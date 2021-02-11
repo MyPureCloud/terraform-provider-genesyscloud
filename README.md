@@ -1,3 +1,4 @@
+![tests](https://github.com/MyPureCloud/terraform-provider-genesyscloud/workflows/.github/workflows/test.yml/badge.svg)
 # Genesys Cloud Terraform Provider
 <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" width="600px">
 
