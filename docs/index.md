@@ -1,0 +1,29 @@
+---
+page_title: "genesyscloud Provider"
+subcategory: ""
+description: |-
+  
+---
+
+# genesyscloud Provider
+
+
+
+## Example Usage
+
+```terraform
+provider "genesyscloud" {
+  oauthclient_id     = "client-id"
+  oauthclient_secret = "client-secret"
+  aws_region         = "us-east-1"
+}
+```
+
+## Schema
+
+### Optional
+
+- **aws_region** (String) AWS region where org exists. e.g. us-east-1
+- **oauthclient_id** (String) OAuthClient ID found on the OAuth page of Admin UI.
+- **oauthclient_secret** (String, Sensitive) OAuthClient secret found on the OAuth page of Admin UI.
+- **sdk_debug** (Boolean) Enables debug tracing in the Genesys Cloud SDK.
