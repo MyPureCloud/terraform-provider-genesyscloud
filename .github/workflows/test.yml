@@ -73,6 +73,6 @@ jobs:
 
         GENESYSCLOUD_OAUTHCLIENT_ID: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
         GENESYSCLOUD_OAUTHCLIENT_SECRET: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
-        GENESYSCLOUD_REGION: "dca"
+        GENESYSCLOUD_REGION: "us-east-1"
       run: |
         go test -v -cover ./genesyscloud/

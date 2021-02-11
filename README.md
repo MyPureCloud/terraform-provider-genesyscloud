@@ -32,7 +32,7 @@ Then commit the changes to `go.mod` and `go.sum`.
 
 ## Using the provider
 
-When using the Terraform CLI, you can run [`terraform init`](https://www.terraform.io/docs/commands/init.html) in the directory containing your provider configuration and Terraform will automatically install the defined provider. The Genesys Cloud provider msut be configured with an authorized OAuth client ID and secret to call the SDK.
+When using the Terraform CLI, you can run [`terraform init`](https://www.terraform.io/docs/commands/init.html) in the directory containing your provider configuration and Terraform will automatically install the defined provider. The Genesys Cloud provider must be configured with an authorized OAuth client ID and secret to call the SDK.
 
 ```hcl
 terraform {
@@ -40,7 +40,7 @@ terraform {
   required_providers {
     genesyscloud = {
       source  = "genesys/genesyscloud"
-      version = "1.0.0"
+      version = "1.1.0"
     }
   }
 }
@@ -76,3 +76,14 @@ $ make testacc
 ```
 
 *Note:* Acceptance tests create real resources and require an OAuth Client authorized to create, update, and delete all resources in your org. The OAuth Client information must be set in the `GENESYSCLOUD_*` environment variables prior to running the tests.
+
+### Releases
+
+A GitHub release action will be triggered when pushing any version tag starting with 'v'. The release number must follow the [Semantic Versioning](https://semver.org/spec/v2.0.0.html) spec.
+
+```
+$ git tag -a v1.1.1 -m "Release v1.1.1"
+$ git push origin v1.1.1
+```
+
+ This action will build binaries, generate a changelog from labeled PRs, and create a draft GitHub release. The GitHub release draft must be reviewed and released manually.
