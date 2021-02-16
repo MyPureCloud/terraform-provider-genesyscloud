@@ -30,7 +30,7 @@ jobs:
           PASSPHRASE: ${{ secrets.PASSPHRASE }}
       - 
         name: Build Changelog
-        uses: mikepenz/release-changelog-builder-action@v1.4.2
+        uses: mikepenz/release-changelog-builder-action@v1.4.3
         with:
           configuration: "changelog-config.json"
           outputFile: "CHANGELOG.md"
