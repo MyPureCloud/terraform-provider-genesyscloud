@@ -15,9 +15,9 @@ import (
 var (
 	queueResource1           = "test-queue"
 	queueResource2           = "test-queue-members"
-	queueName1               = "Terraform Test Queue1"
-	queueName2               = "Terraform Test Queue2"
-	queueName3               = "Terraform Test Queue3"
+	queueName1               = "Terraform Test Queue1-" + uuid.NewString()
+	queueName2               = "Terraform Test Queue2-" + uuid.NewString()
+	queueName3               = "Terraform Test Queue3-" + uuid.NewString()
 	queueDesc1               = "This is a test"
 	queueDesc2               = "This is still a test"
 	alertTimeout1            = "7"
