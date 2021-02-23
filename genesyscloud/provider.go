@@ -59,7 +59,8 @@ func New(version string) func() *schema.Provider {
 				},
 			},
 			ResourcesMap: map[string]*schema.Resource{
-				"genesyscloud_user": userResource(),
+				"genesyscloud_user":          userResource(),
+				"genesyscloud_routing_queue": routingQueueResource(),
 			},
 			ConfigureContextFunc: configure,
 		}
