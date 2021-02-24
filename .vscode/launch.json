@@ -9,12 +9,15 @@
             "type": "go",
             "request": "launch",
             "mode": "test",
-            // this assumes your workspace is the root of the repo
-            "program": "${fileDirname}",
+            "program": "${workspaceRoot}/genesyscloud",
             "env": {
                 "TF_ACC": "1",
             },
-            "args": [],
+            "args": [
+                "-test.v",
+                "-test.run",
+                "TestAccResourceRoutingQueueMembers"
+            ],
         },
         {
             "name": "Debug - Attach External CLI",

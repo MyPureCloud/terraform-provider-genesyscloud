@@ -1,0 +1,2 @@
+feature: ['feature/*', 'feat/*']
+bug: ['fix/*', 'bug/*']

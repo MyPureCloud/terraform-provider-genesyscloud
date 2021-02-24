@@ -32,7 +32,7 @@ jobs:
         name: Build Changelog
         uses: mikepenz/release-changelog-builder-action@v1.5.0
         with:
-          configuration: "changelog-config.json"
+          configuration: ".github/changelog-config.json"
           outputFile: "CHANGELOG.md"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
