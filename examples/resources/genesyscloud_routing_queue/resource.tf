@@ -10,7 +10,7 @@ resource "genesyscloud_routing_queue" "test_queue" {
   auto_answer_only                  = true
   enable_transcription              = true
   enable_manual_assignment          = true
-  calling_party_name                = "Acme Inc."
+  calling_party_name                = "Example Inc."
   outbound_messaging_sms_address_id = "c1bb045e-254d-4316-9d78-cea6849a3db4"
   outbound_email_address {
     domain_id = "example.com"
@@ -28,14 +28,14 @@ resource "genesyscloud_routing_queue" "test_queue" {
   }
   bullseye_rings {
     expansion_timeout_seconds = 15.1
-    skills_to_remove          = ["0d9d3b90-53a8-43cf-a3ad-7e6a41592a3f"]
+    skills_to_remove          = [genesyscloud_routing_skill.test-skill.id]
   }
   default_script_ids {
     EMAIL = "153fcff5-597e-4f17-94e5-17eac456a0b2"
     CHAT  = "98dff282-c50c-4c36-bc70-80b058564e1b"
   }
   members {
-    user_id  = "851dcc4f-80d4-4cc9-8bb3-b98cf560d572"
+    user_id  = genesyscloud_user.test-user.id
     ring_num = 2
   }
 }
