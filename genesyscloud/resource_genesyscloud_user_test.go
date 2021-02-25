@@ -12,23 +12,23 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-var (
-	userResource1 = "test-user1"
-	userResource2 = "test-user2"
-	email1        = "terraform-" + uuid.NewString() + "@example.com"
-	email2        = "terraform-" + uuid.NewString() + "@example.com"
-	email3        = "terraform-" + uuid.NewString() + "@example.com"
-	userName1     = "John Terraform"
-	userName2     = "Jim Terraform"
-	stateActive   = "active"
-	stateInactive = "inactive"
-	title1        = "Senior Director"
-	title2        = "Project Manager"
-	department1   = "Development"
-	department2   = "Project Management"
-)
-
 func TestAccResourceUserBasic(t *testing.T) {
+	var (
+		userResource1 = "test-user1"
+		userResource2 = "test-user2"
+		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		email2        = "terraform-" + uuid.NewString() + "@example.com"
+		email3        = "terraform-" + uuid.NewString() + "@example.com"
+		userName1     = "John Terraform"
+		userName2     = "Jim Terraform"
+		stateActive   = "active"
+		stateInactive = "inactive"
+		title1        = "Senior Director"
+		title2        = "Project Manager"
+		department1   = "Development"
+		department2   = "Project Management"
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -119,23 +119,22 @@ func TestAccResourceUserBasic(t *testing.T) {
 	})
 }
 
-var (
-	addrUserResource1 = "test-user-addr"
-	addrUserName      = "Nancy Terraform"
-	addrEmail1        = "terraform-" + uuid.NewString() + "@example.com"
-	addrEmail2        = "terraform-" + uuid.NewString() + "@example.com"
-	addrEmail3        = "terraform-" + uuid.NewString() + "@example.com"
-	addrPhone1        = "3174269078"
-	addrPhone2        = "+441434634996"
-	addrPhoneExt      = "1234"
-	phoneMediaType    = "PHONE"
-	smsMediaType      = "SMS"
-	addrTypeWork      = "WORK"
-	addrTypeMobile    = "MOBILE"
-	addrTypeHome      = "HOME"
-)
-
 func TestAccResourceUserAddresses(t *testing.T) {
+	var (
+		addrUserResource1 = "test-user-addr"
+		addrUserName      = "Nancy Terraform"
+		addrEmail1        = "terraform-" + uuid.NewString() + "@example.com"
+		addrEmail2        = "terraform-" + uuid.NewString() + "@example.com"
+		addrEmail3        = "terraform-" + uuid.NewString() + "@example.com"
+		addrPhone1        = "3174269078"
+		addrPhone2        = "+441434634996"
+		addrPhoneExt      = "1234"
+		phoneMediaType    = "PHONE"
+		smsMediaType      = "SMS"
+		addrTypeWork      = "WORK"
+		addrTypeHome      = "HOME"
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -206,6 +205,165 @@ func TestAccResourceUserAddresses(t *testing.T) {
 	})
 }
 
+func TestAccResourceUserSkills(t *testing.T) {
+	var (
+		userResource1  = "test-user"
+		email1         = "terraform-" + uuid.NewString() + "@example.com"
+		userName1      = "Skill Terraform"
+		skillResource1 = "test-skill-1"
+		skillResource2 = "test-skill-2"
+		skillName1     = "skill1-" + uuid.NewString()
+		skillName2     = "skill2-" + uuid.NewString()
+		proficiency1   = "1.5"
+		proficiency2   = "2.5"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create user with 1 skill
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName1,
+					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource1+".id", proficiency1),
+				) + generateRoutingSkillResource(skillResource1, skillName1),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserSkill("genesyscloud_user."+userResource1, "genesyscloud_routing_skill."+skillResource1, proficiency1),
+				),
+			},
+			{
+				// Create another skill and add to the user
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName1,
+					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource1+".id", proficiency1),
+					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource2+".id", proficiency2),
+				) + generateRoutingSkillResource(
+					skillResource1,
+					skillName1,
+				) + generateRoutingSkillResource(
+					skillResource2,
+					skillName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserSkill("genesyscloud_user."+userResource1, "genesyscloud_routing_skill."+skillResource1, proficiency1),
+					validateUserSkill("genesyscloud_user."+userResource1, "genesyscloud_routing_skill."+skillResource2, proficiency2),
+				),
+			},
+			{
+				// Remove a skill from the user and modify proficiency
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName1,
+					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource2+".id", proficiency1),
+				) + generateRoutingSkillResource(
+					skillResource1,
+					skillName1,
+				) + generateRoutingSkillResource(
+					skillResource2,
+					skillName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserSkill("genesyscloud_user."+userResource1, "genesyscloud_routing_skill."+skillResource2, proficiency1),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_user." + userResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
+func TestAccResourceUserRoles(t *testing.T) {
+	var (
+		userResource1 = "test-user"
+		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		userName1     = "Role Terraform"
+		roleResource1 = "test-role-1"
+		roleResource2 = "test-role-2"
+		roleName1     = "Terraform User Role Test1"
+		roleName2     = "Terraform User Role Test2"
+		roleDesc      = "Terraform user test role"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create user with 1 role in default division
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName1,
+					generateUserRoles("genesyscloud_auth_role."+roleResource1+".id"),
+				) + generateAuthRoleResource(roleResource1, roleName1, roleDesc),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserRole("genesyscloud_user."+userResource1, "genesyscloud_auth_role."+roleResource1),
+				),
+			},
+			{
+				// Create another role and add to the user
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName1,
+					generateUserRoles("genesyscloud_auth_role."+roleResource1+".id"),
+					generateUserRoles("genesyscloud_auth_role."+roleResource2+".id"),
+				) + generateAuthRoleResource(
+					roleResource1,
+					roleName1,
+					roleDesc,
+				) + generateAuthRoleResource(
+					roleResource2,
+					roleName2,
+					roleDesc,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserRole("genesyscloud_user."+userResource1, "genesyscloud_auth_role."+roleResource1),
+					validateUserRole("genesyscloud_user."+userResource1, "genesyscloud_auth_role."+roleResource2),
+				),
+			},
+			{
+				// Remove a role from the user and modify division
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName1,
+					generateUserRoles("genesyscloud_auth_role."+roleResource2+".id", strconv.Quote("*")),
+				) + generateAuthRoleResource(
+					roleResource1,
+					roleName1,
+					roleDesc,
+				) + generateAuthRoleResource(
+					roleResource2,
+					roleName2,
+					roleDesc,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserRole("genesyscloud_user."+userResource1, "genesyscloud_auth_role."+roleResource2, "*"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_user." + userResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
 func testVerifyUsersDestroyed(state *terraform.State) error {
 	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {
@@ -226,6 +384,93 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 	}
 	// Success. All users destroyed
 	return nil
+}
+
+func validateUserSkill(userResourceName string, skillResourceName string, proficiency string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		userResource, ok := state.RootModule().Resources[userResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find user %s in state", userResourceName)
+		}
+		userID := userResource.Primary.ID
+
+		skillResource, ok := state.RootModule().Resources[skillResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find skill %s in state", skillResourceName)
+		}
+		skillID := skillResource.Primary.ID
+
+		numSkillsAttr, ok := userResource.Primary.Attributes["routing_skills.#"]
+		if !ok {
+			return fmt.Errorf("No skills found for user %s in state", userID)
+		}
+
+		numSkills, _ := strconv.Atoi(numSkillsAttr)
+		for i := 0; i < numSkills; i++ {
+			if userResource.Primary.Attributes["routing_skills."+strconv.Itoa(i)+".skill_id"] == skillID {
+				if userResource.Primary.Attributes["routing_skills."+strconv.Itoa(i)+".proficiency"] == proficiency {
+					// Found skill with correct proficiency
+					return nil
+				}
+				return fmt.Errorf("Skill %s found for user %s with incorrect proficiency", skillID, userID)
+			}
+		}
+
+		return fmt.Errorf("Skill %s not found for user %s in state", skillID, userID)
+	}
+}
+
+func validateUserRole(userResourceName string, roleResourceName string, divisions ...string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		userResource, ok := state.RootModule().Resources[userResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find user %s in state", userResourceName)
+		}
+		userID := userResource.Primary.ID
+
+		roleResource, ok := state.RootModule().Resources[roleResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find role %s in state", roleResourceName)
+		}
+		roleID := roleResource.Primary.ID
+
+		if len(divisions) == 0 {
+			// If no division specified, role should be in the home division
+			homeDiv, err := getHomeDivisionID()
+			if err != nil {
+				return fmt.Errorf("Failed to query home div: %v", err)
+			}
+			divisions = []string{homeDiv}
+		}
+
+		userAttrs := userResource.Primary.Attributes
+		numRolesAttr, _ := userAttrs["roles.#"]
+		numRoles, _ := strconv.Atoi(numRolesAttr)
+		for i := 0; i < numRoles; i++ {
+			if userAttrs["roles."+strconv.Itoa(i)+".role_id"] == roleID {
+				numDivsAttr, _ := userAttrs["roles."+strconv.Itoa(i)+".division_ids.#"]
+				numDivs, _ := strconv.Atoi(numDivsAttr)
+				stateDivs := make([]string, numDivs)
+				for j := 0; j < numDivs; j++ {
+					stateDivs[j] = userAttrs["roles."+strconv.Itoa(i)+".division_ids."+strconv.Itoa(j)]
+				}
+
+				extraDivs := sliceDifference(stateDivs, divisions)
+				if len(extraDivs) > 0 {
+					return fmt.Errorf("Unexpected divisions found for role %s in state: %v", roleID, extraDivs)
+				}
+
+				missingDivs := sliceDifference(divisions, stateDivs)
+				if len(missingDivs) > 0 {
+					return fmt.Errorf("Missing expected divisions for role %s in state: %v", roleID, missingDivs)
+				}
+
+				// Found expected role and divisions
+				return nil
+			}
+		}
+		return fmt.Errorf("Missing expected role for user %s in state: %s", userID, roleID)
+	}
 }
 
 // Basic user with minimum required fields
@@ -277,4 +522,24 @@ func generateUserEmailAddress(emailAddress string, emailType string) string {
 				type = %s
 			}
 			`, emailAddress, emailType)
+}
+
+func generateUserRoutingSkill(skillID string, proficiency string) string {
+	return fmt.Sprintf(`routing_skills {
+		skill_id = %s
+		proficiency = %s
+	}
+	`, skillID, proficiency)
+}
+
+func generateUserRoles(skillID string, divisionIds ...string) string {
+	var divAttr string
+	if len(divisionIds) > 0 {
+		divAttr = "division_ids = [" + strings.Join(divisionIds, ",") + "]"
+	}
+	return fmt.Sprintf(`roles {
+		role_id = %s
+		%s
+	}
+	`, skillID, divAttr)
 }

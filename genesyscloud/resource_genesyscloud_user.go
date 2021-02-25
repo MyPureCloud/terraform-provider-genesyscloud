@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"log"
+	"strings"
 
 	"github.com/MyPureCloud/platform-client-sdk-go/platformclientv2"
 	"github.com/hashicorp/go-cty/cty"
@@ -57,6 +58,37 @@ var (
 				Optional:     true,
 				Default:      "WORK",
 				ValidateFunc: validation.StringInSlice([]string{"WORK", "HOME"}, false),
+			},
+		},
+	}
+	userSkillResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"skill_id": {
+				Description: "ID of routing skill.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"proficiency": {
+				Description:  "Rating from 0.0 to 5.0 on how competent an agent is for a particular skill. It is used when a queue is set to 'Best available skills' mode to allow acd interactions to target agents with higher proficiency ratings.",
+				Type:         schema.TypeFloat,
+				Required:     true,
+				ValidateFunc: validation.FloatBetween(0, 5),
+			},
+		},
+	}
+	userRoleResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"role_id": {
+				Description: "Role ID.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"division_ids": {
+				Description: "Divisions applied to this role. If not set, the home division will be used. '*' may be set for all divisions.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -131,6 +163,19 @@ func userResource() *schema.Resource {
 				Set:         phoneNumberHash,
 				Elem:        phoneNumberResource,
 			},
+			"routing_skills": {
+				Description: "Skills and proficiencies for this user.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        userSkillResource,
+			},
+			"roles": {
+				Description: "Roles and their divisions assigned to this user. If not set on creation, the server will assign a base role.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        userRoleResource,
+			},
 		},
 	}
 }
@@ -190,13 +235,22 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
+	diagErr := updateUserSkills(d)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = updateUserRoles(d)
+	if diagErr != nil {
+		return diagErr
+	}
 	return readUser(ctx, d, meta)
 }
 
 func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	usersAPI := platformclientv2.NewUsersApi()
 
-	currentUser, _, getErr := usersAPI.GetUser(d.Id(), nil, "", "")
+	currentUser, _, getErr := usersAPI.GetUser(d.Id(), []string{"skills"}, "", "")
 	if getErr != nil {
 		return diag.Errorf("Failed to read user %s: %s", d.Id(), getErr)
 	}
@@ -224,6 +278,16 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("other_emails", emailSet)
 		d.Set("phone_numbers", phoneNumSet)
 	}
+
+	if currentUser.Skills != nil {
+		d.Set("routing_skills", flattenUserSkills(*currentUser.Skills))
+	}
+
+	roles, err := readUserRoles(d.Id())
+	if err != nil {
+		return err
+	}
+	d.Set("roles", roles)
 
 	return nil
 }
@@ -298,6 +362,15 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
+	diagErr := updateUserSkills(d)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = updateUserRoles(d)
+	if diagErr != nil {
+		return diagErr
+	}
 	return readUser(ctx, d, meta)
 }
 
@@ -433,4 +506,155 @@ func flattenUserAddresses(addresses []platformclientv2.Contact) (emailSet *schem
 		}
 	}
 	return
+}
+
+func updateUserSkills(d *schema.ResourceData) diag.Diagnostics {
+	if d.HasChange("routing_skills") {
+		usersAPI := platformclientv2.NewUsersApi()
+		sdkSkills := make([]platformclientv2.Userroutingskillpost, 0)
+
+		skillsConfig := d.Get("routing_skills")
+
+		if skillsConfig != nil {
+			skillsList := skillsConfig.(*schema.Set).List()
+			for _, configSkill := range skillsList {
+				skillMap := configSkill.(map[string]interface{})
+				skillID := skillMap["skill_id"].(string)
+				skillProf := skillMap["proficiency"].(float64)
+
+				sdkSkills = append(sdkSkills, platformclientv2.Userroutingskillpost{
+					Id:          &skillID,
+					Proficiency: &skillProf,
+				})
+			}
+		}
+
+		_, _, err := usersAPI.PutUserRoutingskillsBulk(d.Id(), sdkSkills)
+		if err != nil {
+			return diag.Errorf("Failed to update skills for user %s: %s", d.Id(), err)
+		}
+	}
+	return nil
+}
+
+func flattenUserSkills(skills []platformclientv2.Userroutingskill) *schema.Set {
+	skillSet := schema.NewSet(schema.HashResource(userSkillResource), []interface{}{})
+	for _, sdkSkill := range skills {
+		skill := make(map[string]interface{})
+		skill["skill_id"] = *sdkSkill.Id
+		skill["proficiency"] = *sdkSkill.Proficiency
+		skillSet.Add(skill)
+	}
+	return skillSet
+}
+
+func createRoleDivisionPair(roleID string, divisionID string) string {
+	return roleID + ":" + divisionID
+}
+
+func roleDivPairsToGrants(grantPairs []string) platformclientv2.Roledivisiongrants {
+	grants := make([]platformclientv2.Roledivisionpair, len(grantPairs))
+	for i, pair := range grantPairs {
+		roleDiv := strings.Split(pair, ":")
+		grants[i] = platformclientv2.Roledivisionpair{
+			RoleId:     &roleDiv[0],
+			DivisionId: &roleDiv[1],
+		}
+	}
+	return platformclientv2.Roledivisiongrants{
+		Grants: &grants,
+	}
+}
+
+func updateUserRoles(d *schema.ResourceData) diag.Diagnostics {
+	if d.HasChange("roles") {
+		authAPI := platformclientv2.NewAuthorizationApi()
+
+		// Get existing roles/divisions
+		subject, _, err := authAPI.GetAuthorizationSubject(d.Id())
+		if err != nil {
+			return diag.Errorf("Failed to get current roles for user %s: %s", d.Id(), err)
+		}
+
+		var existingGrants []string
+		if subject != nil && subject.Grants != nil {
+			for _, grant := range *subject.Grants {
+				existingGrants = append(existingGrants, createRoleDivisionPair(*grant.Role.Id, *grant.Division.Id))
+			}
+		}
+
+		var configGrants []string
+		rolesConfig := d.Get("roles")
+		if rolesConfig != nil {
+			homeDiv, err := getHomeDivisionID()
+			if err != nil {
+				return err
+			}
+			rolesList := rolesConfig.(*schema.Set).List()
+			for _, configRole := range rolesList {
+				roleMap := configRole.(map[string]interface{})
+				roleID := roleMap["role_id"].(string)
+
+				var divisionIDs []string
+				if configDivs, ok := roleMap["division_ids"]; ok {
+					divisionIDs = *setToStringList(configDivs.(*schema.Set))
+				}
+
+				if len(divisionIDs) == 0 {
+					// No division set. Use the home division
+					divisionIDs = []string{homeDiv}
+				}
+
+				for _, divID := range divisionIDs {
+					configGrants = append(configGrants, createRoleDivisionPair(roleID, divID))
+				}
+			}
+		}
+
+		grantsToRemove := sliceDifference(existingGrants, configGrants)
+		if len(grantsToRemove) > 0 {
+			_, err := authAPI.PostAuthorizationSubjectBulkremove(d.Id(), roleDivPairsToGrants(grantsToRemove))
+			if err != nil {
+				return diag.Errorf("Failed to remove role grants for user %s: %s", d.Id(), err)
+			}
+		}
+
+		grantsToAdd := sliceDifference(configGrants, existingGrants)
+		if len(grantsToAdd) > 0 {
+			_, err := authAPI.PostAuthorizationSubjectBulkadd(d.Id(), roleDivPairsToGrants(grantsToAdd), "PC_USER")
+			if err != nil {
+				return diag.Errorf("Failed to add role grants for user %s: %s", d.Id(), err)
+			}
+		}
+	}
+	return nil
+}
+
+func readUserRoles(userID string) (*schema.Set, diag.Diagnostics) {
+	authAPI := platformclientv2.NewAuthorizationApi()
+
+	subject, _, err := authAPI.GetAuthorizationSubject(userID)
+	if err != nil {
+		return nil, diag.Errorf("Failed to get current roles for user %s: %s", userID, err)
+	}
+
+	roleDivsMap := make(map[string]*schema.Set)
+	if subject != nil && subject.Grants != nil {
+		for _, grant := range *subject.Grants {
+			if currentDivs, ok := roleDivsMap[*grant.Role.Id]; ok {
+				currentDivs.Add(*grant.Division.Id)
+			} else {
+				roleDivsMap[*grant.Role.Id] = schema.NewSet(schema.HashString, []interface{}{*grant.Division.Id})
+			}
+		}
+	}
+
+	roleSet := schema.NewSet(schema.HashResource(userRoleResource), []interface{}{})
+	for roleID, divs := range roleDivsMap {
+		role := make(map[string]interface{})
+		role["role_id"] = roleID
+		role["division_ids"] = divs
+		roleSet.Add(role)
+	}
+	return roleSet, nil
 }

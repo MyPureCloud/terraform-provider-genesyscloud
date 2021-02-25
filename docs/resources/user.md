@@ -14,22 +14,30 @@ Genesys Cloud User
 
 ```terraform
 resource "genesyscloud_user" "test_user" {
-  email       = "test@example.com"
-  name        = "Test User"
+  email       = "john@example.com"
+  name        = "John Doe"
   password    = "initial-password"
   division_id = "505e1036-6f04-405c-a630-de94a8ad2eb8"
   state       = "active"
   department  = "Development"
   title       = "Senior Director"
-  manager     = "165d19ca-7224-4a9b-ad08-2f4c9fe6356c"
+  manager     = genesyscloud_user.test-user-manager.id
   other_emails {
-    address = "test@gmail.com"
+    address = "john@gmail.com"
     type    = "HOME"
   }
   phone_numbers {
     number     = "3174181234"
     media_type = "PHONE"
     type       = "MOBILE"
+  }
+  routing_skills {
+    skill_id    = genesyscloud_routing_skill.test-skill.id
+    proficiency = 4.5
+  }
+  roles {
+    role_id      = genesyscloud_auth_role.custom-role.id
+    division_ids = ["505e1036-6f04-405c-a630-de94a8ad2eb8"]
   }
 }
 ```
@@ -48,9 +56,11 @@ resource "genesyscloud_user" "test_user" {
 - **division_id** (String) The division to which this user will belong. If not set, the home division will be used.
 - **id** (String) The ID of this resource.
 - **manager** (String) User ID of this user's manager.
-- **other_emails** (Block Set) Other Email addresses for this user. If this and phone_numbers are not set, addresses are not managed by this resource. (see [below for nested schema](#nestedblock--other_emails))
+- **other_emails** (Block Set) Other Email addresses for this user. (see [below for nested schema](#nestedblock--other_emails))
 - **password** (String, Sensitive) User's password. If specified, this is only set on user create.
-- **phone_numbers** (Block Set) Phone number addresses for this user. If this and other_emails are not set, addresses are not managed by this resource. (see [below for nested schema](#nestedblock--phone_numbers))
+- **phone_numbers** (Block Set) Phone number addresses for this user. (see [below for nested schema](#nestedblock--phone_numbers))
+- **roles** (Block Set) Roles and their divisions assigned to this user. If not set on creation, the server will assign a base role. (see [below for nested schema](#nestedblock--roles))
+- **routing_skills** (Block Set) Skills and proficiencies for this user. (see [below for nested schema](#nestedblock--routing_skills))
 - **state** (String) User's state (active | inactive). Default is 'active'.
 - **title** (String) User's title.
 
@@ -78,5 +88,26 @@ Optional:
 - **extension** (String) Phone number extension
 - **media_type** (String) Media type of phone number (SMS | PHONE). Defaults to PHONE
 - **type** (String) Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE). Defaults to WORK
+
+
+<a id="nestedblock--roles"></a>
+### Nested Schema for `roles`
+
+Required:
+
+- **role_id** (String) Role ID.
+
+Optional:
+
+- **division_ids** (Set of String) Divisions applied to this role. If not set, the home division will be used. '*' may be set for all divisions.
+
+
+<a id="nestedblock--routing_skills"></a>
+### Nested Schema for `routing_skills`
+
+Required:
+
+- **proficiency** (Number) Rating from 0.0 to 5.0 on how competent an agent is for a particular skill. It is used when a queue is set to 'Best available skills' mode to allow acd interactions to target agents with higher proficiency ratings.
+- **skill_id** (String) ID of routing skill.
 
 

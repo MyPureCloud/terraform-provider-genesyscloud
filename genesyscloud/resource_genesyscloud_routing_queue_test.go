@@ -12,39 +12,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-var (
-	queueResource1           = "test-queue"
-	queueResource2           = "test-queue-members"
-	queueName1               = "Terraform Test Queue1-" + uuid.NewString()
-	queueName2               = "Terraform Test Queue2-" + uuid.NewString()
-	queueName3               = "Terraform Test Queue3-" + uuid.NewString()
-	queueDesc1               = "This is a test"
-	queueDesc2               = "This is still a test"
-	alertTimeout1            = "7"
-	alertTimeout2            = "100"
-	slPercent1               = "0.5"
-	slPercent2               = "0.9"
-	slDuration1              = "1000"
-	slDuration2              = "10000"
-	wrapupPromptOptional     = "OPTIONAL"
-	wrapupPromptMandTimeout  = "MANDATORY_TIMEOUT"
-	routingRuleOpAny         = "ANY"
-	routingRuleOpMeetsThresh = "MEETS_THRESHOLD"
-	skillEvalAll             = "ALL"
-	skillEvalBest            = "BEST"
-	callingPartyName         = "Acme"
-	callingPartyNumber       = "3173416548"
-	queueMemberResource1     = "test-queue-user1"
-	queueMemberResource2     = "test-queue-user2"
-	queueMemberEmail1        = "terraform1-" + uuid.NewString() + "@example.com"
-	queueMemberEmail2        = "terraform2-" + uuid.NewString() + "@example.com"
-	queueMemberName1         = "Henry Terraform"
-	queueMemberName2         = "Amanda Terraform"
-	defaultQueueRingNum      = "1"
-	queueRingNum             = "3"
-)
-
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
+	var (
+		queueResource1           = "test-queue"
+		queueName1               = "Terraform Test Queue1-" + uuid.NewString()
+		queueName2               = "Terraform Test Queue2-" + uuid.NewString()
+		queueDesc1               = "This is a test"
+		queueDesc2               = "This is still a test"
+		alertTimeout1            = "7"
+		alertTimeout2            = "100"
+		slPercent1               = "0.5"
+		slPercent2               = "0.9"
+		slDuration1              = "1000"
+		slDuration2              = "10000"
+		wrapupPromptOptional     = "OPTIONAL"
+		wrapupPromptMandTimeout  = "MANDATORY_TIMEOUT"
+		routingRuleOpAny         = "ANY"
+		routingRuleOpMeetsThresh = "MEETS_THRESHOLD"
+		skillEvalAll             = "ALL"
+		skillEvalBest            = "BEST"
+		callingPartyName         = "Acme"
+		callingPartyNumber       = "3173416548"
+		queueSkillResource       = "test-queue-skill"
+		queueSkillName           = "Terraform Skill " + uuid.NewString()
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -56,7 +48,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					queueName1,
 					queueDesc1,
 					nullValue, // MANDATORY_TIMEOUT
-					"200000",
+					"200000",  // acw_timeout
 					nullValue, // ALL
 					nullValue, // auto_answer_only true
 					nullValue, // No calling party name
@@ -68,10 +60,10 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					generateMediaSettings("media_settings_chat", alertTimeout1, slPercent1, slDuration1),
 					generateMediaSettings("media_settings_email", alertTimeout1, slPercent1, slDuration1),
 					generateMediaSettings("media_settings_message", alertTimeout1, slPercent1, slDuration1),
-					generateBullseyeSettings(alertTimeout1),
-					generateBullseyeSettings(alertTimeout1),
+					generateBullseyeSettings(alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource+".id"),
+					generateBullseyeSettings(alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource+".id"),
 					generateRoutingRules(routingRuleOpAny, "50", nullValue),
-				),
+				) + generateRoutingSkillResource(queueSkillResource, queueSkillName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "name", queueName1),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "description", queueDesc1),
@@ -87,7 +79,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, slPercent1, slDuration1),
-					validateBullseyeSettings(queueResource1, 2, alertTimeout1, ""),
+					validateBullseyeSettings(queueResource1, 2, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource),
 					validateRoutingRules(queueResource1, 0, routingRuleOpAny, "50", "5"),
 				),
 			},
@@ -98,7 +90,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					queueName2,
 					queueDesc2,
 					strconv.Quote(wrapupPromptOptional),
-					nullValue,
+					nullValue, // acw_timeout
 					strconv.Quote(skillEvalBest),
 					falseValue, // auto_answer_only false
 					strconv.Quote(callingPartyName),
@@ -153,6 +145,18 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 }
 
 func TestAccResourceRoutingQueueMembers(t *testing.T) {
+	var (
+		queueResource        = "test-queue-members"
+		queueName            = "Terraform Test Queue3-" + uuid.NewString()
+		queueMemberResource1 = "test-queue-user1"
+		queueMemberResource2 = "test-queue-user2"
+		queueMemberEmail1    = "terraform1-" + uuid.NewString() + "@example.com"
+		queueMemberEmail2    = "terraform2-" + uuid.NewString() + "@example.com"
+		queueMemberName1     = "Henry Terraform"
+		queueMemberName2     = "Amanda Terraform"
+		defaultQueueRingNum  = "1"
+		queueRingNum         = "3"
+	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -160,8 +164,8 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 			{
 				// Create
 				Config: generateRoutingQueueResourceBasic(
-					queueResource2,
-					queueName3,
+					queueResource,
+					queueName,
 					generateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", nullValue),
 				) + generateBasicUserResource(
 					queueMemberResource1,
@@ -173,14 +177,14 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					queueMemberName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateMember("genesyscloud_routing_queue."+queueResource2, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, defaultQueueRingNum),
 				),
 			},
 			{
 				// Update with another queue member and modify rings
 				Config: generateRoutingQueueResourceBasic(
-					queueResource2,
-					queueName3,
+					queueResource,
+					queueName,
 					generateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", queueRingNum),
 					generateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
 				) + generateBasicUserResource(
@@ -193,15 +197,15 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					queueMemberName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateMember("genesyscloud_routing_queue."+queueResource2, "genesyscloud_user."+queueMemberResource1, queueRingNum),
-					validateMember("genesyscloud_routing_queue."+queueResource2, "genesyscloud_user."+queueMemberResource2, queueRingNum),
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource1, queueRingNum),
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
 				),
 			},
 			{
 				// Remove a queue member
 				Config: generateRoutingQueueResourceBasic(
-					queueResource2,
-					queueName3,
+					queueResource,
+					queueName,
 					generateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
 				) + generateBasicUserResource(
 					queueMemberResource1,
@@ -213,12 +217,12 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					queueMemberName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateMember("genesyscloud_routing_queue."+queueResource2, "genesyscloud_user."+queueMemberResource2, queueRingNum),
+					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_queue." + queueResource2,
+				ResourceName:      "genesyscloud_routing_queue." + queueResource,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -356,7 +360,7 @@ func validateBullseyeSettings(resourceName string, numRings int, timeout string,
 
 		if skillToRemove != "" {
 			checks = append(checks,
-				resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "bullseye_rings."+ringNum+".skills_to_remove.0", skillToRemove))
+				resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+resourceName, "bullseye_rings."+ringNum+".skills_to_remove.0", skillToRemove, "id"))
 		} else {
 			checks = append(checks,
 				resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "bullseye_rings."+ringNum+".skills_to_remove.#", "0"))
