@@ -33,7 +33,7 @@ var (
 	}
 )
 
-func authRoleResource() *schema.Resource {
+func resourceAuthRole() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Authorization Role",
 
@@ -114,7 +114,6 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 	if role.PermissionPolicies != nil {
 		d.Set("permission_policies", flattenRolePermissionPolicies(*role.PermissionPolicies))
 	}
-
 	return nil
 }
 

@@ -94,7 +94,7 @@ var (
 	}
 )
 
-func userResource() *schema.Resource {
+func resourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud User",
 
@@ -502,6 +502,8 @@ func flattenUserAddresses(addresses []platformclientv2.Contact) (emailSet *schem
 				email["type"] = *address.VarType
 				email["address"] = *address.Address
 				emailSet.Add(email)
+			} else {
+				log.Printf("Unknown address media type %s", *address.MediaType)
 			}
 		}
 	}

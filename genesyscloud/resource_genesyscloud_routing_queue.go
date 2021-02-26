@@ -68,7 +68,7 @@ var (
 	}
 )
 
-func routingQueueResource() *schema.Resource {
+func resourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Queue",
 
@@ -541,7 +541,7 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	// Queue deletes are not immediate. Query until queue is no longer found
-	return diag.FromErr(resource.RetryContext(ctx, d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
+	return withRetries(ctx, d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingQueue(d.Id())
 		if err != nil {
 			if resp != nil && resp.StatusCode == 404 {
@@ -551,7 +551,7 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return resource.NonRetryableError(fmt.Errorf("Error deleting queue %s: %s", d.Id(), err))
 		}
 		return resource.RetryableError(fmt.Errorf("Queue %s still exists", d.Id()))
-	}))
+	})
 }
 
 func buildSdkMediaSettings(d *schema.ResourceData) *map[string]platformclientv2.Mediasetting {

@@ -1,8 +1,12 @@
 package genesyscloud
 
 import (
+	"context"
+	"time"
+
 	"github.com/MyPureCloud/platform-client-sdk-go/platformclientv2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -65,4 +69,8 @@ func setToStringList(strSet *schema.Set) *[]string {
 		strList[i] = s.(string)
 	}
 	return &strList
+}
+
+func withRetries(ctx context.Context, timeout time.Duration, method func() *resource.RetryError) diag.Diagnostics {
+	return diag.FromErr(resource.RetryContext(ctx, timeout, method))
 }
