@@ -44,7 +44,7 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource1, "name", roleName1),
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource1, "description", roleDesc1),
-					validatePermissions("genesyscloud_auth_role."+roleResource1, perm1),
+					validateRolePermissions("genesyscloud_auth_role."+roleResource1, perm1),
 					validatePermissionPolicy("genesyscloud_auth_role."+roleResource1, directoryDom, userEntity, addAction),
 				),
 			},
@@ -61,7 +61,7 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource1, "name", roleName1),
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource1, "description", roleDesc2),
-					validatePermissions("genesyscloud_auth_role."+roleResource1, perm1, perm2),
+					validateRolePermissions("genesyscloud_auth_role."+roleResource1, perm1, perm2),
 					validatePermissionPolicy("genesyscloud_auth_role."+roleResource1, directoryDom, userEntity, allAction),
 					validatePermissionPolicy("genesyscloud_auth_role."+roleResource1, directoryDom, groupEntity, addAction, editAction),
 				),
@@ -127,7 +127,7 @@ func testVerifyRolesDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func validatePermissions(roleResourceName string, permissions ...string) resource.TestCheckFunc {
+func validateRolePermissions(roleResourceName string, permissions ...string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		roleResource, ok := state.RootModule().Resources[roleResourceName]
 		if !ok {
