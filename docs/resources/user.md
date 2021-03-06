@@ -22,14 +22,16 @@ resource "genesyscloud_user" "test_user" {
   department  = "Development"
   title       = "Senior Director"
   manager     = genesyscloud_user.test-user-manager.id
-  other_emails {
-    address = "john@gmail.com"
-    type    = "HOME"
-  }
-  phone_numbers {
-    number     = "3174181234"
-    media_type = "PHONE"
-    type       = "MOBILE"
+  addresses {
+    other_emails {
+      address = "john@gmail.com"
+      type    = "HOME"
+    }
+    phone_numbers {
+      number     = "3174181234"
+      media_type = "PHONE"
+      type       = "MOBILE"
+    }
   }
   routing_skills {
     skill_id    = genesyscloud_routing_skill.test-skill.id
@@ -52,20 +54,27 @@ resource "genesyscloud_user" "test_user" {
 
 ### Optional
 
+- **addresses** (Block List, Max: 1) The address settings for this user. If not set, addresses will not be managed by this resource. (see [below for nested schema](#nestedblock--addresses))
 - **department** (String) User's department.
 - **division_id** (String) The division to which this user will belong. If not set, the home division will be used.
 - **id** (String) The ID of this resource.
 - **manager** (String) User ID of this user's manager.
-- **other_emails** (Block Set) Other Email addresses for this user. (see [below for nested schema](#nestedblock--other_emails))
 - **password** (String, Sensitive) User's password. If specified, this is only set on user create.
-- **phone_numbers** (Block Set) Phone number addresses for this user. (see [below for nested schema](#nestedblock--phone_numbers))
-- **roles** (Block Set) Roles and their divisions assigned to this user. If not set on creation, the server will assign a base role. (see [below for nested schema](#nestedblock--roles))
-- **routing_skills** (Block Set) Skills and proficiencies for this user. (see [below for nested schema](#nestedblock--routing_skills))
+- **roles** (Block Set) Roles and their divisions assigned to this user. If not set, roles will not be managed by this resource. (see [below for nested schema](#nestedblock--roles))
+- **routing_skills** (Block Set) Skills and proficiencies for this user. If not set, skills will not be managed by this resource. (see [below for nested schema](#nestedblock--routing_skills))
 - **state** (String) User's state (active | inactive). Default is 'active'.
 - **title** (String) User's title.
 
-<a id="nestedblock--other_emails"></a>
-### Nested Schema for `other_emails`
+<a id="nestedblock--addresses"></a>
+### Nested Schema for `addresses`
+
+Optional:
+
+- **other_emails** (Block Set) Other Email addresses for this user. (see [below for nested schema](#nestedblock--addresses--other_emails))
+- **phone_numbers** (Block Set) Phone number addresses for this user. (see [below for nested schema](#nestedblock--addresses--phone_numbers))
+
+<a id="nestedblock--addresses--other_emails"></a>
+### Nested Schema for `addresses.other_emails`
 
 Required:
 
@@ -76,8 +85,8 @@ Optional:
 - **type** (String) Type of email address (WORK | HOME). Defaults to WORK.
 
 
-<a id="nestedblock--phone_numbers"></a>
-### Nested Schema for `phone_numbers`
+<a id="nestedblock--addresses--phone_numbers"></a>
+### Nested Schema for `addresses.phone_numbers`
 
 Required:
 
@@ -88,6 +97,7 @@ Optional:
 - **extension** (String) Phone number extension
 - **media_type** (String) Media type of phone number (SMS | PHONE). Defaults to PHONE
 - **type** (String) Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE). Defaults to WORK
+
 
 
 <a id="nestedblock--roles"></a>

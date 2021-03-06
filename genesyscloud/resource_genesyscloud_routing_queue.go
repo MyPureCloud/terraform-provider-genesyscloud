@@ -8,12 +8,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/MyPureCloud/platform-client-sdk-go/platformclientv2"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
 var (
@@ -36,7 +36,7 @@ var (
 				ValidateFunc: validation.IntAtLeast(7),
 			},
 			"service_level_percentage": {
-				Description:  "The desired Service Level. A value between 0 and 1.",
+				Description:  "The desired Service Level. A float value between 0 and 1.",
 				Type:         schema.TypeFloat,
 				Required:     true,
 				ValidateFunc: validation.FloatBetween(0, 1),
@@ -68,6 +68,45 @@ var (
 	}
 )
 
+func getAllRoutingQueues() (ResourceIDNameMap, diag.Diagnostics) {
+	resources := make(map[string]string)
+	routingAPI := platformclientv2.NewRoutingApi()
+
+	for pageNum := 1; ; pageNum++ {
+		queues, _, getErr := routingAPI.GetRoutingQueues(100, pageNum, "", "", nil, nil)
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of queues: %v", getErr)
+		}
+
+		if queues.Entities == nil || len(*queues.Entities) == 0 {
+			break
+		}
+
+		for _, queue := range *queues.Entities {
+			resources[*queue.Id] = *queue.Name
+		}
+	}
+
+	return resources, nil
+}
+
+func routingQueueExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllRoutingQueues,
+		ResourceDef:      resourceRoutingQueue(),
+		RefAttrs: map[string]*RefAttrSettings{
+			"division_id":                       {},                      // Ref type not yet defined
+			"queue_flow_id":                     {},                      // Ref type not yet defined
+			"whisper_prompt_id":                 {},                      // Ref type not yet defined
+			"outbound_messaging_sms_address_id": {},                      // Ref type not yet defined
+			"default_script_ids.*":              {},                      // Ref type not yet defined
+			"outbound_email_address.route_id":   {RemoveOuterItem: true}, // Ref type not yet defined
+			"bullseye_rings.skills_to_remove":   {RefType: "genesyscloud_routing_skill"},
+			"members.user_id":                   {RefType: "genesyscloud_user", RemoveOuterItem: true},
+		},
+	}
+}
+
 func resourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Queue",
@@ -79,7 +118,7 @@ func resourceRoutingQueue() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-
+		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Queue name.",
@@ -296,7 +335,7 @@ func resourceRoutingQueue() *schema.Resource {
 				},
 			},
 			"members": {
-				Description: "Users in the queue. If not set, this resource will not manage queue membership.",
+				Description: "Users in the queue. If not set, queue members will not be managed by this resource.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
@@ -360,8 +399,12 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	routingAPI := platformclientv2.NewRoutingApi()
 
-	currentQueue, _, getErr := routingAPI.GetRoutingQueue(d.Id())
+	currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 	if getErr != nil {
+		if resp != nil && resp.StatusCode == 404 {
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Failed to read user %s: %s", d.Id(), getErr)
 	}
 
@@ -813,9 +856,9 @@ func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 }
 
 func updateQueueMembers(d *schema.ResourceData) diag.Diagnostics {
-	var newUserIds []string
-	newUserRingNums := make(map[string]int)
 	if members, ok := d.GetOk("members"); ok {
+		var newUserIds []string
+		newUserRingNums := make(map[string]int)
 		memberList := members.(*schema.Set).List()
 		newUserIds = make([]string, len(memberList))
 		for i, member := range memberList {
@@ -823,59 +866,55 @@ func updateQueueMembers(d *schema.ResourceData) diag.Diagnostics {
 			newUserIds[i] = memberMap["user_id"].(string)
 			newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
 		}
-	} else {
-		// Members not set in the config. Do not update.
-		return nil
-	}
 
-	routingAPI := platformclientv2.NewRoutingApi()
-	oldSdkUsers, err := getRoutingQueueMembers(d.Id(), routingAPI)
-	if err != nil {
-		return err
-	}
-
-	oldUserIds := make([]string, len(oldSdkUsers))
-	oldUserRingNums := make(map[string]int)
-	for i, user := range oldSdkUsers {
-		oldUserIds[i] = *user.Id
-		oldUserRingNums[oldUserIds[i]] = *user.RingNumber
-	}
-
-	if len(oldUserIds) > 0 {
-		usersToRemove := sliceDifference(oldUserIds, newUserIds)
-		err := updateMembersInChunks(d.Id(), usersToRemove, true, routingAPI)
+		routingAPI := platformclientv2.NewRoutingApi()
+		oldSdkUsers, err := getRoutingQueueMembers(d.Id(), routingAPI)
 		if err != nil {
 			return err
 		}
-	}
 
-	if len(newUserIds) > 0 {
-		usersToAdd := sliceDifference(newUserIds, oldUserIds)
-		err := updateMembersInChunks(d.Id(), usersToAdd, false, routingAPI)
-		if err != nil {
-			return err
+		oldUserIds := make([]string, len(oldSdkUsers))
+		oldUserRingNums := make(map[string]int)
+		for i, user := range oldSdkUsers {
+			oldUserIds[i] = *user.Id
+			oldUserRingNums[oldUserIds[i]] = *user.RingNumber
 		}
-	}
 
-	// Check for ring numbers to update
-	for userID, newNum := range newUserRingNums {
-		if oldNum, found := oldUserRingNums[userID]; found {
-			if newNum != oldNum {
-				// Number changed. Update ring number
+		if len(oldUserIds) > 0 {
+			usersToRemove := sliceDifference(oldUserIds, newUserIds)
+			err := updateMembersInChunks(d.Id(), usersToRemove, true, routingAPI)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(newUserIds) > 0 {
+			usersToAdd := sliceDifference(newUserIds, oldUserIds)
+			err := updateMembersInChunks(d.Id(), usersToAdd, false, routingAPI)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Check for ring numbers to update
+		for userID, newNum := range newUserRingNums {
+			if oldNum, found := oldUserRingNums[userID]; found {
+				if newNum != oldNum {
+					// Number changed. Update ring number
+					err := updateQueueUserRingNum(d.Id(), userID, newNum, routingAPI)
+					if err != nil {
+						return err
+					}
+				}
+			} else if newNum != 1 {
+				// New queue member. Update ring num if not set to the default of 1
 				err := updateQueueUserRingNum(d.Id(), userID, newNum, routingAPI)
 				if err != nil {
 					return err
 				}
 			}
-		} else if newNum != 1 {
-			// New queue member. Update ring num if not set to the default of 1
-			err := updateQueueUserRingNum(d.Id(), userID, newNum, routingAPI)
-			if err != nil {
-				return err
-			}
 		}
 	}
-
 	return nil
 }
 
@@ -893,12 +932,10 @@ func updateMembersInChunks(queueID string, membersToUpdate []string, remove bool
 		}
 
 		if len(updateChunk) > 0 {
-			// TODO: Ignoring err for now as SDK has a bug deserializing empty bodies
-			/*_, _, err := */
-			api.PostRoutingQueueMembers(queueID, updateChunk, remove)
-			//if err != nil {
-			//	return diag.Errorf("Failed to update members in queue %s: %s", queueID, err)
-			//}
+			_, err := api.PostRoutingQueueMembers(queueID, updateChunk, remove)
+			if err != nil {
+				return diag.Errorf("Failed to update members in queue %s: %s", queueID, err)
+			}
 		}
 	}
 	return nil
@@ -934,8 +971,8 @@ func getRoutingQueueMembers(queueID string, api *platformclientv2.RoutingApi) ([
 }
 
 func sdkGetRoutingQueueMembers(queueID string, pageNumber int, pageSize int, api *platformclientv2.RoutingApi) (*platformclientv2.Queuememberentitylisting, *platformclientv2.APIResponse, error) {
-	// SDK does not support nil values for boolean query params yet, so we must manually construct the HTTP request for now
-	apiClient := api.Configuration.APIClient
+	// SDK does not support nil values for boolean query params yet, so we must manually construct this HTTP request for now
+	apiClient := &api.Configuration.APIClient
 
 	// create path and map variables
 	path := api.Configuration.BasePath + "/api/v2/routing/queues/{queueId}/members"

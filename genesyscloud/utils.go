@@ -4,11 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/MyPureCloud/platform-client-sdk-go/platformclientv2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
+
+type jsonMap map[string]interface{}
 
 func getHomeDivisionID() (string, diag.Diagnostics) {
 	authAPI := platformclientv2.NewAuthorizationApi()

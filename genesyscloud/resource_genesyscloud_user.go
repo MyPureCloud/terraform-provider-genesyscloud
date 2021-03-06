@@ -5,11 +5,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/MyPureCloud/platform-client-sdk-go/platformclientv2"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -94,6 +94,43 @@ var (
 	}
 )
 
+func getAllUsers() (ResourceIDNameMap, diag.Diagnostics) {
+	resources := make(map[string]string)
+	usersAPI := platformclientv2.NewUsersApi()
+
+	for pageNum := 1; ; pageNum++ {
+		users, _, getErr := usersAPI.GetUsers(100, pageNum, nil, nil, "", nil, "", "")
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of users: %v", getErr)
+		}
+
+		if users.Entities == nil || len(*users.Entities) == 0 {
+			break
+		}
+
+		for _, user := range *users.Entities {
+			resources[*user.Id] = *user.Email
+		}
+	}
+
+	return resources, nil
+}
+
+func userExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllUsers,
+		ResourceDef:      resourceUser(),
+		RefAttrs: map[string]*RefAttrSettings{
+			"manager":                 {RefType: "genesyscloud_user"},
+			"division_id":             {},
+			"routing_skills.skill_id": {RefType: "genesyscloud_routing_skill", RemoveOuterItem: true},
+			"roles.role_id":           {RefType: "genesyscloud_auth_role", RemoveOuterItem: true},
+			"roles.division_ids":      {AltValues: []string{"*"}},
+		},
+		AllowZeroValues: []string{"routing_skills.proficiency"},
+	}
+}
+
 func resourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud User",
@@ -105,6 +142,7 @@ func resourceUser() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"email": {
 				Description: "User's primary email and username.",
@@ -150,27 +188,39 @@ func resourceUser() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"other_emails": {
-				Description: "Other Email addresses for this user.",
-				Type:        schema.TypeSet,
+			"addresses": {
+				Description: "The address settings for this user. If not set, addresses will not be managed by this resource.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Computed:    true,
 				Optional:    true,
-				Elem:        otherEmailResource,
-			},
-			"phone_numbers": {
-				Description: "Phone number addresses for this user.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Set:         phoneNumberHash,
-				Elem:        phoneNumberResource,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"other_emails": {
+							Description: "Other Email addresses for this user.",
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Elem:        otherEmailResource,
+						},
+						"phone_numbers": {
+							Description: "Phone number addresses for this user.",
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Set:         phoneNumberHash,
+							Elem:        phoneNumberResource,
+						},
+					},
+				},
 			},
 			"routing_skills": {
-				Description: "Skills and proficiencies for this user.",
+				Description: "Skills and proficiencies for this user. If not set, skills will not be managed by this resource.",
 				Type:        schema.TypeSet,
 				Optional:    true,
+				Computed:    true,
 				Elem:        userSkillResource,
 			},
 			"roles": {
-				Description: "Roles and their divisions assigned to this user. If not set on creation, the server will assign a base role.",
+				Description: "Roles and their divisions assigned to this user. If not set, roles will not be managed by this resource.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
@@ -250,8 +300,12 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	usersAPI := platformclientv2.NewUsersApi()
 
-	currentUser, _, getErr := usersAPI.GetUser(d.Id(), []string{"skills"}, "", "")
+	currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{"skills"}, "", "")
 	if getErr != nil {
+		if resp != nil && resp.StatusCode == 404 {
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Failed to read user %s: %s", d.Id(), getErr)
 	}
 
@@ -274,9 +328,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	}
 
 	if currentUser.Addresses != nil {
-		emailSet, phoneNumSet := flattenUserAddresses(*currentUser.Addresses)
-		d.Set("other_emails", emailSet)
-		d.Set("phone_numbers", phoneNumSet)
+		d.Set("addresses", flattenUserAddresses(*currentUser.Addresses))
 	}
 
 	if currentUser.Skills != nil {
@@ -455,26 +507,35 @@ func buildSdkPhoneNumbers(configPhoneNumbers *schema.Set) ([]platformclientv2.Co
 }
 
 func buildSdkAddresses(d *schema.ResourceData) (*[]platformclientv2.Contact, diag.Diagnostics) {
-	otherEmails := d.Get("other_emails")
-	phoneNumbers := d.Get("phone_numbers")
-
-	var addresses []platformclientv2.Contact
-	if otherEmails != nil {
-		addresses = append(addresses, buildSdkEmails(otherEmails.(*schema.Set))...)
-	}
-	if phoneNumbers != nil {
-		sdkNums, err := buildSdkPhoneNumbers(phoneNumbers.(*schema.Set))
-		if err != nil {
-			return nil, err
+	addresses := d.Get("addresses").([]interface{})
+	if addresses != nil {
+		var otherEmails *schema.Set
+		var phoneNumbers *schema.Set
+		if len(addresses) > 0 {
+			addressMap := addresses[0].(map[string]interface{})
+			otherEmails = addressMap["other_emails"].(*schema.Set)
+			phoneNumbers = addressMap["phone_numbers"].(*schema.Set)
 		}
-		addresses = append(addresses, sdkNums...)
+
+		sdkAddresses := make([]platformclientv2.Contact, 0)
+		if otherEmails != nil {
+			sdkAddresses = append(sdkAddresses, buildSdkEmails(otherEmails)...)
+		}
+		if phoneNumbers != nil {
+			sdkNums, err := buildSdkPhoneNumbers(phoneNumbers)
+			if err != nil {
+				return nil, err
+			}
+			sdkAddresses = append(sdkAddresses, sdkNums...)
+		}
+		return &sdkAddresses, nil
 	}
-	return &addresses, nil
+	return nil, nil
 }
 
-func flattenUserAddresses(addresses []platformclientv2.Contact) (emailSet *schema.Set, phoneNumSet *schema.Set) {
-	emailSet = schema.NewSet(schema.HashResource(otherEmailResource), []interface{}{})
-	phoneNumSet = schema.NewSet(phoneNumberHash, []interface{}{})
+func flattenUserAddresses(addresses []platformclientv2.Contact) []interface{} {
+	emailSet := schema.NewSet(schema.HashResource(otherEmailResource), []interface{}{})
+	phoneNumSet := schema.NewSet(phoneNumberHash, []interface{}{})
 
 	for _, address := range addresses {
 		if address.MediaType != nil {
@@ -482,11 +543,12 @@ func flattenUserAddresses(addresses []platformclientv2.Contact) (emailSet *schem
 				phoneNumber := make(map[string]interface{})
 				phoneNumber["media_type"] = *address.MediaType
 
+				// Strip off any parentheses from phone numbers
 				if address.Address != nil {
-					phoneNumber["number"] = *address.Address
+					phoneNumber["number"] = strings.Trim(*address.Address, "()")
 				} else if address.Display != nil {
 					// Some numbers are only returned in Display
-					phoneNumber["number"] = *address.Display
+					phoneNumber["number"] = strings.Trim(*address.Display, "()")
 				}
 
 				if address.Extension != nil {
@@ -507,28 +569,27 @@ func flattenUserAddresses(addresses []platformclientv2.Contact) (emailSet *schem
 			}
 		}
 	}
-	return
+	return []interface{}{map[string]interface{}{
+		"other_emails":  emailSet,
+		"phone_numbers": phoneNumSet,
+	}}
 }
 
 func updateUserSkills(d *schema.ResourceData) diag.Diagnostics {
-	if d.HasChange("routing_skills") {
+	if skillsConfig, ok := d.GetOk("routing_skills"); ok && d.HasChange("routing_skills") {
 		usersAPI := platformclientv2.NewUsersApi()
 		sdkSkills := make([]platformclientv2.Userroutingskillpost, 0)
 
-		skillsConfig := d.Get("routing_skills")
+		skillsList := skillsConfig.(*schema.Set).List()
+		for _, configSkill := range skillsList {
+			skillMap := configSkill.(map[string]interface{})
+			skillID := skillMap["skill_id"].(string)
+			skillProf := skillMap["proficiency"].(float64)
 
-		if skillsConfig != nil {
-			skillsList := skillsConfig.(*schema.Set).List()
-			for _, configSkill := range skillsList {
-				skillMap := configSkill.(map[string]interface{})
-				skillID := skillMap["skill_id"].(string)
-				skillProf := skillMap["proficiency"].(float64)
-
-				sdkSkills = append(sdkSkills, platformclientv2.Userroutingskillpost{
-					Id:          &skillID,
-					Proficiency: &skillProf,
-				})
-			}
+			sdkSkills = append(sdkSkills, platformclientv2.Userroutingskillpost{
+				Id:          &skillID,
+				Proficiency: &skillProf,
+			})
 		}
 
 		_, _, err := usersAPI.PutUserRoutingskillsBulk(d.Id(), sdkSkills)
@@ -570,28 +631,29 @@ func roleDivPairsToGrants(grantPairs []string) platformclientv2.Roledivisiongran
 
 func updateUserRoles(d *schema.ResourceData) diag.Diagnostics {
 	if d.HasChange("roles") {
-		authAPI := platformclientv2.NewAuthorizationApi()
-
-		// Get existing roles/divisions
-		subject, _, err := authAPI.GetAuthorizationSubject(d.Id())
-		if err != nil {
-			return diag.Errorf("Failed to get current roles for user %s: %s", d.Id(), err)
-		}
-
-		var existingGrants []string
-		if subject != nil && subject.Grants != nil {
-			for _, grant := range *subject.Grants {
-				existingGrants = append(existingGrants, createRoleDivisionPair(*grant.Role.Id, *grant.Division.Id))
-			}
-		}
-
-		var configGrants []string
 		rolesConfig := d.Get("roles")
 		if rolesConfig != nil {
-			homeDiv, err := getHomeDivisionID()
+			authAPI := platformclientv2.NewAuthorizationApi()
+
+			// Get existing roles/divisions
+			subject, _, err := authAPI.GetAuthorizationSubject(d.Id())
 			if err != nil {
-				return err
+				return diag.Errorf("Failed to get current roles for user %s: %s", d.Id(), err)
 			}
+
+			var existingGrants []string
+			if subject != nil && subject.Grants != nil {
+				for _, grant := range *subject.Grants {
+					existingGrants = append(existingGrants, createRoleDivisionPair(*grant.Role.Id, *grant.Division.Id))
+				}
+			}
+
+			homeDiv, diagErr := getHomeDivisionID()
+			if diagErr != nil {
+				return diagErr
+			}
+
+			var configGrants []string
 			rolesList := rolesConfig.(*schema.Set).List()
 			for _, configRole := range rolesList {
 				roleMap := configRole.(map[string]interface{})
@@ -611,21 +673,21 @@ func updateUserRoles(d *schema.ResourceData) diag.Diagnostics {
 					configGrants = append(configGrants, createRoleDivisionPair(roleID, divID))
 				}
 			}
-		}
 
-		grantsToRemove := sliceDifference(existingGrants, configGrants)
-		if len(grantsToRemove) > 0 {
-			_, err := authAPI.PostAuthorizationSubjectBulkremove(d.Id(), roleDivPairsToGrants(grantsToRemove))
-			if err != nil {
-				return diag.Errorf("Failed to remove role grants for user %s: %s", d.Id(), err)
+			grantsToRemove := sliceDifference(existingGrants, configGrants)
+			if len(grantsToRemove) > 0 {
+				_, err := authAPI.PostAuthorizationSubjectBulkremove(d.Id(), roleDivPairsToGrants(grantsToRemove))
+				if err != nil {
+					return diag.Errorf("Failed to remove role grants for user %s: %s", d.Id(), err)
+				}
 			}
-		}
 
-		grantsToAdd := sliceDifference(configGrants, existingGrants)
-		if len(grantsToAdd) > 0 {
-			_, err := authAPI.PostAuthorizationSubjectBulkadd(d.Id(), roleDivPairsToGrants(grantsToAdd), "PC_USER")
-			if err != nil {
-				return diag.Errorf("Failed to add role grants for user %s: %s", d.Id(), err)
+			grantsToAdd := sliceDifference(configGrants, existingGrants)
+			if len(grantsToAdd) > 0 {
+				_, err := authAPI.PostAuthorizationSubjectBulkadd(d.Id(), roleDivPairsToGrants(grantsToAdd), "PC_USER")
+				if err != nil {
+					return diag.Errorf("Failed to add role grants for user %s: %s", d.Id(), err)
+				}
 			}
 		}
 	}

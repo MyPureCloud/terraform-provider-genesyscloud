@@ -2,12 +2,15 @@ package genesyscloud
 
 import (
 	"context"
+	"log"
+	"net/http"
 	"strings"
+	"time"
 
-	"github.com/MyPureCloud/platform-client-sdk-go/platformclientv2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
 func init() {
@@ -63,35 +66,49 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_routing_queue": resourceRoutingQueue(),
 				"genesyscloud_routing_skill": resourceRoutingSkill(),
 				"genesyscloud_user":          resourceUser(),
+				"genesyscloud_tf_export":     resourceTfExport(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"genesyscloud_auth_role":     dataSourceAuthRole(),
 				"genesyscloud_routing_skill": dataSourceRoutingSkill(),
 				"genesyscloud_user":          dataSourceUser(),
 			},
-			ConfigureContextFunc: configure,
+			ConfigureContextFunc: configure(version),
 		}
 	}
 }
 
 type providerMeta struct {
+	Version string
 }
 
-func configure(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	oauthclientID := data.Get("oauthclient_id").(string)
-	oauthclientSecret := data.Get("oauthclient_secret").(string)
-	basePath := getRegionBasePath(data.Get("aws_region").(string))
+func configure(version string) schema.ConfigureContextFunc {
+	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		oauthclientID := data.Get("oauthclient_id").(string)
+		oauthclientSecret := data.Get("oauthclient_secret").(string)
+		basePath := getRegionBasePath(data.Get("aws_region").(string))
 
-	config := platformclientv2.GetDefaultConfiguration()
-	config.BasePath = basePath
-	config.SetDebug(data.Get("sdk_debug").(bool))
+		config := platformclientv2.GetDefaultConfiguration()
+		config.BasePath = basePath
+		config.SetDebug(data.Get("sdk_debug").(bool))
+		config.RetryConfiguration = &platformclientv2.RetryConfiguration{
+			RetryWaitMin: time.Second * 1,
+			RetryWaitMax: time.Second * 30,
+			RetryMax:     20,
+			RequestLogHook: func(request *http.Request, count int) {
+				if count > 0 && request != nil {
+					log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
+				}
+			},
+		}
 
-	err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
-	if err != nil {
-		return nil, diag.Errorf("Failed to authorize Genesys Cloud client credentials")
+		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+		if err != nil {
+			return nil, diag.Errorf("Failed to authorize Genesys Cloud client credentials")
+		}
+
+		return &providerMeta{Version: version}, nil
 	}
-
-	return &providerMeta{}, nil
 }
 
 func getRegionMap() map[string]string {
