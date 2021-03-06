@@ -42,7 +42,7 @@ jobs:
     name: Matrix Test
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -81,3 +81,10 @@ jobs:
         GENESYSCLOUD_REGION: "us-east-1"
       run: |
         go test -v -cover ./genesyscloud/
+
+    - name: 'Upload Export Result'
+      uses: actions/upload-artifact@v2
+      with:
+        name: export-result ${{ matrix.terraform }}
+        path: ./.terraform/
+        retention-days: 5
