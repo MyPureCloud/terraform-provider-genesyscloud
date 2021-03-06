@@ -294,8 +294,8 @@ func TestAccResourceUserRoles(t *testing.T) {
 		userName1     = "Role Terraform"
 		roleResource1 = "test-role-1"
 		roleResource2 = "test-role-2"
-		roleName1     = "Terraform User Role Test1"
-		roleName2     = "Terraform User Role Test2"
+		roleName1     = "Terraform User Role Test1" + uuid.NewString()
+		roleName2     = "Terraform User Role Test2" + uuid.NewString()
 		roleDesc      = "Terraform user test role"
 	)
 
