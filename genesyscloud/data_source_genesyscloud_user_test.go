@@ -13,7 +13,7 @@ func TestAccDataSourceUser(t *testing.T) {
 		userResource   = "test-user"
 		userDataSource = "test-user-data"
 		userEmail      = "terraform-" + uuid.NewString() + "@example.com"
-		userName       = "John Data"
+		userName       = "John Data-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
