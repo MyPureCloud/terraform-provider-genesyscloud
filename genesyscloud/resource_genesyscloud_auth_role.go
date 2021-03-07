@@ -35,7 +35,7 @@ var (
 
 func getAllAuthRoles() (ResourceIDNameMap, diag.Diagnostics) {
 	resources := make(map[string]string)
-	authAPI := platformclientv2.NewAuthorizationApi()
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 
 	for pageNum := 1; ; pageNum++ {
 		roles, _, getErr := authAPI.GetAuthorizationRoles(100, pageNum, "", nil, "", "", "", nil, nil, false, nil)
@@ -113,7 +113,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	description := d.Get("description").(string)
 	defaultRoleID := d.Get("default_role_id").(string)
 
-	authAPI := platformclientv2.NewAuthorizationApi()
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 
 	log.Printf("Creating role %s", name)
 	if defaultRoleID != "" {
@@ -141,7 +141,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 }
 
 func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	authAPI := platformclientv2.NewAuthorizationApi()
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 
 	role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), nil)
 	if getErr != nil {
@@ -177,7 +177,7 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	description := d.Get("description").(string)
 	defaultRoleID := d.Get("default_role_id").(string)
 
-	authAPI := platformclientv2.NewAuthorizationApi()
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 
 	log.Printf("Updating role %s", name)
 	_, _, err := authAPI.PutAuthorizationRole(d.Id(), platformclientv2.Domainorganizationroleupdate{
@@ -198,7 +198,7 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	name := d.Get("name").(string)
 	defaultRoleID := d.Get("default_role_id").(string)
 
-	authAPI := platformclientv2.NewAuthorizationApi()
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 
 	if defaultRoleID != "" {
 		// Restore default roles to their default state instead of deleting them
@@ -276,7 +276,7 @@ func flattenRolePermissionPolicies(policies []platformclientv2.Domainpermissionp
 }
 
 func getRoleID(defaultRoleID string) (string, diag.Diagnostics) {
-	authAPI := platformclientv2.NewAuthorizationApi()
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 	roles, _, getErr := authAPI.GetAuthorizationRoles(1, 1, "", nil, "", "", "", nil, []string{defaultRoleID}, false, nil)
 	if getErr != nil {
 		return "", diag.Errorf("Error requesting default role %s: %s", defaultRoleID, getErr)

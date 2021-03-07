@@ -27,9 +27,9 @@ resource "genesyscloud_tf_export" "export" {
 
 ### Optional
 
-- **directory** (String) Directory where the config and state files will be exported. Defaults to './genesyscloud'.
+- **directory** (String) Directory where the config and state files will be exported. Defaults to `./genesyscloud`.
 - **id** (String) The ID of this resource.
-- **include_state_file** (Boolean) Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform.
+- **include_state_file** (Boolean) Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. Defaults to `false`.
 - **resource_types** (Set of String) Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types.
 
 

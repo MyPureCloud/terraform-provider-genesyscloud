@@ -31,7 +31,7 @@ func dataSourceUser() *schema.Resource {
 }
 
 func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	usersAPI := platformclientv2.NewUsersApi()
+	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
 
 	exactSearchType := "EXACT"
 	sortOrderAsc := "ASC"

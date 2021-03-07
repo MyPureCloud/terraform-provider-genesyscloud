@@ -62,7 +62,7 @@ resource "genesyscloud_user" "test_user" {
 - **password** (String, Sensitive) User's password. If specified, this is only set on user create.
 - **roles** (Block Set) Roles and their divisions assigned to this user. If not set, roles will not be managed by this resource. (see [below for nested schema](#nestedblock--roles))
 - **routing_skills** (Block Set) Skills and proficiencies for this user. If not set, skills will not be managed by this resource. (see [below for nested schema](#nestedblock--routing_skills))
-- **state** (String) User's state (active | inactive). Default is 'active'.
+- **state** (String) User's state (active | inactive). Default is 'active'. Defaults to `active`.
 - **title** (String) User's title.
 
 <a id="nestedblock--addresses"></a>
@@ -82,7 +82,7 @@ Required:
 
 Optional:
 
-- **type** (String) Type of email address (WORK | HOME). Defaults to WORK.
+- **type** (String) Type of email address (WORK | HOME). Defaults to `WORK`.
 
 
 <a id="nestedblock--addresses--phone_numbers"></a>
@@ -95,8 +95,8 @@ Required:
 Optional:
 
 - **extension** (String) Phone number extension
-- **media_type** (String) Media type of phone number (SMS | PHONE). Defaults to PHONE
-- **type** (String) Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE). Defaults to WORK
+- **media_type** (String) Media type of phone number (SMS | PHONE). Defaults to `PHONE`.
+- **type** (String) Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE). Defaults to `WORK`.
 
 
 

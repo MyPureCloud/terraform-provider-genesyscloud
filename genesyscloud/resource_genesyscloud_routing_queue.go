@@ -58,7 +58,7 @@ var (
 				Required:    true,
 			},
 			"ring_num": {
-				Description:  "Ring number between 1 and 6 for this user in the queue. Defaults to 1.",
+				Description:  "Ring number between 1 and 6 for this user in the queue.",
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Default:      1,
@@ -70,7 +70,7 @@ var (
 
 func getAllRoutingQueues() (ResourceIDNameMap, diag.Diagnostics) {
 	resources := make(map[string]string)
-	routingAPI := platformclientv2.NewRoutingApi()
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
 
 	for pageNum := 1; ; pageNum++ {
 		queues, _, getErr := routingAPI.GetRoutingQueues(100, pageNum, "", "", nil, nil)
@@ -244,7 +244,7 @@ func resourceRoutingQueue() *schema.Resource {
 				},
 			},
 			"acw_wrapup_prompt": {
-				Description:  "This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED). Defaults to MANDATORY_TIMEOUT.",
+				Description:  "This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "MANDATORY_TIMEOUT",
@@ -258,7 +258,7 @@ func resourceRoutingQueue() *schema.Resource {
 				ValidateFunc: validation.IntBetween(1000, 86400000),
 			},
 			"skill_evaluation_method": {
-				Description:  "The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to ALL.",
+				Description:  "The skill evaluation method to use when routing conversations (NONE | BEST | ALL).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "ALL",
@@ -275,19 +275,19 @@ func resourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 			},
 			"auto_answer_only": {
-				Description: "Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered. Defaults to true.",
+				Description: "Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
 			},
 			"enable_transcription": {
-				Description: "Indicates whether voice transcription is enabled for this queue. Defaults to false.",
+				Description: "Indicates whether voice transcription is enabled for this queue.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
 			},
 			"enable_manual_assignment": {
-				Description: "Indicates whether manual assignment is enabled for this queue. Defaults to false.",
+				Description: "Indicates whether manual assignment is enabled for this queue.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -356,7 +356,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	callingPartyName := d.Get("calling_party_name").(string)
 	callingPartyNumber := d.Get("calling_party_number").(string)
 
-	routingAPI := platformclientv2.NewRoutingApi()
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
 
 	createQueue := platformclientv2.Createqueuerequest{
 		Name:                       &name,
@@ -397,7 +397,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	routingAPI := platformclientv2.NewRoutingApi()
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
 
 	currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 	if getErr != nil {
@@ -523,8 +523,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	callingPartyName := d.Get("calling_party_name").(string)
 	callingPartyNumber := d.Get("calling_party_number").(string)
 
-	routingAPI := platformclientv2.NewRoutingApi()
-	authAPI := platformclientv2.NewAuthorizationApi()
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
 
 	_, _, err := routingAPI.PutRoutingQueue(d.Id(), platformclientv2.Queuerequest{
 		Name:                       &name,
@@ -550,6 +549,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	if d.HasChange("division_id") {
+		authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 		if divisionID == "" {
 			// Default to home division
 			homeDivision, diagErr := getHomeDivisionID()
@@ -575,7 +575,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	routingAPI := platformclientv2.NewRoutingApi()
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
 
 	log.Printf("Deleting queue %s", name)
 	_, err := routingAPI.DeleteRoutingQueue(d.Id(), true)
@@ -867,7 +867,7 @@ func updateQueueMembers(d *schema.ResourceData) diag.Diagnostics {
 			newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
 		}
 
-		routingAPI := platformclientv2.NewRoutingApi()
+		routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
 		oldSdkUsers, err := getRoutingQueueMembers(d.Id(), routingAPI)
 		if err != nil {
 			return err

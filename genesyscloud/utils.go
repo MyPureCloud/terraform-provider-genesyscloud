@@ -13,7 +13,7 @@ import (
 type jsonMap map[string]interface{}
 
 func getHomeDivisionID() (string, diag.Diagnostics) {
-	authAPI := platformclientv2.NewAuthorizationApi()
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 	homeDiv, _, err := authAPI.GetAuthorizationDivisionsHome()
 	if err != nil {
 		return "", diag.Errorf("Failed to query home division: %s", err)

@@ -26,7 +26,7 @@ func dataSourceRoutingSkill() *schema.Resource {
 }
 
 func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	routingAPI := platformclientv2.NewRoutingApi()
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
 
 	name := d.Get("name").(string)
 

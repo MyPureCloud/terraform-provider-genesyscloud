@@ -2,9 +2,11 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -20,13 +22,13 @@ func init() {
 
 	// Customize the content of descriptions when output. For example you can add defaults on
 	// to the exported descriptions if present.
-	// schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
-	// 	desc := s.Description
-	// 	if s.Default != nil {
-	// 		desc += fmt.Sprintf(" Defaults to `%v`.", s.Default)
-	// 	}
-	// 	return strings.TrimSpace(desc)
-	// }
+	schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
+		desc := s.Description
+		if s.Default != nil {
+			desc += fmt.Sprintf(" Defaults to `%v`.", s.Default)
+		}
+		return strings.TrimSpace(desc)
+	}
 }
 
 // New initializes the provider schema
@@ -82,31 +84,35 @@ type providerMeta struct {
 	Version string
 }
 
+// ClientConfigPool maintains a pool of client connections to increase throughput
+type ClientConfigPool struct {
+	configs []*platformclientv2.Configuration
+	counter uint64
+}
+
+var clientConfigPool *ClientConfigPool
+
+func newClientPool(data *schema.ResourceData, size int) *ClientConfigPool {
+	pool := &ClientConfigPool{}
+	pool.configs = make([]*platformclientv2.Configuration, size)
+	for i := 0; i < size; i++ {
+		pool.configs[i] = platformclientv2.NewConfiguration()
+		initClientConfig(data, pool.configs[i])
+	}
+	return pool
+}
+
+// GetSdkClient returns a Genesys SDK client configuration from the pool
+// This must be called after the configure method initializes the pool
+func GetSdkClient() *platformclientv2.Configuration {
+	nextClientIdx := atomic.AddUint64(&clientConfigPool.counter, 1) % uint64(len(clientConfigPool.configs))
+	return clientConfigPool.configs[nextClientIdx]
+}
+
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		oauthclientID := data.Get("oauthclient_id").(string)
-		oauthclientSecret := data.Get("oauthclient_secret").(string)
-		basePath := getRegionBasePath(data.Get("aws_region").(string))
-
-		config := platformclientv2.GetDefaultConfiguration()
-		config.BasePath = basePath
-		config.SetDebug(data.Get("sdk_debug").(bool))
-		config.RetryConfiguration = &platformclientv2.RetryConfiguration{
-			RetryWaitMin: time.Second * 1,
-			RetryWaitMax: time.Second * 30,
-			RetryMax:     20,
-			RequestLogHook: func(request *http.Request, count int) {
-				if count > 0 && request != nil {
-					log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
-				}
-			},
-		}
-
-		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
-		if err != nil {
-			return nil, diag.Errorf("Failed to authorize Genesys Cloud client credentials")
-		}
-
+		initClientConfig(data, platformclientv2.GetDefaultConfiguration())
+		clientConfigPool = newClientPool(data, 10)
 		return &providerMeta{Version: version}, nil
 	}
 }
@@ -139,4 +145,29 @@ func getAllowedRegions() []string {
 
 func getRegionBasePath(region string) string {
 	return getRegionMap()[strings.ToLower(region)]
+}
+
+func initClientConfig(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
+	oauthclientID := data.Get("oauthclient_id").(string)
+	oauthclientSecret := data.Get("oauthclient_secret").(string)
+	basePath := getRegionBasePath(data.Get("aws_region").(string))
+
+	config.BasePath = basePath
+	config.SetDebug(data.Get("sdk_debug").(bool))
+	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
+		RetryWaitMin: time.Second * 1,
+		RetryWaitMax: time.Second * 30,
+		RetryMax:     20,
+		RequestLogHook: func(request *http.Request, count int) {
+			if count > 0 && request != nil {
+				log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
+			}
+		},
+	}
+
+	err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+	if err != nil {
+		return diag.Errorf("Failed to authorize Genesys Cloud client credentials")
+	}
+	return nil
 }

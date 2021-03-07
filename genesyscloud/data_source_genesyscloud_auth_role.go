@@ -26,7 +26,7 @@ func dataSourceAuthRole() *schema.Resource {
 }
 
 func dataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	authAPI := platformclientv2.NewAuthorizationApi()
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 
 	name := d.Get("name").(string)
 

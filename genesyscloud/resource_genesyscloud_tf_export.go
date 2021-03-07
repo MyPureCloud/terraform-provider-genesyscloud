@@ -36,7 +36,7 @@ func resourceTfExport() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"directory": {
-				Description: "Directory where the config and state files will be exported. Defaults to './genesyscloud'.",
+				Description: "Directory where the config and state files will be exported.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "./genesyscloud",

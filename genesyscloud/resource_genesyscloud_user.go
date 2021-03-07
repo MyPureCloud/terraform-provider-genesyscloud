@@ -25,14 +25,14 @@ var (
 				ValidateDiagFunc: validatePhoneNumber,
 			},
 			"media_type": {
-				Description:  "Media type of phone number (SMS | PHONE). Defaults to PHONE",
+				Description:  "Media type of phone number (SMS | PHONE).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "PHONE",
 				ValidateFunc: validation.StringInSlice([]string{"PHONE", "SMS"}, false),
 			},
 			"type": {
-				Description:  "Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE). Defaults to WORK",
+				Description:  "Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "WORK",
@@ -53,7 +53,7 @@ var (
 				Required:    true,
 			},
 			"type": {
-				Description:  "Type of email address (WORK | HOME). Defaults to WORK.",
+				Description:  "Type of email address (WORK | HOME).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "WORK",
@@ -96,7 +96,7 @@ var (
 
 func getAllUsers() (ResourceIDNameMap, diag.Diagnostics) {
 	resources := make(map[string]string)
-	usersAPI := platformclientv2.NewUsersApi()
+	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
 
 	for pageNum := 1; ; pageNum++ {
 		users, _, getErr := usersAPI.GetUsers(100, pageNum, nil, nil, "", nil, "", "")
@@ -240,7 +240,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	title := d.Get("title").(string)
 	manager := d.Get("manager").(string)
 
-	usersAPI := platformclientv2.NewUsersApi()
+	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
 
 	addresses, addrErr := buildSdkAddresses(d)
 	if addrErr != nil {
@@ -298,7 +298,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	usersAPI := platformclientv2.NewUsersApi()
+	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
 
 	currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{"skills"}, "", "")
 	if getErr != nil {
@@ -353,8 +353,8 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	title := d.Get("title").(string)
 	manager := d.Get("manager").(string)
 
-	usersAPI := platformclientv2.NewUsersApi()
-	authAPI := platformclientv2.NewAuthorizationApi()
+	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 
 	// Need the current user version for patches
 	currentUser, _, getErr := usersAPI.GetUser(d.Id(), nil, "", "")
@@ -429,7 +429,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	email := d.Get("email").(string)
 
-	usersAPI := platformclientv2.NewUsersApi()
+	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
 
 	log.Printf("Deleting user %s", email)
 	_, _, err := usersAPI.DeleteUser(d.Id())
@@ -577,7 +577,7 @@ func flattenUserAddresses(addresses []platformclientv2.Contact) []interface{} {
 
 func updateUserSkills(d *schema.ResourceData) diag.Diagnostics {
 	if skillsConfig, ok := d.GetOk("routing_skills"); ok && d.HasChange("routing_skills") {
-		usersAPI := platformclientv2.NewUsersApi()
+		usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
 		sdkSkills := make([]platformclientv2.Userroutingskillpost, 0)
 
 		skillsList := skillsConfig.(*schema.Set).List()
@@ -633,7 +633,7 @@ func updateUserRoles(d *schema.ResourceData) diag.Diagnostics {
 	if d.HasChange("roles") {
 		rolesConfig := d.Get("roles")
 		if rolesConfig != nil {
-			authAPI := platformclientv2.NewAuthorizationApi()
+			authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 
 			// Get existing roles/divisions
 			subject, _, err := authAPI.GetAuthorizationSubject(d.Id())
@@ -695,7 +695,7 @@ func updateUserRoles(d *schema.ResourceData) diag.Diagnostics {
 }
 
 func readUserRoles(userID string) (*schema.Set, diag.Diagnostics) {
-	authAPI := platformclientv2.NewAuthorizationApi()
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
 
 	subject, _, err := authAPI.GetAuthorizationSubject(userID)
 	if err != nil {
