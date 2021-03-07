@@ -78,12 +78,14 @@ func createRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 
 	d.SetId(*skill.Id)
 
+	log.Printf("Created skill %s %s", name, *skill.Id)
 	return readRoutingSkill(ctx, d, meta)
 }
 
 func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
 
+	log.Printf("Reading skill %s", d.Id())
 	skill, resp, getErr := routingAPI.GetRoutingSkill(d.Id())
 	if getErr != nil {
 		if resp != nil && resp.StatusCode == 404 {
@@ -99,6 +101,7 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	d.Set("name", *skill.Name)
+	log.Printf("Read skill %s %s", d.Id(), *skill.Name)
 	return nil
 }
 
@@ -112,5 +115,6 @@ func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 	if err != nil {
 		return diag.Errorf("Failed to delete skill %s: %s", name, err)
 	}
+	log.Printf("Deleted skill %s", name)
 	return nil
 }

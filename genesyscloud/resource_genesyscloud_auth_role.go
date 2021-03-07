@@ -137,11 +137,14 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	d.SetId(*role.Id)
+	log.Printf("Created role %s %s", name, *role.Id)
 	return readAuthRole(ctx, d, meta)
 }
 
 func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
+
+	log.Printf("Reading role %s", d.Id())
 
 	role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), nil)
 	if getErr != nil {
@@ -169,6 +172,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 	if role.PermissionPolicies != nil {
 		d.Set("permission_policies", flattenRolePermissionPolicies(*role.PermissionPolicies))
 	}
+	log.Printf("Read role %s %s", d.Id(), *role.Name)
 	return nil
 }
 
@@ -191,6 +195,7 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diag.Errorf("Failed to create role %s: %s", name, err)
 	}
 
+	log.Printf("Updated role %s", name)
 	return readAuthRole(ctx, d, meta)
 }
 
@@ -220,6 +225,7 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	if err != nil {
 		return diag.Errorf("Failed to delete role %s: %s", name, err)
 	}
+	log.Printf("Deleted role %s", name)
 	return nil
 }
 

@@ -294,12 +294,14 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if diagErr != nil {
 		return diagErr
 	}
+	log.Printf("Created user %s %s", email, *user.Id)
 	return readUser(ctx, d, meta)
 }
 
 func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
 
+	log.Printf("Reading user %s", d.Id())
 	currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{"skills"}, "", "")
 	if getErr != nil {
 		if resp != nil && resp.StatusCode == 404 {
@@ -341,6 +343,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	}
 	d.Set("roles", roles)
 
+	log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
 	return nil
 }
 
@@ -355,6 +358,8 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
+
+	log.Printf("Updating user %s", email)
 
 	// Need the current user version for patches
 	currentUser, _, getErr := usersAPI.GetUser(d.Id(), nil, "", "")
@@ -391,7 +396,6 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		updateUser.Version = updatedStateUser.Version
 	}
 
-	log.Printf("Updating user %s", email)
 	_, _, patchErr := usersAPI.PatchUser(d.Id(), updateUser)
 	if patchErr != nil {
 		return diag.Errorf("Failed to update user %s: %s", email, patchErr)
@@ -423,6 +427,8 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if diagErr != nil {
 		return diagErr
 	}
+
+	log.Printf("Finished updating user %s", email)
 	return readUser(ctx, d, meta)
 }
 
@@ -436,6 +442,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if err != nil {
 		return diag.Errorf("Failed to delete user %s: %s", email, err)
 	}
+	log.Printf("Deleted user %s", email)
 	return nil
 }
 

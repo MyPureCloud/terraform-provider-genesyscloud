@@ -72,6 +72,7 @@ jobs:
       timeout-minutes: 30
       env:
         TF_ACC: "1"
+        TF_LOG: "INFO"
         TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
 
         GENESYSCLOUD_OAUTHCLIENT_ID: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}

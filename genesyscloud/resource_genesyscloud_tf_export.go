@@ -93,12 +93,14 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	// Build the sanitized ID->name maps
-	for _, exporter := range exporters {
+	for name, exporter := range exporters {
+		log.Printf("Getting all resources for type %s", name)
 		idNameMap, err := exporter.GetResourcesFunc()
 		if err != nil {
 			return err
 		}
 		exporter.SanitizedResourceMap = sanitizeResourceNames(idNameMap)
+		log.Printf("Found %d resources for type %s", len(idNameMap), name)
 	}
 
 	includeStateFile := d.Get("include_state_file").(bool)
@@ -185,11 +187,13 @@ func readTfExport(ctx context.Context, d *schema.ResourceData, meta interface{})
 func deleteTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	jsonFile, _ := getFilePath(d, defaultTfJSONFile)
 	if _, err := os.Stat(jsonFile); err == nil {
+		log.Printf("Deleting export config %s", jsonFile)
 		os.Remove(jsonFile)
 	}
 
 	stateFile, _ := getFilePath(d, defaultTfStateFile)
 	if _, err := os.Stat(stateFile); err == nil {
+		log.Printf("Deleting export state %s", jsonFile)
 		os.Remove(stateFile)
 	}
 	return nil
@@ -284,6 +288,7 @@ func writeTfState(ctx context.Context, resources []resourceInfo, d *schema.Resou
 		return diag.Errorf("Failed to encode state as JSON: %v", err)
 	}
 
+	log.Printf("Writing export state file to %s", stateFilePath)
 	if err := writeToFile(data, stateFilePath); err != nil {
 		return err
 	}
@@ -326,6 +331,7 @@ func writeTfState(ctx context.Context, resources []resourceInfo, d *schema.Resou
 		providerSource,
 	}...)
 
+	log.Printf("Running 'terraform state replace-provider' on %s", stateFilePath)
 	if err := cmd.Run(); err != nil {
 		log.Println(cliError)
 		return nil
@@ -339,6 +345,7 @@ func writeJSONConfig(jsonMap map[string]interface{}, path string) diag.Diagnosti
 		return diag.FromErr(err)
 	}
 
+	log.Printf("Writing export config file to %s", path)
 	if err := writeToFile(dataJSONBytes, path); err != nil {
 		return err
 	}

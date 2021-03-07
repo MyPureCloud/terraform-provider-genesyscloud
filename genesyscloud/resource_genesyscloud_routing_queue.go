@@ -399,6 +399,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
 
+	log.Printf("Reading queue %s", d.Id())
 	currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 	if getErr != nil {
 		if resp != nil && resp.StatusCode == 404 {
@@ -509,6 +510,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	}
 	d.Set("members", members)
 
+	log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
 	return nil
 }
 
@@ -524,6 +526,8 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	callingPartyNumber := d.Get("calling_party_number").(string)
 
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
+
+	log.Printf("Updating queue %s", name)
 
 	_, _, err := routingAPI.PutRoutingQueue(d.Id(), platformclientv2.Queuerequest{
 		Name:                       &name,
@@ -569,6 +573,8 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if diagErr != nil {
 		return diagErr
 	}
+
+	log.Printf("Finished updating queue %s", name)
 	return readQueue(ctx, d, meta)
 }
 
@@ -589,6 +595,7 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if err != nil {
 			if resp != nil && resp.StatusCode == 404 {
 				// Queue deleted
+				log.Printf("Queue %s deleted", name)
 				return nil
 			}
 			return resource.NonRetryableError(fmt.Errorf("Error deleting queue %s: %s", d.Id(), err))
@@ -857,6 +864,7 @@ func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 
 func updateQueueMembers(d *schema.ResourceData) diag.Diagnostics {
 	if members, ok := d.GetOk("members"); ok {
+		log.Printf("Updating members for Queue %s", d.Get("name"))
 		var newUserIds []string
 		newUserRingNums := make(map[string]int)
 		memberList := members.(*schema.Set).List()
@@ -914,6 +922,7 @@ func updateQueueMembers(d *schema.ResourceData) diag.Diagnostics {
 				}
 			}
 		}
+		log.Printf("Members updated for Queue %s", d.Get("name"))
 	}
 	return nil
 }
