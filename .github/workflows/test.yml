@@ -73,6 +73,7 @@ jobs:
       env:
         TF_ACC: "1"
         TF_LOG: "INFO"
+        TF_LOG_PATH: "../test.log"
         TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
 
         GENESYSCLOUD_OAUTHCLIENT_ID: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
@@ -86,4 +87,11 @@ jobs:
       with:
         name: export-result ${{ matrix.terraform }}
         path: ./.terraform/
+        retention-days: 5
+
+    - name: 'Upload Logs'
+      uses: actions/upload-artifact@v2
+      with:
+        name: logs ${{ matrix.terraform }}
+        path: ./test.log
         retention-days: 5
