@@ -14,7 +14,7 @@ import (
 func dataSourceRoutingSkill() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Routing Skills. Select a skill by name.",
-		ReadContext: dataSourceRoutingSkillRead,
+		ReadContext: readWithPooledClient(dataSourceRoutingSkillRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Skill name.",
@@ -26,7 +26,8 @@ func dataSourceRoutingSkill() *schema.Resource {
 }
 
 func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
+	sdkConfig := m.(*providerMeta).ClientConfig
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 

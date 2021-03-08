@@ -9,9 +9,9 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
-func getAllRoutingSkills() (ResourceIDNameMap, diag.Diagnostics) {
+func getAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
 	resources := make(map[string]string)
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		skills, _, getErr := routingAPI.GetRoutingSkills(100, pageNum, "", nil)
@@ -35,7 +35,7 @@ func getAllRoutingSkills() (ResourceIDNameMap, diag.Diagnostics) {
 
 func routingSkillExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllRoutingSkills,
+		GetResourcesFunc: getAllWithPooledClient(getAllRoutingSkills),
 		ResourceDef:      resourceRoutingSkill(),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
@@ -45,9 +45,9 @@ func resourceRoutingSkill() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Skill",
 
-		CreateContext: createRoutingSkill,
-		ReadContext:   readRoutingSkill,
-		DeleteContext: deleteRoutingSkill,
+		CreateContext: createWithPooledClient(createRoutingSkill),
+		ReadContext:   readWithPooledClient(readRoutingSkill),
+		DeleteContext: deleteWithPooledClient(deleteRoutingSkill),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -66,7 +66,8 @@ func resourceRoutingSkill() *schema.Resource {
 func createRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Creating skill %s", name)
 	skill, _, err := routingAPI.PostRoutingSkills(platformclientv2.Routingskill{
@@ -83,7 +84,8 @@ func createRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading skill %s", d.Id())
 	skill, resp, getErr := routingAPI.GetRoutingSkill(d.Id())
@@ -108,7 +110,8 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting skill %s", name)
 	_, err := routingAPI.DeleteRoutingSkill(d.Id())

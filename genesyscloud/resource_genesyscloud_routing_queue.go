@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -68,9 +69,9 @@ var (
 	}
 )
 
-func getAllRoutingQueues() (ResourceIDNameMap, diag.Diagnostics) {
+func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
 	resources := make(map[string]string)
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		queues, _, getErr := routingAPI.GetRoutingQueues(100, pageNum, "", "", nil, nil)
@@ -92,7 +93,7 @@ func getAllRoutingQueues() (ResourceIDNameMap, diag.Diagnostics) {
 
 func routingQueueExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllRoutingQueues,
+		GetResourcesFunc: getAllWithPooledClient(getAllRoutingQueues),
 		ResourceDef:      resourceRoutingQueue(),
 		RefAttrs: map[string]*RefAttrSettings{
 			"division_id":                       {},                      // Ref type not yet defined
@@ -111,10 +112,10 @@ func resourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Queue",
 
-		CreateContext: createQueue,
-		ReadContext:   readQueue,
-		UpdateContext: updateQueue,
-		DeleteContext: deleteQueue,
+		CreateContext: createWithPooledClient(createQueue),
+		ReadContext:   readWithPooledClient(readQueue),
+		UpdateContext: updateWithPooledClient(updateQueue),
+		DeleteContext: deleteWithPooledClient(deleteQueue),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -356,7 +357,8 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	callingPartyName := d.Get("calling_party_name").(string)
 	callingPartyNumber := d.Get("calling_party_number").(string)
 
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	createQueue := platformclientv2.Createqueuerequest{
 		Name:                       &name,
@@ -389,7 +391,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 	d.SetId(*queue.Id)
 
-	diagErr := updateQueueMembers(d)
+	diagErr := updateQueueMembers(d, routingAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -397,7 +399,8 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
 	currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
@@ -525,7 +528,8 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	callingPartyName := d.Get("calling_party_name").(string)
 	callingPartyNumber := d.Get("calling_party_number").(string)
 
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Updating queue %s", name)
 
@@ -553,7 +557,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	if d.HasChange("division_id") {
-		authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
+		authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 		if divisionID == "" {
 			// Default to home division
 			homeDivision, diagErr := getHomeDivisionID()
@@ -569,7 +573,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 	}
 
-	diagErr := updateQueueMembers(d)
+	diagErr := updateQueueMembers(d, routingAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -581,7 +585,8 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting queue %s", name)
 	_, err := routingAPI.DeleteRoutingQueue(d.Id(), true)
@@ -590,6 +595,10 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	// Queue deletes are not immediate. Query until queue is no longer found
+	// Add a delay before the first request to reduce the liklihood of public API's cache
+	// re-populating the queue after the delete. Otherwise it may not expire for a minute.
+	time.Sleep(5 * time.Second)
+
 	return withRetries(ctx, d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingQueue(d.Id())
 		if err != nil {
@@ -862,7 +871,7 @@ func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 	return settingsMap
 }
 
-func updateQueueMembers(d *schema.ResourceData) diag.Diagnostics {
+func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
 	if members, ok := d.GetOk("members"); ok {
 		log.Printf("Updating members for Queue %s", d.Get("name"))
 		var newUserIds []string
@@ -875,7 +884,6 @@ func updateQueueMembers(d *schema.ResourceData) diag.Diagnostics {
 			newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
 		}
 
-		routingAPI := platformclientv2.NewRoutingApiWithConfig(GetSdkClient())
 		oldSdkUsers, err := getRoutingQueueMembers(d.Id(), routingAPI)
 		if err != nil {
 			return err

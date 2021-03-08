@@ -14,7 +14,7 @@ import (
 func dataSourceAuthRole() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Roles. Select a role by name.",
-		ReadContext: dataSourceAuthRoleRead,
+		ReadContext: readWithPooledClient(dataSourceAuthRoleRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Role name.",
@@ -26,7 +26,8 @@ func dataSourceAuthRole() *schema.Resource {
 }
 
 func dataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
+	sdkConfig := m.(*providerMeta).ClientConfig
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 

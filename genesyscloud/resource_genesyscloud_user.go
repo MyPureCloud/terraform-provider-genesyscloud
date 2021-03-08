@@ -94,9 +94,9 @@ var (
 	}
 )
 
-func getAllUsers() (ResourceIDNameMap, diag.Diagnostics) {
+func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
 	resources := make(map[string]string)
-	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		users, _, getErr := usersAPI.GetUsers(100, pageNum, nil, nil, "", nil, "", "")
@@ -118,7 +118,7 @@ func getAllUsers() (ResourceIDNameMap, diag.Diagnostics) {
 
 func userExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllUsers,
+		GetResourcesFunc: getAllWithPooledClient(getAllUsers),
 		ResourceDef:      resourceUser(),
 		RefAttrs: map[string]*RefAttrSettings{
 			"manager":                 {RefType: "genesyscloud_user"},
@@ -135,10 +135,10 @@ func resourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud User",
 
-		CreateContext: createUser,
-		ReadContext:   readUser,
-		UpdateContext: updateUser,
-		DeleteContext: deleteUser,
+		CreateContext: createWithPooledClient(createUser),
+		ReadContext:   readWithPooledClient(readUser),
+		UpdateContext: updateWithPooledClient(updateUser),
+		DeleteContext: deleteWithPooledClient(deleteUser),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -240,7 +240,9 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	title := d.Get("title").(string)
 	manager := d.Get("manager").(string)
 
-	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	addresses, addrErr := buildSdkAddresses(d)
 	if addrErr != nil {
@@ -285,12 +287,12 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
-	diagErr := updateUserSkills(d)
+	diagErr := updateUserSkills(d, usersAPI)
 	if diagErr != nil {
 		return diagErr
 	}
 
-	diagErr = updateUserRoles(d)
+	diagErr = updateUserRoles(d, authAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -299,7 +301,9 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading user %s", d.Id())
 	currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{"skills"}, "", "")
@@ -337,7 +341,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("routing_skills", flattenUserSkills(*currentUser.Skills))
 	}
 
-	roles, err := readUserRoles(d.Id())
+	roles, err := readUserRoles(d.Id(), authAPI)
 	if err != nil {
 		return err
 	}
@@ -356,8 +360,9 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	title := d.Get("title").(string)
 	manager := d.Get("manager").(string)
 
-	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Updating user %s", email)
 
@@ -418,12 +423,12 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
-	diagErr := updateUserSkills(d)
+	diagErr := updateUserSkills(d, usersAPI)
 	if diagErr != nil {
 		return diagErr
 	}
 
-	diagErr = updateUserRoles(d)
+	diagErr = updateUserRoles(d, authAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -435,7 +440,8 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	email := d.Get("email").(string)
 
-	usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user %s", email)
 	_, _, err := usersAPI.DeleteUser(d.Id())
@@ -582,9 +588,8 @@ func flattenUserAddresses(addresses []platformclientv2.Contact) []interface{} {
 	}}
 }
 
-func updateUserSkills(d *schema.ResourceData) diag.Diagnostics {
+func updateUserSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	if skillsConfig, ok := d.GetOk("routing_skills"); ok && d.HasChange("routing_skills") {
-		usersAPI := platformclientv2.NewUsersApiWithConfig(GetSdkClient())
 		sdkSkills := make([]platformclientv2.Userroutingskillpost, 0)
 
 		skillsList := skillsConfig.(*schema.Set).List()
@@ -636,12 +641,10 @@ func roleDivPairsToGrants(grantPairs []string) platformclientv2.Roledivisiongran
 	}
 }
 
-func updateUserRoles(d *schema.ResourceData) diag.Diagnostics {
+func updateUserRoles(d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi) diag.Diagnostics {
 	if d.HasChange("roles") {
 		rolesConfig := d.Get("roles")
 		if rolesConfig != nil {
-			authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
-
 			// Get existing roles/divisions
 			subject, _, err := authAPI.GetAuthorizationSubject(d.Id())
 			if err != nil {
@@ -701,9 +704,7 @@ func updateUserRoles(d *schema.ResourceData) diag.Diagnostics {
 	return nil
 }
 
-func readUserRoles(userID string) (*schema.Set, diag.Diagnostics) {
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
-
+func readUserRoles(userID string, authAPI *platformclientv2.AuthorizationApi) (*schema.Set, diag.Diagnostics) {
 	subject, _, err := authAPI.GetAuthorizationSubject(userID)
 	if err != nil {
 		return nil, diag.Errorf("Failed to get current roles for user %s: %s", userID, err)

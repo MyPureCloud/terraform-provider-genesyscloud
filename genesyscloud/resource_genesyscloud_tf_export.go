@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sync"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -25,7 +26,7 @@ func resourceTfExport() *schema.Resource {
 	return &schema.Resource{
 		Description: fmt.Sprintf(`
 		Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
-		The config file is named '%s', and the state file is named '%s'
+		The config file is named '%s', and the state file is named '%s'.
 		`, defaultTfJSONFile, defaultTfStateFile),
 
 		CreateContext: createTfExport,
@@ -64,9 +65,10 @@ func resourceTfExport() *schema.Resource {
 }
 
 type resourceInfo struct {
-	State *terraform.InstanceState
-	Name  string
-	Type  string
+	State   *terraform.InstanceState
+	Name    string
+	Type    string
+	CtyType cty.Type
 }
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -92,54 +94,39 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diag.Errorf("No valid resource types to export.")
 	}
 
-	// Build the sanitized ID->name maps
-	for name, exporter := range exporters {
-		log.Printf("Getting all resources for type %s", name)
-		idNameMap, err := exporter.GetResourcesFunc()
-		if err != nil {
-			return err
-		}
-		exporter.SanitizedResourceMap = sanitizeResourceNames(idNameMap)
-		log.Printf("Found %d resources for type %s", len(idNameMap), name)
+	diagErr = buildSanitizedResourceMaps(exporters)
+	if diagErr != nil {
+		return diagErr
 	}
 
 	includeStateFile := d.Get("include_state_file").(bool)
-
 	provider := New(version)()
 
 	// Read the instance data from each exporter
-	resourceTypeJSONMaps := make(map[string]map[string]jsonMap)
 	var resources []resourceInfo
 	for resType, exporter := range exporters {
-		ctyType := exporter.ResourceDef.CoreConfigSchema().ImpliedType()
-		for id, name := range exporter.SanitizedResourceMap {
-			instanceState, err := getResourceState(ctx, provider, resType, id, meta)
-			if err != nil {
-				return diag.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
-			}
-			if instanceState == nil {
-				log.Printf("Resource %s no longer exists. Skipping.", name)
-				delete(exporter.SanitizedResourceMap, id)
-				continue
-			}
-
-			if includeStateFile {
-				resources = append(resources, resourceInfo{State: instanceState, Name: name, Type: resType})
-			}
-
-			jsonResult, err := instanceStateToJSONMap(instanceState, ctyType)
-			if err != nil {
-				return err
-			}
-
-			// Removes nulls/ids and sets proper reference expressions
-			sanitizeConfigMap(resType, jsonResult, "", exporters, includeStateFile)
-
-			if resourceTypeJSONMaps[resType] == nil {
-				resourceTypeJSONMaps[resType] = make(map[string]jsonMap)
-			}
-			resourceTypeJSONMaps[resType][name] = jsonResult
+		typeResources, err := getResourcesForType(resType, provider, exporter, meta)
+		if err != nil {
+			return err
 		}
+		resources = append(resources, typeResources...)
+	}
+
+	// Generate the JSON config map
+	resourceTypeJSONMaps := make(map[string]map[string]jsonMap)
+	for _, resource := range resources {
+		jsonResult, diagErr := instanceStateToJSONMap(resource.State, resource.CtyType)
+		if diagErr != nil {
+			return diagErr
+		}
+
+		// Removes zero values and sets proper reference expressions
+		sanitizeConfigMap(resource.Type, jsonResult, "", exporters, includeStateFile)
+
+		if resourceTypeJSONMaps[resource.Type] == nil {
+			resourceTypeJSONMaps[resource.Type] = make(map[string]jsonMap)
+		}
+		resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
 	}
 
 	providerSource := "registry.terraform.io/mypurecloud/genesyscloud"
@@ -212,6 +199,115 @@ func getFilePath(d *schema.ResourceData, filename string) (string, diag.Diagnost
 	return path, nil
 }
 
+func buildSanitizedResourceMaps(exporters map[string]*ResourceExporter) diag.Diagnostics {
+	errorChan := make(chan diag.Diagnostics)
+	wgDone := make(chan bool)
+
+	// Cancel remaining goroutines if an error occurs
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+	for name, exporter := range exporters {
+		wg.Add(1)
+		go func(name string, exporter *ResourceExporter) {
+			defer wg.Done()
+			log.Printf("Getting all resources for type %s", name)
+			idNameMap, err := exporter.GetResourcesFunc(ctx)
+			if err != nil {
+				select {
+				case <-ctx.Done():
+				case errorChan <- err:
+				}
+				cancel()
+				return
+			}
+			exporter.SanitizedResourceMap = sanitizeResourceNames(idNameMap)
+			log.Printf("Found %d resources for type %s", len(idNameMap), name)
+		}(name, exporter)
+	}
+
+	go func() {
+		wg.Wait()
+		close(wgDone)
+	}()
+
+	// Wait until either WaitGroup is done or an error is received
+	select {
+	case <-wgDone:
+		return nil
+	case err := <-errorChan:
+		return err
+	}
+}
+
+func getResourcesForType(resType string, provider *schema.Provider, exporter *ResourceExporter, meta interface{}) ([]resourceInfo, diag.Diagnostics) {
+	lenResources := len(exporter.SanitizedResourceMap)
+	errorChan := make(chan diag.Diagnostics, lenResources)
+	resourceChan := make(chan resourceInfo, lenResources)
+	removeChan := make(chan string, lenResources)
+
+	// Cancel remaining goroutines if an error occurs
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	ctyType := exporter.ResourceDef.CoreConfigSchema().ImpliedType()
+
+	var wg sync.WaitGroup
+	wg.Add(lenResources)
+	for id, name := range exporter.SanitizedResourceMap {
+		go func(id string, name string) {
+			defer wg.Done()
+
+			// This calls into the resource's ReadContext method which
+			// will block until it can acquire a pooled client config object.
+			instanceState, err := getResourceState(ctx, provider, resType, id, meta)
+			if err != nil {
+				errorChan <- diag.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
+				cancel() // Stop other requests
+				return
+			}
+
+			if instanceState == nil {
+				log.Printf("Resource %s no longer exists. Skipping.", name)
+				removeChan <- id // Mark for removal from the map
+				return
+			}
+
+			resourceChan <- resourceInfo{
+				State:   instanceState,
+				Name:    name,
+				Type:    resType,
+				CtyType: ctyType,
+			}
+		}(id, name)
+	}
+
+	go func() {
+		wg.Wait()
+		close(resourceChan)
+		close(removeChan)
+	}()
+
+	var resources []resourceInfo
+	for resource := range resourceChan {
+		resources = append(resources, resource)
+	}
+
+	// Remove resources that weren't found in this pass
+	for id := range removeChan {
+		delete(exporter.SanitizedResourceMap, id)
+	}
+
+	// Return the first error if one was received
+	select {
+	case err := <-errorChan:
+		return nil, err
+	default:
+		return resources, nil
+	}
+}
+
 func escapeRune(s string) string {
 	return fmt.Sprintf("%02X", s)
 }
@@ -235,12 +331,13 @@ func sanitizeResourceNames(idNamesMap ResourceIDNameMap) ResourceIDNameMap {
 }
 
 func getResourceState(ctx context.Context, provider *schema.Provider, resType string, resID string, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
-	state, err := provider.ResourcesMap[resType].RefreshWithoutUpgrade(ctx, &terraform.InstanceState{ID: resID}, meta)
+	resource := provider.ResourcesMap[resType]
+	state, err := resource.RefreshWithoutUpgrade(ctx, &terraform.InstanceState{ID: resID}, meta)
 	if err != nil {
 		return nil, err
 	}
-	if state.ID == "" {
-		// Resource no longer exists.
+	if state == nil || state.ID == "" {
+		// Resource no longer exists or refresh was cancelled
 		return nil, nil
 	}
 	return state, nil

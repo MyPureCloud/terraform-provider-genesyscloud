@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -81,39 +80,27 @@ func New(version string) func() *schema.Provider {
 }
 
 type providerMeta struct {
-	Version string
-}
-
-// ClientConfigPool maintains a pool of client connections to increase throughput
-type ClientConfigPool struct {
-	configs []*platformclientv2.Configuration
-	counter uint64
-}
-
-var clientConfigPool *ClientConfigPool
-
-func newClientPool(data *schema.ResourceData, size int) *ClientConfigPool {
-	pool := &ClientConfigPool{}
-	pool.configs = make([]*platformclientv2.Configuration, size)
-	for i := 0; i < size; i++ {
-		pool.configs[i] = platformclientv2.NewConfiguration()
-		initClientConfig(data, pool.configs[i])
-	}
-	return pool
-}
-
-// GetSdkClient returns a Genesys SDK client configuration from the pool
-// This must be called after the configure method initializes the pool
-func GetSdkClient() *platformclientv2.Configuration {
-	nextClientIdx := atomic.AddUint64(&clientConfigPool.counter, 1) % uint64(len(clientConfigPool.configs))
-	return clientConfigPool.configs[nextClientIdx]
+	Version      string
+	ClientConfig *platformclientv2.Configuration
 }
 
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		initClientConfig(data, platformclientv2.GetDefaultConfiguration())
-		clientConfigPool = newClientPool(data, 10)
-		return &providerMeta{Version: version}, nil
+		// Initialize the default config for tests and anything else that doesn't use the pool
+		err := initClientConfig(data, platformclientv2.GetDefaultConfiguration())
+		if err != nil {
+			return nil, err
+		}
+
+		// Initialize the SDK Client pool with 10 clients
+		err = InitSDKClientPool(10, data)
+		if err != nil {
+			return nil, err
+		}
+		return &providerMeta{
+			Version:      version,
+			ClientConfig: platformclientv2.GetDefaultConfiguration(),
+		}, nil
 	}
 }
 

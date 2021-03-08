@@ -1,12 +1,17 @@
 package genesyscloud
 
 import (
+	"context"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourceIDNameMap is a map of IDs to resource names
 type ResourceIDNameMap map[string]string
+
+// GetAllResourcesFunc is a method that returns all resource IDs
+type GetAllResourcesFunc func(context.Context) (ResourceIDNameMap, diag.Diagnostics)
 
 // RefAttrSettings contains behavior settings for references
 type RefAttrSettings struct {
@@ -28,7 +33,7 @@ type ResourceExporter struct {
 	// Method to load all resource IDs for a given resource.
 	// Returned map key should be the ID and the value should be a name to use for the resource.
 	// Names will be sanitized with part of the ID appended, so it is not required that they be unique
-	GetResourcesFunc func() (ResourceIDNameMap, diag.Diagnostics)
+	GetResourcesFunc GetAllResourcesFunc
 
 	// The root level resource definition
 	ResourceDef *schema.Resource

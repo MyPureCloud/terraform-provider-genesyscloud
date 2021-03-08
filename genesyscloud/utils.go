@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -12,13 +13,26 @@ import (
 
 type jsonMap map[string]interface{}
 
+// Attempt to get the home division once during a provider run
+var divOnce sync.Once
+var homeDivID string
+var homeDivErr diag.Diagnostics
+
 func getHomeDivisionID() (string, diag.Diagnostics) {
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(GetSdkClient())
-	homeDiv, _, err := authAPI.GetAuthorizationDivisionsHome()
-	if err != nil {
-		return "", diag.Errorf("Failed to query home division: %s", err)
+	divOnce.Do(func() {
+		authAPI := platformclientv2.NewAuthorizationApi()
+		homeDiv, _, err := authAPI.GetAuthorizationDivisionsHome()
+		if err != nil {
+			homeDivErr = diag.Errorf("Failed to query home division: %s", err)
+			return
+		}
+		homeDivID = *homeDiv.Id
+	})
+
+	if homeDivErr != nil {
+		return "", homeDivErr
 	}
-	return *homeDiv.Id, nil
+	return homeDivID, nil
 }
 
 func buildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Domainentityref {
