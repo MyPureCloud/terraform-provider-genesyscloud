@@ -19,8 +19,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-const defaultTfJSONFile = "genesyscloud.tf.json"
-const defaultTfStateFile = "terraform.tfstate"
+const (
+	defaultTfJSONFile  = "genesyscloud.tf.json"
+	defaultTfStateFile = "terraform.tfstate"
+)
 
 func resourceTfExport() *schema.Resource {
 	return &schema.Resource{
@@ -129,12 +131,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
 	}
 
-	providerSource := "registry.terraform.io/mypurecloud/genesyscloud"
-	if version == "0.1.0" {
-		// Force using local dev version by providing a unique repo URL
-		providerSource = "genesys.com/mypurecloud/genesyscloud"
-	}
-
+	providerSource := sourceForVersion(version)
 	if includeStateFile {
 		if err := writeTfState(ctx, resources, d, providerSource); err != nil {
 			return err
@@ -159,6 +156,15 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	d.SetId(jsonFilePath)
 	return nil
+}
+
+func sourceForVersion(version string) string {
+	providerSource := "registry.terraform.io/mypurecloud/genesyscloud"
+	if version == "0.1.0" {
+		// Force using local dev version by providing a unique repo URL
+		providerSource = "genesys.com/mypurecloud/genesyscloud"
+	}
+	return providerSource
 }
 
 func readTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
