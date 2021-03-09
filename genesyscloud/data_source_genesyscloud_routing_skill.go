@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MyPureCloud/platform-client-sdk-go/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -14,7 +14,7 @@ import (
 func dataSourceRoutingSkill() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Routing Skills. Select a skill by name.",
-		ReadContext: dataSourceRoutingSkillRead,
+		ReadContext: readWithPooledClient(dataSourceRoutingSkillRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Skill name.",
@@ -26,7 +26,8 @@ func dataSourceRoutingSkill() *schema.Resource {
 }
 
 func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	routingAPI := platformclientv2.NewRoutingApi()
+	sdkConfig := m.(*providerMeta).ClientConfig
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 

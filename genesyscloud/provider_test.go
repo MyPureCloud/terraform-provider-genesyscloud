@@ -12,12 +12,12 @@ import (
 // to create a provider server to which the CLI can reattach.
 var providerFactories = map[string]func() (*schema.Provider, error){
 	"genesyscloud": func() (*schema.Provider, error) {
-		return New("dev")(), nil
+		return New("0.1.0")(), nil
 	},
 }
 
 func TestProvider(t *testing.T) {
-	if err := New("dev")().InternalValidate(); err != nil {
+	if err := New("0.1.0")().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }

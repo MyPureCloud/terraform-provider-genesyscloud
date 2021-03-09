@@ -30,10 +30,11 @@ resource "genesyscloud_auth_role" "agent_role" {
 
 ### Required
 
-- **name** (String) Role name.
+- **name** (String) Role name. This cannot be modified for default roles.
 
 ### Optional
 
+- **default_role_id** (String) Internal ID for an existing default role, e.g. 'employee'. This can be set to manage permissions on existing default roles.
 - **description** (String) Role description.
 - **id** (String) The ID of this resource.
 - **permission_policies** (Block Set) Role permission policies. (see [below for nested schema](#nestedblock--permission_policies))

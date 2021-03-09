@@ -4,9 +4,9 @@ import (
 	"context"
 	"log"
 
-	"github.com/MyPureCloud/platform-client-sdk-go/platformclientv2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
 var (
@@ -33,20 +33,51 @@ var (
 	}
 )
 
+func getAllAuthRoles(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
+	resources := make(map[string]string)
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		roles, _, getErr := authAPI.GetAuthorizationRoles(100, pageNum, "", nil, "", "", "", nil, nil, false, nil)
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of roles: %v", getErr)
+		}
+
+		if roles.Entities == nil || len(*roles.Entities) == 0 {
+			break
+		}
+
+		for _, role := range *roles.Entities {
+			resources[*role.Id] = *role.Name
+		}
+	}
+
+	return resources, nil
+}
+
+func authRoleExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllAuthRoles),
+		ResourceDef:      resourceAuthRole(),
+		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+	}
+}
+
 func resourceAuthRole() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Authorization Role",
 
-		CreateContext: createAuthRole,
-		UpdateContext: updateAuthRole,
-		ReadContext:   readAuthRole,
-		DeleteContext: deleteAuthRole,
+		CreateContext: createWithPooledClient(createAuthRole),
+		ReadContext:   readWithPooledClient(readAuthRole),
+		UpdateContext: updateWithPooledClient(updateAuthRole),
+		DeleteContext: deleteWithPooledClient(deleteAuthRole),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Role name.",
+				Description: "Role name. This cannot be modified for default roles.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -67,6 +98,12 @@ func resourceAuthRole() *schema.Resource {
 				Optional:    true,
 				Elem:        rolePermPolicyResource,
 			},
+			"default_role_id": {
+				Description: "Internal ID for an existing default role, e.g. 'employee'. This can be set to manage permissions on existing default roles.",
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Optional:    true,
+			},
 		},
 	}
 }
@@ -74,10 +111,22 @@ func resourceAuthRole() *schema.Resource {
 func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
+	defaultRoleID := d.Get("default_role_id").(string)
 
-	authAPI := platformclientv2.NewAuthorizationApi()
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Creating role %s", name)
+	if defaultRoleID != "" {
+		// Default roles must already exist, or they cannot be modified
+		id, diagErr := getRoleID(defaultRoleID, authAPI)
+		if diagErr != nil {
+			return diagErr
+		}
+		d.SetId(id)
+		return updateAuthRole(ctx, d, meta)
+	}
+
 	role, _, err := authAPI.PostAuthorizationRoles(platformclientv2.Domainorganizationrolecreate{
 		Name:               &name,
 		Description:        &description,
@@ -89,15 +138,22 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	d.SetId(*role.Id)
-
+	log.Printf("Created role %s %s", name, *role.Id)
 	return readAuthRole(ctx, d, meta)
 }
 
 func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	authAPI := platformclientv2.NewAuthorizationApi()
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
-	role, _, getErr := authAPI.GetAuthorizationRole(d.Id(), nil)
+	log.Printf("Reading role %s", d.Id())
+
+	role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), nil)
 	if getErr != nil {
+		if resp != nil && resp.StatusCode == 404 {
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("Failed to read role %s: %s", d.Id(), getErr)
 	}
 
@@ -107,6 +163,10 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		d.Set("description", *role.Description)
 	}
 
+	if role.DefaultRoleId != nil {
+		d.Set("default_role_id", *role.DefaultRoleId)
+	}
+
 	if role.Permissions != nil {
 		d.Set("permissions", stringListToSet(*role.Permissions))
 	}
@@ -114,41 +174,62 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 	if role.PermissionPolicies != nil {
 		d.Set("permission_policies", flattenRolePermissionPolicies(*role.PermissionPolicies))
 	}
+	log.Printf("Read role %s %s", d.Id(), *role.Name)
 	return nil
 }
 
 func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
+	defaultRoleID := d.Get("default_role_id").(string)
 
-	authAPI := platformclientv2.NewAuthorizationApi()
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Updating role %s", name)
-	role, _, err := authAPI.PutAuthorizationRole(d.Id(), platformclientv2.Domainorganizationroleupdate{
+	_, _, err := authAPI.PutAuthorizationRole(d.Id(), platformclientv2.Domainorganizationroleupdate{
 		Name:               &name,
 		Description:        &description,
 		Permissions:        buildSdkRolePermissions(d),
 		PermissionPolicies: buildSdkRolePermPolicies(d),
+		DefaultRoleId:      &defaultRoleID,
 	})
 	if err != nil {
 		return diag.Errorf("Failed to create role %s: %s", name, err)
 	}
 
-	d.SetId(*role.Id)
-
+	log.Printf("Updated role %s", name)
 	return readAuthRole(ctx, d, meta)
 }
 
 func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
+	defaultRoleID := d.Get("default_role_id").(string)
 
-	authAPI := platformclientv2.NewAuthorizationApi()
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+
+	if defaultRoleID != "" {
+		// Restore default roles to their default state instead of deleting them
+		log.Printf("Restoring default role %s", name)
+		id := d.Id()
+		_, _, err := authAPI.PutAuthorizationRolesDefault([]platformclientv2.Domainorganizationrole{
+			{
+				Id: &id,
+			},
+		})
+		if err != nil {
+			return diag.Errorf("Failed to restore default role %s: %s", defaultRoleID, err)
+		}
+		return nil
+	}
 
 	log.Printf("Deleting role %s", name)
 	_, err := authAPI.DeleteAuthorizationRole(d.Id())
 	if err != nil {
 		return diag.Errorf("Failed to delete role %s: %s", name, err)
 	}
+	log.Printf("Deleted role %s", name)
 	return nil
 }
 
@@ -202,4 +283,16 @@ func flattenRolePermissionPolicies(policies []platformclientv2.Domainpermissionp
 	}
 
 	return policySet
+}
+
+func getRoleID(defaultRoleID string, authAPI *platformclientv2.AuthorizationApi) (string, diag.Diagnostics) {
+	roles, _, getErr := authAPI.GetAuthorizationRoles(1, 1, "", nil, "", "", "", nil, []string{defaultRoleID}, false, nil)
+	if getErr != nil {
+		return "", diag.Errorf("Error requesting default role %s: %s", defaultRoleID, getErr)
+	}
+	if roles.Entities == nil || len(*roles.Entities) == 0 {
+		return "", diag.Errorf("Default role not found: %s", defaultRoleID)
+	}
+
+	return *(*roles.Entities)[0].Id, nil
 }

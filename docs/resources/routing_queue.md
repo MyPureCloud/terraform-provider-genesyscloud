@@ -66,16 +66,16 @@ resource "genesyscloud_routing_queue" "test_queue" {
 ### Optional
 
 - **acw_timeout_ms** (Number) The amount of time the agent can stay in ACW. Only set when ACW is MANDATORY_TIMEOUT, MANDATORY_FORCED_TIMEOUT or AGENT_REQUESTED.
-- **acw_wrapup_prompt** (String) This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED). Defaults to MANDATORY_TIMEOUT.
-- **auto_answer_only** (Boolean) Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered. Defaults to true.
+- **acw_wrapup_prompt** (String) This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED). Defaults to `MANDATORY_TIMEOUT`.
+- **auto_answer_only** (Boolean) Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered. Defaults to `true`.
 - **bullseye_rings** (Block List, Max: 6) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - **calling_party_name** (String) The name to use for caller identification for outbound calls from this queue.
 - **calling_party_number** (String) The phone number to use for caller identification for outbound calls from this queue.
 - **default_script_ids** (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - **description** (String) Queue description.
 - **division_id** (String) The division to which this queue will belong. If not set, the home division will be used.
-- **enable_manual_assignment** (Boolean) Indicates whether manual assignment is enabled for this queue. Defaults to false.
-- **enable_transcription** (Boolean) Indicates whether voice transcription is enabled for this queue. Defaults to false.
+- **enable_manual_assignment** (Boolean) Indicates whether manual assignment is enabled for this queue. Defaults to `false`.
+- **enable_transcription** (Boolean) Indicates whether voice transcription is enabled for this queue. Defaults to `false`.
 - **id** (String) The ID of this resource.
 - **media_settings_call** (Block List, Max: 1) Call media settings. (see [below for nested schema](#nestedblock--media_settings_call))
 - **media_settings_callback** (Block List, Max: 1) Callback media settings. (see [below for nested schema](#nestedblock--media_settings_callback))
@@ -84,12 +84,12 @@ resource "genesyscloud_routing_queue" "test_queue" {
 - **media_settings_message** (Block List, Max: 1) Message media settings. (see [below for nested schema](#nestedblock--media_settings_message))
 - **media_settings_social** (Block List, Max: 1) Social media settings. (see [below for nested schema](#nestedblock--media_settings_social))
 - **media_settings_video** (Block List, Max: 1) Video media settings. (see [below for nested schema](#nestedblock--media_settings_video))
-- **members** (Block Set) Users in the queue. If not set, this resource will not manage queue membership. (see [below for nested schema](#nestedblock--members))
+- **members** (Block Set) Users in the queue. If not set, queue members will not be managed by this resource. (see [below for nested schema](#nestedblock--members))
 - **outbound_email_address** (Block List, Max: 1) The outbound email address settings for this queue. (see [below for nested schema](#nestedblock--outbound_email_address))
 - **outbound_messaging_sms_address_id** (String) The unique ID of the outbound messaging SMS address for the queue.
 - **queue_flow_id** (String) The in-queue flow ID to use for conversations waiting in queue.
 - **routing_rules** (Block List, Max: 6) The routing rules for the queue, used for routing to known or preferred agents. (see [below for nested schema](#nestedblock--routing_rules))
-- **skill_evaluation_method** (String) The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to ALL.
+- **skill_evaluation_method** (String) The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to `ALL`.
 - **whisper_prompt_id** (String) The prompt ID used for whisper on the queue, if configured.
 
 <a id="nestedblock--bullseye_rings"></a>
@@ -111,7 +111,7 @@ Required:
 
 - **alerting_timeout_sec** (Number) Alerting timeout in seconds. Must be >= 7
 - **service_level_duration_ms** (Number) Service Level target in milliseconds. Must be >= 1000
-- **service_level_percentage** (Number) The desired Service Level. A value between 0 and 1.
+- **service_level_percentage** (Number) The desired Service Level. A float value between 0 and 1.
 
 
 <a id="nestedblock--media_settings_callback"></a>
@@ -121,7 +121,7 @@ Required:
 
 - **alerting_timeout_sec** (Number) Alerting timeout in seconds. Must be >= 7
 - **service_level_duration_ms** (Number) Service Level target in milliseconds. Must be >= 1000
-- **service_level_percentage** (Number) The desired Service Level. A value between 0 and 1.
+- **service_level_percentage** (Number) The desired Service Level. A float value between 0 and 1.
 
 
 <a id="nestedblock--media_settings_chat"></a>
@@ -131,7 +131,7 @@ Required:
 
 - **alerting_timeout_sec** (Number) Alerting timeout in seconds. Must be >= 7
 - **service_level_duration_ms** (Number) Service Level target in milliseconds. Must be >= 1000
-- **service_level_percentage** (Number) The desired Service Level. A value between 0 and 1.
+- **service_level_percentage** (Number) The desired Service Level. A float value between 0 and 1.
 
 
 <a id="nestedblock--media_settings_email"></a>
@@ -141,7 +141,7 @@ Required:
 
 - **alerting_timeout_sec** (Number) Alerting timeout in seconds. Must be >= 7
 - **service_level_duration_ms** (Number) Service Level target in milliseconds. Must be >= 1000
-- **service_level_percentage** (Number) The desired Service Level. A value between 0 and 1.
+- **service_level_percentage** (Number) The desired Service Level. A float value between 0 and 1.
 
 
 <a id="nestedblock--media_settings_message"></a>
@@ -151,7 +151,7 @@ Required:
 
 - **alerting_timeout_sec** (Number) Alerting timeout in seconds. Must be >= 7
 - **service_level_duration_ms** (Number) Service Level target in milliseconds. Must be >= 1000
-- **service_level_percentage** (Number) The desired Service Level. A value between 0 and 1.
+- **service_level_percentage** (Number) The desired Service Level. A float value between 0 and 1.
 
 
 <a id="nestedblock--media_settings_social"></a>
@@ -161,7 +161,7 @@ Required:
 
 - **alerting_timeout_sec** (Number) Alerting timeout in seconds. Must be >= 7
 - **service_level_duration_ms** (Number) Service Level target in milliseconds. Must be >= 1000
-- **service_level_percentage** (Number) The desired Service Level. A value between 0 and 1.
+- **service_level_percentage** (Number) The desired Service Level. A float value between 0 and 1.
 
 
 <a id="nestedblock--media_settings_video"></a>
@@ -171,7 +171,7 @@ Required:
 
 - **alerting_timeout_sec** (Number) Alerting timeout in seconds. Must be >= 7
 - **service_level_duration_ms** (Number) Service Level target in milliseconds. Must be >= 1000
-- **service_level_percentage** (Number) The desired Service Level. A value between 0 and 1.
+- **service_level_percentage** (Number) The desired Service Level. A float value between 0 and 1.
 
 
 <a id="nestedblock--members"></a>
@@ -183,7 +183,7 @@ Required:
 
 Optional:
 
-- **ring_num** (Number) Ring number between 1 and 6 for this user in the queue. Defaults to 1.
+- **ring_num** (Number) Ring number between 1 and 6 for this user in the queue. Defaults to `1`.
 
 
 <a id="nestedblock--outbound_email_address"></a>
@@ -200,8 +200,8 @@ Required:
 
 Optional:
 
-- **operator** (String) Matching operator (MEETS_THRESHOLD | ANY). MEETS_THRESHOLD matches any agent with a score at or above the rule's threshold. ANY matches all specified agents, regardless of score.
+- **operator** (String) Matching operator (MEETS_THRESHOLD | ANY). MEETS_THRESHOLD matches any agent with a score at or above the rule's threshold. ANY matches all specified agents, regardless of score. Defaults to `MEETS_THRESHOLD`.
 - **threshold** (Number) Threshold required for routing attempt (generally an agent score). Ignored for operator ANY.
-- **wait_seconds** (Number) Seconds to wait in this rule before moving to the next.
+- **wait_seconds** (Number) Seconds to wait in this rule before moving to the next. Defaults to `5`.
 
 

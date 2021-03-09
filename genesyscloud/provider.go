@@ -2,12 +2,16 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"net/http"
 	"strings"
+	"time"
 
-	"github.com/MyPureCloud/platform-client-sdk-go/platformclientv2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
 func init() {
@@ -17,13 +21,13 @@ func init() {
 
 	// Customize the content of descriptions when output. For example you can add defaults on
 	// to the exported descriptions if present.
-	// schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
-	// 	desc := s.Description
-	// 	if s.Default != nil {
-	// 		desc += fmt.Sprintf(" Defaults to `%v`.", s.Default)
-	// 	}
-	// 	return strings.TrimSpace(desc)
-	// }
+	schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
+		desc := s.Description
+		if s.Default != nil {
+			desc += fmt.Sprintf(" Defaults to `%v`.", s.Default)
+		}
+		return strings.TrimSpace(desc)
+	}
 }
 
 // New initializes the provider schema
@@ -63,35 +67,41 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_routing_queue": resourceRoutingQueue(),
 				"genesyscloud_routing_skill": resourceRoutingSkill(),
 				"genesyscloud_user":          resourceUser(),
+				"genesyscloud_tf_export":     resourceTfExport(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"genesyscloud_auth_role":     dataSourceAuthRole(),
 				"genesyscloud_routing_skill": dataSourceRoutingSkill(),
 				"genesyscloud_user":          dataSourceUser(),
 			},
-			ConfigureContextFunc: configure,
+			ConfigureContextFunc: configure(version),
 		}
 	}
 }
 
 type providerMeta struct {
+	Version      string
+	ClientConfig *platformclientv2.Configuration
 }
 
-func configure(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	oauthclientID := data.Get("oauthclient_id").(string)
-	oauthclientSecret := data.Get("oauthclient_secret").(string)
-	basePath := getRegionBasePath(data.Get("aws_region").(string))
+func configure(version string) schema.ConfigureContextFunc {
+	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		// Initialize the default config for tests and anything else that doesn't use the pool
+		err := initClientConfig(data, platformclientv2.GetDefaultConfiguration())
+		if err != nil {
+			return nil, err
+		}
 
-	config := platformclientv2.GetDefaultConfiguration()
-	config.BasePath = basePath
-	config.SetDebug(data.Get("sdk_debug").(bool))
-
-	err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
-	if err != nil {
-		return nil, diag.Errorf("Failed to authorize Genesys Cloud client credentials")
+		// Initialize the SDK Client pool with 10 clients
+		err = InitSDKClientPool(10, data)
+		if err != nil {
+			return nil, err
+		}
+		return &providerMeta{
+			Version:      version,
+			ClientConfig: platformclientv2.GetDefaultConfiguration(),
+		}, nil
 	}
-
-	return &providerMeta{}, nil
 }
 
 func getRegionMap() map[string]string {
@@ -122,4 +132,29 @@ func getAllowedRegions() []string {
 
 func getRegionBasePath(region string) string {
 	return getRegionMap()[strings.ToLower(region)]
+}
+
+func initClientConfig(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
+	oauthclientID := data.Get("oauthclient_id").(string)
+	oauthclientSecret := data.Get("oauthclient_secret").(string)
+	basePath := getRegionBasePath(data.Get("aws_region").(string))
+
+	config.BasePath = basePath
+	config.SetDebug(data.Get("sdk_debug").(bool))
+	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
+		RetryWaitMin: time.Second * 1,
+		RetryWaitMax: time.Second * 30,
+		RetryMax:     20,
+		RequestLogHook: func(request *http.Request, count int) {
+			if count > 0 && request != nil {
+				log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
+			}
+		},
+	}
+
+	err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+	if err != nil {
+		return diag.Errorf("Failed to authorize Genesys Cloud client credentials")
+	}
+	return nil
 }

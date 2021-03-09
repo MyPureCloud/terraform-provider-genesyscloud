@@ -7,14 +7,16 @@ resource "genesyscloud_user" "test_user" {
   department  = "Development"
   title       = "Senior Director"
   manager     = genesyscloud_user.test-user-manager.id
-  other_emails {
-    address = "john@gmail.com"
-    type    = "HOME"
-  }
-  phone_numbers {
-    number     = "3174181234"
-    media_type = "PHONE"
-    type       = "MOBILE"
+  addresses {
+    other_emails {
+      address = "john@gmail.com"
+      type    = "HOME"
+    }
+    phone_numbers {
+      number     = "3174181234"
+      media_type = "PHONE"
+      type       = "MOBILE"
+    }
   }
   routing_skills {
     skill_id    = genesyscloud_routing_skill.test-skill.id

@@ -10,11 +10,8 @@
 ## Building The Provider
 
 1. Clone the repository
-1. Enter the repository directory
-1. Build the provider using the Go `install` command: 
-```sh
-$ go install
-```
+2. Enter the repository directory
+3. Build the provider by running `make build`
 
 ## Using the provider
 
@@ -25,8 +22,8 @@ terraform {
   required_version = "~> 0.13.0"
   required_providers {
     genesyscloud = {
-      source  = "genesys/genesyscloud"
-      version = "1.1.0"
+      source  = "mypurecloud/genesyscloud"
+      version = "~> 1.0.0"
     }
   }
 }
@@ -47,7 +44,47 @@ GENESYSCLOUD_OAUTHCLIENT_SECRET
 GENESYSCLOUD_REGION
 ```
 
+*Note:* The provider makes Public API calls to perform all of the CRUD operations necessary to manage Genesys Cloud resources. All of these API calls require specific permissions and OAuth scopes. Therefore it is important that you verify your OAuth Client is authorized for all necessary scopes and is assigned an admin role capable of creating, reading, updating, and deleting all resources that your Terraform configuration will manage.
+
 For any issues, questions, or suggestions for the provider, visit the [Genesys Cloud Developer Forum](https://developer.mypurecloud.com/forum/)
+
+### Exporting existing Genesys Cloud configuration
+
+For existing orgs, it may be desirable to have Terraform begin managing your configuration. If there are only a handful of users, queues, etc. to manage, Terraform has an option to [import individual resources](https://www.terraform.io/docs/cli/import/index.html) into a Terraform module.
+
+However, if there are a lot of existing resources it can be painful to manually import all of them into a Terraform state file. To make this easier, a special resource has been defined to export that configuration into a local [Terraform JSON configuration file](https://www.terraform.io/docs/language/syntax/json.html). Ensure you have the Terraform CLI installed and create a `.tf` file that requires the genesyscloud provider as shown above. Add a `genesyscloud_tf_export` resource to that same file:
+```hcl
+terraform {
+  required_providers {
+    genesyscloud = {
+      source  = "mypurecloud/genesyscloud"
+      version = "~> 1.0.0"
+    }
+  }
+}
+
+resource "genesyscloud_tf_export" "export" {
+  directory          = "~/genesyscloud"
+  resource_types     = ["genesyscloud_user"]
+  include_state_file = true
+}
+```
+
+You may choose specific resource types to export such as `genesyscloud_user`, or you can export all supported resources by not setting the `resource_types` attribute. You may also choose to export a `.tfstate` file along with the `.tf.json` config file by setting `include_state_file` to true. Generating a state file alongside the config will allow Terraform to begin managing your existing resources even though it did not create them. Excluding the state file will generate configuration that can be applied to a different org.
+
+Once your export resource is configured, run `terraform init` to set up Terraform in that directory followed by `terraform apply` to run the export. Once complete, a new Terraform config file will be created in the chosen directory where you can begin modifying the generated config and running Terraform commands.
+
+If state is exported, the config file may not be able to be applied to another org as it likely contains ID references to objects in the current org. If you choose not to export the state file, the standalone `.tf.json` config file will be stripped of all reference attribute values that cannot be mapped to exported resources. For example if you only export users, any attributes that reference other object types (roles, skills, etc.) will be removed from the config. This is necessary as it would not be possible to apply configuration with references to IDs from a different org.
+
+### Data Sources
+
+There may be cases where you want to reference existing resources in a Terraform configuration file but do not want those resources to be managed by Terraform. This provider supports several data source types that can act as a read-only resource for existing objects in your org. To include one in your configuration, add a `data` block to your configuration file with one of the supported data source types:
+```hcl
+data "genesyscloud_auth_role" "employee" {
+  name = "employee"
+}
+```
+The example above will attempt to find a role named "employee" which can be referenced elsewhere in the config. By default, all data sources will allow you to access the `id` attribute which is useful for setting reference attributes that require IDs. Additional attributes may be added to data sources as needs arise.
 
 ## Developing the Provider
 
@@ -66,6 +103,10 @@ $ make testacc TESTARGS="-run TestAccResourceUserBasic"
 All new resources must have passing acceptance tests and docs in order to be merged.
 
 *Note:* Acceptance tests create real resources and require an OAuth Client authorized to create, update, and delete all resources in your org. The OAuth Client information must be set in the `GENESYSCLOUD_*` environment variables prior to running the tests.
+
+### Using the Provider locally
+
+In order to use a locally compiled version of the provider, the correct binary for your system must be copied to the local `~/.terraform.d/plugins` folder. Run `make sideload` to build the provider and copy it to the correct folder. In your Terraform config file, specify version `0.1.0` and set the provider source to `genesys.com/mypurecloud/genesyscloud`. Run `terraform init` and verify that it finds the local version.
 
 ### Branches
 

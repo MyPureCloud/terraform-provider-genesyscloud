@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MyPureCloud/platform-client-sdk-go/platformclientv2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
 func dataSourceAuthRole() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Roles. Select a role by name.",
-		ReadContext: dataSourceAuthRoleRead,
+		ReadContext: readWithPooledClient(dataSourceAuthRoleRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Role name.",
@@ -26,7 +26,8 @@ func dataSourceAuthRole() *schema.Resource {
 }
 
 func dataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	authAPI := platformclientv2.NewAuthorizationApi()
+	sdkConfig := m.(*providerMeta).ClientConfig
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 
