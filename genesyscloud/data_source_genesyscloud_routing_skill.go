@@ -34,7 +34,7 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			skills, _, getErr := routingAPI.GetRoutingSkills(50, pageNum, name, nil)
+			skills, _, getErr := routingAPI.GetRoutingSkills(100, pageNum, name, nil)
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting role %s: %s", name, getErr))
 			}

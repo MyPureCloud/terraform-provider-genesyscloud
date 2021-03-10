@@ -119,13 +119,12 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 func userExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllUsers),
-		ResourceDef:      resourceUser(),
 		RefAttrs: map[string]*RefAttrSettings{
 			"manager":                 {RefType: "genesyscloud_user"},
-			"division_id":             {},
+			"division_id":             {RefType: "genesyscloud_auth_division"},
 			"routing_skills.skill_id": {RefType: "genesyscloud_routing_skill", RemoveOuterItem: true},
 			"roles.role_id":           {RefType: "genesyscloud_auth_role", RemoveOuterItem: true},
-			"roles.division_ids":      {AltValues: []string{"*"}},
+			"roles.division_ids":      {RefType: "genesyscloud_auth_division", AltValues: []string{"*"}},
 		},
 		AllowZeroValues: []string{"routing_skills.proficiency"},
 	}

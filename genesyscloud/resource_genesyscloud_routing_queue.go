@@ -94,9 +94,8 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 func routingQueueExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllRoutingQueues),
-		ResourceDef:      resourceRoutingQueue(),
 		RefAttrs: map[string]*RefAttrSettings{
-			"division_id":                       {},                      // Ref type not yet defined
+			"division_id":                       {RefType: "genesyscloud_auth_division"},
 			"queue_flow_id":                     {},                      // Ref type not yet defined
 			"whisper_prompt_id":                 {},                      // Ref type not yet defined
 			"outbound_messaging_sms_address_id": {},                      // Ref type not yet defined

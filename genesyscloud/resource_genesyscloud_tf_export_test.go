@@ -55,8 +55,13 @@ func generateTfExportResource(
 	includeState string) string {
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
 		directory = "%s"
-		resource_types = ["genesyscloud_routing_queue", "genesyscloud_routing_skill"]
         include_state_file = %s
+		resource_types = [
+			"genesyscloud_routing_queue",
+			"genesyscloud_routing_skill",
+			"genesyscloud_auth_role",
+			"genesyscloud_auth_division"
+		]
     }
 	`, resourceID, directory, includeState)
 }
