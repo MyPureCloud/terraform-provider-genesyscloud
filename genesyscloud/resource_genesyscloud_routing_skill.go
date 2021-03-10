@@ -36,7 +36,6 @@ func getAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Con
 func routingSkillExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllRoutingSkills),
-		ResourceDef:      resourceRoutingSkill(),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }

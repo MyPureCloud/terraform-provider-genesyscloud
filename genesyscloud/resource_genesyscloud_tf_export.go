@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"sync"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -219,7 +218,7 @@ func buildSanitizedResourceMaps(exporters map[string]*ResourceExporter) diag.Dia
 		go func(name string, exporter *ResourceExporter) {
 			defer wg.Done()
 			log.Printf("Getting all resources for type %s", name)
-			idNameMap, err := exporter.GetResourcesFunc(ctx)
+			err := exporter.loadSanitizedResourceMap(ctx)
 			if err != nil {
 				select {
 				case <-ctx.Done():
@@ -228,8 +227,7 @@ func buildSanitizedResourceMaps(exporters map[string]*ResourceExporter) diag.Dia
 				cancel()
 				return
 			}
-			exporter.SanitizedResourceMap = sanitizeResourceNames(idNameMap)
-			log.Printf("Found %d resources for type %s", len(idNameMap), name)
+			log.Printf("Found %d resources for type %s", len(exporter.SanitizedResourceMap), name)
 		}(name, exporter)
 	}
 
@@ -257,7 +255,12 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *Re
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ctyType := exporter.ResourceDef.CoreConfigSchema().ImpliedType()
+	resource := provider.ResourcesMap[resType]
+	if resource == nil {
+		return nil, diag.Errorf("Resource type %s not defined", resType)
+	}
+
+	ctyType := resource.CoreConfigSchema().ImpliedType()
 
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
@@ -267,7 +270,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *Re
 
 			// This calls into the resource's ReadContext method which
 			// will block until it can acquire a pooled client config object.
-			instanceState, err := getResourceState(ctx, provider, resType, id, meta)
+			instanceState, err := getResourceState(ctx, resource, id, meta)
 			if err != nil {
 				errorChan <- diag.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
 				cancel() // Stop other requests
@@ -314,36 +317,13 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *Re
 	}
 }
 
-func escapeRune(s string) string {
-	return fmt.Sprintf("%02X", s)
-}
-
-// Resource names must only contain alphanumeric chars, underscores, or dashes
-var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
-
-func sanitizeResourceNames(idNamesMap ResourceIDNameMap) ResourceIDNameMap {
-	result := make(ResourceIDNameMap)
-	for id, name := range idNamesMap {
-		name = unsafeNameChars.ReplaceAllStringFunc(name, escapeRune)
-		// Append part of ID to ensure uniqueness for similar names
-		if len(id) > 6 {
-			name = name + "_" + id[:6]
-		} else {
-			name = name + "_" + id
-		}
-		result[id] = name
-	}
-	return result
-}
-
-func getResourceState(ctx context.Context, provider *schema.Provider, resType string, resID string, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
-	resource := provider.ResourcesMap[resType]
+func getResourceState(ctx context.Context, resource *schema.Resource, resID string, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
 	state, err := resource.RefreshWithoutUpgrade(ctx, &terraform.InstanceState{ID: resID}, meta)
 	if err != nil {
 		return nil, err
 	}
 	if state == nil || state.ID == "" {
-		// Resource no longer exists or refresh was cancelled
+		// Resource no longer exists
 		return nil, nil
 	}
 	return state, nil

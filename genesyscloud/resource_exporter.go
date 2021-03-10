@@ -2,9 +2,10 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourceIDNameMap is a map of IDs to resource names
@@ -35,9 +36,6 @@ type ResourceExporter struct {
 	// Names will be sanitized with part of the ID appended, so it is not required that they be unique
 	GetResourcesFunc GetAllResourcesFunc
 
-	// The root level resource definition
-	ResourceDef *schema.Resource
-
 	// A map of resource attributes to types that they reference
 	// Attributes in nested objects can be defined with a '.' separator
 	RefAttrs map[string]*RefAttrSettings
@@ -46,8 +44,18 @@ type ResourceExporter struct {
 	// By default zero values are removed from the config due to lack of "null" support in the plugin SDK
 	AllowZeroValues []string
 
-	// Map of resource id->names. This is set at the start of an export
+	// Map of resource id->names. This is set after a call to loadSanitizedResourceMap
 	SanitizedResourceMap ResourceIDNameMap
+}
+
+func (r *ResourceExporter) loadSanitizedResourceMap(ctx context.Context) diag.Diagnostics {
+	result, err := r.GetResourcesFunc(ctx)
+	if err != nil {
+		return err
+	}
+	r.SanitizedResourceMap = result
+	sanitizeResourceNames(r.SanitizedResourceMap)
+	return nil
 }
 
 func (r *ResourceExporter) getRefAttrSettings(attribute string) *RefAttrSettings {
@@ -64,10 +72,11 @@ func (r *ResourceExporter) allowZeroValues(attribute string) bool {
 // Add new resources that can be exported here
 func getResourceExporters() map[string]*ResourceExporter {
 	return map[string]*ResourceExporter{
-		"genesyscloud_user":          userExporter(),
+		"genesyscloud_auth_division": authDivisionExporter(),
 		"genesyscloud_auth_role":     authRoleExporter(),
 		"genesyscloud_routing_queue": routingQueueExporter(),
 		"genesyscloud_routing_skill": routingSkillExporter(),
+		"genesyscloud_user":          userExporter(),
 	}
 }
 
@@ -80,4 +89,24 @@ func getAvailableExporterTypes() []string {
 		i++
 	}
 	return types
+}
+
+func escapeRune(s string) string {
+	return fmt.Sprintf("%02X", s)
+}
+
+// Resource names must only contain alphanumeric chars, underscores, or dashes
+var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
+
+func sanitizeResourceNames(idNamesMap ResourceIDNameMap) {
+	for id, name := range idNamesMap {
+		name = unsafeNameChars.ReplaceAllStringFunc(name, escapeRune)
+		// Append part of ID to ensure uniqueness for similar names
+		if len(id) > 6 {
+			name = name + "_" + id[:6]
+		} else {
+			name = name + "_" + id
+		}
+		idNamesMap[id] = name
+	}
 }

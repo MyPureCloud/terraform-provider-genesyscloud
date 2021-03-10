@@ -58,7 +58,6 @@ func getAllAuthRoles(ctx context.Context, clientConfig *platformclientv2.Configu
 func authRoleExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllAuthRoles),
-		ResourceDef:      resourceAuthRole(),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }
@@ -195,7 +194,7 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		DefaultRoleId:      &defaultRoleID,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create role %s: %s", name, err)
+		return diag.Errorf("Failed to update role %s: %s", name, err)
 	}
 
 	log.Printf("Updated role %s", name)
