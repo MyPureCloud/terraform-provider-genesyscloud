@@ -33,7 +33,7 @@ func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m i
 
 	// Query division by name. Retry in case search has not yet indexed the division.
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		divisions, _, getErr := authAPI.GetAuthorizationDivisions(10, 1, "", nil, "", "", false, nil, name)
+		divisions, _, getErr := authAPI.GetAuthorizationDivisions(100, 1, "", nil, "", "", false, nil, name)
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting division %s: %s", name, getErr))
 		}
