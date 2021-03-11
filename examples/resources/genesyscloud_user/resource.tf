@@ -2,7 +2,7 @@ resource "genesyscloud_user" "test_user" {
   email       = "john@example.com"
   name        = "John Doe"
   password    = "initial-password"
-  division_id = "505e1036-6f04-405c-a630-de94a8ad2eb8"
+  division_id = genesyscloud_auth_division.home.id
   state       = "active"
   department  = "Development"
   title       = "Senior Director"
@@ -24,6 +24,6 @@ resource "genesyscloud_user" "test_user" {
   }
   roles {
     role_id      = genesyscloud_auth_role.custom-role.id
-    division_ids = ["505e1036-6f04-405c-a630-de94a8ad2eb8"]
+    division_ids = [genesyscloud_auth_division.marketing.id]
   }
 }

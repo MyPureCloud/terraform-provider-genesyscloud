@@ -22,7 +22,7 @@ func TestAccResourceTfExport(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				// Run export without state file
+				// Run export without state file in HCL format
 				Config: generateTfExportResource(
 					exportResource1,
 					exportTestDir,
@@ -33,7 +33,7 @@ func TestAccResourceTfExport(t *testing.T) {
 				),
 			},
 			{
-				// Run export with state file
+				// Run export with state file in JSON format
 				Config: generateTfExportResource(
 					exportResource1,
 					exportTestDir,
@@ -78,17 +78,17 @@ func validateFileCreated(filename string) resource.TestCheckFunc {
 
 func testVerifyExportsDestroyed(state *terraform.State) error {
 	// Check config file deleted
-	configPath := filepath.Join(exportTestDir, defaultTfJSONFile)
-	_, err := os.Stat(configPath)
+	jsonConfigPath := filepath.Join(exportTestDir, defaultTfJSONFile)
+	_, err := os.Stat(jsonConfigPath)
 	if !os.IsNotExist(err) {
-		return fmt.Errorf("Failed to delete config file %s", configPath)
+		return fmt.Errorf("Failed to delete JSON config file %s", jsonConfigPath)
 	}
 
 	// Check state file deleted
 	statePath := filepath.Join(exportTestDir, defaultTfStateFile)
 	_, err = os.Stat(statePath)
 	if !os.IsNotExist(err) {
-		return fmt.Errorf("Failed to delete state file %s", configPath)
+		return fmt.Errorf("Failed to delete state file %s", statePath)
 	}
 	return nil
 }

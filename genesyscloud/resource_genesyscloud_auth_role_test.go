@@ -114,6 +114,102 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 	})
 }
 
+func TestAccResourceAuthRoleConditions(t *testing.T) {
+	var (
+		roleResource1     = "auth-role1"
+		queueResource1    = "queue-resource1"
+		queueName1        = "Terraform Queue-" + uuid.NewString()
+		roleName1         = "Terraform Role-" + uuid.NewString()
+		roleDesc1         = "Terraform test condition role"
+		qualityDom        = "quality"
+		calibrationEntity = "calibration"
+		addAction         = "add"
+		conjAnd           = "AND"
+		varNameMedia      = "Conversation.mediaType"
+		varNameQueue      = "Conversation.queues"
+		opEq              = "EQ"
+		typeScalar        = "SCALAR"
+		typeQueue         = "QUEUE"
+		valueCall         = "CALL"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create with a scalar condition
+				Config: generateAuthRoleResource(
+					roleResource1,
+					roleName1,
+					roleDesc1,
+					generateRolePermPolicyCondition(
+						qualityDom,
+						calibrationEntity,
+						addAction,
+						conjAnd,
+						generateRolePermPolicyCondTerm(
+							varNameMedia,
+							opEq,
+							generateRoleCondValue(typeScalar, "value", strconv.Quote(valueCall)),
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validatePermPolicyCondition(
+						"genesyscloud_auth_role."+roleResource1,
+						qualityDom,
+						calibrationEntity,
+						conjAnd,
+						varNameMedia,
+						opEq,
+						typeScalar,
+						valueCall,
+					),
+				),
+			},
+			{
+				// Create a queue and update with a queue condition
+				Config: generateRoutingQueueResourceBasic(queueResource1, queueName1) +
+					generateAuthRoleResource(
+						roleResource1,
+						roleName1,
+						roleDesc1,
+						generateRolePermPolicyCondition(
+							qualityDom,
+							calibrationEntity,
+							addAction,
+							conjAnd,
+							generateRolePermPolicyCondTerm(
+								varNameQueue,
+								opEq,
+								generateRoleCondValue(typeQueue, "queue_id", "genesyscloud_routing_queue."+queueResource1+".id"),
+							),
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					validatePermPolicyCondition(
+						"genesyscloud_auth_role."+roleResource1,
+						qualityDom,
+						calibrationEntity,
+						conjAnd,
+						varNameQueue,
+						opEq,
+						typeQueue,
+						"genesyscloud_routing_queue."+queueResource1),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_auth_role." + roleResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyRolesDestroyed,
+	})
+}
+
 func generateAuthRoleResource(
 	resourceID string,
 	name string,
@@ -140,6 +236,38 @@ func generateRolePermPolicy(domain string, entityName string, actions ...string)
 		action_set = [%s]
 	}
 	`, domain, entityName, strings.Join(actions, ","))
+}
+
+func generateRolePermPolicyCondition(domain string, entityName string, action string, conj string, terms ...string) string {
+	return fmt.Sprintf(` permission_policies {
+		domain = "%s"
+		entity_name = "%s"
+		action_set = ["%s"]
+		conditions {
+			conjunction = "%s"
+			%s
+		}
+	}
+	`, domain, entityName, action, conj, strings.Join(terms, "\n"))
+}
+
+func generateRolePermPolicyCondTerm(varName string, op string, operands ...string) string {
+	return fmt.Sprintf(`
+	terms {
+		variable_name = "%s"
+		operator      = "%s"
+		%s
+	}
+	`, varName, op, strings.Join(operands, "\n"))
+}
+
+func generateRoleCondValue(varType string, attr string, val string) string {
+	return fmt.Sprintf(`
+	operands {
+		type  = "%s"
+		%s = %s
+	}
+	`, varType, attr, val)
 }
 
 func testVerifyRolesDestroyed(state *terraform.State) error {
@@ -230,6 +358,92 @@ func validatePermissionPolicy(roleResourceName string, domain string, entityName
 				}
 
 				// Found expected policy
+				return nil
+			}
+		}
+
+		return fmt.Errorf("Missing expected permission policy for role %s in state: %s %s", roleResource.Primary.ID, domain, entityName)
+	}
+}
+
+func validatePermPolicyCondition(
+	roleResourceName string,
+	domain string,
+	entityName string,
+	conjunction string,
+	variableName string,
+	operator string,
+	typeVar string,
+	value string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		roleResource, ok := state.RootModule().Resources[roleResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find role %s in state", roleResourceName)
+		}
+
+		roleAttrs := roleResource.Primary.Attributes
+		numPermsAttr, _ := roleAttrs["permission_policies.#"]
+		numPerms, _ := strconv.Atoi(numPermsAttr)
+		for i := 0; i < numPerms; i++ {
+			strNum := strconv.Itoa(i)
+			if roleAttrs["permission_policies."+strNum+".domain"] == domain &&
+				roleAttrs["permission_policies."+strNum+".entity_name"] == entityName {
+
+				// Check condition exists and matches
+				numCondAttr, _ := roleAttrs["permission_policies."+strNum+".conditions.#"]
+				numCond, _ := strconv.Atoi(numCondAttr)
+
+				if numCond == 0 {
+					return fmt.Errorf("Missing conditions in role %s", roleResource.Primary.ID)
+				}
+
+				stateConjunction := roleAttrs["permission_policies."+strNum+".conditions.0.conjunction"]
+				if stateConjunction != conjunction {
+					return fmt.Errorf("Invalid condition conjunction role %s: %v", roleResource.Primary.ID, stateConjunction)
+				}
+
+				stateVarName := roleAttrs["permission_policies."+strNum+".conditions.0.terms.0.variable_name"]
+				if stateVarName != variableName {
+					return fmt.Errorf("Invalid condition variable name in role %s: %v", roleResource.Primary.ID, stateVarName)
+				}
+
+				stateOp := roleAttrs["permission_policies."+strNum+".conditions.0.terms.0.operator"]
+				if stateOp != operator {
+					return fmt.Errorf("Invalid condition operator name in role %s: %v", roleResource.Primary.ID, stateOp)
+				}
+
+				stateType := roleAttrs["permission_policies."+strNum+".conditions.0.terms.0.operands.0.type"]
+				if stateType != typeVar {
+					return fmt.Errorf("Invalid condition operand type in role %s: %v", roleResource.Primary.ID, stateType)
+				}
+
+				if typeVar == "QUEUE" {
+					// Get the ID of the queue in the expected value and compare
+					stateQueue := roleAttrs["permission_policies."+strNum+".conditions.0.terms.0.operands.0.queue_id"]
+					queueResource, ok := state.RootModule().Resources[value]
+					if !ok {
+						return fmt.Errorf("Failed to find queue %s in state", value)
+					}
+					if stateQueue != queueResource.Primary.ID {
+						return fmt.Errorf("Condition operand value in role %s did not match queue ID: %v", roleResource.Primary.ID, stateQueue)
+					}
+				} else if typeVar == "USER" {
+					// Get the ID of the user in the expected value and compare
+					stateUser := roleAttrs["permission_policies."+strNum+".conditions.0.terms.0.operands.0.user_id"]
+					userResource, ok := state.RootModule().Resources[value]
+					if !ok {
+						return fmt.Errorf("Failed to find queue %s in state", value)
+					}
+					if stateUser != userResource.Primary.ID {
+						return fmt.Errorf("Condition operand value in role %s did not match user ID: %v", roleResource.Primary.ID, stateUser)
+					}
+				} else {
+					stateVal := roleAttrs["permission_policies."+strNum+".conditions.0.terms.0.operands.0.value"]
+					if stateVal != value {
+						return fmt.Errorf("Invalid condition operand value in role %s: %v", roleResource.Primary.ID, stateVal)
+					}
+				}
+
 				return nil
 			}
 		}
