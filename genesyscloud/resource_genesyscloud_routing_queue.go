@@ -96,13 +96,17 @@ func routingQueueExporter() *ResourceExporter {
 		GetResourcesFunc: getAllWithPooledClient(getAllRoutingQueues),
 		RefAttrs: map[string]*RefAttrSettings{
 			"division_id":                       {RefType: "genesyscloud_auth_division"},
-			"queue_flow_id":                     {},                      // Ref type not yet defined
-			"whisper_prompt_id":                 {},                      // Ref type not yet defined
-			"outbound_messaging_sms_address_id": {},                      // Ref type not yet defined
-			"default_script_ids.*":              {},                      // Ref type not yet defined
-			"outbound_email_address.route_id":   {RemoveOuterItem: true}, // Ref type not yet defined
+			"queue_flow_id":                     {}, // Ref type not yet defined
+			"whisper_prompt_id":                 {}, // Ref type not yet defined
+			"outbound_messaging_sms_address_id": {}, // Ref type not yet defined
+			"default_script_ids.*":              {}, // Ref type not yet defined
+			"outbound_email_address.route_id":   {}, // Ref type not yet defined
 			"bullseye_rings.skills_to_remove":   {RefType: "genesyscloud_routing_skill"},
-			"members.user_id":                   {RefType: "genesyscloud_user", RemoveOuterItem: true},
+			"members.user_id":                   {RefType: "genesyscloud_user"},
+		},
+		RemoveIfMissing: map[string][]string{
+			"outbound_email_address": {"route_id"},
+			"members":                {"user_id"},
 		},
 	}
 }

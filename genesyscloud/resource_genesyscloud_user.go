@@ -122,9 +122,13 @@ func userExporter() *ResourceExporter {
 		RefAttrs: map[string]*RefAttrSettings{
 			"manager":                 {RefType: "genesyscloud_user"},
 			"division_id":             {RefType: "genesyscloud_auth_division"},
-			"routing_skills.skill_id": {RefType: "genesyscloud_routing_skill", RemoveOuterItem: true},
-			"roles.role_id":           {RefType: "genesyscloud_auth_role", RemoveOuterItem: true},
+			"routing_skills.skill_id": {RefType: "genesyscloud_routing_skill"},
+			"roles.role_id":           {RefType: "genesyscloud_auth_role"},
 			"roles.division_ids":      {RefType: "genesyscloud_auth_division", AltValues: []string{"*"}},
+		},
+		RemoveIfMissing: map[string][]string{
+			"routing_skills": {"skill_id"},
+			"roles":          {"role_id"},
 		},
 		AllowZeroValues: []string{"routing_skills.proficiency"},
 	}

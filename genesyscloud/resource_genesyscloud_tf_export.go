@@ -73,7 +73,7 @@ type resourceInfo struct {
 }
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	jsonFilePath, diagErr := getFilePath(d, defaultTfJSONFile)
+	filePath, diagErr := getFilePath(d, defaultTfJSONFile)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -149,11 +149,11 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		},
 	}
 
-	if err := writeJSONConfig(rootJSONObject, jsonFilePath); err != nil {
+	if err := writeConfig(rootJSONObject, filePath); err != nil {
 		return err
 	}
 
-	d.SetId(jsonFilePath)
+	d.SetId(filePath)
 	return nil
 }
 
@@ -168,8 +168,8 @@ func sourceForVersion(version string) string {
 
 func readTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// If the output config file doesn't exist, mark the resource for creation.
-	jsonFile, _ := getFilePath(d, defaultTfJSONFile)
-	if _, err := os.Stat(jsonFile); os.IsNotExist(err) {
+	path := d.Id()
+	if _, err := os.Stat(path); os.IsNotExist(err) {
 		d.SetId("")
 		return nil
 	}
@@ -177,15 +177,15 @@ func readTfExport(ctx context.Context, d *schema.ResourceData, meta interface{})
 }
 
 func deleteTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	jsonFile, _ := getFilePath(d, defaultTfJSONFile)
-	if _, err := os.Stat(jsonFile); err == nil {
-		log.Printf("Deleting export config %s", jsonFile)
-		os.Remove(jsonFile)
+	configPath := d.Id()
+	if _, err := os.Stat(configPath); err == nil {
+		log.Printf("Deleting export config %s", configPath)
+		os.Remove(configPath)
 	}
 
 	stateFile, _ := getFilePath(d, defaultTfStateFile)
 	if _, err := os.Stat(stateFile); err == nil {
-		log.Printf("Deleting export state %s", jsonFile)
+		log.Printf("Deleting export state %s", stateFile)
 		os.Remove(stateFile)
 	}
 	return nil
@@ -422,7 +422,7 @@ func writeTfState(ctx context.Context, resources []resourceInfo, d *schema.Resou
 	return nil
 }
 
-func writeJSONConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
+func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
 	dataJSONBytes, err := json.MarshalIndent(jsonMap, "", "  ")
 	if err != nil {
 		return diag.FromErr(err)
@@ -481,11 +481,6 @@ func sanitizeConfigMap(
 			}
 			if refSettings != nil {
 				configMap[key] = resolveReference(refSettings, val.(string), exporters, exportingState)
-				if configMap[key] == "" && refSettings.RemoveOuterItem {
-					// Missing this attribute reference should cause the outer object to be removed
-					// This is useful for removing attribute maps that depend on a reference being set to be valid
-					return false
-				}
 			}
 		}
 
@@ -497,6 +492,12 @@ func sanitizeConfigMap(
 			removeZeroValues(key, configMap[key], configMap)
 		}
 	}
+
+	if exporter.removeIfMissing(prevAttr, configMap) {
+		// Missing some inner attributes causes the outer object to be removed
+		return false
+	}
+
 	return true
 }
 

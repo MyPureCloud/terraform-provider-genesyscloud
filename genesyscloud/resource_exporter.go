@@ -20,10 +20,6 @@ type RefAttrSettings struct {
 	// Referenced resource type
 	RefType string
 
-	// Set to true if missing this reference should result in removing
-	// the object from the outer array when exporting config only
-	RemoveOuterItem bool
-
 	// Values that may be set that should not be treated as IDs
 	AltValues []string
 }
@@ -43,6 +39,10 @@ type ResourceExporter struct {
 	// AllowZeroValues is a list of attributes that should allow zero values in the export.
 	// By default zero values are removed from the config due to lack of "null" support in the plugin SDK
 	AllowZeroValues []string
+
+	// RemoveIfMissing is a map of attributes to a list of inner object attributes.
+	// When all specified inner attributes are missing from an object, that object is removed
+	RemoveIfMissing map[string][]string
 
 	// Map of resource id->names. This is set after a call to loadSanitizedResourceMap
 	SanitizedResourceMap ResourceIDNameMap
@@ -67,6 +67,21 @@ func (r *ResourceExporter) getRefAttrSettings(attribute string) *RefAttrSettings
 
 func (r *ResourceExporter) allowZeroValues(attribute string) bool {
 	return stringInSlice(attribute, r.AllowZeroValues)
+}
+
+func (r *ResourceExporter) removeIfMissing(attribute string, config map[string]interface{}) bool {
+	if attrs, ok := r.RemoveIfMissing[attribute]; ok {
+		// Check if all required inner attributes are missing
+		missingAll := true
+		for _, attr := range attrs {
+			if _, foundInner := config[attr]; foundInner{
+				missingAll = false
+				break
+			}
+		}
+		return missingAll
+	}
+	return false
 }
 
 // Add new resources that can be exported here

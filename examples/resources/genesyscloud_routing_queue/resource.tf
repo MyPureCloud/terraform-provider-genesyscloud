@@ -1,6 +1,6 @@
 resource "genesyscloud_routing_queue" "test_queue" {
   name                              = "Test Queue"
-  division_id                       = "505e1036-6f04-405c-a630-de94a8ad2eb8"
+  division_id                       = genesyscloud_auth_division.home.id
   description                       = "This is a test queue"
   acw_wrapup_prompt                 = "MANDATORY_TIMEOUT"
   acw_timeout_ms                    = 300000
