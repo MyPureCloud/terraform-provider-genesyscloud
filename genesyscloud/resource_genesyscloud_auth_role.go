@@ -30,7 +30,7 @@ var (
 				Optional:    true,
 			},
 			"value": {
-				Description: "Value for operand. For USER or QUEUE types, user user_id or queue_id instead.",
+				Description: "Value for operand. For USER or QUEUE types, use user_id or queue_id instead.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -88,8 +88,7 @@ var (
 						"conjunction": {
 							Description:  "Conjunction for condition terms (AND | OR).",
 							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "AND",
+							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"AND", "OR"}, false),
 						},
 						"terms": {
@@ -136,8 +135,8 @@ func authRoleExporter() *ResourceExporter {
 		},
 		RemoveIfMissing: map[string][]string{
 			"permission_policies.conditions.terms.operands": {"queue_id", "user_id", "value"},
-			"permission_policies.conditions.terms": {"operands"},
-			"permission_policies.conditions": {"terms"},
+			"permission_policies.conditions.terms":          {"operands"},
+			"permission_policies.conditions":                {"terms"},
 		},
 	}
 }

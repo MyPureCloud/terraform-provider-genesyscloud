@@ -69,11 +69,8 @@ Optional:
 
 Required:
 
+- **conjunction** (String) Conjunction for condition terms (AND | OR).
 - **terms** (Block Set, Min: 1) Terms of the condition. (see [below for nested schema](#nestedblock--permission_policies--conditions--terms))
-
-Optional:
-
-- **conjunction** (String) Conjunction for condition terms (AND | OR). Defaults to `AND`.
 
 <a id="nestedblock--permission_policies--conditions--terms"></a>
 ### Nested Schema for `permission_policies.conditions.terms`
@@ -95,6 +92,6 @@ Optional:
 
 - **queue_id** (String) Queue ID for QUEUE types.
 - **user_id** (String) User ID for USER types.
-- **value** (String) Value for operand. For USER or QUEUE types, user user_id or queue_id instead.
+- **value** (String) Value for operand. For USER or QUEUE types, use user_id or queue_id instead.
 
 
