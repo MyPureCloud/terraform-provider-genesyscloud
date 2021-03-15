@@ -1,0 +1,241 @@
+package genesyscloud
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
+)
+
+var (
+	roleAssignmentResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"role_id": {
+				Description: "Role ID.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"division_ids": {
+				Description: "Division IDs applied to this resource. If not set, the home division will be used. '*' may be set for all divisions.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+		},
+	}
+)
+
+// Get subject grants and filters out inherited grants
+func getAssignedGrants(subjectID string, authAPI *platformclientv2.AuthorizationApi) ([]platformclientv2.Authzgrant, diag.Diagnostics) {
+	var grants []platformclientv2.Authzgrant
+
+	subject, _, err := authAPI.GetAuthorizationSubject(subjectID)
+	if err != nil {
+		return nil, diag.Errorf("Failed to get current grants for subject %s: %s", subjectID, err)
+	}
+
+	if subject != nil && subject.Grants != nil {
+		for _, grant := range *subject.Grants {
+			if grant.SubjectId != nil && *grant.SubjectId == subjectID {
+				grants = append(grants, grant)
+			}
+		}
+	}
+
+	return grants, nil
+}
+
+func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationApi) (*schema.Set, diag.Diagnostics) {
+	grants, err := getAssignedGrants(subjectID, authAPI)
+	if err != nil {
+		return nil, err
+	}
+
+	roleDivsMap := make(map[string]*schema.Set)
+	for _, grant := range grants {
+		if currentDivs, ok := roleDivsMap[*grant.Role.Id]; ok {
+			currentDivs.Add(*grant.Division.Id)
+		} else {
+			roleDivsMap[*grant.Role.Id] = schema.NewSet(schema.HashString, []interface{}{*grant.Division.Id})
+		}
+	}
+
+	roleSet := schema.NewSet(schema.HashResource(roleAssignmentResource), []interface{}{})
+	for roleID, divs := range roleDivsMap {
+		role := make(map[string]interface{})
+		role["role_id"] = roleID
+		role["division_ids"] = divs
+		roleSet.Add(role)
+	}
+	return roleSet, nil
+}
+
+func updateSubjectRoles(d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {
+	if d.HasChange("roles") {
+		rolesConfig := d.Get("roles")
+		if rolesConfig != nil {
+			// Get existing roles/divisions
+			grants, err := getAssignedGrants(d.Id(), authAPI)
+			if err != nil {
+				return err
+			}
+
+			var existingGrants []string
+			for _, grant := range grants {
+				existingGrants = append(existingGrants, createRoleDivisionPair(*grant.Role.Id, *grant.Division.Id))
+			}
+
+			homeDiv, diagErr := getHomeDivisionID()
+			if diagErr != nil {
+				return diagErr
+			}
+
+			var configGrants []string
+			rolesList := rolesConfig.(*schema.Set).List()
+			for _, configRole := range rolesList {
+				roleMap := configRole.(map[string]interface{})
+				roleID := roleMap["role_id"].(string)
+
+				var divisionIDs []string
+				if configDivs, ok := roleMap["division_ids"]; ok {
+					divisionIDs = *setToStringList(configDivs.(*schema.Set))
+				}
+
+				if len(divisionIDs) == 0 {
+					// No division set. Use the home division
+					divisionIDs = []string{homeDiv}
+				}
+
+				for _, divID := range divisionIDs {
+					configGrants = append(configGrants, createRoleDivisionPair(roleID, divID))
+				}
+			}
+
+			grantsToRemove := sliceDifference(existingGrants, configGrants)
+			if len(grantsToRemove) > 0 {
+				// It's possible for a role or division to be removed before this update is processed,
+				// and the bulk remove API returns failure if any roles/divisions no longer exist.
+				// Work around by removing all grants individually and ignore 404s.
+				sdkGrantsToRemove := roleDivPairsToGrants(grantsToRemove)
+				for _, grant := range *sdkGrantsToRemove.Grants {
+					resp, err := authAPI.DeleteAuthorizationSubjectDivisionRole(d.Id(), *grant.DivisionId, *grant.RoleId)
+					if err != nil {
+						if resp == nil || resp.StatusCode != 404 {
+							return diag.Errorf("Failed to remove role grants for subject %s: %s", d.Id(), err)
+						}
+					}
+				}
+			}
+
+			grantsToAdd := sliceDifference(configGrants, existingGrants)
+			if len(grantsToAdd) > 0 {
+				_, err := authAPI.PostAuthorizationSubjectBulkadd(d.Id(), roleDivPairsToGrants(grantsToAdd), subjectType)
+				if err != nil {
+					return diag.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func createRoleDivisionPair(roleID string, divisionID string) string {
+	return roleID + ":" + divisionID
+}
+
+func roleDivPairsToGrants(grantPairs []string) platformclientv2.Roledivisiongrants {
+	grants := make([]platformclientv2.Roledivisionpair, len(grantPairs))
+	for i, pair := range grantPairs {
+		roleDiv := strings.Split(pair, ":")
+		grants[i] = platformclientv2.Roledivisionpair{
+			RoleId:     &roleDiv[0],
+			DivisionId: &roleDiv[1],
+		}
+	}
+	return platformclientv2.Roledivisiongrants{
+		Grants: &grants,
+	}
+}
+
+// Testing common
+func generateResourceRoles(skillID string, divisionIds ...string) string {
+	var divAttr string
+	if len(divisionIds) > 0 {
+		divAttr = "division_ids = [" + strings.Join(divisionIds, ",") + "]"
+	}
+	return fmt.Sprintf(`roles {
+		role_id = %s
+		%s
+	}
+	`, skillID, divAttr)
+}
+
+func validateResourceRole(resourceName string, roleResourceName string, divisions ...string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resource, ok := state.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find %s in state", resourceName)
+		}
+		resourceID := resource.Primary.ID
+
+		roleResource, ok := state.RootModule().Resources[roleResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find role %s in state", roleResourceName)
+		}
+		roleID := roleResource.Primary.ID
+
+		if len(divisions) == 0 {
+			// If no division specified, role should be in the home division
+			homeDiv, err := getHomeDivisionID()
+			if err != nil {
+				return fmt.Errorf("Failed to query home div: %v", err)
+			}
+			divisions = []string{homeDiv}
+		} else if divisions[0] != "*" {
+			// Get the division IDs from state
+			divisionIDs := make([]string, len(divisions))
+			for i, divResourceName := range divisions {
+				divResource, ok := state.RootModule().Resources[divResourceName]
+				if !ok {
+					return fmt.Errorf("Failed to find %s in state", divResourceName)
+				}
+				divisionIDs[i] = divResource.Primary.ID
+			}
+			divisions = divisionIDs
+		}
+
+		resourceAttrs := resource.Primary.Attributes
+		numRolesAttr, _ := resourceAttrs["roles.#"]
+		numRoles, _ := strconv.Atoi(numRolesAttr)
+		for i := 0; i < numRoles; i++ {
+			if resourceAttrs["roles."+strconv.Itoa(i)+".role_id"] == roleID {
+				numDivsAttr, _ := resourceAttrs["roles."+strconv.Itoa(i)+".division_ids.#"]
+				numDivs, _ := strconv.Atoi(numDivsAttr)
+				stateDivs := make([]string, numDivs)
+				for j := 0; j < numDivs; j++ {
+					stateDivs[j] = resourceAttrs["roles."+strconv.Itoa(i)+".division_ids."+strconv.Itoa(j)]
+				}
+
+				extraDivs := sliceDifference(stateDivs, divisions)
+				if len(extraDivs) > 0 {
+					return fmt.Errorf("Unexpected divisions found for role %s in state: %v", roleID, extraDivs)
+				}
+
+				missingDivs := sliceDifference(divisions, stateDivs)
+				if len(missingDivs) > 0 {
+					return fmt.Errorf("Missing expected divisions for role %s in state: %v", roleID, missingDivs)
+				}
+
+				// Found expected role and divisions
+				return nil
+			}
+		}
+		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceID, roleID)
+	}
+}

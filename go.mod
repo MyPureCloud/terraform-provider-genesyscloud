@@ -47,6 +47,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20210220000619-9bb904979d93 // indirect
 	golang.org/x/sys v0.0.0-20210305034016-7844c3c200c3 // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
+	gonum.org/v1/gonum v0.9.0
 	google.golang.org/genproto v0.0.0-20210303154014-9728d6b83eeb // indirect
 	google.golang.org/grpc v1.36.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect

@@ -22,8 +22,4 @@ resource "genesyscloud_user" "test_user" {
     skill_id    = genesyscloud_routing_skill.test-skill.id
     proficiency = 4.5
   }
-  roles {
-    role_id      = genesyscloud_auth_role.custom-role.id
-    division_ids = [genesyscloud_auth_division.marketing.id]
-  }
 }

@@ -122,10 +122,14 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	if division.Description != nil {
 		d.Set("description", *division.Description)
+	} else {
+		d.Set("description", nil)
 	}
 
 	if division.HomeDivision != nil {
 		d.Set("home", *division.HomeDivision)
+	} else {
+		d.Set("home", nil)
 	}
 
 	log.Printf("Read division %s %s", d.Id(), *division.Name)

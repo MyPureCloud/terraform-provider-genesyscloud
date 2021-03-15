@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -218,6 +218,16 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateMember("genesyscloud_routing_queue."+queueResource, "genesyscloud_user."+queueMemberResource2, queueRingNum),
+				),
+			},
+			{
+				// Remove all queue members
+				Config: generateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "members"),
 				),
 			},
 			{

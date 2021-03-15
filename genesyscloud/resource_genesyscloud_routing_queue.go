@@ -339,10 +339,9 @@ func resourceRoutingQueue() *schema.Resource {
 				},
 			},
 			"members": {
-				Description: "Users in the queue. If not set, queue members will not be managed by this resource.",
+				Description: "Users in the queue.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
 				Elem:        queueMemberResource,
 			},
 		},
@@ -420,24 +419,34 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 	if currentQueue.Description != nil {
 		d.Set("description", *currentQueue.Description)
+	} else {
+		d.Set("description", nil)
 	}
 
+	d.Set("acw_wrapup_prompt", nil)
+	d.Set("acw_timeout_ms", nil)
 	if currentQueue.AcwSettings != nil {
 		if currentQueue.AcwSettings.WrapupPrompt != nil {
 			d.Set("acw_wrapup_prompt", *currentQueue.AcwSettings.WrapupPrompt)
 		}
 		if currentQueue.AcwSettings.TimeoutMs != nil {
 			d.Set("acw_timeout_ms", int(*currentQueue.AcwSettings.TimeoutMs))
-		} else {
-			// Computed value needs to be cleared if not set by the server
-			d.Set("acw_timeout_ms", nil)
 		}
 	}
 
 	if currentQueue.SkillEvaluationMethod != nil {
 		d.Set("skill_evaluation_method", *currentQueue.SkillEvaluationMethod)
+	} else {
+		d.Set("skill_evaluation_method", nil)
 	}
 
+	d.Set("media_settings_call", nil)
+	d.Set("media_settings_callback", nil)
+	d.Set("media_settings_chat", nil)
+	d.Set("media_settings_email", nil)
+	d.Set("media_settings_message", nil)
+	d.Set("media_settings_social", nil)
+	d.Set("media_settings_video", nil)
 	if currentQueue.MediaSettings != nil {
 		if callSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyCall]; ok {
 			d.Set("media_settings_call", []interface{}{flattenMediaSetting(callSettings)})
@@ -464,50 +473,74 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 	if currentQueue.RoutingRules != nil {
 		d.Set("routing_rules", flattenRoutingRules(*currentQueue.RoutingRules))
+	} else {
+		d.Set("routing_rules", nil)
 	}
 
 	if currentQueue.Bullseye != nil && currentQueue.Bullseye.Rings != nil {
 		d.Set("bullseye_rings", flattenBullseyeRings(*currentQueue.Bullseye.Rings))
+	} else {
+		d.Set("bullseye_rings", nil)
 	}
 
 	if currentQueue.QueueFlow != nil && currentQueue.QueueFlow.Id != nil {
 		d.Set("queue_flow_id", *currentQueue.QueueFlow.Id)
+	} else {
+		d.Set("queue_flow_id", nil)
 	}
 
 	if currentQueue.WhisperPrompt != nil && currentQueue.WhisperPrompt.Id != nil {
 		d.Set("whisper_prompt_id", *currentQueue.WhisperPrompt.Id)
+	} else {
+		d.Set("whisper_prompt_id", nil)
 	}
 
 	if currentQueue.AutoAnswerOnly != nil {
 		d.Set("auto_answer_only", *currentQueue.AutoAnswerOnly)
+	} else {
+		d.Set("auto_answer_only", nil)
 	}
 
 	if currentQueue.EnableTranscription != nil {
 		d.Set("enable_transcription", *currentQueue.EnableTranscription)
+	} else {
+		d.Set("enable_transcription", nil)
 	}
 
 	if currentQueue.EnableManualAssignment != nil {
 		d.Set("enable_manual_assignment", *currentQueue.EnableManualAssignment)
+	} else {
+		d.Set("enable_manual_assignment", nil)
 	}
 
 	if currentQueue.CallingPartyName != nil {
 		d.Set("calling_party_name", *currentQueue.CallingPartyName)
+	} else {
+		d.Set("calling_party_name", nil)
 	}
 
 	if currentQueue.CallingPartyNumber != nil {
 		d.Set("calling_party_number", *currentQueue.CallingPartyNumber)
+	} else {
+		d.Set("calling_party_number", nil)
 	}
 
 	if currentQueue.DefaultScripts != nil {
 		d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
+	} else {
+		d.Set("default_script_ids", nil)
 	}
 
 	if currentQueue.OutboundMessagingAddresses != nil && currentQueue.OutboundMessagingAddresses.SmsAddress != nil {
 		d.Set("outbound_messaging_sms_address_id", *currentQueue.OutboundMessagingAddresses.SmsAddress.Id)
+	} else {
+		d.Set("outbound_messaging_sms_address_id", nil)
 	}
 
 	if currentQueue.OutboundEmailAddress != nil {
 		d.Set("outbound_email_address", []interface{}{flattenQueueEmailAddress(*currentQueue.OutboundEmailAddress)})
+	} else {
+		d.Set("outbound_email_address", nil)
 	}
 
 	members, err := flattenQueueMembers(d.Id(), routingAPI)
@@ -875,65 +908,67 @@ func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 }
 
 func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
-	if members, ok := d.GetOk("members"); ok {
-		log.Printf("Updating members for Queue %s", d.Get("name"))
-		var newUserIds []string
-		newUserRingNums := make(map[string]int)
-		memberList := members.(*schema.Set).List()
-		newUserIds = make([]string, len(memberList))
-		for i, member := range memberList {
-			memberMap := member.(map[string]interface{})
-			newUserIds[i] = memberMap["user_id"].(string)
-			newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
-		}
+	if d.HasChange("members") {
+		if members := d.Get("members"); members != nil {
+			log.Printf("Updating members for Queue %s", d.Get("name"))
+			var newUserIds []string
+			newUserRingNums := make(map[string]int)
+			memberList := members.(*schema.Set).List()
+			newUserIds = make([]string, len(memberList))
+			for i, member := range memberList {
+				memberMap := member.(map[string]interface{})
+				newUserIds[i] = memberMap["user_id"].(string)
+				newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
+			}
 
-		oldSdkUsers, err := getRoutingQueueMembers(d.Id(), routingAPI)
-		if err != nil {
-			return err
-		}
-
-		oldUserIds := make([]string, len(oldSdkUsers))
-		oldUserRingNums := make(map[string]int)
-		for i, user := range oldSdkUsers {
-			oldUserIds[i] = *user.Id
-			oldUserRingNums[oldUserIds[i]] = *user.RingNumber
-		}
-
-		if len(oldUserIds) > 0 {
-			usersToRemove := sliceDifference(oldUserIds, newUserIds)
-			err := updateMembersInChunks(d.Id(), usersToRemove, true, routingAPI)
+			oldSdkUsers, err := getRoutingQueueMembers(d.Id(), routingAPI)
 			if err != nil {
 				return err
 			}
-		}
 
-		if len(newUserIds) > 0 {
-			usersToAdd := sliceDifference(newUserIds, oldUserIds)
-			err := updateMembersInChunks(d.Id(), usersToAdd, false, routingAPI)
-			if err != nil {
-				return err
+			oldUserIds := make([]string, len(oldSdkUsers))
+			oldUserRingNums := make(map[string]int)
+			for i, user := range oldSdkUsers {
+				oldUserIds[i] = *user.Id
+				oldUserRingNums[oldUserIds[i]] = *user.RingNumber
 			}
-		}
 
-		// Check for ring numbers to update
-		for userID, newNum := range newUserRingNums {
-			if oldNum, found := oldUserRingNums[userID]; found {
-				if newNum != oldNum {
-					// Number changed. Update ring number
+			if len(oldUserIds) > 0 {
+				usersToRemove := sliceDifference(oldUserIds, newUserIds)
+				err := updateMembersInChunks(d.Id(), usersToRemove, true, routingAPI)
+				if err != nil {
+					return err
+				}
+			}
+
+			if len(newUserIds) > 0 {
+				usersToAdd := sliceDifference(newUserIds, oldUserIds)
+				err := updateMembersInChunks(d.Id(), usersToAdd, false, routingAPI)
+				if err != nil {
+					return err
+				}
+			}
+
+			// Check for ring numbers to update
+			for userID, newNum := range newUserRingNums {
+				if oldNum, found := oldUserRingNums[userID]; found {
+					if newNum != oldNum {
+						// Number changed. Update ring number
+						err := updateQueueUserRingNum(d.Id(), userID, newNum, routingAPI)
+						if err != nil {
+							return err
+						}
+					}
+				} else if newNum != 1 {
+					// New queue member. Update ring num if not set to the default of 1
 					err := updateQueueUserRingNum(d.Id(), userID, newNum, routingAPI)
 					if err != nil {
 						return err
 					}
 				}
-			} else if newNum != 1 {
-				// New queue member. Update ring num if not set to the default of 1
-				err := updateQueueUserRingNum(d.Id(), userID, newNum, routingAPI)
-				if err != nil {
-					return err
-				}
 			}
+			log.Printf("Members updated for Queue %s", d.Get("name"))
 		}
-		log.Printf("Members updated for Queue %s", d.Get("name"))
 	}
 	return nil
 }

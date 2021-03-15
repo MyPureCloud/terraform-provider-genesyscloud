@@ -37,10 +37,6 @@ resource "genesyscloud_user" "test_user" {
     skill_id    = genesyscloud_routing_skill.test-skill.id
     proficiency = 4.5
   }
-  roles {
-    role_id      = genesyscloud_auth_role.custom-role.id
-    division_ids = [genesyscloud_auth_division.marketing.id]
-  }
 }
 ```
 
@@ -54,14 +50,13 @@ resource "genesyscloud_user" "test_user" {
 
 ### Optional
 
-- **addresses** (Block List, Max: 1) The address settings for this user. If not set, addresses will not be managed by this resource. (see [below for nested schema](#nestedblock--addresses))
+- **addresses** (Block List, Max: 1) The address settings for this user. (see [below for nested schema](#nestedblock--addresses))
 - **department** (String) User's department.
 - **division_id** (String) The division to which this user will belong. If not set, the home division will be used.
 - **id** (String) The ID of this resource.
 - **manager** (String) User ID of this user's manager.
 - **password** (String, Sensitive) User's password. If specified, this is only set on user create.
-- **roles** (Block Set) Roles and their divisions assigned to this user. If not set, roles will not be managed by this resource. (see [below for nested schema](#nestedblock--roles))
-- **routing_skills** (Block Set) Skills and proficiencies for this user. If not set, skills will not be managed by this resource. (see [below for nested schema](#nestedblock--routing_skills))
+- **routing_skills** (Block Set) Skills and proficiencies for this user. (see [below for nested schema](#nestedblock--routing_skills))
 - **state** (String) User's state (active | inactive). Default is 'active'. Defaults to `active`.
 - **title** (String) User's title.
 
@@ -98,18 +93,6 @@ Optional:
 - **media_type** (String) Media type of phone number (SMS | PHONE). Defaults to `PHONE`.
 - **type** (String) Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE). Defaults to `WORK`.
 
-
-
-<a id="nestedblock--roles"></a>
-### Nested Schema for `roles`
-
-Required:
-
-- **role_id** (String) Role ID.
-
-Optional:
-
-- **division_ids** (Set of String) Divisions applied to this role. If not set, the home division will be used. '*' may be set for all divisions.
 
 
 <a id="nestedblock--routing_skills"></a>

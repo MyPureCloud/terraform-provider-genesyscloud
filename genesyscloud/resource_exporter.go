@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
@@ -46,6 +47,9 @@ type ResourceExporter struct {
 
 	// Map of resource id->names. This is set after a call to loadSanitizedResourceMap
 	SanitizedResourceMap ResourceIDNameMap
+
+	// List of attributes to exclude from config. This is set by the export configuration.
+	ExcludedAttributes []string
 }
 
 func (r *ResourceExporter) loadSanitizedResourceMap(ctx context.Context) diag.Diagnostics {
@@ -69,12 +73,26 @@ func (r *ResourceExporter) allowZeroValues(attribute string) bool {
 	return stringInSlice(attribute, r.AllowZeroValues)
 }
 
+func (r *ResourceExporter) addExcludedAttribute(attribute string) {
+	r.ExcludedAttributes = append(r.ExcludedAttributes, attribute)
+}
+
+func (r *ResourceExporter) isAttributeExcluded(attribute string) bool {
+	for _, excluded := range r.ExcludedAttributes {
+		// Excluded if attributes match, or the specified attribute is nested in the excluded attribute
+		if excluded == attribute || strings.HasPrefix(attribute, excluded+".") {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *ResourceExporter) removeIfMissing(attribute string, config map[string]interface{}) bool {
 	if attrs, ok := r.RemoveIfMissing[attribute]; ok {
 		// Check if all required inner attributes are missing
 		missingAll := true
 		for _, attr := range attrs {
-			if _, foundInner := config[attr]; foundInner{
+			if _, foundInner := config[attr]; foundInner {
 				missingAll = false
 				break
 			}
@@ -84,19 +102,32 @@ func (r *ResourceExporter) removeIfMissing(attribute string, config map[string]i
 	return false
 }
 
-// Add new resources that can be exported here
-func getResourceExporters() map[string]*ResourceExporter {
-	return map[string]*ResourceExporter{
+func getResourceExporters(filter []string) map[string]*ResourceExporter {
+	exporters := map[string]*ResourceExporter{
+		// Add new resources that can be exported here
 		"genesyscloud_auth_division": authDivisionExporter(),
 		"genesyscloud_auth_role":     authRoleExporter(),
+		"genesyscloud_group":         groupExporter(),
+		"genesyscloud_group_roles":   groupRolesExporter(),
 		"genesyscloud_routing_queue": routingQueueExporter(),
 		"genesyscloud_routing_skill": routingSkillExporter(),
 		"genesyscloud_user":          userExporter(),
+		"genesyscloud_user_roles":    userRolesExporter(),
 	}
+
+	// Include all if no filters
+	if len(filter) > 0 {
+		for resType := range exporters {
+			if !stringInSlice(resType, filter) {
+				delete(exporters, resType)
+			}
+		}
+	}
+	return exporters
 }
 
 func getAvailableExporterTypes() []string {
-	exporters := getResourceExporters()
+	exporters := getResourceExporters(nil)
 	types := make([]string, len(exporters))
 	i := 0
 	for k := range exporters {
