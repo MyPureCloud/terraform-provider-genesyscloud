@@ -37,7 +37,7 @@ func TestAccResourceAuthDivision(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName1),
-					resource.TestCheckNoResourceAttr("genesyscloud_auth_division."+divResource1, "description"),
+					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "description", ""),
 				),
 			},
 			{
