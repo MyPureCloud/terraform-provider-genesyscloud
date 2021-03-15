@@ -65,10 +65,13 @@ func New(version string) func() *schema.Provider {
 			ResourcesMap: map[string]*schema.Resource{
 				"genesyscloud_auth_role":     resourceAuthRole(),
 				"genesyscloud_auth_division": resourceAuthDivision(),
+				"genesyscloud_group":         resourceGroup(),
+				"genesyscloud_group_roles":   resourceGroupRoles(),
 				"genesyscloud_routing_queue": resourceRoutingQueue(),
 				"genesyscloud_routing_skill": resourceRoutingSkill(),
 				"genesyscloud_tf_export":     resourceTfExport(),
 				"genesyscloud_user":          resourceUser(),
+				"genesyscloud_user_roles":    resourceUserRoles(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"genesyscloud_auth_role":     dataSourceAuthRole(),

@@ -97,6 +97,10 @@ func TestAccResourceAuthDivision(t *testing.T) {
 	})
 }
 
+func generateAuthDivisionBasic(resourceID string, name string) string {
+	return generateAuthDivisionResource(resourceID, name, nullValue, falseValue)
+}
+
 func generateAuthDivisionResource(
 	resourceID string,
 	name string,

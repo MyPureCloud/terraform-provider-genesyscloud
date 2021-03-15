@@ -51,7 +51,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "title", title1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "department", department1),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "password"),
-					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "manager"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "manager", ""),
 					testDefaultHomeDivision("genesyscloud_user."+userResource1),
 				),
 			},
@@ -72,7 +72,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "state", stateInactive),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "title", title2),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "department", department2),
-					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "manager"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "manager", ""),
 					testDefaultHomeDivision("genesyscloud_user."+userResource1),
 				),
 			},
@@ -99,14 +99,25 @@ func TestAccResourceUserBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource2, "email", email3),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource2, "name", userName1),
 					resource.TestCheckResourceAttrPair("genesyscloud_user."+userResource2, "manager", "genesyscloud_user."+userResource1, "id"),
-					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "manager"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "manager", ""),
 				),
 			},
 			{
-				// Import/Read
-				ResourceName:      "genesyscloud_user." + userResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				// Remove manager
+				Config: generateUserResource(
+					userResource2,
+					email3,
+					userName1,
+					nullValue, // Active
+					strconv.Quote(title1),
+					strconv.Quote(department1),
+					nullValue,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource2, "email", email3),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource2, "name", userName1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource2, "manager", ""),
+				),
 			},
 			{
 				// Import/Read
@@ -266,102 +277,22 @@ func TestAccResourceUserSkills(t *testing.T) {
 					userName1,
 					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource2+".id", proficiency1),
 				) + generateRoutingSkillResource(
-					skillResource1,
-					skillName1,
-				) + generateRoutingSkillResource(
 					skillResource2,
 					skillName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateUserSkill("genesyscloud_user."+userResource1, "genesyscloud_routing_skill."+skillResource2, proficiency1),
 				),
-			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_user." + userResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-		CheckDestroy: testVerifyUsersDestroyed,
-	})
-}
-
-func TestAccResourceUserRoles(t *testing.T) {
-	var (
-		userResource1 = "test-user"
-		email1        = "terraform-" + uuid.NewString() + "@example.com"
-		userName1     = "Role Terraform"
-		roleResource1 = "test-role-1"
-		roleResource2 = "test-role-2"
-		roleName1     = "Terraform User Role Test1" + uuid.NewString()
-		roleName2     = "Terraform User Role Test2" + uuid.NewString()
-		roleDesc      = "Terraform user test role"
-	)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		Steps: []resource.TestStep{
-			{
-				// Create user with 1 role in default division
+			}, {
+				// Remove all skills from the user
 				Config: generateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
-					generateUserRoles("genesyscloud_auth_role."+roleResource1+".id"),
-				) + generateAuthRoleResource(roleResource1, roleName1, roleDesc),
-				Check: resource.ComposeTestCheckFunc(
-					validateUserRole("genesyscloud_user."+userResource1, "genesyscloud_auth_role."+roleResource1),
-				),
-			},
-			{
-				// Create another role and add to the user
-				Config: generateUserWithCustomAttrs(
-					userResource1,
-					email1,
-					userName1,
-					generateUserRoles("genesyscloud_auth_role."+roleResource1+".id"),
-					generateUserRoles("genesyscloud_auth_role."+roleResource2+".id"),
-				) + generateAuthRoleResource(
-					roleResource1,
-					roleName1,
-					roleDesc,
-				) + generateAuthRoleResource(
-					roleResource2,
-					roleName2,
-					roleDesc,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserRole("genesyscloud_user."+userResource1, "genesyscloud_auth_role."+roleResource1),
-					validateUserRole("genesyscloud_user."+userResource1, "genesyscloud_auth_role."+roleResource2),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "skills"),
 				),
-			},
-			{
-				// Remove a role from the user and modify division
-				Config: generateUserWithCustomAttrs(
-					userResource1,
-					email1,
-					userName1,
-					generateUserRoles("genesyscloud_auth_role."+roleResource2+".id", strconv.Quote("*")),
-				) + generateAuthRoleResource(
-					roleResource1,
-					roleName1,
-					roleDesc,
-				) + generateAuthRoleResource(
-					roleResource2,
-					roleName2,
-					roleDesc,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateUserRole("genesyscloud_user."+userResource1, "genesyscloud_auth_role."+roleResource2, "*"),
-				),
-			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_user." + userResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyUsersDestroyed,
@@ -421,59 +352,6 @@ func validateUserSkill(userResourceName string, skillResourceName string, profic
 		}
 
 		return fmt.Errorf("Skill %s not found for user %s in state", skillID, userID)
-	}
-}
-
-func validateUserRole(userResourceName string, roleResourceName string, divisions ...string) resource.TestCheckFunc {
-	return func(state *terraform.State) error {
-		userResource, ok := state.RootModule().Resources[userResourceName]
-		if !ok {
-			return fmt.Errorf("Failed to find user %s in state", userResourceName)
-		}
-		userID := userResource.Primary.ID
-
-		roleResource, ok := state.RootModule().Resources[roleResourceName]
-		if !ok {
-			return fmt.Errorf("Failed to find role %s in state", roleResourceName)
-		}
-		roleID := roleResource.Primary.ID
-
-		if len(divisions) == 0 {
-			// If no division specified, role should be in the home division
-			homeDiv, err := getHomeDivisionID()
-			if err != nil {
-				return fmt.Errorf("Failed to query home div: %v", err)
-			}
-			divisions = []string{homeDiv}
-		}
-
-		userAttrs := userResource.Primary.Attributes
-		numRolesAttr, _ := userAttrs["roles.#"]
-		numRoles, _ := strconv.Atoi(numRolesAttr)
-		for i := 0; i < numRoles; i++ {
-			if userAttrs["roles."+strconv.Itoa(i)+".role_id"] == roleID {
-				numDivsAttr, _ := userAttrs["roles."+strconv.Itoa(i)+".division_ids.#"]
-				numDivs, _ := strconv.Atoi(numDivsAttr)
-				stateDivs := make([]string, numDivs)
-				for j := 0; j < numDivs; j++ {
-					stateDivs[j] = userAttrs["roles."+strconv.Itoa(i)+".division_ids."+strconv.Itoa(j)]
-				}
-
-				extraDivs := sliceDifference(stateDivs, divisions)
-				if len(extraDivs) > 0 {
-					return fmt.Errorf("Unexpected divisions found for role %s in state: %v", roleID, extraDivs)
-				}
-
-				missingDivs := sliceDifference(divisions, stateDivs)
-				if len(missingDivs) > 0 {
-					return fmt.Errorf("Missing expected divisions for role %s in state: %v", roleID, missingDivs)
-				}
-
-				// Found expected role and divisions
-				return nil
-			}
-		}
-		return fmt.Errorf("Missing expected role for user %s in state: %s", userID, roleID)
 	}
 }
 
@@ -541,16 +419,4 @@ func generateUserRoutingSkill(skillID string, proficiency string) string {
 		proficiency = %s
 	}
 	`, skillID, proficiency)
-}
-
-func generateUserRoles(skillID string, divisionIds ...string) string {
-	var divAttr string
-	if len(divisionIds) > 0 {
-		divAttr = "division_ids = [" + strings.Join(divisionIds, ",") + "]"
-	}
-	return fmt.Sprintf(`roles {
-		role_id = %s
-		%s
-	}
-	`, skillID, divAttr)
 }

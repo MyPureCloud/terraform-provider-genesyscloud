@@ -19,6 +19,7 @@ resource "genesyscloud_tf_export" "export" {
   directory          = "./terraform"
   resource_types     = ["genesyscloud_user"]
   include_state_file = true
+  exclude_attributes = ["genesyscloud_user.skills"]
 }
 ```
 
@@ -28,8 +29,9 @@ resource "genesyscloud_tf_export" "export" {
 ### Optional
 
 - **directory** (String) Directory where the config and state files will be exported. Defaults to `./genesyscloud`.
+- **exclude_attributes** (List of String) Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_name}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.
 - **id** (String) The ID of this resource.
 - **include_state_file** (Boolean) Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. Defaults to `false`.
-- **resource_types** (Set of String) Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types.
+- **resource_types** (List of String) Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types.
 
 

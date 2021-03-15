@@ -84,7 +84,7 @@ resource "genesyscloud_routing_queue" "test_queue" {
 - **media_settings_message** (Block List, Max: 1) Message media settings. (see [below for nested schema](#nestedblock--media_settings_message))
 - **media_settings_social** (Block List, Max: 1) Social media settings. (see [below for nested schema](#nestedblock--media_settings_social))
 - **media_settings_video** (Block List, Max: 1) Video media settings. (see [below for nested schema](#nestedblock--media_settings_video))
-- **members** (Block Set) Users in the queue. If not set, queue members will not be managed by this resource. (see [below for nested schema](#nestedblock--members))
+- **members** (Block Set) Users in the queue. (see [below for nested schema](#nestedblock--members))
 - **outbound_email_address** (Block List, Max: 1) The outbound email address settings for this queue. (see [below for nested schema](#nestedblock--outbound_email_address))
 - **outbound_messaging_sms_address_id** (String) The unique ID of the outbound messaging SMS address for the queue.
 - **queue_flow_id** (String) The in-queue flow ID to use for conversations waiting in queue.

@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -46,7 +47,7 @@ func resourceTfExport() *schema.Resource {
 			},
 			"resource_types": {
 				Description: "Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types.",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
@@ -59,6 +60,13 @@ func resourceTfExport() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+				ForceNew:    true,
+			},
+			"exclude_attributes": {
+				Description: "Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_name}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 				ForceNew:    true,
 			},
 		},
@@ -79,20 +87,21 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	version := meta.(*providerMeta).Version
-	exporters := getResourceExporters()
 
-	// Apply resource type filter
-	if types, ok := d.GetOk("resource_types"); ok {
-		allowedTypes := *setToStringList(types.(*schema.Set))
-		for resType := range exporters {
-			if !stringInSlice(resType, allowedTypes) {
-				delete(exporters, resType)
-			}
-		}
+	var filter []string
+	if resourceTypes, ok := d.GetOk("resource_types"); ok {
+		filter = interfaceListToStrings(resourceTypes.([]interface{}))
 	}
+	exporters := getResourceExporters(filter)
 
 	if len(exporters) == 0 {
 		return diag.Errorf("No valid resource types to export.")
+	}
+
+	if excludedAttrs, ok := d.GetOk("exclude_attributes"); ok {
+		if diagErr := populateConfigExcluded(exporters, interfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
+			return diagErr
+		}
 	}
 
 	diagErr = buildSanitizedResourceMaps(exporters)
@@ -457,6 +466,12 @@ func sanitizeConfigMap(
 			continue
 		}
 
+		if exporter.isAttributeExcluded(currAttr) {
+			// Excluded. Remove from the config.
+			delete(configMap, key)
+			continue
+		}
+
 		switch val.(type) {
 		case map[string]interface{}:
 			// Maps are sanitized in-place
@@ -578,4 +593,27 @@ func resolveReference(refSettings *RefAttrSettings, refID string, exporters map[
 	}
 	// No match found. Remove the value from the config since we do not have a reference to use
 	return ""
+}
+
+func populateConfigExcluded(exporters map[string]*ResourceExporter, configExcluded []string) diag.Diagnostics {
+	for _, excluded := range configExcluded {
+		resourceIdx := strings.Index(excluded, ".")
+		if resourceIdx == -1 {
+			return diag.Errorf("Invalid excluded_attribute %s", excluded)
+		}
+
+		if len(excluded) == resourceIdx {
+			return diag.Errorf("excluded_attributes value %s does not contain an attribute", excluded)
+		}
+
+		resourceName := excluded[:resourceIdx]
+		exporter := exporters[resourceName]
+		if exporter == nil {
+			return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceName)
+		}
+		excludedAttr := excluded[resourceIdx+1:]
+		exporter.addExcludedAttribute(excludedAttr)
+		log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceName)
+	}
+	return nil
 }

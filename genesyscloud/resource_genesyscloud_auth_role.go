@@ -239,19 +239,28 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	if role.Description != nil {
 		d.Set("description", *role.Description)
+	} else {
+		d.Set("description", nil)
 	}
 
 	if role.DefaultRoleId != nil {
 		d.Set("default_role_id", *role.DefaultRoleId)
+	} else {
+		d.Set("default_role_id", nil)
 	}
 
 	if role.Permissions != nil {
 		d.Set("permissions", stringListToSet(*role.Permissions))
+	} else {
+		d.Set("permissions", nil)
 	}
 
 	if role.PermissionPolicies != nil {
 		d.Set("permission_policies", flattenRolePermissionPolicies(*role.PermissionPolicies))
+	} else {
+		d.Set("permission_policies", nil)
 	}
+
 	log.Printf("Read role %s %s", d.Id(), *role.Name)
 	return nil
 }
