@@ -35,7 +35,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/mypurecloud/platform-client-sdk-go/platformclientv2 v0.0.0-20210305150846-d3b33d1fb5f4
 	github.com/nsf/jsondiff v0.0.0-20210303162244-6ea32392771e // indirect
-	github.com/nyaruka/phonenumbers v1.0.66
+	github.com/nyaruka/phonenumbers v1.0.67
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
