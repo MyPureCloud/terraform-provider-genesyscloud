@@ -808,10 +808,13 @@ func updateUserSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersAp
 				})
 			}
 
-			_, _, err := usersAPI.PutUserRoutingskillsBulk(d.Id(), sdkSkills)
-			if err != nil {
-				return diag.Errorf("Failed to update skills for user %s: %s", d.Id(), err)
-			}
+			return retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+				_, resp, err := usersAPI.PutUserRoutingskillsBulk(d.Id(), sdkSkills)
+				if err != nil {
+					return resp, diag.Errorf("Failed to update skills for user %s: %s", d.Id(), err)
+				}
+				return nil, nil
+			})
 		}
 	}
 	return nil
@@ -845,9 +848,15 @@ func updateUserLanguages(d *schema.ResourceData, usersAPI *platformclientv2.User
 			if len(oldLangIds) > 0 {
 				langsToRemove := sliceDifference(oldLangIds, newLangIds)
 				for _, langID := range langsToRemove {
-					_, err := usersAPI.DeleteUserRoutinglanguage(d.Id(), langID)
-					if err != nil {
-						return diag.Errorf("Failed to remove language from user %s: %s", d.Id(), err)
+					diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+						resp, err := usersAPI.DeleteUserRoutinglanguage(d.Id(), langID)
+						if err != nil {
+							return resp, diag.Errorf("Failed to remove language from user %s: %s", d.Id(), err)
+						}
+						return nil, nil
+					})
+					if diagErr != nil {
+						return diagErr
 					}
 				}
 			}
@@ -914,9 +923,15 @@ func updateUserRoutingLanguages(
 		}
 
 		if len(updateChunk) > 0 {
-			_, _, err := api.PatchUserRoutinglanguagesBulk(userID, updateChunk)
-			if err != nil {
-				return diag.Errorf("Failed to update languages for user %s: %s", userID, err)
+			diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+				_, resp, err := api.PatchUserRoutinglanguagesBulk(userID, updateChunk)
+				if err != nil {
+					return resp, diag.Errorf("Failed to update languages for user %s: %s", userID, err)
+				}
+				return nil, nil
+			})
+			if diagErr != nil {
+				return diagErr
 			}
 		}
 	}
@@ -927,9 +942,15 @@ func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.
 	if d.HasChange("profile_skills") {
 		if profileSkills := d.Get("profile_skills"); profileSkills != nil {
 			profileSkills := setToStringList(profileSkills.(*schema.Set))
-			_, _, err := usersAPI.PutUserProfileskills(d.Id(), *profileSkills)
-			if err != nil {
-				return diag.Errorf("Failed to update profile skills for user %s: %s", d.Id(), err)
+			diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+				_, resp, err := usersAPI.PutUserProfileskills(d.Id(), *profileSkills)
+				if err != nil {
+					return resp, diag.Errorf("Failed to update profile skills for user %s: %s", d.Id(), err)
+				}
+				return nil, nil
+			})
+			if diagErr != nil {
+				return diagErr
 			}
 		}
 	}
