@@ -64,15 +64,13 @@ If you wish to work on the provider, you'll first need [Go](http://www.golang.or
 
 To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
 
-To generate or update documentation, run `go generate`.
-
 In order to run the full suite of Acceptance tests, run `make testacc`. You can also specify individual tests using the TESTARGS variable:
 
 ```sh
 $ make testacc TESTARGS="-run TestAccResourceUserBasic"
 ```
 
-All new resources must have passing acceptance tests and docs in order to be merged.
+All new resources must have passing acceptance tests and docs in order to be merged. Most of the docs are generated automatically from the schema. An example `resource.tf` file for the resource should be added to the examples folder along with an `apis.md` file listing all of the APIs the resource uses. To generate or update documentation, run `go generate`.
 
 *Note:* Acceptance tests create real resources and require an OAuth Client authorized to create, update, and delete all resources in your org. The OAuth Client information must be set in the `GENESYSCLOUD_*` environment variables prior to running the tests.
 

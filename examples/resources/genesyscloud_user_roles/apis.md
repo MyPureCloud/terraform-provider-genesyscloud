@@ -1,0 +1,4 @@
+* [GET /api/v2/authorization/subjects/{subjectId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-subjects--subjectId-)
+* [GET /api/v2/authorization/divisions/home](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-divisions-home)
+* [POST /api/v2/authorization/subjects/{subjectId}/bulkadd](https://developer.mypurecloud.com/api/rest/v2/authorization/#post-api-v2-authorization-subjects--subjectId--bulkadd)
+* [DELETE /api/v2/authorization/subjects/{subjectId}/divisions/{divisionId}/roles/{roleId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#delete-api-v2-authorization-subjects--subjectId--divisions--divisionId--roles--roleId-)

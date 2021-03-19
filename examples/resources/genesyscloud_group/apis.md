@@ -1,0 +1,8 @@
+* [GET /api/v2/groups](https://developer.mypurecloud.com/api/rest/v2/groups/#get-api-v2-groups)
+* [GET /api/v2/groups/{groupId}](https://developer.mypurecloud.com/api/rest/v2/groups/#get-api-v2-groups--groupId-)
+* [POST /api/v2/groups](https://developer.mypurecloud.com/api/rest/v2/groups/#post-api-v2-groups)
+* [PUT /api/v2/groups/{groupId}](https://developer.mypurecloud.com/api/rest/v2/groups/#put-api-v2-groups--groupId-)
+* [DELETE /api/v2/groups/{groupId}](https://developer.mypurecloud.com/api/rest/v2/groups/#delete-api-v2-groups--groupId-)
+* [GET /api/v2/groups/{groupId}/individuals](https://developer.mypurecloud.com/api/rest/v2/groups/#get-api-v2-groups--groupId--individuals)
+* [POST /api/v2/groups/{groupId}/members](https://developer.mypurecloud.com/api/rest/v2/groups/#post-api-v2-groups--groupId--members)
+* [DELETE /api/v2/groups/{groupId}/members](https://developer.mypurecloud.com/api/rest/v2/groups/#delete-api-v2-groups--groupId--members)
