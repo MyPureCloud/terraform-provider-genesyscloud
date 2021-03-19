@@ -127,9 +127,10 @@ func resourceGroup() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"member_ids": {
-				Description: "IDs of members assigned to the group.",
+				Description: "IDs of members assigned to the group. If not set, this resource will not manage group members.",
 				Type:        schema.TypeSet,
 				Optional:    true,
+				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
@@ -269,12 +270,16 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(sdkConfig)
 
-	log.Printf("Deleting group %s", name)
-	_, err := groupsAPI.DeleteGroup(d.Id())
-	if err != nil {
-		return diag.Errorf("Failed to delete group %s: %s", name, err)
-	}
-	log.Printf("Deleted group %s", name)
+	retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
+		log.Printf("Deleting group %s", name)
+		resp, err := groupsAPI.DeleteGroup(d.Id())
+		if err != nil {
+			return resp, diag.Errorf("Failed to delete group %s: %s", name, err)
+		}
+		log.Printf("Deleted group %s", name)
+		return nil, nil
+	})
 	return nil
 }
 
@@ -369,8 +374,7 @@ func flattenGroupOwners(owners []platformclientv2.User) *schema.Set {
 
 func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.GroupsApi) diag.Diagnostics {
 	if d.HasChange("member_ids") {
-		membersConfig := d.Get("member_ids")
-		if membersConfig != nil {
+		if membersConfig := d.Get("member_ids"); membersConfig != nil {
 			// Get existing members
 			members, _, err := groupsAPI.GetGroupIndividuals(d.Id())
 			if err != nil {

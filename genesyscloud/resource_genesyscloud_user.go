@@ -5,7 +5,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -76,6 +75,35 @@ var (
 			},
 		},
 	}
+	userLanguageResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"language_id": {
+				Description: "ID of routing language.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"proficiency": {
+				Description:  "Proficiency is a rating from 0 to 5 on how competent an agent is for a particular language. It is used when a queue is set to 'Best available language' mode to allow acd interactions to target agents with higher proficiency ratings.",
+				Type:         schema.TypeInt, // The API accepts a float, but the backend rounds to the nearest int
+				Required:     true,
+				ValidateFunc: validation.IntBetween(0, 5),
+			},
+		},
+	}
+	userLocationResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"location_id": {
+				Description: "ID of location.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"notes": {
+				Description: "Optional description on the user's location.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
 )
 
 func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
@@ -104,12 +132,16 @@ func userExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllUsers),
 		RefAttrs: map[string]*RefAttrSettings{
-			"manager":                 {RefType: "genesyscloud_user"},
-			"division_id":             {RefType: "genesyscloud_auth_division"},
-			"routing_skills.skill_id": {RefType: "genesyscloud_routing_skill"},
+			"manager":                       {RefType: "genesyscloud_user"},
+			"division_id":                   {RefType: "genesyscloud_auth_division"},
+			"routing_skills.skill_id":       {RefType: "genesyscloud_routing_skill"},
+			"routing_languages.language_id": {RefType: "genesyscloud_routing_language"},
+			"locations.location_id":         {RefType: "genesyscloud_location"},
 		},
 		RemoveIfMissing: map[string][]string{
-			"routing_skills": {"skill_id"},
+			"routing_skills":    {"skill_id"},
+			"routing_languages": {"language_id"},
+			"locations":         {"location_id"},
 		},
 		AllowZeroValues: []string{"routing_skills.proficiency"},
 	}
@@ -172,11 +204,39 @@ func resourceUser() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"acd_auto_answer": {
+				Description: "Enable ACD auto-answer.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"routing_skills": {
+				Description: "Skills and proficiencies for this user.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        userSkillResource,
+			},
+			"routing_languages": {
+				Description: "Languages and proficiencies for this user.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        userLanguageResource,
+			},
+			"locations": {
+				Description: "The user placement at each site location. If not set, this resource will not manage user locations.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				ConfigMode:  schema.SchemaConfigModeAttr,
+				Elem:        userLocationResource,
+			},
 			"addresses": {
-				Description: "The address settings for this user.",
+				Description: "The address settings for this user. If not set, this resource will not manage addresses.",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
+				Computed:    true,
+				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"other_emails": {
@@ -184,6 +244,7 @@ func resourceUser() *schema.Resource {
 							Type:        schema.TypeSet,
 							Optional:    true,
 							Elem:        otherEmailResource,
+							ConfigMode:  schema.SchemaConfigModeAttr,
 						},
 						"phone_numbers": {
 							Description: "Phone number addresses for this user.",
@@ -191,15 +252,58 @@ func resourceUser() *schema.Resource {
 							Optional:    true,
 							Set:         phoneNumberHash,
 							Elem:        phoneNumberResource,
+							ConfigMode:  schema.SchemaConfigModeAttr,
 						},
 					},
 				},
 			},
-			"routing_skills": {
-				Description: "Skills and proficiencies for this user.",
+			"profile_skills": {
+				Description: "Profile skills for this user. If not set, this resource will not manage profile skills.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Elem:        userSkillResource,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"certifications": {
+				Description: "Certifications for this user. If not set, this resource will not manage certifications.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"employer_info": {
+				Description: "The employer info for this user. If not set, this resource will not manage employer info.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				ConfigMode:  schema.SchemaConfigModeAttr,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"official_name": {
+							Description: "User's official name.",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						"employee_id": {
+							Description: "Employee ID.",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						"employee_type": {
+							Description:  "Employee type (Full-time | Part-time | Contractor).",
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"Full-time", "Part-time", "Contractor"}, false),
+						},
+						"date_hire": {
+							Description:      "Hiring date. Dates must be an ISO-8601 string. For example: yyyy-MM-dd.",
+							Type:             schema.TypeString,
+							Optional:         true,
+							ValidateDiagFunc: validateDate,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -214,6 +318,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	department := d.Get("department").(string)
 	title := d.Get("title").(string)
 	manager := d.Get("manager").(string)
+	acdAutoAnswer := d.Get("acd_auto_answer").(bool)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
@@ -250,11 +355,21 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	d.SetId(*user.Id)
 
 	// Set attributes that can only be modified in a patch
-	if d.HasChanges("manager") {
+	if d.HasChanges(
+		"manager",
+		"locations",
+		"acd_auto_answer",
+		"profile_skills",
+		"certifications",
+		"employer_info") {
 		log.Printf("Updating additional attributes for user %s", email)
 		_, _, patchErr := usersAPI.PatchUser(d.Id(), platformclientv2.Updateuser{
-			Manager: &manager,
-			Version: user.Version,
+			Manager:        &manager,
+			Locations:      buildSdkLocations(d),
+			AcdAutoAnswer:  &acdAutoAnswer,
+			Certifications: buildSdkCertifications(d),
+			EmployerInfo:   buildSdkEmployerInfo(d),
+			Version:        user.Version,
 		})
 		if patchErr != nil {
 			return diag.Errorf("Failed to update user %s: %v", d.Id(), patchErr)
@@ -262,6 +377,16 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	diagErr := updateUserSkills(d, usersAPI)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = updateUserLanguages(d, usersAPI)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = updateUserProfileSkills(d, usersAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -275,7 +400,16 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Reading user %s", d.Id())
-	currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{"skills"}, "", "")
+	currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{
+		// Expands
+		"skills",
+		"languages",
+		"locations",
+		"profileSkills",
+		"certifications",
+		"employerInfo",
+	}, "", "")
+
 	if getErr != nil {
 		if resp != nil && resp.StatusCode == 404 {
 			d.SetId("")
@@ -308,17 +442,19 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("manager", nil)
 	}
 
-	if currentUser.Addresses != nil {
-		d.Set("addresses", flattenUserAddresses(*currentUser.Addresses))
+	if currentUser.AcdAutoAnswer != nil {
+		d.Set("acd_auto_answer", *currentUser.AcdAutoAnswer)
 	} else {
-		d.Set("addresses", nil)
+		d.Set("acd_auto_answer", nil)
 	}
 
-	if currentUser.Skills != nil {
-		d.Set("routing_skills", flattenUserSkills(*currentUser.Skills))
-	} else {
-		d.Set("routing_skills", nil)
-	}
+	d.Set("addresses", flattenUserAddresses(currentUser.Addresses))
+	d.Set("routing_skills", flattenUserSkills(currentUser.Skills))
+	d.Set("routing_languages", flattenUserLanguages(currentUser.Languages))
+	d.Set("locations", flattenUserLocations(currentUser.Locations))
+	d.Set("profile_skills", flattenUserProfileSkills(currentUser.ProfileSkills))
+	d.Set("certifications", flattenUserCertifications(currentUser.Certifications))
+	d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
 
 	log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
 	return nil
@@ -332,6 +468,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	department := d.Get("department").(string)
 	title := d.Get("title").(string)
 	manager := d.Get("manager").(string)
+	acdAutoAnswer := d.Get("acd_auto_answer").(bool)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
@@ -356,12 +493,16 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	patchErr := patchUser(d.Id(), platformclientv2.Updateuser{
-		Name:       &name,
-		Email:      &email,
-		Department: &department,
-		Title:      &title,
-		Manager:    &manager,
-		Addresses:  addresses,
+		Name:           &name,
+		Email:          &email,
+		Department:     &department,
+		Title:          &title,
+		Manager:        &manager,
+		Addresses:      addresses,
+		Locations:      buildSdkLocations(d),
+		AcdAutoAnswer:  &acdAutoAnswer,
+		Certifications: buildSdkCertifications(d),
+		EmployerInfo:   buildSdkEmployerInfo(d),
 	}, usersAPI)
 	if patchErr != nil {
 		return patchErr
@@ -389,6 +530,16 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
+	diagErr = updateUserLanguages(d, usersAPI)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = updateUserProfileSkills(d, usersAPI)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	log.Printf("Finished updating user %s", email)
 	return readUser(ctx, d, meta)
 }
@@ -400,10 +551,14 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user %s", email)
-	_, _, err := usersAPI.DeleteUser(d.Id())
-	if err != nil {
-		return diag.Errorf("Failed to delete user %s: %s", email, err)
-	}
+	retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
+		_, resp, err := usersAPI.DeleteUser(d.Id())
+		if err != nil {
+			return resp, diag.Errorf("Failed to delete user %s: %s", email, err)
+		}
+		return nil, nil
+	})
 	log.Printf("Deleted user %s", email)
 	return nil
 }
@@ -422,15 +577,6 @@ func patchUser(id string, update platformclientv2.Updateuser, usersAPI *platform
 		}
 		return nil, nil
 	})
-}
-
-func validatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
-	numberStr := number.(string)
-	_, err := phonenumbers.Parse(numberStr, "US")
-	if err != nil {
-		return diag.Errorf("Failed to validate phone number %s: %s", numberStr, err)
-	}
-	return nil
 }
 
 func phoneNumberHash(val interface{}) int {
@@ -492,8 +638,8 @@ func buildSdkPhoneNumbers(configPhoneNumbers *schema.Set) ([]platformclientv2.Co
 }
 
 func buildSdkAddresses(d *schema.ResourceData) (*[]platformclientv2.Contact, diag.Diagnostics) {
-	addresses := d.Get("addresses").([]interface{})
-	if addresses != nil {
+	if addresses := d.Get("addresses").([]interface{}); addresses != nil {
+		sdkAddresses := make([]platformclientv2.Contact, 0)
 		var otherEmails *schema.Set
 		var phoneNumbers *schema.Set
 		if len(addresses) > 0 {
@@ -502,7 +648,6 @@ func buildSdkAddresses(d *schema.ResourceData) (*[]platformclientv2.Contact, dia
 			phoneNumbers = addressMap["phone_numbers"].(*schema.Set)
 		}
 
-		sdkAddresses := make([]platformclientv2.Contact, 0)
 		if otherEmails != nil {
 			sdkAddresses = append(sdkAddresses, buildSdkEmails(otherEmails)...)
 		}
@@ -518,15 +663,65 @@ func buildSdkAddresses(d *schema.ResourceData) (*[]platformclientv2.Contact, dia
 	return nil, nil
 }
 
-func flattenUserAddresses(addresses []platformclientv2.Contact) []interface{} {
-	if len(addresses) == 0 {
-		return []interface{}{}
+func buildSdkLocations(d *schema.ResourceData) *[]platformclientv2.Location {
+	if locationConfig := d.Get("locations"); locationConfig != nil {
+		sdkLocations := make([]platformclientv2.Location, 0)
+		locationList := locationConfig.(*schema.Set).List()
+		for _, configLoc := range locationList {
+			locMap := configLoc.(map[string]interface{})
+			locID := locMap["location_id"].(string)
+			locNotes := locMap["notes"].(string)
+
+			sdkLocations = append(sdkLocations, platformclientv2.Location{
+				Id:    &locID,
+				Notes: &locNotes,
+			})
+		}
+		return &sdkLocations
+	}
+	return nil
+}
+
+func buildSdkEmployerInfo(d *schema.ResourceData) *platformclientv2.Employerinfo {
+	if configInfo := d.Get("employer_info").([]interface{}); configInfo != nil {
+		var sdkInfo platformclientv2.Employerinfo
+		if len(configInfo) > 0 {
+			infoMap := configInfo[0].(map[string]interface{})
+			// Only set non-empty values.
+			if offName := infoMap["official_name"].(string); len(offName) > 0 {
+				sdkInfo.OfficialName = &offName
+			}
+			if empID := infoMap["employee_id"].(string); len(empID) > 0 {
+				sdkInfo.EmployeeId = &empID
+			}
+			if empType := infoMap["employee_type"].(string); len(empType) > 0 {
+				sdkInfo.EmployeeType = &empType
+			}
+			if dateHire := infoMap["date_hire"].(string); len(dateHire) > 0 {
+				sdkInfo.DateHire = &dateHire
+			}
+		}
+		return &sdkInfo
+	}
+	return nil
+}
+
+func buildSdkCertifications(d *schema.ResourceData) *[]string {
+	if certs := d.Get("certifications"); certs != nil {
+		return setToStringList(certs.(*schema.Set))
+	}
+	return nil
+}
+
+func flattenUserAddresses(addresses *[]platformclientv2.Contact) []interface{} {
+	if addresses == nil || len(*addresses) == 0 {
+		return nil
 	}
 
 	emailSet := schema.NewSet(schema.HashResource(otherEmailResource), []interface{}{})
 	phoneNumSet := schema.NewSet(phoneNumberHash, []interface{}{})
 
-	for _, address := range addresses {
+	for _, address := range *addresses {
 		if address.MediaType != nil {
 			if *address.MediaType == "SMS" || *address.MediaType == "PHONE" {
 				phoneNumber := make(map[string]interface{})
@@ -564,6 +759,38 @@ func flattenUserAddresses(addresses []platformclientv2.Contact) []interface{} {
 	}}
 }
 
+func flattenUserEmployerInfo(empInfo *platformclientv2.Employerinfo) []interface{} {
+	if empInfo == nil {
+		return nil
+	}
+	var (
+		offName  string
+		empID    string
+		empType  string
+		dateHire string
+	)
+
+	if empInfo.OfficialName != nil {
+		offName = *empInfo.OfficialName
+	}
+	if empInfo.EmployeeId != nil {
+		empID = *empInfo.EmployeeId
+	}
+	if empInfo.EmployeeType != nil {
+		empType = *empInfo.EmployeeType
+	}
+	if empInfo.DateHire != nil {
+		dateHire = *empInfo.DateHire
+	}
+
+	return []interface{}{map[string]interface{}{
+		"official_name": offName,
+		"employee_id":   empID,
+		"employee_type": empType,
+		"date_hire":     dateHire,
+	}}
+}
+
 func updateUserSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	if d.HasChange("routing_skills") {
 		if skillsConfig := d.Get("routing_skills"); skillsConfig != nil {
@@ -590,13 +817,181 @@ func updateUserSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersAp
 	return nil
 }
 
-func flattenUserSkills(skills []platformclientv2.Userroutingskill) *schema.Set {
+func updateUserLanguages(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
+	if d.HasChange("routing_languages") {
+		if languages := d.Get("routing_languages"); languages != nil {
+			log.Printf("Updating languages for user %s", d.Get("email"))
+			newLangProfs := make(map[string]int)
+			langList := languages.(*schema.Set).List()
+			newLangIds := make([]string, len(langList))
+			for i, lang := range langList {
+				langMap := lang.(map[string]interface{})
+				newLangIds[i] = langMap["language_id"].(string)
+				newLangProfs[newLangIds[i]] = langMap["proficiency"].(int)
+			}
+
+			oldSdkLangs, err := getUserRoutingLanguages(d.Id(), usersAPI)
+			if err != nil {
+				return err
+			}
+
+			oldLangIds := make([]string, len(oldSdkLangs))
+			oldLangProfs := make(map[string]int)
+			for i, lang := range oldSdkLangs {
+				oldLangIds[i] = *lang.Id
+				oldLangProfs[oldLangIds[i]] = int(*lang.Proficiency)
+			}
+
+			if len(oldLangIds) > 0 {
+				langsToRemove := sliceDifference(oldLangIds, newLangIds)
+				for _, langID := range langsToRemove {
+					_, err := usersAPI.DeleteUserRoutinglanguage(d.Id(), langID)
+					if err != nil {
+						return diag.Errorf("Failed to remove language from user %s: %s", d.Id(), err)
+					}
+				}
+			}
+
+			if len(newLangIds) > 0 {
+				// Languages to add
+				langsToAddOrUpdate := sliceDifference(newLangIds, oldLangIds)
+
+				// Check for existing proficiencies to update which can be done with the same API
+				for langID, newNum := range newLangProfs {
+					if oldNum, found := oldLangProfs[langID]; found {
+						if newNum != oldNum {
+							langsToAddOrUpdate = append(langsToAddOrUpdate, langID)
+						}
+					}
+				}
+				if diagErr := updateUserRoutingLanguages(d.Id(), langsToAddOrUpdate, newLangProfs, usersAPI); diagErr != nil {
+					return diagErr
+				}
+			}
+			log.Printf("Languages updated for user %s", d.Get("email"))
+		}
+	}
+	return nil
+}
+
+func getUserRoutingLanguages(userID string, api *platformclientv2.UsersApi) ([]platformclientv2.Userroutinglanguage, diag.Diagnostics) {
+	const maxPageSize = 50
+
+	var sdkLanguages []platformclientv2.Userroutinglanguage
+	for pageNum := 1; ; pageNum++ {
+		langs, _, err := api.GetUserRoutinglanguages(userID, maxPageSize, pageNum, "")
+		if err != nil {
+			return nil, diag.Errorf("Failed to query languages for user %s: %s", userID, err)
+		}
+		if langs == nil || langs.Entities == nil || len(*langs.Entities) == 0 {
+			return sdkLanguages, nil
+		}
+		for _, language := range *langs.Entities {
+			sdkLanguages = append(sdkLanguages, language)
+		}
+	}
+}
+
+func updateUserRoutingLanguages(
+	userID string,
+	langsToUpdate []string,
+	langProfs map[string]int,
+	api *platformclientv2.UsersApi) diag.Diagnostics {
+	// Bulk API restricts language adds to 50 per call
+	const maxBatchSize = 50
+	for i := 0; i < len(langsToUpdate); i += maxBatchSize {
+		end := i + maxBatchSize
+		if end > len(langsToUpdate) {
+			end = len(langsToUpdate)
+		}
+		var updateChunk []platformclientv2.Userroutinglanguagepost
+		for _, id := range langsToUpdate[i:end] {
+			newProf := float64(langProfs[id])
+			updateChunk = append(updateChunk, platformclientv2.Userroutinglanguagepost{
+				Id:          &id,
+				Proficiency: &newProf,
+			})
+		}
+
+		if len(updateChunk) > 0 {
+			_, _, err := api.PatchUserRoutinglanguagesBulk(userID, updateChunk)
+			if err != nil {
+				return diag.Errorf("Failed to update languages for user %s: %s", userID, err)
+			}
+		}
+	}
+	return nil
+}
+
+func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
+	if d.HasChange("profile_skills") {
+		if profileSkills := d.Get("profile_skills"); profileSkills != nil {
+			profileSkills := setToStringList(profileSkills.(*schema.Set))
+			_, _, err := usersAPI.PutUserProfileskills(d.Id(), *profileSkills)
+			if err != nil {
+				return diag.Errorf("Failed to update profile skills for user %s: %s", d.Id(), err)
+			}
+		}
+	}
+	return nil
+}
+
+func flattenUserSkills(skills *[]platformclientv2.Userroutingskill) *schema.Set {
+	if skills == nil {
+		return nil
+	}
 	skillSet := schema.NewSet(schema.HashResource(userSkillResource), []interface{}{})
-	for _, sdkSkill := range skills {
+	for _, sdkSkill := range *skills {
 		skill := make(map[string]interface{})
 		skill["skill_id"] = *sdkSkill.Id
 		skill["proficiency"] = *sdkSkill.Proficiency
 		skillSet.Add(skill)
 	}
 	return skillSet
+}
+
+func flattenUserLanguages(languages *[]platformclientv2.Userroutinglanguage) *schema.Set {
+	if languages == nil {
+		return nil
+	}
+	languageSet := schema.NewSet(schema.HashResource(userLanguageResource), []interface{}{})
+	for _, sdkLang := range *languages {
+		language := make(map[string]interface{})
+		language["language_id"] = *sdkLang.Id
+		language["proficiency"] = int(*sdkLang.Proficiency)
+		languageSet.Add(language)
+	}
+	return languageSet
+}
+
+func flattenUserLocations(locations *[]platformclientv2.Location) *schema.Set {
+	if locations == nil {
+		return nil
+	}
+	locSet := schema.NewSet(schema.HashResource(userLocationResource), []interface{}{})
+	for _, sdkLoc := range *locations {
+		if sdkLoc.LocationDefinition != nil {
+			location := make(map[string]interface{})
+			location["location_id"] = *sdkLoc.LocationDefinition.Id
+			if sdkLoc.Notes != nil {
+				location["notes"] = *sdkLoc.Notes
+			}
+			locSet.Add(location)
+		}
+	}
+	return locSet
+}
+
+func flattenUserProfileSkills(skills *[]string) *schema.Set {
+	if skills != nil {
+		return stringListToSet(*skills)
+	}
+	return nil
+}
+
+func flattenUserCertifications(certs *[]string) *schema.Set {
+	if certs != nil {
+		return stringListToSet(*certs)
+	}
+	return nil
 }

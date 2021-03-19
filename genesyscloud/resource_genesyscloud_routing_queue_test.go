@@ -225,6 +225,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				Config: generateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
+					"members = []",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "members"),

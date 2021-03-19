@@ -127,6 +127,9 @@ func generateTfExportResource(
 			"genesyscloud_auth_role",
 			"genesyscloud_auth_division",
 			"genesyscloud_group",
+			"genesyscloud_group_roles",
+			"genesyscloud_location",
+			"genesyscloud_routing_language",
 			"genesyscloud_routing_queue",
 			"genesyscloud_routing_skill"
 		]

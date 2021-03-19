@@ -40,7 +40,7 @@ resource "genesyscloud_group" "test_group" {
 - **addresses** (Block Set) Contact numbers for this group. (see [below for nested schema](#nestedblock--addresses))
 - **description** (String) Group description.
 - **id** (String) The ID of this resource.
-- **member_ids** (Set of String) IDs of members assigned to the group.
+- **member_ids** (Set of String) IDs of members assigned to the group. If not set, this resource will not manage group members.
 - **owner_ids** (Set of String) IDs of owners of the group.
 - **rules_visible** (Boolean) Are membership rules visible to the person requesting to view the group. Defaults to `true`.
 - **type** (String) Group type (official | social). This cannot be modified. Defaults to `official`.

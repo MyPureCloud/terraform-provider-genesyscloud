@@ -396,8 +396,8 @@ github.com/mitchellh/mapstructure v1.4.1/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RR
 github.com/mitchellh/reflectwalk v1.0.0/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/mitchellh/reflectwalk v1.0.1 h1:FVzMWA5RllMAKIdUSC8mdWo3XtwoecrH79BY70sEEpE=
 github.com/mitchellh/reflectwalk v1.0.1/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
-github.com/mypurecloud/platform-client-sdk-go/platformclientv2 v0.0.0-20210305150846-d3b33d1fb5f4 h1:Dav9IQofPDEc/xoIIG4PigZuPQaBmIPlOxk+uNlDdZc=
-github.com/mypurecloud/platform-client-sdk-go/platformclientv2 v0.0.0-20210305150846-d3b33d1fb5f4/go.mod h1:zXuv7EOr2qvTP1z3YMyaoYhN+/s4oX46G6AXVpnYvfM=
+github.com/mypurecloud/platform-client-sdk-go/platformclientv2 v0.0.0-20210318180203-499669b8db42 h1:ZwEKz/jHXPMDFYjvazDU12vjCpf4TJVLnGak4dfzi88=
+github.com/mypurecloud/platform-client-sdk-go/platformclientv2 v0.0.0-20210318180203-499669b8db42/go.mod h1:zXuv7EOr2qvTP1z3YMyaoYhN+/s4oX46G6AXVpnYvfM=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nishanths/predeclared v0.0.0-20200524104333-86fad755b4d3/go.mod h1:nt3d53pc1VYcphSCIaYAJtnPYnr3Zyn8fMq2wvPGPso=

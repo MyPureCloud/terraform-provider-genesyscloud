@@ -92,7 +92,7 @@ func (r *ResourceExporter) removeIfMissing(attribute string, config map[string]i
 		// Check if all required inner attributes are missing
 		missingAll := true
 		for _, attr := range attrs {
-			if _, foundInner := config[attr]; foundInner {
+			if val, foundInner := config[attr]; foundInner && val != nil {
 				missingAll = false
 				break
 			}
@@ -105,14 +105,16 @@ func (r *ResourceExporter) removeIfMissing(attribute string, config map[string]i
 func getResourceExporters(filter []string) map[string]*ResourceExporter {
 	exporters := map[string]*ResourceExporter{
 		// Add new resources that can be exported here
-		"genesyscloud_auth_division": authDivisionExporter(),
-		"genesyscloud_auth_role":     authRoleExporter(),
-		"genesyscloud_group":         groupExporter(),
-		"genesyscloud_group_roles":   groupRolesExporter(),
-		"genesyscloud_routing_queue": routingQueueExporter(),
-		"genesyscloud_routing_skill": routingSkillExporter(),
-		"genesyscloud_user":          userExporter(),
-		"genesyscloud_user_roles":    userRolesExporter(),
+		"genesyscloud_auth_division":    authDivisionExporter(),
+		"genesyscloud_auth_role":        authRoleExporter(),
+		"genesyscloud_group":            groupExporter(),
+		"genesyscloud_group_roles":      groupRolesExporter(),
+		"genesyscloud_location":         locationExporter(),
+		"genesyscloud_routing_language": routingLanguageExporter(),
+		"genesyscloud_routing_queue":    routingQueueExporter(),
+		"genesyscloud_routing_skill":    routingSkillExporter(),
+		"genesyscloud_user":             userExporter(),
+		"genesyscloud_user_roles":       userRolesExporter(),
 	}
 
 	// Include all if no filters

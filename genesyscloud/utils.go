@@ -108,14 +108,15 @@ type callSdkFunc func() (*platformclientv2.APIResponse, diag.Diagnostics)
 func retryWhen(shouldRetry checkResponseFunc, callSdk callSdkFunc) diag.Diagnostics {
 	var lastErr diag.Diagnostics
 	for i := 0; i < 10; i++ {
-		resp, lastErr := callSdk()
-		if lastErr != nil {
+		resp, sdkErr := callSdk()
+		if sdkErr != nil {
 			if resp != nil && shouldRetry(resp) {
 				// Wait a second and try again
+				lastErr = sdkErr
 				time.Sleep(time.Second)
 				continue
 			} else {
-				return lastErr
+				return sdkErr
 			}
 		}
 		// Success
