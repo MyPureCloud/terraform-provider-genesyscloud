@@ -19,8 +19,7 @@ func init() {
 	// and the language server.
 	schema.DescriptionKind = schema.StringMarkdown
 
-	// Customize the content of descriptions when output. For example you can add defaults on
-	// to the exported descriptions if present.
+	// Customize the content of descriptions when output.
 	schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
 		desc := s.Description
 		if s.Default != nil {
@@ -39,20 +38,20 @@ func New(version string) func() *schema.Provider {
 					Type:        schema.TypeString,
 					Required:    true,
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_ID", nil),
-					Description: "OAuthClient ID found on the OAuth page of Admin UI.",
+					Description: "OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.",
 				},
 				"oauthclient_secret": {
 					Type:        schema.TypeString,
 					Required:    true,
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_SECRET", nil),
-					Description: "OAuthClient secret found on the OAuth page of Admin UI.",
+					Description: "OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.",
 					Sensitive:   true,
 				},
 				"aws_region": {
 					Type:         schema.TypeString,
 					Required:     true,
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_REGION", nil),
-					Description:  "AWS region where org exists. e.g. us-east-1",
+					Description:  "AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable.",
 					ValidateFunc: validation.StringInSlice(getAllowedRegions(), true),
 				},
 				"sdk_debug": {
@@ -63,21 +62,24 @@ func New(version string) func() *schema.Provider {
 				},
 			},
 			ResourcesMap: map[string]*schema.Resource{
-				"genesyscloud_auth_role":     resourceAuthRole(),
-				"genesyscloud_auth_division": resourceAuthDivision(),
-				"genesyscloud_group":         resourceGroup(),
-				"genesyscloud_group_roles":   resourceGroupRoles(),
-				"genesyscloud_routing_queue": resourceRoutingQueue(),
-				"genesyscloud_routing_skill": resourceRoutingSkill(),
-				"genesyscloud_tf_export":     resourceTfExport(),
-				"genesyscloud_user":          resourceUser(),
-				"genesyscloud_user_roles":    resourceUserRoles(),
+				"genesyscloud_auth_role":        resourceAuthRole(),
+				"genesyscloud_auth_division":    resourceAuthDivision(),
+				"genesyscloud_group":            resourceGroup(),
+				"genesyscloud_group_roles":      resourceGroupRoles(),
+				"genesyscloud_location":         resourceLocation(),
+				"genesyscloud_routing_language": resourceRoutingLanguage(),
+				"genesyscloud_routing_queue":    resourceRoutingQueue(),
+				"genesyscloud_routing_skill":    resourceRoutingSkill(),
+				"genesyscloud_tf_export":        resourceTfExport(),
+				"genesyscloud_user":             resourceUser(),
+				"genesyscloud_user_roles":       resourceUserRoles(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
-				"genesyscloud_auth_role":     dataSourceAuthRole(),
-				"genesyscloud_auth_division": dataSourceAuthDivision(),
-				"genesyscloud_routing_skill": dataSourceRoutingSkill(),
-				"genesyscloud_user":          dataSourceUser(),
+				"genesyscloud_auth_role":        dataSourceAuthRole(),
+				"genesyscloud_auth_division":    dataSourceAuthDivision(),
+				"genesyscloud_routing_language": dataSourceRoutingLanguage(),
+				"genesyscloud_routing_skill":    dataSourceRoutingSkill(),
+				"genesyscloud_user":             dataSourceUser(),
 			},
 			ConfigureContextFunc: configure(version),
 		}
@@ -92,13 +94,13 @@ type providerMeta struct {
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		// Initialize the default config for tests and anything else that doesn't use the pool
-		err := initClientConfig(data, platformclientv2.GetDefaultConfiguration())
+		err := initClientConfig(data, version, platformclientv2.GetDefaultConfiguration())
 		if err != nil {
 			return nil, err
 		}
 
 		// Initialize the SDK Client pool with 10 clients
-		err = InitSDKClientPool(10, data)
+		err = InitSDKClientPool(10, version, data)
 		if err != nil {
 			return nil, err
 		}
@@ -139,13 +141,14 @@ func getRegionBasePath(region string) string {
 	return getRegionMap()[strings.ToLower(region)]
 }
 
-func initClientConfig(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
+func initClientConfig(data *schema.ResourceData, version string, config *platformclientv2.Configuration) diag.Diagnostics {
 	oauthclientID := data.Get("oauthclient_id").(string)
 	oauthclientSecret := data.Get("oauthclient_secret").(string)
 	basePath := getRegionBasePath(data.Get("aws_region").(string))
 
 	config.BasePath = basePath
 	config.SetDebug(data.Get("sdk_debug").(bool))
+	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
 		RetryWaitMin: time.Second * 1,
 		RetryWaitMax: time.Second * 30,

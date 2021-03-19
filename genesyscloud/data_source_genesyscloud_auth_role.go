@@ -32,7 +32,7 @@ func dataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m inter
 	name := d.Get("name").(string)
 
 	// Query role by name. Retry in case search has not yet indexed the role.
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		roles, _, getErr := authAPI.GetAuthorizationRoles(100, 1, "", nil, "", "", name, nil, nil, false, nil)
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting role %s: %s", name, getErr))

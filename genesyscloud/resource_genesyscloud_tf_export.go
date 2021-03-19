@@ -444,6 +444,11 @@ func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
 	return nil
 }
 
+// Removes empty and zero-valued attributes from the JSON config.
+// Map attributes are removed by setting them to null, as the Terraform
+// attribute syntax requires attributes be set to null
+// that would otherwise be optional in nested block form:
+// https://www.terraform.io/docs/language/attr-as-blocks.html#arbitrary-expressions-with-argument-syntax
 func sanitizeConfigMap(
 	resourceType string,
 	configMap map[string]interface{},
@@ -468,7 +473,7 @@ func sanitizeConfigMap(
 
 		if exporter.isAttributeExcluded(currAttr) {
 			// Excluded. Remove from the config.
-			delete(configMap, key)
+			configMap[key] = nil
 			continue
 		}
 
@@ -478,14 +483,14 @@ func sanitizeConfigMap(
 			currMap := val.(map[string]interface{})
 			if !sanitizeConfigMap(resourceType, val.(map[string]interface{}), currAttr, exporters, exportingState) || len(currMap) == 0 {
 				// Remove empty maps or maps indicating they should be removed
-				delete(configMap, key)
+				configMap[key] = nil
 			}
 		case []interface{}:
 			if arr := sanitizeConfigArray(resourceType, val.([]interface{}), currAttr, exporters, exportingState); len(arr) > 0 {
 				configMap[key] = arr
 			} else {
 				// Remove empty arrays
-				delete(configMap, key)
+				configMap[key] = nil
 			}
 		case string:
 			// Check if we are on a reference attribute and update as needed
@@ -520,18 +525,16 @@ func removeZeroValues(key string, val interface{}, configMap jsonMap) {
 	switch val.(type) {
 	case string:
 		if val.(string) == "" {
-			delete(configMap, key)
+			configMap[key] = nil
 		}
 	case int:
 		if val.(int) == 0 {
-			delete(configMap, key)
+			configMap[key] = nil
 		}
 	case float64:
 		if val.(float64) == 0 {
-			delete(configMap, key)
+			configMap[key] = nil
 		}
-	case nil:
-		delete(configMap, key)
 	}
 }
 

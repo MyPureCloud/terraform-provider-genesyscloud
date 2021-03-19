@@ -339,9 +339,11 @@ func resourceRoutingQueue() *schema.Resource {
 				},
 			},
 			"members": {
-				Description: "Users in the queue.",
+				Description: "Users in the queue. If not set, this resource will not manage members.",
 				Type:        schema.TypeSet,
 				Optional:    true,
+				Computed:    true,
+				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        queueMemberResource,
 			},
 		},
@@ -449,25 +451,25 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	d.Set("media_settings_video", nil)
 	if currentQueue.MediaSettings != nil {
 		if callSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyCall]; ok {
-			d.Set("media_settings_call", []interface{}{flattenMediaSetting(callSettings)})
+			d.Set("media_settings_call", flattenMediaSetting(callSettings))
 		}
 		if callbackSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyCallback]; ok {
-			d.Set("media_settings_callback", []interface{}{flattenMediaSetting(callbackSettings)})
+			d.Set("media_settings_callback", flattenMediaSetting(callbackSettings))
 		}
 		if chatSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyChat]; ok {
-			d.Set("media_settings_chat", []interface{}{flattenMediaSetting(chatSettings)})
+			d.Set("media_settings_chat", flattenMediaSetting(chatSettings))
 		}
 		if emailSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyEmail]; ok {
-			d.Set("media_settings_email", []interface{}{flattenMediaSetting(emailSettings)})
+			d.Set("media_settings_email", flattenMediaSetting(emailSettings))
 		}
 		if messageSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyMessage]; ok {
-			d.Set("media_settings_message", []interface{}{flattenMediaSetting(messageSettings)})
+			d.Set("media_settings_message", flattenMediaSetting(messageSettings))
 		}
 		if socialSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeySocial]; ok {
-			d.Set("media_settings_social", []interface{}{flattenMediaSetting(socialSettings)})
+			d.Set("media_settings_social", flattenMediaSetting(socialSettings))
 		}
 		if videoSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyVideo]; ok {
-			d.Set("media_settings_video", []interface{}{flattenMediaSetting(videoSettings)})
+			d.Set("media_settings_video", flattenMediaSetting(videoSettings))
 		}
 	}
 
@@ -706,12 +708,12 @@ func buildSdkMediaSetting(settings []interface{}) platformclientv2.Mediasetting 
 	}
 }
 
-func flattenMediaSetting(settings platformclientv2.Mediasetting) map[string]interface{} {
+func flattenMediaSetting(settings platformclientv2.Mediasetting) []interface{} {
 	settingsMap := make(map[string]interface{})
 	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
-	return settingsMap
+	return []interface{}{settingsMap}
 }
 
 func buildSdkRoutingRules(d *schema.ResourceData) *[]platformclientv2.Routingrule {
@@ -911,10 +913,9 @@ func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.Rou
 	if d.HasChange("members") {
 		if members := d.Get("members"); members != nil {
 			log.Printf("Updating members for Queue %s", d.Get("name"))
-			var newUserIds []string
 			newUserRingNums := make(map[string]int)
 			memberList := members.(*schema.Set).List()
-			newUserIds = make([]string, len(memberList))
+			newUserIds := make([]string, len(memberList))
 			for i, member := range memberList {
 				memberMap := member.(map[string]interface{})
 				newUserIds[i] = memberMap["user_id"].(string)

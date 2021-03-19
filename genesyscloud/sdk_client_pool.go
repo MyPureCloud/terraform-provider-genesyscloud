@@ -23,20 +23,20 @@ var once sync.Once
 
 // InitSDKClientPool creates a new pool of Clients with the given provider config
 // This must be called during provider initialization before the pool is used
-func InitSDKClientPool(max int, providerConfig *schema.ResourceData) diag.Diagnostics {
+func InitSDKClientPool(max int, version string, providerConfig *schema.ResourceData) diag.Diagnostics {
 	once.Do(func() {
 		sdkClientPool = &SDKClientPool{
 			pool: make(chan *platformclientv2.Configuration, max),
 		}
 	})
 	log.Printf("Initializing %d clients in the pool.", max)
-	return sdkClientPool.preFill(providerConfig)
+	return sdkClientPool.preFill(providerConfig, version)
 }
 
-func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData) diag.Diagnostics {
+func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version string) diag.Diagnostics {
 	for cap(p.pool) > 0 {
 		sdkConfig := platformclientv2.NewConfiguration()
-		err := initClientConfig(providerConfig, sdkConfig)
+		err := initClientConfig(providerConfig, version, sdkConfig)
 		if err != nil {
 			return err
 		}

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
 func dataSourceRoutingSkill() *schema.Resource {
@@ -32,11 +32,11 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 	name := d.Get("name").(string)
 
 	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			skills, _, getErr := routingAPI.GetRoutingSkills(100, pageNum, name, nil)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting role %s: %s", name, getErr))
+				return resource.NonRetryableError(fmt.Errorf("Error requesting skill %s: %s", name, getErr))
 			}
 
 			if skills.Entities == nil || len(*skills.Entities) == 0 {

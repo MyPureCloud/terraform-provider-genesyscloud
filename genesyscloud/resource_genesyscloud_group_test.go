@@ -224,13 +224,14 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					groupResource,
 					groupName,
 					generateGroupOwners("genesyscloud_user."+userResource2+".id"),
+					"member_ids = []",
 				) + generateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResource, "members"),
+					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResource, "member_ids"),
 				),
 			},
 			{

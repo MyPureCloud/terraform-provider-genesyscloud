@@ -27,6 +27,10 @@ func TestAccResourceUserBasic(t *testing.T) {
 		title2        = "Project Manager"
 		department1   = "Development"
 		department2   = "Project Management"
+		profileSkill1 = "Java"
+		profileSkill2 = "Go"
+		cert1         = "AWS Dev"
+		cert2         = "AWS Architect"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -43,6 +47,9 @@ func TestAccResourceUserBasic(t *testing.T) {
 					strconv.Quote(title1),
 					strconv.Quote(department1),
 					nullValue, // No manager
+					nullValue, // Default acdAutoAnswer
+					"",        // No profile skills
+					"",        // No certs
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
@@ -52,6 +59,9 @@ func TestAccResourceUserBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "department", department1),
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "password"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "manager", ""),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "acd_auto_answer", "false"),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "profile_skills"),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "certifications"),
 					testDefaultHomeDivision("genesyscloud_user."+userResource1),
 				),
 			},
@@ -65,6 +75,9 @@ func TestAccResourceUserBasic(t *testing.T) {
 					strconv.Quote(title2),
 					strconv.Quote(department2),
 					nullValue, // No manager
+					trueValue, // AcdAutoAnswer
+					strconv.Quote(profileSkill1),
+					strconv.Quote(cert1),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email2),
@@ -73,6 +86,9 @@ func TestAccResourceUserBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "title", title2),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "department", department2),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "manager", ""),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "acd_auto_answer", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "profile_skills.0", profileSkill1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "certifications.0", cert1),
 					testDefaultHomeDivision("genesyscloud_user."+userResource1),
 				),
 			},
@@ -85,7 +101,10 @@ func TestAccResourceUserBasic(t *testing.T) {
 					strconv.Quote(stateInactive),
 					strconv.Quote(title2),
 					strconv.Quote(department2),
-					nullValue, // No manager
+					nullValue,  // No manager
+					falseValue, // AcdAutoAnswer
+					strconv.Quote(profileSkill2),
+					strconv.Quote(cert2),
 				) + generateUserResource(
 					userResource2,
 					email3,
@@ -94,16 +113,21 @@ func TestAccResourceUserBasic(t *testing.T) {
 					strconv.Quote(title1),
 					strconv.Quote(department1),
 					"genesyscloud_user."+userResource1+".id",
+					trueValue, // AcdAutoAnswer
+					strconv.Quote(profileSkill1),
+					strconv.Quote(cert1),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource2, "email", email3),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource2, "name", userName1),
 					resource.TestCheckResourceAttrPair("genesyscloud_user."+userResource2, "manager", "genesyscloud_user."+userResource1, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "manager", ""),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "profile_skills.0", profileSkill2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "certifications.0", cert2),
 				),
 			},
 			{
-				// Remove manager
+				// Remove manager and update profile skills/certs
 				Config: generateUserResource(
 					userResource2,
 					email3,
@@ -112,11 +136,16 @@ func TestAccResourceUserBasic(t *testing.T) {
 					strconv.Quote(title1),
 					strconv.Quote(department1),
 					nullValue,
+					falseValue, // AcdAutoAnswer
+					"",         // No profile skills
+					"",         // No certs
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource2, "email", email3),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource2, "name", userName1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource2, "manager", ""),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource2, "profile_skills"),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource2, "certifications"),
 				),
 			},
 			{
@@ -283,7 +312,8 @@ func TestAccResourceUserSkills(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					validateUserSkill("genesyscloud_user."+userResource1, "genesyscloud_routing_skill."+skillResource2, proficiency1),
 				),
-			}, {
+			},
+			{
 				// Remove all skills from the user
 				Config: generateUserWithCustomAttrs(
 					userResource1,
@@ -292,6 +322,246 @@ func TestAccResourceUserSkills(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "skills"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
+func TestAccResourceUserLanguages(t *testing.T) {
+	var (
+		userResource1 = "test-user"
+		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		userName1     = "Lang Terraform"
+		langResource1 = "test-lang-1"
+		langResource2 = "test-lang-2"
+		langName1     = "lang1-" + uuid.NewString()
+		langName2     = "lang2-" + uuid.NewString()
+		proficiency1  = "1"
+		proficiency2  = "2"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create user with 1 language
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName1,
+					generateUserRoutingLang("genesyscloud_routing_language."+langResource1+".id", proficiency1),
+				) + generateRoutingLanguageResource(langResource1, langName1),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserLanguage("genesyscloud_user."+userResource1, "genesyscloud_routing_language."+langResource1, proficiency1),
+				),
+			},
+			{
+				// Create another language and add to the user
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName1,
+					generateUserRoutingLang("genesyscloud_routing_language."+langResource1+".id", proficiency1),
+					generateUserRoutingLang("genesyscloud_routing_language."+langResource2+".id", proficiency2),
+				) + generateRoutingLanguageResource(
+					langResource1,
+					langName1,
+				) + generateRoutingLanguageResource(
+					langResource2,
+					langName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserLanguage("genesyscloud_user."+userResource1, "genesyscloud_routing_language."+langResource1, proficiency1),
+					validateUserLanguage("genesyscloud_user."+userResource1, "genesyscloud_routing_language."+langResource2, proficiency2),
+				),
+			},
+			{
+				// Remove a language from the user and modify proficiency
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName1,
+					generateUserRoutingLang("genesyscloud_routing_language."+langResource2+".id", proficiency1),
+				) + generateRoutingLanguageResource(
+					langResource2,
+					langName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserLanguage("genesyscloud_user."+userResource1, "genesyscloud_routing_language."+langResource2, proficiency1),
+				),
+			},
+			{
+				// Remove all languages from the user
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName1,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_languages"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
+func TestAccResourceUserLocations(t *testing.T) {
+	var (
+		userResource1 = "test-user-loc"
+		email         = "terraform-" + uuid.NewString() + "@example.com"
+		userName      = "Loki Terraform"
+		locResource1  = "test-location1"
+		locResource2  = "test-location2"
+		locName1      = "Terraform location" + uuid.NewString()
+		locName2      = "Terraform location" + uuid.NewString()
+		locNotes1     = "First floor"
+		locNotes2     = "Second floor"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create user with a location
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email,
+					userName,
+					generateUserLocation(
+						"genesyscloud_location."+locResource1+".id",
+						strconv.Quote(locNotes1),
+					),
+				) + generateLocationResourceBasic(locResource1, locName1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email),
+					resource.TestCheckResourceAttrPair("genesyscloud_user."+userResource1, "locations.0.location_id", "genesyscloud_location."+locResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "locations.0.notes", locNotes1),
+				),
+			},
+			{
+				// Update with a new location
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email,
+					userName,
+					generateUserLocation(
+						"genesyscloud_location."+locResource2+".id",
+						strconv.Quote(locNotes2),
+					),
+				) + generateLocationResourceBasic(locResource2, locName2),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email),
+					resource.TestCheckResourceAttrPair("genesyscloud_user."+userResource1, "locations.0.location_id", "genesyscloud_location."+locResource2, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "locations.0.notes", locNotes2),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
+func TestAccResourceUserEmployerInfo(t *testing.T) {
+	var (
+		userResource1 = "test-user-info"
+		userName      = "Info Terraform"
+		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		empTypeFull   = "Full-time"
+		empTypePart   = "Part-time"
+		hireDate1     = "2010-05-06"
+		hireDate2     = "1999-10-25"
+		empID1        = "12345"
+		empID2        = "abcde"
+		offName1      = "John Smith"
+		offName2      = "Johnny"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName,
+					generateUserEmployerInfo(
+						strconv.Quote(offName1), // Only set official name
+						nullValue,
+						nullValue,
+						nullValue,
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.official_name", offName1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.employee_id", ""),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.employee_type", ""),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.date_hire", ""),
+				),
+			},
+			{
+				// Update with other attributes
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName,
+					generateUserEmployerInfo(
+						nullValue,
+						strconv.Quote(empID1),
+						strconv.Quote(empTypeFull),
+						strconv.Quote(hireDate1),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.official_name", ""),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.employee_id", empID1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.employee_type", empTypeFull),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.date_hire", hireDate1),
+				),
+			},
+			{
+				// Update all attributes
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName,
+					generateUserEmployerInfo(
+						strconv.Quote(offName2),
+						strconv.Quote(empID2),
+						strconv.Quote(empTypePart),
+						strconv.Quote(hireDate2),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.official_name", offName2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.employee_id", empID2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.employee_type", empTypePart),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "employer_info.0.date_hire", hireDate2),
+				),
+			},
+			{
+				// Remove all employer info attributes
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName,
+					"employer_info = []",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "employer_info"),
 				),
 			},
 		},
@@ -355,9 +625,43 @@ func validateUserSkill(userResourceName string, skillResourceName string, profic
 	}
 }
 
+func validateUserLanguage(userResourceName string, langResourceName string, proficiency string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		userResource, ok := state.RootModule().Resources[userResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find user %s in state", userResourceName)
+		}
+		userID := userResource.Primary.ID
+
+		langResource, ok := state.RootModule().Resources[langResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find language %s in state", langResourceName)
+		}
+		langID := langResource.Primary.ID
+
+		numLangAttr, ok := userResource.Primary.Attributes["routing_languages.#"]
+		if !ok {
+			return fmt.Errorf("No languages found for user %s in state", userID)
+		}
+
+		numLangs, _ := strconv.Atoi(numLangAttr)
+		for i := 0; i < numLangs; i++ {
+			if userResource.Primary.Attributes["routing_languages."+strconv.Itoa(i)+".language_id"] == langID {
+				if userResource.Primary.Attributes["routing_languages."+strconv.Itoa(i)+".proficiency"] == proficiency {
+					// Found language with correct proficiency
+					return nil
+				}
+				return fmt.Errorf("Language %s found for user %s with incorrect proficiency", langID, userID)
+			}
+		}
+
+		return fmt.Errorf("Language %s not found for user %s in state", langID, userID)
+	}
+}
+
 // Basic user with minimum required fields
 func generateBasicUserResource(resourceID string, email string, name string) string {
-	return generateUserResource(resourceID, email, name, nullValue, nullValue, nullValue, nullValue)
+	return generateUserResource(resourceID, email, name, nullValue, nullValue, nullValue, nullValue, nullValue, "", "")
 }
 
 func generateUserResource(
@@ -367,7 +671,10 @@ func generateUserResource(
 	state string,
 	title string,
 	department string,
-	manager string) string {
+	manager string,
+	acdAutoAnswer string,
+	profileSkills string,
+	certifications string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		email = "%s"
 		name = "%s"
@@ -375,8 +682,11 @@ func generateUserResource(
 		title = %s
 		department = %s
 		manager = %s
+		acd_auto_answer = %s
+		profile_skills = [%s]
+		certifications = [%s]
 	}
-	`, resourceID, email, name, state, title, department, manager)
+	`, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
 }
 
 func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
@@ -393,6 +703,16 @@ func generateUserAddresses(nestedBlocks ...string) string {
 		%s
 	}
 	`, strings.Join(nestedBlocks, "\n"))
+}
+
+func generateUserEmployerInfo(offName string, empID string, empType string, dateHire string) string {
+	return fmt.Sprintf(`employer_info {
+		official_name = %s
+		employee_id = %s
+		employee_type = %s
+		date_hire = %s
+	}
+	`, offName, empID, empType, dateHire)
 }
 
 func generateUserPhoneAddress(phoneNum string, phoneMediaType string, phoneType string, extension string) string {
@@ -419,4 +739,20 @@ func generateUserRoutingSkill(skillID string, proficiency string) string {
 		proficiency = %s
 	}
 	`, skillID, proficiency)
+}
+
+func generateUserRoutingLang(langID string, proficiency string) string {
+	return fmt.Sprintf(`routing_languages {
+		language_id = %s
+		proficiency = %s
+	}
+	`, langID, proficiency)
+}
+
+func generateUserLocation(locResource string, notes string) string {
+	return fmt.Sprintf(`locations {
+				location_id = %s
+				notes = %s
+			}
+			`, locResource, notes)
 }
