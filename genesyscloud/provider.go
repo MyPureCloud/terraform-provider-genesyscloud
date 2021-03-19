@@ -38,20 +38,20 @@ func New(version string) func() *schema.Provider {
 					Type:        schema.TypeString,
 					Required:    true,
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_ID", nil),
-					Description: "OAuthClient ID found on the OAuth page of Admin UI.",
+					Description: "OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.",
 				},
 				"oauthclient_secret": {
 					Type:        schema.TypeString,
 					Required:    true,
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_SECRET", nil),
-					Description: "OAuthClient secret found on the OAuth page of Admin UI.",
+					Description: "OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.",
 					Sensitive:   true,
 				},
 				"aws_region": {
 					Type:         schema.TypeString,
 					Required:     true,
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_REGION", nil),
-					Description:  "AWS region where org exists. e.g. us-east-1",
+					Description:  "AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable.",
 					ValidateFunc: validation.StringInSlice(getAllowedRegions(), true),
 				},
 				"sdk_debug": {
