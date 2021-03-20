@@ -1,9 +1,11 @@
 package genesyscloud
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -76,7 +78,7 @@ func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationA
 	return roleSet, nil
 }
 
-func updateSubjectRoles(d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {
+func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {
 	if d.HasChange("roles") {
 		rolesConfig := d.Get("roles")
 		if rolesConfig != nil {
@@ -135,10 +137,18 @@ func updateSubjectRoles(d *schema.ResourceData, authAPI *platformclientv2.Author
 
 			grantsToAdd := sliceDifference(configGrants, existingGrants)
 			if len(grantsToAdd) > 0 {
-				_, err := authAPI.PostAuthorizationSubjectBulkadd(d.Id(), roleDivPairsToGrants(grantsToAdd), subjectType)
-				if err != nil {
-					return diag.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err)
-				}
+				// In some cases new roles or divisions have not yet been added to the auth service cache causing 404s that should be retried.
+				diagErr = withRetries(ctx, 10*time.Second, func() *resource.RetryError {
+					resp, err := authAPI.PostAuthorizationSubjectBulkadd(d.Id(), roleDivPairsToGrants(grantsToAdd), subjectType)
+					if err != nil {
+						if resp != nil && resp.StatusCode == 404 {
+							// Retry
+							return resource.RetryableError(fmt.Errorf("Missing resource for adding grant to subject %s: %s", d.Id(), err))
+						}
+						return resource.NonRetryableError(fmt.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err))
+					}
+					return nil
+				})
 			}
 		}
 	}
