@@ -81,7 +81,7 @@ func updateGroupRoles(ctx context.Context, d *schema.ResourceData, meta interfac
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Updating roles for group %s", d.Id())
-	diagErr := updateSubjectRoles(d, authAPI, "PC_GROUP")
+	diagErr := updateSubjectRoles(ctx, d, authAPI, "PC_GROUP")
 	if diagErr != nil {
 		return diagErr
 	}

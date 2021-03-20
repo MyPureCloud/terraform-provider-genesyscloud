@@ -2,10 +2,13 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
@@ -277,10 +280,22 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if err != nil {
 			return resp, diag.Errorf("Failed to delete group %s: %s", name, err)
 		}
-		log.Printf("Deleted group %s", name)
 		return nil, nil
 	})
-	return nil
+
+	// Group deletes are not immediate. Give time for caches to clear, then query until group is no longer found
+	time.Sleep(5 * time.Second)
+	return withRetries(ctx, d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
+		_, resp, err := groupsAPI.GetGroup(d.Id())
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				log.Printf("Group %s deleted", name)
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting group %s: %s", d.Id(), err))
+		}
+		return resource.RetryableError(fmt.Errorf("Group %s still exists", d.Id()))
+	})
 }
 
 func groupAddressHash(val interface{}) int {

@@ -1,6 +1,7 @@
 package genesyscloud
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -76,7 +77,7 @@ func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationA
 	return roleSet, nil
 }
 
-func updateSubjectRoles(d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {
+func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {
 	if d.HasChange("roles") {
 		rolesConfig := d.Get("roles")
 		if rolesConfig != nil {
@@ -135,9 +136,16 @@ func updateSubjectRoles(d *schema.ResourceData, authAPI *platformclientv2.Author
 
 			grantsToAdd := sliceDifference(configGrants, existingGrants)
 			if len(grantsToAdd) > 0 {
-				_, err := authAPI.PostAuthorizationSubjectBulkadd(d.Id(), roleDivPairsToGrants(grantsToAdd), subjectType)
-				if err != nil {
-					return diag.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err)
+				// In some cases new roles or divisions have not yet been added to the auth service cache causing 404s that should be retried.
+				diagErr = retryWhen(isStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+					resp, err := authAPI.PostAuthorizationSubjectBulkadd(d.Id(), roleDivPairsToGrants(grantsToAdd), subjectType)
+					if err != nil {
+						return resp, diag.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err)
+					}
+					return nil, nil
+				})
+				if diagErr != nil {
+					return diagErr
 				}
 			}
 		}
