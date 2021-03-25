@@ -83,6 +83,7 @@ jobs:
         go test -v -cover ./genesyscloud/
 
     - name: 'Upload Export Result'
+      if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
         name: export-result ${{ matrix.terraform }}
@@ -90,6 +91,7 @@ jobs:
         retention-days: 5
 
     - name: 'Upload Logs'
+      if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
         name: logs ${{ matrix.terraform }}
