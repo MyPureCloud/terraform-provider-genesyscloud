@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -97,6 +98,9 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	if err != nil {
 		return diag.Errorf("Failed to create division %s: %s", name, err)
 	}
+
+	// Give auth service's indexes time to update
+	time.Sleep(2 * time.Second)
 
 	d.SetId(*division.Id)
 	log.Printf("Created division %s %s", name, *division.Id)

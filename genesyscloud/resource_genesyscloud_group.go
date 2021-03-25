@@ -285,7 +285,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	// Group deletes are not immediate. Give time for caches to clear, then query until group is no longer found
 	time.Sleep(5 * time.Second)
-	return withRetries(ctx, d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
+	return withRetries(ctx, 30 * time.Second, func() *resource.RetryError {
 		_, resp, err := groupsAPI.GetGroup(d.Id())
 		if err != nil {
 			if resp != nil && resp.StatusCode == 404 {
@@ -406,9 +406,14 @@ func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.Grou
 
 			membersToRemove := sliceDifference(existingMembers, configMembers)
 			if len(membersToRemove) > 0 {
-				_, _, err := groupsAPI.DeleteGroupMembers(d.Id(), strings.Join(membersToRemove, ","))
-				if err != nil {
-					return diag.Errorf("Failed to remove members from group %s: %s", d.Id(), err)
+				if diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+					_, resp, err := groupsAPI.DeleteGroupMembers(d.Id(), strings.Join(membersToRemove, ","))
+					if err != nil {
+						return resp, diag.Errorf("Failed to remove members from group %s: %s", d.Id(), err)
+					}
+					return resp, nil
+				}); diagErr != nil {
+					return diagErr
 				}
 			}
 
