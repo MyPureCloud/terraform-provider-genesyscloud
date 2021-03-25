@@ -637,7 +637,7 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	// re-populating the queue after the delete. Otherwise it may not expire for a minute.
 	time.Sleep(5 * time.Second)
 
-	return withRetries(ctx, d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingQueue(d.Id())
 		if err != nil {
 			if resp != nil && resp.StatusCode == 404 {
