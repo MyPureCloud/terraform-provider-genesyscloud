@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -11,6 +12,8 @@ import (
 
 func TestAccResourceUserRolesMembership(t *testing.T) {
 	var (
+		empRoleDataSrc   = "employee-role"
+		empRoleName      = "employee"
 		userRoleResource = "test-user-roles"
 		userResource1    = "test-user"
 		email1           = "terraform-" + uuid.NewString() + "@example.com"
@@ -30,6 +33,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 role in default division
+				// Also add employee role reference as new user's automatically get this role
 				Config: generateBasicUserResource(
 					userResource1,
 					email1,
@@ -42,6 +46,10 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userRoleResource,
 					userResource1,
 					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+					generateResourceRoles("data.genesyscloud_auth_role."+empRoleDataSrc+".id"),
+				) + generateDefaultAuthRoleDataSource(
+					empRoleDataSrc,
+					strconv.Quote(empRoleName),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1),
