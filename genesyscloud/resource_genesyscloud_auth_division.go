@@ -2,10 +2,12 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
@@ -100,7 +102,7 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	// Give auth service's indexes time to update
-	time.Sleep(2 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	d.SetId(*division.Id)
 	log.Printf("Created division %s %s", name, *division.Id)
@@ -157,6 +159,9 @@ func updateAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	log.Printf("Updated division %s", name)
+
+	// Give time for public API caches to update
+	time.Sleep(5 * time.Second)
 	return readAuthDivision(ctx, d, meta)
 }
 
@@ -178,6 +183,19 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	if err != nil {
 		return diag.Errorf("Failed to delete division %s: %s", name, err)
 	}
-	log.Printf("Deleted division %s", name)
-	return nil
+
+	// Give public API caches time to expire
+	time.Sleep(5 * time.Second)
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := authAPI.GetAuthorizationDivision(d.Id(), false)
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// Division deleted
+				log.Printf("Deleted division %s", name)
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting division %s: %s", name, err))
+		}
+		return resource.RetryableError(fmt.Errorf("Division %s still exists", name))
+	})
 }

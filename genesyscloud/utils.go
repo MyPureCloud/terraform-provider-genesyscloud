@@ -96,6 +96,13 @@ func interfaceListToStrings(interfaceList []interface{}) []string {
 	return strs
 }
 
+func buildSdkStringList(d *schema.ResourceData, attrName string) *[]string {
+	if val, ok := d.GetOk(attrName); ok {
+		return setToStringList(val.(*schema.Set))
+	}
+	return nil
+}
+
 func withRetries(ctx context.Context, timeout time.Duration, method func() *resource.RetryError) diag.Diagnostics {
 	return diag.FromErr(resource.RetryContext(ctx, timeout, method))
 }

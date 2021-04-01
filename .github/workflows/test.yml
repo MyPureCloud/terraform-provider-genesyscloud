@@ -8,7 +8,7 @@ on:
       - 'README.md'
   # Run daily tests
   schedule:
-    - cron: '0 13 * * *'
+    - cron: '0 10 * * *'
 jobs:
   # ensure the code builds...
   build:
