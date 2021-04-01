@@ -1,0 +1,3 @@
+* [GET /api/v2/identityproviders/okta](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#get-api-v2-identityproviders-okta)
+* [PUT /api/v2/identityproviders/okta](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#put-api-v2-identityproviders-okta)
+* [DELETE /api/v2/identityproviders/okta](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#delete-api-v2-identityproviders-okta)
