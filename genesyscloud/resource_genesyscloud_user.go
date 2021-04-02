@@ -214,12 +214,16 @@ func resourceUser() *schema.Resource {
 				Description: "Skills and proficiencies for this user.",
 				Type:        schema.TypeSet,
 				Optional:    true,
+				Computed:    true,
+				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        userSkillResource,
 			},
 			"routing_languages": {
 				Description: "Languages and proficiencies for this user.",
 				Type:        schema.TypeSet,
 				Optional:    true,
+				Computed:    true,
+				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        userLanguageResource,
 			},
 			"locations": {

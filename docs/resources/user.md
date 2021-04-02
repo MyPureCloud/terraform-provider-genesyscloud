@@ -89,8 +89,8 @@ resource "genesyscloud_user" "test_user" {
 - **manager** (String) User ID of this user's manager.
 - **password** (String, Sensitive) User's password. If specified, this is only set on user create.
 - **profile_skills** (Set of String) Profile skills for this user. If not set, this resource will not manage profile skills.
-- **routing_languages** (Block Set) Languages and proficiencies for this user. (see [below for nested schema](#nestedblock--routing_languages))
-- **routing_skills** (Block Set) Skills and proficiencies for this user. (see [below for nested schema](#nestedblock--routing_skills))
+- **routing_languages** (Set of Object) Languages and proficiencies for this user. (see [below for nested schema](#nestedatt--routing_languages))
+- **routing_skills** (Set of Object) Skills and proficiencies for this user. (see [below for nested schema](#nestedatt--routing_skills))
 - **state** (String) User's state (active | inactive). Default is 'active'. Defaults to `active`.
 - **title** (String) User's title.
 
@@ -143,20 +143,20 @@ Optional:
 - **notes** (String)
 
 
-<a id="nestedblock--routing_languages"></a>
+<a id="nestedatt--routing_languages"></a>
 ### Nested Schema for `routing_languages`
 
-Required:
+Optional:
 
-- **language_id** (String) ID of routing language.
-- **proficiency** (Number) Proficiency is a rating from 0 to 5 on how competent an agent is for a particular language. It is used when a queue is set to 'Best available language' mode to allow acd interactions to target agents with higher proficiency ratings.
+- **language_id** (String)
+- **proficiency** (Number)
 
 
-<a id="nestedblock--routing_skills"></a>
+<a id="nestedatt--routing_skills"></a>
 ### Nested Schema for `routing_skills`
 
-Required:
+Optional:
 
-- **proficiency** (Number) Rating from 0.0 to 5.0 on how competent an agent is for a particular skill. It is used when a queue is set to 'Best available skills' mode to allow acd interactions to target agents with higher proficiency ratings.
-- **skill_id** (String) ID of routing skill.
+- **proficiency** (Number)
+- **skill_id** (String)
 

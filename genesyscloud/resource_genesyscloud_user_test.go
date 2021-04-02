@@ -319,6 +319,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
+					"routing_skills = []",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "skills"),
@@ -399,6 +400,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
+					"routing_languages = []",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_languages"),
