@@ -7,7 +7,7 @@ description: |-
 
 # Genesys Cloud Provider
 
-The Genesys Cloud provider implements resources to interact with the Genesys Cloud Public API.
+The Genesys Cloud provider implements resources to interact with the Genesys Cloud Public API. The provider requires an OAuth Client configured with a Client Credentials grant. For instructions to set up an OAuth Client in your org, see https://help.mypurecloud.com/articles/create-an-oauth-client/.
 
 ## Example Usage
 
