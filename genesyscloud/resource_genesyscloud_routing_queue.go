@@ -346,6 +346,13 @@ func resourceRoutingQueue() *schema.Resource {
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        queueMemberResource,
 			},
+			"wrapup_codes": {
+				Description: "IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -399,6 +406,12 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if diagErr != nil {
 		return diagErr
 	}
+
+	diagErr = updateQueueWrapupCodes(d, routingAPI)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	return readQueue(ctx, d, meta)
 }
 
@@ -551,6 +564,12 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	}
 	d.Set("members", members)
 
+	wrapupCodes, err := flattenQueueWrapupCodes(d.Id(), routingAPI)
+	if err != nil {
+		return err
+	}
+	d.Set("wrapup_codes", wrapupCodes)
+
 	log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
 	return nil
 }
@@ -612,6 +631,11 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	diagErr := updateQueueMembers(d, routingAPI)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = updateQueueWrapupCodes(d, routingAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -909,6 +933,90 @@ func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 	return settingsMap
 }
 
+func updateQueueWrapupCodes(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
+	if d.HasChange("wrapup_codes") {
+		if codesConfig := d.Get("wrapup_codes"); codesConfig != nil {
+			// Get existing codes
+			codes, err := getRoutingQueueWrapupCodes(d.Id(), routingAPI)
+			if err != nil {
+				return err
+			}
+
+			var existingCodes []string
+			if codes != nil {
+				for _, code := range codes {
+					existingCodes = append(existingCodes, *code.Id)
+				}
+			}
+			configCodes := *setToStringList(codesConfig.(*schema.Set))
+
+			codesToRemove := sliceDifference(existingCodes, configCodes)
+			if len(codesToRemove) > 0 {
+				for _, codeId := range codesToRemove {
+					resp, err := routingAPI.DeleteRoutingQueueWrapupcode(d.Id(), codeId)
+					if err != nil {
+						if resp != nil && resp.StatusCode == 404 {
+							// Ignore missing queue or wrapup code
+							continue
+						}
+						return diag.Errorf("Failed to remove wrapup code from queue %s: %s", d.Id(), err)
+					}
+				}
+			}
+
+			codesToAdd := sliceDifference(configCodes, existingCodes)
+			if len(codesToAdd) > 0 {
+				err := addWrapupCodesInChunks(d.Id(), codesToAdd, routingAPI)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func addWrapupCodesInChunks(queueID string, codesToAdd []string, api *platformclientv2.RoutingApi) diag.Diagnostics {
+	// API restricts wraup code adds to 100 per call
+	const maxBatchSize = 100
+	for i := 0; i < len(codesToAdd); i += maxBatchSize {
+		end := i + maxBatchSize
+		if end > len(codesToAdd) {
+			end = len(codesToAdd)
+		}
+		var updateChunk []platformclientv2.Wrapupcodereference
+		for _, id := range codesToAdd[i:end] {
+			updateChunk = append(updateChunk, platformclientv2.Wrapupcodereference{Id: &id})
+		}
+
+		if len(updateChunk) > 0 {
+			_, _, err := api.PostRoutingQueueWrapupcodes(queueID, updateChunk)
+			if err != nil {
+				return diag.Errorf("Failed to update wrapup codes in queue %s: %s", queueID, err)
+			}
+		}
+	}
+	return nil
+}
+
+func getRoutingQueueWrapupCodes(queueID string, api *platformclientv2.RoutingApi) ([]platformclientv2.Wrapupcode, diag.Diagnostics) {
+	const maxPageSize = 100
+
+	var codes []platformclientv2.Wrapupcode
+	for pageNum := 1; ; pageNum++ {
+		codeResult, _, err := api.GetRoutingQueueWrapupcodes(queueID, maxPageSize, pageNum)
+		if err != nil {
+			return nil, diag.Errorf("Failed to query wrapup codes for queue %s: %s", queueID, err)
+		}
+		if codeResult == nil || codeResult.Entities == nil || len(*codeResult.Entities) == 0 {
+			return codes, nil
+		}
+		for _, code := range *codeResult.Entities {
+			codes = append(codes, code)
+		}
+	}
+}
+
 func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
 	if d.HasChange("members") {
 		if members := d.Get("members"); members != nil {
@@ -1083,4 +1191,26 @@ func flattenQueueMembers(queueID string, api *platformclientv2.RoutingApi) (*sch
 	}
 
 	return memberSet, nil
+}
+
+func flattenQueueWrapupCodes(queueID string, api *platformclientv2.RoutingApi) (*schema.Set, diag.Diagnostics) {
+	const maxPageSize = 100
+	var codeIds []string
+	for pageNum := 1; ; pageNum++ {
+		codes, _, err := api.GetRoutingQueueWrapupcodes(queueID, maxPageSize, pageNum)
+		if err != nil {
+			return nil, diag.Errorf("Failed to query wrapup codes for queue %s: %s", queueID, err)
+		}
+		if codes == nil || codes.Entities == nil || len(*codes.Entities) == 0 {
+			break
+		}
+		for _, code := range *codes.Entities {
+			codeIds = append(codeIds, *code.Id)
+		}
+	}
+
+	if codeIds != nil {
+		return stringListToSet(codeIds), nil
+	}
+	return nil, nil
 }

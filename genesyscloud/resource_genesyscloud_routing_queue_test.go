@@ -242,6 +242,92 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 	})
 }
 
+func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
+	var (
+		queueResource       = "test-queue-wrapup"
+		queueName           = "Terraform Test Queue-" + uuid.NewString()
+		wrapupCodeResource1 = "test-wrapup-1"
+		wrapupCodeResource2 = "test-wrapup-2"
+		wrapupCodeName1     = "Terraform Test Code1-" + uuid.NewString()
+		wrapupCodeName2     = "Terraform Test Code2-" + uuid.NewString()
+	)
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create with a single wrapup code
+				Config: generateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					generateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id"),
+				) + generateRoutingWrapupcodeResource(
+					wrapupCodeResource1,
+					wrapupCodeName1,
+				) + generateRoutingWrapupcodeResource(
+					wrapupCodeResource2,
+					wrapupCodeName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_wrapupcode."+wrapupCodeResource1),
+				),
+			},
+			{
+				// Update with another wrapup code
+				Config: generateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					generateQueueWrapupCodes(
+						"genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
+						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
+				) + generateRoutingWrapupcodeResource(
+					wrapupCodeResource1,
+					wrapupCodeName1,
+				) + generateRoutingWrapupcodeResource(
+					wrapupCodeResource2,
+					wrapupCodeName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_wrapupcode."+wrapupCodeResource1),
+					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_wrapupcode."+wrapupCodeResource2),
+				),
+			},
+			{
+				// Remove a wrapup code
+				Config: generateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					generateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
+				) + generateRoutingWrapupcodeResource(
+					wrapupCodeResource2,
+					wrapupCodeName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_wrapupcode."+wrapupCodeResource2),
+				),
+			},
+			{
+				// Remove all wrapup codes
+				Config: generateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					generateQueueWrapupCodes(),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "wrapup_codes"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResource,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
+}
+
 func testVerifyQueuesDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
 	for _, rs := range state.RootModule().Resources {
@@ -353,6 +439,12 @@ func generateMemberBlock(userID string, ringNum string) string {
 	`, userID, ringNum)
 }
 
+func generateQueueWrapupCodes(wrapupCodes ...string) string {
+	return fmt.Sprintf(`
+		wrapup_codes = [%s]
+	`, strings.Join(wrapupCodes, ", "))
+}
+
 func validateRoutingRules(resourceName string, ringNum int, operator string, threshold string, waitSec string) resource.TestCheckFunc {
 	ringNumStr := strconv.Itoa(ringNum)
 	return resource.ComposeAggregateTestCheckFunc(
@@ -411,5 +503,35 @@ func validateMember(queueResourceName string, userResourceName string, ringNum s
 		}
 
 		return fmt.Errorf("Member %s not found for queue %s in state", userID, queueID)
+	}
+}
+
+func validateQueueWrapupCode(queueResourceName string, codeResourceName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		queueResource, ok := state.RootModule().Resources[queueResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find queue %s in state", queueResourceName)
+		}
+		queueID := queueResource.Primary.ID
+
+		codeResource, ok := state.RootModule().Resources[codeResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find code %s in state", codeResourceName)
+		}
+		codeID := codeResource.Primary.ID
+
+		numCodesAttr, ok := queueResource.Primary.Attributes["wrapup_codes.#"]
+		if !ok {
+			return fmt.Errorf("No wrapup codes found for queue %s in state", queueID)
+		}
+
+		numCodes, _ := strconv.Atoi(numCodesAttr)
+		for i := 0; i < numCodes; i++ {
+			if queueResource.Primary.Attributes["wrapup_codes."+strconv.Itoa(i)] == codeID {
+				// Found wrapup code
+				return nil
+			}
+		}
+		return fmt.Errorf("Wrapup code %s not found for queue %s in state", codeID, queueID)
 	}
 }
