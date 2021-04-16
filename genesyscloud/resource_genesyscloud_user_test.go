@@ -571,6 +571,109 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 	})
 }
 
+func TestAccResourceUserRoutingUtil(t *testing.T) {
+	var (
+		userResource1 = "test-user-util"
+		userName      = "Terraform Util"
+		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		maxCapacity1  = "10"
+		maxCapacity2  = "12"
+		utilTypeCall  = "call"
+		utilTypeVideo = "videoComm"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create with utilization settings
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName,
+					generateUserRoutingUtil(
+						generateRoutingUtilMediaType("call", maxCapacity1, falseValue),
+						generateRoutingUtilMediaType("callback", maxCapacity1, falseValue),
+						generateRoutingUtilMediaType("chat", maxCapacity1, falseValue),
+						generateRoutingUtilMediaType("email", maxCapacity1, falseValue),
+						generateRoutingUtilMediaType("message", maxCapacity1, falseValue),
+						generateRoutingUtilMediaType("video", maxCapacity1, falseValue),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Agent"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", falseValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", falseValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", falseValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", falseValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", falseValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.video.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.video.0.include_non_acd", falseValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.video.0.interruptible_media_types"),
+				),
+			},
+			{
+				// Update utilization settings and set different org-level settings
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName,
+					generateUserRoutingUtil(
+						generateRoutingUtilMediaType("call", maxCapacity2, trueValue, strconv.Quote(utilTypeVideo)),
+						generateRoutingUtilMediaType("callback", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("chat", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("email", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
+						generateRoutingUtilMediaType("message", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Agent"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", trueValue),
+					validateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeVideo),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", trueValue),
+					validateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", trueValue),
+					validateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", trueValue),
+					validateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", trueValue),
+					validateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+				),
+			},
+			{
+				// Reset to org-level settings by specifying empty routing utilization attribute
+				Config: generateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName,
+					"routing_utilization = []",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Organization"),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
 func testVerifyUsersDestroyed(state *terraform.State) error {
 	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {
@@ -661,6 +764,29 @@ func validateUserLanguage(userResourceName string, langResourceName string, prof
 	}
 }
 
+func validateUserUtilizationLevel(userResourceName string, level string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		userResource, ok := state.RootModule().Resources[userResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find user %s in state", userResourceName)
+		}
+		userID := userResource.Primary.ID
+
+		usersAPI := platformclientv2.NewUsersApi()
+		util, _, err := usersAPI.GetRoutingUserUtilization(userID)
+		if err != nil {
+			// Unexpected error
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+
+		if *util.Level != level {
+			return fmt.Errorf("Unexpected utilization level for user %s: %s", userID, *util.Level)
+		}
+
+		return nil
+	}
+}
+
 // Basic user with minimum required fields
 func generateBasicUserResource(resourceID string, email string, name string) string {
 	return generateUserResource(resourceID, email, name, nullValue, nullValue, nullValue, nullValue, nullValue, "", "")
@@ -715,6 +841,13 @@ func generateUserEmployerInfo(offName string, empID string, empType string, date
 		date_hire = %s
 	}
 	`, offName, empID, empType, dateHire)
+}
+
+func generateUserRoutingUtil(nestedBlocks ...string) string {
+	return fmt.Sprintf(`routing_utilization {
+		%s
+	}
+	`, strings.Join(nestedBlocks, "\n"))
 }
 
 func generateUserPhoneAddress(phoneNum string, phoneMediaType string, phoneType string, extension string) string {

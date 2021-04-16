@@ -138,7 +138,8 @@ func generateTfExportResource(
 			"genesyscloud_location",
 			"genesyscloud_routing_language",
 			"genesyscloud_routing_queue",
-			"genesyscloud_routing_skill"
+			"genesyscloud_routing_skill",
+			"genesyscloud_routing_utilization"
 		]
 		exclude_attributes = [%s]
     }
