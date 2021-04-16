@@ -103,6 +103,7 @@ func routingQueueExporter() *ResourceExporter {
 			"outbound_email_address.route_id":   {}, // Ref type not yet defined
 			"bullseye_rings.skills_to_remove":   {RefType: "genesyscloud_routing_skill"},
 			"members.user_id":                   {RefType: "genesyscloud_user"},
+			"wrapup_codes":                      {RefType: "genesyscloud_routing_wrapupcode"},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},
