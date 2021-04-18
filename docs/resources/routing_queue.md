@@ -17,7 +17,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/routing/queues/{queueId}/members](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--members)
 * [PATCH /api/v2/routing/queues/{queueId}/members/{memberId}](https://developer.mypurecloud.com/api/rest/v2/routing/#patch-api-v2-routing-queues--queueId--members--memberId-)
 * [DELETE /api/v2/routing/queues/{queueId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId-)
-
+* [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId--wrapupcodes)
+* [POST /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--wrapupcodes)
+* [DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId--wrapupcodes--codeId-)
 
 ## Example Usage
 
@@ -62,6 +64,7 @@ resource "genesyscloud_routing_queue" "test_queue" {
     user_id  = genesyscloud_user.test-user.id
     ring_num = 2
   }
+  wrapup_codes = [genesyscloud_routing_wrapupcode.test-code.id]
 }
 ```
 
@@ -100,6 +103,7 @@ resource "genesyscloud_routing_queue" "test_queue" {
 - **routing_rules** (Block List, Max: 6) The routing rules for the queue, used for routing to known or preferred agents. (see [below for nested schema](#nestedblock--routing_rules))
 - **skill_evaluation_method** (String) The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to `ALL`.
 - **whisper_prompt_id** (String) The prompt ID used for whisper on the queue, if configured.
+- **wrapup_codes** (Set of String) IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.
 
 <a id="nestedblock--bullseye_rings"></a>
 ### Nested Schema for `bullseye_rings`

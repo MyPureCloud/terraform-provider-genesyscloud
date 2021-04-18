@@ -38,4 +38,5 @@ resource "genesyscloud_routing_queue" "test_queue" {
     user_id  = genesyscloud_user.test-user.id
     ring_num = 2
   }
+  wrapup_codes = [genesyscloud_routing_wrapupcode.test-code.id]
 }
