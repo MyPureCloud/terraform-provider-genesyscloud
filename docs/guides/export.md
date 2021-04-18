@@ -21,7 +21,7 @@ terraform {
 }
 
 resource "genesyscloud_tf_export" "export" {
-  directory          = "~/genesyscloud"
+  directory          = "./genesyscloud"
   resource_types     = ["genesyscloud_user"]
   include_state_file = true
 }

@@ -211,7 +211,7 @@ func resourceUser() *schema.Resource {
 				Default:     false,
 			},
 			"routing_skills": {
-				Description: "Skills and proficiencies for this user.",
+				Description: "Skills and proficiencies for this user. If not set, this resource will not manage user skills.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
@@ -219,7 +219,7 @@ func resourceUser() *schema.Resource {
 				Elem:        userSkillResource,
 			},
 			"routing_languages": {
-				Description: "Languages and proficiencies for this user.",
+				Description: "Languages and proficiencies for this user. If not set, this resource will not manage user languages.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,

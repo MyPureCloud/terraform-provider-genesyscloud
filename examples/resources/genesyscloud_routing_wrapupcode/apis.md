@@ -1,0 +1,5 @@
+* [GET /api/v2/routing/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-wrapupcodes)
+* [GET /api/v2/routing/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-wrapupcodes--codeId-)
+* [POST /api/v2/routing/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-wrapupcodes)
+* [PUT /api/v2/routing/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#put-api-v2-routing-wrapupcodes--codeId-)
+* [DELETE /api/v2/routing/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-wrapupcodes--codeId-)

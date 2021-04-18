@@ -16,7 +16,7 @@
             "args": [
                 "-test.v",
                 "-test.run",
-                "TestAccResourceAuthDivision"
+                "TestAccResourceTfExport"
             ],
         },
         {

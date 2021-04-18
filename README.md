@@ -70,9 +70,17 @@ In order to run the full suite of Acceptance tests, run `make testacc`. You can 
 $ make testacc TESTARGS="-run TestAccResourceUserBasic"
 ```
 
-All new resources must have passing acceptance tests and docs in order to be merged. Most of the docs are generated automatically from the schema. An example `resource.tf` file for the resource should be added to the examples folder along with an `apis.md` file listing all of the APIs the resource uses. To generate or update documentation, run `go generate`.
+All new resources must have passing acceptance tests and docs in order to be merged. Most of the docs are generated automatically from the schema and examples folder by running `go generate`.
 
-*Note:* Acceptance tests create real resources and require an OAuth Client authorized to create, update, and delete all resources in your org. The OAuth Client information must be set in the `GENESYSCLOUD_*` environment variables prior to running the tests.
+### Adding a new resource type
+
+1. Create new resource and test go files for the resource type, e.g. `resource_genesyscloud_{resource_name}.go` and `resource_genesyscloud_{resource_name}_test.go`. Resource names should typically be the same as (or very similar to) the Public API resource. 
+2. Define your resource schema in a method returning a `*schema.Resource`. See existing schemas and [this page](https://www.terraform.io/docs/extend/schemas/index.html) for examples. The schema should closely match Public API schemas, but there are some Terraform schema limitations that may require some deviation from the API.
+3. Add the resource name along with the schema method to the `ResourcesMap` found in `provider.go`. This will make the resource available to the plugin.
+4. Define methods for the resource's `CreateContext`, `ReadContext`, `UpdateContext`, and `DeleteContext` attributes as necessary. As the names imply, each one should handle one of the CRUD operations for the resource. Some best practices can be found [here](https://www.terraform.io/docs/extend/best-practices/index.html), and existing resources contain many common patterns and examples.
+5. If the resource should be exportable, add a method that returns a `*ResourceExporter` for the resource. See `resource_exporter.go` for details on each field in the `ResourceExporter` struct. This method should be added the `getResourceExporters` method in `resource_exporter.go` to make it an exportable resource.
+6. Write acceptance test cases that cover all of the attributes and CRUD operations for the resource. The tests should be written in the `resource_genesyscloud_{resource_name}_test.go` file. Acceptance tests modify real resources in a test org and require an OAuth Client authorized to create, update, and delete the resource type in the org. See existing tests for examples and [Terraform Acceptance Test documentation](https://www.terraform.io/docs/extend/testing/acceptance-tests/index.html) for more details.
+7. Add a new folder for the resource under the `/examples` folder. An example `resource.tf` file for the resource should be added to the folder along with an `apis.md` file listing all of the APIs the resource uses. To generate or update documentation, run `go generate`.
 
 ### Using the Provider locally
 
