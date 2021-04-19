@@ -80,7 +80,7 @@ jobs:
         GENESYSCLOUD_OAUTHCLIENT_SECRET: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
         GENESYSCLOUD_REGION: "us-east-1"
       run: |
-        go test -v -cover ./genesyscloud/
+        go test -timeout 60m -v -cover ./genesyscloud/
 
     - name: 'Upload Export Result'
       if: ${{ always() }}
