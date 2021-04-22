@@ -929,8 +929,12 @@ func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueem
 
 func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[string]interface{} {
 	settingsMap := make(map[string]interface{})
-	settingsMap["domain_id"] = *settings.Domain.Id
-	settingsMap["route_id"] = *settings.Route.Id
+	if settings.Domain != nil {
+		settingsMap["domain_id"] = *settings.Domain.Id
+	}
+	if settings.Route != nil {
+		settingsMap["route_id"] = *settings.Route.Id
+	}
 	return settingsMap
 }
 
