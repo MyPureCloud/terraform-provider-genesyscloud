@@ -13,17 +13,15 @@ require (
 	github.com/aws/aws-sdk-go v1.38.20 // indirect
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/gliderlabs/ssh v0.3.2 // indirect
-	github.com/go-git/go-git/v5 v5.3.0 // indirect
 	github.com/go-test/deep v1.0.7 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
-	github.com/hashicorp/go-getter v1.5.3 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/hcl/v2 v2.9.1 // indirect
 	github.com/hashicorp/terraform-plugin-docs v0.4.0
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.6.0
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.6.1
 	github.com/hashicorp/yamux v0.0.0-20210316155119-a95892c5f864 // indirect
 	github.com/jhump/protoreflect v1.8.2 // indirect
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
@@ -37,7 +35,6 @@ require (
 	github.com/nyaruka/phonenumbers v1.0.68
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc // indirect
 	golang.org/x/net v0.0.0-20210414194228-064579744ee0 // indirect
