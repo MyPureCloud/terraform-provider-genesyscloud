@@ -106,8 +106,8 @@ var (
 	}
 )
 
-func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -121,7 +121,7 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 		}
 
 		for _, user := range *users.Entities {
-			resources[*user.Id] = *user.Email
+			resources[*user.Id] = &ResourceMeta{Name: *user.Email}
 		}
 	}
 

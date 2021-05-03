@@ -57,10 +57,10 @@ func getSdkUtilizationTypes() []string {
 	return types
 }
 
-func getAllRoutingUtilization(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
+func getAllRoutingUtilization(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	// Routing utilization config always exists
-	resources := make(map[string]string)
-	resources["0"] = "routing_utilization"
+	resources := make(ResourceIDMetaMap)
+	resources["0"] = &ResourceMeta{Name: "routing_utilization"}
 	return resources, nil
 }
 

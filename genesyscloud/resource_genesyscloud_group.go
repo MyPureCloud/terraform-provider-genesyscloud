@@ -40,8 +40,8 @@ var (
 	}
 )
 
-func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -55,7 +55,7 @@ func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configurat
 		}
 
 		for _, group := range *groups.Entities {
-			resources[*group.Id] = *group.Name
+			resources[*group.Id] = &ResourceMeta{Name: *group.Name}
 		}
 	}
 
@@ -285,7 +285,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	// Group deletes are not immediate. Give time for caches to clear, then query until group is no longer found
 	time.Sleep(5 * time.Second)
-	return withRetries(ctx, 30 * time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := groupsAPI.GetGroup(d.Id())
 		if err != nil {
 			if resp != nil && resp.StatusCode == 404 {

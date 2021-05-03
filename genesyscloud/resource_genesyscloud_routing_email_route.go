@@ -28,8 +28,8 @@ var (
 	}
 )
 
-func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	domains, _, getErr := routingAPI.GetRoutingEmailDomains()
@@ -57,7 +57,10 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 			}
 
 			for _, route := range *routes.Entities {
-				resources[*route.Id] = *route.Pattern + *domain.Id
+				resources[*route.Id] = &ResourceMeta{
+					Name:     *route.Pattern + *domain.Id,
+					IdPrefix: *domain.Id + "/",
+				}
 			}
 		}
 	}

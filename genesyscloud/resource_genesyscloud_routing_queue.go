@@ -69,8 +69,8 @@ var (
 	}
 )
 
-func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -84,7 +84,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, queue := range *queues.Entities {
-			resources[*queue.Id] = *queue.Name
+			resources[*queue.Id] = &ResourceMeta{Name: *queue.Name}
 		}
 	}
 

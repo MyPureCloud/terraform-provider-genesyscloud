@@ -9,9 +9,9 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
-func getAllIdpGsuite(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
+func getAllIdpGsuite(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
-	resources := make(map[string]string)
+	resources := make(ResourceIDMetaMap)
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersGsuite()
 	if getErr != nil {
@@ -22,7 +22,7 @@ func getAllIdpGsuite(ctx context.Context, clientConfig *platformclientv2.Configu
 		return nil, diag.Errorf("Failed to get IDP GSuite: %v", getErr)
 	}
 
-	resources["0"] = "gsuite"
+	resources["0"] = &ResourceMeta{Name: "gsuite"}
 	return resources, nil
 }
 

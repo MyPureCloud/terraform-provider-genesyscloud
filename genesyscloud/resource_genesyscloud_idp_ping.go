@@ -9,9 +9,9 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
-func getAllIdpPing(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
+func getAllIdpPing(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
-	resources := make(map[string]string)
+	resources := make(ResourceIDMetaMap)
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersPing()
 	if getErr != nil {
@@ -22,7 +22,7 @@ func getAllIdpPing(ctx context.Context, clientConfig *platformclientv2.Configura
 		return nil, diag.Errorf("Failed to get IDP Ping: %v", getErr)
 	}
 
-	resources["0"] = "ping"
+	resources["0"] = &ResourceMeta{Name: "ping"}
 	return resources, nil
 }
 

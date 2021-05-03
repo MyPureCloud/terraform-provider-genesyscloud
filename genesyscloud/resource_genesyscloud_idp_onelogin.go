@@ -9,9 +9,9 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
-func getAllIdpOnelogin(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
+func getAllIdpOnelogin(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
-	resources := make(map[string]string)
+	resources := make(ResourceIDMetaMap)
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersOnelogin()
 	if getErr != nil {
@@ -22,7 +22,7 @@ func getAllIdpOnelogin(ctx context.Context, clientConfig *platformclientv2.Confi
 		return nil, diag.Errorf("Failed to get IDP Onelogin: %v", getErr)
 	}
 
-	resources["0"] = "onelogin"
+	resources["0"] = &ResourceMeta{Name: "onelogin"}
 	return resources, nil
 }
 

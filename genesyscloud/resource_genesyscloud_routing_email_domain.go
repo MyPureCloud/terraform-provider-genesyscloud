@@ -10,8 +10,8 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
-func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	domains, _, getErr := routingAPI.GetRoutingEmailDomains()
@@ -24,7 +24,7 @@ func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclient
 	}
 
 	for _, domain := range *domains.Entities {
-		resources[*domain.Id] = *domain.Id
+		resources[*domain.Id] = &ResourceMeta{Name: *domain.Id}
 	}
 
 	return resources, nil
