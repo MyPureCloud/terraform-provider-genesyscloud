@@ -11,8 +11,8 @@ import (
 	"github.com/nyaruka/phonenumbers"
 )
 
-func getAllLocations(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllLocations(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -26,7 +26,7 @@ func getAllLocations(ctx context.Context, clientConfig *platformclientv2.Configu
 		}
 
 		for _, location := range *locations.Entities {
-			resources[*location.Id] = *location.Name
+			resources[*location.Id] = &ResourceMeta{Name: *location.Name}
 		}
 	}
 

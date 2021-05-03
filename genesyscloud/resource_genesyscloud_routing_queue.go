@@ -69,8 +69,8 @@ var (
 	}
 )
 
-func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -84,7 +84,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, queue := range *queues.Entities {
-			resources[*queue.Id] = *queue.Name
+			resources[*queue.Id] = &ResourceMeta{Name: *queue.Name}
 		}
 	}
 
@@ -100,7 +100,8 @@ func routingQueueExporter() *ResourceExporter {
 			"whisper_prompt_id":                 {}, // Ref type not yet defined
 			"outbound_messaging_sms_address_id": {}, // Ref type not yet defined
 			"default_script_ids.*":              {}, // Ref type not yet defined
-			"outbound_email_address.route_id":   {}, // Ref type not yet defined
+			"outbound_email_address.route_id":   {RefType: "genesyscloud_routing_email_route"},
+			"outbound_email_address.domain_id":  {RefType: "genesyscloud_routing_email_domain"},
 			"bullseye_rings.skills_to_remove":   {RefType: "genesyscloud_routing_skill"},
 			"members.user_id":                   {RefType: "genesyscloud_user"},
 			"wrapup_codes":                      {RefType: "genesyscloud_routing_wrapupcode"},

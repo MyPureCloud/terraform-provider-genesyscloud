@@ -1,0 +1,5 @@
+* [GET /api/v2/routing/email/domains/{domainName}/routes](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-email-domains--domainName--routes)
+* [POST /api/v2/routing/email/domains/{domainName}/routes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-email-domains--domainName--routes)
+* [GET /api/v2/routing/email/domains/{domainName}/routes/{routeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-email-domains--domainName--routes--routeId-)
+* [PUT /api/v2/routing/email/domains/{domainName}/routes/{routeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#put-api-v2-routing-email-domains--domainName--routes--routeId-)
+* [DELETE /api/v2/routing/email/domains/{domainName}/routes/{routeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-email-domains--domainName--routes--routeId-)

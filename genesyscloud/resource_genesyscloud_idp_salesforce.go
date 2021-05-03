@@ -9,9 +9,9 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
-func getAllIdpSalesforce(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
+func getAllIdpSalesforce(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
-	resources := make(map[string]string)
+	resources := make(ResourceIDMetaMap)
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersSalesforce()
 	if getErr != nil {
@@ -22,7 +22,7 @@ func getAllIdpSalesforce(ctx context.Context, clientConfig *platformclientv2.Con
 		return nil, diag.Errorf("Failed to get IDP Salesforce: %v", getErr)
 	}
 
-	resources["0"] = "salesforce"
+	resources["0"] = &ResourceMeta{Name: "salesforce"}
 	return resources, nil
 }
 

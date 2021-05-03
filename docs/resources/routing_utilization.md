@@ -74,7 +74,7 @@ Required:
 Optional:
 
 - **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (chat | email | message | videoComm | call | callback).
+- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 
 
 <a id="nestedblock--callback"></a>
@@ -87,7 +87,7 @@ Required:
 Optional:
 
 - **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (chat | email | message | videoComm | call | callback).
+- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 
 
 <a id="nestedblock--chat"></a>
@@ -100,7 +100,7 @@ Required:
 Optional:
 
 - **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (chat | email | message | videoComm | call | callback).
+- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 
 
 <a id="nestedblock--email"></a>
@@ -113,7 +113,7 @@ Required:
 Optional:
 
 - **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (chat | email | message | videoComm | call | callback).
+- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 
 
 <a id="nestedblock--message"></a>
@@ -126,7 +126,7 @@ Required:
 Optional:
 
 - **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (chat | email | message | videoComm | call | callback).
+- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 
 
 <a id="nestedblock--video"></a>
@@ -139,5 +139,5 @@ Required:
 Optional:
 
 - **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (chat | email | message | videoComm | call | callback).
+- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 

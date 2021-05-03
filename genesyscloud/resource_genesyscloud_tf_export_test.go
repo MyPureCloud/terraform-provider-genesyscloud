@@ -95,15 +95,38 @@ func TestForExportCycles(t *testing.T) {
 
 	cycles := topo.DirectedCyclesIn(graph)
 	if len(cycles) > 0 {
-		cycleResources := make([][]string, len(cycles))
-		for i, cycle := range cycles {
-			cycleResources[i] = make([]string, len(cycle))
+		cycleResources := make([][]string, 0)
+		for _, cycle := range cycles {
+			cycleTemp := make([]string, len(cycle))
 			for j, cycleNode := range cycle {
-				cycleResources[i][j] = resNames[cycleNode.ID()]
+				cycleTemp[j] = resNames[cycleNode.ID()]
+			}
+			if !isIgnoredReferenceCycle(cycleTemp) {
+				cycleResources = append(cycleResources, cycleTemp)
 			}
 		}
-		t.Fatalf("Found the following potential reference cycles:\n %s", cycleResources)
+
+		if len(cycleResources) > 0 {
+			t.Fatalf("Found the following potential reference cycles:\n %s", cycleResources)
+		}
 	}
+}
+
+func isIgnoredReferenceCycle(cycle []string) bool {
+	// Some cycles cannot be broken with a schema change and must be dealt with in the config
+	// These cycles can be ignored by this test
+	ignoredCycles := [][]string{
+		// Email routes contain a ref to an inbound queue ID, and queues contain a ref to an outbound email route
+		{"genesyscloud_routing_queue", "genesyscloud_routing_email_route", "genesyscloud_routing_queue"},
+		{"genesyscloud_routing_email_route", "genesyscloud_routing_queue", "genesyscloud_routing_email_route"},
+	}
+
+	for _, ignored := range ignoredCycles {
+		if strArrayEquals(ignored, cycle) {
+			return true
+		}
+	}
+	return false
 }
 
 func resNodeIndex(resName string, resNames []string) int64 {
@@ -136,6 +159,8 @@ func generateTfExportResource(
 			"genesyscloud_idp_ping",
 			"genesyscloud_idp_salesforce",
 			"genesyscloud_location",
+			"genesyscloud_routing_email_domain",
+			"genesyscloud_routing_email_route",
 			"genesyscloud_routing_language",
 			"genesyscloud_routing_queue",
 			"genesyscloud_routing_skill",

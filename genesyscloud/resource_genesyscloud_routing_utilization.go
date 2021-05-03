@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -52,13 +53,14 @@ func getSdkUtilizationTypes() []string {
 	for t := range utilizationMediaTypes {
 		types = append(types, t)
 	}
+	sort.Strings(types)
 	return types
 }
 
-func getAllRoutingUtilization(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
+func getAllRoutingUtilization(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	// Routing utilization config always exists
-	resources := make(map[string]string)
-	resources["0"] = "routing_utilization"
+	resources := make(ResourceIDMetaMap)
+	resources["0"] = &ResourceMeta{Name: "routing_utilization"}
 	return resources, nil
 }
 

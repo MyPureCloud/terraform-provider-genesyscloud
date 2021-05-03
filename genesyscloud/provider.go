@@ -62,26 +62,28 @@ func New(version string) func() *schema.Provider {
 				},
 			},
 			ResourcesMap: map[string]*schema.Resource{
-				"genesyscloud_auth_role":           resourceAuthRole(),
-				"genesyscloud_auth_division":       resourceAuthDivision(),
-				"genesyscloud_group":               resourceGroup(),
-				"genesyscloud_group_roles":         resourceGroupRoles(),
-				"genesyscloud_idp_adfs":            resourceIdpAdfs(),
-				"genesyscloud_idp_generic":         resourceIdpGeneric(),
-				"genesyscloud_idp_gsuite":          resourceIdpGsuite(),
-				"genesyscloud_idp_okta":            resourceIdpOkta(),
-				"genesyscloud_idp_onelogin":        resourceIdpOnelogin(),
-				"genesyscloud_idp_ping":            resourceIdpPing(),
-				"genesyscloud_idp_salesforce":      resourceIdpSalesforce(),
-				"genesyscloud_location":            resourceLocation(),
-				"genesyscloud_routing_language":    resourceRoutingLanguage(),
-				"genesyscloud_routing_queue":       resourceRoutingQueue(),
-				"genesyscloud_routing_skill":       resourceRoutingSkill(),
-				"genesyscloud_routing_utilization": resourceRoutingUtilization(),
-				"genesyscloud_routing_wrapupcode":  resourceRoutingWrapupCode(),
-				"genesyscloud_tf_export":           resourceTfExport(),
-				"genesyscloud_user":                resourceUser(),
-				"genesyscloud_user_roles":          resourceUserRoles(),
+				"genesyscloud_auth_role":            resourceAuthRole(),
+				"genesyscloud_auth_division":        resourceAuthDivision(),
+				"genesyscloud_group":                resourceGroup(),
+				"genesyscloud_group_roles":          resourceGroupRoles(),
+				"genesyscloud_idp_adfs":             resourceIdpAdfs(),
+				"genesyscloud_idp_generic":          resourceIdpGeneric(),
+				"genesyscloud_idp_gsuite":           resourceIdpGsuite(),
+				"genesyscloud_idp_okta":             resourceIdpOkta(),
+				"genesyscloud_idp_onelogin":         resourceIdpOnelogin(),
+				"genesyscloud_idp_ping":             resourceIdpPing(),
+				"genesyscloud_idp_salesforce":       resourceIdpSalesforce(),
+				"genesyscloud_location":             resourceLocation(),
+				"genesyscloud_routing_email_domain": resourceRoutingEmailDomain(),
+				"genesyscloud_routing_email_route":  resourceRoutingEmailRoute(),
+				"genesyscloud_routing_language":     resourceRoutingLanguage(),
+				"genesyscloud_routing_queue":        resourceRoutingQueue(),
+				"genesyscloud_routing_skill":        resourceRoutingSkill(),
+				"genesyscloud_routing_utilization":  resourceRoutingUtilization(),
+				"genesyscloud_routing_wrapupcode":   resourceRoutingWrapupCode(),
+				"genesyscloud_tf_export":            resourceTfExport(),
+				"genesyscloud_user":                 resourceUser(),
+				"genesyscloud_user_roles":           resourceUserRoles(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"genesyscloud_auth_role":        dataSourceAuthRole(),
@@ -98,6 +100,7 @@ func New(version string) func() *schema.Provider {
 type providerMeta struct {
 	Version      string
 	ClientConfig *platformclientv2.Configuration
+	Domain       string
 }
 
 func configure(version string) schema.ConfigureContextFunc {
@@ -116,24 +119,25 @@ func configure(version string) schema.ConfigureContextFunc {
 		return &providerMeta{
 			Version:      version,
 			ClientConfig: platformclientv2.GetDefaultConfiguration(),
+			Domain:       getRegionDomain(data.Get("aws_region").(string)),
 		}, nil
 	}
 }
 
 func getRegionMap() map[string]string {
 	return map[string]string{
-		"dca":            "https://api.inindca.com",
-		"tca":            "https://api.inintca.com",
-		"us-east-1":      "https://api.mypurecloud.com",
-		"us-west-2":      "https://api.usw2.pure.cloud",
-		"eu-west-1":      "https://api.mypurecloud.ie",
-		"eu-west-2":      "https://api.euw2.pure.cloud",
-		"ap-southeast-2": "https://api.mypurecloud.com.au",
-		"ap-northeast-1": "https://api.mypurecloud.jp",
-		"eu-central-1":   "https://api.mypurecloud.de",
-		"ca-central-1":   "https://api.cac1.pure.cloud",
-		"ap-northeast-2": "https://api.apne2.pure.cloud",
-		"ap-south-1":     "https://api.aps1.pure.cloud",
+		"dca":            "inindca.com",
+		"tca":            "inintca.com",
+		"us-east-1":      "mypurecloud.com",
+		"us-west-2":      "usw2.pure.cloud",
+		"eu-west-1":      "mypurecloud.ie",
+		"eu-west-2":      "euw2.pure.cloud",
+		"ap-southeast-2": "mypurecloud.com.au",
+		"ap-northeast-1": "mypurecloud.jp",
+		"eu-central-1":   "mypurecloud.de",
+		"ca-central-1":   "cac1.pure.cloud",
+		"ap-northeast-2": "apne2.pure.cloud",
+		"ap-south-1":     "aps1.pure.cloud",
 	}
 }
 
@@ -146,8 +150,12 @@ func getAllowedRegions() []string {
 	return regionKeys
 }
 
-func getRegionBasePath(region string) string {
+func getRegionDomain(region string) string {
 	return getRegionMap()[strings.ToLower(region)]
+}
+
+func getRegionBasePath(region string) string {
+	return "https://api." + getRegionDomain(region)
 }
 
 func initClientConfig(data *schema.ResourceData, version string, config *platformclientv2.Configuration) diag.Diagnostics {
@@ -171,7 +179,7 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 
 	err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
 	if err != nil {
-		return diag.Errorf("Failed to authorize Genesys Cloud client credentials")
+		return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
 	}
 	return nil
 }

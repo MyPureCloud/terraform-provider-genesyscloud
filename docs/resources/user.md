@@ -125,6 +125,7 @@ resource "genesyscloud_user" "test_user" {
 - **profile_skills** (Set of String) Profile skills for this user. If not set, this resource will not manage profile skills.
 - **routing_languages** (Set of Object) Languages and proficiencies for this user. If not set, this resource will not manage user languages. (see [below for nested schema](#nestedatt--routing_languages))
 - **routing_skills** (Set of Object) Skills and proficiencies for this user. If not set, this resource will not manage user skills. (see [below for nested schema](#nestedatt--routing_skills))
+- **routing_utilization** (List of Object) The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings. (see [below for nested schema](#nestedatt--routing_utilization))
 - **state** (String) User's state (active | inactive). Default is 'active'. Defaults to `active`.
 - **title** (String) User's title.
 

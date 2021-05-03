@@ -9,11 +9,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
 
-// ResourceIDNameMap is a map of IDs to resource names
-type ResourceIDNameMap map[string]string
+type ResourceMeta struct {
+	// Name of the resoruce to be used in exports
+	Name string
+
+	// Prefix to add to the ID when reading state
+	IdPrefix string
+}
+
+// ResourceIDMetaMap is a map of IDs to ResourceMeta
+type ResourceIDMetaMap map[string]*ResourceMeta
 
 // GetAllResourcesFunc is a method that returns all resource IDs
-type GetAllResourcesFunc func(context.Context) (ResourceIDNameMap, diag.Diagnostics)
+type GetAllResourcesFunc func(context.Context) (ResourceIDMetaMap, diag.Diagnostics)
 
 // RefAttrSettings contains behavior settings for references
 type RefAttrSettings struct {
@@ -46,7 +54,7 @@ type ResourceExporter struct {
 	RemoveIfMissing map[string][]string
 
 	// Map of resource id->names. This is set after a call to loadSanitizedResourceMap
-	SanitizedResourceMap ResourceIDNameMap
+	SanitizedResourceMap ResourceIDMetaMap
 
 	// List of attributes to exclude from config. This is set by the export configuration.
 	ExcludedAttributes []string
@@ -105,25 +113,27 @@ func (r *ResourceExporter) removeIfMissing(attribute string, config map[string]i
 func getResourceExporters(filter []string) map[string]*ResourceExporter {
 	exporters := map[string]*ResourceExporter{
 		// Add new resources that can be exported here
-		"genesyscloud_auth_division":       authDivisionExporter(),
-		"genesyscloud_auth_role":           authRoleExporter(),
-		"genesyscloud_group":               groupExporter(),
-		"genesyscloud_group_roles":         groupRolesExporter(),
-		"genesyscloud_idp_adfs":            idpAdfsExporter(),
-		"genesyscloud_idp_generic":         idpGenericExporter(),
-		"genesyscloud_idp_gsuite":          idpGsuiteExporter(),
-		"genesyscloud_idp_okta":            idpOktaExporter(),
-		"genesyscloud_idp_onelogin":        idpOneloginExporter(),
-		"genesyscloud_idp_ping":            idpPingExporter(),
-		"genesyscloud_idp_salesforce":      idpSalesforceExporter(),
-		"genesyscloud_location":            locationExporter(),
-		"genesyscloud_routing_language":    routingLanguageExporter(),
-		"genesyscloud_routing_queue":       routingQueueExporter(),
-		"genesyscloud_routing_skill":       routingSkillExporter(),
-		"genesyscloud_routing_utilization": routingUtilizationExporter(),
-		"genesyscloud_routing_wrapupcode":  routingWrapupCodeExporter(),
-		"genesyscloud_user":                userExporter(),
-		"genesyscloud_user_roles":          userRolesExporter(),
+		"genesyscloud_auth_division":        authDivisionExporter(),
+		"genesyscloud_auth_role":            authRoleExporter(),
+		"genesyscloud_group":                groupExporter(),
+		"genesyscloud_group_roles":          groupRolesExporter(),
+		"genesyscloud_idp_adfs":             idpAdfsExporter(),
+		"genesyscloud_idp_generic":          idpGenericExporter(),
+		"genesyscloud_idp_gsuite":           idpGsuiteExporter(),
+		"genesyscloud_idp_okta":             idpOktaExporter(),
+		"genesyscloud_idp_onelogin":         idpOneloginExporter(),
+		"genesyscloud_idp_ping":             idpPingExporter(),
+		"genesyscloud_idp_salesforce":       idpSalesforceExporter(),
+		"genesyscloud_location":             locationExporter(),
+		"genesyscloud_routing_email_domain": routingEmailDomainExporter(),
+		"genesyscloud_routing_email_route":  routingEmailRouteExporter(),
+		"genesyscloud_routing_language":     routingLanguageExporter(),
+		"genesyscloud_routing_queue":        routingQueueExporter(),
+		"genesyscloud_routing_skill":        routingSkillExporter(),
+		"genesyscloud_routing_utilization":  routingUtilizationExporter(),
+		"genesyscloud_routing_wrapupcode":   routingWrapupCodeExporter(),
+		"genesyscloud_user":                 userExporter(),
+		"genesyscloud_user_roles":           userRolesExporter(),
 	}
 
 	// Include all if no filters
@@ -155,15 +165,15 @@ func escapeRune(s string) string {
 // Resource names must only contain alphanumeric chars, underscores, or dashes
 var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
 
-func sanitizeResourceNames(idNamesMap ResourceIDNameMap) {
-	for id, name := range idNamesMap {
-		name = unsafeNameChars.ReplaceAllStringFunc(name, escapeRune)
+func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
+	for id, meta := range idMetaMap {
+		name := unsafeNameChars.ReplaceAllStringFunc(meta.Name, escapeRune)
 		// Append part of ID to ensure uniqueness for similar names
 		if len(id) > 6 {
 			name = name + "_" + id[:6]
 		} else {
 			name = name + "_" + id
 		}
-		idNamesMap[id] = name
+		meta.Name = name
 	}
 }
