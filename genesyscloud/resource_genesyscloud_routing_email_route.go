@@ -57,7 +57,7 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 			}
 
 			for _, route := range *routes.Entities {
-				resources[*route.Id] = *route.Name
+				resources[*route.Id] = *route.Pattern + *domain.Id
 			}
 		}
 	}
