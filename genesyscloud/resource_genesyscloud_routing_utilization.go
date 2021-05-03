@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -52,6 +53,7 @@ func getSdkUtilizationTypes() []string {
 	for t := range utilizationMediaTypes {
 		types = append(types, t)
 	}
+	sort.Strings(types)
 	return types
 }
 

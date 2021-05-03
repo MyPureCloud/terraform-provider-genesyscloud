@@ -68,3 +68,15 @@ func validateStringInArray(resourceName string, attrName string, value string) r
 		return fmt.Errorf("%s %s not found for group %s in state", attrName, value, resourceID)
 	}
 }
+
+func strArrayEquals(a, b []string) bool {
+	if len(a) != len(b) {
+        return false
+    }
+    for i, v := range a {
+        if v != b[i] {
+            return false
+        }
+    }
+    return true
+}
