@@ -10,9 +10,9 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
-func getAllIdpGeneric(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
+func getAllIdpGeneric(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
-	resources := make(map[string]string)
+	resources := make(ResourceIDMetaMap)
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersGeneric()
 	if getErr != nil {
@@ -23,7 +23,7 @@ func getAllIdpGeneric(ctx context.Context, clientConfig *platformclientv2.Config
 		return nil, diag.Errorf("Failed to get IDP Generic: %v", getErr)
 	}
 
-	resources["0"] = "generic"
+	resources["0"] = &ResourceMeta{Name: "generic"}
 	return resources, nil
 }
 

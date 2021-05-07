@@ -9,8 +9,8 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
-func getAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -25,7 +25,7 @@ func getAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Con
 
 		for _, skill := range *skills.Entities {
 			if *skill.State != "deleted" {
-				resources[*skill.Id] = *skill.Name
+				resources[*skill.Id] = &ResourceMeta{Name: *skill.Name}
 			}
 		}
 	}

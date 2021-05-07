@@ -104,8 +104,8 @@ var (
 	}
 )
 
-func getAllAuthRoles(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllAuthRoles(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -119,7 +119,7 @@ func getAllAuthRoles(ctx context.Context, clientConfig *platformclientv2.Configu
 		}
 
 		for _, role := range *roles.Entities {
-			resources[*role.Id] = *role.Name
+			resources[*role.Id] = &ResourceMeta{Name: *role.Name}
 		}
 	}
 

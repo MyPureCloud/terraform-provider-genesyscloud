@@ -273,13 +273,13 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *Re
 
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
-	for id, name := range exporter.SanitizedResourceMap {
-		go func(id string, name string) {
+	for id, resMeta := range exporter.SanitizedResourceMap {
+		go func(id string, resMeta *ResourceMeta) {
 			defer wg.Done()
 
 			// This calls into the resource's ReadContext method which
 			// will block until it can acquire a pooled client config object.
-			instanceState, err := getResourceState(ctx, resource, id, meta)
+			instanceState, err := getResourceState(ctx, resource, id, resMeta, meta)
 			if err != nil {
 				errorChan <- diag.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
 				cancel() // Stop other requests
@@ -287,18 +287,18 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *Re
 			}
 
 			if instanceState == nil {
-				log.Printf("Resource %s no longer exists. Skipping.", name)
+				log.Printf("Resource %s no longer exists. Skipping.", resMeta.Name)
 				removeChan <- id // Mark for removal from the map
 				return
 			}
 
 			resourceChan <- resourceInfo{
 				State:   instanceState,
-				Name:    name,
+				Name:    resMeta.Name,
 				Type:    resType,
 				CtyType: ctyType,
 			}
-		}(id, name)
+		}(id, resMeta)
 	}
 
 	go func() {
@@ -326,8 +326,20 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *Re
 	}
 }
 
-func getResourceState(ctx context.Context, resource *schema.Resource, resID string, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
-	state, err := resource.RefreshWithoutUpgrade(ctx, &terraform.InstanceState{ID: resID}, meta)
+func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
+	// If defined, pass the full ID through the import method to generate a readable state
+	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
+	if resource.Importer != nil && resource.Importer.StateContext != nil {
+		resourceDataArr, err := resource.Importer.StateContext(ctx, resource.Data(instanceState), meta)
+		if err != nil {
+			return nil, diag.FromErr(err)
+		}
+		if len(resourceDataArr) > 0 {
+			instanceState = resourceDataArr[0].State()
+		}
+	}
+
+	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
 	if err != nil {
 		return nil, err
 	}
@@ -583,9 +595,9 @@ func resolveReference(refSettings *RefAttrSettings, refID string, exporters map[
 
 	if exporters[refSettings.RefType] != nil {
 		// Get the sanitized name from the ID returned as a reference expression
-		if idNameMap := exporters[refSettings.RefType].SanitizedResourceMap; idNameMap != nil {
-			if name := idNameMap[refID]; name != "" {
-				return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, name)
+		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
+			if meta := idMetaMap[refID]; meta != nil && meta.Name != "" {
+				return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.Name)
 			}
 		}
 	}

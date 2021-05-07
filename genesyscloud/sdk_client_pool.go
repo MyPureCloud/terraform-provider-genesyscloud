@@ -64,7 +64,7 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) {
 }
 
 type resContextFunc func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics
-type getAllConfigFunc func(context.Context, *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics)
+type getAllConfigFunc func(context.Context, *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics)
 
 func createWithPooledClient(method resContextFunc) schema.CreateContextFunc {
 	return schema.CreateContextFunc(runWithPooledClient(method))
@@ -105,7 +105,7 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 
 // Inject a pooled SDK client connection into an exporter's getAll* method
 func getAllWithPooledClient(method getAllConfigFunc) GetAllResourcesFunc {
-	return func(ctx context.Context) (ResourceIDNameMap, diag.Diagnostics) {
+	return func(ctx context.Context) (ResourceIDMetaMap, diag.Diagnostics) {
 		clientConfig := sdkClientPool.acquire()
 		defer sdkClientPool.release(clientConfig)
 

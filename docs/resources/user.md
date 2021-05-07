@@ -20,6 +20,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/users/{userId}/routinglanguages/bulk](https://developer.mypurecloud.com/api/rest/v2/users/#patch-api-v2-users--userId--routinglanguages-bulk)
 * [GET /api/v2/users/{userId}/routinglanguages](https://developer.mypurecloud.com/api/rest/v2/users/#get-api-v2-users--userId--routinglanguages)
 * [PUT /api/v2/users/{userId}/profileskills](https://developer.mypurecloud.com/api/rest/v2/users/#put-api-v2-users--userId--profileskills)
+* [GET /api/v2/routing/users/{userId}/utilization](https://developer.mypurecloud.com/api/rest/v2/users/#get-api-v2-routing-users--userId--utilization)
+* [PUT /api/v2/routing/users/{userId}/utilization](https://developer.mypurecloud.com/api/rest/v2/users/#put-api-v2-routing-users--userId--utilization)
+* [DELETE /api/v2/routing/users/{userId}/utilization](https://developer.mypurecloud.com/api/rest/v2/users/#delete-api-v2-routing-users--userId--utilization)
 
 ## Example Usage
 
@@ -65,6 +68,37 @@ resource "genesyscloud_user" "test_user" {
     employee_type = "Full-time"
     date_hire     = "2021-03-18"
   }
+  routing_utilization {
+    call {
+      maximum_capacity = 1
+      include_non_acd  = true
+    }
+    callback {
+      maximum_capacity          = 2
+      include_non_acd           = false
+      interruptible_media_types = ["call", "email"]
+    }
+    chat {
+      maximum_capacity          = 3
+      include_non_acd           = false
+      interruptible_media_types = ["call"]
+    }
+    email {
+      maximum_capacity          = 2
+      include_non_acd           = false
+      interruptible_media_types = ["call", "chat"]
+    }
+    video {
+      maximum_capacity          = 1
+      include_non_acd           = false
+      interruptible_media_types = ["call"]
+    }
+    message {
+      maximum_capacity          = 4
+      include_non_acd           = false
+      interruptible_media_types = ["call", "chat"]
+    }
+  }
 }
 ```
 
@@ -91,6 +125,7 @@ resource "genesyscloud_user" "test_user" {
 - **profile_skills** (Set of String) Profile skills for this user. If not set, this resource will not manage profile skills.
 - **routing_languages** (Set of Object) Languages and proficiencies for this user. If not set, this resource will not manage user languages. (see [below for nested schema](#nestedatt--routing_languages))
 - **routing_skills** (Set of Object) Skills and proficiencies for this user. If not set, this resource will not manage user skills. (see [below for nested schema](#nestedatt--routing_skills))
+- **routing_utilization** (List of Object) The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings. (see [below for nested schema](#nestedatt--routing_utilization))
 - **state** (String) User's state (active | inactive). Default is 'active'. Defaults to `active`.
 - **title** (String) User's title.
 
@@ -159,4 +194,76 @@ Optional:
 
 - **proficiency** (Number)
 - **skill_id** (String)
+
+
+<a id="nestedatt--routing_utilization"></a>
+### Nested Schema for `routing_utilization`
+
+Optional:
+
+- **call** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--call))
+- **callback** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--callback))
+- **chat** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--chat))
+- **email** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--email))
+- **message** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--message))
+- **video** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--video))
+
+<a id="nestedobjatt--routing_utilization--call"></a>
+### Nested Schema for `routing_utilization.call`
+
+Optional:
+
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
+
+
+<a id="nestedobjatt--routing_utilization--callback"></a>
+### Nested Schema for `routing_utilization.callback`
+
+Optional:
+
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
+
+
+<a id="nestedobjatt--routing_utilization--chat"></a>
+### Nested Schema for `routing_utilization.chat`
+
+Optional:
+
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
+
+
+<a id="nestedobjatt--routing_utilization--email"></a>
+### Nested Schema for `routing_utilization.email`
+
+Optional:
+
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
+
+
+<a id="nestedobjatt--routing_utilization--message"></a>
+### Nested Schema for `routing_utilization.message`
+
+Optional:
+
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
+
+
+<a id="nestedobjatt--routing_utilization--video"></a>
+### Nested Schema for `routing_utilization.video`
+
+Optional:
+
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
 

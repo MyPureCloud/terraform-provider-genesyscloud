@@ -106,8 +106,8 @@ var (
 	}
 )
 
-func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -121,7 +121,7 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 		}
 
 		for _, user := range *users.Entities {
-			resources[*user.Id] = *user.Email
+			resources[*user.Id] = &ResourceMeta{Name: *user.Email}
 		}
 	}
 
@@ -309,6 +309,72 @@ func resourceUser() *schema.Resource {
 					},
 				},
 			},
+			"routing_utilization": {
+				Description: "The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				ConfigMode:  schema.SchemaConfigModeAttr,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"call": {
+							Description: "Call media settings. If not set, this reverts to the default media type settings.",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
+							Computed:    true,
+							ConfigMode:  schema.SchemaConfigModeAttr,
+							Elem:        utilizationSettingsResource,
+						},
+						"callback": {
+							Description: "Callback media settings. If not set, this reverts to the default media type settings.",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
+							Computed:    true,
+							ConfigMode:  schema.SchemaConfigModeAttr,
+							Elem:        utilizationSettingsResource,
+						},
+						"message": {
+							Description: "Message media settings. If not set, this reverts to the default media type settings.",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
+							Computed:    true,
+							ConfigMode:  schema.SchemaConfigModeAttr,
+							Elem:        utilizationSettingsResource,
+						},
+						"video": {
+							Description: "Video media settings. If not set, this reverts to the default media type settings.",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
+							Computed:    true,
+							ConfigMode:  schema.SchemaConfigModeAttr,
+							Elem:        utilizationSettingsResource,
+						},
+						"email": {
+							Description: "Email media settings. If not set, this reverts to the default media type settings.",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
+							Computed:    true,
+							ConfigMode:  schema.SchemaConfigModeAttr,
+							Elem:        utilizationSettingsResource,
+						},
+						"chat": {
+							Description: "Chat media settings. If not set, this reverts to the default media type settings.",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
+							Computed:    true,
+							ConfigMode:  schema.SchemaConfigModeAttr,
+							Elem:        utilizationSettingsResource,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -395,6 +461,11 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
+	diagErr = updateUserRoutingUtilization(d, usersAPI)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	log.Printf("Created user %s %s", email, *user.Id)
 	return readUser(ctx, d, meta)
 }
@@ -460,6 +531,10 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	d.Set("certifications", flattenUserCertifications(currentUser.Certifications))
 	d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
 
+	if diagErr := readUserRoutingUtilization(d, usersAPI); diagErr != nil {
+		return diagErr
+	}
+
 	log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
 	return nil
 }
@@ -468,7 +543,6 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	name := d.Get("name").(string)
 	email := d.Get("email").(string)
 	state := d.Get("state").(string)
-	divisionID := d.Get("division_id").(string)
 	department := d.Get("department").(string)
 	title := d.Get("title").(string)
 	manager := d.Get("manager").(string)
@@ -476,7 +550,6 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	addresses, err := buildSdkAddresses(d)
 	if err != nil {
@@ -512,24 +585,12 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return patchErr
 	}
 
-	if d.HasChange("division_id") {
-		// Default to home division
-		if divisionID == "" {
-			homeDivision, diagErr := getHomeDivisionID()
-			if diagErr != nil {
-				return diagErr
-			}
-			divisionID = homeDivision
-		}
-
-		log.Printf("Updating division for user %s to %s", email, divisionID)
-		_, divErr := authAPI.PostAuthorizationDivisionObject(divisionID, "USER", []string{d.Id()})
-		if divErr != nil {
-			return diag.Errorf("Failed to update division for user %s: %s", email, divErr)
-		}
+	diagErr := updateObjectDivision(d, "USER", sdkConfig)
+	if diagErr != nil {
+		return diagErr
 	}
 
-	diagErr := updateUserSkills(d, usersAPI)
+	diagErr = updateUserSkills(d, usersAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -540,6 +601,11 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	diagErr = updateUserProfileSkills(d, usersAPI)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = updateUserRoutingUtilization(d, usersAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -794,6 +860,36 @@ func flattenUserEmployerInfo(empInfo *platformclientv2.Employerinfo) []interface
 	}}
 }
 
+func readUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
+	settings, resp, getErr := usersAPI.GetRoutingUserUtilization(d.Id())
+	if getErr != nil {
+		if resp != nil && resp.StatusCode == 404 {
+			d.SetId("") // User doesn't exist
+			return nil
+		}
+		return diag.Errorf("Failed to read Routing Utilization for user %s: %s", d.Id(), getErr)
+	}
+
+	if settings != nil && settings.Utilization != nil {
+		// If the settings are org-wide, set to empty to indicate no settings on the user
+		if settings.Level != nil && *settings.Level == "Organization" {
+			d.Set("routing_utilization", []interface{}{})
+		} else {
+			allSettings := map[string]interface{}{}
+			for sdkType, schemaType := range utilizationMediaTypes {
+				if mediaSettings, ok := (*settings.Utilization)[sdkType]; ok {
+					allSettings[schemaType] = flattenUtilizationSetting(mediaSettings)
+				}
+			}
+			d.Set("routing_utilization", []interface{}{allSettings})
+		}
+	} else {
+		d.Set("routing_utilization", nil)
+	}
+
+	return nil
+}
+
 func updateUserSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	if d.HasChange("routing_skills") {
 		if skillsConfig := d.Get("routing_skills"); skillsConfig != nil {
@@ -954,6 +1050,36 @@ func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.
 			})
 			if diagErr != nil {
 				return diagErr
+			}
+		}
+	}
+	return nil
+}
+
+func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
+	if d.HasChange("routing_utilization") {
+		if utilConfig := d.Get("routing_utilization").([]interface{}); utilConfig != nil {
+			if len(utilConfig) > 0 { // Specified but empty utilization list will reset to org-wide defaults
+				sdkSettings := make(map[string]platformclientv2.Mediautilization)
+				allSettings := utilConfig[0].(map[string]interface{})
+				for sdkType, schemaType := range utilizationMediaTypes {
+					if mediaSettings, ok := allSettings[schemaType]; ok && len(mediaSettings.([]interface{})) > 0 {
+						sdkSettings[sdkType] = buildSdkMediaUtilization(mediaSettings.([]interface{}))
+					}
+				}
+				// Update settings
+				_, _, err := usersAPI.PutRoutingUserUtilization(d.Id(), platformclientv2.Utilization{
+					Utilization: &sdkSettings,
+				})
+				if err != nil {
+					return diag.Errorf("Failed to update Routing Utilization for user %s: %s", d.Id(), err)
+				}
+			} else {
+				// Reset to org-wide defaults
+				_, err := usersAPI.DeleteRoutingUserUtilization(d.Id())
+				if err != nil {
+					return diag.Errorf("Failed to delete Routing Utilization for user %s: %s", d.Id(), err)
+				}
 			}
 		}
 	}

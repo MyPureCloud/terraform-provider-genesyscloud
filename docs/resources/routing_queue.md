@@ -39,8 +39,8 @@ resource "genesyscloud_routing_queue" "test_queue" {
   calling_party_name                = "Example Inc."
   outbound_messaging_sms_address_id = "c1bb045e-254d-4316-9d78-cea6849a3db4"
   outbound_email_address {
-    domain_id = "example.com"
-    route_id  = "1b242045-d0f9-49e0-b07f-de19fa4e374e"
+    domain_id = genesyscloud_routing_email_domain.main.id
+    route_id  = genesyscloud_routing_email_route.support.id
   }
   media_settings_call {
     alerting_timeout_sec      = 30

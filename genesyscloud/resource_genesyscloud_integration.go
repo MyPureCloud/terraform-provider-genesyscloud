@@ -46,8 +46,8 @@ var (
 	}
 )
 
-func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -61,7 +61,7 @@ func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Conf
 		}
 
 		for _, integration := range *integrations.Entities {
-			resources[*integration.Id] = *integration.Name
+			resources[*integration.Id] = &ResourceMeta{Name: *integration.Name}
 		}
 	}
 

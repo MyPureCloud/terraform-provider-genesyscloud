@@ -187,6 +187,9 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					queueName,
 					generateMemberBlock("genesyscloud_user."+queueMemberResource1+".id", queueRingNum),
 					generateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
+					generateBullseyeSettings("10"),
+					generateBullseyeSettings("10"),
+					generateBullseyeSettings("10"),
 				) + generateBasicUserResource(
 					queueMemberResource1,
 					queueMemberEmail1,
@@ -207,6 +210,9 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					queueResource,
 					queueName,
 					generateMemberBlock("genesyscloud_user."+queueMemberResource2+".id", queueRingNum),
+					generateBullseyeSettings("10"),
+					generateBullseyeSettings("10"),
+					generateBullseyeSettings("10"),
 				) + generateBasicUserResource(
 					queueMemberResource1,
 					queueMemberEmail1,
@@ -226,6 +232,9 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					queueResource,
 					queueName,
 					"members = []",
+					generateBullseyeSettings("10"),
+					generateBullseyeSettings("10"),
+					generateBullseyeSettings("10"),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "members"),

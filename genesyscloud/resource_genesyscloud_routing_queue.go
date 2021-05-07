@@ -69,8 +69,8 @@ var (
 	}
 )
 
-func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
-	resources := make(map[string]string)
+func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -84,7 +84,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, queue := range *queues.Entities {
-			resources[*queue.Id] = *queue.Name
+			resources[*queue.Id] = &ResourceMeta{Name: *queue.Name}
 		}
 	}
 
@@ -100,7 +100,8 @@ func routingQueueExporter() *ResourceExporter {
 			"whisper_prompt_id":                 {}, // Ref type not yet defined
 			"outbound_messaging_sms_address_id": {}, // Ref type not yet defined
 			"default_script_ids.*":              {}, // Ref type not yet defined
-			"outbound_email_address.route_id":   {}, // Ref type not yet defined
+			"outbound_email_address.route_id":   {RefType: "genesyscloud_routing_email_route"},
+			"outbound_email_address.domain_id":  {RefType: "genesyscloud_routing_email_domain"},
 			"bullseye_rings.skills_to_remove":   {RefType: "genesyscloud_routing_skill"},
 			"members.user_id":                   {RefType: "genesyscloud_user"},
 			"wrapup_codes":                      {RefType: "genesyscloud_routing_wrapupcode"},
@@ -577,7 +578,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
-	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 	skillEvaluationMethod := d.Get("skill_evaluation_method").(string)
 	autoAnswerOnly := d.Get("auto_answer_only").(bool)
@@ -614,24 +614,12 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("Error updating queue %s: %s", name, err)
 	}
 
-	if d.HasChange("division_id") {
-		authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
-		if divisionID == "" {
-			// Default to home division
-			homeDivision, diagErr := getHomeDivisionID()
-			if diagErr != nil {
-				return diagErr
-			}
-			divisionID = homeDivision
-		}
-		log.Printf("Updating division for queue %s to %s", name, divisionID)
-		_, divErr := authAPI.PostAuthorizationDivisionObject(divisionID, "QUEUE", []string{d.Id()})
-		if divErr != nil {
-			return diag.Errorf("Failed to update division for queue %s: %s", name, divErr)
-		}
+	diagErr := updateObjectDivision(d, "QUEUE", sdkConfig)
+	if diagErr != nil {
+		return diagErr
 	}
 
-	diagErr := updateQueueMembers(d, routingAPI)
+	diagErr = updateQueueMembers(d, routingAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -929,8 +917,12 @@ func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueem
 
 func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[string]interface{} {
 	settingsMap := make(map[string]interface{})
-	settingsMap["domain_id"] = *settings.Domain.Id
-	settingsMap["route_id"] = *settings.Route.Id
+	if settings.Domain != nil {
+		settingsMap["domain_id"] = *settings.Domain.Id
+	}
+	if settings.Route != nil {
+		settingsMap["route_id"] = *settings.Route.Id
+	}
 	return settingsMap
 }
 
@@ -1107,7 +1099,7 @@ func updateMembersInChunks(queueID string, membersToUpdate []string, remove bool
 }
 
 func updateQueueUserRingNum(queueID string, userID string, ringNum int, api *platformclientv2.RoutingApi) diag.Diagnostics {
-	_, _, err := api.PatchRoutingQueueMember(queueID, userID, platformclientv2.Queuemember{
+	_, err := api.PatchRoutingQueueMember(queueID, userID, platformclientv2.Queuemember{
 		Id:         &userID,
 		RingNumber: &ringNum,
 	})

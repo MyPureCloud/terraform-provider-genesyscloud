@@ -1,0 +1,311 @@
+package genesyscloud
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"strings"
+	"sync"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
+)
+
+// Row IDs structured as {table-id}/{key-value}
+func createDatatableRowId(tableId string, keyVal string) string {
+	return strings.Join([]string{tableId, keyVal}, "/")
+}
+
+func splitDatatableRowId(rowId string) (string, string) {
+	split := strings.SplitN(rowId, "/", 2)
+	if len(split) == 2 {
+		return split[0], split[1]
+	}
+	return "", ""
+}
+
+func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+
+	tables, err := getAllArchitectDatatables(ctx, clientConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	for tableId := range tables {
+		for pageNum := 1; ; pageNum++ {
+			rows, _, getErr := archAPI.GetFlowsDatatableRows(tableId, pageNum, 100, false)
+			if getErr != nil {
+				return nil, diag.Errorf("Failed to get page of Datatable Rows: %v", getErr)
+			}
+
+			if rows.Entities == nil || len(*rows.Entities) == 0 {
+				break
+			}
+
+			for _, row := range *rows.Entities {
+				if keyVal, ok := row["key"]; ok {
+					keyStr := keyVal.(string) // Keys must be strings
+					resources[createDatatableRowId(tableId, keyStr)] = &ResourceMeta{Name: keyStr}
+				}
+			}
+		}
+	}
+
+	return resources, nil
+}
+
+func architectDatatableRowExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllArchitectDatatableRows),
+		RefAttrs: map[string]*RefAttrSettings{
+			"datatable_id": {RefType: "genesyscloud_architect_datatable"},
+		},
+	}
+}
+
+func resourceArchitectDatatableRow() *schema.Resource {
+	return &schema.Resource{
+		Description: "Genesys Cloud Architect Datatable Row",
+
+		CreateContext: createWithPooledClient(createArchitectDatatableRow),
+		ReadContext:   readWithPooledClient(readArchitectDatatableRow),
+		UpdateContext: updateWithPooledClient(updateArchitectDatatableRow),
+		DeleteContext: deleteWithPooledClient(deleteArchitectDatatableRow),
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
+		SchemaVersion: 1,
+		Schema: map[string]*schema.Schema{
+			"datatable_id": {
+				Description: "Datatable ID that contains this row. If this is changed, a new row is created.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+			},
+			"key_value": {
+				Description: "Value for this row's key. If this is changed, a new row is created.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+			},
+			"properties_json": {
+				Description:      "JSON object containing properties and values for this row. Defaults will be set for missing properties.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				DiffSuppressFunc: suppressEquivalentJsonDiffs,
+			},
+		},
+		CustomizeDiff: customizeDatatableRowDiff,
+	}
+}
+
+func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	tableId := d.Get("datatable_id").(string)
+	keyStr := d.Get("key_value").(string)
+	properties := d.Get("properties_json").(string)
+
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	rowMap, diagErr := buildSdkRowPropertyMap(properties, keyStr)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	rowId := createDatatableRowId(tableId, keyStr)
+	log.Printf("Creating Datatable Row %s", rowId)
+
+	_, _, err := archAPI.PostFlowsDatatableRows(tableId, rowMap)
+	if err != nil {
+		return diag.Errorf("Failed to create Datatable Row %s: %s", rowId, err)
+	}
+
+	d.SetId(rowId)
+
+	log.Printf("Created Datatable Row %s", d.Id())
+	return readArchitectDatatableRow(ctx, d, meta)
+}
+
+func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	tableId, keyStr := splitDatatableRowId(d.Id())
+	if keyStr == "" {
+		return diag.Errorf("Invalid Row ID %s", d.Id())
+	}
+
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	log.Printf("Reading Datatable Row %s", d.Id())
+
+	row, resp, getErr := archAPI.GetFlowsDatatableRow(tableId, keyStr, false)
+	if getErr != nil {
+		if resp != nil && resp.StatusCode == 404 {
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr)
+	}
+
+	d.Set("datatable_id", tableId)
+	d.Set("key_value", keyStr)
+
+	// The key value is exposed through a separate attribute, so it should be removed from the value map
+	delete(*row, "key")
+
+	valueBytes, err := json.Marshal(*row)
+	if err != nil {
+		return diag.Errorf("Failed to marshal row map %v: %v", *row, err)
+	}
+	d.Set("properties_json", string(valueBytes))
+
+	log.Printf("Read Datatable Row %s", d.Id())
+	return nil
+}
+
+func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	tableId := d.Get("datatable_id").(string)
+	keyStr := d.Get("key_value").(string)
+	properties := d.Get("properties_json").(string)
+
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	rowMap, diagErr := buildSdkRowPropertyMap(properties, keyStr)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	log.Printf("Updating Datatable Row %s", d.Id())
+
+	_, _, err := archAPI.PutFlowsDatatableRow(tableId, keyStr, rowMap)
+	if err != nil {
+		return diag.Errorf("Failed to update Datatable Row %s: %s", d.Id(), err)
+	}
+
+	log.Printf("Updated Datatable Row %s", d.Id())
+	return readArchitectDatatableRow(ctx, d, meta)
+}
+
+func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	tableId, keyStr := splitDatatableRowId(d.Id())
+	if keyStr == "" {
+		return diag.Errorf("Invalid Row ID %s", d.Id())
+	}
+
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	log.Printf("Deleting Datatable Row %s", d.Id())
+	_, err := archAPI.DeleteFlowsDatatableRow(tableId, keyStr)
+	if err != nil {
+		return diag.Errorf("Failed to delete Datatable Row %s: %s", d.Id(), err)
+	}
+	return nil
+}
+
+func buildSdkRowPropertyMap(propertiesJson string, keyStr string) (map[string]interface{}, diag.Diagnostics) {
+	// Property value must be empty or a JSON object (map)
+	propMap := map[string]interface{}{}
+	if propertiesJson != "" {
+		if err := json.Unmarshal([]byte(propertiesJson), &propMap); err != nil {
+			return nil, diag.Errorf("Error parsing properties_json value %s: %v", propertiesJson, err)
+		}
+	}
+	// Set the key value
+	propMap["key"] = keyStr
+	return propMap, nil
+}
+
+func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	// Defaults must be set on missing properties
+
+	if !diff.NewValueKnown("datatable_id") {
+		// datatable_id not yet in final state. Nothing to do.
+		return nil
+	}
+
+	if !diff.NewValueKnown("properties_json") {
+		// properties_json value not yet in final state. Nothing to do.
+		return nil
+	}
+
+	tableId := diff.Get("datatable_id").(string)
+	keyStr := diff.Get("key_value").(string)
+	id := createDatatableRowId(tableId, keyStr)
+
+	propertiesJson := diff.Get("properties_json").(string)
+
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	// Retrieve defaults from the datatable for this row
+	datatable, getErr := getArchitectDatatableCached(tableId, archAPI)
+	if getErr != nil {
+		return fmt.Errorf("Failed to read datatable %s: %s", tableId, getErr)
+	}
+
+	// Parse resource properties into map
+	configMap := map[string]interface{}{}
+	if propertiesJson == "" {
+		propertiesJson = "{}" // empty object by default
+	}
+	if err := json.Unmarshal([]byte(propertiesJson), &configMap); err != nil {
+		return fmt.Errorf("Failure to parse properties_json for %s: %s", id, err)
+	}
+
+	// For each property in the schema, check if a value is set in the config
+	if datatable.Schema != nil && datatable.Schema.Properties != nil {
+		for name, prop := range *datatable.Schema.Properties {
+			if name == "key" {
+				// Skip setting the key value
+				continue
+			}
+			if _, set := configMap[name]; !set {
+				// Property in schema not set. Override diff with expected default.
+				if prop.Default != nil {
+					configMap[name] = *prop.Default
+				} else if *prop.VarType == "boolean" {
+					// Booleans default to false
+					configMap[name] = false
+				} else if *prop.VarType == "string" {
+					// Strings default to empty
+					configMap[name] = ""
+				} else if *prop.VarType == "integer" || *prop.VarType == "number" {
+					// Numbers default to 0
+					configMap[name] = 0
+				}
+			}
+		}
+	}
+
+	// Marshal back to string and set as the diff value
+	result, err := json.Marshal(configMap)
+	if err != nil {
+		return fmt.Errorf("Failure to marshal properties for %s: %s", id, err)
+	}
+
+	diff.SetNew("properties_json", string(result))
+	return nil
+}
+
+// Prevent getting the datatable schema on every row diff
+// by caching the results for the duration of the TF run
+var archDatatableCache sync.Map
+
+func getArchitectDatatableCached(tableID string, archAPI *platformclientv2.ArchitectApi) (*Datatable, error) {
+	if table, ok := archDatatableCache.Load(tableID); ok {
+		return table.(*Datatable), nil
+	}
+
+	datatable, _, getErr := sdkGetArchitectDatatable(tableID, "schema", archAPI)
+	if getErr != nil {
+		return nil, fmt.Errorf("Failed to read datatable %s: %s", tableID, getErr)
+	}
+	archDatatableCache.Store(tableID, datatable)
+	return datatable, nil
+}

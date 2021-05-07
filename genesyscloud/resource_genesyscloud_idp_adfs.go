@@ -9,9 +9,9 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
-func getAllIdpAdfs(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDNameMap, diag.Diagnostics) {
+func getAllIdpAdfs(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
-	resources := make(map[string]string)
+	resources := make(ResourceIDMetaMap)
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersAdfs()
 	if getErr != nil {
@@ -22,7 +22,7 @@ func getAllIdpAdfs(ctx context.Context, clientConfig *platformclientv2.Configura
 		return nil, diag.Errorf("Failed to get IDP ADFS: %v", getErr)
 	}
 
-	resources["0"] = "adfs"
+	resources["0"] = &ResourceMeta{Name: "adfs"}
 	return resources, nil
 }
 
