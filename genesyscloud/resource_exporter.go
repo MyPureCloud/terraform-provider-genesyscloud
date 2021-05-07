@@ -123,6 +123,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_routing_wrapupcode": routingWrapupCodeExporter(),
 		"genesyscloud_user":               userExporter(),
 		"genesyscloud_user_roles":         userRolesExporter(),
+		"genesyscloud_integration":        integrationExporter(),
 	}
 
 	// Include all if no filters

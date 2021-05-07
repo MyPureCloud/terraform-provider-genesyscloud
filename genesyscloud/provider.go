@@ -81,6 +81,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_tf_export":          resourceTfExport(),
 				"genesyscloud_user":               resourceUser(),
 				"genesyscloud_user_roles":         resourceUserRoles(),
+				"genesyscloud_integration":        resourceIntegration(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"genesyscloud_auth_role":        dataSourceAuthRole(),
