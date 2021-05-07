@@ -3,7 +3,6 @@ module github.com/mypurecloud/terraform-provider-genesyscloud
 go 1.15
 
 require (
-	cloud.google.com/go v0.81.0 // indirect
 	cloud.google.com/go/storage v1.15.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Microsoft/go-winio v0.5.0 // indirect
@@ -32,7 +31,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/mypurecloud/platform-client-sdk-go v0.1.2-0.20210504153038-e47ff969892a
 	github.com/nsf/jsondiff v0.0.0-20210303162244-6ea32392771e // indirect
-	github.com/nyaruka/phonenumbers v1.0.68
+	github.com/nyaruka/phonenumbers v1.0.69
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
@@ -43,7 +42,6 @@ require (
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
 	gonum.org/v1/gonum v0.9.1
 	google.golang.org/genproto v0.0.0-20210504143626-3b2ad6ccc450 // indirect
-	google.golang.org/grpc v1.37.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
