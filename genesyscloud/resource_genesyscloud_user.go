@@ -543,7 +543,6 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	name := d.Get("name").(string)
 	email := d.Get("email").(string)
 	state := d.Get("state").(string)
-	divisionID := d.Get("division_id").(string)
 	department := d.Get("department").(string)
 	title := d.Get("title").(string)
 	manager := d.Get("manager").(string)
@@ -551,7 +550,6 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	addresses, err := buildSdkAddresses(d)
 	if err != nil {
@@ -587,24 +585,12 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return patchErr
 	}
 
-	if d.HasChange("division_id") {
-		// Default to home division
-		if divisionID == "" {
-			homeDivision, diagErr := getHomeDivisionID()
-			if diagErr != nil {
-				return diagErr
-			}
-			divisionID = homeDivision
-		}
-
-		log.Printf("Updating division for user %s to %s", email, divisionID)
-		_, divErr := authAPI.PostAuthorizationDivisionObject(divisionID, "USER", []string{d.Id()})
-		if divErr != nil {
-			return diag.Errorf("Failed to update division for user %s: %s", email, divErr)
-		}
+	diagErr := updateObjectDivision(d, "USER", sdkConfig)
+	if diagErr != nil {
+		return diagErr
 	}
 
-	diagErr := updateUserSkills(d, usersAPI)
+	diagErr = updateUserSkills(d, usersAPI)
 	if diagErr != nil {
 		return diagErr
 	}

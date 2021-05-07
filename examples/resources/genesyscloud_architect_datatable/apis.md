@@ -1,0 +1,5 @@
+* [GET /api/v2/flows/datatables](https://developer.mypurecloud.com/api/rest/v2/architect/#get-api-v2-flows-datatables)
+* [POST /api/v2/flows/datatables](https://developer.mypurecloud.com/api/rest/v2/architect/#post-api-v2-flows-datatables)
+* [GET /api/v2/flows/datatables/{datatableId}](https://developer.mypurecloud.com/api/rest/v2/architect/#get-api-v2-flows-datatables--datatableId-)
+* [PUT /api/v2/flows/datatables/{datatableId}](https://developer.mypurecloud.com/api/rest/v2/architect/#put-api-v2-flows-datatables--datatableId-)
+* [DELETE /api/v2/flows/datatables/{datatableId}](https://developer.mypurecloud.com/api/rest/v2/architect/#delete-api-v2-flows-datatables--datatableId-)

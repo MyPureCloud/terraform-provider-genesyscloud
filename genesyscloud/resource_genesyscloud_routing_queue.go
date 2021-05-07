@@ -578,7 +578,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
-	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 	skillEvaluationMethod := d.Get("skill_evaluation_method").(string)
 	autoAnswerOnly := d.Get("auto_answer_only").(bool)
@@ -615,24 +614,12 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("Error updating queue %s: %s", name, err)
 	}
 
-	if d.HasChange("division_id") {
-		authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
-		if divisionID == "" {
-			// Default to home division
-			homeDivision, diagErr := getHomeDivisionID()
-			if diagErr != nil {
-				return diagErr
-			}
-			divisionID = homeDivision
-		}
-		log.Printf("Updating division for queue %s to %s", name, divisionID)
-		_, divErr := authAPI.PostAuthorizationDivisionObject(divisionID, "QUEUE", []string{d.Id()})
-		if divErr != nil {
-			return diag.Errorf("Failed to update division for queue %s: %s", name, divErr)
-		}
+	diagErr := updateObjectDivision(d, "QUEUE", sdkConfig)
+	if diagErr != nil {
+		return diagErr
 	}
 
-	diagErr := updateQueueMembers(d, routingAPI)
+	diagErr = updateQueueMembers(d, routingAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -1112,7 +1099,7 @@ func updateMembersInChunks(queueID string, membersToUpdate []string, remove bool
 }
 
 func updateQueueUserRingNum(queueID string, userID string, ringNum int, api *platformclientv2.RoutingApi) diag.Diagnostics {
-	_, _, err := api.PatchRoutingQueueMember(queueID, userID, platformclientv2.Queuemember{
+	_, err := api.PatchRoutingQueueMember(queueID, userID, platformclientv2.Queuemember{
 		Id:         &userID,
 		RingNumber: &ringNum,
 	})

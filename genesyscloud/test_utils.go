@@ -1,6 +1,7 @@
 package genesyscloud
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -71,12 +72,42 @@ func validateStringInArray(resourceName string, attrName string, value string) r
 
 func strArrayEquals(a, b []string) bool {
 	if len(a) != len(b) {
-        return false
-    }
-    for i, v := range a {
-        if v != b[i] {
-            return false
-        }
-    }
-    return true
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func validateValueInJsonAttr(resourceName string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resource, ok := state.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find resource %s in state", resourceName)
+		}
+		resourceID := resource.Primary.ID
+
+		jsonAttr, ok := resource.Primary.Attributes[attrName]
+		if !ok {
+			return fmt.Errorf("No %s found for %s in state", attrName, resourceID)
+		}
+
+		var jsonMap map[string]interface{}
+		if err := json.Unmarshal([]byte(jsonAttr), &jsonMap); err != nil {
+			return fmt.Errorf("Error parsing JSON for %s in state: %v", resourceID, err)
+		}
+
+		if val, ok := jsonMap[jsonProp]; ok {
+			strVal := interfaceToString(val)
+			if strVal != jsonValue {
+				return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourceName, jsonProp, strVal, jsonValue)
+			}
+		} else {
+			return fmt.Errorf("JSON property %s not found for %s in state", jsonProp, resourceID)
+		}
+		return nil
+	}
 }
