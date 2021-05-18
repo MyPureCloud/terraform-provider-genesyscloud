@@ -2,10 +2,13 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
@@ -631,7 +634,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user %s", email)
-	return retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	err := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		_, resp, err := usersAPI.DeleteUser(d.Id())
 		if err != nil {
@@ -639,6 +642,21 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 		log.Printf("Deleted user %s", email)
 		return nil, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// Verify user in deleted state and search index has been updated
+	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+		id, err := getDeletedUserId(email, usersAPI)
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error searching for deleted user %s: %v", email, err))
+		}
+		if id == nil {
+			return resource.RetryableError(fmt.Errorf("User %s not yet in deleted state", email))
+		}
+		return nil
 	})
 }
 
