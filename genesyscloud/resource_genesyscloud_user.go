@@ -2,10 +2,13 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
@@ -416,9 +419,19 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Creating user %s", email)
-	user, _, err := usersAPI.PostUsers(createUser)
+	user, resp, err := usersAPI.PostUsers(createUser)
 	if err != nil {
-		// TODO: Handle restoring previously deleted users with the same email
+		if resp.Error != nil && (*resp.Error).Code == "general.conflict" {
+			// Check for a deleted user
+			id, diagErr := getDeletedUserId(email, usersAPI)
+			if diagErr != nil {
+				return diagErr
+			}
+			if id != nil {
+				d.SetId(*id)
+				return restoreDeletedUser(ctx, d, meta, usersAPI)
+			}
+		}
 		return diag.Errorf("Failed to create user %s: %s", email, err)
 	}
 
@@ -621,7 +634,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user %s", email)
-	return retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	err := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		_, resp, err := usersAPI.DeleteUser(d.Id())
 		if err != nil {
@@ -630,11 +643,30 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		log.Printf("Deleted user %s", email)
 		return nil, nil
 	})
+	if err != nil {
+		return err
+	}
+
+	// Verify user in deleted state and search index has been updated
+	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+		id, err := getDeletedUserId(email, usersAPI)
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error searching for deleted user %s: %v", email, err))
+		}
+		if id == nil {
+			return resource.RetryableError(fmt.Errorf("User %s not yet in deleted state", email))
+		}
+		return nil
+	})
 }
 
 func patchUser(id string, update platformclientv2.Updateuser, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
+	return patchUserWithState(id, "", update, usersAPI)
+}
+
+func patchUserWithState(id string, state string, update platformclientv2.Updateuser, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	return retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		currentUser, _, getErr := usersAPI.GetUser(id, nil, "", "")
+		currentUser, _, getErr := usersAPI.GetUser(id, nil, "", state)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to read user %s: %s", id, getErr)
 		}
@@ -646,6 +678,46 @@ func patchUser(id string, update platformclientv2.Updateuser, usersAPI *platform
 		}
 		return nil, nil
 	})
+}
+
+func getDeletedUserId(email string, usersAPI *platformclientv2.UsersApi) (*string, diag.Diagnostics) {
+	exactType := "EXACT"
+	results, _, getErr := usersAPI.PostUsersSearch(platformclientv2.Usersearchrequest{
+		Query: &[]platformclientv2.Usersearchcriteria{
+			{
+				Fields:  &[]string{"email"},
+				Value:   &email,
+				VarType: &exactType,
+			},
+			{
+				Fields:  &[]string{"state"},
+				Values:  &[]string{"deleted"},
+				VarType: &exactType,
+			},
+		},
+	})
+	if getErr != nil {
+		return nil, diag.Errorf("Failed to search for user %s: %s", email, getErr)
+	}
+	if results.Results != nil && len(*results.Results) > 0 {
+		// User found
+		return (*results.Results)[0].Id, nil
+	}
+	return nil, nil
+}
+
+func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interface{}, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
+	email := d.Get("email").(string)
+	state := d.Get("state").(string)
+
+	log.Printf("Restoring deleted user %s", email)
+	patchErr := patchUserWithState(d.Id(), "deleted", platformclientv2.Updateuser{
+		State: &state,
+	}, usersAPI)
+	if patchErr != nil {
+		return patchErr
+	}
+	return updateUser(ctx, d, meta)
 }
 
 func phoneNumberHash(val interface{}) int {
