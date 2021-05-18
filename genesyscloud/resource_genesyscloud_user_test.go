@@ -674,6 +674,56 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 	})
 }
 
+func TestAccResourceUserRestore(t *testing.T) {
+	var (
+		userResource1 = "test-user"
+		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		userName1     = "Terraform Restore1"
+		userName2     = "Terraform Restore2"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create a basic user
+				Config: generateBasicUserResource(
+					userResource1,
+					email1,
+					userName1,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName1),
+				),
+			},
+			{
+				Config: generateBasicUserResource(
+					userResource1,
+					email1,
+					userName1,
+				),
+				Destroy: true, // Delete the user
+				Check:   testVerifyUsersDestroyed,
+			},
+			{
+				// Restore the same user email but set a different name
+				Config: generateBasicUserResource(
+					userResource1,
+					email1,
+					userName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName2),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
 func testVerifyUsersDestroyed(state *terraform.State) error {
 	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {
