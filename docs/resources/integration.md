@@ -26,17 +26,10 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_integration" "integration1" {
-  name           = "test_integration"
-  intended_state = "DISABLED"
-  integration_type {
-    id          = "embedded-client-app"
-    name        = "Client Application"
-    description = "Embeds third-party webapps via iframe in the Genesys Cloud UI."
-    provider    = "clientapps"
-    category    = "Client Apps"
-  }
+  intended_state   = "DISABLED"
+  integration_type = "embedded-client-app"
   config {
-    name = "Premium Client Application Example"
+    name = "test_integration name"
     properties = jsonencode({
       "displayType" : "standalone",
       "sandbox" : "allow-scripts,allow-same-origin,allow-forms,allow-modals",
@@ -44,9 +37,11 @@ resource "genesyscloud_integration" "integration1" {
       # Potential groups and queues filter (Need to look up the key name from integration type schema)
       "groups" : [genesyscloud_group.test_group.id]
     })
-    advanced    = jsonencode({})
-    notes       = "Test config"
-    credentials = jsonencode({})
+    advanced = jsonencode({})
+    notes    = "Test config notes"
+    credentials {
+      basic_Auth = genesyscloud_credentials.test_cred.id
+    }
   }
 }
 ```
@@ -56,38 +51,22 @@ resource "genesyscloud_integration" "integration1" {
 
 ### Required
 
-- **integration_type** (Block List, Min: 1, Max: 1) Integration type. (see [below for nested schema](#nestedblock--integration_type))
-- **name** (String) Integration name.
+- **integration_type** (String) Integration type.
 
 ### Optional
 
-- **config** (List of Object) Integration config. Each integration type has different schema, use [GET /api/v2/integrations/types/{typeId}/configschemas/{configType}](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations-types--typeId--configschemas--configType-) to check schema, then use the correct attribute names for properties. (see [below for nested schema](#nestedatt--config))
+- **config** (Block List, Max: 1) Integration config. Each integration type has different schema, use [GET /api/v2/integrations/types/{typeId}/configschemas/{configType}](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations-types--typeId--configschemas--configType-) to check schema, then use the correct attribute names for properties. (see [below for nested schema](#nestedblock--config))
 - **id** (String) The ID of this resource.
-- **intended_state** (String) Integration state. Defaults to `DISABLED`.
+- **intended_state** (String) Integration state (ENABLED | DISABLED | DELETED). Defaults to `DISABLED`.
 
-<a id="nestedblock--integration_type"></a>
-### Nested Schema for `integration_type`
-
-Required:
-
-- **id** (String) Integration type id.
-
-Optional:
-
-- **category** (String) Integration type category.
-- **description** (String) Integration type description.
-- **name** (String) Integration type name.
-- **provider** (String) Integration type provider.
-
-
-<a id="nestedatt--config"></a>
+<a id="nestedblock--config"></a>
 ### Nested Schema for `config`
 
 Optional:
 
-- **advanced** (String)
-- **credentials** (String)
-- **name** (String)
-- **notes** (String)
-- **properties** (String)
+- **advanced** (String) Integration advanced config (JSON string).
+- **credentials** (Map of String) Credentials required for the integration. The required keys are indicated in the credentials property of the Integration Type.
+- **name** (String) Integration name.
+- **notes** (String) Integration notes.
+- **properties** (String) Integration config properties (JSON string).
 

@@ -1,15 +1,8 @@
 resource "genesyscloud_integration" "integration1" {
-  name           = "test_integration"
-  intended_state = "DISABLED"
-  integration_type {
-    id          = "embedded-client-app"
-    name        = "Client Application"
-    description = "Embeds third-party webapps via iframe in the Genesys Cloud UI."
-    provider    = "clientapps"
-    category    = "Client Apps"
-  }
+  intended_state   = "DISABLED"
+  integration_type = "embedded-client-app"
   config {
-    name = "Premium Client Application Example"
+    name = "test_integration name"
     properties = jsonencode({
       "displayType" : "standalone",
       "sandbox" : "allow-scripts,allow-same-origin,allow-forms,allow-modals",
@@ -17,8 +10,10 @@ resource "genesyscloud_integration" "integration1" {
       # Potential groups and queues filter (Need to look up the key name from integration type schema)
       "groups" : [genesyscloud_group.test_group.id]
     })
-    advanced    = jsonencode({})
-    notes       = "Test config"
-    credentials = jsonencode({})
+    advanced = jsonencode({})
+    notes    = "Test config notes"
+    credentials {
+      basic_Auth = genesyscloud_credentials.test_cred.id
+    }
   }
 }

@@ -126,6 +126,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_idp_onelogin":            idpOneloginExporter(),
 		"genesyscloud_idp_ping":                idpPingExporter(),
 		"genesyscloud_idp_salesforce":          idpSalesforceExporter(),
+		"genesyscloud_integration":             integrationExporter(),
 		"genesyscloud_location":                locationExporter(),
 		"genesyscloud_routing_email_domain":    routingEmailDomainExporter(),
 		"genesyscloud_routing_email_route":     routingEmailRouteExporter(),
@@ -136,7 +137,6 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_routing_wrapupcode":      routingWrapupCodeExporter(),
 		"genesyscloud_user":                    userExporter(),
 		"genesyscloud_user_roles":              userRolesExporter(),
-		"genesyscloud_integration":             integrationExporter(),
 	}
 
 	// Include all if no filters
