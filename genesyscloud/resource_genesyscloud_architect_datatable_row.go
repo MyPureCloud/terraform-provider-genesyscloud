@@ -35,7 +35,7 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 		return nil, err
 	}
 
-	for tableId := range tables {
+	for tableId, tableMeta := range tables {
 		for pageNum := 1; ; pageNum++ {
 			rows, _, getErr := archAPI.GetFlowsDatatableRows(tableId, pageNum, 100, false)
 			if getErr != nil {
@@ -49,7 +49,7 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 			for _, row := range *rows.Entities {
 				if keyVal, ok := row["key"]; ok {
 					keyStr := keyVal.(string) // Keys must be strings
-					resources[createDatatableRowId(tableId, keyStr)] = &ResourceMeta{Name: keyStr}
+					resources[createDatatableRowId(tableId, keyStr)] = &ResourceMeta{Name: tableMeta.Name + "_" + keyStr}
 				}
 			}
 		}
