@@ -2,8 +2,9 @@ package genesyscloud
 
 import (
 	"context"
-	"fmt"
+	"hash/fnv"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -161,21 +162,23 @@ func getAvailableExporterTypes() []string {
 }
 
 func escapeRune(s string) string {
-	return fmt.Sprintf("%02X", s)
+	// Always replace with an underscore for readability. The appended hash will help ensure uniqueness
+	return "_"
 }
 
 // Resource names must only contain alphanumeric chars, underscores, or dashes
 var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
 
 func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
-	for id, meta := range idMetaMap {
+	for _, meta := range idMetaMap {
 		name := unsafeNameChars.ReplaceAllStringFunc(meta.Name, escapeRune)
-		// Append part of ID to ensure uniqueness for similar names
-		if len(id) > 6 {
-			name = name + "_" + id[:6]
-		} else {
-			name = name + "_" + id
+		if name != meta.Name {
+			// Append a hash of the original name to ensure uniqueness for similar names
+			// and that equivalent names are consistent across orgs
+			algorithm := fnv.New32()
+			algorithm.Write([]byte(meta.Name))
+			name = name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+			meta.Name = name
 		}
-		meta.Name = name
 	}
 }
