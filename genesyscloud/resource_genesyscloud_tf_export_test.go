@@ -160,6 +160,7 @@ func generateTfExportResource(
 			"genesyscloud_idp_onelogin",
 			"genesyscloud_idp_ping",
 			"genesyscloud_idp_salesforce",
+			"genesyscloud_integration",
 			"genesyscloud_location",
 			"genesyscloud_routing_email_domain",
 			"genesyscloud_routing_email_route",
