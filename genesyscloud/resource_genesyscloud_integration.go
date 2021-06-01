@@ -321,9 +321,7 @@ func updateIntegrationConfig(d *schema.ResourceData, integrationAPI *platformcli
 					name = configMap["name"].(string)
 				}
 
-				if configMap["notes"].(string) != "" {
-					notes = configMap["notes"].(string)
-				}
+				notes = configMap["notes"].(string)
 
 				if properties := configMap["properties"].(string); len(properties) > 0 {
 					if err := json.Unmarshal([]byte(properties), &propJSON); err != nil {

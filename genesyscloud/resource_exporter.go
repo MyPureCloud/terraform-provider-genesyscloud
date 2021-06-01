@@ -118,6 +118,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_architect_datatable_row": architectDatatableRowExporter(),
 		"genesyscloud_auth_division":           authDivisionExporter(),
 		"genesyscloud_auth_role":               authRoleExporter(),
+		"genesyscloud_credential":              credentialExporter(),
 		"genesyscloud_group":                   groupExporter(),
 		"genesyscloud_group_roles":             groupRolesExporter(),
 		"genesyscloud_idp_adfs":                idpAdfsExporter(),

@@ -24,7 +24,9 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, cred := range *credentials.Entities {
-			resources[*cred.Id] = &ResourceMeta{Name: *cred.Name}
+			if cred.Name != nil { // Credential is possible to have no name
+				resources[*cred.Id] = &ResourceMeta{Name: *cred.Name}
+			}
 		}
 	}
 
@@ -34,7 +36,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 func credentialExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllCredentials),
-		RefAttrs:         map[string]*RefAttrSettings{},
+		RefAttrs:         map[string]*RefAttrSettings{}, // No Reference
 	}
 }
 
@@ -61,6 +63,13 @@ func resourceCredential() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"fields": {
+				Description: "Credential fields. Different credential types require different fields. Missing any correct required fields will result API request failure. Check out the specific credential type schema to find out what fields are required. ",
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -78,6 +87,7 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 		VarType: &platformclientv2.Credentialtype{
 			Name: &cred_type,
 		},
+		CredentialFields: buildCredentialFields(d),
 	}
 
 	credential, _, err := integrationAPI.PostIntegrationsCredentials(createCredential)
@@ -122,7 +132,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
-	if d.HasChanges("name", "credential_type_name") {
+	if d.HasChanges("name", "credential_type_name", "fields") {
 
 		log.Printf("Updating credential %s", name)
 
@@ -131,6 +141,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 			VarType: &platformclientv2.Credentialtype{
 				Name: &cred_type,
 			},
+			CredentialFields: buildCredentialFields(d),
 		})
 		if putErr != nil {
 			return diag.Errorf("Failed to update credential %s: %s", name, putErr)
@@ -151,4 +162,28 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 	log.Printf("Deleted credential %s", d.Id())
 	return nil
+}
+
+func buildCredentialFields(d *schema.ResourceData) *map[string]string {
+	results := make(map[string]string)
+	if fields, ok := d.GetOk("fields"); ok {
+		fieldMap := fields.(map[string]interface{})
+		for k, v := range fieldMap {
+			results[k] = v.(string)
+		}
+		return &results
+	}
+	return &results
+}
+
+func flattenCredentialFields(fields map[string]string) map[string]interface{} {
+	if len(fields) == 0 {
+		return nil
+	}
+
+	results := make(map[string]interface{})
+	for k, v := range fields {
+		results[k] = v
+	}
+	return results
 }

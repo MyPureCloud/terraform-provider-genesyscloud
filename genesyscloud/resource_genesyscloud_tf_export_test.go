@@ -151,6 +151,7 @@ func generateTfExportResource(
 			"genesyscloud_architect_datatable_row",
 			"genesyscloud_auth_role",
 			"genesyscloud_auth_division",
+			"genesyscloud_credential",
 			"genesyscloud_group",
 			"genesyscloud_group_roles",
 			"genesyscloud_idp_adfs",
