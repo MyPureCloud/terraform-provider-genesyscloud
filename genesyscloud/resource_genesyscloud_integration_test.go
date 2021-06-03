@@ -254,7 +254,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
-						generateMapKeyValue(credTypeName1, "genesyscloud_credential."+credResource1+".id"), // Reference credential ID
+						generateMapKeyValue(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
 						generateJsonEncodedProperties(
 							generateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),
@@ -267,7 +267,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.name", inteName1),
 					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.notes", configNotes),
 					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.advanced", emptyJSON),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration."+inteResource2, "config.0.credentials."+credTypeName1, "genesyscloud_credential."+credResource1, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration."+inteResource2, "config.0.credentials."+credTypeName1, "genesyscloud_integration_credential."+credResource1, "id"),
 				),
 			},
 			{ // Update integration with credential specified
@@ -285,7 +285,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName2),
 						nullValue, // Empty notes
-						generateMapKeyValue(credTypeName1, "genesyscloud_credential."+credResource1+".id"), // Reference credential ID
+						generateMapKeyValue(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
 						generateJsonEncodedProperties(
 							generateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),
@@ -298,7 +298,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.name", inteName2),
 					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.notes", ""),
 					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.advanced", emptyJSON),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration."+inteResource2, "config.0.credentials."+credTypeName1, "genesyscloud_credential."+credResource1, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration."+inteResource2, "config.0.credentials."+credTypeName1, "genesyscloud_integration_credential."+credResource1, "id"),
 				),
 			},
 			{

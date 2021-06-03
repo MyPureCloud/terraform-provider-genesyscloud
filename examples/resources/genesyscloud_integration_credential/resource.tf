@@ -1,4 +1,4 @@
-resource "genesyscloud_credential" "credential1" {
+resource "genesyscloud_integration_credential" "credential1" {
   name                 = "test-credential"
   credential_type_name = "basicAuth" //Example type
   fields = {

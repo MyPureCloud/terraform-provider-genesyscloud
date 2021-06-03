@@ -59,15 +59,16 @@ func resourceCredential() *schema.Resource {
 				Optional:    true,
 			},
 			"credential_type_name": {
-				Description: "Credential type name.",
+				Description: "Credential type name. Use [GET /api/v2/integrations/credentials/types](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-credentials-types) to see the list of available integration credential types. ",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 			"fields": {
-				Description: "Credential fields. Different credential types require different fields. Missing any correct required fields will result API request failure. Check out the specific credential type schema to find out what fields are required. ",
+				Description: "Credential fields. Different credential types require different fields. Missing any correct required fields will result API request failure. Use [GET /api/v2/integrations/credentials/types](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-credentials-types) to check out the specific credential type schema to find out what fields are required. ",
 				Type:        schema.TypeMap,
 				Optional:    true,
 				Computed:    true,
+				Sensitive:   true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},

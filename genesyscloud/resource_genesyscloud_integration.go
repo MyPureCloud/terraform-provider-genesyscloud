@@ -76,7 +76,7 @@ func integrationExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllIntegrations),
 		RefAttrs: map[string]*RefAttrSettings{
-			"config.credentials.*": {}, // Ref type not yet defined
+			"config.credentials.*": {RefType: "genesyscloud_integration_credential"},
 		},
 	}
 }
