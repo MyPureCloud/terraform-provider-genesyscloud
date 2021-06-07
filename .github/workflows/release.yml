@@ -30,7 +30,7 @@ jobs:
           PASSPHRASE: ${{ secrets.PASSPHRASE }}
       - 
         name: Build Changelog
-        uses: mikepenz/release-changelog-builder-action@v1.8.1
+        uses: mikepenz/release-changelog-builder-action@v1.8.2
         with:
           configuration: ".github/changelog-config.json"
           outputFile: "CHANGELOG.md"
@@ -38,7 +38,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2.6.0
+        uses: goreleaser/goreleaser-action@v2.6.1
         with:
           version: latest
           args: release --rm-dist --release-notes=CHANGELOG.md
