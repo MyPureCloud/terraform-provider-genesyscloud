@@ -3,7 +3,6 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -161,17 +160,6 @@ func generateArchitectDatatableRowResource(
 		properties_json = %s
 	}
 	`, resourceID, tableID, keyVal, properties)
-}
-
-func generateJsonEncodedProperties(properties ...string) string {
-	return fmt.Sprintf(`jsonencode({
-		%s
-	})
-	`, strings.Join(properties, "\n"))
-}
-
-func generateJsonProperty(propName string, propValue string) string {
-	return fmt.Sprintf(`"%s" = %s`, propName, propValue)
 }
 
 func testVerifyDatatableRowsDestroyed(state *terraform.State) error {

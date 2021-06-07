@@ -76,6 +76,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_idp_ping":                resourceIdpPing(),
 				"genesyscloud_idp_salesforce":          resourceIdpSalesforce(),
 				"genesyscloud_integration":             resourceIntegration(),
+				"genesyscloud_integration_action":      resourceIntegrationAction(),
 				"genesyscloud_location":                resourceLocation(),
 				"genesyscloud_routing_email_domain":    resourceRoutingEmailDomain(),
 				"genesyscloud_routing_email_route":     resourceRoutingEmailRoute(),

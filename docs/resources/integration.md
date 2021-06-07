@@ -31,11 +31,11 @@ resource "genesyscloud_integration" "integration1" {
   config {
     name = "test_integration name"
     properties = jsonencode({
-      "displayType" : "standalone",
-      "sandbox" : "allow-scripts,allow-same-origin,allow-forms,allow-modals",
-      "url" : "https://mypurecloud.github.io/purecloud-premium-app/wizard/index.html"
+      "displayType" = "standalone",
+      "sandbox"     = "allow-scripts,allow-same-origin,allow-forms,allow-modals",
+      "url"         = "https://mypurecloud.github.io/purecloud-premium-app/wizard/index.html"
       # Potential groups and queues filter (Need to look up the key name from integration type schema)
-      "groups" : [genesyscloud_group.test_group.id]
+      "groups" = [genesyscloud_group.test_group.id]
     })
     advanced = jsonencode({})
     notes    = "Test config notes"

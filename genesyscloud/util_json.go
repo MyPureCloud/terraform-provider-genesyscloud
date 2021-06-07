@@ -44,3 +44,12 @@ func jsonBytesEqual(b1, b2 []byte) bool {
 func interfaceToString(val interface{}) string {
 	return fmt.Sprintf("%v", val)
 }
+
+func jsonStringToInterface(jsonStr string) (interface{}, error) {
+	var obj interface{}
+	err := json.Unmarshal([]byte(jsonStr), &obj)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to marshal %s: %v", jsonStr, err)
+	}
+	return obj, nil
+}

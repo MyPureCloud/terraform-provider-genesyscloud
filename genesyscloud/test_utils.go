@@ -100,7 +100,16 @@ func validateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 			return fmt.Errorf("Error parsing JSON for %s in state: %v", resourceID, err)
 		}
 
-		if val, ok := jsonMap[jsonProp]; ok {
+		propPath := strings.Split(jsonProp, ".")
+		if val, ok := jsonMap[propPath[0]]; ok {
+			for i := 1; i < len(propPath); i++ {
+				switch obj := val.(type) {
+				case map[string]interface{}:
+					val = obj[propPath[i]]
+				default:
+					return fmt.Errorf("JSON property %s not found for %s in state", jsonProp, resourceID)
+				}
+			}
 			strVal := interfaceToString(val)
 			if strVal != jsonValue {
 				return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourceName, jsonProp, strVal, jsonValue)
@@ -110,4 +119,32 @@ func validateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 		}
 		return nil
 	}
+}
+
+func generateJsonEncodedProperties(properties ...string) string {
+	return fmt.Sprintf(`jsonencode({
+		%s
+	})
+	`, strings.Join(properties, "\n"))
+}
+
+func generateJsonProperty(propName string, propValue string) string {
+	return fmt.Sprintf(`"%s" = %s`, propName, propValue)
+}
+
+func generateJsonObject(properties ...string) string {
+	return fmt.Sprintf(`{
+		%s
+	}`, strings.Join(properties, "\n"))
+}
+
+func generateMapProperty(propName string, propValue string) string {
+	return fmt.Sprintf(`%s = %s`, propName, propValue)
+}
+
+func generateMapAttr(name string, properties ...string) string {
+	return fmt.Sprintf(`%s = {
+		%s
+	}
+	`, name, strings.Join(properties, "\n"))
 }

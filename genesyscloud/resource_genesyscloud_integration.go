@@ -3,7 +3,6 @@ package genesyscloud
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -261,7 +260,7 @@ func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration)
 	if config.Properties != nil {
 		propJSONStr, err := json.Marshal(*config.Properties)
 		if err != nil {
-			fmt.Errorf("Failed to marshal integration config properties. Error message: %s", err)
+			log.Printf("Failed to marshal integration config properties. Error message: %s", err)
 		} else {
 			configProperties = string(propJSONStr)
 		}
@@ -269,7 +268,7 @@ func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration)
 	if config.Advanced != nil {
 		advJSONStr, err := json.Marshal(*config.Advanced)
 		if err != nil {
-			fmt.Errorf("Failed to marshal integration config advanced properties. Error message: %s", err)
+			log.Printf("Failed to marshal integration config advanced properties. Error message: %s", err)
 		} else {
 			configAdvanced = string(advJSONStr)
 		}
