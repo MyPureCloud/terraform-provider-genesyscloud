@@ -245,7 +245,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
 					generateCredentialFields(
-						generateMapKeyValue(key1, strconv.Quote(val1)),
+						generateMapProperty(key1, strconv.Quote(val1)),
 					),
 				) + generateIntegrationResource(
 					inteResource2,
@@ -254,7 +254,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
-						generateMapKeyValue(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						generateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
 						generateJsonEncodedProperties(
 							generateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),
@@ -276,7 +276,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
 					generateCredentialFields(
-						generateMapKeyValue(key1, strconv.Quote(val1)),
+						generateMapProperty(key1, strconv.Quote(val1)),
 					),
 				) + generateIntegrationResource(
 					inteResource2,
@@ -285,7 +285,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName2),
 						nullValue, // Empty notes
-						generateMapKeyValue(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						generateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
 						generateJsonEncodedProperties(
 							generateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),

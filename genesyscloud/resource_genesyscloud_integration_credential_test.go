@@ -3,7 +3,6 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -44,7 +43,7 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(typeName1),
 					generateCredentialFields(
-						generateMapKeyValue(key1, strconv.Quote(val1)),
+						generateMapProperty(key1, strconv.Quote(val1)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -60,7 +59,7 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
 					generateCredentialFields(
-						generateMapKeyValue(key1, strconv.Quote(val1_2)),
+						generateMapProperty(key1, strconv.Quote(val1_2)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -76,8 +75,8 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
 					generateCredentialFields(
-						generateMapKeyValue(key1, strconv.Quote(val1)),
-						generateMapKeyValue(key2, strconv.Quote(val2)),
+						generateMapProperty(key1, strconv.Quote(val1)),
+						generateMapProperty(key2, strconv.Quote(val2)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -93,8 +92,8 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
 					generateCredentialFields(
-						generateMapKeyValue(key1, strconv.Quote(val1)),
-						generateMapKeyValue(key2, strconv.Quote(val2_2)),
+						generateMapProperty(key1, strconv.Quote(val1)),
+						generateMapProperty(key2, strconv.Quote(val2_2)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -117,7 +116,7 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(typeName2),
 					generateCredentialFields(
-						generateMapKeyValue(key3, strconv.Quote(val3)),
+						generateMapProperty(key3, strconv.Quote(val3)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -133,7 +132,7 @@ func TestAccResourceCredential(t *testing.T) {
 					strconv.Quote(credName2),
 					strconv.Quote(typeName2),
 					generateCredentialFields(
-						generateMapKeyValue(key3, strconv.Quote(val3)),
+						generateMapProperty(key3, strconv.Quote(val3)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -164,16 +163,7 @@ func generateCredentialResource(resourceID string, name string, credentialType s
 }
 
 func generateCredentialFields(fields ...string) string {
-	return fmt.Sprintf(`fields = {
-        %s
-	}
-	`, strings.Join(fields, "\n"))
-}
-
-func generateMapKeyValue(key string, val string) string {
-	return fmt.Sprintf(`
-        %s = %s
-    `, key, val)
+	return generateMapAttr("fields", fields...)
 }
 
 func testVerifyCredentialDestroyed(state *terraform.State) error {
