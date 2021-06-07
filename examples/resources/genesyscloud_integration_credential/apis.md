@@ -1,0 +1,5 @@
+* [POST /api/v2/integrations/credentials](https://developer.genesys.cloud/api/rest/v2/integrations/#post-api-v2-integrations-credentials)
+* [GET /api/v2/integrations/credentials/types](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-credentials-types)
+* [GET /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-credentials--credentialId-)
+* [PUT /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/api/rest/v2/integrations/#put-api-v2-integrations-credentials--credentialId-)
+* [DELETE /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/api/rest/v2/integrations/#delete-api-v2-integrations-credentials--credentialId-)

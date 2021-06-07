@@ -15,6 +15,7 @@ import (
 func TestAccResourceIntegration(t *testing.T) {
 	var (
 		inteResource1 = "test_integration1"
+		inteResource2 = "test_integration2"
 		inteName1     = "Terraform Integration Test-" + uuid.NewString()
 		inteName2     = "Terraform Integration Test-" + uuid.NewString()
 
@@ -23,7 +24,8 @@ func TestAccResourceIntegration(t *testing.T) {
 		configNotes  = "some notes"
 		configNotes2 = "This is a note"
 
-		typeID = "embedded-client-app"
+		typeID  = "embedded-client-app"
+		typeID2 = "custom-smtp-server"
 
 		displayTypeKey  = "displayType"
 		sandboxKey      = "sandbox"
@@ -36,6 +38,12 @@ func TestAccResourceIntegration(t *testing.T) {
 		groupName       = "terraform integration test group-" + uuid.NewString()
 		fakeGroupID     = "123456789"
 		emptyJSON       = "{}"
+
+		credResource1 = "test_credential"
+		credName1     = "Terraform Credential Test-" + uuid.NewString()
+		credTypeName1 = "basicAuth"
+		key1          = "userName"
+		val1          = "someUserName"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -68,7 +76,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName1),
 						nullValue, //Empty notes
-						nullValue, //Empty credential ID
+						"",        //Empty credential ID
 						nullValue, //Empty properties
 						nullValue, //Empty advanced JSON
 					),
@@ -92,7 +100,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						nullValue, // No name update. Should stay the same
 						nullValue, //Empty notes
-						nullValue, //Empty credential ID
+						"",        //Empty credential ID
 						nullValue, //Empty properties
 						nullValue, //Empty advanced JSON
 					),
@@ -116,7 +124,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName2),
 						strconv.Quote(configNotes),
-						nullValue, //Empty credential ID
+						"", //Empty credential ID
 						generateJsonEncodedProperties(
 							generateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
 							generateJsonProperty(urlKey, strconv.Quote(propURL)),
@@ -153,7 +161,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
-						nullValue, //Empty credential ID
+						"", //Empty credential ID
 						generateJsonEncodedProperties(
 							generateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
 							generateJsonProperty(urlKey, strconv.Quote(propURL)),
@@ -181,7 +189,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes2),
-						nullValue, //Empty credentials
+						"", //Empty credentials
 						generateJsonEncodedProperties(
 							generateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
 							generateJsonProperty(urlKey, strconv.Quote(propURL)),
@@ -209,7 +217,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName2),
 						strconv.Quote(configNotes2),
-						nullValue, //Empty credentials
+						"", //Empty credentials
 						// Use Raw JSON instead of jsonencode function
 						fmt.Sprintf(`"{  \"%s\":   \"%s\",  \"%s\": \"%s\",  \"%s\": \"%s\",  \"%s\": %s}"`, displayTypeKey, propDisplayType, urlKey, propURL, sandboxKey, propSandbox, groupsKey, "[]"),
 						nullValue,
@@ -231,9 +239,76 @@ func TestAccResourceIntegration(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
-			//TODO: After credential resource is created, create a test credential and add it into properties
+			{ // Create a credential and use it as reference for the new integration
+				Config: generateCredentialResource(
+					credResource1,
+					strconv.Quote(credName1),
+					strconv.Quote(credTypeName1),
+					generateCredentialFields(
+						generateMapKeyValue(key1, strconv.Quote(val1)),
+					),
+				) + generateIntegrationResource(
+					inteResource2,
+					strconv.Quote(enabledState),
+					strconv.Quote(typeID2),
+					generateIntegrationConfig(
+						strconv.Quote(inteName1),
+						strconv.Quote(configNotes),
+						generateMapKeyValue(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						generateJsonEncodedProperties(
+							generateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
+						),
+						nullValue,
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "intended_state", enabledState),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "integration_type", typeID2),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.name", inteName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.notes", configNotes),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.advanced", emptyJSON),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration."+inteResource2, "config.0.credentials."+credTypeName1, "genesyscloud_integration_credential."+credResource1, "id"),
+				),
+			},
+			{ // Update integration with credential specified
+				Config: generateCredentialResource(
+					credResource1,
+					strconv.Quote(credName1),
+					strconv.Quote(credTypeName1),
+					generateCredentialFields(
+						generateMapKeyValue(key1, strconv.Quote(val1)),
+					),
+				) + generateIntegrationResource(
+					inteResource2,
+					nullValue, //Empty intended_state, default value is "DISABLED"
+					strconv.Quote(typeID2),
+					generateIntegrationConfig(
+						strconv.Quote(inteName2),
+						nullValue, // Empty notes
+						generateMapKeyValue(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						generateJsonEncodedProperties(
+							generateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
+						),
+						nullValue,
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "intended_state", defaultState),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "integration_type", typeID2),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.name", inteName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.notes", ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.advanced", emptyJSON),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration."+inteResource2, "config.0.credentials."+credTypeName1, "genesyscloud_integration_credential."+credResource1, "id"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_integration." + inteResource2,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
-		CheckDestroy: testVerifyDivisionsDestroyed,
+		CheckDestroy: testVerifyIntegrationDestroyed,
 	})
 }
 
@@ -250,7 +325,9 @@ func generateIntegrationConfig(name string, notes string, cred string, props str
 	return fmt.Sprintf(`config {
         name = %s
         notes = %s
-        credentials = %s
+        credentials = {
+            %s
+        }
         properties = %s
         advanced = %s
 	}
