@@ -75,8 +75,10 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
 					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "type", "object"),
 					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "properties."+inputAttr1+".type", "string"),
+					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "required", inputAttr1),
 					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "type", "object"),
 					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "properties."+outputAttr1+".type", "string"),
+					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "required", outputAttr1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_url_template", reqUrlTemplate1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_type", reqType1),
 				),
@@ -236,6 +238,8 @@ func generateJsonSchemaDocStr(properties ...string) string {
 	allProps := strings.Join(propStrs, "\n")
 
 	return generateJsonEncodedProperties(
+		// First field is required
+		generateJsonArrayProperty("required", strconv.Quote(properties[0])),
 		generateJsonProperty(attrType, strconv.Quote(typeObject)),
 		generateJsonProperty(attrProperties, generateJsonObject(
 			allProps,
