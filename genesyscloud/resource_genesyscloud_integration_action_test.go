@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v45/platformclientv2"
 )
 
 func TestAccResourceIntegrationAction(t *testing.T) {
@@ -26,17 +26,20 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 		inputAttr1  = "service"
 		outputAttr1 = "status"
 
-		reqUrlTemplate1    = "/api/v2/users"
-		reqUrlTemplate2    = "/api/v2/integrations"
-		reqType1           = "GET"
-		reqType2           = "PUT"
-		reqTemp            = "{ \\\"service\\\": \\\"$${input.service}\\\" }"
-		headerKey          = "Cache-Control"
-		headerVal          = "no-cache"
-		successTemplate    = "{ \\\"name\\\": $${nameValue}, \\\"build\\\": $${buildNumber} }"
-		transMapAttr       = "nameValue"
-		transMapVal        = "$.Name"
-		transMapValDefault = "UNKNOWN"
+		reqUrlTemplate1     = "/api/v2/users"
+		reqUrlTemplate2     = "/api/v2/integrations"
+		reqType1            = "GET"
+		reqType2            = "PUT"
+		reqTemp             = "{ \\\"service\\\": \\\"$${input.service}\\\" }"
+		headerKey           = "Cache-Control"
+		headerVal1          = "no-cache"
+		headerVal2          = "no-store"
+		successTemplate     = "{ \\\"name\\\": $${nameValue}, \\\"build\\\": $${buildNumber} }"
+		transMapAttr        = "nameValue"
+		transMapVal1        = "$.Name"
+		transMapVal2        = "$.NewName"
+		transMapValDefault1 = "UNKNOWN"
+		transMapValDefault2 = "NotKnown"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -98,18 +101,18 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 						strconv.Quote(reqTemp),
 						generateMapAttr(
 							"headers",
-							generateMapProperty(headerKey, strconv.Quote(headerVal)),
+							generateMapProperty(headerKey, strconv.Quote(headerVal1)),
 						),
 					),
 					generateIntegrationActionConfigResponse(
 						strconv.Quote(successTemplate),
 						generateMapAttr(
 							"translation_map",
-							generateMapProperty(transMapAttr, strconv.Quote(transMapVal)),
+							generateMapProperty(transMapAttr, strconv.Quote(transMapVal1)),
 						),
 						generateMapAttr(
 							"translation_map_defaults",
-							generateMapProperty(transMapAttr, strconv.Quote(transMapValDefault)),
+							generateMapProperty(transMapAttr, strconv.Quote(transMapValDefault1)),
 						),
 					),
 				),
@@ -121,10 +124,59 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_url_template", reqUrlTemplate2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_type", reqType2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_template", strings.ReplaceAll(reqTemp, "$${", "${")),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.headers."+headerKey, headerVal),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.headers."+headerKey, headerVal1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.success_template", strings.ReplaceAll(successTemplate, "$${", "${")),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.translation_map."+transMapAttr, transMapVal),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.translation_map_defaults."+transMapAttr, transMapValDefault),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.translation_map."+transMapAttr, transMapVal1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.translation_map_defaults."+transMapAttr, transMapValDefault1),
+				),
+			},
+			{
+				// Update config values as well as secure field which should force a new action to be created
+				Config: generateIntegrationResource(
+					integResource1,
+					nullValue,
+					strconv.Quote(integTypeID),
+				) + generateIntegrationActionResource(
+					actionResource1,
+					actionName2,
+					actionCateg2,
+					"genesyscloud_integration."+integResource1+".id",
+					trueValue,                             // Secure
+					generateJsonSchemaDocStr(inputAttr1),  // contract_input
+					generateJsonSchemaDocStr(outputAttr1), // contract_output
+					generateIntegrationActionConfigRequest(
+						reqUrlTemplate2,
+						reqType2,
+						strconv.Quote(reqTemp),
+						generateMapAttr(
+							"headers",
+							generateMapProperty(headerKey, strconv.Quote(headerVal2)),
+						),
+					),
+					generateIntegrationActionConfigResponse(
+						strconv.Quote(successTemplate),
+						generateMapAttr(
+							"translation_map",
+							generateMapProperty(transMapAttr, strconv.Quote(transMapVal2)),
+						),
+						generateMapAttr(
+							"translation_map_defaults",
+							generateMapProperty(transMapAttr, strconv.Quote(transMapValDefault2)),
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "name", actionName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "category", actionCateg2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", trueValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_url_template", reqUrlTemplate2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_type", reqType2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_template", strings.ReplaceAll(reqTemp, "$${", "${")),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.headers."+headerKey, headerVal2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.success_template", strings.ReplaceAll(successTemplate, "$${", "${")),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.translation_map."+transMapAttr, transMapVal2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_response.0.translation_map_defaults."+transMapAttr, transMapValDefault2),
 				),
 			},
 			{
