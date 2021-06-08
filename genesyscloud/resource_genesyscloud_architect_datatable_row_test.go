@@ -3,13 +3,12 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v45/platformclientv2"
 )
 
 func TestAccResourceArchitectDatatableRow(t *testing.T) {
@@ -161,17 +160,6 @@ func generateArchitectDatatableRowResource(
 		properties_json = %s
 	}
 	`, resourceID, tableID, keyVal, properties)
-}
-
-func generateJsonEncodedProperties(properties ...string) string {
-	return fmt.Sprintf(`jsonencode({
-		%s
-	})
-	`, strings.Join(properties, "\n"))
-}
-
-func generateJsonProperty(propName string, propValue string) string {
-	return fmt.Sprintf(`"%s" = %s`, propName, propValue)
 }
 
 func testVerifyDatatableRowsDestroyed(state *terraform.State) error {

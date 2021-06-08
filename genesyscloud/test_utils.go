@@ -100,14 +100,65 @@ func validateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 			return fmt.Errorf("Error parsing JSON for %s in state: %v", resourceID, err)
 		}
 
-		if val, ok := jsonMap[jsonProp]; ok {
-			strVal := interfaceToString(val)
-			if strVal != jsonValue {
-				return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourceName, jsonProp, strVal, jsonValue)
+		propPath := strings.Split(jsonProp, ".")
+		if val, ok := jsonMap[propPath[0]]; ok {
+			for i := 1; i < len(propPath); i++ {
+				switch obj := val.(type) {
+				case map[string]interface{}:
+					val = obj[propPath[i]]
+				case []interface{}:
+					val = obj
+				default:
+					return fmt.Errorf("JSON property %s not found for %s in state", jsonProp, resourceID)
+				}
+			}
+			if arr, ok := val.([]interface{}); ok {
+				// Property is an array. Check if string value exists in array.
+				if stringInSlice(jsonValue, interfaceListToStrings(arr)) {
+					return nil
+				}
+				return fmt.Errorf("JSON array property for resource %s.%s does not contain expected %s", resourceName, jsonProp, jsonValue)
+			} else {
+				strVal := interfaceToString(val)
+				if strVal != jsonValue {
+					return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourceName, jsonProp, strVal, jsonValue)
+				}
 			}
 		} else {
 			return fmt.Errorf("JSON property %s not found for %s in state", jsonProp, resourceID)
 		}
 		return nil
 	}
+}
+
+func generateJsonEncodedProperties(properties ...string) string {
+	return fmt.Sprintf(`jsonencode({
+		%s
+	})
+	`, strings.Join(properties, "\n"))
+}
+
+func generateJsonProperty(propName string, propValue string) string {
+	return fmt.Sprintf(`"%s" = %s`, propName, propValue)
+}
+
+func generateJsonArrayProperty(propName string, propValues ...string) string {
+	return fmt.Sprintf(`"%s" = [%s]`, propName, strings.Join(propValues, ", "))
+}
+
+func generateJsonObject(properties ...string) string {
+	return fmt.Sprintf(`{
+		%s
+	}`, strings.Join(properties, "\n"))
+}
+
+func generateMapProperty(propName string, propValue string) string {
+	return fmt.Sprintf(`%s = %s`, propName, propValue)
+}
+
+func generateMapAttr(name string, properties ...string) string {
+	return fmt.Sprintf(`%s = {
+		%s
+	}
+	`, name, strings.Join(properties, "\n"))
 }

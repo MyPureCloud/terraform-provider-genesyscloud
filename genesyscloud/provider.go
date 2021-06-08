@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v45/platformclientv2"
 )
 
 func init() {
@@ -76,6 +76,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_idp_ping":                resourceIdpPing(),
 				"genesyscloud_idp_salesforce":          resourceIdpSalesforce(),
 				"genesyscloud_integration":             resourceIntegration(),
+				"genesyscloud_integration_action":      resourceIntegrationAction(),
 				"genesyscloud_integration_credential":  resourceCredential(),
 				"genesyscloud_location":                resourceLocation(),
 				"genesyscloud_routing_email_domain":    resourceRoutingEmailDomain(),
@@ -168,7 +169,13 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 	basePath := getRegionBasePath(data.Get("aws_region").(string))
 
 	config.BasePath = basePath
-	config.SetDebug(data.Get("sdk_debug").(bool))
+	if data.Get("sdk_debug").(bool) {
+		config.LoggingConfiguration = &platformclientv2.LoggingConfiguration{
+			LogLevel:        platformclientv2.LDebug,
+			LogRequestBody:  true,
+			LogResponseBody: true,
+		}
+	}
 	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
 		RetryWaitMin: time.Second * 1,

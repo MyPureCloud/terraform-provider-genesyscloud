@@ -513,6 +513,8 @@ func sanitizeConfigMap(
 			}
 			if refSettings != nil {
 				configMap[key] = resolveReference(refSettings, val.(string), exporters, exportingState)
+			} else {
+				configMap[key] = escapeString(val.(string))
 			}
 		}
 
@@ -550,6 +552,14 @@ func removeZeroValues(key string, val interface{}, configMap jsonMap) {
 	}
 }
 
+func escapeString(strValue string) string {
+	// Check for any '${' or '%{' in the exported string and escape them
+	// https://www.terraform.io/docs/language/expressions/strings.html#escape-sequences
+	escapedVal := strings.ReplaceAll(strValue, "${", "$${")
+	escapedVal = strings.ReplaceAll(escapedVal, "%{", "%%{")
+	return escapedVal
+}
+
 func sanitizeConfigArray(
 	resourceType string,
 	anArray []interface{},
@@ -578,7 +588,7 @@ func sanitizeConfigArray(
 					result = append(result, referenceVal)
 				}
 			} else {
-				result = append(result, val)
+				result = append(result, escapeString(val.(string)))
 			}
 		default:
 			result = append(result, val)

@@ -161,6 +161,7 @@ func generateTfExportResource(
 			"genesyscloud_idp_ping",
 			"genesyscloud_idp_salesforce",
 			"genesyscloud_integration",
+			"genesyscloud_integration_action",
 			"genesyscloud_integration_credential",
 			"genesyscloud_location",
 			"genesyscloud_routing_email_domain",

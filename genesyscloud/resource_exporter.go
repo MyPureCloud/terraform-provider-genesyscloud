@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
@@ -128,6 +129,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_idp_ping":                idpPingExporter(),
 		"genesyscloud_idp_salesforce":          idpSalesforceExporter(),
 		"genesyscloud_integration":             integrationExporter(),
+		"genesyscloud_integration_action":      integrationActionExporter(),
 		"genesyscloud_integration_credential":  credentialExporter(),
 		"genesyscloud_location":                locationExporter(),
 		"genesyscloud_routing_email_domain":    routingEmailDomainExporter(),
@@ -169,6 +171,7 @@ func escapeRune(s string) string {
 }
 
 // Resource names must only contain alphanumeric chars, underscores, or dashes
+// https://www.terraform.io/docs/language/syntax/configuration.html#identifiers
 var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
 
 func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
@@ -181,6 +184,10 @@ func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
 			algorithm.Write([]byte(meta.Name))
 			name = name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 			meta.Name = name
+		}
+		if unicode.IsDigit(rune(meta.Name[0])) {
+			// Terraform does not allow names to begin with a number. Prefix with an underscore instead
+			meta.Name = "_" + meta.Name
 		}
 	}
 }
