@@ -60,6 +60,13 @@ func New(version string) func() *schema.Provider {
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG", false),
 					Description: "Enables debug tracing in the Genesys Cloud SDK.",
 				},
+				"token_pool_size": {
+					Type:         schema.TypeInt,
+					Optional:     true,
+					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_POOL_SIZE", 10),
+					Description:  "Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
+					ValidateFunc: validation.IntBetween(1, 20),
+				},
 			},
 			ResourcesMap: map[string]*schema.Resource{
 				"genesyscloud_architect_datatable":     resourceArchitectDatatable(),
@@ -116,8 +123,8 @@ func configure(version string) schema.ConfigureContextFunc {
 			return nil, err
 		}
 
-		// Initialize the SDK Client pool with 10 clients
-		err = InitSDKClientPool(10, version, data)
+		// Initialize the SDK Client pool
+		err = InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
 		if err != nil {
 			return nil, err
 		}
