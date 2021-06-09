@@ -117,14 +117,8 @@ type providerMeta struct {
 
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		// Initialize the default config for tests and anything else that doesn't use the pool
-		err := initClientConfig(data, version, platformclientv2.GetDefaultConfiguration())
-		if err != nil {
-			return nil, err
-		}
-
 		// Initialize the SDK Client pool
-		err = InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
+		err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
 		if err != nil {
 			return nil, err
 		}
