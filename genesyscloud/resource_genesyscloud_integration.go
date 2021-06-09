@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -157,6 +158,9 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 			return diag.Errorf("Failed to update integration %s: %v", name, patchErr)
 		}
 	}
+
+	// Give integration caches time to update
+	time.Sleep(2 * time.Second)
 
 	log.Printf("Created integration %s %s", name, *integration.Id)
 	return readIntegration(ctx, d, meta)
