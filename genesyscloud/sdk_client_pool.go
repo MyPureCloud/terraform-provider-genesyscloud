@@ -25,6 +25,7 @@ var once sync.Once
 // This must be called during provider initialization before the pool is used
 func InitSDKClientPool(max int, version string, providerConfig *schema.ResourceData) diag.Diagnostics {
 	once.Do(func() {
+		log.Print("Initializing client pool.")
 		sdkClientPool = &SDKClientPool{
 			pool: make(chan *platformclientv2.Configuration, max),
 		}

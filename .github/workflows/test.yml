@@ -79,7 +79,7 @@ jobs:
         GENESYSCLOUD_OAUTHCLIENT_ID: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
         GENESYSCLOUD_OAUTHCLIENT_SECRET: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
         GENESYSCLOUD_REGION: "us-east-1"
-        GENESYSCLOUD_SDK_DEBUG: "true"
+        GENESYSCLOUD_SDK_DEBUG: "false"
         GENESYSCLOUD_TOKEN_POOL_SIZE: "5"
       run: |
         go test -timeout 60m -v -cover ./genesyscloud/
