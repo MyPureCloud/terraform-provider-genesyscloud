@@ -19,18 +19,28 @@ type SDKClientPool struct {
 }
 
 var sdkClientPool *SDKClientPool
+var sdkClientPoolErr diag.Diagnostics
 var once sync.Once
 
 // InitSDKClientPool creates a new pool of Clients with the given provider config
 // This must be called during provider initialization before the pool is used
 func InitSDKClientPool(max int, version string, providerConfig *schema.ResourceData) diag.Diagnostics {
 	once.Do(func() {
+		log.Print("Initializing default SDK client.")
+		// Initialize the default config for tests and anything else that doesn't use the pool
+		err := initClientConfig(providerConfig, version, platformclientv2.GetDefaultConfiguration())
+		if err != nil {
+			sdkClientPoolErr = err
+			return
+		}
+
+		log.Printf("Initializing %d SDK clients in the pool.", max)
 		sdkClientPool = &SDKClientPool{
 			pool: make(chan *platformclientv2.Configuration, max),
 		}
+		sdkClientPoolErr = sdkClientPool.preFill(providerConfig, version)
 	})
-	log.Printf("Initializing %d clients in the pool.", max)
-	return sdkClientPool.preFill(providerConfig, version)
+	return sdkClientPoolErr
 }
 
 func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version string) diag.Diagnostics {
