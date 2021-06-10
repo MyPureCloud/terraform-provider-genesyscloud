@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v45/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
 )
 
 func init() {
@@ -170,13 +170,7 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 	basePath := getRegionBasePath(data.Get("aws_region").(string))
 
 	config.BasePath = basePath
-	if data.Get("sdk_debug").(bool) {
-		config.LoggingConfiguration = &platformclientv2.LoggingConfiguration{
-			LogLevel:        platformclientv2.LDebug,
-			LogRequestBody:  true,
-			LogResponseBody: true,
-		}
-	}
+	config.SetDebug(data.Get("sdk_debug").(bool))
 	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
 		RetryWaitMin: time.Second * 1,
