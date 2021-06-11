@@ -45,16 +45,16 @@ resource "genesyscloud_integration_action" "test-action" {
     request_url_template = "https://www.example.com/health/check/services/$${input.service}"
     request_type         = "GET"
     request_template     = "$${input.rawRequest}"
-    headers {
+    headers = {
       Cache-Control = "no-cache"
     }
   }
   config_response {
-    translation_map {
+    translation_map = {
       nameValue   = "$.Name"
       buildNumber = "$.Build-Version"
     }
-    translation_map_defaults {
+    translation_map_defaults = {
       buildNumber = "UNKNOWN"
     }
     success_template = "{ \"name\": $${nameValue}, \"build\": $${buildNumber} }"
