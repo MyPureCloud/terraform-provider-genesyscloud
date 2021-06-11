@@ -12,7 +12,7 @@ resource "genesyscloud_integration" "integration1" {
     })
     advanced = jsonencode({})
     notes    = "Test config notes"
-    credentials {
+    credentials = {
       basic_Auth = genesyscloud_credentials.test_cred.id
     }
   }
