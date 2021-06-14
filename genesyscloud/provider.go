@@ -100,6 +100,7 @@ func New(version string) func() *schema.Provider {
 			DataSourcesMap: map[string]*schema.Resource{
 				"genesyscloud_auth_role":        dataSourceAuthRole(),
 				"genesyscloud_auth_division":    dataSourceAuthDivision(),
+				"genesyscloud_flow":             dataSourceFlow(),
 				"genesyscloud_routing_language": dataSourceRoutingLanguage(),
 				"genesyscloud_routing_skill":    dataSourceRoutingSkill(),
 				"genesyscloud_user":             dataSourceUser(),
