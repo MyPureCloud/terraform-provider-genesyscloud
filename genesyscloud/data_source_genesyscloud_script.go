@@ -32,22 +32,33 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 	name := d.Get("name").(string)
 
 	// Query for scripts by name. Retry in case new script is not yet indexed by search.
-  // As script names are non-unique, and search is full-text, fail in case of multiple results.
+  // As script names are non-unique, fail in case of multiple results.
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		scripts, _, getErr := scriptsAPI.GetScripts(25, 1, "", name, "", "", "", "", "")
+		scripts, _, getErr := scriptsAPI.GetScripts(100, 1, "", name, "", "", "", "", "")
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting script %s: %s", name, getErr))
 		}
+		
+		matchedScripts := []platformclientv2.Script{}
+		
+		if scripts.Entities != nil {
+			// Since script name search is full-text, filter out non-exact matches.
+			for _, script := range *scripts.Entities {
+				if *script.Name == name {
+					matchedScripts = append(matchedScripts, script)
+				}
+			}
+		}
 
-		if scripts.Entities == nil || len(*scripts.Entities) == 0 {
+		if scripts.Entities == nil || len(matchedScripts) == 0 {
 			return resource.RetryableError(fmt.Errorf("No scripts found with name %s", name))
 		}
 
-		if len(*scripts.Entities) > 1 {
+		if len(matchedScripts) > 1 {
 			return resource.NonRetryableError(fmt.Errorf("Ambiguous script name: %s", name))
 		}
 
-    script := (*scripts.Entities)[0]
+    script := (matchedScripts)[0]
 	  d.SetId(*script.Id)
 	  return nil
 	})
