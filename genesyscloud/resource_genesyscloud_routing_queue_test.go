@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v46/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -257,37 +257,21 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 		queueName           = "Terraform Test Queue-" + uuid.NewString()
 		wrapupCodeResource1 = "test-wrapup-1"
 		wrapupCodeResource2 = "test-wrapup-2"
+		wrapupCodeResource3 = "test-wrapup-3"
 		wrapupCodeName1     = "Terraform Test Code1-" + uuid.NewString()
 		wrapupCodeName2     = "Terraform Test Code2-" + uuid.NewString()
+		wrapupCodeName3     = "Terraform Test Code3-" + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				// Create with a single wrapup code
+				// Create with two wrapup codes
 				Config: generateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-					generateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id"),
-				) + generateRoutingWrapupcodeResource(
-					wrapupCodeResource1,
-					wrapupCodeName1,
-				) + generateRoutingWrapupcodeResource(
-					wrapupCodeResource2,
-					wrapupCodeName2,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_wrapupcode."+wrapupCodeResource1),
-				),
-			},
-			{
-				// Update with another wrapup code
-				Config: generateRoutingQueueResourceBasic(
-					queueResource,
-					queueName,
-					generateQueueWrapupCodes(
-						"genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
+					generateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
 				) + generateRoutingWrapupcodeResource(
 					wrapupCodeResource1,
@@ -302,7 +286,31 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 				),
 			},
 			{
-				// Remove a wrapup code
+				// Update with another wrapup code
+				Config: generateRoutingQueueResourceBasic(
+					queueResource,
+					queueName,
+					generateQueueWrapupCodes(
+						"genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
+						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id",
+						"genesyscloud_routing_wrapupcode."+wrapupCodeResource3+".id"),
+				) + generateRoutingWrapupcodeResource(
+					wrapupCodeResource1,
+					wrapupCodeName1,
+				) + generateRoutingWrapupcodeResource(
+					wrapupCodeResource2,
+					wrapupCodeName2,
+				) + generateRoutingWrapupcodeResource(
+					wrapupCodeResource3,
+					wrapupCodeName3,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_wrapupcode."+wrapupCodeResource1),
+					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_wrapupcode."+wrapupCodeResource2),
+				),
+			},
+			{
+				// Remove two wrapup codes
 				Config: generateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,

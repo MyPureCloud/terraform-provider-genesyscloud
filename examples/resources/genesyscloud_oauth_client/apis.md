@@ -1,0 +1,5 @@
+* [GET /api/v2/oauth/clients](https://developer.genesys.cloud/api/rest/v2/oauth/#get-api-v2-oauth-clients)
+* [GET /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/api/rest/v2/oauth/#get-api-v2-oauth-clients--clientId-)
+* [POST /api/v2/oauth/clients](https://developer.genesys.cloud/api/rest/v2/oauth/#post-api-v2-oauth-clients)
+* [PUT /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/api/rest/v2/oauth/#put-api-v2-oauth-clients--clientId-)
+* [DELETE /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/api/rest/v2/oauth/#delete-api-v2-oauth-clients--clientId-)

@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v46/platformclientv2"
 )
 
 var (
@@ -978,8 +978,8 @@ func addWrapupCodesInChunks(queueID string, codesToAdd []string, api *platformcl
 			end = len(codesToAdd)
 		}
 		var updateChunk []platformclientv2.Wrapupcodereference
-		for _, id := range codesToAdd[i:end] {
-			updateChunk = append(updateChunk, platformclientv2.Wrapupcodereference{Id: &id})
+		for j := i; j < end; j++ {
+			updateChunk = append(updateChunk, platformclientv2.Wrapupcodereference{Id: &codesToAdd[j]})
 		}
 
 		if len(updateChunk) > 0 {
@@ -1084,8 +1084,8 @@ func updateMembersInChunks(queueID string, membersToUpdate []string, remove bool
 			end = len(membersToUpdate)
 		}
 		var updateChunk []platformclientv2.Writableentity
-		for _, id := range membersToUpdate[i:end] {
-			updateChunk = append(updateChunk, platformclientv2.Writableentity{Id: &id})
+		for j := i; j < end; j++ {
+			updateChunk = append(updateChunk, platformclientv2.Writableentity{Id: &membersToUpdate[j]})
 		}
 
 		if len(updateChunk) > 0 {
