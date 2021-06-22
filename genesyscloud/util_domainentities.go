@@ -2,7 +2,7 @@ package genesyscloud
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v46/platformclientv2"
 )
 
 func buildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Domainentityref {
@@ -19,7 +19,8 @@ func buildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platfo
 		if strList != nil {
 			domainEntityRefs := make([]platformclientv2.Domainentityref, len(*strList))
 			for i, id := range *strList {
-				domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &id}
+				tempId := id
+				domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
 			}
 			return &domainEntityRefs
 		}

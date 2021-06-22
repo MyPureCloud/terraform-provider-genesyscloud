@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v46/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -1087,8 +1087,9 @@ func updateUserRoutingLanguages(
 		var updateChunk []platformclientv2.Userroutinglanguagepost
 		for _, id := range langsToUpdate[i:end] {
 			newProf := float64(langProfs[id])
+			tempId := id
 			updateChunk = append(updateChunk, platformclientv2.Userroutinglanguagepost{
-				Id:          &id,
+				Id:          &tempId,
 				Proficiency: &newProf,
 			})
 		}

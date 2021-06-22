@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v46/platformclientv2"
 )
 
 // Row IDs structured as {table-id}/{key-value}
