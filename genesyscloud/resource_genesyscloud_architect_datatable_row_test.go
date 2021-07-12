@@ -64,12 +64,14 @@ func TestAccResourceArchitectDatatableRow(t *testing.T) {
 					rowResource1,
 					"genesyscloud_architect_datatable."+tableResource1+".id",
 					keyVal1,
-					nullValue, // No JSON values specified, so all props in state should be default
+					generateJsonEncodedProperties(
+						generateJsonProperty(propInt, intVal1), // Most props in state should be default
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_datatable_row."+rowResource1, "key_value", keyVal1),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_datatable_row."+rowResource1, "datatable_id", "genesyscloud_architect_datatable."+tableResource1, "id"),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propInt, defInt1),
+					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propInt, intVal1),
 					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propBool, defBool1),
 					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propNum, defNum),
 					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propStr, defStr),
