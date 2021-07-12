@@ -224,13 +224,15 @@ func buildSdkRowPropertyMap(propertiesJson string, keyStr string) (map[string]in
 func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	// Defaults must be set on missing properties
 
-	if !diff.NewValueKnown("datatable_id") {
-		// datatable_id not yet in final state. Nothing to do.
+	if !diff.NewValueKnown("properties_json") {
+		// properties_json value not yet in final state. Nothing to do.
 		return nil
 	}
 
-	if !diff.NewValueKnown("properties_json") {
-		// properties_json value not yet in final state. Nothing to do.
+	if !diff.NewValueKnown("datatable_id") {
+		// datatable_id not yet in final state, but properties_json is marked as known.
+		// There may be computed defaults to set on properties_json that we do not know yet.
+		diff.SetNewComputed("properties_json")
 		return nil
 	}
 
