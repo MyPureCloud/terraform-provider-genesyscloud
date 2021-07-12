@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -152,6 +153,7 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	log.Printf("Updated IDP Salesforce")
+	time.Sleep(2 * time.Second)
 	return readIdpSalesforce(ctx, d, meta)
 }
 

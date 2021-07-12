@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -165,6 +166,7 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updated IDP ADFS")
+	time.Sleep(2 * time.Second)
 	return readIdpAdfs(ctx, d, meta)
 }
 
