@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v46/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v48/platformclientv2"
 )
 
 func dataSourceScript() *schema.Resource {
@@ -32,15 +32,15 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 	name := d.Get("name").(string)
 
 	// Query for scripts by name. Retry in case new script is not yet indexed by search.
-  // As script names are non-unique, fail in case of multiple results.
+	// As script names are non-unique, fail in case of multiple results.
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		scripts, _, getErr := scriptsAPI.GetScripts(100, 1, "", name, "", "", "", "", "")
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting script %s: %s", name, getErr))
 		}
-		
+
 		matchedScripts := []platformclientv2.Script{}
-		
+
 		if scripts.Entities != nil {
 			// Since script name search is full-text, filter out non-exact matches.
 			for _, script := range *scripts.Entities {
@@ -58,8 +58,8 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 			return resource.NonRetryableError(fmt.Errorf("Ambiguous script name: %s", name))
 		}
 
-    script := (matchedScripts)[0]
-	  d.SetId(*script.Id)
-	  return nil
+		script := (matchedScripts)[0]
+		d.SetId(*script.Id)
+		return nil
 	})
 }
