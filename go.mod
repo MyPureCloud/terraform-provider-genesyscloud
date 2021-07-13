@@ -28,7 +28,7 @@ require (
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/mypurecloud/platform-client-sdk-go/v46 v46.0.0
+	github.com/mypurecloud/platform-client-sdk-go/v48 v48.0.0
 	github.com/nsf/jsondiff v0.0.0-20210303162244-6ea32392771e // indirect
 	github.com/nyaruka/phonenumbers v1.0.70
 	github.com/oklog/run v1.1.0 // indirect
