@@ -240,10 +240,29 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.Errorf("Failed to read success template for integration action %s: %s", d.Id(), getErr)
 	}
 
-	d.Set("name", *action.Name)
-	d.Set("category", *action.Category)
-	d.Set("integration_id", *action.IntegrationId)
-	d.Set("secure", *action.Secure)
+	if action.Name != nil {
+		d.Set("name", *action.Name)
+	} else {
+		d.Set("name", nil)
+	}
+
+	if action.Category != nil {
+		d.Set("category", *action.Category)
+	} else {
+		d.Set("category", nil)
+	}
+
+	if action.IntegrationId != nil {
+		d.Set("integration_id", *action.IntegrationId)
+	} else {
+		d.Set("integration_id", nil)
+	}
+
+	if action.Secure != nil {
+		d.Set("secure", *action.Secure)
+	} else {
+		d.Set("secure", nil)
+	}
 
 	if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
 		input, err := flattenActionContract(*action.Contract.Input.InputSchema)
