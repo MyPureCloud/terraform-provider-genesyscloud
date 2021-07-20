@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -14,6 +15,7 @@ import (
 )
 
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
 	var (
 		domainRes     = "routing-domain1"
 		domainId      = "tfroutetest" + strconv.Itoa(rand.Intn(1000)) + ".com"
