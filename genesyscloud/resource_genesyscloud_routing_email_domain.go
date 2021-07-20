@@ -130,8 +130,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 
 	if domain.SubDomain != nil && *domain.SubDomain {
 		// Strip off the regional domain suffix added by the server
-		gcDomainSuffix := "." + meta.(*providerMeta).Domain
-		d.Set("domain_id", strings.TrimSuffix(*domain.Id, gcDomainSuffix))
+		d.Set("domain_id", strings.SplitN(*domain.Id, ".", 2)[0])
 	} else {
 		d.Set("domain_id", *domain.Id)
 	}
