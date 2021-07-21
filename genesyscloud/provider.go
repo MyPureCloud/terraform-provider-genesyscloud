@@ -94,6 +94,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_routing_skill":           resourceRoutingSkill(),
 				"genesyscloud_routing_utilization":     resourceRoutingUtilization(),
 				"genesyscloud_routing_wrapupcode":      resourceRoutingWrapupCode(),
+				"genesyscloud_telephony_did_pool":      resourceTelephonyDidPool(),
 				"genesyscloud_tf_export":               resourceTfExport(),
 				"genesyscloud_user":                    resourceUser(),
 				"genesyscloud_user_roles":              resourceUserRoles(),
