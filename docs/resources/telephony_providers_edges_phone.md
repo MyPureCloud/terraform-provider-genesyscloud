@@ -55,7 +55,7 @@ resource "genesyscloud_telephony_providers_edges_phone" "test_phone" {
 
 ### Optional
 
-- **capabilities** (List of Object) Phone Capabilities. (see [below for nested schema](#nestedatt--capabilities))
+- **capabilities** (Block List, Max: 1) Phone Capabilities. (see [below for nested schema](#nestedblock--capabilities))
 - **id** (String) The ID of this resource.
 - **state** (String) Indicates if the resource is active, inactive, or deleted. Valid values: active, inactive, deleted. Defaults to `active`.
 - **web_rtc_user_id** (String) Web RTC User ID.
@@ -64,18 +64,18 @@ resource "genesyscloud_telephony_providers_edges_phone" "test_phone" {
 
 - **phone_meta_base_id** (String) Phone Meta Base ID.
 
-<a id="nestedatt--capabilities"></a>
+<a id="nestedblock--capabilities"></a>
 ### Nested Schema for `capabilities`
 
 Optional:
 
-- **allow_reboot** (Boolean)
-- **cdm** (Boolean)
-- **dual_registers** (Boolean)
-- **hardware_id_type** (String)
-- **media_codecs** (List of String)
-- **no_cloud_provisioning** (Boolean)
-- **no_rebalance** (Boolean)
-- **provisions** (Boolean)
-- **registers** (Boolean)
+- **allow_reboot** (Boolean) Allow Reboot
+- **cdm** (Boolean) CDM
+- **dual_registers** (Boolean) Dual Registers
+- **hardware_id_type** (String) HardwareId Type
+- **media_codecs** (List of String) Media Codecs
+- **no_cloud_provisioning** (Boolean) No Cloud Provisioning
+- **no_rebalance** (Boolean) No Rebalance
+- **provisions** (Boolean) Provisions
+- **registers** (Boolean) Registers
 

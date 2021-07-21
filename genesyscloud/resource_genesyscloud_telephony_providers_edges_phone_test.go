@@ -129,6 +129,12 @@ func TestAccResourcePhone(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "web_rtc_user_id", webRtcUserId2),
 				),
 			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_telephony_providers_edges_phone." + phoneRes,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 		CheckDestroy: testVerifyWebRtcPhoneDestroyed,
 	})

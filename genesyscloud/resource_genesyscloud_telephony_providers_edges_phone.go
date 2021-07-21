@@ -65,7 +65,6 @@ func resourcePhone() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"provisions": {
@@ -346,7 +345,9 @@ func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration
 func phoneExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllPhones),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*RefAttrSettings{
+			"web_rtc_user_id": {RefType: "genesyscloud_user"},
+		},
 	}
 }
 
