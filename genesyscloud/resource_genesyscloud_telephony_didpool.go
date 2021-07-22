@@ -135,20 +135,8 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return nil
 	}
 
-	// d.Set("start_phone_number", *didPool.StartPhoneNumber)
-	// d.Set("end_phone_number", *didPool.EndPhoneNumber)
-
-	if didPool.StartPhoneNumber != nil {
-		d.Set("start_phone_number", *didPool.StartPhoneNumber)
-	} else {
-		d.Set("start_phone_number", nil)
-	}
-
-	if didPool.EndPhoneNumber != nil {
-		d.Set("end_phone_number", *didPool.EndPhoneNumber)
-	} else {
-		d.Set("end_phone_number", nil)
-	}
+	d.Set("start_phone_number", *didPool.StartPhoneNumber)
+	d.Set("end_phone_number", *didPool.EndPhoneNumber)
 
 	if didPool.Description != nil {
 		d.Set("description", *didPool.Description)
