@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -12,6 +13,7 @@ import (
 )
 
 func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
 	var (
 		domainRes = "routing-domain1"
 		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000))
@@ -26,11 +28,11 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 				Config: generateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					trueValue, // Subdomain
+					trueValue, // Subdomain clear
 					nullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId ),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", trueValue),
 				),
 			},
@@ -46,6 +48,7 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 }
 
 func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
 	var (
 		domainRes       = "routing-domain1"
 		domainId        = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
