@@ -170,15 +170,16 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	log.Printf("Updating DID pool %s", d.Id())
-	_, _, err := telephonyApi.PutTelephonyProvidersEdgesDidpool(d.Id(), platformclientv2.Didpool{
+	didPoolBody := platformclientv2.Didpool{
 		StartPhoneNumber: &startPhoneNumber,
 		EndPhoneNumber:   &endPhoneNumber,
 		Description:      &description,
 		Comments:         &comments,
 		Provider:         &poolProvider,
-	})
-	if err != nil {
+	}
+
+	log.Printf("Updating DID pool %s", d.Id())
+	if _, _, err := telephonyApi.PutTelephonyProvidersEdgesDidpool(d.Id(), didPoolBody); err != nil {
 		return diag.Errorf("Error updating DID pool %s: %s", startPhoneNumber, err)
 	}
 
@@ -193,8 +194,7 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting DID pool with starting number %s", startPhoneNumber)
-	_, err := telephonyApi.DeleteTelephonyProvidersEdgesDidpool(d.Id())
-	if err != nil {
+	if _, err := telephonyApi.DeleteTelephonyProvidersEdgesDidpool(d.Id()); err != nil {
 		return diag.Errorf("Failed to delete DID pool with starting number %s: %s", startPhoneNumber, err)
 	}
 	log.Printf("Deleted DID pool with starting number %s", startPhoneNumber)

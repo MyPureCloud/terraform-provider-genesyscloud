@@ -10,15 +10,22 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v48/platformclientv2"
 )
 
+type didPoolStruct struct {
+	resourceID       string
+	startPhoneNumber string
+	endPhoneNumber   string
+	description      string
+	comments         string
+	poolProvider     string
+}
+
 func TestAccResourceDidPoolBasic(t *testing.T) {
-	var (
-		didPoolResource1         = "test-didpool1"
-		didPoolStartPhoneNumber1 = "+13175550000"
-		didPoolEndPhoneNumber1   = "+13175550005"
-		didPoolDescription1      = "Test description"
-		didPoolComments1         = "Test comments"
-		didPoolProvider1         = "PURE_CLOUD"
-	)
+	didPoolResource1 := "test-didpool1"
+	didPoolStartPhoneNumber1 := "+13175550000"
+	didPoolEndPhoneNumber1 := "+13175550005"
+	didPoolDescription1 := "Test description"
+	didPoolComments1 := "Test comments"
+	didPoolProvider1 := "PURE_CLOUD"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -26,14 +33,14 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateDidPoolResource(
+				Config: generateDidPoolResource(&didPoolStruct{
 					didPoolResource1,
 					didPoolStartPhoneNumber1,
 					didPoolEndPhoneNumber1,
 					nullValue, // No description
 					nullValue, // No comments
 					nullValue, // No provider
-				),
+				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "start_phone_number", didPoolStartPhoneNumber1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "end_phone_number", didPoolEndPhoneNumber1),
@@ -44,14 +51,14 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateDidPoolResource(
+				Config: generateDidPoolResource(&didPoolStruct{
 					didPoolResource1,
 					didPoolStartPhoneNumber1,
 					didPoolEndPhoneNumber1,
 					strconv.Quote(didPoolDescription1),
 					strconv.Quote(didPoolComments1),
 					strconv.Quote(didPoolProvider1),
-				),
+				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "start_phone_number", didPoolStartPhoneNumber1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "end_phone_number", didPoolEndPhoneNumber1),
@@ -71,13 +78,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	})
 }
 
-func generateDidPoolResource(
-	resourceID string,
-	startPhoneNumber string,
-	endPhoneNumber string,
-	description string,
-	comments string,
-	poolProvider string) string {
+func generateDidPoolResource(didPool *didPoolStruct) string {
 	return fmt.Sprintf(`resource "genesyscloud_telephony_did_pool" "%s" {
 		start_phone_number = "%s"
 		end_phone_number = "%s"
@@ -85,7 +86,12 @@ func generateDidPoolResource(
 		comments = %s
 		pool_provider = %s
 	}
-	`, resourceID, startPhoneNumber, endPhoneNumber, description, comments, poolProvider)
+	`, didPool.resourceID,
+		didPool.startPhoneNumber,
+		didPool.endPhoneNumber,
+		didPool.description,
+		didPool.comments,
+		didPool.poolProvider)
 }
 
 func testVerifyDidPoolsDestroyed(state *terraform.State) error {
@@ -96,19 +102,21 @@ func testVerifyDidPoolsDestroyed(state *terraform.State) error {
 		}
 
 		didPool, resp, err := telephonyAPI.GetTelephonyProvidersEdgesDidpool(rs.Primary.ID)
+		if didPool != nil && didPool.State != nil && *didPool.State == "deleted" {
+			continue
+		}
+
 		if didPool != nil {
-			if didPool.State != nil && *didPool.State == "deleted" {
-				// DID pool deleted
-				continue
-			}
 			return fmt.Errorf("DID Pool (%s) still exists", rs.Primary.ID)
-		} else if resp != nil && resp.StatusCode == 404 {
+		}
+
+		if resp != nil && resp.StatusCode == 404 {
 			// DID pool not found as expected
 			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
 		}
+
+		// Unexpected error
+		return fmt.Errorf("Unexpected error: %s", err)
 	}
 	// Success. All DID pool destroyed
 	return nil
