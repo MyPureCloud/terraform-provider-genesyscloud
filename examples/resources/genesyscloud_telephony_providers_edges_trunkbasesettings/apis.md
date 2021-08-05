@@ -1,0 +1,5 @@
+* [GET /api/v2/telephony/providers/edges/trunkbasesettings](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-trunkbasesettings)
+* [POST /api/v2/telephony/providers/edges/trunkbasesettings](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#post-api-v2-telephony-providers-edges-trunkbasesettings)
+* [GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
+* [DELETE /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#delete-api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
+* [PUT /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#put-api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
