@@ -2,11 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v48/platformclientv2"
@@ -17,9 +14,9 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 		schedResource1  = "arch-sched1"
         name            = "CX Code Schedule"
 		description     = "Sample Scedhule by CX as Code"
-		start           = "2021-08-04T08:00:00.000Z"
-        start2          = "2021-08-04T09:00:00.000Z"
-		end             = "2021-08-04T17:00:00.000Z"        
+		start           = "2021-08-04T08:00:00.000"
+        start2          = "2021-08-04T09:00:00.000"
+		end             = "2021-08-04T17:00:00.000"        
 		rrule           = "FREQ=DAILY;INTERVAL=1"
 	)
 
@@ -83,9 +80,10 @@ func generateArchitectSchedulesResource(
 	rrule string) string {
 	return fmt.Sprintf(`resource "genesyscloud_architect_schedules" "%s" {
 		name = "%s"
-		description = %s
-		start = %s
-		end = %s
+		description = "%s"
+		start = "%s"
+		end = "%s"
+		rrule = "%s"
 	}
 	`, schedResource1, name, description, start, end, rrule)
 }

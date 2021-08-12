@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v48/platformclientv2"
 )
 
@@ -63,58 +62,14 @@ func resourceArchitectSchedules() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"version": {
-				Description: "Schedule's current version.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
-            "date_created": {
-				Description: "The date the schedule was created.",
-				Type:         schema.TypeString,
-                ValidateFunc: validation.IsRFC3339Time,
-				Optional:     true,
-			},
-            "date_modified": {
-				Description: "The date of last modification to the schedule.",
-				Type:         schema.TypeString,
-                ValidateFunc: validation.IsRFC3339Time,
-				Optional:     true,
-			},
-            "modified_by": {
-				Description: "ID of the user that last modified the schedule.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-            "created_by": {
-				Description: "ID of the user that created the schedule.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-            "state": {
-				Description: "Indicates if the schedule is active, inactive or deleted.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-            "modified_by_app": {
-				Description: "Application that last modified the schedule.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-            "created_by_app": {
-				Description: "Application that created the schedule.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
             "start": {
 				Description: "Date time is represented as an ISO-8601 string without a timezone.",
 				Type:         schema.TypeString,
-                ValidateFunc: validation.IsRFC3339Time,
 				Required:     true,
 			},
             "end": {
 				Description: "Date time is represented as an ISO-8601 string without a timezone.",
 				Type:         schema.TypeString,
-                ValidateFunc: validation.IsRFC3339Time,
 				Required:     true,
 			},
             "rrule": {
@@ -129,14 +84,6 @@ func resourceArchitectSchedules() *schema.Resource {
 func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	version := d.Get("version").(int)
-	dateCreated := d.Get("date_created").(string)
-	dateModified := d.Get("date_modified").(string)
-	modifiedBy := d.Get("modified_by").(string)
-	createdBy := d.Get("created_by").(string)
-	state := d.Get("state").(string)
-	modifiedByApp := d.Get("modified_by_app").(string)
-	createdByApp := d.Get("created_by_app").(string)
 	start := d.Get("start").(string)
 	end := d.Get("end").(string)
 	rrule := d.Get("rrule").(string)
@@ -144,28 +91,28 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	test := time.Parse("2006-01-02T00:00:00.000Z", dateCreated)
+	schedStart, err := time.Parse("2006-01-02T15:04:05.000", start)
+	if err != nil {
+		return diag.Errorf("Failed to parse date %s: %s", start, err)
+	}
+
+	schedEnd, err := time.Parse("2006-01-02T15:04:05.000", end)
+	if err != nil {
+		return diag.Errorf("Failed to parse date %s: %s", end, err)
+	}
 
 	sched := platformclientv2.Schedule{
 		Name:       		&name,
 		Description:      	&description,
-		Version:  			&version,
-		DateCreated: 		test,
-		DateModified:      	&dateModified,
-		ModifiedBy:			&modifiedBy,
-		CreatedBy:			&createdBy,
-		State:				&state,
-		ModifiedByApp:		&modifiedByApp,
-		CreatedByApp:		&createdByApp,
-		Start:				&start,
-		End:				&end,
+		Start:				&schedStart,
+		End:				&schedEnd,
 		Rrule:				&rrule,
 	}
 
 	log.Printf("Creating schedule %s", name)
-	schedule, resp, getErr := archAPI.PostArchitectSchedules(sched)
+	schedule, _, getErr := archAPI.PostArchitectSchedules(sched)
 	if getErr != nil {
-		return diag.Errorf("Failed to create schedule %s: %s", name, getErr)
+		return diag.Errorf("Failed to create schedule %s: | Start: %s, | End: %s, | ERROR: %s", *sched.Name, *sched.Start, *sched.End, getErr)
 	}
 
 	d.SetId(*schedule.Id)
@@ -191,14 +138,6 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 
 	d.Set("name", *schedule.Name)
 	d.Set("description", *schedule.Description)
-	d.Set("version", *schedule.Version)
-	d.Set("date_created", *schedule.DateCreated)
-	d.Set("date_modified", *schedule.DateModified)
-	d.Set("modified_by", *schedule.ModifiedBy)
-	d.Set("created_by", *schedule.CreatedBy)
-	d.Set("state", *schedule.State)
-	d.Set("modified_by_app", *schedule.ModifiedByApp)
-	d.Set("created_by_app", *schedule.CreatedByApp)
 	d.Set("start", *schedule.Start)
 	d.Set("end", *schedule.End)
 	d.Set("rrule", *schedule.Rrule)
@@ -210,14 +149,6 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	version := d.Get("version").(int)
-	dateCreated := d.Get("date_created").(string)
-	dateModified := d.Get("date_modified").(string)
-	modifiedBy := d.Get("modified_by").(string)
-	createdBy := d.Get("created_by").(string)
-	state := d.Get("state").(string)
-	modifiedByApp := d.Get("modified_by_app").(string)
-	createdByApp := d.Get("created_by_app").(string)
 	start := d.Get("start").(string)
 	end := d.Get("end").(string)
 	rrule := d.Get("rrule").(string)
@@ -225,24 +156,26 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
+	schedStart, err := time.Parse("2006-01-02T15:04:05.000", start)
+	if err != nil {
+		return diag.Errorf("Failed to parse date %s: %s", start, err)
+	}
+
+	schedEnd, err := time.Parse("2006-01-02T15:04:05.000", end)
+	if err != nil {
+		return diag.Errorf("Failed to parse date %s: %s", end, err)
+	}
+
 	sched := platformclientv2.Schedule{
 		Name:       		&name,
 		Description:      	&description,
-		Version:  			&version,
-		DateCreated: 		&dateCreated,
-		DateModified:      	&dateModified,
-		ModifiedBy:			&modifiedBy,
-		CreatedBy:			&createdBy,
-		State:				&state,
-		ModifiedByApp:		&modifiedByApp,
-		CreatedByApp:		&createdByApp,
-		Start:				&start,
-		End:				&end,
+		Start:				&schedStart,
+		End:				&schedEnd,
 		Rrule:				&rrule,
 	}
 
 	log.Printf("Updating schedule %s", name)
-	schedule, resp, getErr := archAPI.PutArchitectSchedule(d.Id(), sched)
+	schedule, _, getErr := archAPI.PutArchitectSchedule(d.Id(), sched)
 	if getErr != nil {
 		return diag.Errorf("Failed to update schedule %s: %s", name, getErr)
 	}
