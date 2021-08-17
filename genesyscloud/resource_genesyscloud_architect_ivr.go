@@ -1,0 +1,187 @@
+package genesyscloud
+
+import (
+	"context"
+	"log"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v48/platformclientv2"
+)
+
+func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		ivrConfigs, _, getErr := architectAPI.GetArchitectIvrs(pageNum, 100, "", "", "")
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of IVR configs: %v", getErr)
+		}
+
+		if ivrConfigs.Entities == nil || len(*ivrConfigs.Entities) == 0 {
+			break
+		}
+
+		for _, ivrConfig := range *ivrConfigs.Entities {
+			if *ivrConfig.State != "deleted" {
+				resources[*ivrConfig.Id] = &ResourceMeta{Name: *ivrConfig.Name}
+			}
+		}
+	}
+
+	return resources, nil
+}
+
+func architectIvrExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllIvrConfigs),
+		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+	}
+}
+
+func resourceArchitectIvrConfig() *schema.Resource {
+	return &schema.Resource{
+		Description: "Genesys Cloud IVR config",
+
+		CreateContext: createWithPooledClient(createIvrConfig),
+		ReadContext:   readWithPooledClient(readIvrConfig),
+		UpdateContext: updateWithPooledClient(updateIvrConfig),
+		DeleteContext: deleteWithPooledClient(deleteIvrConfig),
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
+		SchemaVersion: 1,
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Description: "Name of the IVR config.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+			},
+			"description": {
+				Description: "IVR Config description.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"dnis": {
+				Description: "The phone number(s) to contact the IVR by.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validatePhoneNumber},
+			},
+			// TODO: Add OpenHoursFlow, ClosedHoursFlow, HolidayHoursFlow and ScheduleGroup
+			//          once Schedule and Flow resources are created. CXCODE-22 / CXCODE-23
+		},
+	}
+}
+
+func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	name := d.Get("name").(string)
+	description := d.Get("description").(string)
+
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	ivrBody := platformclientv2.Ivr{
+		Name:        &name,
+		Description: &description,
+		Dnis:        buildSdkIvrDnis(d),
+	}
+
+	log.Printf("Creating IVR config %s", name)
+	ivrConfig, _, err := architectApi.PostArchitectIvrs(ivrBody)
+	if err != nil {
+		return diag.Errorf("Failed to create IVR config %s: %s", name, err)
+	}
+
+	d.SetId(*ivrConfig.Id)
+
+	log.Printf("Created IVR config %s %s", name, *ivrConfig.Id)
+	return readIvrConfig(ctx, d, meta)
+}
+
+func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	log.Printf("Reading IVR config %s", d.Id())
+	ivrConfig, resp, getErr := architectApi.GetArchitectIvr(d.Id())
+	if getErr != nil {
+		if resp != nil && resp.StatusCode == 404 {
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr)
+	}
+
+	if *ivrConfig.State == "deleted" {
+		d.SetId("")
+		return nil
+	}
+
+	d.Set("name", *ivrConfig.Name)
+	d.Set("description", *ivrConfig.Description)
+
+	if ivrConfig.Description != nil {
+		d.Set("description", *ivrConfig.Description)
+	} else {
+		d.Set("description", nil)
+	}
+
+	d.Set("dnis", flattenIvrDnis(ivrConfig.Dnis))
+
+	log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
+	return nil
+}
+
+func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	name := d.Get("name").(string)
+	description := d.Get("description").(string)
+
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	ivrBody := platformclientv2.Ivr{
+		Name:        &name,
+		Description: &description,
+		Dnis:        buildSdkIvrDnis(d),
+	}
+
+	log.Printf("Updating IVR config %s", d.Id())
+	if _, _, err := architectApi.PutArchitectIvr(d.Id(), ivrBody); err != nil {
+		return diag.Errorf("Error updating IVR config %s: %s", name, err)
+	}
+
+	log.Printf("Updated IVR config %s", d.Id())
+	return readIvrConfig(ctx, d, meta)
+}
+
+func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	name := d.Get("name").(string)
+
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	log.Printf("Deleting IVR config %s", name)
+	if _, err := architectApi.DeleteArchitectIvr(d.Id()); err != nil {
+		return diag.Errorf("Failed to delete IVR config %s: %s", name, err)
+	}
+	log.Printf("Deleted IVR config %s", name)
+	return nil
+}
+
+func buildSdkIvrDnis(d *schema.ResourceData) *[]string {
+	if permConfig, ok := d.GetOk("dnis"); ok {
+		return setToStringList(permConfig.(*schema.Set))
+	}
+	return nil
+}
+
+func flattenIvrDnis(dnisArr *[]string) *schema.Set {
+	if dnisArr != nil {
+		return stringListToSet(*dnisArr)
+	}
+	return nil
+}
