@@ -147,7 +147,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		Id: &phoneMetaBaseId,
 	}
 
-	lines := buildSdkLines(d, lineBaseSettings)
+	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
 	capabilities := buildSdkCapabilities(d)
 	webRtcUserId := d.Get("web_rtc_user_id")
 
@@ -165,7 +165,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		Capabilities:      capabilities,
 	}
 
-	if len(*lines) > 0 {
+	if isStandalone {
 		createPhone.Properties = &map[string]interface{}{
 			"phone_standalone": &map[string]interface{}{
 				"value": &map[string]interface{}{
@@ -238,7 +238,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	phoneBaseSettings := buildSdkDomainEntityRef(d, "phone_base_settings_id")
 	lineBaseSettings := buildSdkDomainEntityRef(d, "line_base_settings_id")
 	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
-	lines := buildSdkLines(d, lineBaseSettings)
+	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
 	webRtcUserId := d.Get("web_rtc_user_id")
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
@@ -250,6 +250,16 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		PhoneBaseSettings: phoneBaseSettings,
 		PhoneMetaBase:     phoneMetaBase,
 		Lines:             lines,
+	}
+
+	if isStandalone {
+		updatePhoneBody.Properties = &map[string]interface{}{
+			"phone_standalone": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": true,
+				},
+			},
+		}
 	}
 
 	if webRtcUserId != "" {
@@ -385,11 +395,14 @@ func phoneExporter() *ResourceExporter {
 	}
 }
 
-func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Domainentityref) *[]platformclientv2.Line {
+func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Domainentityref) (linesPtr *[]platformclientv2.Line, isStandAlone bool) {
 	lines := []platformclientv2.Line{}
+	isStandAlone = false
 
 	lineAddresses, ok := d.GetOk("line_addresses")
 	lineStringList := interfaceListToStrings(lineAddresses.([]interface{}))
+
+	// If line_addresses is not provided, phone is not standalone
 	if !ok || len(lineStringList) == 0 {
 		lineName := "line_" + *lineBaseSettings.Id
 		lines = append(lines, platformclientv2.Line{
@@ -397,7 +410,8 @@ func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Do
 			LineBaseSettings: lineBaseSettings,
 		})
 
-		return &lines
+		linesPtr = &lines
+		return
 	}
 
 	for i := 0; i < len(lineStringList); i++ {
@@ -416,7 +430,10 @@ func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Do
 		})
 	}
 
-	return &lines
+	linesPtr = &lines
+	isStandAlone = true
+
+	return
 }
 
 func buildSdkCapabilities(d *schema.ResourceData) *platformclientv2.Phonecapabilities {
