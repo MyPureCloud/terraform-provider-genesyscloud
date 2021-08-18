@@ -36,7 +36,11 @@ func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Config
 func architectIvrExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllIvrConfigs),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs: map[string]*RefAttrSettings{
+			"open_hours_flow_id":    {RefType: "genesyscloud_flow"},
+			"closed_hours_flow_id":  {RefType: "genesyscloud_flow"},
+			"holiday_hours_flow_id": {RefType: "genesyscloud_flow"},
+		},
 	}
 }
 
@@ -71,8 +75,26 @@ func resourceArchitectIvrConfig() *schema.Resource {
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validatePhoneNumber},
 			},
-			// TODO: Add OpenHoursFlow, ClosedHoursFlow, HolidayHoursFlow and ScheduleGroup
-			//          once Schedule and Flow resources are created. CXCODE-22 / CXCODE-23
+			"open_hours_flow_id": {
+				Description: "ID of inbound call flow for open hours.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"closed_hours_flow_id": {
+				Description: "ID of inbound call flow for closed hours.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"holiday_hours_flow_id": {
+				Description: "ID of inbound call flow for holidays.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"schedule_group_id": {
+				Description: "Schedule group ID.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
 }
@@ -80,14 +102,22 @@ func resourceArchitectIvrConfig() *schema.Resource {
 func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
+	openHoursFlowId := buildSdkDomainEntityRef(d, "open_hours_flow_id")
+	closedHoursFlowId := buildSdkDomainEntityRef(d, "closed_hours_flow_id")
+	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
+	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	ivrBody := platformclientv2.Ivr{
-		Name:        &name,
-		Description: &description,
-		Dnis:        buildSdkIvrDnis(d),
+		Name:             &name,
+		Description:      &description,
+		Dnis:             buildSdkIvrDnis(d),
+		OpenHoursFlow:    openHoursFlowId,
+		ClosedHoursFlow:  closedHoursFlowId,
+		HolidayHoursFlow: holidayHoursFlowId,
+		ScheduleGroup:    scheduleGroupId,
 	}
 
 	log.Printf("Creating IVR config %s", name)
@@ -122,7 +152,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	d.Set("name", *ivrConfig.Name)
-	d.Set("description", *ivrConfig.Description)
+	d.Set("dnis", flattenIvrDnis(ivrConfig.Dnis))
 
 	if ivrConfig.Description != nil {
 		d.Set("description", *ivrConfig.Description)
@@ -130,7 +160,29 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 		d.Set("description", nil)
 	}
 
-	d.Set("dnis", flattenIvrDnis(ivrConfig.Dnis))
+	if ivrConfig.OpenHoursFlow != nil {
+		d.Set("open_hours_flow_id", *ivrConfig.OpenHoursFlow.Id)
+	} else {
+		d.Set("open_hours_flow_id", nil)
+	}
+
+	if ivrConfig.ClosedHoursFlow != nil {
+		d.Set("closed_hours_flow_id", *ivrConfig.ClosedHoursFlow.Id)
+	} else {
+		d.Set("closed_hours_flow_id", nil)
+	}
+
+	if ivrConfig.HolidayHoursFlow != nil {
+		d.Set("holiday_hours_flow_id", *ivrConfig.HolidayHoursFlow.Id)
+	} else {
+		d.Set("holiday_hours_flow_id", nil)
+	}
+
+	if ivrConfig.ScheduleGroup != nil {
+		d.Set("schedule_group_id", *ivrConfig.ScheduleGroup.Id)
+	} else {
+		d.Set("schedule_group_id", nil)
+	}
 
 	log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
 	return nil
@@ -139,14 +191,22 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
+	openHoursFlowId := buildSdkDomainEntityRef(d, "open_hours_flow_id")
+	closedHoursFlowId := buildSdkDomainEntityRef(d, "closed_hours_flow_id")
+	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
+	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	ivrBody := platformclientv2.Ivr{
-		Name:        &name,
-		Description: &description,
-		Dnis:        buildSdkIvrDnis(d),
+		Name:             &name,
+		Description:      &description,
+		Dnis:             buildSdkIvrDnis(d),
+		OpenHoursFlow:    openHoursFlowId,
+		ClosedHoursFlow:  closedHoursFlowId,
+		HolidayHoursFlow: holidayHoursFlowId,
+		ScheduleGroup:    scheduleGroupId,
 	}
 
 	log.Printf("Updating IVR config %s", d.Id())

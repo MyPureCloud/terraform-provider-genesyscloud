@@ -20,6 +20,8 @@ type ivrConfigStruct struct {
 	depends_on  string
 }
 
+// TODO: Add tests for configuration of Schedule and Flows once the resources are created
+
 func TestAccResourceIvrConfigBasic(t *testing.T) {
 	ivrConfigResource1 := "test-ivrconfig1"
 	ivrConfigName := "terraform-ivrconfig-" + uuid.NewString()
