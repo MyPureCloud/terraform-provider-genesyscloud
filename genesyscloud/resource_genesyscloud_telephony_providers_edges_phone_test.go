@@ -211,7 +211,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		genericSIPPhoneBaseId,
 		lineBaseSettingsId,
 		lineAddresses,
-		webRtcUserId1,
+		"", // no web rtc user
 		"genesyscloud_telephony_did_pool." + didPoolResource1,
 	}, capabilities)
 
@@ -226,7 +226,6 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "state", stateActive),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "site_id", siteId),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "phone_base_settings_id", genericSIPPhoneBaseId),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "web_rtc_user_id", webRtcUserId1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_addresses.0", lineAddresses[0]),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.provisions", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.registers", trueValue),
@@ -240,10 +239,9 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_telephony_providers_edges_phone." + phoneRes,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"web_rtc_user_id"},
+				ResourceName:      "genesyscloud_telephony_providers_edges_phone." + phoneRes,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyWebRtcPhoneDestroyed,
@@ -399,15 +397,20 @@ func generatePhoneResourceWithCustomAttrs(config *phoneConfig, otherAttrs ...str
 		lineStrs[i] = fmt.Sprintf("\"%s\"", val)
 	}
 
-	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_phone" "%s" {
+	webRtcUser := ""
+	if len(config.webRtcUserId) != 0 {
+		webRtcUser = fmt.Sprintf(`web_rtc_user_id = "%s"`, config.webRtcUserId)
+	}
+
+	finalConfig := fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_phone" "%s" {
 		name = "%s"
 		state = "%s"
 		site_id = "%s"
 		phone_base_settings_id = "%s"
 		line_base_settings_id = "%s"
 		line_addresses = [%s]
-		web_rtc_user_id = "%s"
 		depends_on=[%s]
+		%s
 		%s
 	}
 	`, config.phoneRes,
@@ -417,10 +420,12 @@ func generatePhoneResourceWithCustomAttrs(config *phoneConfig, otherAttrs ...str
 		config.phoneBaseSettingsId,
 		config.lineBaseSettingsId,
 		strings.Join(lineStrs, ","),
-		config.webRtcUserId,
 		config.depends_on,
+		webRtcUser,
 		strings.Join(otherAttrs, "\n"),
 	)
+
+	return finalConfig
 }
 
 func generatePhoneCapabilities(
