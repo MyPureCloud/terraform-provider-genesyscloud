@@ -27,6 +27,7 @@ resource "genesyscloud_telephony_providers_edges_phone" "test_phone" {
   site_id                = "48382f1b-fbbe-4232-8dd6-42a4fa70c1b6"
   phone_base_settings_id = "9bae71b4-7ba8-46f1-bb35-710c0c1b225b"
   line_base_settings_id  = "e9069894-b078-4905-b14f-488a6309b82b"
+  line_addresses         = ["+13175550000"]
   web_rtc_user_id        = genesyscloud_user.id
 
   capabilities {
@@ -57,6 +58,7 @@ resource "genesyscloud_telephony_providers_edges_phone" "test_phone" {
 
 - **capabilities** (Block List, Max: 1) Phone Capabilities. (see [below for nested schema](#nestedblock--capabilities))
 - **id** (String) The ID of this resource.
+- **line_addresses** (List of String) Ordered list of Line DIDs for standalone phones.
 - **state** (String) Indicates if the resource is active, inactive, or deleted. Valid values: active, inactive, deleted. Defaults to `active`.
 - **web_rtc_user_id** (String) Web RTC User ID.
 
