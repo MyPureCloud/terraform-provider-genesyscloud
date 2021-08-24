@@ -392,6 +392,28 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
+	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Get the latest version of the setting
+		trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
+		if getErr != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				return resp, diag.Errorf("The trunk base settings does not exist %s: %s", d.Id(), getErr)
+			}
+			return resp, diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
+		}
+		trunkBase.Version = trunkBaseSettings.Version
+
+		log.Printf("Updating trunk base settings %s", name)
+		trunkBaseSettings, resp, err := edgesAPI.PutTelephonyProvidersEdgesTrunkbasesetting(d.Id(), trunkBase)
+		if err != nil {
+			return resp, diag.Errorf("Failed to update trunk base settings %s: %s %v", name, err, resp.String())
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
+
 	// Get the latest version of the setting
 	trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 	if getErr != nil {
@@ -581,10 +603,16 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	log.Printf("Deleting trunk base settings")
-	_, err := edgesAPI.DeleteTelephonyProvidersEdgesTrunkbasesetting(d.Id())
-	if err != nil {
-		return diag.Errorf("Failed to delete trunk base settings: %s", err)
+	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Deleting trunk base settings")
+		resp, err := edgesAPI.DeleteTelephonyProvidersEdgesTrunkbasesetting(d.Id())
+		if err != nil {
+			return resp, diag.Errorf("Failed to delete trunk base settings: %s", err)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {

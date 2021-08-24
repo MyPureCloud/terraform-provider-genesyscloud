@@ -59,7 +59,7 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 					edgeGroupDescription1,
 					false,
 					false,
-					generateMembersIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes1+".id",
+					generatePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes1+".id",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes2+".id")),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "name", edgeGroupName1),
@@ -76,7 +76,7 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 					edgeGroupDescription2,
 					false,
 					false,
-					generateMembersIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes3+".id")),
+					generatePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes3+".id")),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "name", edgeGroupName2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "description", edgeGroupDescription2),
@@ -136,7 +136,7 @@ func generateEdgeGroupResourceWithCustomAttrs(
 	`, edgeGroupRes, name, description, managed, hybrid, strings.Join(otherAttrs, "\n"))
 }
 
-func generateMembersIds(userIDs ...string) string {
+func generatePhoneTrunkBaseIds(userIDs ...string) string {
 	return fmt.Sprintf(`phone_trunk_base_ids = [%s]
 	`, strings.Join(userIDs, ","))
 }

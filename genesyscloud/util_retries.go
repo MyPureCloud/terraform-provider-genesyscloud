@@ -56,3 +56,10 @@ func isStatus404(resp *platformclientv2.APIResponse) bool {
 	}
 	return false
 }
+
+func isStatus400(resp *platformclientv2.APIResponse) bool {
+	if resp != nil && resp.StatusCode == 400 {
+		return true
+	}
+	return false
+}

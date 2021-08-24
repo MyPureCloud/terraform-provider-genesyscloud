@@ -117,10 +117,25 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	log.Printf("Updating edge group %s", name)
-	edgeGroup, _, err := edgesAPI.PutTelephonyProvidersEdgesEdgegroup(d.Id(), *edgeGroup)
-	if err != nil {
-		return diag.Errorf("Failed to create edge group %s: %s", name, err)
+	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		edgeGroupFromApi, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
+		if getErr != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				return resp, diag.Errorf("The edge group does not exist %s: %s", d.Id(), getErr)
+			}
+			return resp, diag.Errorf("Failed to read edge group %s: %s", d.Id(), getErr)
+		}
+		edgeGroup.Version = edgeGroupFromApi.Version
+
+		log.Printf("Updating edge group %s", name)
+		_, resp, putErr := edgesAPI.PutTelephonyProvidersEdgesEdgegroup(d.Id(), *edgeGroup)
+		if putErr != nil {
+			return resp, diag.Errorf("Failed to update edge group %s: %s", name, putErr)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	log.Printf("Updated edge group %s", *edgeGroup.Id)
