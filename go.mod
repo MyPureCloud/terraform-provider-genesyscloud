@@ -32,7 +32,7 @@ require (
 	github.com/mypurecloud/platform-client-sdk-go/v48 v48.0.0
 	github.com/mypurecloud/platform-client-sdk-go/v53 v53.0.1 // indirect
 	github.com/nsf/jsondiff v0.0.0-20210303162244-6ea32392771e // indirect
-	github.com/nyaruka/phonenumbers v1.0.70
+	github.com/nyaruka/phonenumbers v1.0.71
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
