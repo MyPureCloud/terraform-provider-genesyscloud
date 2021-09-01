@@ -14,9 +14,9 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 		schedResource1  = "arch-sched1"
         name            = "CX Code Schedule"
 		description     = "Sample Scedhule by CX as Code"
-		start           = "2021-08-04T08:00:00.000"
-        start2          = "2021-08-04T09:00:00.000"
-		end             = "2021-08-04T17:00:00.000"        
+		start           = "2021-08-04T08:00:00.000000"
+        start2          = "2021-08-04T09:00:00.000000"
+		end             = "2021-08-04T17:00:00.000000"
 		rrule           = "FREQ=DAILY;INTERVAL=1"
 	)
 
@@ -55,7 +55,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "description", description),
-					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start2),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "end", end),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "rrule", rrule),
 				),

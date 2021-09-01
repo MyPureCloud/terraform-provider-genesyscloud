@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/leekchan/timeutil"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
@@ -91,12 +92,12 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	schedStart, err := time.Parse("2006-01-02T15:04:05.000", start)
+	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
 	if err != nil {
 		return diag.Errorf("Failed to parse date %s: %s", start, err)
 	}
 
-	schedEnd, err := time.Parse("2006-01-02T15:04:05.000", end)
+	schedEnd, err := time.Parse("2006-01-02T15:04:05.000000", end)
 	if err != nil {
 		return diag.Errorf("Failed to parse date %s: %s", end, err)
 	}
@@ -136,10 +137,26 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.Errorf("Failed to read schedule %s: %s", d.Id(), getErr)
 	}
 
+	Start := new(string)
+	if schedule.Start != nil {
+		*Start = timeutil.Strftime(schedule.Start, "%Y-%m-%dT%H:%M:%S.%f")
+		
+	} else {
+		Start = nil
+	}
+	
+	End := new(string)
+	if schedule.End != nil {
+		*End = timeutil.Strftime(schedule.End, "%Y-%m-%dT%H:%M:%S.%f")
+		
+	} else {
+		End = nil
+	}
+
 	d.Set("name", *schedule.Name)
 	d.Set("description", *schedule.Description)
-	d.Set("start", *schedule.Start)
-	d.Set("end", *schedule.End)
+	d.Set("start", Start)
+	d.Set("end", End)
 	d.Set("rrule", *schedule.Rrule)
 
 	log.Printf("Read schedule %s %s", d.Id(), *schedule.Name)
@@ -156,12 +173,12 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	schedStart, err := time.Parse("2006-01-02T15:04:05.000", start)
+	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
 	if err != nil {
 		return diag.Errorf("Failed to parse date %s: %s", start, err)
 	}
 
-	schedEnd, err := time.Parse("2006-01-02T15:04:05.000", end)
+	schedEnd, err := time.Parse("2006-01-02T15:04:05.000000", end)
 	if err != nil {
 		return diag.Errorf("Failed to parse date %s: %s", end, err)
 	}
