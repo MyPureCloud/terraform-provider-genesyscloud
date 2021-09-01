@@ -12,8 +12,8 @@ import (
 func TestAccResourceArchitectSchedules(t *testing.T) {
     var (
 		schedResource1  = "arch-sched1"
-        name            = "CX Code Schedule"
-		description     = "Sample Scedhule by CX as Code"
+        name            = "CX as Code Schedule"
+		description     = "Sample Schedule by CX as Code"
 		start           = "2021-08-04T08:00:00.000000"
         start2          = "2021-08-04T09:00:00.000000"
 		end             = "2021-08-04T17:00:00.000000"
