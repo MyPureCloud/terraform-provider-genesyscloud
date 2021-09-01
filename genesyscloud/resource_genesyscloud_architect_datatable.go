@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v48/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
 )
 
 var (
@@ -47,7 +47,7 @@ func getAllArchitectDatatables(ctx context.Context, clientConfig *platformclient
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		tables, _, getErr := archAPI.GetFlowsDatatables("", pageNum, 100, "", "", nil)
+		tables, _, getErr := archAPI.GetFlowsDatatables("", pageNum, 100, "", "", nil, "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of datatables: %v", getErr)
 		}
