@@ -208,6 +208,8 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 	d.Set("emergency_number", flattenLocationEmergencyNumber(location.EmergencyNumber))
 	d.Set("address", flattenLocationAddress(location.Address))
 
+	//fmt.Println("STATE\n", d.State().String())
+
 	log.Printf("Read location %s %s", d.Id(), *location.Name)
 	return nil
 }
@@ -261,7 +263,7 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting location %s", name)
-	retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		resp, err := locationsAPI.DeleteLocation(d.Id())
 		if err != nil {
@@ -269,6 +271,9 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 		return nil, nil
 	})
+	if diagErr != nil {
+		return diagErr
+	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		location, resp, err := locationsAPI.GetLocation(d.Id(), nil)

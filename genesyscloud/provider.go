@@ -100,6 +100,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_telephony_providers_edges_did_pool":          resourceTelephonyDidPool(),
 				"genesyscloud_telephony_providers_edges_edge_group":        resourceEdgeGroup(),
 				"genesyscloud_telephony_providers_edges_phone":             resourcePhone(),
+				"genesyscloud_telephony_providers_edges_site":              resourceSite(),
 				"genesyscloud_telephony_providers_edges_trunkbasesettings": resourceTrunkBaseSettings(),
 				"genesyscloud_tf_export":                                   resourceTfExport(),
 				"genesyscloud_user":                                        resourceUser(),
@@ -114,6 +115,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_routing_email_domain": dataSourceRoutingEmailDomain(),
 				"genesyscloud_script":               dataSourceScript(),
 				"genesyscloud_user":                 dataSourceUser(),
+				"genesyscloud_site":                 dataSourceSite(),
 			},
 			ConfigureContextFunc: configure(version),
 		}
