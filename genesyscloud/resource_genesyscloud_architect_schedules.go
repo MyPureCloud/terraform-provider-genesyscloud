@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/leekchan/timeutil"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/leekchan/timeutil"
 	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
 )
 
@@ -63,20 +63,22 @@ func resourceArchitectSchedules() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-            "start": {
-				Description: "Date time is represented as an ISO-8601 string without a timezone.",
-				Type:         schema.TypeString,
-				Required:     true,
+			"start": {
+				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validateLocalDateTimes,
 			},
-            "end": {
-				Description: "Date time is represented as an ISO-8601 string without a timezone.",
-				Type:         schema.TypeString,
-				Required:     true,
+			"end": {
+				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: validateLocalDateTimes,
 			},
-            "rrule": {
+			"rrule": {
 				Description: "An iCal Recurrence Rule (RRULE) string.",
-				Type:         schema.TypeString,
-				Required:     true,
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
@@ -103,11 +105,15 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	sched := platformclientv2.Schedule{
-		Name:       		&name,
-		Description:      	&description,
-		Start:				&schedStart,
-		End:				&schedEnd,
-		Rrule:				&rrule,
+		Name:  &name,
+		Start: &schedStart,
+		End:   &schedEnd,
+		Rrule: &rrule,
+	}
+
+	// Optional attributes
+	if description != "" {
+		sched.Description = &description
 	}
 
 	log.Printf("Creating schedule %s", name)
@@ -140,15 +146,15 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 	Start := new(string)
 	if schedule.Start != nil {
 		*Start = timeutil.Strftime(schedule.Start, "%Y-%m-%dT%H:%M:%S.%f")
-		
+
 	} else {
 		Start = nil
 	}
-	
+
 	End := new(string)
 	if schedule.End != nil {
 		*End = timeutil.Strftime(schedule.End, "%Y-%m-%dT%H:%M:%S.%f")
-		
+
 	} else {
 		End = nil
 	}
@@ -183,23 +189,32 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to parse date %s: %s", end, err)
 	}
 
-	sched := platformclientv2.Schedule{
-		Name:       		&name,
-		Description:      	&description,
-		Start:				&schedStart,
-		End:				&schedEnd,
-		Rrule:				&rrule,
+	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Get current schedule version
+		sched, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
+		if getErr != nil {
+			return resp, diag.Errorf("Failed to read schedule %s: %s", d.Id(), getErr)
+		}
+
+		log.Printf("Updating schedule %s", name)
+		_, resp, putErr := archAPI.PutArchitectSchedule(d.Id(), platformclientv2.Schedule{
+			Name:        &name,
+			Version:     sched.Version,
+			Description: &description,
+			Start:       &schedStart,
+			End:         &schedEnd,
+			Rrule:       &rrule,
+		})
+		if putErr != nil {
+			return resp, diag.Errorf("Failed to update schedule %s: %s", d.Id(), putErr)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
-	log.Printf("Updating schedule %s", name)
-	schedule, _, getErr := archAPI.PutArchitectSchedule(d.Id(), sched)
-	if getErr != nil {
-		return diag.Errorf("Failed to update schedule %s: %s", name, getErr)
-	}
-
-	d.SetId(*schedule.Id)
-
-	log.Printf("Finished updating schedule %s %s", name, *schedule.Id)
+	log.Printf("Finished updating schedule %s", name)
 	return readArchitectSchedules(ctx, d, meta)
 }
 

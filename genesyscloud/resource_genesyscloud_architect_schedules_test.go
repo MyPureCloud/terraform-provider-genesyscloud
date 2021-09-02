@@ -10,14 +10,14 @@ import (
 )
 
 func TestAccResourceArchitectSchedules(t *testing.T) {
-    var (
-		schedResource1  = "arch-sched1"
-        name            = "CX as Code Schedule"
-		description     = "Sample Schedule by CX as Code"
-		start           = "2021-08-04T08:00:00.000000"
-        start2          = "2021-08-04T09:00:00.000000"
-		end             = "2021-08-04T17:00:00.000000"
-		rrule           = "FREQ=DAILY;INTERVAL=1"
+	var (
+		schedResource1 = "arch-sched1"
+		name           = "CX as Code Schedule"
+		description    = "Sample Schedule by CX as Code"
+		start          = "2021-08-04T08:00:00.000000"
+		start2         = "2021-08-04T09:00:00.000000"
+		end            = "2021-08-04T17:00:00.000000"
+		rrule          = "FREQ=DAILY;INTERVAL=1"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -27,7 +27,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 			{
 				// Create
 				Config: generateArchitectSchedulesResource(
-                    schedResource1,
+					schedResource1,
 					name,
 					description,
 					start,
