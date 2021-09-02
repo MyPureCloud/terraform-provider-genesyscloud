@@ -117,14 +117,14 @@ func testVerifyIvrConfigsDestroyed(state *terraform.State) error {
 		}
 
 		if resp != nil && resp.StatusCode == 404 {
-			// DID pool not found as expected
+			// IVR Config not found as expected
 			continue
 		}
 
 		// Unexpected error
 		return fmt.Errorf("Unexpected error: %s", err)
 	}
-	// Success. All DID pool destroyed
+	// Success. All IVR Config pool destroyed
 	return nil
 }
 

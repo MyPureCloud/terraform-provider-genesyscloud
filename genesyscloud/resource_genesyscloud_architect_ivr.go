@@ -112,12 +112,15 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 	ivrBody := platformclientv2.Ivr{
 		Name:             &name,
-		Description:      &description,
 		Dnis:             buildSdkIvrDnis(d),
 		OpenHoursFlow:    openHoursFlowId,
 		ClosedHoursFlow:  closedHoursFlowId,
 		HolidayHoursFlow: holidayHoursFlowId,
 		ScheduleGroup:    scheduleGroupId,
+	}
+
+	if description != "" {
+		ivrBody.Description = &description
 	}
 
 	log.Printf("Creating IVR config %s", name)
@@ -199,19 +202,37 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	ivrBody := platformclientv2.Ivr{
-		Name:             &name,
-		Description:      &description,
-		Dnis:             buildSdkIvrDnis(d),
-		OpenHoursFlow:    openHoursFlowId,
-		ClosedHoursFlow:  closedHoursFlowId,
-		HolidayHoursFlow: holidayHoursFlowId,
-		ScheduleGroup:    scheduleGroupId,
-	}
+	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Get current version
+		ivr, resp, getErr := architectApi.GetArchitectIvr(d.Id())
+		if getErr != nil {
+			return resp, diag.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr)
+		}
 
-	log.Printf("Updating IVR config %s", d.Id())
-	if _, _, err := architectApi.PutArchitectIvr(d.Id(), ivrBody); err != nil {
-		return diag.Errorf("Error updating IVR config %s: %s", name, err)
+		ivrBody := platformclientv2.Ivr{
+			Version:          ivr.Version,
+			Name:             &name,
+			Dnis:             buildSdkIvrDnis(d),
+			OpenHoursFlow:    openHoursFlowId,
+			ClosedHoursFlow:  closedHoursFlowId,
+			HolidayHoursFlow: holidayHoursFlowId,
+			ScheduleGroup:    scheduleGroupId,
+		}
+
+		if description != "" {
+			ivrBody.Description = &description
+		}
+
+		log.Printf("Updating IVR config %s", name)
+		_, resp, putErr := architectApi.PutArchitectIvr(d.Id(), ivrBody)
+
+		if putErr != nil {
+			return resp, diag.Errorf("Failed to update IVR config %s: %s", d.Id(), putErr)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	log.Printf("Updated IVR config %s", d.Id())
