@@ -1,0 +1,16 @@
+inboundCall:
+  name: Terraform Flow Test-cf12fc5b-1a3e-4718-a6a3-15ef9285e415
+  defaultLanguage: en-us
+  startUpRef: ./menus/menu[mainMenu]
+  initialGreeting:
+    tts: Archy says hi!!!
+  menus:
+    - menu:
+        name: Main Menu
+        audio:
+          tts: You are at the Main Menu, press 9 to disconnect.
+        refId: mainMenu
+        choices:
+          - menuDisconnect:
+              name: Disconnect
+              dtmf: digit_9
