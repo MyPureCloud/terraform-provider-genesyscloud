@@ -117,6 +117,8 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		// Add new resources that can be exported here
 		"genesyscloud_architect_datatable":                         architectDatatableExporter(),
 		"genesyscloud_architect_datatable_row":                     architectDatatableRowExporter(),
+		"genesyscloud_architect_schedules":                         architectSchedulesExporter(),
+		"genesyscloud_architect_schedulegroups":                    architectScheduleGroupsExporter(),
 		"genesyscloud_auth_division":                               authDivisionExporter(),
 		"genesyscloud_auth_role":                                   authRoleExporter(),
 		"genesyscloud_group":                                       groupExporter(),
