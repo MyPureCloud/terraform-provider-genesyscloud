@@ -72,6 +72,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_architect_datatable":                         resourceArchitectDatatable(),
 				"genesyscloud_architect_datatable_row":                     resourceArchitectDatatableRow(),
 				"genesyscloud_architect_schedules":                         resourceArchitectSchedules(),
+				"genesyscloud_architect_schedulegroups":                    resourceArchitectScheduleGroups(),
 				"genesyscloud_auth_role":                                   resourceAuthRole(),
 				"genesyscloud_auth_division":                               resourceAuthDivision(),
 				"genesyscloud_group":                                       resourceGroup(),
