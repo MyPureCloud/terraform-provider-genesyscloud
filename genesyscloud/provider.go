@@ -98,6 +98,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_routing_utilization":                         resourceRoutingUtilization(),
 				"genesyscloud_routing_wrapupcode":                          resourceRoutingWrapupCode(),
 				"genesyscloud_telephony_did_pool":                          resourceTelephonyDidPool(),
+				"genesyscloud_telephony_providers_edges_edge_group":        resourceEdgeGroup(),
 				"genesyscloud_telephony_providers_edges_phone":             resourcePhone(),
 				"genesyscloud_telephony_providers_edges_trunkbasesettings": resourceTrunkBaseSettings(),
 				"genesyscloud_tf_export":                                   resourceTfExport(),
