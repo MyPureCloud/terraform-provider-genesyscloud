@@ -40,14 +40,6 @@ func TestAccResourceArchitectDatatable(t *testing.T) {
 		defBool1 = "true"
 	)
 
-	fmt.Println(generateArchitectDatatableResource(
-		tableResource1,
-		tableName1,
-		strconv.Quote(tableDesc1),
-		generateArchitectDatatableProperty(propBool, typeBool, nullValue, nullValue),
-		generateArchitectDatatableProperty(propNameKey, typeString, nullValue, nullValue)))
-	panic("£lool")
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,

@@ -8,14 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/leekchan/timeutil"
 	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
-	"github.com/tidwall/pretty"
 	"log"
 	"time"
 )
 
 func resourceSite() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Site", // TODO exporter
+		Description: "Genesys Cloud Site",
 
 		CreateContext: createWithPooledClient(createSite),
 		ReadContext:   readWithPooledClient(readSite),
@@ -332,8 +331,6 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		return diagErr
 	}
 
-	fmt.Println("STATE\n", d.State().String())
-
 	log.Printf("Read site %s %s", d.Id(), *currentSite.Name)
 	return nil
 }
@@ -646,11 +643,6 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 		}
 	}
 	return nil
-}
-
-func Render(data string) {
-	result := pretty.Pretty([]byte(data))
-	fmt.Printf("%s", result)
 }
 
 func isDefaultPlan(name string) bool {

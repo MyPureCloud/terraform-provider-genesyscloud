@@ -208,8 +208,6 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 	d.Set("emergency_number", flattenLocationEmergencyNumber(location.EmergencyNumber))
 	d.Set("address", flattenLocationAddress(location.Address))
 
-	//fmt.Println("STATE\n", d.State().String())
-
 	log.Printf("Read location %s %s", d.Id(), *location.Name)
 	return nil
 }
