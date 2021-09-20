@@ -25,7 +25,7 @@ require (
 	github.com/jhump/protoreflect v1.8.2 // indirect
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
 	github.com/klauspost/compress v1.12.2 // indirect
-	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d // indirect
+	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
