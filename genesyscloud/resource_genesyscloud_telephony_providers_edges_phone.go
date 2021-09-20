@@ -3,11 +3,13 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+	"strconv"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v48/platformclientv2"
-	"log"
+	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
 )
 
 func resourcePhone() *schema.Resource {
@@ -59,6 +61,13 @@ func resourcePhone() *schema.Resource {
 				Description: "Web RTC User ID.",
 				Type:        schema.TypeString,
 				Optional:    true,
+			},
+			"line_addresses": {
+				Description: "Ordered list of Line DIDs for standalone phones.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validatePhoneNumber},
 			},
 			"capabilities": {
 				Description: "Phone Capabilities.",
@@ -137,11 +146,8 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	phoneMetaBase := &platformclientv2.Domainentityref{
 		Id: &phoneMetaBaseId,
 	}
-	lineName := "line_" + *lineBaseSettings.Id
-	line := &platformclientv2.Line{
-		Name:             &lineName,
-		LineBaseSettings: lineBaseSettings,
-	}
+
+	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
 	capabilities := buildSdkCapabilities(d)
 	webRtcUserId := d.Get("web_rtc_user_id")
 
@@ -155,10 +161,18 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		PhoneBaseSettings: phoneBaseSettings,
 		LineBaseSettings:  lineBaseSettings,
 		PhoneMetaBase:     phoneMetaBase,
-		Lines: &[]platformclientv2.Line{
-			*line,
-		},
-		Capabilities: capabilities,
+		Lines:             lines,
+		Capabilities:      capabilities,
+	}
+
+	if isStandalone {
+		createPhone.Properties = &map[string]interface{}{
+			"phone_standalone": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": true,
+				},
+			},
+		}
 	}
 
 	if webRtcUserId != "" {
@@ -206,6 +220,10 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("web_rtc_user_id", *currentPhone.WebRtcUser.Id)
 	}
 
+	if currentPhone.Lines != nil {
+		d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
+	}
+
 	if currentPhone.Capabilities != nil {
 		d.Set("capabilities", flattenPhoneCapabilities(currentPhone.Capabilities))
 	}
@@ -220,11 +238,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	phoneBaseSettings := buildSdkDomainEntityRef(d, "phone_base_settings_id")
 	lineBaseSettings := buildSdkDomainEntityRef(d, "line_base_settings_id")
 	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
-	lineName := "line_" + *lineBaseSettings.Id
-	line := &platformclientv2.Line{
-		Name:             &lineName,
-		LineBaseSettings: lineBaseSettings,
-	}
+	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
 	webRtcUserId := d.Get("web_rtc_user_id")
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
@@ -235,9 +249,17 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		Site:              site,
 		PhoneBaseSettings: phoneBaseSettings,
 		PhoneMetaBase:     phoneMetaBase,
-		Lines: &[]platformclientv2.Line{
-			*line,
-		},
+		Lines:             lines,
+	}
+
+	if isStandalone {
+		updatePhoneBody.Properties = &map[string]interface{}{
+			"phone_standalone": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": true,
+				},
+			},
+		}
 	}
 
 	if webRtcUserId != "" {
@@ -278,6 +300,28 @@ func getPhoneMetaBaseId(meta interface{}, phoneBaseSettingsId string) (string, e
 	}
 
 	return *phoneBase.PhoneMetaBase.Id, nil
+}
+
+func flattenPhoneLines(lines *[]platformclientv2.Line) []string {
+	if lines == nil {
+		return nil
+	}
+
+	lineAddressList := []string{}
+	for i := 0; i < len(*lines); i++ {
+		line := (*lines)[i]
+		did := ""
+		if k := (*line.Properties)["station_identity_address"]; k != nil {
+			did = k.(map[string]interface{})["value"].(map[string]interface{})["instance"].(string)
+		}
+
+		if len(did) == 0 {
+			continue
+		}
+		lineAddressList = append(lineAddressList, did)
+	}
+
+	return lineAddressList
 }
 
 func flattenPhoneCapabilities(capabilities *platformclientv2.Phonecapabilities) []interface{} {
@@ -345,10 +389,51 @@ func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration
 func phoneExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllPhones),
-		RefAttrs:         map[string]*RefAttrSettings{
+		RefAttrs: map[string]*RefAttrSettings{
 			"web_rtc_user_id": {RefType: "genesyscloud_user"},
 		},
 	}
+}
+
+func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Domainentityref) (linesPtr *[]platformclientv2.Line, isStandAlone bool) {
+	lines := []platformclientv2.Line{}
+	isStandAlone = false
+
+	lineAddresses, ok := d.GetOk("line_addresses")
+	lineStringList := interfaceListToStrings(lineAddresses.([]interface{}))
+
+	// If line_addresses is not provided, phone is not standalone
+	if !ok || len(lineStringList) == 0 {
+		lineName := "line_" + *lineBaseSettings.Id
+		lines = append(lines, platformclientv2.Line{
+			Name:             &lineName,
+			LineBaseSettings: lineBaseSettings,
+		})
+
+		linesPtr = &lines
+		return
+	}
+
+	for i := 0; i < len(lineStringList); i++ {
+		lineName := "line_" + *lineBaseSettings.Id + "_" + strconv.Itoa(i+1)
+		properties := map[string]interface{}{
+			"station_identity_address": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": (lineStringList)[i],
+				},
+			},
+		}
+		lines = append(lines, platformclientv2.Line{
+			Name:             &lineName,
+			LineBaseSettings: lineBaseSettings,
+			Properties:       &properties,
+		})
+	}
+
+	linesPtr = &lines
+	isStandAlone = true
+
+	return
 }
 
 func buildSdkCapabilities(d *schema.ResourceData) *platformclientv2.Phonecapabilities {
