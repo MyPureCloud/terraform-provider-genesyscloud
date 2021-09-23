@@ -14,6 +14,62 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v55/platformclientv2"
 )
 
+var (
+	phoneCapabilities = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"provisions": {
+				Description: "Provisions",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"registers": {
+				Description: "Registers",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"dual_registers": {
+				Description: "Dual Registers",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"hardware_id_type": {
+				Description: "HardwareId Type",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"allow_reboot": {
+				Description: "Allow Reboot",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"no_rebalance": {
+				Description: "No Rebalance",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"no_cloud_provisioning": {
+				Description: "No Cloud Provisioning",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"media_codecs": {
+				Description: "Media Codecs",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validation.StringInSlice([]string{"audio/opus", "audio/pcmu", "audio/pcma", "audio/g729", "audio/g722"}, false),
+				},
+			},
+			"cdm": {
+				Description: "CDM",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+		},
+	}
+)
+
 func resourcePhone() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Phone",
@@ -76,59 +132,8 @@ func resourcePhone() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"provisions": {
-							Description: "Provisions",
-							Type:        schema.TypeBool,
-							Optional:    true,
-						},
-						"registers": {
-							Description: "Registers",
-							Type:        schema.TypeBool,
-							Optional:    true,
-						},
-						"dual_registers": {
-							Description: "Dual Registers",
-							Type:        schema.TypeBool,
-							Optional:    true,
-						},
-						"hardware_id_type": {
-							Description: "HardwareId Type",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"allow_reboot": {
-							Description: "Allow Reboot",
-							Type:        schema.TypeBool,
-							Optional:    true,
-						},
-						"no_rebalance": {
-							Description: "No Rebalance",
-							Type:        schema.TypeBool,
-							Optional:    true,
-						},
-						"no_cloud_provisioning": {
-							Description: "No Cloud Provisioning",
-							Type:        schema.TypeBool,
-							Optional:    true,
-						},
-						"media_codecs": {
-							Description: "Media Codecs",
-							Type:        schema.TypeList,
-							Optional:    true,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
-								ValidateFunc: validation.StringInSlice([]string{"audio/opus", "audio/pcmu", "audio/pcma", "audio/g729", "audio/g722"}, false),
-							},
-						},
-						"cdm": {
-							Description: "CDM",
-							Type:        schema.TypeBool,
-							Optional:    true,
-						},
-					},
-				},
+				Computed:    true,
+				Elem:        phoneCapabilities,
 			},
 		},
 	}
@@ -332,7 +337,10 @@ func flattenPhoneLines(lines *[]platformclientv2.Line) []string {
 		line := (*lines)[i]
 		did := ""
 		if k := (*line.Properties)["station_identity_address"]; k != nil {
-			did = k.(map[string]interface{})["value"].(map[string]interface{})["instance"].(string)
+			didI := flattenPhoneBaseSettingsProperty(k.(map[string]interface{}))
+			if didI != nil {
+				did = didI.(string)
+			}
 		}
 
 		if len(did) == 0 {
@@ -410,8 +418,9 @@ func phoneExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllPhones),
 		RefAttrs: map[string]*RefAttrSettings{
-			"web_rtc_user_id": {RefType: "genesyscloud_user"},
-			"site_id":         {RefType: "genesyscloud_telephony_providers_edges_site"},
+			"web_rtc_user_id":        {RefType: "genesyscloud_user"},
+			"site_id":                {RefType: "genesyscloud_telephony_providers_edges_site"},
+			"phone_base_settings_id": {RefType: "genesyscloud_telephony_providers_edges_phonebasesettings"},
 		},
 	}
 }
