@@ -60,7 +60,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 					ivrConfigName,
 					ivrConfigDescription,
 					ivrConfigDnis,
-					"genesyscloud_telephony_did_pool." + didPoolResource1,
+					"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "name", ivrConfigName),

@@ -212,7 +212,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		lineBaseSettingsId,
 		lineAddresses,
 		"", // no web rtc user
-		"genesyscloud_telephony_did_pool." + didPoolResource1,
+		"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
 	}, capabilities)
 
 	resource.Test(t, resource.TestCase{

@@ -71,7 +71,7 @@ func New(version string) func() *schema.Provider {
 			ResourcesMap: map[string]*schema.Resource{
 				"genesyscloud_architect_datatable":                         resourceArchitectDatatable(),
 				"genesyscloud_architect_datatable_row":                     resourceArchitectDatatableRow(),
-				"genesyscloud_architect_ivr":                   			resourceArchitectIvrConfig(),
+				"genesyscloud_architect_ivr":                               resourceArchitectIvrConfig(),
 				"genesyscloud_architect_schedules":                         resourceArchitectSchedules(),
 				"genesyscloud_architect_schedulegroups":                    resourceArchitectScheduleGroups(),
 				"genesyscloud_auth_role":                                   resourceAuthRole(),
@@ -97,7 +97,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_routing_skill":                               resourceRoutingSkill(),
 				"genesyscloud_routing_utilization":                         resourceRoutingUtilization(),
 				"genesyscloud_routing_wrapupcode":                          resourceRoutingWrapupCode(),
-				"genesyscloud_telephony_did_pool":                          resourceTelephonyDidPool(),
+				"genesyscloud_telephony_providers_edges_did_pool":          resourceTelephonyDidPool(),
 				"genesyscloud_telephony_providers_edges_edge_group":        resourceEdgeGroup(),
 				"genesyscloud_telephony_providers_edges_phone":             resourcePhone(),
 				"genesyscloud_telephony_providers_edges_trunkbasesettings": resourceTrunkBaseSettings(),

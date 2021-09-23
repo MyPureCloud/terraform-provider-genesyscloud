@@ -117,7 +117,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		// Add new resources that can be exported here
 		"genesyscloud_architect_datatable":                         architectDatatableExporter(),
 		"genesyscloud_architect_datatable_row":                     architectDatatableRowExporter(),
-		"genesyscloud_architect_ivr":                   			architectIvrExporter(),
+		"genesyscloud_architect_ivr":                               architectIvrExporter(),
 		"genesyscloud_architect_schedules":                         architectSchedulesExporter(),
 		"genesyscloud_architect_schedulegroups":                    architectScheduleGroupsExporter(),
 		"genesyscloud_auth_division":                               authDivisionExporter(),
@@ -143,7 +143,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_routing_skill":                               routingSkillExporter(),
 		"genesyscloud_routing_utilization":                         routingUtilizationExporter(),
 		"genesyscloud_routing_wrapupcode":                          routingWrapupCodeExporter(),
-		"genesyscloud_telephony_did_pool":                          telephonyDidPoolExporter(),
+		"genesyscloud_telephony_providers_edges_did_pool":          telephonyDidPoolExporter(),
 		"genesyscloud_telephony_providers_edges_edge_group":        edgeGroupExporter(),
 		"genesyscloud_telephony_providers_edges_phone":             phoneExporter(),
 		"genesyscloud_telephony_providers_edges_trunkbasesettings": trunkBaseSettingsExporter(),
