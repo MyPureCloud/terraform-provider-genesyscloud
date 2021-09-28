@@ -3,8 +3,10 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -286,8 +288,26 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	if err != nil {
 		return diag.Errorf("Failed to delete phone: %s", err)
 	}
-	log.Printf("Deleted Phone")
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		phone, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhone(d.Id())
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// Phone deleted
+				log.Printf("Deleted Phone %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting Phone %s: %s", d.Id(), err))
+		}
+
+		if *phone.State == "deleted" {
+			// phone deleted
+			log.Printf("Deleted Phone %s", d.Id())
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("Phone %s still exists", d.Id()))
+	})
 }
 
 func getPhoneMetaBaseId(meta interface{}, phoneBaseSettingsId string) (string, error) {

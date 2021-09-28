@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"time"
 
@@ -244,6 +246,17 @@ func deleteIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 	if err != nil {
 		return diag.Errorf("Failed to delete IDP Generic: %s", err)
 	}
-	log.Printf("Deleted IDP Generic")
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := idpAPI.GetIdentityprovidersGeneric()
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// IDP Generic deleted
+				log.Printf("Deleted IDP Generic")
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Generic: %s", err))
+		}
+		return resource.RetryableError(fmt.Errorf("IDP Generic still exists"))
+	})
 }

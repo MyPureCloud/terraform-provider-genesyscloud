@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"time"
 
@@ -239,8 +241,19 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	if err != nil {
 		return diag.Errorf("Failed to delete the integration %s: %s", d.Id(), err)
 	}
-	log.Printf("Deleted integration %s", d.Id())
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := integrationAPI.GetIntegration(d.Id(), 100, 1, "", nil, "", "")
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// Integration deleted
+				log.Printf("Deleted Integration %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting integration %s: %s", d.Id(), err))
+		}
+		return resource.RetryableError(fmt.Errorf("Integration %s still exists", d.Id()))
+	})
 }
 
 func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration) []interface{} {

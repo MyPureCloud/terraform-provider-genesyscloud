@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -348,7 +351,19 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	if err != nil {
 		return diag.Errorf("Failed to delete integration action %s: %s", name, err)
 	}
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := sdkGetIntegrationAction(d.Id(), integAPI)
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// Integration action deleted
+				log.Printf("Deleted Integration action %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting integration action %s: %s", d.Id(), err))
+		}
+		return resource.RetryableError(fmt.Errorf("Integration action %s still exists", d.Id()))
+	})
 }
 
 func buildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagnostics) {

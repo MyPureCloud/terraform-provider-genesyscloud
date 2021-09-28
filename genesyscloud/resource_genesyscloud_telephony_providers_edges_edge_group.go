@@ -2,10 +2,13 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
 	"log"
+	"time"
 )
 
 func resourceEdgeGroup() *schema.Resource {
@@ -134,8 +137,26 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	if err != nil {
 		return diag.Errorf("Failed to delete edge group: %s", err)
 	}
-	log.Printf("Deleted edge group")
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		edgeGroup, resp, err := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// Edge group deleted
+				log.Printf("Deleted Edge group %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting Edge group %s: %s", d.Id(), err))
+		}
+
+		if *edgeGroup.State == "deleted" {
+			// Edge group deleted
+			log.Printf("Deleted Edge group %s", d.Id())
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("Edge group %s still exists", d.Id()))
+	})
 }
 
 func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

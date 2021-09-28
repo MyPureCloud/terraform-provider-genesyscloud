@@ -2,7 +2,10 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -118,6 +121,24 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 	if err != nil {
 		return diag.Errorf("Failed to delete language %s: %s", name, err)
 	}
-	log.Printf("Deleted language %s", name)
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		routingLanguage, resp, err := languagesAPI.GetRoutingLanguage(d.Id())
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// Routing language deleted
+				log.Printf("Deleted Routing language %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting Routing language %s: %s", d.Id(), err))
+		}
+
+		if *routingLanguage.State == "deleted" {
+			// Routing language deleted
+			log.Printf("Deleted Routing language %s", d.Id())
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("Routing language %s still exists", d.Id()))
+	})
 }

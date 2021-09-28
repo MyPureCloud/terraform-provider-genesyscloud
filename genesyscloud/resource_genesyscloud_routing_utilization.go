@@ -3,14 +3,13 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"log"
-	"sort"
-	"strings"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
+	"log"
+	"sort"
+	"strings"
 )
 
 var (

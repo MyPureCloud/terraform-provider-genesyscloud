@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"time"
 
@@ -133,5 +135,17 @@ func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 	if err != nil {
 		return diag.Errorf("Failed to delete wrapupcode %s: %s", name, err)
 	}
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := routingAPI.GetRoutingWrapupcode(d.Id())
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// Routing wrapup code deleted
+				log.Printf("Deleted Routing wrapup code %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting Routing wrapup code %s: %s", d.Id(), err))
+		}
+		return resource.RetryableError(fmt.Errorf("Routing wrapup code %s still exists", d.Id()))
+	})
 }
