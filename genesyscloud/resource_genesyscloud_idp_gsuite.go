@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"time"
 
@@ -179,6 +181,17 @@ func deleteIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 	if err != nil {
 		return diag.Errorf("Failed to delete IDP GSuite: %s", err)
 	}
-	log.Printf("Deleted IDP GSuite")
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := idpAPI.GetIdentityprovidersGsuite()
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// IDP GSuite deleted
+				log.Printf("Deleted IDP GSuite")
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP GSuite: %s", err))
+		}
+		return resource.RetryableError(fmt.Errorf("IDP GSuite still exists"))
+	})
 }

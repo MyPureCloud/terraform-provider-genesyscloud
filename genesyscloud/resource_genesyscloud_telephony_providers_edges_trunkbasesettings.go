@@ -2,12 +2,15 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
 	"log"
 	"regexp"
+	"time"
 )
 
 var (
@@ -583,8 +586,26 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	if err != nil {
 		return diag.Errorf("Failed to delete trunk base settings: %s", err)
 	}
-	log.Printf("Deleted trunk base settings")
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		trunkBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), false)
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// trunk base settings deleted
+				log.Printf("Deleted trunk base settings %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting trunk base settings %s: %s", d.Id(), err))
+		}
+
+		if *trunkBaseSettings.State == "deleted" {
+			// trunk base settings deleted
+			log.Printf("Deleted trunk base settings %s", d.Id())
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("trunk base settings %s still exists", d.Id()))
+	})
 }
 
 func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {

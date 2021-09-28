@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"time"
 
@@ -179,6 +181,17 @@ func deleteIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 	if err != nil {
 		return diag.Errorf("Failed to delete IDP Ping: %s", err)
 	}
-	log.Printf("Deleted IDP Ping")
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := idpAPI.GetIdentityprovidersPing()
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// IDP Ping deleted
+				log.Printf("Deleted IDP Ping")
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Ping: %s", err))
+		}
+		return resource.RetryableError(fmt.Errorf("IDP Ping still exists"))
+	})
 }

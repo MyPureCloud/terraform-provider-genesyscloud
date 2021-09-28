@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -217,7 +220,19 @@ func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	if err != nil {
 		return diag.Errorf("Failed to delete datatable %s: %s", name, err)
 	}
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := archAPI.GetFlowsDatatable(d.Id(), "")
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// Datatable row deleted
+				log.Printf("Deleted datatable row %s", name)
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting datatable row %s: %s", name, err))
+		}
+		return resource.RetryableError(fmt.Errorf("Datatable row %s still exists", name))
+	})
 }
 
 func buildSdkDatatableSchema(d *schema.ResourceData) (*Jsonschemadocument, diag.Diagnostics) {

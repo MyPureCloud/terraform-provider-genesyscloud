@@ -2,7 +2,10 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -197,6 +200,24 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	if _, err := telephonyApi.DeleteTelephonyProvidersEdgesDidpool(d.Id()); err != nil {
 		return diag.Errorf("Failed to delete DID pool with starting number %s: %s", startPhoneNumber, err)
 	}
-	log.Printf("Deleted DID pool with starting number %s", startPhoneNumber)
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		didPool, resp, err := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// DID pool deleted
+				log.Printf("Deleted DID pool %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting DID pool %s: %s", d.Id(), err))
+		}
+
+		if *didPool.State == "deleted" {
+			// DID pool deleted
+			log.Printf("Deleted DID pool %s", d.Id())
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("DID pool %s still exists", d.Id()))
+	})
 }

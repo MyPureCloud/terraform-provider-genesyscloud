@@ -2,7 +2,10 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -249,8 +252,26 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	if _, err := architectApi.DeleteArchitectIvr(d.Id()); err != nil {
 		return diag.Errorf("Failed to delete IVR config %s: %s", name, err)
 	}
-	log.Printf("Deleted IVR config %s", name)
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		ivr, resp, err := architectApi.GetArchitectIvr(d.Id())
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// IVR config deleted
+				log.Printf("Deleted IVR config %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting IVR config %s: %s", d.Id(), err))
+		}
+
+		if *ivr.State == "deleted" {
+			// IVR config deleted
+			log.Printf("Deleted IVR config %s", d.Id())
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("IVR config %s still exists", d.Id()))
+	})
 }
 
 func buildSdkIvrDnis(d *schema.ResourceData) *[]string {

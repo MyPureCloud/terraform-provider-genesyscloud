@@ -2,7 +2,10 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -282,7 +285,26 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	if err != nil {
 		return diag.Errorf("Failed to delete oauth client %s: %s", name, err)
 	}
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		oauthClient, resp, err := oauthAPI.GetOauthClient(d.Id())
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// OAuth client deleted
+				log.Printf("Deleted OAuth client %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting OAuth client %s: %s", d.Id(), err))
+		}
+
+		if *oauthClient.State == "deleted" {
+			// OAuth client deleted
+			log.Printf("Deleted OAuth client %s", d.Id())
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("OAuth client %s still exists", d.Id()))
+	})
 }
 
 func buildOAuthRedirectURIs(d *schema.ResourceData) *[]string {

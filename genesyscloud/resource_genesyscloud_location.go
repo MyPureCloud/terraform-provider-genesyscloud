@@ -2,7 +2,10 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -266,8 +269,26 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 		return nil, nil
 	})
-	log.Printf("Deleted location %s", name)
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		location, resp, err := locationsAPI.GetLocation(d.Id(), nil)
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// Location deleted
+				log.Printf("Deleted location %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting location %s: %s", d.Id(), err))
+		}
+
+		if *location.State == "deleted" {
+			// Location deleted
+			log.Printf("Deleted location %s", d.Id())
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("Location %s still exists", d.Id()))
+	})
 }
 
 func buildSdkLocationPath(d *schema.ResourceData) *[]string {

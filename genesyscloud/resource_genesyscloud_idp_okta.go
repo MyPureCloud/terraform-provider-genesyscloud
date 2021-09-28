@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"time"
 
@@ -166,6 +168,17 @@ func deleteIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	if err != nil {
 		return diag.Errorf("Failed to delete IDP Okta: %s", err)
 	}
-	log.Printf("Deleted IDP Okta")
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := idpAPI.GetIdentityprovidersOkta()
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// IDP Okta deleted
+				log.Printf("Deleted IDP Okta")
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Okta: %s", err))
+		}
+		return resource.RetryableError(fmt.Errorf("IDP Okta still exists"))
+	})
 }

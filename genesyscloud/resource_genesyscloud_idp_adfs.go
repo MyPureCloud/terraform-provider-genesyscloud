@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"time"
 
@@ -179,6 +181,17 @@ func deleteIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	if err != nil {
 		return diag.Errorf("Failed to delete IDP ADFS: %s", err)
 	}
-	log.Printf("Deleted IDP ADFS")
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := idpAPI.GetIdentityprovidersAdfs()
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// IDP ADFS deleted
+				log.Printf("Deleted IDP ADFS")
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP ADFS: %s", err))
+		}
+		return resource.RetryableError(fmt.Errorf("IDP ADFS still exists"))
+	})
 }

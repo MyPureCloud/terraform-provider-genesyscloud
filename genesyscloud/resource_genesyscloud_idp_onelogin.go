@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"time"
 
@@ -166,6 +168,17 @@ func deleteIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 	if err != nil {
 		return diag.Errorf("Failed to delete IDP Onelogin: %s", err)
 	}
-	log.Printf("Deleted IDP Onelogin")
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := idpAPI.GetIdentityprovidersOnelogin()
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// IDP Onelogin deleted
+				log.Printf("Deleted IDP Onelogin")
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Onelogin: %s", err))
+		}
+		return resource.RetryableError(fmt.Errorf("IDP Onelogin still exists"))
+	})
 }

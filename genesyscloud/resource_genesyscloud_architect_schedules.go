@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"time"
 
@@ -228,6 +230,23 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to delete schedule %s: %s", d.Id(), err)
 	}
 
-	log.Printf("Deleted schedule %s", d.Id())
-	return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		schedule, resp, err := archAPI.GetArchitectSchedule(d.Id())
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// schedule deleted
+				log.Printf("Deleted schedule %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting schedule %s: %s", d.Id(), err))
+		}
+
+		if *schedule.State == "deleted" {
+			// schedule deleted
+			log.Printf("Deleted group %s", d.Id())
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("Schedule %s still exists", d.Id()))
+	})
 }
