@@ -116,7 +116,7 @@ func resourcePhone() *schema.Resource {
 				Computed:    true,
 			},
 			"web_rtc_user_id": {
-				Description: "Web RTC User ID.",
+				Description: "Web RTC User ID. This is necessary when creating a Web RTC phone. This user will be assigned to the phone after it is created.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -194,6 +194,13 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	d.SetId(*phone.Id)
 
+	if webRtcUserId != "" {
+		diagErr := assignUserToWebRtcPhone(ctx, sdkConfig, webRtcUserId.(string))
+		if diagErr != nil {
+			return diagErr
+		}
+	}
+
 	log.Printf("Created phone %s", *phone.Id)
 
 	return readPhone(ctx, d, meta)
@@ -239,6 +246,38 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	return nil
 }
 
+func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Configuration, userId string) diag.Diagnostics {
+	stationsAPI := platformclientv2.NewStationsApiWithConfig(sdkConfig)
+	stationId := ""
+
+	retryErr := withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+		fmt.Println("trying...")
+		stations, _, getErr := stationsAPI.GetStations(100, 1, "", "", "", userId, "", "")
+		if getErr != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error requesting stations: %s", getErr))
+		}
+
+		if stations.Entities == nil || len(*stations.Entities) == 0 {
+			return resource.RetryableError(fmt.Errorf("No stations found with userID %v", userId))
+		}
+
+		stationId = *(*stations.Entities)[0].Id
+
+		return nil
+	})
+	if retryErr != nil {
+		return retryErr
+	}
+
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	_, putErr := usersAPI.PutUserStationDefaultstationStationId(userId, stationId)
+	if putErr != nil {
+		return diag.Errorf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr)
+	}
+
+	return nil
+}
+
 func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	site := buildSdkDomainEntityRef(d, "site_id")
@@ -280,6 +319,15 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Updated phone %s", *phone.Id)
+
+	if webRtcUserId != "" {
+		if d.HasChange("web_rtc_user_id") {
+			diagErr := assignUserToWebRtcPhone(ctx, sdkConfig, webRtcUserId.(string))
+			if diagErr != nil {
+				return diagErr
+			}
+		}
+	}
 
 	return readPhone(ctx, d, meta)
 }
