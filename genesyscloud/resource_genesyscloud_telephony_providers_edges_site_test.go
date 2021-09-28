@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v55/platformclientv2"
 	"strconv"
 	"strings"
 	"testing"
@@ -38,7 +38,7 @@ func TestAccResourceSite(t *testing.T) {
 		"HQ1",
 		[]string{},
 		generateLocationEmergencyNum(
-			"3173124741",
+			"3173124740",
 			nullValue, // Default number type
 		), generateLocationAddress(
 			"7601 Interactive Way",
@@ -330,7 +330,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"HQ1",
 		[]string{},
 		generateLocationEmergencyNum(
-			"3173124741",
+			"3173124742",
 			nullValue, // Default number type
 		), generateLocationAddress(
 			"7601 Interactive Way",

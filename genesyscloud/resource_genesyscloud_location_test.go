@@ -2,15 +2,13 @@ package genesyscloud
 
 import (
 	"fmt"
-	"math/rand"
-	"strconv"
-	"strings"
-	"testing"
-
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v55/platformclientv2"
+	"strconv"
+	"strings"
+	"testing"
 )
 
 func TestAccResourceLocationBasic(t *testing.T) {
@@ -22,8 +20,8 @@ func TestAccResourceLocationBasic(t *testing.T) {
 		locName3         = "Terraform location" + uuid.NewString()
 		locNotes1        = "HQ1"
 		locNotes2        = "HQ2"
-		emergencyNum1    = "3"
-		emergencyNum2    = "7"
+		emergencyNum1    = "3173124756"
+		emergencyNum2    = "7654182735"
 		locNumberDefault = "default"
 		locNumberElin    = "elin"
 
@@ -37,11 +35,6 @@ func TestAccResourceLocationBasic(t *testing.T) {
 		state2   = "CA"
 		zip2     = "94014"
 	)
-
-	for i := 0; i < 9; i++ {
-		emergencyNum1 += fmt.Sprintf("%v", rand.Intn(9))
-		emergencyNum2 += fmt.Sprintf("%v", rand.Intn(9))
-	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

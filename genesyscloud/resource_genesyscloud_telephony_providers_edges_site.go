@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v55/platformclientv2"
 	"log"
 	"time"
 )
@@ -230,7 +231,9 @@ func getSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (R
 func siteExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getSites),
-		RefAttrs:         map[string]*RefAttrSettings{},
+		RefAttrs:         map[string]*RefAttrSettings{
+			"location_id": {RefType: "genesyscloud_location"},
+		},
 	}
 }
 
@@ -418,15 +421,34 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Deleting site")
 	_, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(d.Id())
 	if err != nil {
-		fmt.Printf("Failed to delete site: %s\n", err)
 		return diag.Errorf("Failed to delete site: %s", err)
 	}
-	log.Printf("Deleted site")
 
-	// Give time for public API caches to update
-	time.Sleep(5 * time.Second)
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		site, resp, err := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// Site deleted
+				log.Printf("Deleted site %s", d.Id())
+				// Need to sleep here because if terraform deletes the dependent location straight away
+				// the API will think it's still in use
+				time.Sleep(10 * time.Second)
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting site %s: %s", d.Id(), err))
+		}
 
-	return nil
+		if *site.State == "deleted" {
+			// Site deleted
+			log.Printf("Deleted site %s", d.Id())
+			// Need to sleep here because if terraform deletes the dependent location straight away
+			// the API will think it's still in use
+			time.Sleep(10 * time.Second)
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("Site %s still exists", d.Id()))
+	})
 }
 
 func nameInPlans(name string, plans []platformclientv2.Numberplan) (*platformclientv2.Numberplan, bool) {
