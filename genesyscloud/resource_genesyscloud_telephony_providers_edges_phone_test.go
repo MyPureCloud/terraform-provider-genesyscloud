@@ -158,7 +158,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
-	lineAddresses := []string{"+13175550010"}
+	lineAddresses := []string{"+15175550010"}
 	phoneRes := "phone_standalone1234"
 	name1 := "test-phone-standalone_" + uuid.NewString()
 	stateActive := "active"
@@ -300,7 +300,7 @@ func getWebRTCPhoneBaseSettings() (*platformclientv2.Phonebase, error) {
 
 func createGenericSIPPhoneBase() (*platformclientv2.Phonebase, error) {
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-	name := "TestGenericSip-cxascode-12345"
+	name := "TestGenericSip-cxascode-12345"+uuid.NewString()
 	phoneMetaBaseId := "generic_sip.json"
 
 	baseSettingBody := platformclientv2.Phonebase{
