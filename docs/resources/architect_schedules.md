@@ -34,10 +34,10 @@ resource "genesyscloud_architect_schedules" "test_schedule" {
 
 ### Required
 
-- **end** (String) Date time is represented as an ISO-8601 string without a timezone.
+- **end** (String) Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
 - **name** (String) Name of the schedule.
 - **rrule** (String) An iCal Recurrence Rule (RRULE) string.
-- **start** (String) Date time is represented as an ISO-8601 string without a timezone.
+- **start** (String) Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
 
 ### Optional
 

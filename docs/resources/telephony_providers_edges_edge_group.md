@@ -40,8 +40,8 @@ resource "genesyscloud_telephony_providers_edges_edge_group" "test_edge_group" {
 ### Optional
 
 - **description** (String) The resource's description.
-- **hybrid** (Boolean) Is this edge group hybrid.
+- **hybrid** (Boolean) Is this edge group hybrid. Defaults to `false`.
 - **id** (String) The ID of this resource.
-- **managed** (Boolean) Is this edge group being managed remotely.
+- **managed** (Boolean) Is this edge group being managed remotely. Defaults to `false`.
 - **state** (String) Indicates if the resource is active, inactive, or deleted.
 

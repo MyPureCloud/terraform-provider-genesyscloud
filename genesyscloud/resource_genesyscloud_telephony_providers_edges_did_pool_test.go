@@ -42,11 +42,11 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 					nullValue, // No provider
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "start_phone_number", didPoolStartPhoneNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "end_phone_number", didPoolEndPhoneNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "description", ""),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "comments", ""),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "pool_provider", ""),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "start_phone_number", didPoolStartPhoneNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "end_phone_number", didPoolEndPhoneNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "description", ""),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "comments", ""),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "pool_provider", ""),
 				),
 			},
 			{
@@ -60,16 +60,16 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 					strconv.Quote(didPoolProvider1),
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "start_phone_number", didPoolStartPhoneNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "end_phone_number", didPoolEndPhoneNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "description", didPoolDescription1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "comments", didPoolComments1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_did_pool."+didPoolResource1, "pool_provider", didPoolProvider1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "start_phone_number", didPoolStartPhoneNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "end_phone_number", didPoolEndPhoneNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "description", didPoolDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "comments", didPoolComments1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "pool_provider", didPoolProvider1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_telephony_did_pool." + didPoolResource1,
+				ResourceName:      "genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -79,7 +79,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 }
 
 func generateDidPoolResource(didPool *didPoolStruct) string {
-	return fmt.Sprintf(`resource "genesyscloud_telephony_did_pool" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_did_pool" "%s" {
 		start_phone_number = "%s"
 		end_phone_number = "%s"
 		description = %s
@@ -97,7 +97,7 @@ func generateDidPoolResource(didPool *didPoolStruct) string {
 func testVerifyDidPoolsDestroyed(state *terraform.State) error {
 	telephonyAPI := platformclientv2.NewTelephonyProvidersEdgeApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_telephony_did_pool" {
+		if rs.Type != "genesyscloud_telephony_providers_edges_did_pool" {
 			continue
 		}
 
