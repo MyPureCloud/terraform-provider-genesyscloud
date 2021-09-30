@@ -31,18 +31,24 @@ func TestAccResourcePhoneBaseSettings(t *testing.T) {
 					name1,
 					description1,
 					phoneMetaBaseId,
-					generatePhoneBaseSettingsProperties("Generic SIP Phone", 1, true, true, false, []string{strconv.Quote("station 1")}),
+					generatePhoneBaseSettingsProperties(
+						"Generic SIP Phone",
+						"1",
+						trueValue,
+						trueValue,
+						falseValue,
+						[]string{strconv.Quote("station 1")}),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "description", description1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "phone_meta_base_id", phoneMetaBaseId),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_label", "Generic SIP Phone"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_max_line_keys", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_mwi_enabled", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_mwi_subscribe", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_standalone", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_stations.0", "station 1"),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_label", "Generic SIP Phone"),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_maxLineKeys", "1"),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_enabled", trueValue),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_subscribe", trueValue),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_standalone", falseValue),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_stations", strings.Join([]string{"station 1"}, ",")),
 				),
 			},
 			// Update with new name, description and properties
@@ -52,19 +58,24 @@ func TestAccResourcePhoneBaseSettings(t *testing.T) {
 					name2,
 					description2,
 					phoneMetaBaseId,
-					generatePhoneBaseSettingsProperties("Generic SIP Phone 1", 2, false, false, true, []string{strconv.Quote("station 2"), strconv.Quote("station 1")}),
+					generatePhoneBaseSettingsProperties(
+						"Generic SIP Phone 1",
+						"2",
+						falseValue,
+						falseValue,
+						trueValue,
+						[]string{strconv.Quote("station 2"), strconv.Quote("station 1")}),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "description", description2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "phone_meta_base_id", phoneMetaBaseId),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_label", "Generic SIP Phone 1"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_max_line_keys", "2"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_mwi_enabled", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_mwi_subscribe", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_standalone", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_stations.0", "station 2"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties.0.phone_stations.1", "station 1"),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_label", "Generic SIP Phone 1"),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_maxLineKeys", "2"),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_enabled", falseValue),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_subscribe", falseValue),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_standalone", trueValue),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_stations", strings.Join([]string{"station 2", "station 1"}, ",")),
 				),
 			},
 			{
@@ -115,14 +126,44 @@ func generatePhoneBaseSettingsResourceWithCustomAttrs(
 	`, phoneBaseSettingsRes, name, description, phoneMetaBaseId, strings.Join(otherAttrs, "\n"))
 }
 
-func generatePhoneBaseSettingsProperties(phoneLabel string, phoneMaxLineKeys int, phoneMwiEnabled, phoneMwiSubscribe, phoneStandalone bool, phoneStations []string) string {
+func generatePhoneBaseSettingsProperties(phoneLabel, phoneMaxLineKeys, phoneMwiEnabled, phoneMwiSubscribe, phoneStandalone string, phoneStations []string) string {
 	// A random selection of properties
-	return fmt.Sprintf(`properties {
-			phone_label = "%s"
-			phone_max_line_keys = %d
-			phone_mwi_enabled = %v
-			phone_mwi_subscribe = %v
-			phone_standalone = %v
-			phone_stations = [%s]
-		}`, phoneLabel, phoneMaxLineKeys, phoneMwiEnabled, phoneMwiSubscribe, phoneStandalone, strings.Join(phoneStations, ","))
+	return "properties = " + generateJsonEncodedProperties(
+		generateJsonProperty(
+			"phone_label", generateJsonObject(
+				generateJsonProperty(
+					"value", generateJsonObject(
+						generateJsonProperty("instance", strconv.Quote(phoneLabel)),
+					)))),
+		generateJsonProperty(
+			"phone_maxLineKeys", generateJsonObject(
+				generateJsonProperty(
+					"value", generateJsonObject(
+						generateJsonProperty("instance", phoneMaxLineKeys),
+					)))),
+		generateJsonProperty(
+			"phone_mwi_enabled", generateJsonObject(
+				generateJsonProperty(
+					"value", generateJsonObject(
+						generateJsonProperty("instance", phoneMwiEnabled),
+					)))),
+		generateJsonProperty(
+			"phone_mwi_subscribe", generateJsonObject(
+				generateJsonProperty(
+					"value", generateJsonObject(
+						generateJsonProperty("instance", phoneMwiSubscribe),
+					)))),
+		generateJsonProperty(
+			"phone_standalone", generateJsonObject(
+				generateJsonProperty(
+					"value", generateJsonObject(
+						generateJsonProperty("instance", phoneStandalone),
+					)))),
+		generateJsonProperty(
+			"phone_stations", generateJsonObject(
+				generateJsonProperty(
+					"value", generateJsonObject(
+						generateJsonArrayProperty("instance", strings.Join(phoneStations, ",")),
+					)))),
+	)
 }

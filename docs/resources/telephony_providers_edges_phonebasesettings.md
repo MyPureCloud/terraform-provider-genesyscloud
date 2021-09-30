@@ -24,14 +24,38 @@ resource "genesyscloud_telephony_providers_edges_phonebasesettings" "examplePhon
   name               = "example phone base settings"
   description        = "test description"
   phone_meta_base_id = "generic_sip.json"
-  properties {
-    phone_label         = "Generic SIP Phone"
-    phone_max_line_keys = 1
-    phone_mwi_enabled   = true
-    phone_mwi_subscribe = true
-    phone_standalone    = false
-    phone_stations      = ["station 1"]
-  }
+  properties = jsonencode({
+    "phone_label" = {
+      "value" = {
+        "instance" = "Generic SIP Phone"
+      }
+    }
+    "phone_maxLineKeys" = {
+      "value" = {
+        "instance" = 1
+      }
+    }
+    "phone_mwi_enabled" = {
+      "value" = {
+        "instance" = true
+      }
+    }
+    "phone_mwi_subscribe" = {
+      "value" = {
+        "instance" = true
+      }
+    }
+    "phone_standalone" = {
+      "value" = {
+        "instance" = false
+      }
+    }
+    "phone_stations" = {
+      "value" = {
+        "instance" = ["station 1"]
+      }
+    }
+  })
 }
 ```
 
@@ -49,7 +73,7 @@ resource "genesyscloud_telephony_providers_edges_phonebasesettings" "examplePhon
 - **description** (String) The resource's description.
 - **id** (String) The ID of this resource.
 - **line_base_settings_id** (String) Computed line base settings id
-- **properties** (Block Set) phone base settings properties (see [below for nested schema](#nestedblock--properties))
+- **properties** (String) phone base settings properties
 
 <a id="nestedblock--capabilities"></a>
 ### Nested Schema for `capabilities`
@@ -65,21 +89,4 @@ Optional:
 - **no_rebalance** (Boolean) No Rebalance
 - **provisions** (Boolean) Provisions
 - **registers** (Boolean) Registers
-
-
-<a id="nestedblock--properties"></a>
-### Nested Schema for `properties`
-
-Optional:
-
-- **phone_ignore_on_secondary** (Boolean) Defaults to `true`.
-- **phone_label** (String) Defaults to `WebRTC Phone Connections`.
-- **phone_max_line_keys** (Number) Defaults to `1`.
-- **phone_media_codecs** (List of String)
-- **phone_media_dscp** (Number) Defaults to `46`.
-- **phone_mwi_enabled** (Boolean) Defaults to `true`.
-- **phone_mwi_subscribe** (Boolean) Defaults to `true`.
-- **phone_sip_dscp** (Number) Defaults to `24`.
-- **phone_standalone** (Boolean) Defaults to `false`.
-- **phone_stations** (List of String)
 

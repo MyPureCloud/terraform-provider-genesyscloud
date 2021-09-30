@@ -2,90 +2,13 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
 	"log"
-)
-
-var (
-	propertiesPhone_label             = "phone_label"
-	propertiesPhone_mwi_enabled       = "phone_mwi_enabled"
-	propertiesPhone_mwi_subscribe     = "phone_mwi_subscribe"
-	propertiesPhone_stations          = "phone_stations"
-	propertiesPhone_maxLineKeys       = "phone_max_line_keys"
-	propertiesPhone_standalone        = "phone_standalone"
-	propertiesPhone_ignoreOnSecondary = "phone_ignore_on_secondary"
-
-	propertiesPhone_media_codecs = "phone_media_codecs"
-	propertiesPhone_media_dscp   = "phone_media_dscp"
-	propertiesPhone_sip_dscp     = "phone_sip_dscp"
-
-	phoneBaseSettingsProperties = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			propertiesPhone_label: {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "WebRTC Phone Connections",
-			},
-			propertiesPhone_mwi_enabled: {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-			},
-			propertiesPhone_mwi_subscribe: {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-			},
-			propertiesPhone_maxLineKeys: {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  1,
-			},
-			propertiesPhone_stations: {
-				Type:     schema.TypeList,
-				Optional: true,
-				MinItems: 1,
-				Elem: &schema.Schema{
-					Type:    schema.TypeString,
-					Default: nil,
-				},
-			},
-			propertiesPhone_standalone: {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
-			propertiesPhone_ignoreOnSecondary: {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-			},
-			propertiesPhone_media_codecs: {
-				Type:     schema.TypeList,
-				Optional: true,
-				MinItems: 1,
-				Elem: &schema.Schema{
-					Type:    schema.TypeString,
-					Default: "audio/opus",
-				},
-			},
-			propertiesPhone_media_dscp: {
-				Type:         schema.TypeInt,
-				Optional:     true,
-				Default:      46,
-				ValidateFunc: validation.IntBetween(0, 63),
-			},
-			propertiesPhone_sip_dscp: {
-				Type:         schema.TypeInt,
-				Optional:     true,
-				Default:      24,
-				ValidateFunc: validation.IntBetween(0, 63),
-			},
-		},
-	}
+	"time"
 )
 
 func resourcePhoneBaseSettings() *schema.Resource {
@@ -117,11 +40,11 @@ func resourcePhoneBaseSettings() *schema.Resource {
 				Required:    true,
 			},
 			"properties": {
-				Description: "phone base settings properties",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				Elem:        phoneBaseSettingsProperties,
+				Description:      "phone base settings properties",
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				DiffSuppressFunc: suppressEquivalentJsonDiffs,
 			},
 			"capabilities": {
 				Description: "Phone Capabilities.",
@@ -138,73 +61,15 @@ func resourcePhoneBaseSettings() *schema.Resource {
 				Computed:    true,
 			},
 		},
+		CustomizeDiff: customizePhoneBaseSettingsPropertiesDiff,
 	}
-}
-
-func buildSdkPhoneBaseSettingsProperty(property interface{}) map[string]interface{} {
-	return buildSdkTrunkBaseSettingsProperty(property)
-}
-
-func buildSdkPhoneBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{} {
-	returnValue := make(map[string]interface{})
-
-	if properties := d.Get("properties"); properties != nil {
-		prop := properties.(*schema.Set)
-		propList := prop.List()
-
-		if len(propList) == 0 {
-			return &returnValue
-		}
-
-		propertiesMap := propList[0].(map[string]interface{})
-		if property, ok := propertiesMap[propertiesPhone_label].(string); ok && property != "" {
-			returnValue["phone_label"] = buildSdkPhoneBaseSettingsProperty(property)
-		}
-		if property, ok := propertiesMap[propertiesPhone_mwi_enabled].(bool); ok {
-			returnValue["phone_mwi_enabled"] = buildSdkPhoneBaseSettingsProperty(property)
-		}
-		if property, ok := propertiesMap[propertiesPhone_mwi_subscribe].(bool); ok {
-			returnValue["phone_mwi_subscribe"] = buildSdkPhoneBaseSettingsProperty(property)
-		}
-		if property, ok := propertiesMap[propertiesPhone_stations].([]interface{}); ok {
-			if len(property) == 0 {
-				returnValue["phone_stations"] = buildSdkPhoneBaseSettingsProperty(nil)
-			} else {
-				returnValue["phone_stations"] = buildSdkPhoneBaseSettingsProperty(property)
-			}
-		}
-		if property, ok := propertiesMap[propertiesPhone_maxLineKeys].(int); ok {
-			returnValue["phone_maxLineKeys"] = buildSdkPhoneBaseSettingsProperty(property)
-		}
-		if property, ok := propertiesMap[propertiesPhone_standalone].(bool); ok {
-			returnValue["phone_standalone"] = buildSdkPhoneBaseSettingsProperty(property)
-		}
-		if property, ok := propertiesMap[propertiesPhone_ignoreOnSecondary].(bool); ok {
-			returnValue["phone_ignoreOnSecondary"] = buildSdkPhoneBaseSettingsProperty(property)
-		}
-		if property, ok := propertiesMap[propertiesPhone_media_codecs].([]interface{}); ok {
-			if len(property) == 0 {
-				returnValue["phone_media_codecs"] = buildSdkPhoneBaseSettingsProperty(nil)
-			} else {
-				returnValue["phone_media_codecs"] = buildSdkPhoneBaseSettingsProperty(property)
-			}
-		}
-		if property, ok := propertiesMap[propertiesPhone_media_dscp].(int); ok {
-			returnValue["phone_media_dscp"] = buildSdkPhoneBaseSettingsProperty(property)
-		}
-		if property, ok := propertiesMap[propertiesPhone_sip_dscp].(int); ok {
-			returnValue["phone_sip_dscp"] = buildSdkPhoneBaseSettingsProperty(property)
-		}
-	}
-
-	return &returnValue
 }
 
 func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := buildSdkPhoneBaseSettingsProperties(d)
+	properties := buildBaseSettingsProperties(d)
 
 	phoneBase := platformclientv2.Phonebase{
 		Name:          &name,
@@ -243,7 +108,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := buildSdkPhoneBaseSettingsProperties(d)
+	properties := buildBaseSettingsProperties(d)
 	id := d.Id()
 
 	phoneBase := platformclientv2.Phonebase{
@@ -267,7 +132,6 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	// Get the latest version of the setting
 	phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
 	if getErr != nil {
 		if resp != nil && resp.StatusCode == 404 {
@@ -313,7 +177,11 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 	d.Set("properties", nil)
 	if phoneBaseSettings.Properties != nil {
-		d.Set("properties", flattenPhoneBaseSettingsProperties(phoneBaseSettings.Properties))
+		properties, err := flattenBaseSettingsProperties(phoneBaseSettings.Properties)
+		if err != nil {
+			return err
+		}
+		d.Set("properties", properties)
 	}
 
 	if phoneBaseSettings.Capabilities != nil {
@@ -329,82 +197,6 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 	return nil
 }
 
-func flattenPhoneBaseSettingsProperty(property map[string]interface{}) interface{} {
-	return flattenTrunkBaseSettingsProperty(property)
-}
-
-func flattenPhoneBaseSettingsProperties(properties interface{}) *schema.Set {
-	propertyMap := make(map[string]interface{})
-
-	propertyV := *(properties.(*map[string]interface{}))
-
-	if property, ok := propertyV["phone_label"].(map[string]interface{}); ok {
-		if flattenedProperty := flattenPhoneBaseSettingsProperty(property); flattenedProperty != nil {
-			propertyMap[propertiesPhone_label] = flattenedProperty.(string)
-		}
-	}
-	if property, ok := propertyV["phone_mwi_enabled"].(map[string]interface{}); ok {
-		if flattenedProperty := flattenPhoneBaseSettingsProperty(property); flattenedProperty != nil {
-			propertyMap[propertiesPhone_mwi_enabled] = flattenedProperty.(bool)
-		}
-	}
-	if property, ok := propertyV["phone_mwi_subscribe"].(map[string]interface{}); ok {
-		if flattenedProperty := flattenPhoneBaseSettingsProperty(property); flattenedProperty != nil {
-			propertyMap[propertiesPhone_mwi_subscribe] = flattenedProperty.(bool)
-		}
-	}
-	if property, ok := propertyV["phone_maxLineKeys"].(map[string]interface{}); ok {
-		if flattenedProperty := flattenPhoneBaseSettingsProperty(property); flattenedProperty != nil {
-			propertyMap[propertiesPhone_maxLineKeys] = int(flattenedProperty.(float64))
-		}
-	}
-	if property, ok := propertyV["phone_stations"].(map[string]interface{}); ok {
-		if flattenedProperty := flattenPhoneBaseSettingsProperty(property); flattenedProperty != nil {
-			flattenedPropertySlice := flattenedProperty.([]interface{})
-			propertySlice := make([]interface{}, 0)
-			for _, flattenedPropertyValue := range flattenedPropertySlice {
-				propertySlice = append(propertySlice, flattenedPropertyValue.(interface{}))
-			}
-			propertyMap[propertiesPhone_stations] = propertySlice
-		}
-	}
-	if property, ok := propertyV["phone_standalone"].(map[string]interface{}); ok {
-		if flattenedProperty := flattenPhoneBaseSettingsProperty(property); flattenedProperty != nil {
-			propertyMap[propertiesPhone_standalone] = flattenedProperty.(bool)
-		}
-	}
-	if property, ok := propertyV["phone_ignoreOnSecondary"].(map[string]interface{}); ok {
-		if flattenedProperty := flattenPhoneBaseSettingsProperty(property); flattenedProperty != nil {
-			propertyMap[propertiesPhone_ignoreOnSecondary] = flattenedProperty.(bool)
-		}
-	}
-	if property, ok := propertyV["phone_media_codecs"].(map[string]interface{}); ok {
-		if flattenedProperty := flattenPhoneBaseSettingsProperty(property); flattenedProperty != nil {
-			flattenedPropertySlice := flattenedProperty.([]interface{})
-			propertySlice := make([]interface{}, 0)
-			for _, flattenedPropertyValue := range flattenedPropertySlice {
-				propertySlice = append(propertySlice, flattenedPropertyValue.(interface{}))
-			}
-			propertyMap[propertiesPhone_media_codecs] = propertySlice
-		}
-	}
-	if property, ok := propertyV["phone_media_dscp"].(map[string]interface{}); ok {
-		if flattenedProperty := flattenPhoneBaseSettingsProperty(property); flattenedProperty != nil {
-			propertyMap[propertiesPhone_media_dscp] = int(flattenedProperty.(float64))
-		}
-	}
-	if property, ok := propertyV["phone_sip_dscp"].(map[string]interface{}); ok {
-		if flattenedProperty := flattenPhoneBaseSettingsProperty(property); flattenedProperty != nil {
-			propertyMap[propertiesPhone_sip_dscp] = int(flattenedProperty.(float64))
-		}
-	}
-
-	propertySet := schema.NewSet(schema.HashResource(phoneBaseSettingsProperties), []interface{}{})
-	propertySet.Add(propertyMap)
-
-	return propertySet
-}
-
 func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
@@ -414,8 +206,26 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	if err != nil {
 		return diag.Errorf("Failed to delete phone base settings: %s", err)
 	}
-	log.Printf("Deleted phone base settings")
-	return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		phoneBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
+		if err != nil {
+			if resp != nil && resp.StatusCode == 404 {
+				// Phone base settings deleted
+				log.Printf("Deleted Phone base settings %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting Phone base settings %s: %s", d.Id(), err))
+		}
+
+		if *phoneBaseSettings.State == "deleted" {
+			// Phone base settings deleted
+			log.Printf("Deleted Phone base settings %s", d.Id())
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("Phone base settings %s still exists", d.Id()))
+	})
 }
 
 func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {

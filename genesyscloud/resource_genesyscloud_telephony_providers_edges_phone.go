@@ -384,7 +384,7 @@ func flattenPhoneLines(lines *[]platformclientv2.Line) []string {
 		line := (*lines)[i]
 		did := ""
 		if k := (*line.Properties)["station_identity_address"]; k != nil {
-			didI := flattenPhoneBaseSettingsProperty(k.(map[string]interface{}))
+			didI := k.(map[string]interface{})["value"].(map[string]interface{})["instance"]
 			if didI != nil {
 				did = didI.(string)
 			}
