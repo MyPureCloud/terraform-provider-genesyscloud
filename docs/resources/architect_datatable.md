@@ -22,6 +22,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ```terraform
 resource "genesyscloud_architect_datatable" "customers" {
   name        = "Customers"
+  division_id = genesyscloud_auth_division.home.id
   description = "Table of Customers"
   properties {
     name  = "key"
@@ -53,6 +54,7 @@ resource "genesyscloud_architect_datatable" "customers" {
 ### Optional
 
 - **description** (String) Description of the datatable.
+- **division_id** (String) The division to which this datatable will belong. If not set, the home division will be used.
 - **id** (String) The ID of this resource.
 
 <a id="nestedblock--properties"></a>
