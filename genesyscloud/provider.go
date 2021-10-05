@@ -101,6 +101,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_telephony_providers_edges_edge_group":        resourceEdgeGroup(),
 				"genesyscloud_telephony_providers_edges_phone":             resourcePhone(),
 				"genesyscloud_telephony_providers_edges_trunkbasesettings": resourceTrunkBaseSettings(),
+				"genesyscloud_telephony_providers_edges_trunk":             resourceTrunk(),
 				"genesyscloud_tf_export":                                   resourceTfExport(),
 				"genesyscloud_user":                                        resourceUser(),
 				"genesyscloud_user_roles":                                  resourceUserRoles(),

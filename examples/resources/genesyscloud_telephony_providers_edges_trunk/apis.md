@@ -1,0 +1,7 @@
+* [GET /api/v2/telephony/providers/edges/{edgeId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges--edgeId-)
+* [PUT /api/v2/telephony/providers/edges/{edgeId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#put-api-v2-telephony-providers-edges--edgeId-)
+* [GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
+* [PUT /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#put-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
+* [GET /api/v2/telephony/providers/edges/trunks](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-trunks)
+* [GET /api/v2/telephony/providers/edges/trunks/{trunkId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-trunks--trunkId-)
+* [GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
