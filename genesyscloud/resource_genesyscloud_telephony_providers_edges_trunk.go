@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v55/platformclientv2"
 	"log"
 )
 
