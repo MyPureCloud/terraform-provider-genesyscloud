@@ -411,6 +411,7 @@ func phoneExporter() *ResourceExporter {
 		GetResourcesFunc: getAllWithPooledClient(getAllPhones),
 		RefAttrs: map[string]*RefAttrSettings{
 			"web_rtc_user_id": {RefType: "genesyscloud_user"},
+			"site_id":         {RefType: "genesyscloud_telephony_providers_edges_site"},
 		},
 	}
 }
