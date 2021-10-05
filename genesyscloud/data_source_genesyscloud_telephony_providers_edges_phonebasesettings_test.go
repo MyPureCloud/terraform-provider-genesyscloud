@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestAccDataSourceSite(t *testing.T) {
+func TestAccDataSourcePhoneBaseSettings(t *testing.T) {
 	var (
 		phoneBaseSettingsRes     = "phoneBaseSettings"
 		phoneBaseSettingsDataRes = "phoneBaseSettingsData"
