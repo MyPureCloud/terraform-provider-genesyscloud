@@ -1,12 +1,13 @@
 package genesyscloud
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/platform-client-sdk-go/v48/platformclientv2"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,14 +15,11 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v46/platformclientv2"
 )
-
-var apiurl string = `https://uzr7bby4z7.execute-api.us-east-1.amazonaws.com/deploy/`
-var apikey string = "IoFDHjO6LS9JNnunoUyKw2oXAjrso2kQ5a9A6JcD"
 
 func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
@@ -98,55 +96,91 @@ func resourceFlow() *schema.Resource {
 }
 
 func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	clientID := os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID")
-	clientSecret := os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET")
-	location := getLocationForArchy(os.Getenv("GENESYSCLOUD_REGION"))
-	debug := strconv.FormatBool(d.Get("debug").(bool))
-	forceUnlock := strconv.FormatBool(d.Get("force_unlock").(bool))
-	recreate := strconv.FormatBool(d.Get("recreate").(bool))
-	filepath := d.Get("filepath").(string)
 
-	file, err := ioutil.ReadFile(filepath)
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	orgsAPI := platformclientv2.NewOrganizationApiWithConfig(sdkConfig)
+
+	org, _, err := orgsAPI.GetOrganizationsMe()
 	if err != nil {
-		return diag.Errorf("Failed to read configuration file from this path: %s. %s", filepath, err)
+		return diag.Errorf("Failed to get organization.", err)
 	}
-	filecontent := string(file)
 
-	requestBody, _ := json.Marshal(map[string]interface{}{
-		"command": "publish",
-		"files": map[string]interface{}{
-			"main.yaml": filecontent,
-		},
-		"settings": map[string]interface{}{
-			"clientSecret": &clientSecret,
-			"clientId":     &clientID,
-			"debug":        &debug,
-			"forceUnlock":  &forceUnlock,
-			"location":     &location,
-			"recreate":     &recreate,
-		},
-	})
+	orgID := org.Id
 
-	body, err := sendRequest(requestBody)
+	//Todo: Call architect/archy/jobs to register
+	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	apiClient := &architectAPI.Configuration.APIClient
+	path := architectAPI.Configuration.BasePath + "/api/v2/flows/jobs"
+
+	headerParams := make(map[string]string)
+
+	// add default headers if any
+	for key := range architectAPI.Configuration.DefaultHeader {
+		headerParams[key] = architectAPI.Configuration.DefaultHeader[key]
+	}
+
+	headerParams["Authorization"] = "Bearer " + architectAPI.Configuration.AccessToken
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	var successPayload *IntegrationAction
+	response, err := apiClient.CallAPI(path, "POST", body, headerParams, nil, nil, "", nil)
+	if err != nil {
+		// Nothing special to do here, but do avoid processing the response
+	} else if err == nil && response.Error != nil {
+		err = errors.New(response.ErrorMessage)
+	} else {
+		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
+	}
+	return successPayload, response, err
+
+	//TODO: parse response, get jobId and presigned url
+	presignedUrl := "asdf"
+	jobId := "asdf"
+	correlationId := "asdf"
+	headers := make(map[string]interface{})
+
+	filePath := d.Get("filepath").(string)
+
+	_, err = prepareAndUploadFile(filePath, headers, presignedUrl, jobId, *orgID, correlationId)
 
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
+	//
+	//var result map[string]interface{}
+	//
+	//err = json.Unmarshal(body, &result)
+	//if err != nil {
+	//	return diag.Errorf("Failed to unmarshal response body when creating flow. %s", err)
+	//}
+	//
+	//if result["statusCode"] == nil || int(result["statusCode"].(float64)) != http.StatusOK {
+	//	return diag.Errorf("Create flow Request failed. Result: %s", string(body))
+	//}
 
-	var result map[string]interface{}
+	//flowID := getFlowID((result["body"]).(map[string]interface{})["stdout"].(string))
 
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return diag.Errorf("Failed to unmarshal response body when creating flow. %s", err)
+	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
+		body, resp, err := architectAPI.getStatus()
+		if body.status == "ERRORED" {
+			return resource.NonRetryableError(fmt.Errorf("Error occurred publishing the flow. JobID: %s, error code: %s", jobId, body.error_code))
+		}
+
+		if body.status == "COMPLETED" {
+			// TODO: get ID from archy result from getStatus endpoint
+			d.SetId(*ID)
+			return nil
+		}
+
+		time.Sleep(15 * time.Second) // Wait 15 seconds for next retry
+		return resource.RetryableError(fmt.Errorf("Job is still in progress %s", jobId))
+	})
+
+	if retryErr != nil {
+		return retryErr
 	}
-
-	if result["statusCode"] == nil || int(result["statusCode"].(float64)) != http.StatusOK {
-		return diag.Errorf("Create flow Request failed. Result: %s", string(body))
-	}
-
-	flowID := getFlowID((result["body"]).(map[string]interface{})["stdout"].(string))
-
-	d.SetId(flowID)
 
 	log.Printf("Created flow %s. ", d.Id())
 	return readFlow(ctx, d, meta)
@@ -156,9 +190,6 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	log.Printf("Reading flow %s", d.Id())
-	asdf := d.Id()
-	log.Printf(asdf)
 	flow, resp, err := architectAPI.GetFlow(d.Id(), false)
 	if err != nil {
 		if isStatus404(resp) {
@@ -257,24 +288,41 @@ func hashFileContent(path string) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
-func sendRequest(body []byte) ([]byte, error) {
-	req, _ := http.NewRequest("POST", apiurl, bytes.NewBuffer(body))
+func prepareAndUploadFile(filename string, headers map[string]interface{}, presignedUrl string, jobId string, orgId string, correlationId string) ([]byte, error) {
+
+	file, err := os.Open(filename)
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open file %s . Error: %s ", filename, err)
+	}
+
+	defer file.Close()
+
+	req, _ := http.NewRequest("PUT", presignedUrl, file)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", apikey)
+	req.Header.Set("x-amz-meta-organizationid", orgId)
+	req.Header.Set("x-amz-meta-correlationid", correlationId)
+	req.Header.Set("x-amz-meta-jobid", jobId)
+
+	for key, value := range headers {
+		req.Header.Set(key, value.(string))
+	}
+
+	//TODO: Set headers using presignedUrl object returned by public api endpoint
 
 	client := &http.Client{}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to make API request to update flow. %s", err)
+		return nil, fmt.Errorf("Failed to upload flow configuration file to S3 bucket. Error: %s ", err)
 	}
 
 	defer resp.Body.Close()
 
 	response, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to read response body when updating flow. %s", err)
+		return nil, fmt.Errorf("Failed to read response body when uploading flow configuration file. %s", err)
 	}
 
 	return response, nil
