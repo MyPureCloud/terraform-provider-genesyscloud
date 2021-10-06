@@ -131,6 +131,88 @@ func validateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 	}
 }
 
+func validateValueInJsonPropertiesAttr(resourceName string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resource, ok := state.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find resource %s in state", resourceName)
+		}
+		resourceID := resource.Primary.ID
+
+		jsonAttr, ok := resource.Primary.Attributes[attrName]
+		if !ok {
+			return fmt.Errorf("No %s found for %s in state", attrName, resourceID)
+		}
+
+		var jsonMap map[string]interface{}
+		if err := json.Unmarshal([]byte(jsonAttr), &jsonMap); err != nil {
+			return fmt.Errorf("Error parsing JSON for %s in state: %v", resourceID, err)
+		}
+
+		propPath := strings.Split(jsonProp, ".")
+		if val, ok := jsonMap[propPath[0]]; ok {
+			for i := 1; i < len(propPath); i++ {
+				switch obj := val.(type) {
+				case map[string]interface{}:
+					val = obj[propPath[i]]
+				case []interface{}:
+					val = obj
+				default:
+					return fmt.Errorf("JSON property %s not found for %s in state", jsonProp, resourceID)
+				}
+			}
+
+			valInstance := val.(map[string]interface{})["value"].(map[string]interface{})["instance"]
+			if valInstanceString, ok := valInstance.(string); ok {
+				if valInstanceString != jsonValue {
+					return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourceName, jsonProp, valInstanceString, jsonValue)
+				}
+			} else if valInstanceFloat, ok := valInstance.(float64); ok {
+				intValue, err := strconv.Atoi(jsonValue)
+				if err != nil {
+					return err
+				}
+				if int(valInstanceFloat) != intValue {
+					return fmt.Errorf("JSON property for resource %s %s=%v does not match expected %v", resourceName, jsonProp, valInstanceFloat, jsonValue)
+				}
+			} else if valInstanceBool, ok := valInstance.(bool); ok {
+				boolValue, err := strconv.ParseBool(jsonValue)
+				if err != nil {
+					return err
+				}
+				if valInstanceBool != boolValue {
+					return fmt.Errorf("JSON property for resource %s %s=%v does not match expected %v", resourceName, jsonProp, valInstanceBool, jsonValue)
+				}
+			} else if valInstanceSlice, ok := valInstance.([]interface{}); ok {
+				if _, ok := valInstanceSlice[0].(float64); ok {
+					ints := make([]string, 0)
+					for _, i := range valInstanceSlice {
+						ints = append(ints, strconv.Itoa(int(i.(float64))))
+					}
+					intsJoined := strings.Join(ints, ",")
+
+					if intsJoined != jsonValue {
+						return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourceName, jsonProp, intsJoined, jsonValue)
+					}
+				} else if _, ok := valInstanceSlice[0].(string); ok {
+					strs := make([]string, 0)
+					for _, s := range valInstanceSlice {
+						strs = append(strs, s.(string))
+					}
+					strsJoined := strings.Join(strs, ",")
+
+					if strsJoined != jsonValue {
+						return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourceName, jsonProp, strsJoined, jsonValue)
+					}
+				}
+			}
+		} else {
+			return fmt.Errorf("JSON property %s not found for %s in state", jsonProp, resourceID)
+		}
+		return nil
+	}
+}
+
 func generateJsonEncodedProperties(properties ...string) string {
 	return fmt.Sprintf(`jsonencode({
 		%s

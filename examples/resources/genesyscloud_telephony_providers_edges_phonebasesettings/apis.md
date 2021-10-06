@@ -1,0 +1,5 @@
+* [GET /api/v2/telephony/providers/edges/phonebasesettings](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-phonebasesettings)
+* [POST /api/v2/telephony/providers/edges/phonebasesettings](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#post-api-v2-telephony-providers-edges-phonebasesettings)
+* [GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-phonebasesettings--phoneBaseId-)
+* [DELETE /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#delete-api-v2-telephony-providers-edges-phonebasesettings--phoneBaseId-)
+* [PUT /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#put-api-v2-telephony-providers-edges-phonebasesettings--phoneBaseId-)

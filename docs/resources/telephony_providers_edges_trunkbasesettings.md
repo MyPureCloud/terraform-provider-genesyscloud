@@ -26,26 +26,33 @@ resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSe
   trunk_meta_base_id = "phone_connections_webrtc.json"
   trunk_type         = "PHONE"
   managed            = false
-  properties {
-    trunk_type                                  = "station"
-    trunk_label                                 = "example trunk base settings"
-    trunk_enabled                               = true
-    trunk_max_dial_timeout                      = "1m"
-    trunk_max_call_rate                         = "40/5s"
-    trunk_transport_sip_dscp_value              = 24
-    trunk_transport_tcp_connect_timeout         = 2
-    trunk_transport_tcp_connection_idle_timeout = 86400
-    trunk_transport_retryable_reason_codes      = "500-599"
-    trunk_transport_retryable_cause_codes       = "1-5,25,27,28,31,34,38,41,42,44,46,62,63,79,91,96,97,99,100,103"
-    trunk_media_codec                           = ["audio/opus"]
-    trunk_media_dtmf_method                     = "RTP Events"
-    trunk_media_dtmf_payload                    = 101
-    trunk_media_dscp_value                      = 46
-    trunk_media_srtp_cipher_suites              = ["AES_CM_128_HMAC_SHA1_80"]
-    trunk_media_disconnect_on_idle_rtp          = true
-    trunk_diagnostic_capture_enabled            = false
-    trunk_language                              = "en-US"
-  }
+  properties = jsonencode({
+    "trunk_label" = {
+      "value" = {
+        "instance" = "example trunk base settings"
+      }
+    }
+    "trunk_max_dial_timeout" = {
+      "value" = {
+        "instance" = "1m"
+      }
+    }
+    "trunk_transport_sip_dscp_value" = {
+      "value" = {
+        "instance" = 25
+      }
+    }
+    "trunk_media_disconnect_on_idle_rtp" = {
+      "value" = {
+        "instance" = false
+      }
+    }
+    "trunk_media_codec" = {
+      "value" = {
+        "instance" = ["audio/pcmu"]
+      }
+    }
+  })
 }
 ```
 
@@ -63,32 +70,6 @@ resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSe
 - **description** (String) The resource's description.
 - **id** (String) The ID of this resource.
 - **managed** (Boolean) Is this trunk being managed remotely. This property is synchronized with the managed property of the Edge Group to which it is assigned.
-- **properties** (Block Set) trunk base settings properties (see [below for nested schema](#nestedblock--properties))
+- **properties** (String) trunk base settings properties
 - **state** (String) The resource's state.
-
-<a id="nestedblock--properties"></a>
-### Nested Schema for `properties`
-
-Optional:
-
-- **trunk_diagnostic_capture_enabled** (Boolean) Defaults to `false`.
-- **trunk_diagnostic_capture_end_time** (String)
-- **trunk_diagnostic_protocol_end_time** (String)
-- **trunk_enabled** (Boolean) Defaults to `true`.
-- **trunk_label** (String) Defaults to `WebRTC Phone Connections`.
-- **trunk_language** (String) Defaults to `en-US`.
-- **trunk_max_call_rate** (String) Defaults to `40/5s`.
-- **trunk_max_dial_timeout** (String) Defaults to `1m`.
-- **trunk_media_codec** (List of String)
-- **trunk_media_disconnect_on_idle_rtp** (Boolean) Defaults to `true`.
-- **trunk_media_dscp_value** (Number) Defaults to `46`.
-- **trunk_media_dtmf_method** (String) Defaults to `RTP Events`.
-- **trunk_media_dtmf_payload** (Number) Defaults to `101`.
-- **trunk_media_srtp_cipher_suites** (List of String)
-- **trunk_transport_retryable_cause_codes** (String) Defaults to `1-5,25,27,28,31,34,38,41,42,44,46,62,63,79,91,96,97,99,100,103`.
-- **trunk_transport_retryable_reason_codes** (String) Defaults to `500-599`.
-- **trunk_transport_sip_dscp_value** (Number) Defaults to `24`.
-- **trunk_transport_tcp_connect_timeout** (Number) Defaults to `2`.
-- **trunk_transport_tcp_connection_idle_timeout** (Number) Defaults to `86400`.
-- **trunk_type** (String) Defaults to `station`.
 
