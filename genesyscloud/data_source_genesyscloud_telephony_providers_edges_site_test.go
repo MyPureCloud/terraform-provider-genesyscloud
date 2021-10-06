@@ -20,13 +20,24 @@ func TestAccDataSourceSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	emergencyNumber := "3173124744"
+	err = deleteLocationWithNumber(emergencyNumber)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	location := generateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
 		generateLocationEmergencyNum(
-			"3173124741",
+			emergencyNumber,
 			nullValue, // Default number type
 		), generateLocationAddress(
 			"7601 Interactive Way",
