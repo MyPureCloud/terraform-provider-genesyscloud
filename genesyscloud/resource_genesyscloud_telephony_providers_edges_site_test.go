@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestAccResourceSite(t *testing.T) {
@@ -16,8 +17,8 @@ func TestAccResourceSite(t *testing.T) {
 		// site
 		siteRes      = "site"
 		name         = "site " + uuid.NewString()
-		description1 = "test site description 1"
-		description2 = "test site description 2"
+		description1 = "TestAccResourceSite description 1"
+		description2 = "TestAccResourceSite description 2"
 		mediaModel   = "Cloud"
 
 		// edge_auto_update_config
@@ -32,13 +33,24 @@ func TestAccResourceSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	emergencyNumber := "3173124740"
+	err = deleteLocationWithNumber(emergencyNumber)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	location := generateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
 		generateLocationEmergencyNum(
-			"3173124740",
+			emergencyNumber,
 			nullValue, // Default number type
 		), generateLocationAddress(
 			"7601 Interactive Way",
@@ -137,12 +149,23 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		// site
 		siteRes     = "site"
 		name        = "site " + uuid.NewString()
-		description = "test site description 1"
+		description = "TestAccResourceSiteNumberPlans description 1"
 		mediaModel  = "Cloud"
 
 		// location
 		locationRes = "test-location1"
 	)
+
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	emergencyNumber := "3173124741"
+	err = deleteLocationWithNumber(emergencyNumber)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	location := generateLocationResource(
 		locationRes,
@@ -150,7 +173,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		"HQ1",
 		[]string{},
 		generateLocationEmergencyNum(
-			"3173124741",
+			emergencyNumber,
 			nullValue, // Default number type
 		), generateLocationAddress(
 			"7601 Interactive Way",
@@ -317,12 +340,23 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		// site
 		siteRes     = "site"
 		name        = "site " + uuid.NewString()
-		description = "test site description 1"
+		description = "TestAccResourceSiteOutboundRoutes description 1"
 		mediaModel  = "Cloud"
 
 		// location
 		locationRes = "test-location1"
 	)
+
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	emergencyNumber := "3173124742"
+	err = deleteLocationWithNumber(emergencyNumber)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	location := generateLocationResource(
 		locationRes,
@@ -330,7 +364,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"HQ1",
 		[]string{},
 		generateLocationEmergencyNum(
-			"3173124742",
+			emergencyNumber,
 			nullValue, // Default number type
 		), generateLocationAddress(
 			"7601 Interactive Way",
@@ -442,6 +476,62 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		},
 		CheckDestroy: testVerifySitesDestroyed,
 	})
+}
+
+func deleteLocationWithNumber(emergencyNumber string) error {
+	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		locations, _, getErr := locationsAPI.GetLocations(100, pageNum, nil, "")
+		if getErr != nil {
+			return getErr
+		}
+
+		if locations.Entities == nil || len(*locations.Entities) == 0 {
+			break
+		}
+
+		for _, location := range *locations.Entities {
+			if location.EmergencyNumber != nil {
+				if strings.Contains(*location.EmergencyNumber.E164, emergencyNumber) {
+					err := deleteSiteWithLocationId(*location.Id)
+					if err != nil {
+						return err
+					}
+					_, err = locationsAPI.DeleteLocation(*location.Id)
+					time.Sleep(10 * time.Second)
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func deleteSiteWithLocationId(locationId string) error {
+	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	for pageNum := 1; ; pageNum++ {
+		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(100, pageNum, "", "", "", "", false)
+		if getErr != nil {
+			return getErr
+		}
+
+		if sites.Entities == nil || len(*sites.Entities) == 0 {
+			return nil
+		}
+
+		for _, site := range *sites.Entities {
+			if *site.Location.Id == locationId {
+				_, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(*site.Id)
+				if err != nil {
+					return err
+				}
+				time.Sleep(10 * time.Second)
+				break
+			}
+		}
+	}
 }
 
 func testVerifySitesDestroyed(state *terraform.State) error {
