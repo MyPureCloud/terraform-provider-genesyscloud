@@ -48,12 +48,12 @@ resource "genesyscloud_routing_email_route" "support-route" {
 ### Required
 
 - **domain_id** (String) ID of the routing domain such as: 'example.com'
-- **from_email** (String) The sender email to use for outgoing replies.
 - **from_name** (String) The sender name to use for outgoing replies.
 - **pattern** (String) The search pattern that the mailbox name should match.
 
 ### Optional
 
+- **from_email** (String) The sender email to use for outgoing replies.
 - **auto_bcc** (Block Set) The recipients that should be automatically blind copied on outbound emails associated with this route. (see [below for nested schema](#nestedblock--auto_bcc))
 - **flow_id** (String) The flow to use for processing the email. This should not be set if a queue_id is specified.
 - **id** (String) The ID of this resource.
