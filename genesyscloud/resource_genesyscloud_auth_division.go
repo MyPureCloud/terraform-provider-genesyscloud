@@ -115,31 +115,32 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	log.Printf("Reading division %s", d.Id())
 
-	division, resp, getErr := authAPI.GetAuthorizationDivision(d.Id(), false)
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		division, resp, getErr := authAPI.GetAuthorizationDivision(d.Id(), false)
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read division %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *division.Name)
+		d.Set("name", *division.Name)
 
-	if division.Description != nil {
-		d.Set("description", *division.Description)
-	} else {
-		d.Set("description", nil)
-	}
+		if division.Description != nil {
+			d.Set("description", *division.Description)
+		} else {
+			d.Set("description", nil)
+		}
 
-	if division.HomeDivision != nil {
-		d.Set("home", *division.HomeDivision)
-	} else {
-		d.Set("home", nil)
-	}
+		if division.HomeDivision != nil {
+			d.Set("home", *division.HomeDivision)
+		} else {
+			d.Set("home", nil)
+		}
 
-	log.Printf("Read division %s %s", d.Id(), *division.Name)
-	return nil
+		log.Printf("Read division %s %s", d.Id(), *division.Name)
+		return nil
+	})
 }
 
 func updateAuthDivision(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -189,7 +190,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := authAPI.GetAuthorizationDivision(d.Id(), false)
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Division deleted
 				log.Printf("Deleted division %s", name)
 				return nil

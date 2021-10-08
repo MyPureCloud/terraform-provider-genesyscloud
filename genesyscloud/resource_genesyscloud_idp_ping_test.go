@@ -111,7 +111,7 @@ func testVerifyIdpPingDestroyed(state *terraform.State) error {
 		ping, resp, err := idpAPI.GetIdentityprovidersPing()
 		if ping != nil {
 			return fmt.Errorf("Ping still exists")
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Ping not found as expected
 			continue
 		} else {

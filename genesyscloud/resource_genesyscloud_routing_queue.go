@@ -422,158 +422,159 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
-	currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read user %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *currentQueue.Name)
-	d.Set("division_id", *currentQueue.Division.Id)
+		d.Set("name", *currentQueue.Name)
+		d.Set("division_id", *currentQueue.Division.Id)
 
-	if currentQueue.Description != nil {
-		d.Set("description", *currentQueue.Description)
-	} else {
-		d.Set("description", nil)
-	}
-
-	d.Set("acw_wrapup_prompt", nil)
-	d.Set("acw_timeout_ms", nil)
-	if currentQueue.AcwSettings != nil {
-		if currentQueue.AcwSettings.WrapupPrompt != nil {
-			d.Set("acw_wrapup_prompt", *currentQueue.AcwSettings.WrapupPrompt)
+		if currentQueue.Description != nil {
+			d.Set("description", *currentQueue.Description)
+		} else {
+			d.Set("description", nil)
 		}
-		if currentQueue.AcwSettings.TimeoutMs != nil {
-			d.Set("acw_timeout_ms", int(*currentQueue.AcwSettings.TimeoutMs))
+
+		d.Set("acw_wrapup_prompt", nil)
+		d.Set("acw_timeout_ms", nil)
+		if currentQueue.AcwSettings != nil {
+			if currentQueue.AcwSettings.WrapupPrompt != nil {
+				d.Set("acw_wrapup_prompt", *currentQueue.AcwSettings.WrapupPrompt)
+			}
+			if currentQueue.AcwSettings.TimeoutMs != nil {
+				d.Set("acw_timeout_ms", int(*currentQueue.AcwSettings.TimeoutMs))
+			}
 		}
-	}
 
-	if currentQueue.SkillEvaluationMethod != nil {
-		d.Set("skill_evaluation_method", *currentQueue.SkillEvaluationMethod)
-	} else {
-		d.Set("skill_evaluation_method", nil)
-	}
-
-	d.Set("media_settings_call", nil)
-	d.Set("media_settings_callback", nil)
-	d.Set("media_settings_chat", nil)
-	d.Set("media_settings_email", nil)
-	d.Set("media_settings_message", nil)
-	d.Set("media_settings_social", nil)
-	d.Set("media_settings_video", nil)
-	if currentQueue.MediaSettings != nil {
-		if callSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyCall]; ok {
-			d.Set("media_settings_call", flattenMediaSetting(callSettings))
+		if currentQueue.SkillEvaluationMethod != nil {
+			d.Set("skill_evaluation_method", *currentQueue.SkillEvaluationMethod)
+		} else {
+			d.Set("skill_evaluation_method", nil)
 		}
-		if callbackSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyCallback]; ok {
-			d.Set("media_settings_callback", flattenMediaSetting(callbackSettings))
+
+		d.Set("media_settings_call", nil)
+		d.Set("media_settings_callback", nil)
+		d.Set("media_settings_chat", nil)
+		d.Set("media_settings_email", nil)
+		d.Set("media_settings_message", nil)
+		d.Set("media_settings_social", nil)
+		d.Set("media_settings_video", nil)
+		if currentQueue.MediaSettings != nil {
+			if callSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyCall]; ok {
+				d.Set("media_settings_call", flattenMediaSetting(callSettings))
+			}
+			if callbackSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyCallback]; ok {
+				d.Set("media_settings_callback", flattenMediaSetting(callbackSettings))
+			}
+			if chatSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyChat]; ok {
+				d.Set("media_settings_chat", flattenMediaSetting(chatSettings))
+			}
+			if emailSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyEmail]; ok {
+				d.Set("media_settings_email", flattenMediaSetting(emailSettings))
+			}
+			if messageSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyMessage]; ok {
+				d.Set("media_settings_message", flattenMediaSetting(messageSettings))
+			}
+			if socialSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeySocial]; ok {
+				d.Set("media_settings_social", flattenMediaSetting(socialSettings))
+			}
+			if videoSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyVideo]; ok {
+				d.Set("media_settings_video", flattenMediaSetting(videoSettings))
+			}
 		}
-		if chatSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyChat]; ok {
-			d.Set("media_settings_chat", flattenMediaSetting(chatSettings))
+
+		if currentQueue.RoutingRules != nil {
+			d.Set("routing_rules", flattenRoutingRules(*currentQueue.RoutingRules))
+		} else {
+			d.Set("routing_rules", nil)
 		}
-		if emailSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyEmail]; ok {
-			d.Set("media_settings_email", flattenMediaSetting(emailSettings))
+
+		if currentQueue.Bullseye != nil && currentQueue.Bullseye.Rings != nil {
+			d.Set("bullseye_rings", flattenBullseyeRings(*currentQueue.Bullseye.Rings))
+		} else {
+			d.Set("bullseye_rings", nil)
 		}
-		if messageSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyMessage]; ok {
-			d.Set("media_settings_message", flattenMediaSetting(messageSettings))
+
+		if currentQueue.QueueFlow != nil && currentQueue.QueueFlow.Id != nil {
+			d.Set("queue_flow_id", *currentQueue.QueueFlow.Id)
+		} else {
+			d.Set("queue_flow_id", nil)
 		}
-		if socialSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeySocial]; ok {
-			d.Set("media_settings_social", flattenMediaSetting(socialSettings))
+
+		if currentQueue.WhisperPrompt != nil && currentQueue.WhisperPrompt.Id != nil {
+			d.Set("whisper_prompt_id", *currentQueue.WhisperPrompt.Id)
+		} else {
+			d.Set("whisper_prompt_id", nil)
 		}
-		if videoSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyVideo]; ok {
-			d.Set("media_settings_video", flattenMediaSetting(videoSettings))
+
+		if currentQueue.AutoAnswerOnly != nil {
+			d.Set("auto_answer_only", *currentQueue.AutoAnswerOnly)
+		} else {
+			d.Set("auto_answer_only", nil)
 		}
-	}
 
-	if currentQueue.RoutingRules != nil {
-		d.Set("routing_rules", flattenRoutingRules(*currentQueue.RoutingRules))
-	} else {
-		d.Set("routing_rules", nil)
-	}
+		if currentQueue.EnableTranscription != nil {
+			d.Set("enable_transcription", *currentQueue.EnableTranscription)
+		} else {
+			d.Set("enable_transcription", nil)
+		}
 
-	if currentQueue.Bullseye != nil && currentQueue.Bullseye.Rings != nil {
-		d.Set("bullseye_rings", flattenBullseyeRings(*currentQueue.Bullseye.Rings))
-	} else {
-		d.Set("bullseye_rings", nil)
-	}
+		if currentQueue.EnableManualAssignment != nil {
+			d.Set("enable_manual_assignment", *currentQueue.EnableManualAssignment)
+		} else {
+			d.Set("enable_manual_assignment", nil)
+		}
 
-	if currentQueue.QueueFlow != nil && currentQueue.QueueFlow.Id != nil {
-		d.Set("queue_flow_id", *currentQueue.QueueFlow.Id)
-	} else {
-		d.Set("queue_flow_id", nil)
-	}
+		if currentQueue.CallingPartyName != nil {
+			d.Set("calling_party_name", *currentQueue.CallingPartyName)
+		} else {
+			d.Set("calling_party_name", nil)
+		}
 
-	if currentQueue.WhisperPrompt != nil && currentQueue.WhisperPrompt.Id != nil {
-		d.Set("whisper_prompt_id", *currentQueue.WhisperPrompt.Id)
-	} else {
-		d.Set("whisper_prompt_id", nil)
-	}
+		if currentQueue.CallingPartyNumber != nil {
+			d.Set("calling_party_number", *currentQueue.CallingPartyNumber)
+		} else {
+			d.Set("calling_party_number", nil)
+		}
 
-	if currentQueue.AutoAnswerOnly != nil {
-		d.Set("auto_answer_only", *currentQueue.AutoAnswerOnly)
-	} else {
-		d.Set("auto_answer_only", nil)
-	}
+		if currentQueue.DefaultScripts != nil {
+			d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
+		} else {
+			d.Set("default_script_ids", nil)
+		}
 
-	if currentQueue.EnableTranscription != nil {
-		d.Set("enable_transcription", *currentQueue.EnableTranscription)
-	} else {
-		d.Set("enable_transcription", nil)
-	}
+		if currentQueue.OutboundMessagingAddresses != nil && currentQueue.OutboundMessagingAddresses.SmsAddress != nil {
+			d.Set("outbound_messaging_sms_address_id", *currentQueue.OutboundMessagingAddresses.SmsAddress.Id)
+		} else {
+			d.Set("outbound_messaging_sms_address_id", nil)
+		}
 
-	if currentQueue.EnableManualAssignment != nil {
-		d.Set("enable_manual_assignment", *currentQueue.EnableManualAssignment)
-	} else {
-		d.Set("enable_manual_assignment", nil)
-	}
+		if currentQueue.OutboundEmailAddress != nil {
+			d.Set("outbound_email_address", []interface{}{flattenQueueEmailAddress(*currentQueue.OutboundEmailAddress)})
+		} else {
+			d.Set("outbound_email_address", nil)
+		}
 
-	if currentQueue.CallingPartyName != nil {
-		d.Set("calling_party_name", *currentQueue.CallingPartyName)
-	} else {
-		d.Set("calling_party_name", nil)
-	}
+		members, err := flattenQueueMembers(d.Id(), routingAPI)
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("%v", err))
+		}
+		d.Set("members", members)
 
-	if currentQueue.CallingPartyNumber != nil {
-		d.Set("calling_party_number", *currentQueue.CallingPartyNumber)
-	} else {
-		d.Set("calling_party_number", nil)
-	}
+		wrapupCodes, err := flattenQueueWrapupCodes(d.Id(), routingAPI)
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("%v", err))
+		}
+		d.Set("wrapup_codes", wrapupCodes)
 
-	if currentQueue.DefaultScripts != nil {
-		d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
-	} else {
-		d.Set("default_script_ids", nil)
-	}
-
-	if currentQueue.OutboundMessagingAddresses != nil && currentQueue.OutboundMessagingAddresses.SmsAddress != nil {
-		d.Set("outbound_messaging_sms_address_id", *currentQueue.OutboundMessagingAddresses.SmsAddress.Id)
-	} else {
-		d.Set("outbound_messaging_sms_address_id", nil)
-	}
-
-	if currentQueue.OutboundEmailAddress != nil {
-		d.Set("outbound_email_address", []interface{}{flattenQueueEmailAddress(*currentQueue.OutboundEmailAddress)})
-	} else {
-		d.Set("outbound_email_address", nil)
-	}
-
-	members, err := flattenQueueMembers(d.Id(), routingAPI)
-	if err != nil {
-		return err
-	}
-	d.Set("members", members)
-
-	wrapupCodes, err := flattenQueueWrapupCodes(d.Id(), routingAPI)
-	if err != nil {
-		return err
-	}
-	d.Set("wrapup_codes", wrapupCodes)
-
-	log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
-	return nil
+		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
+		return nil
+	})
 }
 
 func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -653,7 +654,7 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingQueue(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Queue deleted
 				log.Printf("Queue %s deleted", name)
 				return nil
@@ -948,7 +949,7 @@ func updateQueueWrapupCodes(d *schema.ResourceData, routingAPI *platformclientv2
 				for _, codeId := range codesToRemove {
 					resp, err := routingAPI.DeleteRoutingQueueWrapupcode(d.Id(), codeId)
 					if err != nil {
-						if resp != nil && resp.StatusCode == 404 {
+						if isStatus404(resp) {
 							// Ignore missing queue or wrapup code
 							continue
 						}

@@ -111,7 +111,7 @@ func testVerifyIdpGsuiteDestroyed(state *terraform.State) error {
 		gsuite, resp, err := idpAPI.GetIdentityprovidersGsuite()
 		if gsuite != nil {
 			return fmt.Errorf("GSuite still exists")
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// GSuite not found as expected
 			continue
 		} else {

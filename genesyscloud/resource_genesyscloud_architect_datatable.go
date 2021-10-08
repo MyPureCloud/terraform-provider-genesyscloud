@@ -161,32 +161,33 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Reading datatable %s", d.Id())
 
-	datatable, resp, getErr := sdkGetArchitectDatatable(d.Id(), "schema", archAPI)
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		datatable, resp, getErr := sdkGetArchitectDatatable(d.Id(), "schema", archAPI)
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read datatable %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read datatable %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read datatable %s: %s", d.Id(), getErr)
-	}
+		d.Set("name", *datatable.Name)
+		d.Set("division_id", *datatable.Division.Id)
 
-	d.Set("name", *datatable.Name)
-	d.Set("division_id", *datatable.Division.Id)
+		if datatable.Description != nil {
+			d.Set("description", *datatable.Description)
+		} else {
+			d.Set("description", nil)
+		}
 
-	if datatable.Description != nil {
-		d.Set("description", *datatable.Description)
-	} else {
-		d.Set("description", nil)
-	}
+		if datatable.Schema != nil && datatable.Schema.Properties != nil {
+			d.Set("properties", flattenDatatableProperties(*datatable.Schema.Properties))
+		} else {
+			d.Set("properties", nil)
+		}
 
-	if datatable.Schema != nil && datatable.Schema.Properties != nil {
-		d.Set("properties", flattenDatatableProperties(*datatable.Schema.Properties))
-	} else {
-		d.Set("properties", nil)
-	}
+		log.Printf("Read datatable %s %s", d.Id(), *datatable.Name)
 
-	log.Printf("Read datatable %s %s", d.Id(), *datatable.Name)
-	return nil
+		return nil
+	})
 }
 
 func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -243,7 +244,7 @@ func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := archAPI.GetFlowsDatatable(d.Id(), "")
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Datatable row deleted
 				log.Printf("Deleted datatable row %s", name)
 				return nil

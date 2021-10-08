@@ -137,42 +137,43 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Reading schedule %s", d.Id())
 
-	schedule, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		schedule, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read schedule %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read schedule %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read schedule %s: %s", d.Id(), getErr)
-	}
 
-	Start := new(string)
-	if schedule.Start != nil {
-		*Start = timeutil.Strftime(schedule.Start, "%Y-%m-%dT%H:%M:%S.%f")
+		Start := new(string)
+		if schedule.Start != nil {
+			*Start = timeutil.Strftime(schedule.Start, "%Y-%m-%dT%H:%M:%S.%f")
 
-	} else {
-		Start = nil
-	}
+		} else {
+			Start = nil
+		}
 
-	End := new(string)
-	if schedule.End != nil {
-		*End = timeutil.Strftime(schedule.End, "%Y-%m-%dT%H:%M:%S.%f")
+		End := new(string)
+		if schedule.End != nil {
+			*End = timeutil.Strftime(schedule.End, "%Y-%m-%dT%H:%M:%S.%f")
 
-	} else {
-		End = nil
-	}
+		} else {
+			End = nil
+		}
 
-	d.Set("name", *schedule.Name)
-	d.Set("description", nil)
-	if schedule.Description != nil {
-		d.Set("description", *schedule.Description)
-	}
-	d.Set("start", Start)
-	d.Set("end", End)
-	d.Set("rrule", *schedule.Rrule)
+		d.Set("name", *schedule.Name)
+		d.Set("description", nil)
+		if schedule.Description != nil {
+			d.Set("description", *schedule.Description)
+		}
+		d.Set("start", Start)
+		d.Set("end", End)
+		d.Set("rrule", *schedule.Rrule)
 
-	log.Printf("Read schedule %s %s", d.Id(), *schedule.Name)
-	return nil
+		log.Printf("Read schedule %s %s", d.Id(), *schedule.Name)
+		return nil
+	})
 }
 
 func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -237,7 +238,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		schedule, resp, err := archAPI.GetArchitectSchedule(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// schedule deleted
 				log.Printf("Deleted schedule %s", d.Id())
 				return nil

@@ -122,42 +122,43 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Reading routing email domain %s", d.Id())
 
-	domain, resp, getErr := routingAPI.GetRoutingEmailDomain(d.Id())
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		domain, resp, getErr := routingAPI.GetRoutingEmailDomain(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr)
-	}
 
-	if domain.SubDomain != nil && *domain.SubDomain {
-		// Strip off the regional domain suffix added by the server
-		d.Set("domain_id", strings.SplitN(*domain.Id, ".", 2)[0])
-	} else {
-		d.Set("domain_id", *domain.Id)
-	}
+		if domain.SubDomain != nil && *domain.SubDomain {
+			// Strip off the regional domain suffix added by the server
+			d.Set("domain_id", strings.SplitN(*domain.Id, ".", 2)[0])
+		} else {
+			d.Set("domain_id", *domain.Id)
+		}
 
-	if domain.SubDomain != nil {
-		d.Set("subdomain", *domain.SubDomain)
-	} else {
-		d.Set("subdomain", nil)
-	}
+		if domain.SubDomain != nil {
+			d.Set("subdomain", *domain.SubDomain)
+		} else {
+			d.Set("subdomain", nil)
+		}
 
-	if domain.CustomSMTPServer != nil && domain.CustomSMTPServer.Id != nil {
-		d.Set("custom_smtp_server_id", *domain.CustomSMTPServer.Id)
-	} else {
-		d.Set("custom_smtp_server_id", nil)
-	}
+		if domain.CustomSMTPServer != nil && domain.CustomSMTPServer.Id != nil {
+			d.Set("custom_smtp_server_id", *domain.CustomSMTPServer.Id)
+		} else {
+			d.Set("custom_smtp_server_id", nil)
+		}
 
-	if domain.MailFromSettings != nil && domain.MailFromSettings.MailFromDomain != nil {
-		d.Set("mail_from_domain", *domain.MailFromSettings.MailFromDomain)
-	} else {
-		d.Set("mail_from_domain", nil)
-	}
+		if domain.MailFromSettings != nil && domain.MailFromSettings.MailFromDomain != nil {
+			d.Set("mail_from_domain", *domain.MailFromSettings.MailFromDomain)
+		} else {
+			d.Set("mail_from_domain", nil)
+		}
 
-	log.Printf("Read routing email domain %s", d.Id())
-	return nil
+		log.Printf("Read routing email domain %s", d.Id())
+		return nil
+	})
 }
 
 func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -198,7 +199,7 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingEmailDomain(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Routing email domain deleted
 				log.Printf("Deleted Routing email domain %s", d.Id())
 				return nil

@@ -18,7 +18,7 @@ func getAllIdpGsuite(ctx context.Context, clientConfig *platformclientv2.Configu
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersGsuite()
 	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
+		if isStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -91,49 +91,51 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP GSuite")
-	gsuite, resp, getErr := idpAPI.GetIdentityprovidersGsuite()
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		gsuite, resp, getErr := idpAPI.GetIdentityprovidersGsuite()
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
 		}
-		return diag.Errorf("Failed to read IDP GSuite: %s", getErr)
-	}
 
-	if gsuite.Certificate != nil {
-		d.Set("certificates", stringListToSet([]string{*gsuite.Certificate}))
-	} else if gsuite.Certificates != nil {
-		d.Set("certificates", stringListToSet(*gsuite.Certificates))
-	} else {
-		d.Set("certificates", nil)
-	}
+		if gsuite.Certificate != nil {
+			d.Set("certificates", stringListToSet([]string{*gsuite.Certificate}))
+		} else if gsuite.Certificates != nil {
+			d.Set("certificates", stringListToSet(*gsuite.Certificates))
+		} else {
+			d.Set("certificates", nil)
+		}
 
-	if gsuite.IssuerURI != nil {
-		d.Set("issuer_uri", *gsuite.IssuerURI)
-	} else {
-		d.Set("issuer_uri", nil)
-	}
+		if gsuite.IssuerURI != nil {
+			d.Set("issuer_uri", *gsuite.IssuerURI)
+		} else {
+			d.Set("issuer_uri", nil)
+		}
 
-	if gsuite.SsoTargetURI != nil {
-		d.Set("target_uri", *gsuite.SsoTargetURI)
-	} else {
-		d.Set("target_uri", nil)
-	}
+		if gsuite.SsoTargetURI != nil {
+			d.Set("target_uri", *gsuite.SsoTargetURI)
+		} else {
+			d.Set("target_uri", nil)
+		}
 
-	if gsuite.RelyingPartyIdentifier != nil {
-		d.Set("relying_party_identifier", *gsuite.RelyingPartyIdentifier)
-	} else {
-		d.Set("relying_party_identifier", nil)
-	}
+		if gsuite.RelyingPartyIdentifier != nil {
+			d.Set("relying_party_identifier", *gsuite.RelyingPartyIdentifier)
+		} else {
+			d.Set("relying_party_identifier", nil)
+		}
 
-	if gsuite.Disabled != nil {
-		d.Set("disabled", *gsuite.Disabled)
-	} else {
-		d.Set("disabled", nil)
-	}
+		if gsuite.Disabled != nil {
+			d.Set("disabled", *gsuite.Disabled)
+		} else {
+			d.Set("disabled", nil)
+		}
 
-	log.Printf("Read IDP GSuite")
-	return nil
+		log.Printf("Read IDP GSuite")
+		return nil
+	})
 }
 
 func updateIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -185,7 +187,7 @@ func deleteIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersGsuite()
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// IDP GSuite deleted
 				log.Printf("Deleted IDP GSuite")
 				return nil

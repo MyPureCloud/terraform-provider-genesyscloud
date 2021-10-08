@@ -215,94 +215,95 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading integration action %s", d.Id())
 
-	action, resp, getErr := sdkGetIntegrationAction(d.Id(), integAPI)
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		action, resp, getErr := sdkGetIntegrationAction(d.Id(), integAPI)
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read integration action %s: %s", d.Id(), getErr)
-	}
 
-	// Retrieve config request/response templates
-	reqTemp, resp, getErr := sdkGetIntegrationActionTemplate(d.Id(), "requesttemplate.vm", integAPI)
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+		// Retrieve config request/response templates
+		reqTemp, resp, getErr := sdkGetIntegrationActionTemplate(d.Id(), "requesttemplate.vm", integAPI)
+		if getErr != nil {
+			if isStatus404(resp) {
+				d.SetId("")
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read request template for integration action %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read request template for integration action %s: %s", d.Id(), getErr)
-	}
 
-	successTemp, resp, getErr := sdkGetIntegrationActionTemplate(d.Id(), "successtemplate.vm", integAPI)
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+		successTemp, resp, getErr := sdkGetIntegrationActionTemplate(d.Id(), "successtemplate.vm", integAPI)
+		if getErr != nil {
+			if isStatus404(resp) {
+				d.SetId("")
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read success template for integration action %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read success template for integration action %s: %s", d.Id(), getErr)
-	}
 
-	if action.Name != nil {
-		d.Set("name", *action.Name)
-	} else {
-		d.Set("name", nil)
-	}
-
-	if action.Category != nil {
-		d.Set("category", *action.Category)
-	} else {
-		d.Set("category", nil)
-	}
-
-	if action.IntegrationId != nil {
-		d.Set("integration_id", *action.IntegrationId)
-	} else {
-		d.Set("integration_id", nil)
-	}
-
-	if action.Secure != nil {
-		d.Set("secure", *action.Secure)
-	} else {
-		d.Set("secure", nil)
-	}
-
-	if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
-		input, err := flattenActionContract(*action.Contract.Input.InputSchema)
-		if err != nil {
-			return err
+		if action.Name != nil {
+			d.Set("name", *action.Name)
+		} else {
+			d.Set("name", nil)
 		}
-		d.Set("contract_input", input)
-	} else {
-		d.Set("contract_input", nil)
-	}
 
-	if action.Contract != nil && action.Contract.Output != nil && action.Contract.Output.SuccessSchema != nil {
-		output, err := flattenActionContract(*action.Contract.Output.SuccessSchema)
-		if err != nil {
-			return err
+		if action.Category != nil {
+			d.Set("category", *action.Category)
+		} else {
+			d.Set("category", nil)
 		}
-		d.Set("contract_output", output)
-	} else {
-		d.Set("contract_output", nil)
-	}
 
-	if action.Config != nil && action.Config.Request != nil {
-		action.Config.Request.RequestTemplate = reqTemp
-		d.Set("config_request", flattenActionConfigRequest(*action.Config.Request))
-	} else {
-		d.Set("config_request", nil)
-	}
+		if action.IntegrationId != nil {
+			d.Set("integration_id", *action.IntegrationId)
+		} else {
+			d.Set("integration_id", nil)
+		}
 
-	if action.Config != nil && action.Config.Response != nil {
-		action.Config.Response.SuccessTemplate = successTemp
-		d.Set("config_response", flattenActionConfigResponse(*action.Config.Response))
-	} else {
-		d.Set("config_response", nil)
-	}
+		if action.Secure != nil {
+			d.Set("secure", *action.Secure)
+		} else {
+			d.Set("secure", nil)
+		}
 
-	log.Printf("Read integration action %s %s", d.Id(), *action.Name)
-	return nil
+		if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
+			input, err := flattenActionContract(*action.Contract.Input.InputSchema)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("%v", err))
+			}
+			d.Set("contract_input", input)
+		} else {
+			d.Set("contract_input", nil)
+		}
+
+		if action.Contract != nil && action.Contract.Output != nil && action.Contract.Output.SuccessSchema != nil {
+			output, err := flattenActionContract(*action.Contract.Output.SuccessSchema)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("%v", err))
+			}
+			d.Set("contract_output", output)
+		} else {
+			d.Set("contract_output", nil)
+		}
+
+		if action.Config != nil && action.Config.Request != nil {
+			action.Config.Request.RequestTemplate = reqTemp
+			d.Set("config_request", flattenActionConfigRequest(*action.Config.Request))
+		} else {
+			d.Set("config_request", nil)
+		}
+
+		if action.Config != nil && action.Config.Response != nil {
+			action.Config.Response.SuccessTemplate = successTemp
+			d.Set("config_response", flattenActionConfigResponse(*action.Config.Response))
+		} else {
+			d.Set("config_response", nil)
+		}
+
+		log.Printf("Read integration action %s %s", d.Id(), *action.Name)
+		return nil
+	})
 }
 
 func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -355,7 +356,7 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := sdkGetIntegrationAction(d.Id(), integAPI)
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Integration action deleted
 				log.Printf("Deleted Integration action %s", d.Id())
 				return nil

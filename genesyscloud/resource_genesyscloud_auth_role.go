@@ -229,43 +229,44 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Reading role %s", d.Id())
 
-	role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), nil)
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), nil)
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read role %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *role.Name)
+		d.Set("name", *role.Name)
 
-	if role.Description != nil {
-		d.Set("description", *role.Description)
-	} else {
-		d.Set("description", nil)
-	}
+		if role.Description != nil {
+			d.Set("description", *role.Description)
+		} else {
+			d.Set("description", nil)
+		}
 
-	if role.DefaultRoleId != nil {
-		d.Set("default_role_id", *role.DefaultRoleId)
-	} else {
-		d.Set("default_role_id", nil)
-	}
+		if role.DefaultRoleId != nil {
+			d.Set("default_role_id", *role.DefaultRoleId)
+		} else {
+			d.Set("default_role_id", nil)
+		}
 
-	if role.Permissions != nil {
-		d.Set("permissions", stringListToSet(*role.Permissions))
-	} else {
-		d.Set("permissions", nil)
-	}
+		if role.Permissions != nil {
+			d.Set("permissions", stringListToSet(*role.Permissions))
+		} else {
+			d.Set("permissions", nil)
+		}
 
-	if role.PermissionPolicies != nil {
-		d.Set("permission_policies", flattenRolePermissionPolicies(*role.PermissionPolicies))
-	} else {
-		d.Set("permission_policies", nil)
-	}
+		if role.PermissionPolicies != nil {
+			d.Set("permission_policies", flattenRolePermissionPolicies(*role.PermissionPolicies))
+		} else {
+			d.Set("permission_policies", nil)
+		}
 
-	log.Printf("Read role %s %s", d.Id(), *role.Name)
-	return nil
+		log.Printf("Read role %s %s", d.Id(), *role.Name)
+		return nil
+	})
 }
 
 func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -323,7 +324,7 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := authAPI.GetAuthorizationRole(d.Id(), nil)
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// role deleted
 				log.Printf("Deleted role %s", d.Id())
 				return nil

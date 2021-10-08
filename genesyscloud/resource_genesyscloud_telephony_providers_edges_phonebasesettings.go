@@ -134,7 +134,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 
 	phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
 	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
+		if isStatus404(resp) {
 			return nil
 		}
 		return diag.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr)
@@ -157,44 +157,44 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading phone base settings %s", d.Id())
-	phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
-
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *phoneBaseSettings.Name)
-	if phoneBaseSettings.Description != nil {
-		d.Set("description", *phoneBaseSettings.Description)
-	}
-	if phoneBaseSettings.PhoneMetaBase != nil {
-		d.Set("phone_meta_base_id", *phoneBaseSettings.PhoneMetaBase.Id)
-	}
-
-	d.Set("properties", nil)
-	if phoneBaseSettings.Properties != nil {
-		properties, err := flattenBaseSettingsProperties(phoneBaseSettings.Properties)
-		if err != nil {
-			return err
+		d.Set("name", *phoneBaseSettings.Name)
+		if phoneBaseSettings.Description != nil {
+			d.Set("description", *phoneBaseSettings.Description)
 		}
-		d.Set("properties", properties)
-	}
+		if phoneBaseSettings.PhoneMetaBase != nil {
+			d.Set("phone_meta_base_id", *phoneBaseSettings.PhoneMetaBase.Id)
+		}
 
-	if phoneBaseSettings.Capabilities != nil {
-		d.Set("capabilities", flattenPhoneCapabilities(phoneBaseSettings.Capabilities))
-	}
+		d.Set("properties", nil)
+		if phoneBaseSettings.Properties != nil {
+			properties, err := flattenBaseSettingsProperties(phoneBaseSettings.Properties)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("%v", err))
+			}
+			d.Set("properties", properties)
+		}
 
-	if len(*phoneBaseSettings.Lines) > 0 {
-		d.Set("line_base_settings_id", (*phoneBaseSettings.Lines)[0].Id)
-	}
+		if phoneBaseSettings.Capabilities != nil {
+			d.Set("capabilities", flattenPhoneCapabilities(phoneBaseSettings.Capabilities))
+		}
 
-	log.Printf("Read phone base settings %s %s", d.Id(), *phoneBaseSettings.Name)
+		if len(*phoneBaseSettings.Lines) > 0 {
+			d.Set("line_base_settings_id", (*phoneBaseSettings.Lines)[0].Id)
+		}
 
-	return nil
+		log.Printf("Read phone base settings %s %s", d.Id(), *phoneBaseSettings.Name)
+
+		return nil
+	})
 }
 
 func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -210,7 +210,7 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		phoneBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Phone base settings deleted
 				log.Printf("Deleted Phone base settings %s", d.Id())
 				return nil

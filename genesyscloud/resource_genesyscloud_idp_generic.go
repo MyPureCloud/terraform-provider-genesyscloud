@@ -19,7 +19,7 @@ func getAllIdpGeneric(ctx context.Context, clientConfig *platformclientv2.Config
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersGeneric()
 	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
+		if isStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -124,73 +124,75 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP Generic")
-	generic, resp, getErr := idpAPI.GetIdentityprovidersGeneric()
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		generic, resp, getErr := idpAPI.GetIdentityprovidersGeneric()
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
 		}
-		return diag.Errorf("Failed to read IDP Generic: %s", getErr)
-	}
 
-	if generic.Name != nil {
-		d.Set("name", *generic.Name)
-	} else {
-		d.Set("name", nil)
-	}
+		if generic.Name != nil {
+			d.Set("name", *generic.Name)
+		} else {
+			d.Set("name", nil)
+		}
 
-	if generic.Certificate != nil {
-		d.Set("certificates", stringListToSet([]string{*generic.Certificate}))
-	} else if generic.Certificates != nil {
-		d.Set("certificates", stringListToSet(*generic.Certificates))
-	} else {
-		d.Set("certificates", nil)
-	}
+		if generic.Certificate != nil {
+			d.Set("certificates", stringListToSet([]string{*generic.Certificate}))
+		} else if generic.Certificates != nil {
+			d.Set("certificates", stringListToSet(*generic.Certificates))
+		} else {
+			d.Set("certificates", nil)
+		}
 
-	if generic.IssuerURI != nil {
-		d.Set("issuer_uri", *generic.IssuerURI)
-	} else {
-		d.Set("issuer_uri", nil)
-	}
+		if generic.IssuerURI != nil {
+			d.Set("issuer_uri", *generic.IssuerURI)
+		} else {
+			d.Set("issuer_uri", nil)
+		}
 
-	if generic.SsoTargetURI != nil {
-		d.Set("target_uri", *generic.SsoTargetURI)
-	} else {
-		d.Set("target_uri", nil)
-	}
+		if generic.SsoTargetURI != nil {
+			d.Set("target_uri", *generic.SsoTargetURI)
+		} else {
+			d.Set("target_uri", nil)
+		}
 
-	if generic.RelyingPartyIdentifier != nil {
-		d.Set("relying_party_identifier", *generic.RelyingPartyIdentifier)
-	} else {
-		d.Set("relying_party_identifier", nil)
-	}
+		if generic.RelyingPartyIdentifier != nil {
+			d.Set("relying_party_identifier", *generic.RelyingPartyIdentifier)
+		} else {
+			d.Set("relying_party_identifier", nil)
+		}
 
-	if generic.Disabled != nil {
-		d.Set("disabled", *generic.Disabled)
-	} else {
-		d.Set("disabled", nil)
-	}
+		if generic.Disabled != nil {
+			d.Set("disabled", *generic.Disabled)
+		} else {
+			d.Set("disabled", nil)
+		}
 
-	if generic.LogoImageData != nil {
-		d.Set("logo_image_data", *generic.LogoImageData)
-	} else {
-		d.Set("logo_image_data", nil)
-	}
+		if generic.LogoImageData != nil {
+			d.Set("logo_image_data", *generic.LogoImageData)
+		} else {
+			d.Set("logo_image_data", nil)
+		}
 
-	if generic.EndpointCompression != nil {
-		d.Set("endpoint_compression", *generic.EndpointCompression)
-	} else {
-		d.Set("endpoint_compression", nil)
-	}
+		if generic.EndpointCompression != nil {
+			d.Set("endpoint_compression", *generic.EndpointCompression)
+		} else {
+			d.Set("endpoint_compression", nil)
+		}
 
-	if generic.NameIdentifierFormat != nil {
-		d.Set("name_identifier_format", *generic.NameIdentifierFormat)
-	} else {
-		d.Set("name_identifier_format", nil)
-	}
+		if generic.NameIdentifierFormat != nil {
+			d.Set("name_identifier_format", *generic.NameIdentifierFormat)
+		} else {
+			d.Set("name_identifier_format", nil)
+		}
 
-	log.Printf("Read IDP Generic")
-	return nil
+		log.Printf("Read IDP Generic")
+		return nil
+	})
 }
 
 func updateIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -250,7 +252,7 @@ func deleteIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersGeneric()
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// IDP Generic deleted
 				log.Printf("Deleted IDP Generic")
 				return nil

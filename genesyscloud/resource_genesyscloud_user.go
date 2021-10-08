@@ -488,68 +488,69 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Reading user %s", d.Id())
-	currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{
-		// Expands
-		"skills",
-		"languages",
-		"locations",
-		"profileSkills",
-		"certifications",
-		"employerInfo",
-	}, "", "")
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{
+			// Expands
+			"skills",
+			"languages",
+			"locations",
+			"profileSkills",
+			"certifications",
+			"employerInfo",
+		}, "", "")
 
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read user %s: %s", d.Id(), getErr)
-	}
 
-	// Required attributes
-	d.Set("name", *currentUser.Name)
-	d.Set("email", *currentUser.Email)
-	d.Set("division_id", *currentUser.Division.Id)
-	d.Set("state", *currentUser.State)
+		// Required attributes
+		d.Set("name", *currentUser.Name)
+		d.Set("email", *currentUser.Email)
+		d.Set("division_id", *currentUser.Division.Id)
+		d.Set("state", *currentUser.State)
 
-	if currentUser.Department != nil {
-		d.Set("department", *currentUser.Department)
-	} else {
-		d.Set("department", nil)
-	}
+		if currentUser.Department != nil {
+			d.Set("department", *currentUser.Department)
+		} else {
+			d.Set("department", nil)
+		}
 
-	if currentUser.Title != nil {
-		d.Set("title", *currentUser.Title)
-	} else {
-		d.Set("title", nil)
-	}
+		if currentUser.Title != nil {
+			d.Set("title", *currentUser.Title)
+		} else {
+			d.Set("title", nil)
+		}
 
-	if currentUser.Manager != nil {
-		d.Set("manager", *(*currentUser.Manager).Id)
-	} else {
-		d.Set("manager", nil)
-	}
+		if currentUser.Manager != nil {
+			d.Set("manager", *(*currentUser.Manager).Id)
+		} else {
+			d.Set("manager", nil)
+		}
 
-	if currentUser.AcdAutoAnswer != nil {
-		d.Set("acd_auto_answer", *currentUser.AcdAutoAnswer)
-	} else {
-		d.Set("acd_auto_answer", nil)
-	}
+		if currentUser.AcdAutoAnswer != nil {
+			d.Set("acd_auto_answer", *currentUser.AcdAutoAnswer)
+		} else {
+			d.Set("acd_auto_answer", nil)
+		}
 
-	d.Set("addresses", flattenUserAddresses(currentUser.Addresses))
-	d.Set("routing_skills", flattenUserSkills(currentUser.Skills))
-	d.Set("routing_languages", flattenUserLanguages(currentUser.Languages))
-	d.Set("locations", flattenUserLocations(currentUser.Locations))
-	d.Set("profile_skills", flattenUserProfileSkills(currentUser.ProfileSkills))
-	d.Set("certifications", flattenUserCertifications(currentUser.Certifications))
-	d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
+		d.Set("addresses", flattenUserAddresses(currentUser.Addresses))
+		d.Set("routing_skills", flattenUserSkills(currentUser.Skills))
+		d.Set("routing_languages", flattenUserLanguages(currentUser.Languages))
+		d.Set("locations", flattenUserLocations(currentUser.Locations))
+		d.Set("profile_skills", flattenUserProfileSkills(currentUser.ProfileSkills))
+		d.Set("certifications", flattenUserCertifications(currentUser.Certifications))
+		d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
 
-	if diagErr := readUserRoutingUtilization(d, usersAPI); diagErr != nil {
-		return diagErr
-	}
+		if diagErr := readUserRoutingUtilization(d, usersAPI); diagErr != nil {
+			return resource.NonRetryableError(fmt.Errorf("%v", getErr))
+		}
 
-	log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
-	return nil
+		log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
+		return nil
+	})
 }
 
 func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -935,7 +936,7 @@ func flattenUserEmployerInfo(empInfo *platformclientv2.Employerinfo) []interface
 func readUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	settings, resp, getErr := usersAPI.GetRoutingUserUtilization(d.Id())
 	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
+		if isStatus404(resp) {
 			d.SetId("") // User doesn't exist
 			return nil
 		}

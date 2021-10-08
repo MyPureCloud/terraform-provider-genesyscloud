@@ -144,29 +144,30 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 
 	log.Printf("Reading Datatable Row %s", d.Id())
 
-	row, resp, getErr := archAPI.GetFlowsDatatableRow(tableId, keyStr, false)
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		row, resp, getErr := archAPI.GetFlowsDatatableRow(tableId, keyStr, false)
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("datatable_id", tableId)
-	d.Set("key_value", keyStr)
+		d.Set("datatable_id", tableId)
+		d.Set("key_value", keyStr)
 
-	// The key value is exposed through a separate attribute, so it should be removed from the value map
-	delete(*row, "key")
+		// The key value is exposed through a separate attribute, so it should be removed from the value map
+		delete(*row, "key")
 
-	valueBytes, err := json.Marshal(*row)
-	if err != nil {
-		return diag.Errorf("Failed to marshal row map %v: %v", *row, err)
-	}
-	d.Set("properties_json", string(valueBytes))
+		valueBytes, err := json.Marshal(*row)
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("Failed to marshal row map %v: %v", *row, err))
+		}
+		d.Set("properties_json", string(valueBytes))
 
-	log.Printf("Read Datatable Row %s", d.Id())
-	return nil
+		log.Printf("Read Datatable Row %s", d.Id())
+		return nil
+	})
 }
 
 func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -211,7 +212,7 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := archAPI.GetFlowsDatatableRow(tableId, keyStr, false)
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Datatable deleted
 				log.Printf("Deleted datatable row %s", d.Id())
 				return nil

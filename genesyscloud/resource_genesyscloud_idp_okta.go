@@ -18,7 +18,7 @@ func getAllIdpOkta(ctx context.Context, clientConfig *platformclientv2.Configura
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersOkta()
 	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
+		if isStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -86,43 +86,45 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP Okta")
-	okta, resp, getErr := idpAPI.GetIdentityprovidersOkta()
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		okta, resp, getErr := idpAPI.GetIdentityprovidersOkta()
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
 		}
-		return diag.Errorf("Failed to read IDP Okta: %s", getErr)
-	}
 
-	if okta.Certificate != nil {
-		d.Set("certificates", stringListToSet([]string{*okta.Certificate}))
-	} else if okta.Certificates != nil {
-		d.Set("certificates", stringListToSet(*okta.Certificates))
-	} else {
-		d.Set("certificates", nil)
-	}
+		if okta.Certificate != nil {
+			d.Set("certificates", stringListToSet([]string{*okta.Certificate}))
+		} else if okta.Certificates != nil {
+			d.Set("certificates", stringListToSet(*okta.Certificates))
+		} else {
+			d.Set("certificates", nil)
+		}
 
-	if okta.IssuerURI != nil {
-		d.Set("issuer_uri", *okta.IssuerURI)
-	} else {
-		d.Set("issuer_uri", nil)
-	}
+		if okta.IssuerURI != nil {
+			d.Set("issuer_uri", *okta.IssuerURI)
+		} else {
+			d.Set("issuer_uri", nil)
+		}
 
-	if okta.SsoTargetURI != nil {
-		d.Set("target_uri", *okta.SsoTargetURI)
-	} else {
-		d.Set("target_uri", nil)
-	}
+		if okta.SsoTargetURI != nil {
+			d.Set("target_uri", *okta.SsoTargetURI)
+		} else {
+			d.Set("target_uri", nil)
+		}
 
-	if okta.Disabled != nil {
-		d.Set("disabled", *okta.Disabled)
-	} else {
-		d.Set("disabled", nil)
-	}
+		if okta.Disabled != nil {
+			d.Set("disabled", *okta.Disabled)
+		} else {
+			d.Set("disabled", nil)
+		}
 
-	log.Printf("Read IDP Okta")
-	return nil
+		log.Printf("Read IDP Okta")
+		return nil
+	})
 }
 
 func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -172,7 +174,7 @@ func deleteIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersOkta()
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// IDP Okta deleted
 				log.Printf("Deleted IDP Okta")
 				return nil

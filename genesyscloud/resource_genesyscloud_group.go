@@ -181,46 +181,47 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 	log.Printf("Reading group %s", d.Id())
 
-	group, resp, getErr := groupsAPI.GetGroup(d.Id())
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		group, resp, getErr := groupsAPI.GetGroup(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read group %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *group.Name)
-	d.Set("type", *group.VarType)
-	d.Set("visibility", *group.Visibility)
-	d.Set("rules_visible", *group.RulesVisible)
+		d.Set("name", *group.Name)
+		d.Set("type", *group.VarType)
+		d.Set("visibility", *group.Visibility)
+		d.Set("rules_visible", *group.RulesVisible)
 
-	if group.Description != nil {
-		d.Set("description", *group.Description)
-	} else {
-		d.Set("description", nil)
-	}
+		if group.Description != nil {
+			d.Set("description", *group.Description)
+		} else {
+			d.Set("description", nil)
+		}
 
-	if group.Addresses != nil {
-		d.Set("addresses", flattenGroupAddresses(*group.Addresses))
-	} else {
-		d.Set("addresses", nil)
-	}
+		if group.Addresses != nil {
+			d.Set("addresses", flattenGroupAddresses(*group.Addresses))
+		} else {
+			d.Set("addresses", nil)
+		}
 
-	if group.Owners != nil {
-		d.Set("owner_ids", flattenGroupOwners(*group.Owners))
-	} else {
-		d.Set("owner_ids", nil)
-	}
+		if group.Owners != nil {
+			d.Set("owner_ids", flattenGroupOwners(*group.Owners))
+		} else {
+			d.Set("owner_ids", nil)
+		}
 
-	members, err := readGroupMembers(d.Id(), groupsAPI)
-	if err != nil {
-		return err
-	}
-	d.Set("member_ids", members)
+		members, err := readGroupMembers(d.Id(), groupsAPI)
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("%v", err))
+		}
+		d.Set("member_ids", members)
 
-	log.Printf("Read group %s %s", d.Id(), *group.Name)
-	return nil
+		log.Printf("Read group %s %s", d.Id(), *group.Name)
+		return nil
+	})
 }
 
 func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -288,7 +289,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		group, resp, err := groupsAPI.GetGroup(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				log.Printf("Group %s deleted", name)
 				return nil
 			}

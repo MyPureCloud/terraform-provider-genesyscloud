@@ -201,7 +201,7 @@ func testVerifyLocationsDestroyed(state *terraform.State) error {
 				continue
 			}
 			return fmt.Errorf("Location (%s) still exists", rs.Primary.ID)
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Location not found as expected
 			continue
 		} else {

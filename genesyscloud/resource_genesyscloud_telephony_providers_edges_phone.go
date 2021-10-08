@@ -211,39 +211,39 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading phone %s", d.Id())
-	currentPhone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(d.Id())
-
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		currentPhone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read phone %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *currentPhone.Name)
-	d.Set("state", *currentPhone.State)
-	d.Set("site_id", *currentPhone.Site.Id)
-	d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
-	d.Set("line_base_settings_id", *currentPhone.LineBaseSettings.Id)
-	if currentPhone.PhoneMetaBase != nil {
-		d.Set("phone_meta_base_id", *currentPhone.PhoneMetaBase.Id)
-	}
+		d.Set("name", *currentPhone.Name)
+		d.Set("state", *currentPhone.State)
+		d.Set("site_id", *currentPhone.Site.Id)
+		d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
+		d.Set("line_base_settings_id", *currentPhone.LineBaseSettings.Id)
+		if currentPhone.PhoneMetaBase != nil {
+			d.Set("phone_meta_base_id", *currentPhone.PhoneMetaBase.Id)
+		}
 
-	if currentPhone.WebRtcUser != nil {
-		d.Set("web_rtc_user_id", *currentPhone.WebRtcUser.Id)
-	}
+		if currentPhone.WebRtcUser != nil {
+			d.Set("web_rtc_user_id", *currentPhone.WebRtcUser.Id)
+		}
 
-	if currentPhone.Lines != nil {
-		d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
-	}
+		if currentPhone.Lines != nil {
+			d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
+		}
 
-	if currentPhone.Capabilities != nil {
-		d.Set("capabilities", flattenPhoneCapabilities(currentPhone.Capabilities))
-	}
+		if currentPhone.Capabilities != nil {
+			d.Set("capabilities", flattenPhoneCapabilities(currentPhone.Capabilities))
+		}
 
-	log.Printf("Read phone %s %s", d.Id(), *currentPhone.Name)
-	return nil
+		log.Printf("Read phone %s %s", d.Id(), *currentPhone.Name)
+		return nil
+	})
 }
 
 func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Configuration, userId string) diag.Diagnostics {
@@ -344,7 +344,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		phone, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhone(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Phone deleted
 				log.Printf("Deleted Phone %s", d.Id())
 				return nil

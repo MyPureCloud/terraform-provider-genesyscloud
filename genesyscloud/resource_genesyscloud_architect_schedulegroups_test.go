@@ -151,7 +151,7 @@ func testVerifyScheduleGroupsDestroyed(state *terraform.State) error {
 		schedGroup, resp, err := archAPI.GetArchitectSchedulegroup(rs.Primary.ID)
 		if schedGroup != nil {
 			return fmt.Errorf("Schedule group (%s) still exists", rs.Primary.ID)
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Schedule group not found as expected
 			continue
 		} else {

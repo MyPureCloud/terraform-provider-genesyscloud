@@ -47,7 +47,7 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 		for pageNum := 1; ; pageNum++ {
 			routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(*domain.Id, 100, pageNum, "")
 			if getErr != nil {
-				if resp != nil && resp.StatusCode == 404 {
+				if isStatus404(resp) {
 					// Domain not found
 					break
 				}
@@ -245,7 +245,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 	for pageNum := 1; ; pageNum++ {
 		routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(domainID, 100, pageNum, "")
 		if getErr != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Domain not found, so route also does not exist
 				d.SetId("")
 				return nil
@@ -390,7 +390,7 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingEmailDomainRoute(domainID, d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Routing email domain route deleted
 				log.Printf("Deleted Routing email domain route %s", d.Id())
 				return nil

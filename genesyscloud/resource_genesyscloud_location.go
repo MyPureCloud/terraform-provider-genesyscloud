@@ -177,39 +177,41 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading location %s", d.Id())
-	location, resp, getErr := locationsAPI.GetLocation(d.Id(), nil)
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		location, resp, getErr := locationsAPI.GetLocation(d.Id(), nil)
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read location %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read location %s: %s", d.Id(), getErr))
+		}
+
+		if location.State != nil && *location.State == "deleted" {
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Failed to read location %s: %s", d.Id(), getErr)
-	}
 
-	if location.State != nil && *location.State == "deleted" {
-		d.SetId("")
+		d.Set("name", *location.Name)
+
+		if location.Notes != nil {
+			d.Set("notes", *location.Notes)
+		} else {
+			d.Set("notes", nil)
+		}
+
+		if location.Path != nil {
+			d.Set("path", *location.Path)
+		} else {
+			d.Set("path", nil)
+		}
+
+		d.Set("emergency_number", flattenLocationEmergencyNumber(location.EmergencyNumber))
+		d.Set("address", flattenLocationAddress(location.Address))
+
+		log.Printf("Read location %s %s", d.Id(), *location.Name)
 		return nil
-	}
-
-	d.Set("name", *location.Name)
-
-	if location.Notes != nil {
-		d.Set("notes", *location.Notes)
-	} else {
-		d.Set("notes", nil)
-	}
-
-	if location.Path != nil {
-		d.Set("path", *location.Path)
-	} else {
-		d.Set("path", nil)
-	}
-
-	d.Set("emergency_number", flattenLocationEmergencyNumber(location.EmergencyNumber))
-	d.Set("address", flattenLocationAddress(location.Address))
-
-	log.Printf("Read location %s %s", d.Id(), *location.Name)
-	return nil
+	})
 }
 
 func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -276,7 +278,7 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		location, resp, err := locationsAPI.GetLocation(d.Id(), nil)
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Location deleted
 				log.Printf("Deleted location %s", d.Id())
 				return nil

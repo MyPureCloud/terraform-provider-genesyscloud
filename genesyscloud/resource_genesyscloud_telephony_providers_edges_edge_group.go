@@ -120,7 +120,7 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		edgeGroupFromApi, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
 		if getErr != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				return resp, diag.Errorf("The edge group does not exist %s: %s", d.Id(), getErr)
 			}
 			return resp, diag.Errorf("Failed to read edge group %s: %s", d.Id(), getErr)
@@ -156,7 +156,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		edgeGroup, resp, err := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Edge group deleted
 				log.Printf("Deleted Edge group %s", d.Id())
 				return nil
@@ -179,34 +179,35 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading edge group %s", d.Id())
-	edgeGroup, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		edgeGroup, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read edge group %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *edgeGroup.Name)
-	d.Set("state", *edgeGroup.State)
-	if edgeGroup.Description != nil {
-		d.Set("description", *edgeGroup.Description)
-	}
-	if edgeGroup.Managed != nil {
-		d.Set("managed", *edgeGroup.Managed)
-	}
-	if edgeGroup.Hybrid != nil {
-		d.Set("hybrid", *edgeGroup.Hybrid)
-	}
-	d.Set("phone_trunk_base_ids", nil)
-	if edgeGroup.PhoneTrunkBases != nil {
-		d.Set("phone_trunk_base_ids", flattenPhoneTrunkBases(*edgeGroup.PhoneTrunkBases))
-	}
+		d.Set("name", *edgeGroup.Name)
+		d.Set("state", *edgeGroup.State)
+		if edgeGroup.Description != nil {
+			d.Set("description", *edgeGroup.Description)
+		}
+		if edgeGroup.Managed != nil {
+			d.Set("managed", *edgeGroup.Managed)
+		}
+		if edgeGroup.Hybrid != nil {
+			d.Set("hybrid", *edgeGroup.Hybrid)
+		}
+		d.Set("phone_trunk_base_ids", nil)
+		if edgeGroup.PhoneTrunkBases != nil {
+			d.Set("phone_trunk_base_ids", flattenPhoneTrunkBases(*edgeGroup.PhoneTrunkBases))
+		}
 
-	log.Printf("Read edge group %s %s", d.Id(), *edgeGroup.Name)
+		log.Printf("Read edge group %s %s", d.Id(), *edgeGroup.Name)
 
-	return nil
+		return nil
+	})
 }
 
 func flattenPhoneTrunkBases(trunkBases []platformclientv2.Trunkbase) *schema.Set {

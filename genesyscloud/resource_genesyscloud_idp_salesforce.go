@@ -18,7 +18,7 @@ func getAllIdpSalesforce(ctx context.Context, clientConfig *platformclientv2.Con
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersSalesforce()
 	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
+		if isStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -86,43 +86,45 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP Salesforce")
-	salesforce, resp, getErr := idpAPI.GetIdentityprovidersSalesforce()
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		salesforce, resp, getErr := idpAPI.GetIdentityprovidersSalesforce()
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
 		}
-		return diag.Errorf("Failed to read IDP Salesforce: %s", getErr)
-	}
 
-	if salesforce.Certificate != nil {
-		d.Set("certificates", stringListToSet([]string{*salesforce.Certificate}))
-	} else if salesforce.Certificates != nil {
-		d.Set("certificates", stringListToSet(*salesforce.Certificates))
-	} else {
-		d.Set("certificates", nil)
-	}
+		if salesforce.Certificate != nil {
+			d.Set("certificates", stringListToSet([]string{*salesforce.Certificate}))
+		} else if salesforce.Certificates != nil {
+			d.Set("certificates", stringListToSet(*salesforce.Certificates))
+		} else {
+			d.Set("certificates", nil)
+		}
 
-	if salesforce.IssuerURI != nil {
-		d.Set("issuer_uri", *salesforce.IssuerURI)
-	} else {
-		d.Set("issuer_uri", nil)
-	}
+		if salesforce.IssuerURI != nil {
+			d.Set("issuer_uri", *salesforce.IssuerURI)
+		} else {
+			d.Set("issuer_uri", nil)
+		}
 
-	if salesforce.SsoTargetURI != nil {
-		d.Set("target_uri", *salesforce.SsoTargetURI)
-	} else {
-		d.Set("target_uri", nil)
-	}
+		if salesforce.SsoTargetURI != nil {
+			d.Set("target_uri", *salesforce.SsoTargetURI)
+		} else {
+			d.Set("target_uri", nil)
+		}
 
-	if salesforce.Disabled != nil {
-		d.Set("disabled", *salesforce.Disabled)
-	} else {
-		d.Set("disabled", nil)
-	}
+		if salesforce.Disabled != nil {
+			d.Set("disabled", *salesforce.Disabled)
+		} else {
+			d.Set("disabled", nil)
+		}
 
-	log.Printf("Read IDP Salesforce")
-	return nil
+		log.Printf("Read IDP Salesforce")
+		return nil
+	})
 }
 
 func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -172,7 +174,7 @@ func deleteIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersSalesforce()
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// IDP Salesforce deleted
 				log.Printf("Deleted Salesforce Ping")
 				return nil

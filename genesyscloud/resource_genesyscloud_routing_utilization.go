@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 	"log"
 	"sort"
 	"strings"
+	"time"
 )
 
 var (
@@ -146,27 +148,28 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Routing Utilization")
-	settings, resp, getErr := routingAPI.GetRoutingUtilization()
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		settings, resp, getErr := routingAPI.GetRoutingUtilization()
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", getErr))
 		}
-		return diag.Errorf("Failed to read Routing Utilization: %s", getErr)
-	}
 
-	if settings.Utilization != nil {
-		for sdkType, schemaType := range utilizationMediaTypes {
-			if mediaSettings, ok := (*settings.Utilization)[sdkType]; ok {
-				d.Set(schemaType, flattenUtilizationSetting(mediaSettings))
-			} else {
-				d.Set(schemaType, nil)
+		if settings.Utilization != nil {
+			for sdkType, schemaType := range utilizationMediaTypes {
+				if mediaSettings, ok := (*settings.Utilization)[sdkType]; ok {
+					d.Set(schemaType, flattenUtilizationSetting(mediaSettings))
+				} else {
+					d.Set(schemaType, nil)
+				}
 			}
 		}
-	}
 
-	log.Printf("Read Routing Utilization")
-	return nil
+		log.Printf("Read Routing Utilization")
+		return nil
+	})
 }
 
 func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

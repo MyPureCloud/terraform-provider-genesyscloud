@@ -306,39 +306,40 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading site %s", d.Id())
-	currentSite, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		currentSite, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read site %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *currentSite.Name)
-	d.Set("location_id", *currentSite.Location.Id)
-	d.Set("media_model", *currentSite.MediaModel)
-	d.Set("description", nil)
-	if currentSite.Description != nil {
-		d.Set("description", *currentSite.Description)
-	}
-	d.Set("media_regions_use_latency_based", *currentSite.MediaRegionsUseLatencyBased)
+		d.Set("name", *currentSite.Name)
+		d.Set("location_id", *currentSite.Location.Id)
+		d.Set("media_model", *currentSite.MediaModel)
+		d.Set("description", nil)
+		if currentSite.Description != nil {
+			d.Set("description", *currentSite.Description)
+		}
+		d.Set("media_regions_use_latency_based", *currentSite.MediaRegionsUseLatencyBased)
 
-	d.Set("edge_auto_update_config", nil)
-	if currentSite.EdgeAutoUpdateConfig != nil {
-		d.Set("edge_auto_update_config", flattenSdkEdgeAutoUpdateConfig(currentSite.EdgeAutoUpdateConfig))
-	}
+		d.Set("edge_auto_update_config", nil)
+		if currentSite.EdgeAutoUpdateConfig != nil {
+			d.Set("edge_auto_update_config", flattenSdkEdgeAutoUpdateConfig(currentSite.EdgeAutoUpdateConfig))
+		}
 
-	if diagErr := readSiteNumberPlans(d, edgesAPI); diagErr != nil {
-		return diagErr
-	}
+		if diagErr := readSiteNumberPlans(d, edgesAPI); diagErr != nil {
+			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+		}
 
-	if diagErr := readSiteOutboundRoutes(d, edgesAPI); diagErr != nil {
-		return diagErr
-	}
+		if diagErr := readSiteOutboundRoutes(d, edgesAPI); diagErr != nil {
+			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+		}
 
-	log.Printf("Read site %s %s", d.Id(), *currentSite.Name)
-	return nil
+		log.Printf("Read site %s %s", d.Id(), *currentSite.Name)
+		return nil
+	})
 }
 
 func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -430,7 +431,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		site, resp, err := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Site deleted
 				log.Printf("Deleted site %s", d.Id())
 				// Need to sleep here because if terraform deletes the dependent location straight away
@@ -683,7 +684,7 @@ func isDefaultPlan(name string) bool {
 func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) diag.Diagnostics {
 	numberPlans, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(d.Id())
 	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
+		if isStatus404(resp) {
 			d.SetId("") // Site doesn't exist
 			return nil
 		}

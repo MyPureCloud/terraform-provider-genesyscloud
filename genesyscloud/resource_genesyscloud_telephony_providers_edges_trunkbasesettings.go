@@ -135,7 +135,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		// Get the latest version of the setting
 		trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if getErr != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				return resp, diag.Errorf("The trunk base settings does not exist %s: %s", d.Id(), getErr)
 			}
 			return resp, diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
@@ -156,7 +156,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	// Get the latest version of the setting
 	trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
+		if isStatus404(resp) {
 			return nil
 		}
 		return diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
@@ -179,41 +179,41 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading trunk base settings %s", d.Id())
-	trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
-
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *trunkBaseSettings.Name)
-	d.Set("state", *trunkBaseSettings.State)
-	if trunkBaseSettings.Description != nil {
-		d.Set("description", *trunkBaseSettings.Description)
-	}
-	if trunkBaseSettings.Managed != nil {
-		d.Set("managed", *trunkBaseSettings.Managed)
-	}
-	if trunkBaseSettings.TrunkMetabase != nil {
-		d.Set("trunk_meta_base_id", *trunkBaseSettings.TrunkMetabase.Id)
-	}
-	d.Set("trunk_type", *trunkBaseSettings.TrunkType)
-
-	d.Set("properties", nil)
-	if trunkBaseSettings.Properties != nil {
-		properties, err := flattenBaseSettingsProperties(trunkBaseSettings.Properties)
-		if err != nil {
-			return err
+		d.Set("name", *trunkBaseSettings.Name)
+		d.Set("state", *trunkBaseSettings.State)
+		if trunkBaseSettings.Description != nil {
+			d.Set("description", *trunkBaseSettings.Description)
 		}
-		d.Set("properties", properties)
-	}
+		if trunkBaseSettings.Managed != nil {
+			d.Set("managed", *trunkBaseSettings.Managed)
+		}
+		if trunkBaseSettings.TrunkMetabase != nil {
+			d.Set("trunk_meta_base_id", *trunkBaseSettings.TrunkMetabase.Id)
+		}
+		d.Set("trunk_type", *trunkBaseSettings.TrunkType)
 
-	log.Printf("Read trunk base settings %s %s", d.Id(), *trunkBaseSettings.Name)
+		d.Set("properties", nil)
+		if trunkBaseSettings.Properties != nil {
+			properties, err := flattenBaseSettingsProperties(trunkBaseSettings.Properties)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("%v", err))
+			}
+			d.Set("properties", properties)
+		}
 
-	return nil
+		log.Printf("Read trunk base settings %s %s", d.Id(), *trunkBaseSettings.Name)
+
+		return nil
+	})
 }
 
 func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -235,7 +235,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		trunkBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// trunk base settings deleted
 				log.Printf("Deleted trunk base settings %s", d.Id())
 				return nil

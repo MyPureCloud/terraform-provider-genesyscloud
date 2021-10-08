@@ -173,35 +173,36 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading integration %s", d.Id())
-	currentIntegration, resp, getErr := integrationAPI.GetIntegration(d.Id(), 100, 1, "", nil, "", "")
 
-	if getErr != nil {
-		if isStatus404(resp) {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		currentIntegration, resp, getErr := integrationAPI.GetIntegration(d.Id(), 100, 1, "", nil, "", "")
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read integration %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("integration_type", *currentIntegration.IntegrationType.Id)
-	if currentIntegration.IntendedState != nil {
-		d.Set("intended_state", *currentIntegration.IntendedState)
-	} else {
-		d.Set("intended_state", nil)
-	}
+		d.Set("integration_type", *currentIntegration.IntegrationType.Id)
+		if currentIntegration.IntendedState != nil {
+			d.Set("intended_state", *currentIntegration.IntendedState)
+		} else {
+			d.Set("intended_state", nil)
+		}
 
-	// Use returned ID to get current config, which contains complete configuration
-	integrationConfig, _, err := integrationAPI.GetIntegrationConfigCurrent(*currentIntegration.Id)
+		// Use returned ID to get current config, which contains complete configuration
+		integrationConfig, _, err := integrationAPI.GetIntegrationConfigCurrent(*currentIntegration.Id)
 
-	if err != nil {
-		return diag.Errorf("Failed to read config of integration %s: %s", d.Id(), getErr)
-	}
+		if err != nil {
+			return  resource.NonRetryableError(fmt.Errorf("Failed to read config of integration %s: %s", d.Id(), getErr))
+		}
 
-	d.Set("config", flattenIntegrationConfig(integrationConfig))
+		d.Set("config", flattenIntegrationConfig(integrationConfig))
 
-	log.Printf("Read integration %s %s", d.Id(), *currentIntegration.Name)
+		log.Printf("Read integration %s %s", d.Id(), *currentIntegration.Name)
 
-	return nil
+		return nil
+	})
 }
 
 func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -245,7 +246,7 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := integrationAPI.GetIntegration(d.Id(), 100, 1, "", nil, "", "")
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Integration deleted
 				log.Printf("Deleted Integration %s", d.Id())
 				return nil

@@ -2,15 +2,14 @@ package genesyscloud
 
 import (
 	"fmt"
-	"os"
-	"strconv"
-	"strings"
-	"testing"
-
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"os"
+	"strconv"
+	"strings"
+	"testing"
 )
 
 var (
@@ -287,7 +286,7 @@ func testVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 		phone, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhone(rs.Primary.ID)
 		if phone != nil {
 			return fmt.Errorf("Phone (%s) still exists", rs.Primary.ID)
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Phone not found as expected
 			continue
 		} else {

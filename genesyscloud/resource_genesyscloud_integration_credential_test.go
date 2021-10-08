@@ -176,7 +176,7 @@ func testVerifyCredentialDestroyed(state *terraform.State) error {
 		credential, resp, err := integrationAPI.GetIntegrationsCredential(rs.Primary.ID)
 		if credential != nil {
 			return fmt.Errorf("Credential (%s) still exists", rs.Primary.ID)
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Credential not found as expected
 			continue
 		} else {

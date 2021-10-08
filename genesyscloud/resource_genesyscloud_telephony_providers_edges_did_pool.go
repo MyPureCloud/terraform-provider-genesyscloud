@@ -124,43 +124,44 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading DID pool %s", d.Id())
-	didPool, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		didPool, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
+		}
+
+		if *didPool.State == "deleted" {
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr)
-	}
 
-	if *didPool.State == "deleted" {
-		d.SetId("")
+		d.Set("start_phone_number", *didPool.StartPhoneNumber)
+		d.Set("end_phone_number", *didPool.EndPhoneNumber)
+
+		if didPool.Description != nil {
+			d.Set("description", *didPool.Description)
+		} else {
+			d.Set("description", nil)
+		}
+
+		if didPool.Comments != nil {
+			d.Set("comments", *didPool.Comments)
+		} else {
+			d.Set("comments", nil)
+		}
+
+		if didPool.Provider != nil {
+			d.Set("pool_provider", *didPool.Provider)
+		} else {
+			d.Set("pool_provider", nil)
+		}
+
+		log.Printf("Read DID pool %s %s", d.Id(), *didPool.StartPhoneNumber)
 		return nil
-	}
-
-	d.Set("start_phone_number", *didPool.StartPhoneNumber)
-	d.Set("end_phone_number", *didPool.EndPhoneNumber)
-
-	if didPool.Description != nil {
-		d.Set("description", *didPool.Description)
-	} else {
-		d.Set("description", nil)
-	}
-
-	if didPool.Comments != nil {
-		d.Set("comments", *didPool.Comments)
-	} else {
-		d.Set("comments", nil)
-	}
-
-	if didPool.Provider != nil {
-		d.Set("pool_provider", *didPool.Provider)
-	} else {
-		d.Set("pool_provider", nil)
-	}
-
-	log.Printf("Read DID pool %s %s", d.Id(), *didPool.StartPhoneNumber)
-	return nil
+	})
 }
 
 func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -204,7 +205,7 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		didPool, resp, err := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// DID pool deleted
 				log.Printf("Deleted DID pool %s", d.Id())
 				return nil

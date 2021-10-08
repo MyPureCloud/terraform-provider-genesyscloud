@@ -71,7 +71,7 @@ func testVerifyWrapupcodesDestroyed(state *terraform.State) error {
 		wrapupcode, resp, err := routingAPI.GetRoutingWrapupcode(rs.Primary.ID)
 		if wrapupcode != nil {
 			return fmt.Errorf("Wrapupcode (%s) still exists", rs.Primary.ID)
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Wrapupcode not found as expected
 			continue
 		} else {

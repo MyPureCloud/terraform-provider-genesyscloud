@@ -87,20 +87,20 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading wrapupcode %s", d.Id())
-
-	wrapupcode, resp, getErr := routingAPI.GetRoutingWrapupcode(d.Id())
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		wrapupcode, resp, getErr := routingAPI.GetRoutingWrapupcode(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read wrapupcode %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read wrapupcode %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read wrapupcode %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *wrapupcode.Name)
+		d.Set("name", *wrapupcode.Name)
 
-	log.Printf("Read wrapupcode %s %s", d.Id(), *wrapupcode.Name)
-	return nil
+		log.Printf("Read wrapupcode %s %s", d.Id(), *wrapupcode.Name)
+		return nil
+	})
 }
 
 func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -139,7 +139,7 @@ func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingWrapupcode(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Routing wrapup code deleted
 				log.Printf("Deleted Routing wrapup code %s", d.Id())
 				return nil

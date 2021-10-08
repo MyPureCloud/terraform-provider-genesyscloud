@@ -174,61 +174,62 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading oauth client %s", d.Id())
 
-	client, resp, getErr := oauthAPI.GetOauthClient(d.Id())
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		client, resp, getErr := oauthAPI.GetOauthClient(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read oauth client %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read oauth client %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read oauth client %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *client.Name)
+		d.Set("name", *client.Name)
 
-	if client.Description != nil {
-		d.Set("description", *client.Description)
-	} else {
-		d.Set("description", nil)
-	}
+		if client.Description != nil {
+			d.Set("description", *client.Description)
+		} else {
+			d.Set("description", nil)
+		}
 
-	if client.AccessTokenValiditySeconds != nil {
-		d.Set("access_token_validity_seconds", *client.AccessTokenValiditySeconds)
-	} else {
-		d.Set("access_token_validity_seconds", nil)
-	}
+		if client.AccessTokenValiditySeconds != nil {
+			d.Set("access_token_validity_seconds", *client.AccessTokenValiditySeconds)
+		} else {
+			d.Set("access_token_validity_seconds", nil)
+		}
 
-	if client.AuthorizedGrantType != nil {
-		d.Set("authorized_grant_type", *client.AuthorizedGrantType)
-	} else {
-		d.Set("authorized_grant_type", nil)
-	}
+		if client.AuthorizedGrantType != nil {
+			d.Set("authorized_grant_type", *client.AuthorizedGrantType)
+		} else {
+			d.Set("authorized_grant_type", nil)
+		}
 
-	if client.State != nil {
-		d.Set("state", *client.State)
-	} else {
-		d.Set("state", nil)
-	}
+		if client.State != nil {
+			d.Set("state", *client.State)
+		} else {
+			d.Set("state", nil)
+		}
 
-	if client.RegisteredRedirectUri != nil {
-		d.Set("registered_redirect_uris", stringListToSet(*client.RegisteredRedirectUri))
-	} else {
-		d.Set("registered_redirect_uris", nil)
-	}
+		if client.RegisteredRedirectUri != nil {
+			d.Set("registered_redirect_uris", stringListToSet(*client.RegisteredRedirectUri))
+		} else {
+			d.Set("registered_redirect_uris", nil)
+		}
 
-	if client.Scope != nil {
-		d.Set("scopes", stringListToSet(*client.Scope))
-	} else {
-		d.Set("scopes", nil)
-	}
+		if client.Scope != nil {
+			d.Set("scopes", stringListToSet(*client.Scope))
+		} else {
+			d.Set("scopes", nil)
+		}
 
-	if client.RoleDivisions != nil {
-		d.Set("roles", flattenOAuthRoles(*client.RoleDivisions))
-	} else {
-		d.Set("roles", nil)
-	}
+		if client.RoleDivisions != nil {
+			d.Set("roles", flattenOAuthRoles(*client.RoleDivisions))
+		} else {
+			d.Set("roles", nil)
+		}
 
-	log.Printf("Read oauth client %s %s", d.Id(), *client.Name)
-	return nil
+		log.Printf("Read oauth client %s %s", d.Id(), *client.Name)
+		return nil
+	})
 }
 
 func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -289,7 +290,7 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		oauthClient, resp, err := oauthAPI.GetOauthClient(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// OAuth client deleted
 				log.Printf("Deleted OAuth client %s", d.Id())
 				return nil
