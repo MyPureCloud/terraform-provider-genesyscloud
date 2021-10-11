@@ -115,7 +115,7 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	log.Printf("Reading division %s", d.Id())
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		division, resp, getErr := authAPI.GetAuthorizationDivision(d.Id(), false)
 		if getErr != nil {
 			if isStatus404(resp) {

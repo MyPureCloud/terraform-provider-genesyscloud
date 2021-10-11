@@ -92,7 +92,7 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading IDP Ping")
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		ping, resp, getErr := idpAPI.GetIdentityprovidersPing()
 		if getErr != nil {
 			if isStatus404(resp) {

@@ -90,7 +90,7 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading skill %s", d.Id())
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		skill, resp, getErr := routingAPI.GetRoutingSkill(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {

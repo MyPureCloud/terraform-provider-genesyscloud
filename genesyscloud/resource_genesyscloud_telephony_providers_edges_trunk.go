@@ -149,7 +149,7 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading trunk %s", d.Id())
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		trunk, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunk(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {

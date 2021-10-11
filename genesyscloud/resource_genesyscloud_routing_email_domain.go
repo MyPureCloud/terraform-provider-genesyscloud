@@ -122,7 +122,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Reading routing email domain %s", d.Id())
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		domain, resp, getErr := routingAPI.GetRoutingEmailDomain(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {

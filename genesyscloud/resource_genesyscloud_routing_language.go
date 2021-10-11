@@ -90,7 +90,7 @@ func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta inter
 	languagesAPI := platformclientv2.NewLanguagesApiWithConfig(sdkConfig)
 
 	log.Printf("Reading language %s", d.Id())
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		language, resp, getErr := languagesAPI.GetRoutingLanguage(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {

@@ -143,7 +143,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IVR config %s", d.Id())
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		ivrConfig, resp, getErr := architectApi.GetArchitectIvr(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {

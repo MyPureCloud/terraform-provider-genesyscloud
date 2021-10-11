@@ -229,7 +229,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Reading role %s", d.Id())
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), nil)
 		if getErr != nil {
 			if isStatus404(resp) {

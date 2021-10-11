@@ -124,7 +124,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading DID pool %s", d.Id())
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		didPool, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {

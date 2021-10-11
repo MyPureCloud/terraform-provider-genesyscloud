@@ -178,7 +178,7 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Reading location %s", d.Id())
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		location, resp, getErr := locationsAPI.GetLocation(d.Id(), nil)
 		if getErr != nil {
 			if isStatus404(resp) {

@@ -137,7 +137,7 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Reading schedule %s", d.Id())
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		schedule, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {

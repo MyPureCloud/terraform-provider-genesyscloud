@@ -174,7 +174,7 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading oauth client %s", d.Id())
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		client, resp, getErr := oauthAPI.GetOauthClient(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {

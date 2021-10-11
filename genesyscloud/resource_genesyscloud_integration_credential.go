@@ -112,7 +112,7 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading credential %s", d.Id())
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		currentCredential, resp, getErr := integrationAPI.GetIntegrationsCredential(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {

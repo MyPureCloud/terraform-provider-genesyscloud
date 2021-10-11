@@ -215,7 +215,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading integration action %s", d.Id())
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		action, resp, getErr := sdkGetIntegrationAction(d.Id(), integAPI)
 		if getErr != nil {
 			if isStatus404(resp) {

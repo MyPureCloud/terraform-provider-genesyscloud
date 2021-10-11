@@ -144,7 +144,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 
 	log.Printf("Reading Datatable Row %s", d.Id())
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		row, resp, getErr := archAPI.GetFlowsDatatableRow(tableId, keyStr, false)
 		if getErr != nil {
 			if isStatus404(resp) {
