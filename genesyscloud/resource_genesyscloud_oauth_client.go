@@ -264,6 +264,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	log.Printf("Updated oauth client %s", name)
 
+	time.Sleep(5 * time.Second)
 	return readOAuthClient(ctx, d, meta)
 }
 

@@ -149,6 +149,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Updated phone base settings %s", d.Id())
 
+	time.Sleep(5 * time.Second)
 	return readPhoneBaseSettings(ctx, d, meta)
 }
 

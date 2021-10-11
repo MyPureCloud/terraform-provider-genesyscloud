@@ -426,9 +426,9 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
+				return resource.RetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
+			return resource.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 		}
 
 		d.Set("name", *currentQueue.Name)
@@ -631,6 +631,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Finished updating queue %s", name)
+	time.Sleep(5 * time.Second)
 	return readQueue(ctx, d, meta)
 }
 

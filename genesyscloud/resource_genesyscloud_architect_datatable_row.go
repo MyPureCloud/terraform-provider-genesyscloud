@@ -191,6 +191,7 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	log.Printf("Updated Datatable Row %s", d.Id())
+	time.Sleep(5 * time.Second)
 	return readArchitectDatatableRow(ctx, d, meta)
 }
 

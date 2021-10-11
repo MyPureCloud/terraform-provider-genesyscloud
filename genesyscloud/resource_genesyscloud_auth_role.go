@@ -290,6 +290,7 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	log.Printf("Updated role %s", name)
+	time.Sleep(5 * time.Second)
 	return readAuthRole(ctx, d, meta)
 }
 

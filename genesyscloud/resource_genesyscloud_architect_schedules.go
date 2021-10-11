@@ -222,6 +222,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("Finished updating schedule %s", name)
+	time.Sleep(5 * time.Second)
 	return readArchitectSchedules(ctx, d, meta)
 }
 

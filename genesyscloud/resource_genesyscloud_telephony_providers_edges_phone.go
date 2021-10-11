@@ -328,6 +328,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 	}
 
+	time.Sleep(5 * time.Second)
 	return readPhone(ctx, d, meta)
 }
 

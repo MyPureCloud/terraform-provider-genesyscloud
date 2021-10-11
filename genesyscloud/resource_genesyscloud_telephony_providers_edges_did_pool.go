@@ -188,6 +188,7 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updated DID pool %s", d.Id())
+	time.Sleep(5 * time.Second)
 	return readDidPool(ctx, d, meta)
 }
 

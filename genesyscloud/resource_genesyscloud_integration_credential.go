@@ -154,6 +154,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updated credential %s %s", name, d.Id())
+	time.Sleep(5 * time.Second)
 	return readCredential(ctx, d, meta)
 }
 

@@ -186,6 +186,7 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("Updated Routing Utilization")
+	time.Sleep(5 * time.Second)
 	return readRoutingUtilization(ctx, d, meta)
 }
 

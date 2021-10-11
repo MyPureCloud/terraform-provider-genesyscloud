@@ -338,6 +338,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	log.Printf("Updated integration action %s", name)
+	time.Sleep(5 * time.Second)
 	return readIntegrationAction(ctx, d, meta)
 }
 

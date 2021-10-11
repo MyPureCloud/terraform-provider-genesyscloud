@@ -140,6 +140,7 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Updated edge group %s", *edgeGroup.Id)
 
+	time.Sleep(5 * time.Second)
 	return readEdgeGroup(ctx, d, meta)
 }
 
