@@ -143,6 +143,7 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	d.Set("name", *scheduleGroup.Name)
+	d.Set("description", nil)
 	if scheduleGroup.Description != nil {
 		d.Set("description", *scheduleGroup.Description)
 	}

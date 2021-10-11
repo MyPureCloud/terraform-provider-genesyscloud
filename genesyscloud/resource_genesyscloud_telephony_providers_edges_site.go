@@ -318,7 +318,10 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	d.Set("name", *currentSite.Name)
 	d.Set("location_id", *currentSite.Location.Id)
 	d.Set("media_model", *currentSite.MediaModel)
-	d.Set("description", *currentSite.Description)
+	d.Set("description", nil)
+	if currentSite.Description != nil {
+		d.Set("description", *currentSite.Description)
+	}
 	d.Set("media_regions_use_latency_based", *currentSite.MediaRegionsUseLatencyBased)
 
 	d.Set("edge_auto_update_config", nil)
