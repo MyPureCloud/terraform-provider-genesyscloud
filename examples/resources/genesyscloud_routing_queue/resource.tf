@@ -30,7 +30,7 @@ resource "genesyscloud_routing_queue" "test_queue" {
     expansion_timeout_seconds = 15.1
     skills_to_remove          = [genesyscloud_routing_skill.test-skill.id]
   }
-  default_script_ids {
+  default_script_ids = {
     EMAIL = "153fcff5-597e-4f17-94e5-17eac456a0b2"
     CHAT  = "98dff282-c50c-4c36-bc70-80b058564e1b"
   }
