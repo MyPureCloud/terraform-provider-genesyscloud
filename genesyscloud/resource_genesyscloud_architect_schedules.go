@@ -59,6 +59,7 @@ func resourceArchitectSchedules() *schema.Resource {
 				Description: "Name of the schedule.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"description": {
 				Description: "Description of the schedule.",
@@ -162,7 +163,10 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	d.Set("name", *schedule.Name)
-	d.Set("description", *schedule.Description)
+	d.Set("description", nil)
+	if schedule.Description != nil {
+		d.Set("description", *schedule.Description)
+	}
 	d.Set("start", Start)
 	d.Set("end", End)
 	d.Set("rrule", *schedule.Rrule)
