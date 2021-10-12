@@ -1,6 +1,6 @@
 ![tests](https://github.com/MyPureCloud/terraform-provider-genesyscloud/workflows/Tests/badge.svg?branch=main)
 # Genesys Cloud Terraform Provider
-<img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" width="600px">
+<img src="https://www.terraform.io/assets/images/logo-text-8c3ba8a6.svg" width="600px" alt="Terraform Logo">
 
 ## Requirements
 
