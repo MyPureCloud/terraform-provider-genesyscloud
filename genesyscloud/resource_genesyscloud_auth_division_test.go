@@ -129,7 +129,7 @@ func testVerifyDivisionsDestroyed(state *terraform.State) error {
 		division, resp, err := authAPI.GetAuthorizationDivision(rs.Primary.ID, false)
 		if division != nil {
 			return fmt.Errorf("Division (%s) still exists", rs.Primary.ID)
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Division not found as expected
 			continue
 		} else {

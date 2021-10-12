@@ -98,7 +98,7 @@ func testVerifySchedulesDestroyed(state *terraform.State) error {
 		sched, resp, err := archAPI.GetArchitectSchedule(rs.Primary.ID)
 		if sched != nil {
 			return fmt.Errorf("Schedule (%s) still exists", rs.Primary.ID)
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Schedule not found as expected
 			continue
 		} else {

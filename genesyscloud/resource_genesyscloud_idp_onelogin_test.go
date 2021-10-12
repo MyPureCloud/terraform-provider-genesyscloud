@@ -101,7 +101,7 @@ func testVerifyIdpOneloginDestroyed(state *terraform.State) error {
 		onelogin, resp, err := idpAPI.GetIdentityprovidersOnelogin()
 		if onelogin != nil {
 			return fmt.Errorf("Onelogin still exists")
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Onelogin not found as expected
 			continue
 		} else {

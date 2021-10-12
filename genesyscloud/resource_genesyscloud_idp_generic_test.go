@@ -145,7 +145,7 @@ func testVerifyIdpGenericDestroyed(state *terraform.State) error {
 		generic, resp, err := idpAPI.GetIdentityprovidersGeneric()
 		if generic != nil {
 			return fmt.Errorf("Generic IDP still exists")
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Generic IDP not found as expected
 			continue
 		} else {

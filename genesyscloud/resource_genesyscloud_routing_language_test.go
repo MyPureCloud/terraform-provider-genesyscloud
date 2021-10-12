@@ -64,7 +64,7 @@ func testVerifyLanguagesDestroyed(state *terraform.State) error {
 				continue
 			}
 			return fmt.Errorf("Language (%s) still exists", rs.Primary.ID)
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Language not found as expected
 			continue
 		} else {

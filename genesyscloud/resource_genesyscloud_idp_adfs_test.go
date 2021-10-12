@@ -111,7 +111,7 @@ func testVerifyIdpAdfsDestroyed(state *terraform.State) error {
 		adfs, resp, err := idpAPI.GetIdentityprovidersAdfs()
 		if adfs != nil {
 			return fmt.Errorf("ADFS still exists")
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// ADFS not found as expected
 			continue
 		} else {

@@ -101,7 +101,7 @@ func testVerifyIdpOktaDestroyed(state *terraform.State) error {
 		okta, resp, err := idpAPI.GetIdentityprovidersOkta()
 		if okta != nil {
 			return fmt.Errorf("Okta still exists")
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Okta not found as expected
 			continue
 		} else {

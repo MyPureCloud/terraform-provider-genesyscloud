@@ -111,22 +111,23 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading credential %s", d.Id())
-	currentCredential, resp, getErr := integrationAPI.GetIntegrationsCredential(d.Id())
 
-	if getErr != nil {
-		if isStatus404(resp) {
-			d.SetId("")
-			return nil
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+		currentCredential, resp, getErr := integrationAPI.GetIntegrationsCredential(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read credential %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read credential %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read credential %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *currentCredential.Name)
-	d.Set("credential_type_name", *currentCredential.VarType.Name)
+		d.Set("name", *currentCredential.Name)
+		d.Set("credential_type_name", *currentCredential.VarType.Name)
 
-	log.Printf("Read credential %s %s", d.Id(), *currentCredential.Name)
+		log.Printf("Read credential %s %s", d.Id(), *currentCredential.Name)
 
-	return nil
+		return nil
+	})
 }
 
 func updateCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -153,6 +154,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updated credential %s %s", name, d.Id())
+	time.Sleep(5 * time.Second)
 	return readCredential(ctx, d, meta)
 }
 
@@ -168,7 +170,7 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := integrationAPI.GetIntegrationsCredential(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// Integration credential deleted
 				log.Printf("Deleted Integration credential %s", d.Id())
 				return nil

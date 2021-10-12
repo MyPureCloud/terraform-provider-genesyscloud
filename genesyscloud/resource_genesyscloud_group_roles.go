@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -87,6 +88,7 @@ func updateGroupRoles(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updated group roles for %s", d.Id())
+	time.Sleep(5 * time.Second)
 	return readGroupRoles(ctx, d, meta)
 }
 

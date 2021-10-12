@@ -354,7 +354,7 @@ func testVerifyQueuesDestroyed(state *terraform.State) error {
 		queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID)
 		if queue != nil {
 			return fmt.Errorf("Queue (%s) still exists", rs.Primary.ID)
-		} else if resp != nil && resp.StatusCode == 404 {
+		} else if isStatus404(resp) {
 			// Queue not found as expected
 			continue
 		} else {

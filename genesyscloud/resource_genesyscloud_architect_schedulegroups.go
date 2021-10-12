@@ -133,41 +133,42 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading schedule group %s", d.Id())
 
-	scheduleGroup, resp, getErr := archAPI.GetArchitectSchedulegroup(d.Id())
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+		scheduleGroup, resp, getErr := archAPI.GetArchitectSchedulegroup(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *scheduleGroup.Name)
-	d.Set("description", nil)
-	if scheduleGroup.Description != nil {
-		d.Set("description", *scheduleGroup.Description)
-	}
+		d.Set("name", *scheduleGroup.Name)
+		d.Set("description", nil)
+		if scheduleGroup.Description != nil {
+			d.Set("description", *scheduleGroup.Description)
+		}
 
-	if scheduleGroup.OpenSchedules != nil {
-		d.Set("open_schedules_id", sdkDomainEntityRefArrToSet(*scheduleGroup.OpenSchedules))
-	} else {
-		d.Set("open_schedules_id", nil)
-	}
+		if scheduleGroup.OpenSchedules != nil {
+			d.Set("open_schedules_id", sdkDomainEntityRefArrToSet(*scheduleGroup.OpenSchedules))
+		} else {
+			d.Set("open_schedules_id", nil)
+		}
 
-	if scheduleGroup.ClosedSchedules != nil {
-		d.Set("closed_schedules_id", sdkDomainEntityRefArrToSet(*scheduleGroup.ClosedSchedules))
-	} else {
-		d.Set("closed_schedules_id", nil)
-	}
+		if scheduleGroup.ClosedSchedules != nil {
+			d.Set("closed_schedules_id", sdkDomainEntityRefArrToSet(*scheduleGroup.ClosedSchedules))
+		} else {
+			d.Set("closed_schedules_id", nil)
+		}
 
-	if scheduleGroup.HolidaySchedules != nil {
-		d.Set("holiday_schedules_id", sdkDomainEntityRefArrToSet(*scheduleGroup.HolidaySchedules))
-	} else {
-		d.Set("holiday_schedules_id", nil)
-	}
+		if scheduleGroup.HolidaySchedules != nil {
+			d.Set("holiday_schedules_id", sdkDomainEntityRefArrToSet(*scheduleGroup.HolidaySchedules))
+		} else {
+			d.Set("holiday_schedules_id", nil)
+		}
 
-	log.Printf("Read schedule group %s %s", d.Id(), *scheduleGroup.Name)
-	return nil
+		log.Printf("Read schedule group %s %s", d.Id(), *scheduleGroup.Name)
+		return nil
+	})
 }
 
 func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -205,6 +206,7 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	log.Printf("Finished updating schedule group %s", name)
+	time.Sleep(5 * time.Second)
 	return readArchitectScheduleGroups(ctx, d, meta)
 }
 
@@ -221,7 +223,7 @@ func deleteArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		scheduleGroup, resp, err := archAPI.GetArchitectSchedulegroup(d.Id())
 		if err != nil {
-			if resp != nil && resp.StatusCode == 404 {
+			if isStatus404(resp) {
 				// schedule group deleted
 				log.Printf("Deleted schedule group %s", d.Id())
 				return nil
