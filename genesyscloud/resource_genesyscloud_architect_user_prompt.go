@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v53/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
 var userPromptResource = &schema.Resource{
@@ -773,8 +773,14 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 			resourceMap := promptResource.(map[string]interface{})
 			resourceLanguage := resourceMap["language"].(string)
 
+			// RONAN unsafe code
+
+			tag := make(map[string][]string)
+			tag["filename"] = []string{resourceMap["filename"].(string)}
+
 			promptResource := platformclientv2.Promptassetcreate{
 				Language: &resourceLanguage,
+				Tags: &tag,
 			}
 
 			resourceTtsString := resourceMap["tts_string"]
@@ -967,7 +973,11 @@ func flattenPromptResources(promptResources *[]platformclientv2.Promptasset) *sc
 			promptResource["text"] = *sdkPromptAsset.Text
 		}
 
-		//promptResource["filename"] = "test-prompt-01.wav"
+		// RONAN
+		if sdkPromptAsset.Tags != nil && len(*sdkPromptAsset.Tags) > 0 {
+			t := *sdkPromptAsset.Tags
+			promptResource["filename"] = t["filename"][0]
+		}
 
 		resourceSet.Add(promptResource)
 	}
