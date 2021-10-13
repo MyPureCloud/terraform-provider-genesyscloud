@@ -17,8 +17,8 @@ func TestAccDataSourceArchitectDatatable(t *testing.T) {
 
 		propNameKey = "key"
 		propBool    = "Test Bool"
-		typeString = "string"
-		typeBool   = "boolean"
+		typeString  = "string"
+		typeBool    = "boolean"
 
 		tableDataSource = "arch-table1-ds"
 	)
@@ -40,11 +40,13 @@ func TestAccDataSourceArchitectDatatable(t *testing.T) {
 					"genesyscloud_architect_datatable."+tableResource+".name",
 					"genesyscloud_architect_datatable."+tableResource),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_architect_datatable."+tableDataSource, "id", "genesyscloud_architect_datatable."+tableResource, "id"),
+					resource.TestCheckResourceAttrPair(
+						"data.genesyscloud_architect_datatable."+tableDataSource, "id",
+						"genesyscloud_architect_datatable."+tableResource, "id",
+					),
 				),
 			},
 		},
-		CheckDestroy: testVerifyDatatablesDestroyed,
 	})
 }
 
