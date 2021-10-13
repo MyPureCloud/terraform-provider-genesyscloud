@@ -18,13 +18,13 @@ func dataSourceDidPool() *schema.Resource {
 			"start_phone_number": {
 				Description:      "Starting phone number of the DID Pool range.",
 				Type:             schema.TypeString,
-				Optional:         true,
+				Required:         true,
 				ValidateDiagFunc: validatePhoneNumber,
 			},
 			"end_phone_number": {
 				Description:      "Ending phone number of the DID Pool range.",
 				Type:             schema.TypeString,
-				Optional:         true,
+				Required:         true,
 				ValidateDiagFunc: validatePhoneNumber,
 			},
 		},
