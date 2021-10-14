@@ -169,7 +169,10 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		}
 		d.Set("start", Start)
 		d.Set("end", End)
-		d.Set("rrule", *schedule.Rrule)
+		d.Set("rrule", nil)
+		if schedule.Rrule != nil {
+			d.Set("rrule", *schedule.Rrule)
+		}
 
 		log.Printf("Read schedule %s %s", d.Id(), *schedule.Name)
 		return nil
