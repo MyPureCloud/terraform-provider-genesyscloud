@@ -39,6 +39,12 @@ func resourceTrunk() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"name": {
+				Description: "The name of the trunk. This property is read only and populated with the auto generated name",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -158,6 +164,8 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
 		}
+
+		d.Set("name", *trunk.Name)
 
 		log.Printf("Read trunk %s %s", d.Id(), *trunk.Name)
 
