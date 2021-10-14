@@ -773,14 +773,12 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 			resourceMap := promptResource.(map[string]interface{})
 			resourceLanguage := resourceMap["language"].(string)
 
-			// RONAN unsafe code
-
 			tag := make(map[string][]string)
 			tag["filename"] = []string{resourceMap["filename"].(string)}
 
 			promptResource := platformclientv2.Promptassetcreate{
 				Language: &resourceLanguage,
-				Tags: &tag,
+				Tags:     &tag,
 			}
 
 			resourceTtsString := resourceMap["tts_string"]
@@ -908,9 +906,6 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclientv2.Configuration) (string, []byte) {
-	// TODO: Remove early return to test upload
-	return "", nil
-
 	accessToken := sdkConfig.AccessToken
 
 	client := &http.Client{}
@@ -918,6 +913,7 @@ func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclient
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer file.Close()
 
 	body := &bytes.Buffer{}
@@ -973,7 +969,6 @@ func flattenPromptResources(promptResources *[]platformclientv2.Promptasset) *sc
 			promptResource["text"] = *sdkPromptAsset.Text
 		}
 
-		// RONAN
 		if sdkPromptAsset.Tags != nil && len(*sdkPromptAsset.Tags) > 0 {
 			t := *sdkPromptAsset.Tags
 			promptResource["filename"] = t["filename"][0]
@@ -1003,6 +998,9 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 			resourceMap := promptResource.(map[string]interface{})
 			resourceLanguage := resourceMap["language"].(string)
 
+			tag := make(map[string][]string)
+			tag["filename"] = []string{resourceMap["filename"].(string)}
+
 			// Check if language resource already exists
 			for _, v := range *userPrompt.Resources {
 				if *v.Language == resourceLanguage {
@@ -1015,6 +1013,7 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 				// Update existing resource
 				promptResource := platformclientv2.Promptasset{
 					Language: &resourceLanguage,
+					Tags:     &tag,
 				}
 
 				resourceTtsString := resourceMap["tts_string"]
@@ -1040,6 +1039,7 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 				// Create new resource for language
 				promptResource := platformclientv2.Promptassetcreate{
 					Language: &resourceLanguage,
+					Tags:     &tag,
 				}
 
 				resourceTtsString := resourceMap["tts_string"]

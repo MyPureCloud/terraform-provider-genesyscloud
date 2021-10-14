@@ -125,6 +125,7 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 	userPromptResourceLang1 := "en-us"
 	userPromptResourceText1 := "This is a test greeting!"
 	userPromptResourceFileName1 := "test-prompt-01.wav"
+	userPromptResourceFileName2 := "test-prompt-02.wav"
 
 	userPromptAsset1 := userPromptResourceStruct{
 		userPromptResourceLang1,
@@ -133,14 +134,22 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 		strconv.Quote(userPromptResourceFileName1),
 	}
 
+	userPromptAsset2 := userPromptResourceStruct{
+		userPromptResourceLang1,
+		nullValue,
+		strconv.Quote(userPromptResourceText1),
+		strconv.Quote(userPromptResourceFileName2),
+	}
+
 	userPromptResources1 := []*userPromptResourceStruct{&userPromptAsset1}
+	userPromptResources2 := []*userPromptResourceStruct{&userPromptAsset2}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				// Create Empty user prompt
+				// Create user prompt with an audio file
 				Config: generateUserPromptResource(&userPromptStruct{
 					userPromptResource1,
 					userPromptName1,
@@ -150,6 +159,21 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "description", userPromptDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.filename", userPromptResourceFileName1),
+				),
+			},
+			{
+				// Replace audio file for the prompt
+				Config: generateUserPromptResource(&userPromptStruct{
+					userPromptResource1,
+					userPromptName1,
+					strconv.Quote(userPromptDescription1),
+					userPromptResources2,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "description", userPromptDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.filename", userPromptResourceFileName2),
 				),
 			},
 			{
