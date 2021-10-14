@@ -49,7 +49,7 @@ resource "genesyscloud_architect_datatable" "customers" {
 ### Required
 
 - **name** (String) Name of the datatable.
-- **properties** (Block List, Min: 1) Schema properties of the datatable. This must at a minimum contain a string property 'key' that will serve as the row key. (see [below for nested schema](#nestedblock--properties))
+- **properties** (Block List, Min: 1) Schema properties of the datatable. This must at a minimum contain a string property 'key' that will serve as the row key. Properties cannot be removed from a schema once they have been added (see [below for nested schema](#nestedblock--properties))
 
 ### Optional
 

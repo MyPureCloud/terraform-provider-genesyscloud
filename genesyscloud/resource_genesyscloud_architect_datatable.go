@@ -106,7 +106,7 @@ func resourceArchitectDatatable() *schema.Resource {
 				Optional:    true,
 			},
 			"properties": {
-				Description: "Schema properties of the datatable. This must at a minimum contain a string property 'key' that will serve as the row key.",
+				Description: "Schema properties of the datatable. This must at a minimum contain a string property 'key' that will serve as the row key. Properties cannot be removed from a schema once they have been added",
 				Type:        schema.TypeList,
 				Required:    true,
 				MinItems:    1,
