@@ -125,6 +125,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_telephony_providers_edges_trunk":             dataSourceTrunk(),
 				"genesyscloud_telephony_providers_edges_trunkbasesettings": dataSourceTrunkBaseSettings(),
 				"genesyscloud_telephony_providers_edges_did_pool":          dataSourceDidPool(),
+				"genesyscloud_idp_generic":                                 dataSourceIdpGeneric(),
 			},
 			ConfigureContextFunc: configure(version),
 		}
