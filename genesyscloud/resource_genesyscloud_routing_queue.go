@@ -74,7 +74,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		queues, _, getErr := routingAPI.GetRoutingQueues(100, pageNum, "", "", nil, nil)
+		queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, 100, "", "", nil, nil)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of queues: %v", getErr)
 		}
