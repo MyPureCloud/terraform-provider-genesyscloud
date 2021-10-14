@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -26,6 +27,16 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolDescription1 := "Test description"
 	didPoolComments1 := "Test comments"
 	didPoolProvider1 := "PURE_CLOUD"
+
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = deleteDidPoolWithStartNumber(didPoolStartPhoneNumber1)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -76,6 +87,31 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 		},
 		CheckDestroy: testVerifyDidPoolsDestroyed,
 	})
+}
+
+func deleteDidPoolWithStartNumber(startNumber string) error {
+	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		didPools, _, getErr := edgesAPI.GetTelephonyProvidersEdgesDidpools(100, pageNum, "", nil)
+		if getErr != nil {
+			return getErr
+		}
+
+		if didPools.Entities == nil || len(*didPools.Entities) == 0 {
+			break
+		}
+
+		for _, didPool := range *didPools.Entities {
+			if didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == startNumber {
+				_, err := edgesAPI.DeleteTelephonyProvidersEdgesDidpool(*didPool.Id)
+				time.Sleep(20 * time.Second)
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func generateDidPoolResource(didPool *didPoolStruct) string {
