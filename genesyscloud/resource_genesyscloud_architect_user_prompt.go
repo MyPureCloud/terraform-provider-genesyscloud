@@ -732,6 +732,7 @@ func resourceArchitectUserPrompt() *schema.Resource {
 				Description: "Name of the user audio prompt.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"description": {
 				Description: "Description of the user audio prompt.",
@@ -806,9 +807,11 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 			}
 			resourceFilenameStr := resourceFilename.(string)
 
-			status, content := uploadPrompt(uploadUri, &resourceFilenameStr, sdkConfig)
-			log.Printf("Status of upload: %s", status)
-			log.Printf("Content of upload: %s", content)
+			if err := uploadPrompt(uploadUri, &resourceFilenameStr, sdkConfig); err != nil {
+				return diag.Errorf("Failed to upload user prompt resource %s: %s", name, err)
+			}
+
+			log.Printf("Successfully uploaded user prompt resource for language: %s", resourceLanguage)
 		}
 	}
 
@@ -824,34 +827,36 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading User Prompt %s", d.Id())
-	userPrompt, resp, getErr := architectAPI.GetArchitectPrompt(d.Id())
-	if getErr != nil {
-		if resp != nil && resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
+
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+		userPrompt, resp, getErr := architectAPI.GetArchitectPrompt(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
 		}
-		return diag.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr)
-	}
 
-	d.Set("name", *userPrompt.Name)
-	d.Set("description", *userPrompt.Description)
-
-	if userPrompt.Name != nil {
 		d.Set("name", *userPrompt.Name)
-	} else {
-		d.Set("name", nil)
-	}
-
-	if userPrompt.Description != nil {
 		d.Set("description", *userPrompt.Description)
-	} else {
-		d.Set("description", nil)
-	}
 
-	d.Set("resources", flattenPromptResources(userPrompt.Resources))
+		if userPrompt.Name != nil {
+			d.Set("name", *userPrompt.Name)
+		} else {
+			d.Set("name", nil)
+		}
 
-	log.Printf("Read Audio Prompt %s %s", d.Id(), *userPrompt.Id)
-	return nil
+		if userPrompt.Description != nil {
+			d.Set("description", *userPrompt.Description)
+		} else {
+			d.Set("description", nil)
+		}
+
+		d.Set("resources", flattenPromptResources(userPrompt.Resources))
+
+		log.Printf("Read Audio Prompt %s %s", d.Id(), *userPrompt.Id)
+		return nil
+	})
 }
 
 func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -876,6 +881,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updated User Prompt %s", d.Id())
+	time.Sleep(5 * time.Second)
 	return readUserPrompt(ctx, d, meta)
 }
 
@@ -905,13 +911,13 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	})
 }
 
-func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclientv2.Configuration) (string, []byte) {
+func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclientv2.Configuration) error {
 	accessToken := sdkConfig.AccessToken
 
 	client := &http.Client{}
 	file, err := os.Open(*filename)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	defer file.Close()
@@ -921,7 +927,7 @@ func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclient
 	part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	io.Copy(part, file)
@@ -929,7 +935,7 @@ func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclient
 	request, err := http.NewRequest("POST", *uploadUri, body)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	request.Header.Add("Content-Type", writer.FormDataContentType())
@@ -938,17 +944,18 @@ func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclient
 	response, err := client.Do(request)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer response.Body.Close()
 
 	content, err := ioutil.ReadAll(response.Body)
-
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	return response.Status, content
+	log.Printf("Content of upload: %s", content)
+
+	return nil
 }
 
 func flattenPromptResources(promptResources *[]platformclientv2.Promptasset) *schema.Set {
@@ -1071,9 +1078,11 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 			}
 			resourceFilenameStr := resourceFilename.(string)
 
-			status, content := uploadPrompt(uploadUri, &resourceFilenameStr, sdkConfig)
-			log.Printf("Status of upload: %s", status)
-			log.Printf("Content of upload: %s", content)
+			if err := uploadPrompt(uploadUri, &resourceFilenameStr, sdkConfig); err != nil {
+				return diag.Errorf("Failed to upload user prompt resource %s: %s", name, err)
+			}
+
+			log.Printf("Successfully uploaded user prompt resource for language: %s", resourceLanguage)
 		}
 	}
 

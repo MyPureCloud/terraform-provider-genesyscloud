@@ -3,8 +3,10 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
@@ -26,7 +28,7 @@ type userPromptResourceStruct struct {
 
 func TestAccResourceUserPromptBasic(t *testing.T) {
 	userPromptResource1 := "test-user_prompt_1"
-	userPromptName1 := "TestUserPrompt_1"
+	userPromptName1 := "TestUserPrompt_1" + strings.Replace(uuid.NewString(), "-", "", -1)
 	userPromptDescription1 := "Test description"
 	userPromptResourceLang1 := "en-us"
 	userPromptResourceLang2 := "ja-jp"
@@ -120,7 +122,7 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 
 func TestAccResourceUserPromptWavFile(t *testing.T) {
 	userPromptResource1 := "test-user_prompt_wav_file"
-	userPromptName1 := "TestUserPromptWav_1"
+	userPromptName1 := "TestUserPromptWav_1" + strings.Replace(uuid.NewString(), "-", "", -1)
 	userPromptDescription1 := "Test prompt with wav audio file"
 	userPromptResourceLang1 := "en-us"
 	userPromptResourceText1 := "This is a test greeting!"
