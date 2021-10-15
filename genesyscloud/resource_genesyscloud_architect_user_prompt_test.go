@@ -210,7 +210,7 @@ func generateUserPromptResource(userPrompt *userPromptStruct) string {
 	return fmt.Sprintf(`resource "genesyscloud_architect_user_prompt" "%s" {
 		name = "%s"
 		description = %s
-        %s
+		%s
 	}
 	`, userPrompt.resourceID,
 		userPrompt.name,

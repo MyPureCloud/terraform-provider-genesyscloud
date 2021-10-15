@@ -46,7 +46,7 @@ func generateUserPromptDataSource(
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_architect_user_prompt" "%s" {
 		name = %s
-        depends_on=[%s]
+		depends_on=[%s]
 	}
 	`, resourceID, name, dependsOnResource)
 }
