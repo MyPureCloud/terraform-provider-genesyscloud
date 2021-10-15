@@ -341,6 +341,9 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 
 	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
 	if err != nil {
+		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
+			return nil, nil
+		}
 		return nil, err
 	}
 	if state == nil || state.ID == "" {
