@@ -3,12 +3,12 @@
 page_title: "genesyscloud_telephony_providers_edges_did_pool Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-Data source for Genesys Cloud DID pool. Select a DID pool by starting phone number and ending phone number.
+  Data source for Genesys Cloud DID pool. Select a DID pool by starting phone number and ending phone number
 ---
 
 # genesyscloud_telephony_providers_edges_did_pool (Data Source)
 
-Data source for Genesys Cloud DID pool. Select a DID pool by starting phone number and ending phone number.
+Data source for Genesys Cloud DID pool. Select a DID pool by starting phone number and ending phone number
 
 ## Example Usage
 
@@ -24,8 +24,8 @@ data "genesyscloud_telephony_providers_edges_did_pool" "didPool" {
 
 ### Required
 
-- **startPhoneNumber** (String) Starting phone number of the DID pool range.
-- **endPhoneNumber** (String) Ending phone number of the DID pool range.
+- **end_phone_number** (String) Ending phone number of the DID Pool range.
+- **start_phone_number** (String) Starting phone number of the DID Pool range.
 
 ### Optional
 
