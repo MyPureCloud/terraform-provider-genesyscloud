@@ -122,6 +122,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_telephony_providers_edges_linebasesettings":  dataSourceLineBaseSettings(),
 				"genesyscloud_telephony_providers_edges_phone":             dataSourcePhone(),
 				"genesyscloud_telephony_providers_edges_phonebasesettings": dataSourcePhoneBaseSettings(),
+				"genesyscloud_telephony_providers_edges_trunk":             dataSourceTrunk(),
 				"genesyscloud_telephony_providers_edges_trunkbasesettings": dataSourceTrunkBaseSettings(),
 				"genesyscloud_telephony_providers_edges_did_pool":          dataSourceDidPool(),
 			},
