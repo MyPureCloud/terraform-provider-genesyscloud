@@ -816,8 +816,9 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	d.SetId(*userPrompt.Id)
-
 	log.Printf("Created user prompt %s %s", name, *userPrompt.Id)
+
+	time.Sleep(5 * time.Second)
 
 	return readUserPrompt(ctx, d, meta)
 }
