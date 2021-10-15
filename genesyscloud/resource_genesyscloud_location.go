@@ -253,7 +253,7 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	log.Printf("Updated location %s %s", name, d.Id())
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 	return readLocation(ctx, d, meta)
 }
 
