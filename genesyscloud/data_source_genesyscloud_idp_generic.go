@@ -12,11 +12,11 @@ import (
 
 func dataSourceIdpGeneric() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud identity providers. Select an identity provider by name",
+		Description: "Data source for Genesys Cloud Identity Provider. Select an identity provider by name",
 		ReadContext: readWithPooledClient(dataSourceIdpGenericRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description:      "The identity provider name.",
+				Description:      "Name of the provider.",
 				Type:             schema.TypeString,
 				Required:         true,
 			},
@@ -33,17 +33,18 @@ func dataSourceIdpGenericRead(ctx context.Context, d *schema.ResourceData, m int
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			idps, _, getErr := idpAPI.GetIdentityproviders()
+			identityProviders, _, getErr := idpAPI.GetIdentityproviders()
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("error requesting list of identity providers: %s", getErr))
 			}
 
-			if idps.Entities == nil || len(*idps.Entities) == 0 {
+			if identityProviders == nil  {
 				return resource.RetryableError(fmt.Errorf("no identity providers found"))
 			}
 
-			for _, provider := range *idps.Entities {
+			for _, provider := range *identityProviders.Entities {
+				fmt.Println(provider.Name)
 				if provider.Name != nil && *provider.Name == idpName &&
 					provider.Disabled != nil && *provider.Disabled == false {
 					d.SetId(*provider.Id)

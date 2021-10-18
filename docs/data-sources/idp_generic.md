@@ -3,17 +3,17 @@
 page_title: "genesyscloud_idp_generic Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-Data source for Generic Genesys Cloud identity provider. Select an identity provider by name.
+Data source for Generic Genesys Cloud identity provider. Select an identity provider by name
 ---
 
 # genesyscloud_idp_generic (Data Source)
 
-Data source for Generic Genesys Cloud identity provider. Select an identity provider by name.
+Data source for Generic Genesys Cloud identity provider. Select an identity provider by name
 
 ## Example Usage
 
 ```terraform
-data "genesyscloud_idp_generic" "idp" {
+data "genesyscloud_idp_generic" "identityProvider" {
   name = "test idp name"
 }
 ```

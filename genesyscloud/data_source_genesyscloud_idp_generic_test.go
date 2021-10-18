@@ -11,11 +11,9 @@ import (
 
 func TestAccDataSourceIdpGeneric(t *testing.T) {
 	var (
-		name1 = "generic"
-		name2 = "generic2"
-		//name1     = "generic"
-		//name2 = "idpData"
-		name                     = "test idp" + uuid.NewString()
+		idpRes = "identityProvider"
+		idpDataRes = "identityProviderData"
+		name = "test idp" + uuid.NewString()
 		uri1  = "https://test.com/1"
 		uri2  = "https://test.com/2"
 	)
@@ -27,7 +25,7 @@ func TestAccDataSourceIdpGeneric(t *testing.T) {
 			{
 				// Create
 				Config: generateIdpGenericResource(
-					name1,
+					name,
 					generateStringArray(strconv.Quote(testCert1)),
 					uri1,
 					uri2,
@@ -37,12 +35,12 @@ func TestAccDataSourceIdpGeneric(t *testing.T) {
 					nullValue, // No endpoint compression
 					nullValue, // Default name ID format
 				) + generateIdpGenericDataSource(
-					name2,
+					idpDataRes,
 					name,
-					"genesyscloud_idp_generic." + name1,
+					"genesyscloud_idp_generic." + idpRes,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_idp_generic." + name2, "id", "genesyscloud_idp_generic." + name1, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_idp_generic." + idpDataRes, "id", "genesyscloud_idp_generic." + idpRes, "id"),
 				),
 			},
 		},

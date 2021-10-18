@@ -1,3 +1,3 @@
-data "genesyscloud_telephony_providers_edges_did_pool" "idp" {
+data "genesyscloud_idp_generic" "identityProvider" {
   name = "test idp"
 }
