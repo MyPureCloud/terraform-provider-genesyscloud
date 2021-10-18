@@ -1,10 +1,22 @@
 package genesyscloud
 
-import "github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"strings"
+)
 
 func stringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+func subStringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if strings.Contains(b, a) {
 			return true
 		}
 	}

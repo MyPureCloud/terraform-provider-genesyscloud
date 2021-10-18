@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -54,7 +53,7 @@ func resourceTfExport() *schema.Resource {
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: validation.StringInSlice(getAvailableExporterTypes(), false),
+					//ValidateFunc: validation.StringInSlice(getAvailableExporterTypes(), false),
 				},
 				ForceNew: true,
 			},
@@ -224,44 +223,45 @@ func getFilePath(d *schema.ResourceData, filename string) (string, diag.Diagnost
 }
 
 func buildSanitizedResourceMaps(exporters map[string]*ResourceExporter) diag.Diagnostics {
-	errorChan := make(chan diag.Diagnostics)
-	wgDone := make(chan bool)
+	//errorChan := make(chan diag.Diagnostics)
+	//wgDone := make(chan bool)
 
 	// Cancel remaining goroutines if an error occurs
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var wg sync.WaitGroup
+	//var wg sync.WaitGroup
 	for name, exporter := range exporters {
-		wg.Add(1)
-		go func(name string, exporter *ResourceExporter) {
-			defer wg.Done()
-			log.Printf("Getting all resources for type %s", name)
+		//wg.Add(1)
+		//go func(name string, exporter *ResourceExporter) {
+		//	defer wg.Done()
+			fmt.Printf("Getting all resources for type %s\n", name)
 			err := exporter.loadSanitizedResourceMap(ctx)
 			if err != nil {
-				select {
-				case <-ctx.Done():
-				case errorChan <- err:
-				}
+				fmt.Println("err")
+				//select {
+				//case <-ctx.Done():
+				//case errorChan <- err:
+				//}
 				cancel()
-				return
+				return err
 			}
-			log.Printf("Found %d resources for type %s", len(exporter.SanitizedResourceMap), name)
-		}(name, exporter)
+			fmt.Printf("Found %d resources for type %s\n", len(exporter.SanitizedResourceMap), name)
+		//}(name, exporter)
 	}
 
-	go func() {
-		wg.Wait()
-		close(wgDone)
-	}()
+	//go func() {
+	//	wg.Wait()
+	//	close(wgDone)
+	//}()
 
 	// Wait until either WaitGroup is done or an error is received
-	select {
-	case <-wgDone:
+	//select {
+	//case <-wgDone:
 		return nil
-	case err := <-errorChan:
-		return err
-	}
+	//case err := <-errorChan:
+	//	return err
+	//}
 }
 
 func getResourcesForType(resType string, provider *schema.Provider, exporter *ResourceExporter, meta interface{}) ([]resourceInfo, diag.Diagnostics) {

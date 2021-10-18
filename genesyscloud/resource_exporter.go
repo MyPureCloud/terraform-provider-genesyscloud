@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"hash/fnv"
 	"regexp"
 	"strconv"
@@ -63,6 +64,7 @@ type ResourceExporter struct {
 }
 
 func (r *ResourceExporter) loadSanitizedResourceMap(ctx context.Context) diag.Diagnostics {
+	fmt.Println("loadSanitizedResourceMap")
 	result, err := r.GetResourcesFunc(ctx)
 	if err != nil {
 		return err
@@ -158,11 +160,20 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 	// Include all if no filters
 	if len(filter) > 0 {
 		for resType := range exporters {
-			if !stringInSlice(resType, filter) {
+			fmt.Println("resType", resType)
+			if resType == "genesyscloud_routing_queue" {
+				fmt.Println("here")
+			}
+			if !subStringInSlice(resType, filter) {
+				fmt.Println("delete")
 				delete(exporters, resType)
+			} else {
+				fmt.Println("not delete")
 			}
 		}
+		fmt.Println("out of loop")
 	}
+	fmt.Println("out of if")
 	return exporters
 }
 
@@ -187,6 +198,7 @@ func escapeRune(s string) string {
 var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
 
 func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
+	fmt.Println("sanitizeResourceNames", idMetaMap)
 	for _, meta := range idMetaMap {
 		name := unsafeNameChars.ReplaceAllStringFunc(meta.Name, escapeRune)
 		if name != meta.Name {

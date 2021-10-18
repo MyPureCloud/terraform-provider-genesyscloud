@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -47,7 +46,7 @@ func TestAccResourceTfExport(t *testing.T) {
 					exportResource1,
 					exportTestDir,
 					trueValue,
-					strconv.Quote("genesyscloud_auth_role.permission_policies.conditions"),
+					"",//strconv.Quote("genesyscloud_auth_role.permission_policies.conditions"),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateFileCreated(configPath),
@@ -147,31 +146,7 @@ func generateTfExportResource(
 		directory = "%s"
         include_state_file = %s
 		resource_types = [
-			"genesyscloud_architect_datatable",
-			"genesyscloud_architect_datatable_row",
-			"genesyscloud_auth_role",
-			"genesyscloud_auth_division",
-			"genesyscloud_group",
-			"genesyscloud_group_roles",
-			"genesyscloud_idp_adfs",
-			"genesyscloud_idp_generic",
-			"genesyscloud_idp_gsuite",
-			"genesyscloud_idp_okta",
-			"genesyscloud_idp_onelogin",
-			"genesyscloud_idp_ping",
-			"genesyscloud_idp_salesforce",
-			"genesyscloud_integration",
-			"genesyscloud_integration_action",
-			"genesyscloud_integration_credential",
-			"genesyscloud_location",
-			"genesyscloud_oauth_client",
-			"genesyscloud_routing_email_domain",
-			"genesyscloud_routing_email_route",
-			"genesyscloud_routing_language",
-			"genesyscloud_routing_queue",
-			"genesyscloud_routing_skill",
-			"genesyscloud_routing_utilization",
-			"genesyscloud_routing_wrapupcode"
+			"genesyscloud_routing_queue::test"
 		]
 		exclude_attributes = [%s]
     }
