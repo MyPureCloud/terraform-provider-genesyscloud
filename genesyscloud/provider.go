@@ -111,6 +111,7 @@ func New(version string) func() *schema.Provider {
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"genesyscloud_architect_datatable":                         dataSourceArchitectDatatable(),
+				"genesyscloud_architect_schedules":                         dataSourceSchedule(),
 				"genesyscloud_architect_schedulegroups":                    dataSourceArchitectScheduleGroups(),
 				"genesyscloud_architect_user_prompt":                       dataSourceUserPrompt(),
 				"genesyscloud_auth_role":                                   dataSourceAuthRole(),
