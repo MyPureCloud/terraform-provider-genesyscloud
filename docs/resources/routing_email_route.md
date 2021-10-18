@@ -53,9 +53,9 @@ resource "genesyscloud_routing_email_route" "support-route" {
 
 ### Optional
 
-- **from_email** (String) The sender email to use for outgoing replies.
 - **auto_bcc** (Block Set) The recipients that should be automatically blind copied on outbound emails associated with this route. (see [below for nested schema](#nestedblock--auto_bcc))
 - **flow_id** (String) The flow to use for processing the email. This should not be set if a queue_id is specified.
+- **from_email** (String) The sender email to use for outgoing replies.
 - **id** (String) The ID of this resource.
 - **language_id** (String) The language to use for routing.
 - **priority** (Number) The priority to use for routing.

@@ -110,6 +110,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_user_roles":                                  resourceUserRoles(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
+				"genesyscloud_architect_datatable":                         dataSourceArchitectDatatable(),
 				"genesyscloud_architect_user_prompt":                       dataSourceUserPrompt(),
 				"genesyscloud_auth_role":                                   dataSourceAuthRole(),
 				"genesyscloud_auth_division":                               dataSourceAuthDivision(),
