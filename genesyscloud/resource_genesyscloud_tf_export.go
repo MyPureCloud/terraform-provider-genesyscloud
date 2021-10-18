@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
+	"hash/fnv"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -136,6 +139,13 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		if resourceTypeJSONMaps[resource.Type] == nil {
 			resourceTypeJSONMaps[resource.Type] = make(map[string]jsonMap)
 		}
+
+		if len(resourceTypeJSONMaps[resource.Type][resource.Name]) > 0 {
+			algorithm := fnv.New32()
+			algorithm.Write([]byte(uuid.NewString()))
+			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+		}
+
 		resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
 	}
 

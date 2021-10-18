@@ -85,7 +85,6 @@ func resourceOAuthClient() *schema.Resource {
 				Description: "The name of the OAuth client.",
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 			},
 			"description": {
 				Description: "The description of the OAuth client.",
