@@ -12,6 +12,7 @@ import (
 
 func TestAccResourceIdpGeneric(t *testing.T) {
 	var (
+		idpGenericRes       = "idpGenericRes"
 		name1               = "generic1"
 		name2               = "generic2"
 		uri1                = "https://test.com/1"
@@ -30,6 +31,7 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 			{
 				// Create
 				Config: generateIdpGenericResource(
+					idpGenericRes,
 					name1,
 					generateStringArray(strconv.Quote(testCert1)),
 					uri1,
@@ -55,6 +57,7 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 			{
 				// Update with new values
 				Config: generateIdpGenericResource(
+					idpGenericRes,
 					name2,
 					generateStringArray(strconv.Quote(testCert2)),
 					uri2,
@@ -80,6 +83,7 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 			{
 				// Update with multiple certs
 				Config: generateIdpGenericResource(
+					idpGenericRes,
 					name2,
 					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
 					uri2,
@@ -112,6 +116,7 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 }
 
 func generateIdpGenericResource(
+	resName string,
 	name string,
 	certs string,
 	issuerURI string,
@@ -121,7 +126,7 @@ func generateIdpGenericResource(
 	logoImageData string,
 	endpointCompression string,
 	nameIDFormat string) string {
-	return fmt.Sprintf(`resource "genesyscloud_idp_generic" "generic" {
+	return fmt.Sprintf(`resource "genesyscloud_idp_generic" "%s" {
         name = "%s"
 		certificates = %s
 		issuer_uri = "%s"
@@ -132,7 +137,7 @@ func generateIdpGenericResource(
         endpoint_compression = %s
         name_identifier_format = %s
 	}
-	`, name, certs, issuerURI, targetURI, partyID, disabled, logoImageData, endpointCompression, nameIDFormat)
+	`, resName, name, certs, issuerURI, targetURI, partyID, disabled, logoImageData, endpointCompression, nameIDFormat)
 }
 
 func testVerifyIdpGenericDestroyed(state *terraform.State) error {

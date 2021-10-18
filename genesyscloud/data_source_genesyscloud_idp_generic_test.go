@@ -25,6 +25,7 @@ func TestAccDataSourceIdpGeneric(t *testing.T) {
 			{
 				// Create
 				Config: generateIdpGenericResource(
+					idpRes,
 					name,
 					generateStringArray(strconv.Quote(testCert1)),
 					uri1,
