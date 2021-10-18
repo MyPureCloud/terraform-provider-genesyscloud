@@ -118,6 +118,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_script":                                      dataSourceScript(),
 				"genesyscloud_station":                                     dataSourceStation(),
 				"genesyscloud_user":                                        dataSourceUser(),
+				"genesyscloud_telephony_providers_edges_edge_group":        dataSourceEdgeGroup(),
 				"genesyscloud_telephony_providers_edges_site":              dataSourceSite(),
 				"genesyscloud_telephony_providers_edges_linebasesettings":  dataSourceLineBaseSettings(),
 				"genesyscloud_telephony_providers_edges_phone":             dataSourcePhone(),
