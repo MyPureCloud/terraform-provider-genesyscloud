@@ -88,7 +88,7 @@ func updateGroupRoles(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updated group roles for %s", d.Id())
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 	return readGroupRoles(ctx, d, meta)
 }
 

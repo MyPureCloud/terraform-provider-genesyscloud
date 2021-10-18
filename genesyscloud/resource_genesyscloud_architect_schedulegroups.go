@@ -206,7 +206,7 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	log.Printf("Finished updating schedule group %s", name)
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 	return readArchitectScheduleGroups(ctx, d, meta)
 }
 

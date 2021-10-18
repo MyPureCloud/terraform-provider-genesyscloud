@@ -183,7 +183,7 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("Updated routing email domain %s", d.Id())
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 	return readRoutingEmailDomain(ctx, d, meta)
 }
 

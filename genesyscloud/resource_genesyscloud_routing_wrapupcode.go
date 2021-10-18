@@ -120,7 +120,7 @@ func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Updated wrapupcode %s", name)
 
 	// Give time for public API caches to update
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 	return readRoutingWrapupCode(ctx, d, meta)
 }
 

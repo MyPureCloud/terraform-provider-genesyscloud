@@ -265,7 +265,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Updated group %s", name)
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 	return readGroup(ctx, d, meta)
 }
 
