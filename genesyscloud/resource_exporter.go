@@ -120,6 +120,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_architect_ivr":                               architectIvrExporter(),
 		"genesyscloud_architect_schedules":                         architectSchedulesExporter(),
 		"genesyscloud_architect_schedulegroups":                    architectScheduleGroupsExporter(),
+		"genesyscloud_architect_user_prompt":                       architectUserPromptExporter(),
 		"genesyscloud_auth_division":                               authDivisionExporter(),
 		"genesyscloud_auth_role":                                   authRoleExporter(),
 		"genesyscloud_group":                                       groupExporter(),
