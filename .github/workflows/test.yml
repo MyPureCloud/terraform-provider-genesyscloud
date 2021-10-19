@@ -79,7 +79,7 @@ jobs:
         GENESYSCLOUD_OAUTHCLIENT_ID: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
         GENESYSCLOUD_OAUTHCLIENT_SECRET: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
         GENESYSCLOUD_REGION: "us-east-1"
-        GENESYSCLOUD_SDK_DEBUG: "false"
+        GENESYSCLOUD_SDK_DEBUG: "true"
       run: |
         go test -timeout 60m -v -cover ./genesyscloud/
 
@@ -94,6 +94,8 @@ jobs:
     - name: 'Upload Logs'
       if: ${{ always() }}
       uses: actions/upload-artifact@v2
+      run: |
+        find . -name "sdk_debug.log"
       with:
         name: logs ${{ matrix.terraform }}
         path: ./test.log
