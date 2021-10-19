@@ -2,18 +2,17 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceGroup(t *testing.T) {
-	// TODO: Generate a real script once the resource has been added
-	t.Skip("skipping group data source test until resource is defined")
-
 	var (
+		groupResource   = "test-group-members"
 		groupDataSource = "group-data"
-		groupName       = "test group"
+		groupName       = "test group" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -21,12 +20,19 @@ func TestAccDataSourceGroup(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateGroupDataSource(
+				Config: generateGroupResource(
+					groupResource,
+					groupName,
+					nullValue, // No description
+					nullValue, // Default type
+					nullValue, // Default visibility
+					nullValue, // Default rules_visible
+				) + generateGroupDataSource(
 					groupDataSource,
 					groupName,
-				),
+					"genesyscloud_group."+groupResource),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_group."+groupDataSource, "id", ""),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_group."+groupDataSource, "id", "genesyscloud_group."+groupResource, "id"),
 				),
 			},
 		},
@@ -35,9 +41,13 @@ func TestAccDataSourceGroup(t *testing.T) {
 
 func generateGroupDataSource(
 	resourceID string,
-	name string) string {
+	name string,
+	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_group" "%s" {
 		name = "%s"
+		depends_on=[%s]
 	}
-	`, resourceID, name)
+	`, resourceID, name, dependsOnResource)
 }
