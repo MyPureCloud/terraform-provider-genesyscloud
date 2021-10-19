@@ -39,7 +39,7 @@ func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m in
 			}
 
 			if integrations.Entities == nil || len(*integrations.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no integrations found"))
+				return resource.RetryableError(fmt.Errorf("no integrations found with name: %s", integrationName))
 			}
 
 			for _, integration := range *integrations.Entities {
