@@ -131,7 +131,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_telephony_providers_edges_trunkbasesettings": dataSourceTrunkBaseSettings(),
 				"genesyscloud_telephony_providers_edges_did_pool":          dataSourceDidPool(),
 				"genesyscloud_integration":                                 dataSourceIntegration(),
-				"genesyscloud_integration_action":							dataSourceIntegrationAction(),
+				"genesyscloud_integration_action":                          dataSourceIntegrationAction(),
 			},
 			ConfigureContextFunc: configure(version),
 		}
