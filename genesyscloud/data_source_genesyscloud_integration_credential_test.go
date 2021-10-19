@@ -14,20 +14,9 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 		credResource1 = "test_credential_1"
 		credResource2 = "test_credential_2"
 		credName1     = "Terraform Credential Test-" + uuid.NewString()
-		//credName2     = "Terraform Credential Test-" + uuid.NewString()
-
 		typeName1 = "basicAuth"
-		//typeName2 = "callJourney"
-
 		key1   = "userName"
 		val1   = "someUserName"
-		//val1_2 = "otherUserName"
-		//key2   = "password"
-		//val2   = "P@$$W0rd"
-		//val2_2 = "$tr0ng3rP@$$W0rd"
-		//
-		//key3 = "authToken"
-		//val3 = "fakeToken"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -35,7 +24,7 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				// Create with config
+				// Create
 				Config:  generateCredentialResource(
 					credResource1,
 					strconv.Quote(credName1),
