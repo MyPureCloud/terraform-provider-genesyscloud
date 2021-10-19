@@ -31,14 +31,13 @@ func dataSourceGroupRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	exactSearchType := "EXACT"
 	nameField := "name"
+	nameStr := d.Get("name").(string)
 
 	searchCriteria := platformclientv2.Groupsearchcriteria{
 		VarType: &exactSearchType,
+		Value:   &nameStr,
+		Fields:  &[]string{nameField},
 	}
-
-	nameStr := d.Get("name").(string)
-	searchCriteria.Fields = &[]string{nameField}
-	searchCriteria.Value = &nameStr
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		groups, _, getErr := groupsAPI.PostGroupsSearch(platformclientv2.Groupsearchrequest{
@@ -48,8 +47,8 @@ func dataSourceGroupRead(ctx context.Context, d *schema.ResourceData, m interfac
 			return resource.NonRetryableError(fmt.Errorf("Error requesting group %s: %s", nameStr, getErr))
 		}
 
-		if groups.Results == nil || len(*groups.Results) == 0 {
-			return resource.RetryableError(fmt.Errorf("No groups found with search criteria %v", searchCriteria))
+		if *groups.Total == 0 {
+			return resource.RetryableError(fmt.Errorf("No groups found with search criteria %v ", searchCriteria))
 		}
 
 		// Select first group in the list
