@@ -19,7 +19,6 @@ func dataSourceIntegration() *schema.Resource {
 				Description:      "The name of the integration",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validatePhoneNumber,
 			},
 		},
 	}
@@ -33,10 +32,10 @@ func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m in
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			integrations, _, getErr := integrationAPI.GetIntegrations(100, pageNum, "", make([]string, 0), "", "")
+			integrations, _, getErr := integrationAPI.GetIntegrations(100, pageNum, "", nil, "", "")
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("error requesting list of integrations: %s", getErr))
+				return resource.NonRetryableError(fmt.Errorf("failed to get page of integrations: %s", getErr))
 			}
 
 			if integrations.Entities == nil || len(*integrations.Entities) == 0 {
