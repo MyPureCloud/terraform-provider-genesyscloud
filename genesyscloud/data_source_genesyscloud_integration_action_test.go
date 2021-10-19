@@ -5,23 +5,21 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"strconv"
-
-	//"strconv"
 	"testing"
 )
 
 func TestAccDataSourceIntegrationAction(t *testing.T) {
 	var (
-		integResource1 = "test_integration1"
-		integTypeID    = "purecloud-data-actions"
+		integResource1  = "test_integration1"
+		integTypeID     = "purecloud-data-actions"
 		actionResource1 = "test-action1"
 		actionResource2 = "test-action2"
 		actionName1     = "Terraform Action1-" + uuid.NewString()
 		actionCateg1    = "Genesys Cloud Data Actions"
-		inputAttr1  = "service"
-		outputAttr1 = "status"
-		reqUrlTemplate1     = "/api/v2/users"
-		reqType1            = "GET"
+		inputAttr1      = "service"
+		outputAttr1     = "status"
+		reqUrlTemplate1 = "/api/v2/users"
+		reqType1        = "GET"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,7 +28,7 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create without config
-				Config:  generateIntegrationResource(
+				Config: generateIntegrationResource(
 					integResource1,
 					nullValue,
 					strconv.Quote(integTypeID),
@@ -54,7 +52,7 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 					actionResource2,
 					actionName1,
 					"genesyscloud_integration_action."+actionResource1,
-					),
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_action."+actionResource2, "id", "genesyscloud_integration_action."+actionResource1, "id"), // Default value would be "DISABLED"
 				),
@@ -67,8 +65,8 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 func generateIntegrationActionDataSource(
 	resourceID string,
 	name string,
-// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_integration_action" "%s" {
 		name = "%s"

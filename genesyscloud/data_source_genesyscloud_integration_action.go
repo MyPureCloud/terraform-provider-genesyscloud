@@ -16,9 +16,9 @@ func dataSourceIntegrationAction() *schema.Resource {
 		ReadContext: readWithPooledClient(dataSourceIntegrationActionRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description:      "The name of the integration action",
-				Type:             schema.TypeString,
-				Required:         true,
+				Description: "The name of the integration action",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
@@ -39,11 +39,11 @@ func dataSourceIntegrationActionRead(ctx context.Context, d *schema.ResourceData
 			}
 
 			if integrationAction.Entities == nil || len(*integrationAction.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no integration actions found with name: %s", actionName ))
+				return resource.RetryableError(fmt.Errorf("no integration actions found with name: %s", actionName))
 			}
 
 			for _, action := range *integrationAction.Entities {
-				if  action.Name != nil && *action.Name ==  actionName {
+				if action.Name != nil && *action.Name == actionName {
 					d.SetId(*action.Id)
 					return nil
 				}
