@@ -39,7 +39,7 @@ func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.Resource
 			}
 
 			if integrationCredentials.Entities == nil || len(*integrationCredentials.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no integration credentials found"))
+				return resource.RetryableError(fmt.Errorf("no integration credentials found with name: %s", credName))
 			}
 
 			for _, credential := range *integrationCredentials.Entities {
