@@ -63,7 +63,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					generateIntegrationActionConfigRequest(
 						reqUrlTemplate1,
 						reqType1,
-						nullValue, // Default req template
+						nullValue, // Default req templatezz
 						"",        // No headers
 					),
 					// Default config response
