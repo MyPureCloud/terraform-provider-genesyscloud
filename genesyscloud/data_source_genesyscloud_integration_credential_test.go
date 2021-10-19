@@ -26,6 +26,7 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 			{
 				// Create
 				Config: generateCredentialResource(
+
 					credResource1,
 					strconv.Quote(credName1),
 					strconv.Quote(typeName1),
