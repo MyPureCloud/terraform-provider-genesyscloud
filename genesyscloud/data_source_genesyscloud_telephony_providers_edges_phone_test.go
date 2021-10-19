@@ -12,7 +12,7 @@ func TestAccDataSourcePhone(t *testing.T) {
 	var (
 		phoneRes     = "phone1234"
 		phoneDataRes = "phoneData"
-		name1        = "test-phone"
+		name1        = "test-phone" + uuid.NewString()
 		stateActive  = "active"
 
 		phoneBaseSettingsRes  = "phoneBaseSettings1234"

@@ -18,7 +18,7 @@ func TestAccResourceAuthDivision(t *testing.T) {
 		divName1     = "Terraform Div-" + uuid.NewString()
 		divName2     = "Terraform Div-" + uuid.NewString()
 		divDesc1     = "Terraform test division"
-		divHomeName  = "New Home"
+		divHomeName  = "New Home" + uuid.NewString()
 		homeDesc     = "Home"
 		homeDesc2    = "Home Division"
 	)
