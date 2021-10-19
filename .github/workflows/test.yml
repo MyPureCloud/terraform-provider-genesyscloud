@@ -67,7 +67,7 @@ jobs:
     - name: Get dependencies
       run: |
         go mod download
-        
+
     - name: TF acceptance tests
       timeout-minutes: 45
       env:
@@ -97,4 +97,12 @@ jobs:
       with:
         name: logs ${{ matrix.terraform }}
         path: ./test.log
+        retention-days: 5
+
+    - name: 'Upload SDK Log'
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: sdk_log ${{ matrix.terraform }}
+        path: ./genesyscloud/sdk_debug.log
         retention-days: 5
