@@ -82,6 +82,10 @@ jobs:
         GENESYSCLOUD_SDK_DEBUG: "true"
       run: |
         go test -timeout 60m -v -cover ./genesyscloud/
+        mkdir ./.terraform/
+        touch ./.terraform/test
+        mkdir ./genesyscloud/.terraform/
+        touch ./genesyscloud/.terraform/test
 
     - name: 'Upload Export Result'
       if: ${{ always() }}
@@ -94,9 +98,15 @@ jobs:
     - name: 'Upload Logs'
       if: ${{ always() }}
       uses: actions/upload-artifact@v2
-      run: |
-        find . -name "sdk_debug.log"
       with:
         name: logs ${{ matrix.terraform }}
         path: ./test.log
+        retention-days: 5
+
+    - name: 'Upload SDK Log'
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: sdk_log ${{ matrix.terraform }}
+        path: ./genesyscloud/sdk_debug.log
         retention-days: 5
