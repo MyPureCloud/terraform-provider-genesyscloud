@@ -16,9 +16,9 @@ func dataSourceIntegrationCredential() *schema.Resource {
 		ReadContext: readWithPooledClient(dataSourceIntegrationCredentialRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description:      "The name of the integration credential",
-				Type:             schema.TypeString,
-				Required:         true,
+				Description: "The name of the integration credential",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
@@ -43,7 +43,7 @@ func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.Resource
 			}
 
 			for _, credential := range *integrationCredentials.Entities {
-				if  credential.Name != nil && *credential.Name ==  credName {
+				if credential.Name != nil && *credential.Name == credName {
 					d.SetId(*credential.Id)
 					return nil
 				}

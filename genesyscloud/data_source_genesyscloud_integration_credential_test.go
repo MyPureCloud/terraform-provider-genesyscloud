@@ -14,9 +14,9 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 		credResource1 = "test_credential_1"
 		credResource2 = "test_credential_2"
 		credName1     = "Terraform Credential Test-" + uuid.NewString()
-		typeName1 = "basicAuth"
-		key1   = "userName"
-		val1   = "someUserName"
+		typeName1     = "basicAuth"
+		key1          = "userName"
+		val1          = "someUserName"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -25,7 +25,7 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config:  generateCredentialResource(
+				Config: generateCredentialResource(
 					credResource1,
 					strconv.Quote(credName1),
 					strconv.Quote(typeName1),
@@ -47,8 +47,8 @@ func TestAccDataSourceIntegrationCredential(t *testing.T) {
 func generateIntegrationCredentialDataSource(
 	resourceID string,
 	name string,
-// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_integration_credential" "%s" {
 		name = "%s"
