@@ -315,7 +315,7 @@ func getDefaultSiteId() (string, error) {
 
 func authorizeSdk() error {
 	// Create new config
-	sdkConfig = platformclientv2.NewConfiguration()
+	sdkConfig = platformclientv2.GetDefaultConfiguration()
 
 	sdkConfig.BasePath = getRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
 
