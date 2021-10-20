@@ -205,8 +205,13 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting Datatable Row %s", d.Id())
-	_, err := archAPI.DeleteFlowsDatatableRow(tableId, keyStr)
+	resp, err := archAPI.DeleteFlowsDatatableRow(tableId, keyStr)
 	if err != nil {
+		if isStatus404(resp) {
+			// Parent datatable was probably deleted which caused the row to be deleted
+			log.Printf("Datatable row already deleted %s", d.Id())
+			return nil
+		}
 		return diag.Errorf("Failed to delete Datatable Row %s: %s", d.Id(), err)
 	}
 
