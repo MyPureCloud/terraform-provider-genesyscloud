@@ -32,7 +32,8 @@ func dataSourceTrunkBaseSettingsRead(ctx context.Context, d *schema.ResourceData
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			trunkBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesettings(pageNum, 100, "", "", false, true, false, []string{"properties"}, name)
+			const pageSize = 100
+			trunkBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesettings(pageNum, pageSize, "", "", false, true, false, []string{"properties"}, name)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting trunk base settings %s: %s", name, getErr))

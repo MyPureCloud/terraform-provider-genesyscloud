@@ -32,7 +32,8 @@ func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m in
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			integrations, _, getErr := integrationAPI.GetIntegrations(100, pageNum, "", nil, "", "")
+			const pageSize = 100
+			integrations, _, getErr := integrationAPI.GetIntegrations(pageSize, pageNum, "", nil, "", "")
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("failed to get page of integrations: %s", getErr))

@@ -34,7 +34,8 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 	// Find first queue name. Retry in case new queue is not yet indexed by search
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, 100, name, "", nil, nil)
+			const pageSize = 100
+			queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, name, "", nil, nil)
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting queue %s: %s", name, getErr))
 			}

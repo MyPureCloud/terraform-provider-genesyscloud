@@ -32,7 +32,8 @@ func dataSourceSiteRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(50, pageNum, "", "", name, "", false)
+			const pageSize = 50
+			sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", name, "", false)
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting site %s: %s", name, getErr))
 			}

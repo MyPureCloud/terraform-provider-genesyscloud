@@ -32,7 +32,8 @@ func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.Resource
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			integrationCredentials, _, getErr := integrationAPI.GetIntegrationsCredentials(pageNum, 100)
+			const pageSize = 100
+			integrationCredentials, _, getErr := integrationAPI.GetIntegrationsCredentials(pageNum, pageSize)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("failed to get page of integration credentials: %s", getErr))

@@ -33,7 +33,9 @@ func dataSourceScheduleGroupRead(ctx context.Context, d *schema.ResourceData, m 
 
 	// Query schedule group by name. Retry in case search has not yet indexed the schedule group.
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		scheduleGroups, _, getErr := archAPI.GetArchitectSchedulegroups(1, 100, "", "", name, "", nil)
+		const pageNum = 1
+		const pageSize = 100
+		scheduleGroups, _, getErr := archAPI.GetArchitectSchedulegroups(pageNum, pageSize, "", "", name, "", nil)
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting schedule group %s: %s", name, getErr))
 		}

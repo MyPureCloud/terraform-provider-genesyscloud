@@ -31,8 +31,9 @@ func dataSourceScheduleRead(ctx context.Context, d *schema.ResourceData, m inter
 	name := d.Get("name").(string)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
-			schedule, _, getErr := archAPI.GetArchitectSchedules(pageNum, 100, "", "", name, nil)
+			schedule, _, getErr := archAPI.GetArchitectSchedules(pageNum, pageSize, "", "", name, nil)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting schedule %s: %s", name, getErr))

@@ -33,7 +33,9 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	// Query flow by name. Retry in case search has not yet indexed the flow.
 	return withRetries(ctx, 5*time.Second, func() *resource.RetryError {
-		flows, _, getErr := archAPI.GetFlows(nil, 1, 10, "", "", nil, name, "", "", "", "", "", "", "", false, false, "", "", nil)
+		const pageNum = 1
+		const pageSize = 10
+		flows, _, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, false, "", "", nil)
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s", name, getErr))
 		}

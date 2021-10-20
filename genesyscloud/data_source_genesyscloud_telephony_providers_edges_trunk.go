@@ -32,7 +32,8 @@ func dataSourceTrunkRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			trunks, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, 100, "", "", "", "", "")
+			const pageSize = 100
+			trunks, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting trunk %s: %s", name, getErr))

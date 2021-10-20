@@ -32,7 +32,8 @@ func dataSourcePhoneBaseSettingsRead(ctx context.Context, d *schema.ResourceData
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			phoneBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(50, pageNum, "", "", nil, name)
+			const pageSize = 50
+			phoneBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, name)
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting phone base settings %s: %s", name, getErr))
 			}

@@ -34,7 +34,9 @@ func dataSourceUserPromptRead(ctx context.Context, d *schema.ResourceData, m int
 
 	// Query user prompt by name. Retry in case search has not yet indexed the user prompt.
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		prompts, _, getErr := architectApi.GetArchitectPrompts(1, 100, nameArr, "", "", "", "")
+		const pageNum = 1
+		const pageSize = 100
+		prompts, _, getErr := architectApi.GetArchitectPrompts(pageNum, pageSize, nameArr, "", "", "", "")
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting user prompts %s: %s", name, getErr))
 		}
