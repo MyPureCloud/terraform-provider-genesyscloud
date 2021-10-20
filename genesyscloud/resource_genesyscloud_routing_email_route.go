@@ -372,7 +372,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	log.Printf("Updated routing email route %s", d.Id())
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 	return readRoutingEmailRoute(ctx, d, meta)
 }
 

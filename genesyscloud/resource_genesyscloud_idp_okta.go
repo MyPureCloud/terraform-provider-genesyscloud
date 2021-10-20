@@ -157,7 +157,9 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updated IDP Okta")
-	time.Sleep(2 * time.Second)
+	// Give time for public API caches to update
+	// It takes a long time with idp resources
+	time.Sleep(20 * time.Second)
 	return readIdpOkta(ctx, d, meta)
 }
 

@@ -235,7 +235,9 @@ func updateIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updated IDP Generic")
-	time.Sleep(2 * time.Second)
+	// Give time for public API caches to update
+	// It takes a long time with idp resources
+	time.Sleep(20 * time.Second)
 	return readIdpGeneric(ctx, d, meta)
 }
 

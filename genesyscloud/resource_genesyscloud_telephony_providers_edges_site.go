@@ -415,7 +415,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	log.Printf("Updated site %s", *site.Id)
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 	return readSite(ctx, d, meta)
 }
 

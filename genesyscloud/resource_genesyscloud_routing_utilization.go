@@ -186,7 +186,8 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("Updated Routing Utilization")
-	time.Sleep(10 * time.Second)
+	// It takes a very long time for the caches to expire
+	time.Sleep(30 * time.Second)
 	return readRoutingUtilization(ctx, d, meta)
 }
 

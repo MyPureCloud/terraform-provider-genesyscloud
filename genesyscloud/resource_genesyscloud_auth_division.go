@@ -102,7 +102,7 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	// Give auth service's indexes time to update
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	d.SetId(*division.Id)
 	log.Printf("Created division %s %s", name, *division.Id)
@@ -162,7 +162,8 @@ func updateAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	log.Printf("Updated division %s", name)
 
 	// Give time for public API caches to update
-	time.Sleep(10 * time.Second)
+	// It takes a long time with auth resources
+	time.Sleep(20 * time.Second)
 	return readAuthDivision(ctx, d, meta)
 }
 
