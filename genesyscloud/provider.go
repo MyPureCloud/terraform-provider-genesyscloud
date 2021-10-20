@@ -117,6 +117,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_auth_division":                               dataSourceAuthDivision(),
 				"genesyscloud_flow":                                        dataSourceFlow(),
 				"genesyscloud_routing_language":                            dataSourceRoutingLanguage(),
+				"genesyscloud_routing_queue":                               dataSourceRoutingQueue(),
 				"genesyscloud_routing_skill":                               dataSourceRoutingSkill(),
 				"genesyscloud_routing_email_domain":                        dataSourceRoutingEmailDomain(),
 				"genesyscloud_script":                                      dataSourceScript(),
