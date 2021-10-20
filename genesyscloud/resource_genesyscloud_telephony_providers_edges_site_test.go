@@ -16,7 +16,8 @@ func TestAccResourceSite(t *testing.T) {
 	var (
 		// site
 		siteRes      = "site"
-		name         = "site " + uuid.NewString()
+		name1        = "site " + uuid.NewString()
+		name2        = "site " + uuid.NewString()
 		description1 = "TestAccResourceSite description 1"
 		description2 = "TestAccResourceSite description 2"
 		mediaModel   = "Cloud"
@@ -67,30 +68,30 @@ func TestAccResourceSite(t *testing.T) {
 			{
 				Config: generateSiteResourceWithCustomAttrs(
 					siteRes,
-					name,
+					name1,
 					description1,
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false) + location,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "description", description1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "media_model", mediaModel),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "media_regions_use_latency_based", falseValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site."+siteRes, "location_id", "genesyscloud_location."+locationRes, "id"),
 				),
 			},
-			// Update description and media_regions_use_latency_based
+			// Update description, name and media_regions_use_latency_based
 			{
 				Config: generateSiteResourceWithCustomAttrs(
 					siteRes,
-					name,
+					name2,
 					description2,
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					true) + location,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "description", description2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "media_model", mediaModel),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "media_regions_use_latency_based", trueValue),
@@ -101,7 +102,7 @@ func TestAccResourceSite(t *testing.T) {
 			{
 				Config: generateSiteResourceWithCustomAttrs(
 					siteRes,
-					name,
+					name2,
 					description2,
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
@@ -122,7 +123,7 @@ func TestAccResourceSite(t *testing.T) {
 			{
 				Config: generateSiteResourceWithCustomAttrs(
 					siteRes,
-					name,
+					name2,
 					description2,
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
