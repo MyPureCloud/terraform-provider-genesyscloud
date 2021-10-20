@@ -16,9 +16,9 @@ func dataSourceIntegrationCredential() *schema.Resource {
 		ReadContext: readWithPooledClient(dataSourceIntegrationCredentialRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description:      "The name of the integration credential",
-				Type:             schema.TypeString,
-				Required:         true,
+				Description: "The name of the integration credential",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
