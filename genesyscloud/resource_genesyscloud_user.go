@@ -109,12 +109,13 @@ var (
 	}
 )
 
-func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllUsers(_ context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		users, _, getErr := usersAPI.GetUsers(100, pageNum, nil, nil, "", nil, "", "")
+		const pageSize = 100
+		users, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of users: %v", getErr)
 		}

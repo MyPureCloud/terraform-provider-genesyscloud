@@ -483,7 +483,8 @@ func deleteLocationWithNumber(emergencyNumber string) error {
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		locations, _, getErr := locationsAPI.GetLocations(100, pageNum, nil, "")
+		const pageSize = 100
+		locations, _, getErr := locationsAPI.GetLocations(pageSize, pageNum, nil, "")
 		if getErr != nil {
 			return getErr
 		}
@@ -513,7 +514,8 @@ func deleteLocationWithNumber(emergencyNumber string) error {
 func deleteSiteWithLocationId(locationId string) error {
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 	for pageNum := 1; ; pageNum++ {
-		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(100, pageNum, "", "", "", "", false)
+		const pageSize = 100
+		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false)
 		if getErr != nil {
 			return getErr
 		}

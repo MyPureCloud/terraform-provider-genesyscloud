@@ -31,7 +31,7 @@ var (
 	}
 )
 
-func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllOAuthClients(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	oauthAPI := platformclientv2.NewOAuthApiWithConfig(clientConfig)
 

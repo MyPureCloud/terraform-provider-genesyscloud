@@ -59,7 +59,7 @@ func createGroupRoles(ctx context.Context, d *schema.ResourceData, meta interfac
 	return updateGroupRoles(ctx, d, meta)
 }
 
-func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readGroupRoles(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
@@ -92,7 +92,7 @@ func updateGroupRoles(ctx context.Context, d *schema.ResourceData, meta interfac
 	return readGroupRoles(ctx, d, meta)
 }
 
-func deleteGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteGroupRoles(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	// Does not delete groups or roles. This resource will just no longer manage roles.
 	return nil
 }

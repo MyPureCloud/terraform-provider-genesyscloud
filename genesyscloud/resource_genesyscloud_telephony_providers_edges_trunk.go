@@ -128,7 +128,8 @@ func getTrunkByTrunkBaseId(trunkBaseId string, meta interface{}) (*platformclien
 
 	// It should return the trunk as the first object. Paginating to be safe
 	for pageNum := 1; ; pageNum++ {
-		trunks, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, 100, "", "", "", trunkBaseId, "")
+		const pageSize = 100
+		trunks, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", trunkBaseId, "")
 		if getErr != nil {
 			return nil, fmt.Errorf("Failed to get page of edge groups: %v", getErr)
 		}
@@ -173,7 +174,7 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	})
 }
 
-func deleteTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteTrunk(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	// Does not delete the trunk. This resource will just no longer manage trunks.
 	return nil
 }
@@ -194,7 +195,8 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		trunks, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, 100, "", "", "", "", "")
+		const pageSize = 100
+		trunks, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of trunks: %v", getErr)
 		}

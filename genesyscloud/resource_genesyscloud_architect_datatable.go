@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
+	"net/http"
 	"sort"
 	"strconv"
 	"time"
@@ -45,12 +46,13 @@ var (
 	}
 )
 
-func getAllArchitectDatatables(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllArchitectDatatables(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		tables, _, getErr := archAPI.GetFlowsDatatables("", pageNum, 100, "", "", nil, "")
+		const pageSize = 100
+		tables, _, getErr := archAPI.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of datatables: %v", getErr)
 		}
@@ -144,7 +146,7 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 		datatable.Description = &description
 	}
 
-	table, _, err := sdkPutOrPostArchitectDatatable("POST", datatable, archAPI)
+	table, _, err := sdkPutOrPostArchitectDatatable(http.MethodPost, datatable, archAPI)
 	if err != nil {
 		return diag.Errorf("Failed to create datatable %s: %s", name, err)
 	}
@@ -220,7 +222,7 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 		datatable.Description = &description
 	}
 
-	_, _, err := sdkPutOrPostArchitectDatatable("PUT", datatable, archAPI)
+	_, _, err := sdkPutOrPostArchitectDatatable(http.MethodPut, datatable, archAPI)
 	if err != nil {
 		return diag.Errorf("Failed to update datatable %s: %s", name, err)
 	}
@@ -408,7 +410,7 @@ func sdkPutOrPostArchitectDatatable(method string, body *Datatable, api *platfor
 
 	// create path and map variables
 	path := api.Configuration.BasePath + "/api/v2/flows/datatables"
-	if method == "PUT" && body.Id != nil {
+	if method == http.MethodPut && body.Id != nil {
 		path += "/" + *body.Id
 	}
 
@@ -459,13 +461,13 @@ func sdkGetArchitectDatatable(datatableId string, expand string, api *platformcl
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *Datatable
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, queryParams, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if err == nil && response.Error != nil {
 		err = errors.New(response.ErrorMessage)
 	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
+		err = json.Unmarshal(response.RawBody, &successPayload)
 	}
 	return successPayload, response, err
 }

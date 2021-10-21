@@ -30,7 +30,7 @@ var (
 	}
 )
 
-func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
@@ -45,7 +45,8 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 
 	for _, domain := range *domains.Entities {
 		for pageNum := 1; ; pageNum++ {
-			routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(*domain.Id, 100, pageNum, "")
+			const pageSize = 100
+			routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(*domain.Id, pageSize, pageNum, "")
 			if getErr != nil {
 				if isStatus404(resp) {
 					// Domain not found
@@ -184,7 +185,7 @@ func resourceRoutingEmailRoute() *schema.Resource {
 	}
 }
 
-func importRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func importRoutingEmailRoute(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
 	// Import must specify domain ID and route ID
 	idParts := strings.Split(d.Id(), "/")
 	if len(idParts) < 2 {
@@ -231,7 +232,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	return readRoutingEmailRoute(ctx, d, meta)
 }
 
-func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readRoutingEmailRoute(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	domainID := d.Get("domain_id").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
@@ -243,7 +244,8 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 	// This can be bypassed by issuing a domain query instead.
 	var route *platformclientv2.Inboundroute
 	for pageNum := 1; ; pageNum++ {
-		routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(domainID, 100, pageNum, "")
+		const pageSize = 100
+		routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(domainID, pageSize, pageNum, "")
 		if getErr != nil {
 			if isStatus404(resp) {
 				// Domain not found, so route also does not exist

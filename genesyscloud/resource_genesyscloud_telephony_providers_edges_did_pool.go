@@ -13,12 +13,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
-func getAllDidPools(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	telephonyAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		didPools, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesDidpools(100, pageNum, "", nil)
+		const pageSize = 100
+		didPools, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of DID pools: %v", getErr)
 		}

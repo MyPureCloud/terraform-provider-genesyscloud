@@ -260,7 +260,8 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		trunkBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesettings(pageNum, 100, "", "", false, true, false, []string{"properties"}, "")
+		const pageSize = 100
+		trunkBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesettings(pageNum, pageSize, "", "", false, true, false, []string{"properties"}, "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of trunk base settings: %v", getErr)
 		}

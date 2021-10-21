@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -69,12 +70,13 @@ var (
 	}
 )
 
-func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, 100, "", "", nil, nil)
+		const pageSize = 100
+		queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of queues: %v", getErr)
 		}
@@ -1164,7 +1166,7 @@ func sdkGetRoutingQueueMembers(queueID string, pageNumber int, pageSize int, api
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *platformclientv2.Queuememberentitylisting
-	response, err := apiClient.CallAPI(path, "GET", postBody, headerParams, queryParams, formParams, postFileName, fileBytes)
+	response, err := apiClient.CallAPI(path, http.MethodGet, postBody, headerParams, queryParams, formParams, postFileName, fileBytes)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if err == nil && response.Error != nil {

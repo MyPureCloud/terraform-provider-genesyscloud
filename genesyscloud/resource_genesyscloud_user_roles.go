@@ -59,7 +59,7 @@ func createUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 	return updateUserRoles(ctx, d, meta)
 }
 
-func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readUserRoles(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 

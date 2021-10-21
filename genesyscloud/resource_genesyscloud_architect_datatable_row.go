@@ -39,7 +39,8 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 
 	for tableId, tableMeta := range tables {
 		for pageNum := 1; ; pageNum++ {
-			rows, _, getErr := archAPI.GetFlowsDatatableRows(tableId, pageNum, 100, false)
+			const pageSize = 100
+			rows, _, getErr := archAPI.GetFlowsDatatableRows(tableId, pageNum, pageSize, false)
 			if getErr != nil {
 				return nil, diag.Errorf("Failed to get page of Datatable Rows: %v", getErr)
 			}
@@ -242,7 +243,7 @@ func buildSdkRowPropertyMap(propertiesJson string, keyStr string) (map[string]in
 	return propMap, nil
 }
 
-func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+func customizeDatatableRowDiff(_ context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	// Defaults must be set on missing properties
 
 	if !diff.NewValueKnown("properties_json") {

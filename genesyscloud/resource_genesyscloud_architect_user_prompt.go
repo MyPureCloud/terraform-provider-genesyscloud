@@ -686,12 +686,13 @@ var userPromptResource = &schema.Resource{
 	},
 }
 
-func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		userPrompts, _, getErr := architectAPI.GetArchitectPrompts(pageNum, 100, nil, "", "", "", "")
+		const pageSize = 100
+		userPrompts, _, getErr := architectAPI.GetArchitectPrompts(pageNum, pageSize, nil, "", "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of prompts: %v", getErr)
 		}
@@ -933,7 +934,7 @@ func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclient
 
 	io.Copy(part, file)
 	writer.Close()
-	request, err := http.NewRequest("POST", *uploadUri, body)
+	request, err := http.NewRequest(http.MethodPost, *uploadUri, body)
 
 	if err != nil {
 		return err
