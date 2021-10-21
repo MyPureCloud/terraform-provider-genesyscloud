@@ -63,15 +63,39 @@ type ResourceExporter struct {
 	ExcludedAttributes []string
 }
 
-func (r *ResourceExporter) loadSanitizedResourceMap(ctx context.Context) diag.Diagnostics {
-	fmt.Println("loadSanitizedResourceMap")
+func (r *ResourceExporter) loadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
 	result, err := r.GetResourcesFunc(ctx)
 	if err != nil {
 		return err
 	}
+
+	if subStringInSlice(fmt.Sprintf("%v::", name), filter) {
+		result = filterResources(result, name, filter)
+	}
+
 	r.SanitizedResourceMap = result
 	sanitizeResourceNames(r.SanitizedResourceMap)
 	return nil
+}
+
+func filterResources(result ResourceIDMetaMap, name string, filter []string) ResourceIDMetaMap {
+	names := make([]string, 0)
+	for _, f := range filter {
+		n := fmt.Sprintf("%v::", name)
+		if strings.Contains(f, n) {
+			names = append(names, strings.Replace(f, n, "", 1))
+		}
+	}
+
+	newResult := make(ResourceIDMetaMap)
+	for _, name := range names {
+		for k, v := range result {
+			if v.Name == name {
+				newResult[k] = v
+			}
+		}
+	}
+	return newResult
 }
 
 func (r *ResourceExporter) getRefAttrSettings(attribute string) *RefAttrSettings {
@@ -160,20 +184,11 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 	// Include all if no filters
 	if len(filter) > 0 {
 		for resType := range exporters {
-			fmt.Println("resType", resType)
-			if resType == "genesyscloud_routing_queue" {
-				fmt.Println("here")
-			}
 			if !subStringInSlice(resType, filter) {
-				fmt.Println("delete")
 				delete(exporters, resType)
-			} else {
-				fmt.Println("not delete")
 			}
 		}
-		fmt.Println("out of loop")
 	}
-	fmt.Println("out of if")
 	return exporters
 }
 
@@ -198,20 +213,24 @@ func escapeRune(s string) string {
 var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
 
 func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
-	fmt.Println("sanitizeResourceNames", idMetaMap)
 	for _, meta := range idMetaMap {
-		name := unsafeNameChars.ReplaceAllStringFunc(meta.Name, escapeRune)
-		if name != meta.Name {
-			// Append a hash of the original name to ensure uniqueness for similar names
-			// and that equivalent names are consistent across orgs
-			algorithm := fnv.New32()
-			algorithm.Write([]byte(meta.Name))
-			name = name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
-			meta.Name = name
-		}
-		if unicode.IsDigit(rune(meta.Name[0])) {
-			// Terraform does not allow names to begin with a number. Prefix with an underscore instead
-			meta.Name = "_" + meta.Name
-		}
+		meta.Name = sanitizeResourceName(meta.Name)
 	}
+}
+
+func sanitizeResourceName(inputName string) string {
+	name := unsafeNameChars.ReplaceAllStringFunc(inputName, escapeRune)
+	if name != inputName {
+		// Append a hash of the original name to ensure uniqueness for similar names
+		// and that equivalent names are consistent across orgs
+		algorithm := fnv.New32()
+		algorithm.Write([]byte(inputName))
+		name = name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+	}
+	if unicode.IsDigit(rune(name[0])) {
+		// Terraform does not allow names to begin with a number. Prefix with an underscore instead
+		name = "_" + name
+	}
+
+	return name
 }

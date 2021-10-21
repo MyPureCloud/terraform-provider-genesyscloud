@@ -74,6 +74,9 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
+	// Newly created resources often aren't returned unless there's a delay
+	time.Sleep(5 * time.Second)
+
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil)

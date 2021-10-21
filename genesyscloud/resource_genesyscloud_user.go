@@ -113,6 +113,9 @@ func getAllUsers(_ context.Context, sdkConfig *platformclientv2.Configuration) (
 	resources := make(ResourceIDMetaMap)
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
+	// Newly created resources often aren't returned unless there's a delay
+	time.Sleep(5 * time.Second)
+
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		users, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "")

@@ -69,7 +69,7 @@ jobs:
         go mod download
 
     - name: TF acceptance tests
-      timeout-minutes: 50
+      timeout-minutes: 60
       env:
         TF_ACC: "1"
         TF_LOG: "INFO"
