@@ -30,7 +30,6 @@ func resourceSite() *schema.Resource {
 				Description: "The name of the entity.",
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 			},
 			"description": {
 				Description: "The resource's description.",
@@ -47,6 +46,7 @@ func resourceSite() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Premises", "Cloud"}, false),
+				ForceNew:     true,
 			},
 			"media_regions_use_latency_based": {
 				Description: "Latency based on media region",
