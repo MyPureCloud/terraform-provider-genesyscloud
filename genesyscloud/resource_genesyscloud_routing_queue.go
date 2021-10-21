@@ -114,6 +114,7 @@ func routingQueueExporter() *ResourceExporter {
 }
 
 func resourceRoutingQueue() *schema.Resource {
+	timeout, _ := time.ParseDuration("100s")
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Queue",
 
@@ -123,6 +124,9 @@ func resourceRoutingQueue() *schema.Resource {
 		DeleteContext: deleteWithPooledClient(deleteQueue),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
+		},
+		Timeouts: &schema.ResourceTimeout{
+			Default: &timeout,
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
@@ -631,7 +635,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Finished updating queue %s", name)
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 	return readQueue(ctx, d, meta)
 }
 

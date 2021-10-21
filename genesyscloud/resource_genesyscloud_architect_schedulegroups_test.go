@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"strings"
 	"testing"
 
@@ -13,16 +14,16 @@ import (
 func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 	var (
 		schedGroupResource1 = "arch-sched-group1"
-		name                = "Schedule Group x"
+		name                = "Schedule Group x" + uuid.NewString()
 		description         = "Sample Schedule Group by CX as Code"
 		time_zone           = "Asia/Singapore"
 
 		schedResource1 = "arch-sched1"
 		schedResource2 = "arch-sched2"
 		schedResource3 = "arch-sched3"
-		openSched      = "Open Schedule"
-		closedSched    = "Closed Schedule"
-		holidaySched   = "Holiday Schedule"
+		openSched      = "Open Schedule" + uuid.NewString()
+		closedSched    = "Closed Schedule" + uuid.NewString()
+		holidaySched   = "Holiday Schedule" + uuid.NewString()
 		schedDesc      = "Sample Schedule by CX as Code"
 		start          = "2021-08-04T08:00:00.000000"
 		end            = "2021-08-04T17:00:00.000000"

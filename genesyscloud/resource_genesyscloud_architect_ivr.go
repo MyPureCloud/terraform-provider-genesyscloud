@@ -240,7 +240,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Updated IVR config %s", d.Id())
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 	return readIvrConfig(ctx, d, meta)
 }
 

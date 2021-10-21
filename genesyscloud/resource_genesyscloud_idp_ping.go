@@ -170,7 +170,9 @@ func updateIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updated IDP Ping")
-	time.Sleep(2 * time.Second)
+	// Give time for public API caches to update
+	// It takes a long time with idp resources
+	time.Sleep(20 * time.Second)
 	return readIdpPing(ctx, d, meta)
 }
 

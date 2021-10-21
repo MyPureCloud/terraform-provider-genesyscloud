@@ -6,10 +6,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
@@ -187,7 +189,9 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
-	lineAddresses := []string{"+15175550010"}
+	rand.Seed(time.Now().Unix())
+	n := rand.Intn(9)
+	lineAddresses := []string{fmt.Sprintf("+1417553001%v", n)}
 	phoneRes := "phone_standalone1234"
 	name1 := "test-phone-standalone_" + uuid.NewString()
 	stateActive := "active"
@@ -311,7 +315,7 @@ func getDefaultSiteId() (string, error) {
 
 func authorizeSdk() error {
 	// Create new config
-	sdkConfig = platformclientv2.NewConfiguration()
+	sdkConfig = platformclientv2.GetDefaultConfiguration()
 
 	sdkConfig.BasePath = getRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
 

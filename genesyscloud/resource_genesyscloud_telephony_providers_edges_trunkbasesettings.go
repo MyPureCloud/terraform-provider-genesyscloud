@@ -171,7 +171,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Updated trunk base settings %s", *trunkBaseSettings.Id)
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 	return readTrunkBaseSettings(ctx, d, meta)
 }
 

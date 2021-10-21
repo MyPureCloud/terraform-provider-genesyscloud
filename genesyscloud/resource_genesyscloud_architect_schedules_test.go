@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -12,7 +13,7 @@ import (
 func TestAccResourceArchitectSchedules(t *testing.T) {
 	var (
 		schedResource1 = "arch-sched1"
-		name           = "CX as Code Schedule"
+		name           = "CX as Code Schedule" + uuid.NewString()
 		description    = "Sample Schedule by CX as Code"
 		start          = "2021-08-04T08:00:00.000000"
 		start2         = "2021-08-04T09:00:00.000000"

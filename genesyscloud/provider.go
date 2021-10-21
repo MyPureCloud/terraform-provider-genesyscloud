@@ -209,10 +209,11 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 	config.BasePath = basePath
 	if data.Get("sdk_debug").(bool) {
 		config.LoggingConfiguration = &platformclientv2.LoggingConfiguration{
-			LogLevel:        platformclientv2.LDebug,
+			LogLevel:        platformclientv2.LTrace,
 			LogRequestBody:  true,
 			LogResponseBody: true,
 		}
+		config.LoggingConfiguration.SetLogToConsole(false)
 		config.LoggingConfiguration.SetLogFormat(platformclientv2.Text)
 		config.LoggingConfiguration.SetLogFilePath("sdk_debug.log")
 	}
