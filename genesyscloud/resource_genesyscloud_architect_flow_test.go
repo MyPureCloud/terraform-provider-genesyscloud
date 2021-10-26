@@ -54,9 +54,9 @@ func TestAccResourceFlow(t *testing.T) {
 `, flowName1)
 	)
 
-	os.Setenv("GENESYSCLOUD_OAUTHCLIENT_ID", "df4cf7c9-bdcd-4c87-bb90-969455486dd1")
-	os.Setenv("GENESYSCLOUD_OAUTHCLIENT_SECRET", "1zjnIHkin-5UKH_u2dLbHsoax6K9kvj0ZNhi8wHJY6w")
-	os.Setenv("GENESYSCLOUD_REGION", "dca")
+	//os.Setenv("GENESYSCLOUD_OAUTHCLIENT_ID", "df4cf7c9-bdcd-4c87-bb90-969455486dd1")
+	//os.Setenv("GENESYSCLOUD_OAUTHCLIENT_SECRET", "1zjnIHkin-5UKH_u2dLbHsoax6K9kvj0ZNhi8wHJY6w")
+	//os.Setenv("GENESYSCLOUD_REGION", "dca")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -66,38 +66,22 @@ func TestAccResourceFlow(t *testing.T) {
 				// Create flow
 				Config: generateFlowResource(
 					flowResource1,
-					flowName1,
-					flowType1,
 					filePath1,
-					falseValue,
-					trueValue,
-					trueValue,
 					inboundcallConfig1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource1, "description", fmt.Sprintf("Flow name: %s, Flow type: %s", flowName1, flowType1)),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource1, "debug", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource1, "force_unlock", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource1, "recreate", trueValue),
+					validateFlow("genesyscloud_architect_flow."+flowResource1, flowName1, flowType1),
 				),
 			},
 			{
 				// Update flow with name
 				Config: generateFlowResource(
 					flowResource1,
-					flowName2,
-					flowType1,
 					filePath2,
-					falseValue,
-					trueValue,
-					trueValue,
 					inboundcallConfig2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource1, "description", fmt.Sprintf("Flow name: %s, Flow type: %s", flowName2, flowType1)),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource1, "debug", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource1, "force_unlock", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource1, "recreate", trueValue),
+					validateFlow("genesyscloud_architect_flow."+flowResource1, flowName2, flowType1),
 				),
 			},
 			{
@@ -105,44 +89,28 @@ func TestAccResourceFlow(t *testing.T) {
 				ResourceName:            "genesyscloud_architect_flow." + flowResource1,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "debug", "force_unlock", "recreate"},
+				ImportStateVerifyIgnore: []string{"filepath"},
 			},
 			{
 				// Create inboundemail flow
 				Config: generateFlowResource(
 					flowResource2,
-					flowName1,
-					flowType2,
 					filePath3,
-					falseValue,
-					trueValue,
-					trueValue,
 					inboundemailConfig1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource2, "description", fmt.Sprintf("Flow name: %s, Flow type: %s", flowName1, flowType2)),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource2, "debug", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource2, "force_unlock", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource2, "recreate", trueValue),
+					validateFlow("genesyscloud_architect_flow."+flowResource2, flowName1, flowType2),
 				),
 			},
 			{
 				// Update inboundemail flow to inboundcall
 				Config: generateFlowResource(
 					flowResource2,
-					flowName2,
-					flowType1,
 					filePath2,
-					falseValue,
-					trueValue,
-					trueValue,
 					inboundcallConfig2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource2, "description", fmt.Sprintf("Flow name: %s, Flow type: %s", flowName2, flowType1)),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource2, "debug", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource2, "force_unlock", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_architect_flow."+flowResource2, "recreate", trueValue),
+					validateFlow("genesyscloud_architect_flow."+flowResource2, flowName2, flowType1),
 				),
 			},
 			{
@@ -150,25 +118,21 @@ func TestAccResourceFlow(t *testing.T) {
 				ResourceName:            "genesyscloud_architect_flow." + flowResource2,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "debug", "force_unlock", "recreate"},
+				ImportStateVerifyIgnore: []string{"filepath"},
 			},
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
 	})
 }
 
-func generateFlowResource(resourceID string, name string, flowtype string, filepath string, debug string, forceUnlock string, recreate string, filecontent string) string {
+func generateFlowResource(resourceID string, filepath string, filecontent string) string {
 
 	updateFile(filepath, filecontent)
 
 	return fmt.Sprintf(`resource "genesyscloud_architect_flow" "%s" {
-        description = "Flow name: %s, Flow type: %s"
         filepath = %s
-        debug = %s
-        force_unlock = %s
-        recreate = %s
 	}
-	`, resourceID, name, flowtype, strconv.Quote(filepath), debug, forceUnlock, recreate)
+	`, resourceID, strconv.Quote(filepath))
 }
 
 func updateFile(filepath string, content string) {
@@ -182,6 +146,38 @@ func updateFile(filepath string, content string) {
 
 	file.WriteString(content)
 
+}
+
+// Check if flow is published, then check if flow name and type are correct
+func validateFlow(flowResourceName string, name string, flowType string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		flowResource, ok := state.RootModule().Resources[flowResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
+		}
+		flowID := flowResource.Primary.ID
+		architectAPI := platformclientv2.NewArchitectApi()
+
+		flow, _, err := architectAPI.GetFlow(flowID, false)
+
+		if err != nil {
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+
+		if flow == nil {
+			return fmt.Errorf("Flow (%s) not found. ", flowID)
+		}
+
+		if *flow.Name != name {
+			return fmt.Errorf("Returned flow (%s) has incorrect name. Expect: %s, Actual: %s", flowID, name, *flow.Name)
+		}
+
+		if *flow.VarType != flowType {
+			return fmt.Errorf("Returned flow (%s) has incorrect type. Expect: %s, Actual: %s", flowID, flowType, *flow.VarType)
+		}
+
+		return nil
+	}
 }
 
 func testVerifyFlowDestroyed(state *terraform.State) error {
