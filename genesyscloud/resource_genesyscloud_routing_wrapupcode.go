@@ -12,12 +12,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
-func getAllRoutingWrapupCodes(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingWrapupCodes(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		wrapupcodes, _, getErr := routingAPI.GetRoutingWrapupcodes(100, pageNum, "", "", "")
+		const pageSize = 100
+		wrapupcodes, _, getErr := routingAPI.GetRoutingWrapupcodes(pageSize, pageNum, "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of wrapupcodes: %v", getErr)
 		}

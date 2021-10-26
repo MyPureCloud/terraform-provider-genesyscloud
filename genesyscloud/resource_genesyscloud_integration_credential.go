@@ -12,12 +12,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
-func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllCredentials(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		credentials, _, err := integrationAPI.GetIntegrationsCredentials(pageNum, 100)
+		const pageSize = 100
+		credentials, _, err := integrationAPI.GetIntegrationsCredentials(pageNum, pageSize)
 		if err != nil {
 			return nil, diag.Errorf("Failed to get page of credentials: %v", err)
 		}
@@ -191,16 +192,4 @@ func buildCredentialFields(d *schema.ResourceData) *map[string]string {
 		return &results
 	}
 	return &results
-}
-
-func flattenCredentialFields(fields map[string]string) map[string]interface{} {
-	if len(fields) == 0 {
-		return nil
-	}
-
-	results := make(map[string]interface{})
-	for k, v := range fields {
-		results[k] = v
-	}
-	return results
 }

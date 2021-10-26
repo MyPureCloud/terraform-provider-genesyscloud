@@ -32,7 +32,8 @@ func dataSourcePhoneRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			phone, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, 100, "", "", "", "", "", "", "", "", "", "", name, "", "", nil, nil)
+			const pageSize = 100
+			phone, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", name, "", "", nil, nil)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting phone %s: %s", name, getErr))

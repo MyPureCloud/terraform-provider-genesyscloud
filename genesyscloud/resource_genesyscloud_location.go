@@ -14,12 +14,13 @@ import (
 	"github.com/nyaruka/phonenumbers"
 )
 
-func getAllLocations(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllLocations(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		locations, _, getErr := locationsAPI.GetLocations(100, pageNum, nil, "")
+		const pageSize = 100
+		locations, _, getErr := locationsAPI.GetLocations(pageSize, pageNum, nil, "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of locations: %v", getErr)
 		}
@@ -391,7 +392,7 @@ func flattenLocationAddress(addrConfig *platformclientv2.Locationaddress) []inte
 	return []interface{}{addrSettings}
 }
 
-func comparePhoneNumbers(k, old, new string, d *schema.ResourceData) bool {
+func comparePhoneNumbers(_, old, new string, _ *schema.ResourceData) bool {
 	oldNum, err := phonenumbers.Parse(old, "US")
 	if err != nil {
 		return old == new

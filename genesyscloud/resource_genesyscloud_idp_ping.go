@@ -12,7 +12,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
-func getAllIdpPing(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllIdpPing(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
 	resources := make(ResourceIDMetaMap)
 
@@ -176,7 +176,7 @@ func updateIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 	return readIdpPing(ctx, d, meta)
 }
 
-func deleteIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteIdpPing(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 

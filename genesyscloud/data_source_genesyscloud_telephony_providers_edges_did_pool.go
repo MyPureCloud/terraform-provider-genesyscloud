@@ -40,14 +40,15 @@ func dataSourceDidPoolRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			didPools, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesDidpools(100, pageNum, "", nil)
+			const pageSize = 100
+			didPools, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("error requesting list of DID pools: %s", getErr))
 			}
 
 			if didPools.Entities == nil || len(*didPools.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no DID pools found"))
+				return resource.RetryableError(fmt.Errorf("no DID pools found with start phone number: %s and end phone number: %s", didPoolStartPhoneNumber, didPoolEndPhoneNumber))
 			}
 
 			for _, didPool := range *didPools.Entities {

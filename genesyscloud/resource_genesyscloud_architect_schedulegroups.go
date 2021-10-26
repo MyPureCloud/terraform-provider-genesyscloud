@@ -12,12 +12,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
-func getAllArchitectScheduleGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		scheduleGroups, _, getErr := archAPI.GetArchitectSchedulegroups(pageNum, 100, "", "", "", "", nil)
+		const pageSize = 100
+		scheduleGroups, _, getErr := archAPI.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of schedule groups: %v", getErr)
 		}

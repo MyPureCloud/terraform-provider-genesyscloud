@@ -219,13 +219,14 @@ func flattenPhoneTrunkBases(trunkBases []platformclientv2.Trunkbase) *schema.Set
 	return schema.NewSet(schema.HashString, interfaceList)
 }
 
-func getAllEdgeGroups(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		edgeGroups, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(pageNum, 100, "", "", false)
+	for pageSize := 1; ; pageSize++ {
+		const pageNum = 100
+		edgeGroups, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, "", "", false)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of edge groups: %v", getErr)
 		}

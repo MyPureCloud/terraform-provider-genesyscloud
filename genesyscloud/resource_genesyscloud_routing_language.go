@@ -12,12 +12,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
-func getAllRoutingLanguages(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		languages, _, getErr := routingAPI.GetRoutingLanguages(100, pageNum, "", "", nil)
+		const pageSize = 100
+		languages, _, getErr := routingAPI.GetRoutingLanguages(pageSize, pageNum, "", "", nil)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of languages: %v", getErr)
 		}

@@ -34,7 +34,9 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 	// Query for scripts by name. Retry in case new script is not yet indexed by search.
 	// As script names are non-unique, fail in case of multiple results.
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		scripts, _, getErr := scriptsAPI.GetScripts(100, 1, "", name, "", "", "", "", "")
+		const pageSize = 100
+		const pageNum = 1
+		scripts, _, getErr := scriptsAPI.GetScripts(pageSize, pageNum, "", name, "", "", "", "", "")
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting script %s: %s", name, getErr))
 		}

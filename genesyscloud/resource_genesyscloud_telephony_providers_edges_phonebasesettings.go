@@ -229,13 +229,14 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllPhoneBaseSettings(_ context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		phoneBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageNum, 100, "", "", nil, "")
+		const pageSize = 100
+		phoneBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of phone base settings: %v", getErr)
 		}

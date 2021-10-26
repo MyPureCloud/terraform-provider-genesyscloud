@@ -107,12 +107,13 @@ var (
 	}
 )
 
-func getAllAuthRoles(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllAuthRoles(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		roles, _, getErr := authAPI.GetAuthorizationRoles(100, pageNum, "", nil, "", "", "", nil, nil, false, nil)
+		const pageSize = 100
+		roles, _, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", "", nil, nil, false, nil)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of roles: %v", getErr)
 		}
@@ -505,7 +506,9 @@ func flattenRoleConditionOperands(operands []platformclientv2.Domainresourcecond
 }
 
 func getRoleID(defaultRoleID string, authAPI *platformclientv2.AuthorizationApi) (string, diag.Diagnostics) {
-	roles, _, getErr := authAPI.GetAuthorizationRoles(1, 1, "", nil, "", "", "", nil, []string{defaultRoleID}, false, nil)
+	const pageSize = 1
+	const pageNum = 1
+	roles, _, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", "", nil, []string{defaultRoleID}, false, nil)
 	if getErr != nil {
 		return "", diag.Errorf("Error requesting default role %s: %s", defaultRoleID, getErr)
 	}

@@ -58,7 +58,7 @@ func getSdkUtilizationTypes() []string {
 	return types
 }
 
-func getAllRoutingUtilization(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingUtilization(_ context.Context, _ *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	// Routing utilization config always exists
 	resources := make(ResourceIDMetaMap)
 	resources["0"] = &ResourceMeta{Name: "routing_utilization"}
@@ -191,7 +191,7 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 	return readRoutingUtilization(ctx, d, meta)
 }
 
-func deleteRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteRoutingUtilization(_ context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 

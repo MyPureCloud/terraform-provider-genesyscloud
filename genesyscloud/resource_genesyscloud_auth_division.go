@@ -12,12 +12,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
-func getAllAuthDivisions(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		divisions, _, getErr := authAPI.GetAuthorizationDivisions(100, pageNum, "", nil, "", "", false, nil, "")
+		const pageSize = 100
+		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of divisions: %v", getErr)
 		}

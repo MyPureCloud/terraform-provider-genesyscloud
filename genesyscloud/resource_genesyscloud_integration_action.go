@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -69,12 +70,13 @@ var (
 	}
 )
 
-func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllIntegrationActions(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		actions, _, getErr := integAPI.GetIntegrationsActions(100, pageNum, "", "", "", "", "", "", "", "")
+		const pageSize = 100
+		actions, _, getErr := integAPI.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of integration actions: %v", getErr)
 		}
@@ -536,7 +538,7 @@ func sdkPostIntegrationAction(body *IntegrationAction, api *platformclientv2.Int
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *IntegrationAction
-	response, err := apiClient.CallAPI(path, "POST", body, headerParams, nil, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodPost, body, headerParams, nil, nil, "", nil)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if err == nil && response.Error != nil {
@@ -572,7 +574,7 @@ func sdkGetIntegrationAction(actionId string, api *platformclientv2.Integrations
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *IntegrationAction
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, queryParams, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if err == nil && response.Error != nil {
@@ -605,7 +607,7 @@ func sdkGetIntegrationActionTemplate(actionId, templateName string, api *platfor
 	headerParams["Accept"] = "*/*"
 
 	var successPayload *string
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, queryParams, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if err == nil && response.Error != nil {

@@ -52,12 +52,13 @@ var (
 	}
 )
 
-func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllIntegrations(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		integrations, _, err := integrationAPI.GetIntegrations(100, pageNum, "", nil, "", "")
+		const pageSize = 100
+		integrations, _, err := integrationAPI.GetIntegrations(pageSize, pageNum, "", nil, "", "")
 		if err != nil {
 			return nil, diag.Errorf("Failed to get page of integrations: %v", err)
 		}
@@ -152,9 +153,11 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	if d.HasChange(
 		"intended_state") {
 		log.Printf("Updating additional attributes for integration %s", name)
+		const pageSize = 25
+		const pageNum = 1
 		_, _, patchErr := integrationAPI.PatchIntegration(d.Id(), platformclientv2.Integration{
 			IntendedState: &intendedState,
-		}, 25, 1, "", nil, "", "")
+		}, pageSize, pageNum, "", nil, "", "")
 
 		if patchErr != nil {
 			return diag.Errorf("Failed to update integration %s: %v", name, patchErr)
@@ -175,7 +178,9 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 	log.Printf("Reading integration %s", d.Id())
 
 	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
-		currentIntegration, resp, getErr := integrationAPI.GetIntegration(d.Id(), 100, 1, "", nil, "", "")
+		const pageSize = 100
+		const pageNum = 1
+		currentIntegration, resp, getErr := integrationAPI.GetIntegration(d.Id(), pageSize, pageNum, "", nil, "", "")
 		if getErr != nil {
 			if isStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
@@ -220,10 +225,11 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	if d.HasChange("intended_state") {
 
 		log.Printf("Updating integration %s", name)
-
+		const pageSize = 25
+		const pageNum = 1
 		_, _, patchErr := integrationAPI.PatchIntegration(d.Id(), platformclientv2.Integration{
 			IntendedState: &intendedState,
-		}, 25, 1, "", nil, "", "")
+		}, pageSize, pageNum, "", nil, "", "")
 		if patchErr != nil {
 			return diag.Errorf("Failed to update integration %s: %s", name, patchErr)
 		}
@@ -245,7 +251,9 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		_, resp, err := integrationAPI.GetIntegration(d.Id(), 100, 1, "", nil, "", "")
+		const pageSize = 100
+		const pageNum = 1
+		_, resp, err := integrationAPI.GetIntegration(d.Id(), pageSize, pageNum, "", nil, "", "")
 		if err != nil {
 			if isStatus404(resp) {
 				// Integration deleted

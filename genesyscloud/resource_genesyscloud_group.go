@@ -40,12 +40,13 @@ var (
 	}
 )
 
-func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		groups, _, getErr := groupsAPI.GetGroups(100, pageNum, nil, nil, "")
+		const pageSize = 100
+		groups, _, getErr := groupsAPI.GetGroups(pageSize, pageNum, nil, nil, "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of groups: %v", getErr)
 		}

@@ -251,7 +251,9 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 	stationId := ""
 
 	retryErr := withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		stations, _, getErr := stationsAPI.GetStations(100, 1, "", "", "", userId, "", "")
+		const pageSize = 100
+		const pageNum = 1
+		stations, _, getErr := stationsAPI.GetStations(pageSize, pageNum, "", "", "", userId, "", "")
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting stations: %s", getErr))
 		}
@@ -437,13 +439,14 @@ func flattenPhoneCapabilities(capabilities *platformclientv2.Phonecapabilities) 
 	return []interface{}{capabilitiesMap}
 }
 
-func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		phones, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(100, pageNum, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+		const pageSize = 100
+		phones, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of phones: %v", getErr)
 		}

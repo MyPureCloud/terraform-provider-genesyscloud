@@ -12,12 +12,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
-func getAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		skills, _, getErr := routingAPI.GetRoutingSkills(100, pageNum, "", nil)
+		const pageSize = 100
+		skills, _, getErr := routingAPI.GetRoutingSkills(pageSize, pageNum, "", nil)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of skills: %v", getErr)
 		}

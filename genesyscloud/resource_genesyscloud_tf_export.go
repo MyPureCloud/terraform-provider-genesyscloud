@@ -185,7 +185,7 @@ func sourceForVersion(version string) string {
 	return providerSource
 }
 
-func readTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	// If the output config file doesn't exist, mark the resource for creation.
 	path := d.Id()
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -195,7 +195,7 @@ func readTfExport(ctx context.Context, d *schema.ResourceData, meta interface{})
 	return nil
 }
 
-func deleteTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	configPath := d.Id()
 	if _, err := os.Stat(configPath); err == nil {
 		log.Printf("Deleting export config %s", configPath)

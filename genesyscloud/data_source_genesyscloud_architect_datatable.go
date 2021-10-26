@@ -33,7 +33,9 @@ func dataSourceArchitectDatatableRead(ctx context.Context, d *schema.ResourceDat
 
 	// Query architect datatable by name. Retry in case search has not yet indexed the architect datatable.
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		datatables, _, getErr := archAPI.GetFlowsDatatables("", 1, 100, "", "", nil, name)
+		const pageNum = 1
+		const pageSize = 100
+		datatables, _, getErr := archAPI.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, name)
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting architect datatable %s: %s", name, getErr))
 		}

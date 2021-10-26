@@ -32,7 +32,8 @@ func dataSourceEdgeGroupRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			edgeGroup, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(100, pageNum, name, "", false)
+			const pageSize = 100
+			edgeGroup, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, name, "", false)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting edge group %s: %s", name, getErr))

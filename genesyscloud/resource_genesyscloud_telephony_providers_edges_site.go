@@ -203,13 +203,14 @@ func resourceSite() *schema.Resource {
 	}
 }
 
-func getSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageNum, 100, "", "", "", "", false)
+		const pageSize = 100
+		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of sites: %v", getErr)
 		}
@@ -623,7 +624,8 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 
 			outboundRoutesFromAPI := make([]platformclientv2.Outboundroutebase, 0)
 			for pageNum := 1; ; pageNum++ {
-				outboundRoutes, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), 100, pageNum, "", "", "")
+				const pageSize = 100
+				outboundRoutes, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), pageSize, pageNum, "", "", "")
 				if err != nil {
 					return diag.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err)
 				}
@@ -755,7 +757,8 @@ func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Tele
 func readSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) diag.Diagnostics {
 	outboundRoutes := make([]platformclientv2.Outboundroutebase, 0)
 	for pageNum := 1; ; pageNum++ {
-		outboundRouteEntityListing, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), 100, pageNum, "", "", "")
+		const pageSize = 100
+		outboundRouteEntityListing, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), pageSize, pageNum, "", "", "")
 		if err != nil {
 			return diag.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err)
 		}
