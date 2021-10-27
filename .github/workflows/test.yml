@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 2
       matrix:
         # list whatever Terraform versions here you would like to support
         terraform:
@@ -69,7 +69,7 @@ jobs:
         go mod download
 
     - name: TF acceptance tests
-      timeout-minutes: 45
+      timeout-minutes: 50
       env:
         TF_ACC: "1"
         TF_LOG: "INFO"
@@ -81,6 +81,10 @@ jobs:
         GENESYSCLOUD_REGION: "us-east-1"
         GENESYSCLOUD_SDK_DEBUG: "true"
       run: |
+        run: |
+          if [ "$TF_ACC_TERRAFORM_VERSION" == "0.14.7" ]; then
+            sleep 300 # This avoids conflicts with the API and other related issues e.g. too many routing email domains
+          fi
         go test -timeout 60m -v -cover ./genesyscloud/
 
     - name: 'Upload Export Result'
