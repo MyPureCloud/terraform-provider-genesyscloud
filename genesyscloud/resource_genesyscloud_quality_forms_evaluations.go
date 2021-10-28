@@ -248,62 +248,61 @@ func readEvaluation(ctx context.Context, d *schema.ResourceData, meta interface{
 
 }
 
-func buildSdkquestionGroups(d *schema.ResourceData) (*platformclientv2.Evaluationquestiongroup, error) {
-	if questionGroups := d.Get("question_groups"); questionGroups != nil {
-		if questionGroupsList := questionGroups.([]interface{}); len(questionGroupsList) > 0 {
-			questionGroupsMap := questionGroupsList[0].(map[string]interface{})
+func buildSdkquestionGroups(d *schema.ResourceData) *[]platformclientv2.Evaluationquestiongroup {
+	var evalQuestionGroups []platformclientv2.Evaluationquestiongroup
+	if questionGroups, ok := d.GetOk("question_groups"); ok {
+		for _, questionGroupsList := range questionGroups.([]interface{}) {
+			questionGroupsMap := questionGroupsList.(map[string]interface{})
 
-			name := questionGroupsMap["name"].(string)
-			questionType := questionGroupsMap["type"].(string)
-			defaultAnswersToHighest := questionGroupsMap["default_answer_to_highest"].(bool)
-			defaultAnswersToNA := questionGroupsMap["default_answers_to_na"].(bool)
-			naEnabled := questionGroupsMap["na_enabled"].(bool)
-			weight := questionGroupsMap["weight"].(int)
-			manualWeight := questionGroupsMap["manual_weight"].(bool)
+			var sdkquestionGroup platformclientv2.Evaluationquestiongroup
+			sdkquestionGroup.Name = questionGroupsMap["name"].(string)
+			sdkquestionGroup.VarType = questionGroupsMap["type"].(string)
+			sdkquestionGroup.DefaultAnswersToHighest = questionGroupsMap["default_answer_to_highest"].(bool)
+			sdkquestionGroup.DefaultAnswersToNA = questionGroupsMap["default_answers_to_na"].(bool)
+			sdkquestionGroup.NaEnabled = questionGroupsMap["na_enabled"].(bool)
+			sdkquestionGroup.Weight = questionGroupsMap["weight"].(int)
+			sdkquestionGroup.ManualWeight = questionGroupsMap["manual_weight"].(bool)
+			sdkquestionGroup.VisibilityCondition = buildSdkvisibilityCondition(d)
 
-			return &platformclientv2.Evaluationquestiongroup{
-				Name:                    &name,
-				VarType:                 &questionType,
-				DefaultAnswersToHighest: &defaultAnswersToHighest,
-				DefaultAnswersToNA:      &defaultAnswersToNA,
-				NaEnabled:               &naEnabled,
-				Weight:                  &weight,
-				ManualWeight:            &manualWeight,
-				Questions:               buildSdkquestions(d),
-				VisibilityCondition:     buildSdkvisibilityCondition(d),
+			if questions, ok := questionGroupsMap["questions"].([]interface{}); ok {
+				sdkQuestions := make([]platformclientv2.Evaluationquestion, 0)
+				for _, questionsList := range questions.([]interface{}) {
+					questionsMap := questionsList.(map[string]interface{})
+
+					sdkQuestion := platformclientv2.Evaluationquestion{}
+					sdkQuestion.Text = questionsMap["text"].(string)
+					sdkQuestion.HelpText = questionsMap["help_text"].(string)
+					sdkQuestion.VarType = questionsMap["type"].(string)
+					sdkQuestion.NaEnabled = questionsMap["na_enabled"].(bool)
+					sdkQuestion.CommentsRequired = questionsMap["comments_required"].(bool)
+					sdkQuestion.VisibilityCondition = buildSdkvisibilityCondition(d)
+
+					if answerOptions, ok := questionsMap["answer_options"].([]interface{}); ok {
+						sdkAnswerOptions := make([]platformclientv2.Answeroption, 0)
+						for _, answerOptionsList := range answerOptions.([]interface{}) {
+							answerOptionsMap := answerOptionsList.(map[string]interface{})
+
+							sdkAnswerOption := platformclientv2.Answeroption{}
+							sdkAnswerOption.Text = answerOptionsMap["text"].(string)
+							sdkAnswerOption.Value = answerOptionsMap["value"].(string)
+
+							sdkAnswerOptions = append(sdkAnswerOptions, sdkAnswerOption)
+						}
+						sdkQuestion.AnswerOptions = &sdkAnswerOptions
+					}
+
+					sdkQuestions = append(sdkQuestions, sdkQuestion)
+				}
+				sdkquestionGroup.Questions = &sdkQuestions
 			}
+
+			evalQuestionGroups = append(evalQuestionGroups, sdkquestionGroup)
 		}
 	}
-
-	return &platformclientv2.Evaluationquestiongroup{}
+	return &evalQuestionGroups
 }
 
-func buildSdkquestions(d *schema.ResourceData) (*platformclientv2.Evaluationquestion, error) {
-	if buildSdkquestions := d.Get("questions"); questions != nil {
-		if questionsList := questions.([]interface{}); len(questionsList) > 0 {
-			questionsMap := questionsList[0].(map[string]interface{})
-			text := questionsMap["text"].(string)
-			helpText := questionsMap["help_text"].(string)
-			questionType := questionsMap["type"].(string)
-			naEnabled := questionsMap["type"].(bool)
-			commentsRequired := questionsMap["comments_required"].(bool)
-
-			return &platformclientv2.Evaluationquestion{
-				Text:                &text,
-				HelpText:            &helpText,
-				VarType:             &questionType,
-				NaEnabled:           &naEnabled,
-				CommentsRequired:    &commentsRequired,
-				VisibilityCondition: buildSdkvisibilityCondition(d),
-				AnswerOptions:       buildSdkanswerOptions(d),
-			}
-		}
-	}
-
-	return &platformclientv2.Evaluationquestion{}
-}
-
-func buildSdkvisibilityCondition(d *schema.ResourceData) (*platformclientv2.Visibilitycondition, error) {
+func buildSdkvisibilityCondition(d *schema.ResourceData) *platformclientv2.Visibilitycondition {
 	if buildSdkvisibilityConditionOptions := d.Get("visibility_condition"); visibilityCondition != nil {
 		if visibilityConditionList := visibilityCondition.([]interface{}); len(visibilityConditionList) > 0 {
 			visibilityConditionMap := visibilityConditionList[0].(map[string]interface{})
@@ -319,22 +318,4 @@ func buildSdkvisibilityCondition(d *schema.ResourceData) (*platformclientv2.Visi
 	}
 
 	return &platformclientv2.Visibilitycondition{}
-}
-
-func buildSdkanswerOptions(d *schema.ResourceData) (*platformclientv2.Answeroption, error) {
-	if buildSdkanswerOptions := d.Get("answer_options"); answerOptions != nil {
-		if answerOptionsList := answerOptions.([]interface{}); len(answerOptionsList) > 0 {
-			answerOptionsMap := answerOptionsList[0].(map[string]interface{})
-
-			text := answerOptionsMap["text"].(string)
-			value := answerOptionsMap["value"].(string)
-
-			return &platformclientv2.Answeroption{
-				Text:  &text,
-				Value: &value,
-			}
-		}
-	}
-
-	return &platformclientv2.Answeroption{}
 }
