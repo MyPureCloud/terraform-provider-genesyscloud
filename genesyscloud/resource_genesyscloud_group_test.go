@@ -16,7 +16,8 @@ func TestAccResourceGroupBasic(t *testing.T) {
 	var (
 		groupResource1 = "test-group1"
 		groupName      = "terraform-" + uuid.NewString()
-		groupDesc1     = "Terraform Group"
+		groupDesc1     = "Terraform Group Description 1"
+		groupDesc2     = "Terraform Group Description 2"
 		typeOfficial   = "official" // Default
 		visPublic      = "public"   // Default
 		visMembers     = "members"
@@ -31,7 +32,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				Config: generateGroupResource(
 					groupResource1,
 					groupName,
-					nullValue, // No description
+					strconv.Quote(groupDesc1),
 					nullValue, // Default type
 					nullValue, // Default visibility
 					nullValue, // Default rules_visible
@@ -39,7 +40,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "type", typeOfficial),
-					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", ""),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", groupDesc1),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "visibility", visPublic),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", trueValue),
 				),
@@ -49,7 +50,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				Config: generateGroupResource(
 					groupResource1,
 					groupName,
-					strconv.Quote(groupDesc1),
+					strconv.Quote(groupDesc2),
 					strconv.Quote(typeOfficial), // Cannot change type
 					strconv.Quote(visMembers),
 					falseValue,
@@ -57,7 +58,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "type", typeOfficial),
-					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", groupDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", groupDesc2),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "visibility", visMembers),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", falseValue),
 				),
