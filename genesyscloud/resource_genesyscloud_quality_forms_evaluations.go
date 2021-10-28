@@ -11,7 +11,7 @@ import (
 
 func resourceEvaluation() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Genesys Cloud Evaluations",
+		Description:   "Genesys Cloud Evaluation Forms",
 		CreateContext: createWithPooledClient(createEvaluation),
 		ReadContext:   readWithPooledClient(readEvaluation),
 		UpdateContext: updateWithPooledClient(updateEvaluation),
@@ -26,54 +26,45 @@ func resourceEvaluation() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-
-			"context_id": {
-				Description: "The name of the entity.",
-				Type:        schema.TypeString,
-				Required:    false,
-			},
-
 			"published": {
-				Description: "",
+				Description: "Specifies if the evalutaion form is published.",
 				Type:        schema.TypeBool,
-				Required:    true,
+				Optional:     true,
+                Default:     true,
 			},
-
 			"question_groups": {
-				Description: " A list of question groups.",
+				Description: "A list of question groups.",
 				Type:        schema.TypeList,
-				Optional:    false,
+				Required:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"id": {
-							Description: "Id of display question in question group. ",
-							Type:        schema.TypeString,
-							Required:    false,
-						},
 						"name": {
-							Description: "Name of display question in question group. ",
+							Description: "Name of display question in question group.",
 							Type:        schema.TypeString,
 							Required:    true,
 						},
 						"type": {
-							Description: "Type of display question. Valid value: questionGroup",
+							Description: "Type of display question. Valid value: questionGroup.",
 							Type:        schema.TypeString,
 							Required:    true,
 						},
 						"default_answers_to_highest": {
-							Description: "",
+							Description: "Specifies whether to default answers to highest score.",
 							Type:        schema.TypeBool,
-							Required:    false,
+							Optional:     true,
+                            Default:     true,
 						},
 						"default_answers_to_na": {
-							Description: "",
+							Description: "Specifies whether to default answers to not applicable.",
 							Type:        schema.TypeBool,
-							Required:    false,
+							Optional:     true,
+                            Default:     true,
 						},
 						"na_enabled": {
-							Description: "",
+							Description: "Specifies whether a not applicable answer is enabled.",
 							Type:        schema.TypeBool,
-							Required:    false,
+							Optional:     true,
+                            Default:     true,
 						},
 						"weight": {
 							Description: "Points per question",
@@ -81,9 +72,10 @@ func resourceEvaluation() *schema.Resource {
 							Required:    true,
 						},
 						"manual_weight": {
-							Description: "",
+							Description: "Specifies whether a manual weight is set.",
 							Type:        schema.TypeBool,
-							Required:    true,
+							Optional:     true,
+                            Default:     true,
 						},
 						"questions": {
 							Description: "Questions inside the group",
@@ -91,70 +83,69 @@ func resourceEvaluation() *schema.Resource {
 							Required:    true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"id": {
-										Description: "",
-										Type:        schema.TypeString,
-										Optional:    false,
-									},
 									"text": {
 										Description: "Individual question",
 										Type:        schema.TypeString,
-										Optional:    false,
+										Required:    true,
 									},
 									"help_text": {
-										Description: "",
+										Description: "Help text for the question.",
 										Type:        schema.TypeString,
-										Optional:    true,
+										Required:    false,
 									},
 									"type": {
-										Description: "Type of questions. Valid values: multipleChoiceQuestion, freeTextQuestion, npsQuestion, readOnlyTextBlockQuestion ",
+										Description: "Type of questions. Valid values: multipleChoiceQuestion, freeTextQuestion, npsQuestion, readOnlyTextBlockQuestion.",
 										Type:        schema.TypeString,
-										Optional:    false,
+										Required:    true,
 									},
 									"na_enabled": {
-										Description: "Not Applicable Enabled ",
+										Description: "Specifies whether a not applicable answer is enabled.",
 										Type:        schema.TypeBool,
-										Optional:    false,
+										Optional:     true,
+                                        Default:     true,
 									},
 									"comments_required": {
-										Description: "",
+										Description: "Specifies whether comments are required.",
 										Type:        schema.TypeBool,
-										Optional:    false,
+										Optional:     true,
+                                        Default:     true,
 									},
 									"visibility_condition": {
 										Description: "",
 										Type:        schema.TypeBool,
-										Optional:    false,
+										Optional:     true,
+                                        Default:     false,
 										MinItems:    2,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												"combining_operation": {
 													Description: "Valid Values: AND, OR",
 													Type:     schema.TypeString,
-													Optional: false,
+													Required:    true,
 												},
 												"predicates": {
-													Description: "A list of strings, each representing the location in the form of the Answer Option to depend on. In the format of "/form/questionGroup/{questionGroupIndex}/question/{questionIndex}/answer/{answerIndex}" or, to assume the current question group, "../question/{questionIndex}/answer/{answerIndex}". Note: Indexes are zero-based",
+													Description: "A list of strings, each representing the location in the form of the Answer Option to depend on. In the format of \"/form/questionGroup/{questionGroupIndex}/question/{questionIndex}/answer/{answerIndex}\" or, to assume the current question group, \"../question/{questionIndex}/answer/{answerIndex}\". Note: Indexes are zero-based",
 													Type:     schema.TypeString,
-													Optional: false,
+													Required:    true,
 												},
 											},
 										},
 									},
 									"answer_options": {
-										Description: "Choices for questions",
+										Description: "Options from which to choose an answer for this question. Only used by Multiple Choice type questions.",
 										Type:        schema.TypeBool,
-										Optional:    false,
+										Optional:     true,
+                                        Default:     false,
 										MinItems:    2,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												"text": {
 													Type:     schema.TypeString,
-													Optional: false,
+													Required:    true,
 												},
 												"value": {
 													Type:     schema.TypeString,
-													Optional: false,
+													Required:    true,
 												},
 											},
 										},
@@ -162,16 +153,39 @@ func resourceEvaluation() *schema.Resource {
 									"is_kill": {
 										Description: "",
 										Type:        schema.TypeBool,
-										Optional:    false,
+										Optional:     true,
+                                        Default:     false,
 									},
 									"is_critical": {
 										Description: "",
 										Type:        schema.TypeBool,
-										Optional:    false,
+										Optional:     true,
+                                        Default:     false,
 									},
 								},
 							},
 						},
+                        "visibility_condition": {
+                            Description: "",
+                            Type:        schema.TypeBool,
+                            Optional:     true,
+                            Default:     false,
+                            MinItems:    2,
+                            Elem: &schema.Resource{
+                                Schema: map[string]*schema.Schema{
+                                    "combining_operation": {
+                                        Description: "Valid Values: AND, OR",
+                                        Type:     schema.TypeString,
+                                        Required:    true,
+                                    },
+                                    "predicates": {
+                                        Description: "A list of strings, each representing the location in the form of the Answer Option to depend on. In the format of \"/form/questionGroup/{questionGroupIndex}/question/{questionIndex}/answer/{answerIndex}\" or, to assume the current question group, \"../question/{questionIndex}/answer/{answerIndex}\". Note: Indexes are zero-based",
+                                        Type:     schema.TypeString,
+                                        Required:    true,
+                                    },
+                                },
+                            },
+                        },
 					},
 				},
 			},
@@ -196,7 +210,7 @@ func createEvaluation(ctx context.Context, d *schema.ResourceData, meta interfac
 		Name:         	 &name,
 		ContextId:       &contextId,
 		Published:       &published,
-		QuestionGroups:  &buildSdkquestionGroups(d),
+		QuestionGroups:  buildSdkquestionGroups(d),
 		isKill:       	 &isKill,
 		isCritical:      &isCritical,
 
@@ -215,7 +229,7 @@ func createEvaluation(ctx context.Context, d *schema.ResourceData, meta interfac
 func readEvaluation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
-	
+
 	log.Printf("Reading form %s", d.Id())
 	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
 		currentEvaluation, resp, getErr := qualityAPI.GetQualityFormsEvaluations(d.Id())
@@ -247,16 +261,16 @@ func buildSdkquestionGroups(d *schema.ResourceData) (*platformclientv2.QualityAp
 
 			id := questionGroupsMap["id"].(string)
 			name := questionGroupsMap["name"].(string)
-			type := questionGroupsMap["type"].(string)
+			questionType := questionGroupsMap["type"].(string)
 			defaultAnswersToHighest := questionGroupsMap["default_answer_to_highest"].(bool)
 			defaultAnswersToNA := questionGroupsMap["default_answers_to_na"].(bool)
 			naEnabled := questionGroupsMap["na_enabled"].(bool)
 			weight := questionGroupsMap["weight"].(string)
 			manualWeight := questionGroupsMap["manual_weight"].(string)
 			questions, err := buildSdkquestions(d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+            if err != nil {
+                return diag.FromErr(err)
+            }
 
 			return &platformclientv2.QualityApi{
 				name:  &name,
@@ -331,4 +345,4 @@ func buildSdkanswerOptions(d *schema.ResourceData) (*platformclientv2.QualityApi
 	}
 
 	return nil, nil
-}
+} 
