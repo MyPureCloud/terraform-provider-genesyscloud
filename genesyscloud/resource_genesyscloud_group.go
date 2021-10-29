@@ -154,7 +154,6 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	log.Printf("Creating group %s", name)
 	group, _, err := groupsAPI.PostGroups(platformclientv2.Groupcreate{
 		Name:         &name,
-		Description:  &description,
 		VarType:      &groupType,
 		Visibility:   &visibility,
 		RulesVisible: &rulesVisible,
@@ -166,6 +165,14 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	d.SetId(*group.Id)
+
+	// Description can only be set in a PUT. This is a bug with the API and has been reported
+	if description != "" {
+		diagErr := updateGroup(ctx, d, meta)
+		if diagErr != nil {
+			return diagErr
+		}
+	}
 
 	diagErr := updateGroupMembers(d, groupsAPI)
 	if diagErr != nil {
