@@ -147,7 +147,7 @@ func userExporter() *ResourceExporter {
 			"routing_languages": {"language_id"},
 			"locations":         {"location_id"},
 		},
-		AllowZeroValues: []string{"routing_skills.proficiency"},
+		AllowZeroValues: []string{"routing_skills.proficiency" ,"routing_languages.proficiency"},
 	}
 }
 
