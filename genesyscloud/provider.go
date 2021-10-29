@@ -91,6 +91,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_integration_credential":                      resourceCredential(),
 				"genesyscloud_location":                                    resourceLocation(),
 				"genesyscloud_oauth_client":                                resourceOAuthClient(),
+				"genesyscloud_quality_forms_evaluation":                    resourceEvaluationForm(),
 				"genesyscloud_routing_email_domain":                        resourceRoutingEmailDomain(),
 				"genesyscloud_routing_email_route":                         resourceRoutingEmailRoute(),
 				"genesyscloud_routing_language":                            resourceRoutingLanguage(),
