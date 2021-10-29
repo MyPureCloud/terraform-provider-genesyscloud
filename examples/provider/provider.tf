@@ -14,11 +14,6 @@ provider "genesyscloud" {
   aws_region = "dca"
 }
 
-resource "genesyscloud_architect_flow" "test_flow1" {
-  name   = "Terraform Flow Test-e2b9b3f6-5e84-4804-b381-d556864d764b"
-  type = "INBOUNDCALL"
+resource "genesyscloud_architect_flow" "supercool_flow" {
   filepath = "../resources/genesyscloud_architect_flow/inboundcall_flow_example.yaml"
-  debug = false
-  force_unlock = true
-  recreate = true
 }
