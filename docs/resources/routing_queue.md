@@ -102,6 +102,7 @@ resource "genesyscloud_routing_queue" "test_queue" {
 - **queue_flow_id** (String) The in-queue flow ID to use for conversations waiting in queue.
 - **routing_rules** (Block List, Max: 6) The routing rules for the queue, used for routing to known or preferred agents. (see [below for nested schema](#nestedblock--routing_rules))
 - **skill_evaluation_method** (String) The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to `ALL`.
+- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **whisper_prompt_id** (String) The prompt ID used for whisper on the queue, if configured.
 - **wrapup_codes** (Set of String) IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.
 
@@ -213,4 +214,12 @@ Optional:
 - **operator** (String) Matching operator (MEETS_THRESHOLD | ANY). MEETS_THRESHOLD matches any agent with a score at or above the rule's threshold. ANY matches all specified agents, regardless of score. Defaults to `MEETS_THRESHOLD`.
 - **threshold** (Number) Threshold required for routing attempt (generally an agent score). Ignored for operator ANY.
 - **wait_seconds** (Number) Seconds to wait in this rule before moving to the next. Defaults to `5`.
+
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- **default** (String)
 

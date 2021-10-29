@@ -3,7 +3,7 @@
 page_title: "genesyscloud_integration_credential Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-Data source for Genesys Cloud integration credential. Select an integration credential by name
+  Data source for Genesys Cloud integration credential. Select an integration credential by name
 ---
 
 # genesyscloud_integration_credential (Data Source)
@@ -23,7 +23,7 @@ data "genesyscloud_integration_credential" "integrationCredential" {
 
 ### Required
 
-- **name** (String) Integration credential name.
+- **name** (String) The name of the integration credential
 
 ### Optional
 

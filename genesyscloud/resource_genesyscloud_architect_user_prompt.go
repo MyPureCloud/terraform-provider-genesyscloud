@@ -839,9 +839,6 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 			return resource.NonRetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
 		}
 
-		d.Set("name", *userPrompt.Name)
-		d.Set("description", *userPrompt.Description)
-
 		if userPrompt.Name != nil {
 			d.Set("name", *userPrompt.Name)
 		} else {
