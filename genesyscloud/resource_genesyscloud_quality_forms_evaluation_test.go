@@ -25,7 +25,7 @@ type evaluationFormQuestionGroupStruct struct {
 	weight                  float32
 	manualWeight            bool
 	questions               []evaluationFormQuestionStruct
-	visibilityCondition     visibilityConditionStruct
+	visibilityCondition     *visibilityConditionStruct
 }
 
 type evaluationFormQuestionStruct struct {
@@ -35,7 +35,7 @@ type evaluationFormQuestionStruct struct {
 	commentsRequired    bool
 	isKill              bool
 	isCritical          bool
-	visibilityCondition visibilityConditionStruct
+	visibilityCondition *visibilityConditionStruct
 	answerOptions       []answerOptionStruct
 }
 
@@ -85,12 +85,12 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 				// Create
 				Config: generateEvaluationFormResource(formResource1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("resource_genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm1.name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm1.name),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "resource_genesyscloud_quality_forms_evaluation." + formResource1,
+				ResourceName:      "genesyscloud_quality_forms_evaluation." + formResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -102,7 +102,7 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 func testVerifyEvaluationFormDestroyed(state *terraform.State) error {
 	qualityAPI := platformclientv2.NewQualityApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "resource_genesyscloud_quality_forms_evaluation" {
+		if rs.Type != "genesyscloud_quality_forms_evaluation" {
 			continue
 		}
 
@@ -128,10 +128,10 @@ func testVerifyEvaluationFormDestroyed(state *terraform.State) error {
 }
 
 func generateEvaluationFormResource(resourceID string, evaluationForm *evaluationFormStruct) string {
-	return fmt.Sprintf(`resource "resource_genesyscloud_quality_forms_evaluation" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_quality_forms_evaluation" "%s" {
 		name = "%s"
 		published = %v
-		question_groups = %s
+		%s
 	}
 	`, resourceID,
 		evaluationForm.name,
@@ -142,112 +142,100 @@ func generateEvaluationFormResource(resourceID string, evaluationForm *evaluatio
 
 func generateEvaluationFormQuestionGroups(questionGroups *[]evaluationFormQuestionGroupStruct) string {
 	if questionGroups == nil {
-		return nullValue
+		return ""
 	}
 
 	questionGroupsString := ""
 
-	for i, questionGroup := range *questionGroups {
-		questionGroupString := ""
-
-		if i > 0 {
-			questionGroupString += ", "
-		}
-
-		questionGroupString += fmt.Sprintf(`{
+	for _, questionGroup := range *questionGroups {
+		questionGroupString := fmt.Sprintf(`
+        question_groups {
             name = "%s"
             default_answers_to_highest = %v
             default_answers_to_na  = %v
             na_enabled = %v
             weight = %v
             manual_weight = %v
-            questions = %s
-            visibility_condition = %s
-        }`, questionGroup.name,
+            %s
+            %s
+        }
+        `, questionGroup.name,
 			questionGroup.defaultAnswersToHighest,
 			questionGroup.defaultAnswersToNA,
 			questionGroup.naEnabled,
 			questionGroup.weight,
 			questionGroup.manualWeight,
 			generateEvaluationFormQuestions(&questionGroup.questions),
-			generateFormVisibilityCondition(&questionGroup.visibilityCondition),
+			generateFormVisibilityCondition(questionGroup.visibilityCondition),
 		)
 
 		questionGroupsString += questionGroupString
 	}
 
-	return fmt.Sprintf(`[%s]`, questionGroupsString)
+	return questionGroupsString
 }
 
 func generateEvaluationFormQuestions(questions *[]evaluationFormQuestionStruct) string {
 	if questions == nil {
-		return nullValue
+		return ""
 	}
 
 	questionsString := ""
 
-	for i, question := range *questions {
-		questionString := ""
-
-		if i > 0 {
-			questionString += ", "
-		}
-
-		questionString += fmt.Sprintf(`{
+	for _, question := range *questions {
+		questionString := fmt.Sprintf(`
+        questions {
             text = "%s"
             help_text = "%s"
             na_enabled = %v
             comments_required = %v
             is_kill = %v
             is_critical = %v
-            visibility_condition = %s
-            answer_options = %s
-        }`, question.text,
+            %s
+            %s
+        }
+        `, question.text,
 			question.helpText,
 			question.naEnabled,
 			question.commentsRequired,
 			question.isKill,
 			question.isCritical,
-			generateFormVisibilityCondition(&question.visibilityCondition),
+			generateFormVisibilityCondition(question.visibilityCondition),
 			generateFormAnswerOptions(&question.answerOptions),
 		)
 
 		questionsString += questionString
 	}
 
-	return fmt.Sprintf(`[%s]`, questionsString)
+	return questionsString
 }
 
 func generateFormAnswerOptions(answerOptions *[]answerOptionStruct) string {
 	if answerOptions == nil {
-		return nullValue
+		return ""
 	}
 
 	answerOptionsString := ""
 
-	for i, answerOption := range *answerOptions {
-		answerOptionString := ""
-
-		if i > 0 {
-			answerOptionString += ", "
-		}
-
-		answerOptionString += fmt.Sprintf(`{
-            name = "%s"
-            defaultAnswersToHighest = %d
-        }`, answerOption.text,
+	for _, answerOption := range *answerOptions {
+		answerOptionString := fmt.Sprintf(`
+        answer_options {
+            text = "%s"
+            value = %v
+        }
+        `, answerOption.text,
 			answerOption.value,
 		)
 
 		answerOptionsString += answerOptionString
 	}
 
-	return fmt.Sprintf(`[%s]`, answerOptionsString)
+	return fmt.Sprintf(`%s`, answerOptionsString)
 }
 
 func generateFormVisibilityCondition(condition *visibilityConditionStruct) string {
 	if condition == nil {
-		return nullValue
+		return ""
 	}
 
 	predicateString := ""
@@ -260,7 +248,7 @@ func generateFormVisibilityCondition(condition *visibilityConditionStruct) strin
 		predicateString += strconv.Quote(predicate)
 	}
 
-	return fmt.Sprintf(`{
+	return fmt.Sprintf(`visibility_condition = {
         combining_operation = "%s"
         predicates = [%s]
     }`, condition.combiningOperation,

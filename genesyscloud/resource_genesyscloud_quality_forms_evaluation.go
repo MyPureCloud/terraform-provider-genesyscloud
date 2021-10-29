@@ -100,7 +100,7 @@ var (
 			},
 			"answer_options": {
 				Description: "Options from which to choose an answer for this question.",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Required:    true,
 				MinItems:    2,
 				Elem:        evaluationFormAnswerOptions,
@@ -159,7 +159,7 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 		const pageSize = 100
 		evaluationForms, _, getErr := qualityAPI.GetQualityFormsEvaluations(pageSize, pageNum, "", "", "", "", "", "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of IVR configs: %v", getErr)
+			return nil, diag.Errorf("Failed to get page of evaluation forms %v", getErr)
 		}
 
 		if evaluationForms.Entities == nil || len(*evaluationForms.Entities) == 0 {
@@ -382,10 +382,10 @@ func buildSdkQuestionGroups(d *schema.ResourceData) (*[]platformclientv2.Evaluat
 			questionGroupsMap := questionGroup.(map[string]interface{})
 
 			questionGroupName := questionGroupsMap["name"].(string)
-			defaultAnswersToHighest := questionGroupsMap["default_answer_to_highest"].(bool)
+			defaultAnswersToHighest := questionGroupsMap["default_answers_to_highest"].(bool)
 			defaultAnswersToNA := questionGroupsMap["default_answers_to_na"].(bool)
 			naEnabled := questionGroupsMap["na_enabled"].(bool)
-			weight := questionGroupsMap["weight"].(float32)
+			weight := float32(questionGroupsMap["weight"].(float64))
 			manualWeight := questionGroupsMap["manual_weight"].(bool)
 			questions := questionGroupsMap["questions"].([]interface{})
 
@@ -460,7 +460,7 @@ func buildSdkAnswerOptions(answerOptions []interface{}) *[]platformclientv2.Answ
 }
 
 func buildSdkVisibilityCondition(visibilityCondition []interface{}) *platformclientv2.Visibilitycondition {
-	if visibilityCondition == nil {
+	if visibilityCondition == nil || len(visibilityCondition) <= 0 {
 		return nil
 	}
 
@@ -475,12 +475,12 @@ func buildSdkVisibilityCondition(visibilityCondition []interface{}) *platformcli
 	}
 }
 
-func flattenQuestionGroups(questionGroups *[]platformclientv2.Evaluationquestiongroup) *schema.Set {
+func flattenQuestionGroups(questionGroups *[]platformclientv2.Evaluationquestiongroup) []interface{} {
 	if questionGroups == nil {
 		return nil
 	}
 
-	questionGroupSet := schema.NewSet(schema.HashResource(evaluationFormQuestionGroup), []interface{}{})
+	questionGroupList := []interface{}{}
 
 	for _, questionGroup := range *questionGroups {
 		questionGroupMap := make(map[string]interface{})
@@ -509,17 +509,17 @@ func flattenQuestionGroups(questionGroups *[]platformclientv2.Evaluationquestion
 			questionGroupMap["visibility_condition"] = flattenVisibilityCondition(questionGroup.VisibilityCondition)
 		}
 
-		questionGroupSet.Add(questionGroupMap)
+		questionGroupList = append(questionGroupList, questionGroupMap)
 	}
-	return questionGroupSet
+	return questionGroupList
 }
 
-func flattenQuestions(questions *[]platformclientv2.Evaluationquestion) *schema.Set {
+func flattenQuestions(questions *[]platformclientv2.Evaluationquestion) []interface{} {
 	if questions == nil {
 		return nil
 	}
 
-	questionSet := schema.NewSet(schema.HashResource(evaluationFormQuestion), []interface{}{})
+	questionList := []interface{}{}
 
 	for _, question := range *questions {
 		questionMap := make(map[string]interface{})
@@ -548,17 +548,17 @@ func flattenQuestions(questions *[]platformclientv2.Evaluationquestion) *schema.
 			questionMap["answer_options"] = flattenAnswerOptions(question.AnswerOptions)
 		}
 
-		questionSet.Add(questionMap)
+		questionList = append(questionList, questionMap)
 	}
-	return questionSet
+	return questionList
 }
 
-func flattenAnswerOptions(answerOptions *[]platformclientv2.Answeroption) *schema.Set {
+func flattenAnswerOptions(answerOptions *[]platformclientv2.Answeroption) []interface{} {
 	if answerOptions == nil {
 		return nil
 	}
 
-	answerOptionsSet := schema.NewSet(schema.HashResource(evaluationFormAnswerOptions), []interface{}{})
+	answerOptionsList := []interface{}{}
 
 	for _, answerOption := range *answerOptions {
 		answerOptionMap := make(map[string]interface{})
@@ -569,12 +569,12 @@ func flattenAnswerOptions(answerOptions *[]platformclientv2.Answeroption) *schem
 			answerOptionMap["value"] = *answerOption.Value
 		}
 
-		answerOptionsSet.Add(answerOptionMap)
+		answerOptionsList = append(answerOptionsList, answerOptionMap)
 	}
-	return answerOptionsSet
+	return answerOptionsList
 }
 
-func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibilitycondition) *schema.Set {
+func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibilitycondition) []interface{} {
 	if visibilityCondition == nil {
 		return nil
 	}
@@ -587,5 +587,5 @@ func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibility
 		visibilityConditionMap["predicates"] = *visibilityCondition.Predicates
 	}
 
-	return schema.NewSet(schema.HashResource(evaluationFormAnswerOptions), []interface{}{visibilityConditionMap})
+	return []interface{}{visibilityConditionMap}
 }
