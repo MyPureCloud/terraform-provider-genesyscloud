@@ -3,7 +3,7 @@
 page_title: "genesyscloud_integration_action Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-Data source for Genesys Cloud integration action. Select an integration action by name
+  Data source for Genesys Cloud integration action. Select an integration action by name
 ---
 
 # genesyscloud_integration_action (Data Source)
@@ -23,7 +23,7 @@ data "genesyscloud_integration_action" "integrationAction" {
 
 ### Required
 
-- **name** (String) Integration action name.
+- **name** (String) The name of the integration action
 
 ### Optional
 
