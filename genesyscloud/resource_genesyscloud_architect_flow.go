@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v55/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 	"io"
 	"io/ioutil"
 	"log"
@@ -107,7 +107,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	presignedUrl := successPayload["presignedUrl"].(string)
-	jobId := successPayload["jobId"].(string)
+	jobId := successPayload["id"].(string)
 	correlationId := response.CorrelationID
 	headers := successPayload["headers"].(map[string]interface{})
 	orgID := headers["x-amz-meta-organizationid"].(string)
@@ -122,11 +122,10 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	flowID := ""
 
-	//TODO: Test 16 mins
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
 		//body, resp, err := architectAPI.getStatus()
 		path :=
-		//"http://localhost:8080/api/v2/flows/jobs/3f1d37d6-4f15-4cbd-a8ba-b5e7f38e672b"
+			//"http://localhost:8080/api/v2/flows/jobs/3f1d37d6-4f15-4cbd-a8ba-b5e7f38e672b"
 			"http://localhost:8080/api/v2/flows/jobs/" + jobId
 		res := make(map[string]interface{})
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
@@ -151,7 +150,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 
 		time.Sleep(15 * time.Second) // Wait 15 seconds for next retry
-		return resource.RetryableError(fmt.Errorf("Job (%s) is still in progress.", jobId))
+		return resource.RetryableError(fmt.Errorf("Job (%s) could not finish in 16 minutes and timed out.", jobId))
 	})
 
 	if retryErr != nil {
@@ -159,7 +158,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	if flowID == "" {
-		return diag.Errorf("The Architect Job (%s) timed out.", jobId)
+		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
 	}
 
 	d.SetId(flowID)
@@ -172,43 +171,16 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	apiClient := &architectAPI.Configuration.APIClient
-	path := architectAPI.Configuration.BasePath + "/api/v2/flows/" + d.Id()
-
-	headerParams := make(map[string]string)
-
-	// add default headers if any
-	for key := range architectAPI.Configuration.DefaultHeader {
-		headerParams[key] = architectAPI.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Authorization"] = "Bearer " + architectAPI.Configuration.AccessToken
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	successPayload := make(map[string]interface{})
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
+	flow, resp, err := architectAPI.GetFlow(d.Id(), false)
 	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if err == nil && response.Error != nil {
-		return diag.Errorf("Failed to register Archy job. %s", err)
-	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-		if err != nil {
-			return diag.Errorf("Failed to unmarshal response after registering the Archy job. %s", err)
+		if isStatus404(resp) {
+			d.SetId("")
+			return nil
 		}
+		return diag.Errorf("Failed to read flow %s: %s", d.Id(), err)
 	}
 
-	//flow, resp, err := architectAPI.GetFlow(d.Id(), false)
-	//if err != nil {
-	//	if isStatus404(resp) {
-	//		d.SetId("")
-	//		return nil
-	//	}
-	//	return diag.Errorf("Failed to read flow %s: %s", d.Id(), err)
-	//}
-
-	//log.Printf("Read flow %s %s", d.Id(), *flow.Name)
+	log.Printf("Read flow %s %s", d.Id(), *flow.Name)
 	return nil
 }
 
@@ -245,7 +217,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	presignedUrl := successPayload["presignedUrl"].(string)
-	jobId := successPayload["jobId"].(string)
+	jobId := successPayload["id"].(string)
 	correlationId := response.CorrelationID
 	headers := successPayload["headers"].(map[string]interface{})
 	orgID := headers["x-amz-meta-organizationid"].(string)
@@ -258,11 +230,11 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.Errorf(err.Error())
 	}
 
-	//TODO: Test 16 mins
+	flowID := ""
+
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
-		//body, resp, err := architectAPI.getStatus()
 		path :=
-		//"http://localhost:8080/api/v2/flows/jobs/3f1d37d6-4f15-4cbd-a8ba-b5e7f38e672b"
+			//"http://localhost:8080/api/v2/flows/jobs/6e55bade-f6b9-4034-83c0-0998822c66c2"
 			"http://localhost:8080/api/v2/flows/jobs/" + jobId
 		res := make(map[string]interface{})
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
@@ -281,20 +253,25 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 
 		if res["status"] == "Success" {
-			flowID := res["flow"].(map[string]interface{})["id"].(string)
-			d.SetId(flowID)
+			flowID = res["flow"].(map[string]interface{})["id"].(string)
 			return nil
 		}
 
 		time.Sleep(15 * time.Second) // Wait 15 seconds for next retry
-		return resource.RetryableError(fmt.Errorf("Job (%s) is still in progress.", jobId))
+		return resource.RetryableError(fmt.Errorf("Job (%s) could not finish in 16 minutes and timed out.", jobId))
 	})
 
 	if retryErr != nil {
 		return retryErr
 	}
 
-	log.Printf("Created flow %s. ", d.Id())
+	if flowID == "" {
+		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
+	}
+
+	d.SetId(flowID)
+
+	log.Printf("Updated flow %s. ", d.Id())
 	return readFlow(ctx, d, meta)
 }
 
@@ -327,21 +304,7 @@ func hashFileContent(path string) string {
 
 func prepareAndUploadFile(filename string, headers map[string]interface{}, presignedUrl string, jobId string, orgId string, correlationId string) ([]byte, error) {
 
-	//file, err := os.Open(filename)
-	//
-	//if err != nil {
-	//	return nil, fmt.Errorf("Failed to open file %s . Error: %s ", filename, err)
-	//}
-	//
-	//defer file.Close()
-
 	bodyBuf := &bytes.Buffer{}
-	//bodyWriter := multipart.NewWriter(bodyBuf)
-	//
-	//fileWriter, err := bodyWriter.CreateFormFile("uploadfile", filename)
-	//if err != nil {
-	//	return nil, fmt.Errorf("Failed to write file to the buffer. Error: %s ", err)
-	//}
 
 	fh, err := os.Open(filename)
 	if err != nil {
@@ -354,13 +317,7 @@ func prepareAndUploadFile(filename string, headers map[string]interface{}, presi
 		return nil, fmt.Errorf("Failed to copy file content to the handler. Error: %s ", err)
 	}
 
-	//contentType := bodyWriter.FormDataContentType()
-	//bodyWriter.Close()
-
 	req, _ := http.NewRequest("PUT", presignedUrl, bodyBuf)
-	//req.Header.Set("Accept", "*/*")
-	//req.Header.Set("Content-Type", contentType)
-
 	for key, value := range headers {
 		req.Header.Set(key, value.(string))
 	}

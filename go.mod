@@ -24,6 +24,7 @@ require (
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
+	github.com/mypurecloud/platform-client-sdk-go/v46 v46.0.0
 	github.com/mypurecloud/platform-client-sdk-go/v56 v56.0.1
 	github.com/nsf/jsondiff v0.0.0-20210303162244-6ea32392771e // indirect
 	github.com/nyaruka/phonenumbers v1.0.74

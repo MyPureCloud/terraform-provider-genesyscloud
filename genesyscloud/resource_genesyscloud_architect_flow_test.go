@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v46/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
 func TestAccResourceFlow(t *testing.T) {
@@ -53,10 +53,6 @@ func TestAccResourceFlow(t *testing.T) {
                     name: Disconnect
 `, flowName1)
 	)
-
-	//os.Setenv("GENESYSCLOUD_OAUTHCLIENT_ID", "df4cf7c9-bdcd-4c87-bb90-969455486dd1")
-	//os.Setenv("GENESYSCLOUD_OAUTHCLIENT_SECRET", "1zjnIHkin-5UKH_u2dLbHsoax6K9kvj0ZNhi8wHJY6w")
-	//os.Setenv("GENESYSCLOUD_REGION", "dca")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
