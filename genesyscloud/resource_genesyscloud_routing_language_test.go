@@ -59,7 +59,7 @@ func testVerifyLanguagesDestroyed(state *terraform.State) error {
 
 		lang, resp, err := languagesAPI.GetRoutingLanguage(rs.Primary.ID)
 		if lang != nil {
-			if *lang.State == "deleted" {
+			if lang.State != nil && *lang.State == "deleted" {
 				// Language deleted
 				continue
 			}

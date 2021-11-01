@@ -355,7 +355,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return resource.NonRetryableError(fmt.Errorf("Error deleting Phone %s: %s", d.Id(), err))
 		}
 
-		if *phone.State == "deleted" {
+		if phone.State != nil && *phone.State == "deleted" {
 			// phone deleted
 			log.Printf("Deleted Phone %s", d.Id())
 			return nil
@@ -456,7 +456,7 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 		}
 
 		for _, phone := range *phones.Entities {
-			if *phone.State != "deleted" {
+			if phone.State != nil && *phone.State != "deleted" {
 				resources[*phone.Id] = &ResourceMeta{Name: *phone.Name}
 			}
 		}

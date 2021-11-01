@@ -196,7 +196,7 @@ func testVerifyLocationsDestroyed(state *terraform.State) error {
 
 		location, resp, err := locationsAPI.GetLocation(rs.Primary.ID, nil)
 		if location != nil {
-			if *location.State == "deleted" {
+			if location.State != nil && *location.State == "deleted" {
 				// Location deleted
 				continue
 			}

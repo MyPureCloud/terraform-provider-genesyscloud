@@ -232,7 +232,7 @@ func deleteArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 			return resource.NonRetryableError(fmt.Errorf("Error deleting schedule group %s: %s", d.Id(), err))
 		}
 
-		if *scheduleGroup.State == "deleted" {
+		if scheduleGroup.State != nil && *scheduleGroup.State == "deleted" {
 			// schedule group deleted
 			log.Printf("Deleted schedule group %s", d.Id())
 			return nil

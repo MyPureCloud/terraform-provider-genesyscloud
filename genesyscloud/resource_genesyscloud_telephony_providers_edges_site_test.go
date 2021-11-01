@@ -546,7 +546,7 @@ func testVerifySitesDestroyed(state *terraform.State) error {
 
 		site, resp, err := edgesAPI.GetTelephonyProvidersEdgesSite(rs.Primary.ID)
 		if site != nil {
-			if *site.State == "deleted" {
+			if site.State != nil && *site.State == "deleted" {
 				// site deleted
 				continue
 			}

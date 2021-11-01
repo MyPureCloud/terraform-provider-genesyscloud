@@ -29,7 +29,7 @@ func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configurat
 		}
 
 		for _, didPool := range *didPools.Entities {
-			if *didPool.State != "deleted" {
+			if didPool.State != nil && *didPool.State != "deleted" {
 				resources[*didPool.Id] = &ResourceMeta{Name: *didPool.StartPhoneNumber}
 			}
 		}
@@ -134,7 +134,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return resource.NonRetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
 		}
 
-		if *didPool.State == "deleted" {
+		if didPool.State != nil && *didPool.State == "deleted" {
 			d.SetId("")
 			return nil
 		}
@@ -215,7 +215,7 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return resource.NonRetryableError(fmt.Errorf("Error deleting DID pool %s: %s", d.Id(), err))
 		}
 
-		if *didPool.State == "deleted" {
+		if didPool.State != nil && *didPool.State == "deleted" {
 			// DID pool deleted
 			log.Printf("Deleted DID pool %s", d.Id())
 			return nil

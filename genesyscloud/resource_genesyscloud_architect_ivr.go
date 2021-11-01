@@ -28,7 +28,7 @@ func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configur
 		}
 
 		for _, ivrConfig := range *ivrConfigs.Entities {
-			if *ivrConfig.State != "deleted" {
+			if ivrConfig.State != nil && *ivrConfig.State != "deleted" {
 				resources[*ivrConfig.Id] = &ResourceMeta{Name: *ivrConfig.Name}
 			}
 		}
@@ -153,7 +153,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
 		}
 
-		if *ivrConfig.State == "deleted" {
+		if ivrConfig.State != nil && *ivrConfig.State == "deleted" {
 			d.SetId("")
 			return nil
 		}
@@ -267,7 +267,7 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			return resource.NonRetryableError(fmt.Errorf("Error deleting IVR config %s: %s", d.Id(), err))
 		}
 
-		if *ivr.State == "deleted" {
+		if ivr.State != nil && *ivr.State == "deleted" {
 			// IVR config deleted
 			log.Printf("Deleted IVR config %s", d.Id())
 			return nil

@@ -165,7 +165,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 			return resource.NonRetryableError(fmt.Errorf("Error deleting Edge group %s: %s", d.Id(), err))
 		}
 
-		if *edgeGroup.State == "deleted" {
+		if edgeGroup.State != nil && *edgeGroup.State == "deleted" {
 			// Edge group deleted
 			log.Printf("Deleted Edge group %s", d.Id())
 			return nil
@@ -236,7 +236,7 @@ func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configurati
 		}
 
 		for _, edgeGroup := range *edgeGroups.Entities {
-			if *edgeGroup.State != "deleted" {
+			if edgeGroup.State != nil && *edgeGroup.State != "deleted" {
 				resources[*edgeGroup.Id] = &ResourceMeta{Name: *edgeGroup.Name}
 			}
 		}

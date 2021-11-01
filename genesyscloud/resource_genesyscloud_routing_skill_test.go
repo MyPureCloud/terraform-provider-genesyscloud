@@ -59,7 +59,7 @@ func testVerifySkillsDestroyed(state *terraform.State) error {
 
 		skill, resp, err := routingAPI.GetRoutingSkill(rs.Primary.ID)
 		if skill != nil {
-			if *skill.State == "deleted" {
+			if skill.State != nil && *skill.State == "deleted" {
 				// Skill deleted
 				continue
 			}
