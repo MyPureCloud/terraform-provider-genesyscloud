@@ -125,11 +125,10 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
 		//body, resp, err := architectAPI.getStatus()
 		path :=
-			//"http://localhost:8080/api/v2/flows/jobs/3f1d37d6-4f15-4cbd-a8ba-b5e7f38e672b"
-			"http://localhost:8080/api/v2/flows/jobs/" + jobId
+			//"http://localhost:8080/api/v2/flows/jobs/bef6898f-82fa-46b2-9d84-30bdfddfae1f?expand=messages"
+			"http://localhost:8080/api/v2/flows/jobs/" + jobId + "?expand=messages"
 		res := make(map[string]interface{})
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
-		path = "changed"
 		if err != nil {
 			// Nothing special to do here, but do avoid processing the response
 		} else if err == nil && response.Error != nil {
@@ -141,7 +140,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			}
 		}
 		if res["status"] == "Failure" {
-			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, exit code: %f", jobId, res["exitCode"].(float64)))
+			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v", jobId, res["messages"].([]interface{})))
 		}
 
 		if res["status"] == "Success" {
@@ -234,8 +233,8 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
 		path :=
-			//"http://localhost:8080/api/v2/flows/jobs/6e55bade-f6b9-4034-83c0-0998822c66c2"
-			"http://localhost:8080/api/v2/flows/jobs/" + jobId
+			//"http://localhost:8080/api/v2/flows/jobs/bef6898f-82fa-46b2-9d84-30bdfddfae1f?expand=messages"
+			"http://localhost:8080/api/v2/flows/jobs/" + jobId + "?expand=messages"
 		res := make(map[string]interface{})
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 		if err != nil {
@@ -249,7 +248,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			}
 		}
 		if res["status"] == "Failure" {
-			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, exit code: %f", jobId, res["exitCode"].(float64)))
+			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v", jobId, res["messages"].([]interface{})))
 		}
 
 		if res["status"] == "Success" {
