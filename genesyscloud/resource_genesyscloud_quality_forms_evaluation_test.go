@@ -52,11 +52,12 @@ type visibilityConditionStruct struct {
 func TestAccResourceEvaluationFormBasic(t *testing.T) {
 	formResource1 := "test-evaluation-form-1"
 
+	// Most basic evaluation form
 	evaluationForm1 := evaluationFormStruct{
 		name: "terraform-form-evaluations-" + uuid.NewString(),
 		questionGroups: []evaluationFormQuestionGroupStruct{
 			{
-				name:   "Test Question",
+				name:   "Test Question Group 1",
 				weight: 1,
 				questions: []evaluationFormQuestionStruct{
 					{
@@ -77,6 +78,49 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 		},
 	}
 
+	// Duplicate form with additional questions
+	evaluationForm2 := evaluationForm1
+	evaluationForm2.name = "New Form Name"
+	evaluationForm2.questionGroups = append(evaluationForm2.questionGroups, evaluationFormQuestionGroupStruct{
+		name:   "Test Question Group 2",
+		weight: 2,
+		questions: []evaluationFormQuestionStruct{
+			{
+				text: "Yet another yes or no question.",
+				answerOptions: []answerOptionStruct{
+					{
+						text:  "Yes",
+						value: 1,
+					},
+					{
+						text:  "No",
+						value: 0,
+					},
+				},
+			},
+			{
+				text: "Multiple Choice Question.",
+				answerOptions: []answerOptionStruct{
+					{
+						text:  "Option 1",
+						value: 1,
+					},
+					{
+						text:  "Option 2",
+						value: 2,
+					},
+					{
+						text:  "Option 3",
+						value: 3,
+					},
+				},
+			},
+		},
+	})
+
+	evaluationForm3 := evaluationForm1
+	evaluationForm3.published = true
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -86,6 +130,40 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 				Config: generateEvaluationFormResource(formResource1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm1.name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm1.questionGroups[0].name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm1.questionGroups))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.text", evaluationForm1.questionGroups[0].questions[0].text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm1.questionGroups[0].questions[0].answerOptions))),
+				),
+			},
+			{
+				// Update and add some questions
+				Config: generateEvaluationFormResource(formResource1, &evaluationForm2),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm2.name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm2.questionGroups[0].name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm2.questionGroups))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.weight", fmt.Sprint(evaluationForm2.questionGroups[1].weight)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.text", evaluationForm2.questionGroups[0].questions[0].text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.questions.0.text", evaluationForm2.questionGroups[1].questions[0].text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.questions.1.text", evaluationForm2.questionGroups[1].questions[1].text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm2.questionGroups[0].questions[0].answerOptions))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm2.questionGroups[1].questions[0].answerOptions))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.questions.1.answer_options.#", fmt.Sprint(len(evaluationForm2.questionGroups[1].questions[1].answerOptions))),
+				),
+			},
+			{
+				// Publish Evaluation Form
+				Config: generateEvaluationFormResource(formResource1, &evaluationForm3),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm3.name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm3.questionGroups[0].name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm3.questionGroups))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.text", evaluationForm3.questionGroups[0].questions[0].text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm3.questionGroups[0].questions[0].answerOptions))),
 				),
 			},
 			{

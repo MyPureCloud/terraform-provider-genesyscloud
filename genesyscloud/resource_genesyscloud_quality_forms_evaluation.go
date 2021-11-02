@@ -243,15 +243,13 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 
 	// Publishing
 	if published {
-		updatedForm, _, err := qualityAPI.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
+		_, _, err := qualityAPI.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
 			Id:        formId,
 			Published: &published,
 		})
 		if err != nil {
 			return diag.Errorf("Failed to publish evaluation form %s", name)
 		}
-
-		formId = updatedForm.Id
 	}
 
 	d.SetId(*formId)
@@ -319,15 +317,13 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 
 	// Set published property on evaluation form update.
 	if published {
-		updatedForm, _, err := qualityAPI.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
+		_, _, err := qualityAPI.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
 			Id:        form.Id,
 			Published: &published,
 		})
 		if err != nil {
 			return diag.Errorf("Failed to publish evaluation form %s", name)
 		}
-
-		d.SetId(*updatedForm.Id)
 	} else {
 		// If published property is reset to false, set the resource Id to the latest unpublished form
 		d.SetId(*form.Id)
