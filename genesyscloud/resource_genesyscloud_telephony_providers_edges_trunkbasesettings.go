@@ -244,7 +244,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 			return resource.NonRetryableError(fmt.Errorf("Error deleting trunk base settings %s: %s", d.Id(), err))
 		}
 
-		if *trunkBaseSettings.State == "deleted" {
+		if trunkBaseSettings.State != nil && *trunkBaseSettings.State == "deleted" {
 			// trunk base settings deleted
 			log.Printf("Deleted trunk base settings %s", d.Id())
 			return nil
@@ -271,7 +271,7 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 		}
 
 		for _, trunkBaseSetting := range *trunkBaseSettings.Entities {
-			if *trunkBaseSetting.State != "deleted" {
+			if trunkBaseSetting.State != nil && *trunkBaseSetting.State != "deleted" {
 				resources[*trunkBaseSetting.Id] = &ResourceMeta{Name: *trunkBaseSetting.Name}
 			}
 		}

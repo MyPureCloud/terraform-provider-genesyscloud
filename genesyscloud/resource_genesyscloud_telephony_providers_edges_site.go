@@ -220,7 +220,7 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (Res
 		}
 
 		for _, site := range *sites.Entities {
-			if *site.State != "deleted" {
+			if site.State != nil && *site.State != "deleted" {
 				resources[*site.Id] = &ResourceMeta{Name: *site.Name}
 			}
 		}
@@ -444,7 +444,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return resource.NonRetryableError(fmt.Errorf("Error deleting site %s: %s", d.Id(), err))
 		}
 
-		if *site.State == "deleted" {
+		if site.State != nil && *site.State == "deleted" {
 			// Site deleted
 			log.Printf("Deleted site %s", d.Id())
 			// Need to sleep here because if terraform deletes the dependent location straight away

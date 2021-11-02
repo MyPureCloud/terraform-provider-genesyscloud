@@ -288,7 +288,7 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 			return resource.NonRetryableError(fmt.Errorf("Error deleting location %s: %s", d.Id(), err))
 		}
 
-		if *location.State == "deleted" {
+		if location.State != nil && *location.State == "deleted" {
 			// Location deleted
 			log.Printf("Deleted location %s", d.Id())
 			return nil

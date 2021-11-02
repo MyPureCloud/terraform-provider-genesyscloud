@@ -299,7 +299,7 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 			return resource.NonRetryableError(fmt.Errorf("Error deleting OAuth client %s: %s", d.Id(), err))
 		}
 
-		if *oauthClient.State == "deleted" {
+		if oauthClient.State != nil && *oauthClient.State == "deleted" {
 			// OAuth client deleted
 			log.Printf("Deleted OAuth client %s", d.Id())
 			return nil

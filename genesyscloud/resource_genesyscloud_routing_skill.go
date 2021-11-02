@@ -28,7 +28,7 @@ func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, skill := range *skills.Entities {
-			if *skill.State != "deleted" {
+			if skill.State != nil && *skill.State != "deleted" {
 				resources[*skill.Id] = &ResourceMeta{Name: *skill.Name}
 			}
 		}
@@ -134,7 +134,7 @@ func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 			return resource.NonRetryableError(fmt.Errorf("Error deleting Routing skill %s: %s", d.Id(), err))
 		}
 
-		if *routingSkill.State == "deleted" {
+		if routingSkill.State != nil && *routingSkill.State == "deleted" {
 			// Routing skill deleted
 			log.Printf("Deleted Routing skill %s", d.Id())
 			return nil

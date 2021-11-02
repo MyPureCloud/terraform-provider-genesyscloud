@@ -28,7 +28,7 @@ func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Co
 		}
 
 		for _, language := range *languages.Entities {
-			if *language.State != "deleted" {
+			if language.State != nil && *language.State != "deleted" {
 				resources[*language.Id] = &ResourceMeta{Name: *language.Name}
 			}
 		}
@@ -135,7 +135,7 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Error deleting Routing language %s: %s", d.Id(), err))
 		}
 
-		if *routingLanguage.State == "deleted" {
+		if routingLanguage.State != nil && *routingLanguage.State == "deleted" {
 			// Routing language deleted
 			log.Printf("Deleted Routing language %s", d.Id())
 			return nil

@@ -219,7 +219,7 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 			return resource.NonRetryableError(fmt.Errorf("Error deleting Phone base settings %s: %s", d.Id(), err))
 		}
 
-		if *phoneBaseSettings.State == "deleted" {
+		if phoneBaseSettings.State != nil && *phoneBaseSettings.State == "deleted" {
 			// Phone base settings deleted
 			log.Printf("Deleted Phone base settings %s", d.Id())
 			return nil
@@ -246,7 +246,7 @@ func getAllPhoneBaseSettings(_ context.Context, sdkConfig *platformclientv2.Conf
 		}
 
 		for _, phoneBaseSetting := range *phoneBaseSettings.Entities {
-			if *phoneBaseSetting.State != "deleted" {
+			if phoneBaseSetting.State != nil && *phoneBaseSetting.State != "deleted" {
 				resources[*phoneBaseSetting.Id] = &ResourceMeta{Name: *phoneBaseSetting.Name}
 			}
 		}

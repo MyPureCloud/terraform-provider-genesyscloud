@@ -305,7 +305,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return resource.NonRetryableError(fmt.Errorf("Error deleting group %s: %s", d.Id(), err))
 		}
 
-		if *group.State == "deleted" {
+		if group.State != nil && *group.State == "deleted" {
 			log.Printf("Group %s deleted", name)
 			return nil
 		}

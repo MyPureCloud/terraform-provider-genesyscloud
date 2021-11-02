@@ -206,7 +206,7 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 		}
 
 		for _, trunk := range *trunks.Entities {
-			if *trunk.State != "deleted" {
+			if trunk.State != nil && *trunk.State != "deleted" {
 				resources[*trunk.Id] = &ResourceMeta{Name: *trunk.Name}
 			}
 		}
