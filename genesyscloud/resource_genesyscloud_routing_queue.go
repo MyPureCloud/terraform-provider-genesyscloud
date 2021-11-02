@@ -129,6 +129,10 @@ func resourceRoutingQueue() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Default: &timeout,
+			Create:  &timeout,
+			Read:    &timeout,
+			Update:  &timeout,
+			Delete:  &timeout,
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

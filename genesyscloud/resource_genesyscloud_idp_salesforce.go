@@ -158,8 +158,8 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 
 	log.Printf("Updated IDP Salesforce")
 	// Give time for public API caches to update
-	// It takes a long time with idp resources
-	time.Sleep(20 * time.Second)
+	// It takes a very very long time with idp resources
+	time.Sleep(60 * time.Second)
 	return readIdpSalesforce(ctx, d, meta)
 }
 
@@ -173,7 +173,7 @@ func deleteIdpSalesforce(ctx context.Context, _ *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to delete IDP Salesforce: %s", err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersSalesforce()
 		if err != nil {
 			if isStatus404(resp) {

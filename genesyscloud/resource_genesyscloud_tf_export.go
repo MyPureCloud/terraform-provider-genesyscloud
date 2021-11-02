@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -28,6 +29,7 @@ const (
 )
 
 func resourceTfExport() *schema.Resource {
+	timeout, _ := time.ParseDuration("100s")
 	return &schema.Resource{
 		Description: fmt.Sprintf(`
 		Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
@@ -39,6 +41,9 @@ func resourceTfExport() *schema.Resource {
 		DeleteContext: deleteTfExport,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
+		},
+		Timeouts: &schema.ResourceTimeout{
+			Default: &timeout,
 		},
 		Schema: map[string]*schema.Schema{
 			"directory": {

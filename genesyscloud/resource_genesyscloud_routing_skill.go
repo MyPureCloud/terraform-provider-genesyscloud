@@ -45,6 +45,7 @@ func routingSkillExporter() *ResourceExporter {
 }
 
 func resourceRoutingSkill() *schema.Resource {
+	timeout, _ := time.ParseDuration("100s")
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Skill",
 
@@ -53,6 +54,9 @@ func resourceRoutingSkill() *schema.Resource {
 		DeleteContext: deleteWithPooledClient(deleteRoutingSkill),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
+		},
+		Timeouts: &schema.ResourceTimeout{
+			Default: &timeout,
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

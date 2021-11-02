@@ -92,7 +92,7 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading IDP ADFS")
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 60*time.Second, d, func() *resource.RetryError {
 		adfs, resp, getErr := idpAPI.GetIdentityprovidersAdfs()
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -171,8 +171,8 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Updated IDP ADFS")
 	// Give time for public API caches to update
-	// It takes a long time with idp resources
-	time.Sleep(20 * time.Second)
+	// It takes a very very long time with idp resources
+	time.Sleep(60 * time.Second)
 	return readIdpAdfs(ctx, d, meta)
 }
 

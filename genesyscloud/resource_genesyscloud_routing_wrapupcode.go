@@ -43,6 +43,7 @@ func routingWrapupCodeExporter() *ResourceExporter {
 }
 
 func resourceRoutingWrapupCode() *schema.Resource {
+	timeout, _ := time.ParseDuration("100s")
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Wrapup Code",
 
@@ -52,6 +53,9 @@ func resourceRoutingWrapupCode() *schema.Resource {
 		DeleteContext: deleteWithPooledClient(deleteRoutingWrapupCode),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
+		},
+		Timeouts: &schema.ResourceTimeout{
+			Default: &timeout,
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
