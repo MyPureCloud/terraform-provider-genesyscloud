@@ -80,6 +80,7 @@ jobs:
         GENESYSCLOUD_OAUTHCLIENT_SECRET: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
         GENESYSCLOUD_REGION: "us-east-1"
         GENESYSCLOUD_SDK_DEBUG: "true"
+        GENESYSCLOUD_TOKEN_POOL_SIZE: 20
       run: |
         run: |
           if [ "$TF_ACC_TERRAFORM_VERSION" == "0.14.7" ]; then

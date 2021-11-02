@@ -152,7 +152,7 @@ func userExporter() *ResourceExporter {
 }
 
 func resourceUser() *schema.Resource {
-	timeout, _ := time.ParseDuration("100s")
+	timeout := 100 * time.Second
 	return &schema.Resource{
 		Description: "Genesys Cloud User",
 

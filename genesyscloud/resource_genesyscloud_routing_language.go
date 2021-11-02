@@ -45,7 +45,7 @@ func routingLanguageExporter() *ResourceExporter {
 }
 
 func resourceRoutingLanguage() *schema.Resource {
-	timeout, _ := time.ParseDuration("100s")
+	timeout := 100 * time.Second
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Language",
 
