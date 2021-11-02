@@ -447,8 +447,9 @@ func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.Grou
 						Version:   groupInfo.Version,
 					})
 					if err != nil {
-						return resp, diag.Errorf("Failed to read group %s: %s", d.Id(), postErr)
+						return resp, diag.Errorf("Failed to add group members %s: %s", d.Id(), postErr)
 					}
+					time.Sleep(10 * time.Second)
 					return resp, nil
 				}); diagErr != nil {
 					return diagErr
