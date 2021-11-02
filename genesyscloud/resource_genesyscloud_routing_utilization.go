@@ -73,6 +73,7 @@ func routingUtilizationExporter() *ResourceExporter {
 }
 
 func resourceRoutingUtilization() *schema.Resource {
+	timeout, _ := time.ParseDuration("100s")
 	return &schema.Resource{
 		Description: "Genesys Cloud Org-wide Routing Utilization Settings.",
 
@@ -82,6 +83,9 @@ func resourceRoutingUtilization() *schema.Resource {
 		DeleteContext: deleteWithPooledClient(deleteRoutingUtilization),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
+		},
+		Timeouts: &schema.ResourceTimeout{
+			Default: &timeout,
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
@@ -186,8 +190,8 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("Updated Routing Utilization")
-	// It takes a very long time for the caches to expire
-	time.Sleep(30 * time.Second)
+	// It takes a very very long time for the caches to expire
+	time.Sleep(60 * time.Second)
 	return readRoutingUtilization(ctx, d, meta)
 }
 

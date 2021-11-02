@@ -158,8 +158,8 @@ func updateIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	log.Printf("Updated IDP Onelogin")
 	// Give time for public API caches to update
-	// It takes a long time with idp resources
-	time.Sleep(20 * time.Second)
+	// It takes a very very long time with idp resources
+	time.Sleep(60 * time.Second)
 	return readIdpOnelogin(ctx, d, meta)
 }
 
@@ -173,7 +173,7 @@ func deleteIdpOnelogin(ctx context.Context, _ *schema.ResourceData, meta interfa
 		return diag.Errorf("Failed to delete IDP Onelogin: %s", err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersOnelogin()
 		if err != nil {
 			if isStatus404(resp) {

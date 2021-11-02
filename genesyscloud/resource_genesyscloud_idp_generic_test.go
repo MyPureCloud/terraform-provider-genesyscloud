@@ -11,6 +11,7 @@ import (
 )
 
 func TestAccResourceIdpGeneric(t *testing.T) {
+	t.Skip("Skipping IDP tests until caching issues are resolved")
 	var (
 		name1               = "generic1"
 		name2               = "generic2"

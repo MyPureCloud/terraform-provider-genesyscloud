@@ -158,8 +158,8 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Updated IDP Okta")
 	// Give time for public API caches to update
-	// It takes a long time with idp resources
-	time.Sleep(20 * time.Second)
+	// It takes a very very long time with idp resources
+	time.Sleep(60 * time.Second)
 	return readIdpOkta(ctx, d, meta)
 }
 
@@ -173,7 +173,7 @@ func deleteIdpOkta(ctx context.Context, _ *schema.ResourceData, meta interface{}
 		return diag.Errorf("Failed to delete IDP Okta: %s", err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersOkta()
 		if err != nil {
 			if isStatus404(resp) {
