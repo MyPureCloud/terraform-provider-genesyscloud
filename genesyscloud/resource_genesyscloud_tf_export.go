@@ -56,7 +56,7 @@ func validateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 }
 
 func resourceTfExport() *schema.Resource {
-	timeout, _ := time.ParseDuration("100s")
+	timeout := 100 * time.Second
 	return &schema.Resource{
 		Description: fmt.Sprintf(`
 		Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 

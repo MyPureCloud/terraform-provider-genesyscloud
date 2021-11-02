@@ -43,7 +43,7 @@ func routingWrapupCodeExporter() *ResourceExporter {
 }
 
 func resourceRoutingWrapupCode() *schema.Resource {
-	timeout, _ := time.ParseDuration("100s")
+	timeout := 100 * time.Second
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Wrapup Code",
 
