@@ -178,6 +178,7 @@ func evaluationFormExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllEvaluationForms),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		AllowZeroValues: []string{"question_groups.questions.answer_options.value"},
 	}
 }
 
