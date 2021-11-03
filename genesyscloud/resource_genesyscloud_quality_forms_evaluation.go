@@ -330,6 +330,7 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	log.Printf("Updated evaluation form %s %s", name, *form.Id)
+	time.Sleep(5 * time.Second)
 	return readEvaluationForm(ctx, d, meta)
 }
 
