@@ -66,7 +66,7 @@ func resourceFlow() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				StateFunc: func(v interface{}) string {
-					return hashFileContent(v.(string))
+					return hashFileContent(v.(string)) // Use file hash as state, so when the file content changes, Terraform can detect and recognize as "update" operation instead of "create"
 				},
 			},
 		},
@@ -78,6 +78,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
+	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
 	apiClient := &architectAPI.Configuration.APIClient
 	//path := architectAPI.Configuration.BasePath + "/api/v2/flows/jobs"
 	path := "http://localhost:8080/api/v2/flows/jobs"
@@ -114,20 +115,24 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	filePath := d.Get("filepath").(string)
 
+	// Upload flow configuration file
 	_, err = prepareAndUploadFile(filePath, headers, presignedUrl, jobId, orgID, correlationId)
 
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
 
+	// Pre-define here before entering retry function, otherwise it will be overwritten
 	flowID := ""
 
+	// Retry every 15 seconds to fetch job status for 16 minutes until job succeeds or fails
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
-		//body, resp, err := architectAPI.getStatus()
+		// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
 		path :=
 			//"http://localhost:8080/api/v2/flows/jobs/bef6898f-82fa-46b2-9d84-30bdfddfae1f?expand=messages"
 			"http://localhost:8080/api/v2/flows/jobs/" + jobId + "?expand=messages"
 		res := make(map[string]interface{})
+		// If possible, after changing to SDK method invocation, include correlationId we get earlier in this function when making the GET request
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 		if err != nil {
 			// Nothing special to do here, but do avoid processing the response
@@ -161,7 +166,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	d.SetId(flowID)
-	log.Printf("Created flow %s. ", d.Id())
+	log.Printf("Created flow %s.", d.Id())
 	return readFlow(ctx, d, meta)
 }
 
@@ -187,6 +192,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
+	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
 	apiClient := &architectAPI.Configuration.APIClient
 	//path := architectAPI.Configuration.BasePath + "/api/v2/flows/jobs"
 	path := "http://localhost:8080/api/v2/flows/jobs"
@@ -229,13 +235,16 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.Errorf(err.Error())
 	}
 
+	// Pre-define here before entering retry function, otherwise it will be overwritten
 	flowID := ""
 
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
+		// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
 		path :=
 			//"http://localhost:8080/api/v2/flows/jobs/bef6898f-82fa-46b2-9d84-30bdfddfae1f?expand=messages"
 			"http://localhost:8080/api/v2/flows/jobs/" + jobId + "?expand=messages"
 		res := make(map[string]interface{})
+		// If possible, after changing to SDK method invocation, include correlationId we get earlier in this function when making the GET request
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 		if err != nil {
 			// Nothing special to do here, but do avoid processing the response
@@ -286,6 +295,7 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	return nil
 }
 
+// Hash file content, used in stateFunc for "filepath"
 func hashFileContent(path string) string {
 	file, err := os.Open(path)
 	if err != nil {
@@ -301,6 +311,7 @@ func hashFileContent(path string) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
+// Read and upload input file path to S3 pre-signed URL
 func prepareAndUploadFile(filename string, headers map[string]interface{}, presignedUrl string, jobId string, orgId string, correlationId string) ([]byte, error) {
 
 	bodyBuf := &bytes.Buffer{}
