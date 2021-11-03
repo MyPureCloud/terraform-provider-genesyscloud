@@ -370,6 +370,7 @@ func resourceRoutingQueue() *schema.Resource {
 }
 
 func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	fmt.Println("createQueue")
 	name := d.Get("name").(string)
 	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
@@ -428,6 +429,8 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	fmt.Println("readQueue")
+	//time.Sleep(60 * time.Second)
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
@@ -588,6 +591,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 }
 
 func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	fmt.Println("updateQueue")
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	skillEvaluationMethod := d.Get("skill_evaluation_method").(string)
@@ -646,6 +650,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	fmt.Println("deleteQueue")
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
