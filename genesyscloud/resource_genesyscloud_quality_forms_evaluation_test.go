@@ -25,7 +25,7 @@ type evaluationFormQuestionGroupStruct struct {
 	weight                  float32
 	manualWeight            bool
 	questions               []evaluationFormQuestionStruct
-	visibilityCondition     *visibilityConditionStruct
+	visibilityCondition     visibilityConditionStruct
 }
 
 type evaluationFormQuestionStruct struct {
@@ -35,7 +35,7 @@ type evaluationFormQuestionStruct struct {
 	commentsRequired    bool
 	isKill              bool
 	isCritical          bool
-	visibilityCondition *visibilityConditionStruct
+	visibilityCondition visibilityConditionStruct
 	answerOptions       []answerOptionStruct
 }
 
@@ -177,6 +177,195 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 	})
 }
 
+func TestAccResourceEvaluationFormComplete(t *testing.T) {
+	formResource1 := "test-evaluation-form-1"
+
+	// Complete evaluation form
+	evaluationForm1 := evaluationFormStruct{
+		name:      "terraform-form-evaluations-" + uuid.NewString(),
+		published: false,
+		questionGroups: []evaluationFormQuestionGroupStruct{
+			{
+				name:                    "Test Question Group 1",
+				defaultAnswersToHighest: true,
+				defaultAnswersToNA:      true,
+				naEnabled:               true,
+				weight:                  1,
+				manualWeight:            true,
+				questions: []evaluationFormQuestionStruct{
+					{
+						text: "Did the agent perform the opening spiel?",
+						answerOptions: []answerOptionStruct{
+							{
+								text:  "Yes",
+								value: 1,
+							},
+							{
+								text:  "No",
+								value: 0,
+							},
+						},
+					},
+					{
+						text:             "Did the agent greet the customer?",
+						helpText:         "Help text here",
+						naEnabled:        true,
+						commentsRequired: true,
+						isKill:           true,
+						isCritical:       true,
+						visibilityCondition: visibilityConditionStruct{
+							combiningOperation: "AND",
+							predicates:         []string{"/form/questionGroup/0/question/0/answer/1"},
+						},
+						answerOptions: []answerOptionStruct{
+							{
+								text:  "Yes",
+								value: 1,
+							},
+							{
+								text:  "No",
+								value: 0,
+							},
+						},
+					},
+				},
+			},
+			{
+				name:   "Test Question Group 2",
+				weight: 2,
+				questions: []evaluationFormQuestionStruct{
+					{
+						text: "Did the agent offer to sell product?",
+						answerOptions: []answerOptionStruct{
+							{
+								text:  "Yes",
+								value: 1,
+							},
+							{
+								text:  "No",
+								value: 0,
+							},
+						},
+					},
+				},
+				visibilityCondition: visibilityConditionStruct{
+					combiningOperation: "AND",
+					predicates:         []string{"/form/questionGroup/0/question/0/answer/1"},
+				},
+			},
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateEvaluationFormResource(formResource1, &evaluationForm1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "name", evaluationForm1.name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.name", evaluationForm1.questionGroups[0].name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.default_answers_to_highest", strconv.FormatBool(evaluationForm1.questionGroups[0].defaultAnswersToHighest)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.default_answers_to_na", strconv.FormatBool(evaluationForm1.questionGroups[0].defaultAnswersToNA)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.na_enabled", strconv.FormatBool(evaluationForm1.questionGroups[0].naEnabled)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.manual_weight", strconv.FormatBool(evaluationForm1.questionGroups[0].manualWeight)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.visibility_condition.0.combining_operation", evaluationForm1.questionGroups[1].visibilityCondition.combiningOperation),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.1.visibility_condition.0.predicates.0", evaluationForm1.questionGroups[1].visibilityCondition.predicates[0]),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.#", fmt.Sprint(len(evaluationForm1.questionGroups))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.text", evaluationForm1.questionGroups[0].questions[1].text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.help_text", evaluationForm1.questionGroups[0].questions[1].helpText),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.na_enabled", strconv.FormatBool(evaluationForm1.questionGroups[0].questions[1].naEnabled)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.comments_required", strconv.FormatBool(evaluationForm1.questionGroups[0].questions[1].commentsRequired)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.is_kill", strconv.FormatBool(evaluationForm1.questionGroups[0].questions[1].isKill)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.is_critical", strconv.FormatBool(evaluationForm1.questionGroups[0].questions[1].isCritical)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.answer_options.#", fmt.Sprint(len(evaluationForm1.questionGroups[0].questions[1].answerOptions))),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.visibility_condition.0.combining_operation", evaluationForm1.questionGroups[0].questions[1].visibilityCondition.combiningOperation),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "question_groups.0.questions.1.visibility_condition.0.predicates.0", evaluationForm1.questionGroups[0].questions[1].visibilityCondition.predicates[0]),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_quality_forms_evaluation." + formResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyEvaluationFormDestroyed,
+	})
+}
+
+func TestAccResourceEvaluationFormRepublishing(t *testing.T) {
+	formResource1 := "test-evaluation-form-1"
+
+	// Most basic evaluation form
+	evaluationForm1 := evaluationFormStruct{
+		name:      "terraform-form-evaluations-" + uuid.NewString(),
+		published: true,
+		questionGroups: []evaluationFormQuestionGroupStruct{
+			{
+				name:   "Test Question Group 1",
+				weight: 1,
+				questions: []evaluationFormQuestionStruct{
+					{
+						text: "Did the agent perform the opening spiel?",
+						answerOptions: []answerOptionStruct{
+							{
+								text:  "Yes",
+								value: 1,
+							},
+							{
+								text:  "No",
+								value: 0,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Unpublish
+	evaluationForm2 := evaluationForm1
+	evaluationForm2.published = false
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Publish form on creation
+				Config: generateEvaluationFormResource(formResource1, &evaluationForm1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", trueValue),
+				),
+			},
+			{
+				// Unpublish
+				Config: generateEvaluationFormResource(formResource1, &evaluationForm2),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", falseValue),
+				),
+			},
+			{
+				// republish
+				Config: generateEvaluationFormResource(formResource1, &evaluationForm1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResource1, "published", trueValue),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_quality_forms_evaluation." + formResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyEvaluationFormDestroyed,
+	})
+}
+
 func testVerifyEvaluationFormDestroyed(state *terraform.State) error {
 	qualityAPI := platformclientv2.NewQualityApi()
 	for _, rs := range state.RootModule().Resources {
@@ -244,7 +433,7 @@ func generateEvaluationFormQuestionGroups(questionGroups *[]evaluationFormQuesti
 			questionGroup.weight,
 			questionGroup.manualWeight,
 			generateEvaluationFormQuestions(&questionGroup.questions),
-			generateFormVisibilityCondition(questionGroup.visibilityCondition),
+			generateFormVisibilityCondition(&questionGroup.visibilityCondition),
 		)
 
 		questionGroupsString += questionGroupString
@@ -278,7 +467,7 @@ func generateEvaluationFormQuestions(questions *[]evaluationFormQuestionStruct) 
 			question.commentsRequired,
 			question.isKill,
 			question.isCritical,
-			generateFormVisibilityCondition(question.visibilityCondition),
+			generateFormVisibilityCondition(&question.visibilityCondition),
 			generateFormAnswerOptions(&question.answerOptions),
 		)
 
@@ -312,7 +501,7 @@ func generateFormAnswerOptions(answerOptions *[]answerOptionStruct) string {
 }
 
 func generateFormVisibilityCondition(condition *visibilityConditionStruct) string {
-	if condition == nil {
+	if condition == nil || len(condition.combiningOperation) == 0 {
 		return ""
 	}
 
@@ -326,10 +515,12 @@ func generateFormVisibilityCondition(condition *visibilityConditionStruct) strin
 		predicateString += strconv.Quote(predicate)
 	}
 
-	return fmt.Sprintf(`visibility_condition = {
+	return fmt.Sprintf(`
+	visibility_condition {
         combining_operation = "%s"
         predicates = [%s]
-    }`, condition.combiningOperation,
+    }
+	`, condition.combiningOperation,
 		predicateString,
 	)
 }

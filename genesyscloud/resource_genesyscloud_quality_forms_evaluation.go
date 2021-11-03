@@ -132,7 +132,7 @@ var (
 				Description: "A list of strings, each representing the location in the form of the Answer Option to depend on. In the format of \"/form/questionGroup/{questionGroupIndex}/question/{questionIndex}/answer/{answerIndex}\" or, to assume the current question group, \"../question/{questionIndex}/answer/{answerIndex}\". Note: Indexes are zero-based",
 				Type:        schema.TypeList,
 				Required:    true,
-				Elem:        schema.TypeString,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -417,6 +417,8 @@ func buildSdkQuestions(questions []interface{}) *[]platformclientv2.Evaluationqu
 		naEnabled := questionsMap["na_enabled"].(bool)
 		commentsRequired := questionsMap["comments_required"].(bool)
 		answerQuestions := questionsMap["answer_options"].([]interface{})
+		isKill := questionsMap["is_kill"].(bool)
+		isCritical := questionsMap["is_critical"].(bool)
 
 		sdkQuestion := platformclientv2.Evaluationquestion{
 			Text:             &text,
@@ -425,6 +427,8 @@ func buildSdkQuestions(questions []interface{}) *[]platformclientv2.Evaluationqu
 			NaEnabled:        &naEnabled,
 			CommentsRequired: &commentsRequired,
 			AnswerOptions:    buildSdkAnswerOptions(answerQuestions),
+			IsKill:           &isKill,
+			IsCritical:       &isCritical,
 		}
 
 		visibilityCondition := questionsMap["visibility_condition"].([]interface{})
@@ -580,7 +584,7 @@ func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibility
 		visibilityConditionMap["combining_operation"] = *visibilityCondition.CombiningOperation
 	}
 	if visibilityCondition.Predicates != nil {
-		visibilityConditionMap["predicates"] = *visibilityCondition.Predicates
+		visibilityConditionMap["predicates"] = interfaceListToStrings(*visibilityCondition.Predicates)
 	}
 
 	return []interface{}{visibilityConditionMap}
