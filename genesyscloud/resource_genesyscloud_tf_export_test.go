@@ -35,7 +35,7 @@ func TestAccResourceTfExport(t *testing.T) {
 	var (
 		exportResource1 = "test-export1"
 		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
-		statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
+		//statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -55,20 +55,20 @@ func TestAccResourceTfExport(t *testing.T) {
 					validateConfigFile(configPath),
 				),
 			},
-			{
-				// Run export with state file and excluded attribute
-				Config: generateTfExportResource(
-					exportResource1,
-					exportTestDir,
-					trueValue,
-					strconv.Quote("genesyscloud_auth_role.permission_policies.conditions"),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateFileCreated(configPath),
-					validateConfigFile(configPath),
-					validateFileCreated(statePath),
-				),
-			},
+			//{
+			//	// Run export with state file and excluded attribute
+			//	Config: generateTfExportResource(
+			//		exportResource1,
+			//		exportTestDir,
+			//		trueValue,
+			//		strconv.Quote("genesyscloud_auth_role.permission_policies.conditions"),
+			//	),
+			//	Check: resource.ComposeTestCheckFunc(
+			//		validateFileCreated(configPath),
+			//		validateConfigFile(configPath),
+			//		validateFileCreated(statePath),
+			//	),
+			//},
 		},
 		CheckDestroy: testVerifyExportsDestroyed,
 	})
@@ -452,6 +452,7 @@ func generateTfExportResource(
 		directory = "%s"
         include_state_file = %s
 		resource_types = [
+<<<<<<< HEAD
 			"genesyscloud_architect_datatable",
 			"genesyscloud_architect_datatable_row",
 			"genesyscloud_architect_ivr",
@@ -490,6 +491,9 @@ func generateTfExportResource(
 			"genesyscloud_telephony_providers_edges_trunk",
 			"genesyscloud_user",
 			"genesyscloud_user_roles"
+=======
+			"genesyscloud_routing_queue"
+>>>>>>> Trying to get timeouts working
 		]
 		exclude_attributes = [%s]
     }
