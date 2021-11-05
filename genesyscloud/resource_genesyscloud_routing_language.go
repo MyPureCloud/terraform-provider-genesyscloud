@@ -45,7 +45,6 @@ func routingLanguageExporter() *ResourceExporter {
 }
 
 func resourceRoutingLanguage() *schema.Resource {
-	timeout := 100 * time.Second
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Language",
 
@@ -54,9 +53,6 @@ func resourceRoutingLanguage() *schema.Resource {
 		DeleteContext: deleteWithPooledClient(deleteRoutingLanguage),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Timeouts: &schema.ResourceTimeout{
-			Default: &timeout,
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

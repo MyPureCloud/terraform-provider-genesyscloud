@@ -159,7 +159,7 @@ func updateIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Updated IDP Onelogin")
 	// Give time for public API caches to update
 	// It takes a very very long time with idp resources
-	time.Sleep(60 * time.Second)
+	time.Sleep(360 * time.Second)
 	return readIdpOnelogin(ctx, d, meta)
 }
 

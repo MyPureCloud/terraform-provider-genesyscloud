@@ -172,7 +172,7 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Updated IDP ADFS")
 	// Give time for public API caches to update
 	// It takes a very very long time with idp resources
-	time.Sleep(60 * time.Second)
+	time.Sleep(360 * time.Second)
 	return readIdpAdfs(ctx, d, meta)
 }
 

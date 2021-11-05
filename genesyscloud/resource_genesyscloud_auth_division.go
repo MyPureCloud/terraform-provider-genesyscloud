@@ -164,7 +164,7 @@ func updateAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 
 	// Give time for public API caches to update
 	// It takes a really long time with auth resources
-	time.Sleep(30 * time.Second)
+	time.Sleep(360 * time.Second)
 	return readAuthDivision(ctx, d, meta)
 }
 

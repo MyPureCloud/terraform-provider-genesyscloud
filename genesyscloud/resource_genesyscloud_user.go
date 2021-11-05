@@ -155,7 +155,6 @@ func userExporter() *ResourceExporter {
 }
 
 func resourceUser() *schema.Resource {
-	timeout := 100 * time.Second
 	return &schema.Resource{
 		Description: "Genesys Cloud User",
 
@@ -165,9 +164,6 @@ func resourceUser() *schema.Resource {
 		DeleteContext: deleteWithPooledClient(deleteUser),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Timeouts: &schema.ResourceTimeout{
-			Default: &timeout,
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

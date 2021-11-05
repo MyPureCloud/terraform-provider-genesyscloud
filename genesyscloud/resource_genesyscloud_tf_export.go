@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"hash/fnv"
 	"io/ioutil"
 	"log"
@@ -15,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -57,7 +55,6 @@ func validateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 }
 
 func resourceTfExport() *schema.Resource {
-	timeout := 100 * time.Second
 	return &schema.Resource{
 		Description: fmt.Sprintf(`
 		Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
@@ -69,9 +66,6 @@ func resourceTfExport() *schema.Resource {
 		DeleteContext: deleteTfExport,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Timeouts: &schema.ResourceTimeout{
-			Default: &timeout,
 		},
 		Schema: map[string]*schema.Schema{
 			"directory": {
@@ -114,15 +108,6 @@ type resourceInfo struct {
 	Name    string
 	Type    string
 	CtyType cty.Type
-}
-
-func myRefreshFunc() resource.StateRefreshFunc {
-	fmt.Println("in myRefreshFunc")
-	return func() (interface{}, string, error) {
-		fmt.Println("in myRefreshFunc inner")
-		str := "loool"
-		return str, "success", nil
-	}
 }
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -173,44 +158,6 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 		resources = append(resources, typeResources...)
 	}
-
-	createStateConf := &resource.StateChangeConf{
-		Timeout:    d.Timeout(schema.TimeoutCreate),
-		Target:     []string{"success"},
-		Refresh:    myRefreshFunc(),
-		//Delay:      10 * time.Second,
-		Delay:      1 * time.Second,
-		//MinTimeout: 100 * time.Second,
-		MinTimeout: 1 * time.Second,
-		ContinuousTargetOccurence: 5,
-	}
-
-	//createStateConf := &resource.StateChangeConf{
-	//	Timeout:    60 * time.Second,
-	//	Target:     []string{"success"},
-	//	Refresh:    myRefreshFunc(),
-	//	//Delay:      10 * time.Second,
-	//	Delay:      60 * time.Second,
-	//	//MinTimeout: 100 * time.Second,
-	//	MinTimeout: 30 * time.Second,
-	//	ContinuousTargetOccurence: 5,
-	//}
-	_, err := createStateConf.WaitForStateContext(ctx)
-	if err != nil {
-		return diag.Errorf("Error waiting for example instance (%s) to be created: %s", d.Id(), err)
-	}
-
-
-
-
-
-
-
-
-
-
-
-
 
 	// Generate the JSON config map
 	resourceTypeJSONMaps := make(map[string]map[string]jsonMap)
