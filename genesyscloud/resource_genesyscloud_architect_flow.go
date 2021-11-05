@@ -80,8 +80,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
 	apiClient := &architectAPI.Configuration.APIClient
-	//path := architectAPI.Configuration.BasePath + "/api/v2/flows/jobs"
-	path := "http://localhost:8080/api/v2/flows/jobs"
+	path := architectAPI.Configuration.BasePath + "/api/v2/flows/jobs"
 
 	headerParams := make(map[string]string)
 
@@ -107,6 +106,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
+	// Once the endpoint is ready for SDK, can extract data from the InitiateArchitectJobResponse type, instead of map of string interface
 	presignedUrl := successPayload["presignedUrl"].(string)
 	jobId := successPayload["id"].(string)
 	correlationId := response.CorrelationID
@@ -128,33 +128,34 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	// Retry every 15 seconds to fetch job status for 16 minutes until job succeeds or fails
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
 		// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
-		path :=
-			//"http://localhost:8080/api/v2/flows/jobs/bef6898f-82fa-46b2-9d84-30bdfddfae1f?expand=messages"
-			"http://localhost:8080/api/v2/flows/jobs/" + jobId + "?expand=messages"
+		path := architectAPI.Configuration.BasePath + "/api/v2/flows/jobs/" + jobId + "?expand=messages"
 		res := make(map[string]interface{})
 		// If possible, after changing to SDK method invocation, include correlationId we get earlier in this function when making the GET request
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 		if err != nil {
 			// Nothing special to do here, but do avoid processing the response
 		} else if err == nil && response.Error != nil {
-			resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s", jobId, response.ErrorMessage))
+			resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 		} else {
 			err = json.Unmarshal([]byte(response.RawBody), &res)
 			if err != nil {
-				resource.NonRetryableError(fmt.Errorf("Unable to unmarshal response when retrieving job status. JobID: %s, error: %s", jobId, response.ErrorMessage))
+				resource.NonRetryableError(fmt.Errorf("Unable to unmarshal response when retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 			}
 		}
+		// Once SDK is ready, get status from ArchitectJobStateResponse type
 		if res["status"] == "Failure" {
-			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v", jobId, res["messages"].([]interface{})))
+			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v ", jobId, res["messages"].([]interface{})))
 		}
 
+		// Once SDK is ready, get status from ArchitectJobStateResponse type
 		if res["status"] == "Success" {
+			// Once SDK is ready, get flow id from ArchitectJobStateResponse type
 			flowID = res["flow"].(map[string]interface{})["id"].(string)
 			return nil
 		}
 
 		time.Sleep(15 * time.Second) // Wait 15 seconds for next retry
-		return resource.RetryableError(fmt.Errorf("Job (%s) could not finish in 16 minutes and timed out.", jobId))
+		return resource.RetryableError(fmt.Errorf("Job (%s) could not finish in 16 minutes and timed out ", jobId))
 	})
 
 	if retryErr != nil {
@@ -194,8 +195,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
 	apiClient := &architectAPI.Configuration.APIClient
-	//path := architectAPI.Configuration.BasePath + "/api/v2/flows/jobs"
-	path := "http://localhost:8080/api/v2/flows/jobs"
+	path := architectAPI.Configuration.BasePath + "/api/v2/flows/jobs"
 
 	headerParams := make(map[string]string)
 
@@ -221,6 +221,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
+	// Once the endpoint is ready for SDK, can extract data from the InitiateArchitectJobResponse type, instead of map of string interface
 	presignedUrl := successPayload["presignedUrl"].(string)
 	jobId := successPayload["id"].(string)
 	correlationId := response.CorrelationID
@@ -240,33 +241,34 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
 		// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
-		path :=
-			//"http://localhost:8080/api/v2/flows/jobs/bef6898f-82fa-46b2-9d84-30bdfddfae1f?expand=messages"
-			"http://localhost:8080/api/v2/flows/jobs/" + jobId + "?expand=messages"
+		path := architectAPI.Configuration.BasePath + "/api/v2/flows/jobs/" + jobId + "?expand=messages"
 		res := make(map[string]interface{})
 		// If possible, after changing to SDK method invocation, include correlationId we get earlier in this function when making the GET request
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 		if err != nil {
 			// Nothing special to do here, but do avoid processing the response
 		} else if err == nil && response.Error != nil {
-			resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s", jobId, response.ErrorMessage))
+			resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 		} else {
 			err = json.Unmarshal([]byte(response.RawBody), &res)
 			if err != nil {
-				resource.NonRetryableError(fmt.Errorf("Unable to unmarshal response when retrieving job status. JobID: %s, error: %s", jobId, response.ErrorMessage))
+				resource.NonRetryableError(fmt.Errorf("Unable to unmarshal response when retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 			}
 		}
+		// Once SDK is ready, get status from ArchitectJobStateResponse type
 		if res["status"] == "Failure" {
-			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v", jobId, res["messages"].([]interface{})))
+			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v ", jobId, res["messages"].([]interface{})))
 		}
 
+		// Once SDK is ready, get status from ArchitectJobStateResponse type
 		if res["status"] == "Success" {
+			// Once SDK is ready, get flow id from ArchitectJobStateResponse type
 			flowID = res["flow"].(map[string]interface{})["id"].(string)
 			return nil
 		}
 
 		time.Sleep(15 * time.Second) // Wait 15 seconds for next retry
-		return resource.RetryableError(fmt.Errorf("Job (%s) could not finish in 16 minutes and timed out.", jobId))
+		return resource.RetryableError(fmt.Errorf("Job (%s) could not finish in 16 minutes and timed out ", jobId))
 	})
 
 	if retryErr != nil {
