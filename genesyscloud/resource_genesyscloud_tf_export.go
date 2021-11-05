@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -26,6 +25,34 @@ const (
 	defaultTfJSONFile  = "genesyscloud.tf.json"
 	defaultTfStateFile = "terraform.tfstate"
 )
+
+func validateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (warnings []string, errors []error) {
+		v, ok := i.(string)
+		if !ok {
+			errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
+			return warnings, errors
+		}
+
+		for _, b := range valid {
+			if strings.Contains(v, b) {
+				return warnings, errors
+			}
+		}
+
+		if !stringInSlice(v, valid) || !subStringInSlice(v, valid) {
+			errors = append(errors, fmt.Errorf("string %s not in slice", v))
+			return warnings, errors
+		}
+
+		if !subStringInSlice(v, valid) {
+			errors = append(errors, fmt.Errorf("substring %s not in slice", v))
+			return warnings, errors
+		}
+
+		return warnings, errors
+	}
+}
 
 func resourceTfExport() *schema.Resource {
 	return &schema.Resource{
@@ -54,7 +81,7 @@ func resourceTfExport() *schema.Resource {
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: validation.StringInSlice(getAvailableExporterTypes(), false),
+					ValidateFunc: validateSubStringInSlice(getAvailableExporterTypes()),
 				},
 				ForceNew: true,
 			},
@@ -97,6 +124,13 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 	exporters := getResourceExporters(filter)
 
+	newFilter := make([]string, 0)
+	for _, f := range filter {
+		if strings.Contains(f, "::") {
+			newFilter = append(newFilter, f)
+		}
+	}
+
 	if len(exporters) == 0 {
 		return diag.Errorf("No valid resource types to export.")
 	}
@@ -107,7 +141,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 	}
 
-	diagErr = buildSanitizedResourceMaps(exporters)
+	diagErr = buildSanitizedResourceMaps(exporters, newFilter)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -173,6 +207,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	d.SetId(filePath)
+
 	return nil
 }
 
@@ -223,7 +258,7 @@ func getFilePath(d *schema.ResourceData, filename string) (string, diag.Diagnost
 	return path, nil
 }
 
-func buildSanitizedResourceMaps(exporters map[string]*ResourceExporter) diag.Diagnostics {
+func buildSanitizedResourceMaps(exporters map[string]*ResourceExporter, filter []string) diag.Diagnostics {
 	errorChan := make(chan diag.Diagnostics)
 	wgDone := make(chan bool)
 
@@ -237,7 +272,7 @@ func buildSanitizedResourceMaps(exporters map[string]*ResourceExporter) diag.Dia
 		go func(name string, exporter *ResourceExporter) {
 			defer wg.Done()
 			log.Printf("Getting all resources for type %s", name)
-			err := exporter.loadSanitizedResourceMap(ctx)
+			err := exporter.loadSanitizedResourceMap(ctx, name, filter)
 			if err != nil {
 				select {
 				case <-ctx.Done():
