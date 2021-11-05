@@ -1,0 +1,8 @@
+* [GET /api/v2/quality/forms/evaluations](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-evaluations)
+* [GET /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-evaluations--formId-)
+* [POST /api/v2/quality/forms/evaluations](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-forms-evaluations)
+* [PUT /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#put-api-v2-quality-forms-evaluations--formId-)
+* [DELETE /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#delete-api-v2-quality-forms-evaluations--formId-)
+* [POST /api/v2/quality/publishedforms/evaluations](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-publishedforms-evaluations)
+* [GET /api/v2/quality/publishedforms/evaluations/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-publishedforms-evaluations--formId-)
+* [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-evaluations--formId--versions)
