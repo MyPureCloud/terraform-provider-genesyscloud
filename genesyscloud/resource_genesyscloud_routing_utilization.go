@@ -176,6 +176,9 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
+	log.Printf("Reset first to attempt to avoid caching issue")
+	deleteRoutingUtilization(ctx, d, meta)
+
 	log.Printf("Updating Routing Utilization")
 
 	_, _, err := routingAPI.PutRoutingUtilization(platformclientv2.Utilization{
@@ -186,8 +189,8 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("Updated Routing Utilization")
-	// It takes a very long time for the caches to expire
-	time.Sleep(30 * time.Second)
+	// It takes a very very very long time for the caches to expire
+	time.Sleep(360 * time.Second)
 	return readRoutingUtilization(ctx, d, meta)
 }
 

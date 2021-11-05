@@ -236,8 +236,8 @@ func updateIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	log.Printf("Updated IDP Generic")
 	// Give time for public API caches to update
-	// It takes a long time with idp resources
-	time.Sleep(20 * time.Second)
+	// It takes a very very long time with idp resources
+	time.Sleep(360 * time.Second)
 	return readIdpGeneric(ctx, d, meta)
 }
 
@@ -251,7 +251,7 @@ func deleteIdpGeneric(ctx context.Context, _ *schema.ResourceData, meta interfac
 		return diag.Errorf("Failed to delete IDP Generic: %s", err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersGeneric()
 		if err != nil {
 			if isStatus404(resp) {

@@ -171,8 +171,8 @@ func updateIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Updated IDP Ping")
 	// Give time for public API caches to update
-	// It takes a long time with idp resources
-	time.Sleep(20 * time.Second)
+	// It takes a very very long time with idp resources
+	time.Sleep(360 * time.Second)
 	return readIdpPing(ctx, d, meta)
 }
 
@@ -186,7 +186,7 @@ func deleteIdpPing(ctx context.Context, _ *schema.ResourceData, meta interface{}
 		return diag.Errorf("Failed to delete IDP Ping: %s", err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersPing()
 		if err != nil {
 			if isStatus404(resp) {

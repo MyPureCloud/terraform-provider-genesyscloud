@@ -163,8 +163,8 @@ func updateAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	log.Printf("Updated division %s", name)
 
 	// Give time for public API caches to update
-	// It takes a long time with auth resources
-	time.Sleep(20 * time.Second)
+	// It takes a really long time with auth resources
+	time.Sleep(360 * time.Second)
 	return readAuthDivision(ctx, d, meta)
 }
 
@@ -188,7 +188,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	// Give public API caches time to expire
-	time.Sleep(5 * time.Second)
+	time.Sleep(20 * time.Second)
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := authAPI.GetAuthorizationDivision(d.Id(), false)
 		if err != nil {

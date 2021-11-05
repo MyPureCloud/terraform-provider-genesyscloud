@@ -171,8 +171,8 @@ func updateIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Updated IDP GSuite")
 	// Give time for public API caches to update
-	// It takes a long time with idp resources
-	time.Sleep(20 * time.Second)
+	// It takes a very very long time with idp resources
+	time.Sleep(360 * time.Second)
 	return readIdpGsuite(ctx, d, meta)
 }
 
@@ -186,7 +186,7 @@ func deleteIdpGsuite(ctx context.Context, _ *schema.ResourceData, meta interface
 		return diag.Errorf("Failed to delete IDP GSuite: %s", err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersGsuite()
 		if err != nil {
 			if isStatus404(resp) {

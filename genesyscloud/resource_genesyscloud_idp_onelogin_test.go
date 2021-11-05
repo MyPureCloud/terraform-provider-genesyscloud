@@ -11,6 +11,7 @@ import (
 )
 
 func TestAccResourceIdpOnelogin(t *testing.T) {
+	t.Skip("Skipping IDP tests because the cache TTL is so long")
 	var (
 		uri1 = "https://test.com/1"
 		uri2 = "https://test.com/2"

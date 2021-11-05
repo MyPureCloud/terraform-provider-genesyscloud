@@ -644,6 +644,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		_, resp, err := usersAPI.DeleteUser(d.Id())
 		if err != nil {
+			time.Sleep(5 * time.Second)
 			return resp, diag.Errorf("Failed to delete user %s: %s", email, err)
 		}
 		log.Printf("Deleted user %s", email)
