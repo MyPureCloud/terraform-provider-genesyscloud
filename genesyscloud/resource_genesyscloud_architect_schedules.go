@@ -82,7 +82,7 @@ func resourceArchitectSchedules() *schema.Resource {
 			"rrule": {
 				Description: "An iCal Recurrence Rule (RRULE) string.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 		},
 	}

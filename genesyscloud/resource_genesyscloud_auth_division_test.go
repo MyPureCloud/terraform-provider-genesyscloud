@@ -12,6 +12,7 @@ import (
 )
 
 func TestAccResourceAuthDivision(t *testing.T) {
+	t.Skip("Skipping auth division test because the cache TTL is so long")
 	var (
 		divResource1 = "auth-division1"
 		divHomeRes   = "auth-division-home"

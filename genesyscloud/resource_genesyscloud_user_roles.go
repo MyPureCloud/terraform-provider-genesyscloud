@@ -88,7 +88,7 @@ func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Updated user roles for %s", d.Id())
-	time.Sleep(10 * time.Second)
+	time.Sleep(20 * time.Second)
 	return readUserRoles(ctx, d, meta)
 }
 

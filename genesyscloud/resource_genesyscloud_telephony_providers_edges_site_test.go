@@ -525,7 +525,7 @@ func deleteSiteWithLocationId(locationId string) error {
 		}
 
 		for _, site := range *sites.Entities {
-			if *site.Location.Id == locationId {
+			if site.Location != nil && *site.Location.Id == locationId {
 				_, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(*site.Id)
 				if err != nil {
 					return err

@@ -134,7 +134,7 @@ func resourceIntegrationAction() *schema.Resource {
 			"integration_id": {
 				Description: "The ID of the integration this action is associated with. Changes will create a new action.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				ForceNew:    true,
 			},
 			"secure": {
@@ -161,7 +161,7 @@ func resourceIntegrationAction() *schema.Resource {
 			"config_request": {
 				Description: "Configuration of outbound request.",
 				Type:        schema.TypeList,
-				Required:    true,
+				Optional:    true,
 				MaxItems:    1,
 				Elem:        actionConfigRequest,
 			},
