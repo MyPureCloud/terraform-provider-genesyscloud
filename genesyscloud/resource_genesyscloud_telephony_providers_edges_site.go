@@ -317,7 +317,10 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}
 
 		d.Set("name", *currentSite.Name)
-		d.Set("location_id", *currentSite.Location.Id)
+		d.Set("location_id", nil)
+		if currentSite.Location != nil {
+			d.Set("location_id", *currentSite.Location.Id)
+		}
 		d.Set("media_model", *currentSite.MediaModel)
 		d.Set("description", nil)
 		if currentSite.Description != nil {
