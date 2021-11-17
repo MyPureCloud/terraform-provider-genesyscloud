@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -142,6 +143,7 @@ func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *pl
 					if err != nil {
 						return resp, diag.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err)
 					}
+					time.Sleep(60 * time.Second)
 					return nil, nil
 				})
 				if diagErr != nil {

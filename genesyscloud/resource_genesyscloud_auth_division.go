@@ -103,7 +103,7 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	// Give auth service's indexes time to update
-	time.Sleep(10 * time.Second)
+	time.Sleep(60 * time.Second)
 
 	d.SetId(*division.Id)
 	log.Printf("Created division %s %s", name, *division.Id)
@@ -189,7 +189,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 
 	// Give public API caches time to expire
 	time.Sleep(20 * time.Second)
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := authAPI.GetAuthorizationDivision(d.Id(), false)
 		if err != nil {
 			if isStatus404(resp) {
