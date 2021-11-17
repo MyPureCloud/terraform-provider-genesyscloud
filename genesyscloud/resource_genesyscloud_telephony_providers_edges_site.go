@@ -445,7 +445,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				log.Printf("Deleted site %s", d.Id())
 				// Need to sleep here because if terraform deletes the dependent location straight away
 				// the API will think it's still in use
-				time.Sleep(10 * time.Second)
+				time.Sleep(8 * time.Second)
 				return nil
 			}
 			return resource.NonRetryableError(fmt.Errorf("Error deleting site %s: %s", d.Id(), err))
@@ -456,7 +456,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			log.Printf("Deleted site %s", d.Id())
 			// Need to sleep here because if terraform deletes the dependent location straight away
 			// the API will think it's still in use
-			time.Sleep(10 * time.Second)
+			time.Sleep(8 * time.Second)
 			return nil
 		}
 

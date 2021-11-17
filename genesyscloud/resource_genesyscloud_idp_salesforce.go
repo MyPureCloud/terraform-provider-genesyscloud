@@ -48,6 +48,10 @@ func resourceIdpSalesforce() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
+		Timeouts: &schema.ResourceTimeout{
+			Update: schema.DefaultTimeout(8 * time.Minute),
+			Read:   schema.DefaultTimeout(8 * time.Minute),
+		},
 		Schema: map[string]*schema.Schema{
 			"certificates": {
 				Description: "PEM or DER encoded public X.509 certificates for SAML signature validation.",
@@ -87,7 +91,7 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	log.Printf("Reading IDP Salesforce")
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
 		salesforce, resp, getErr := idpAPI.GetIdentityprovidersSalesforce()
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -159,7 +163,7 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Updated IDP Salesforce")
 	// Give time for public API caches to update
 	// It takes a very very long time with idp resources
-	time.Sleep(360 * time.Second)
+	time.Sleep(d.Timeout(schema.TimeoutUpdate))
 	return readIdpSalesforce(ctx, d, meta)
 }
 

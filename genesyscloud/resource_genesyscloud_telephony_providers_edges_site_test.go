@@ -501,7 +501,7 @@ func deleteLocationWithNumber(emergencyNumber string) error {
 						return err
 					}
 					_, err = locationsAPI.DeleteLocation(*location.Id)
-					time.Sleep(10 * time.Second)
+					time.Sleep(8 * time.Second)
 					return err
 				}
 			}
@@ -530,7 +530,7 @@ func deleteSiteWithLocationId(locationId string) error {
 				if err != nil {
 					return err
 				}
-				time.Sleep(10 * time.Second)
+				time.Sleep(8 * time.Second)
 				break
 			}
 		}

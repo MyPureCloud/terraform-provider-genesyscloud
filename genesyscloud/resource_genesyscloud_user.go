@@ -629,7 +629,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Finished updating user %s", email)
-	time.Sleep(10 * time.Second)
+	time.Sleep(8 * time.Second)
 	return readUser(ctx, d, meta)
 }
 
