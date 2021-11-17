@@ -187,21 +187,44 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 	})
 }
 
+func deleteDidPoolWithNumber(number string) {
+	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		didPools, _, getErr := edgesAPI.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
+		if getErr != nil {
+			return
+		}
+
+		if didPools.Entities == nil || len(*didPools.Entities) == 0 {
+			break
+		}
+
+		for _, didPool := range *didPools.Entities {
+			if didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == number {
+				edgesAPI.DeleteTelephonyProvidersEdgesDidpool(*didPool.Id)
+			}
+		}
+	}
+}
+
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
 	rand.Seed(time.Now().Unix())
 	n := rand.Intn(9)
-	lineAddresses := []string{fmt.Sprintf("+1417553001%v", n)}
+	number := fmt.Sprintf("+1417553001%v", n)
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	deleteDidPoolWithNumber(number)
+	lineAddresses := []string{number}
 	phoneRes := "phone_standalone1234"
 	name1 := "test-phone-standalone_" + uuid.NewString()
 	stateActive := "active"
 	phoneBaseSettingsRes := "phoneBaseSettings1234"
 	phoneBaseSettingsName := "phoneBaseSettings " + uuid.NewString()
-
-	err := authorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	siteId, err := getDefaultSiteId()
 	if err != nil {

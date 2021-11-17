@@ -27,7 +27,15 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 	ivrConfigDescription := "Terraform IVR config"
 	rand.Seed(time.Now().Unix())
 	n := rand.Intn(9)
-	ivrConfigDnis := []string{fmt.Sprintf("+1417555001%v", n), fmt.Sprintf("+1417555001%v", n + 1)}
+	number1 := fmt.Sprintf("+1417555001%v", n)
+	number2 := fmt.Sprintf("+1417555001%v", n + 1)
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	deleteDidPoolWithNumber(number1)
+	deleteDidPoolWithNumber(number2)
+	ivrConfigDnis := []string{number1, number2}
 	didPoolResource1 := "test-didpool1"
 
 	resource.Test(t, resource.TestCase{
