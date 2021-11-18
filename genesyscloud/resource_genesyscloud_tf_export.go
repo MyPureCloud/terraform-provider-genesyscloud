@@ -681,6 +681,7 @@ func sanitizeConfigMap(
 	exporters map[string]*ResourceExporter,
 	exportingState bool) bool {
 
+	log.Printf("Sanitizing config map for type: %s", resourceType)
 	exporter := exporters[resourceType]
 	for key, val := range configMap {
 		currAttr := key
@@ -725,6 +726,7 @@ func sanitizeConfigMap(
 				refSettings = exporter.getRefAttrSettings(wildcardAttr)
 			}
 			if refSettings != nil {
+				log.Printf("Resolving reference for %s - %s", key, val.(string))
 				configMap[key] = resolveReference(refSettings, val.(string), exporters, exportingState)
 			} else {
 				configMap[key] = escapeString(val.(string))
@@ -779,6 +781,7 @@ func sanitizeConfigArray(
 	currAttr string,
 	exporters map[string]*ResourceExporter,
 	exportingState bool) []interface{} {
+	log.Printf("Sanitizing config array for type: %s, currAttr: %s", resourceType, currAttr)
 	exporter := exporters[resourceType]
 	result := []interface{}{}
 	for _, val := range anArray {
@@ -811,6 +814,7 @@ func sanitizeConfigArray(
 }
 
 func resolveReference(refSettings *RefAttrSettings, refID string, exporters map[string]*ResourceExporter, exportingState bool) string {
+	log.Printf("Resolving reference: %s", refID)
 	if stringInSlice(refID, refSettings.AltValues) {
 		// This is not actually a reference to another object. Keep the value
 		return refID

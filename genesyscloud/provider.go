@@ -36,15 +36,22 @@ func New(version string) func() *schema.Provider {
 			Schema: map[string]*schema.Schema{
 				"oauthclient_id": {
 					Type:        schema.TypeString,
-					Required:    true,
+					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_ID", nil),
 					Description: "OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.",
 				},
 				"oauthclient_secret": {
 					Type:        schema.TypeString,
-					Required:    true,
+					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_SECRET", nil),
 					Description: "OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.",
+					Sensitive:   true,
+				},
+				"oauth_token": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTH_TOKEN", nil),
+					Description: "OAuth access token. Can be set with the `GENESYSCLOUD_OAUTH_TOKEN` environment variable.",
 					Sensitive:   true,
 				},
 				"aws_region": {
@@ -110,6 +117,8 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_tf_export":                                   resourceTfExport(),
 				"genesyscloud_user":                                        resourceUser(),
 				"genesyscloud_user_roles":                                  resourceUserRoles(),
+				"genesyscloud_webdeployments_configuration":                resourceWebDeploymentConfiguration(),
+				"genesyscloud_webdeployments_deployment":                   resourceWebDeployment(),
 				"genesyscloud_widget_deployment":                           resourceWidgetDeployment(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
@@ -145,6 +154,8 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_telephony_providers_edges_phonebasesettings": dataSourcePhoneBaseSettings(),
 				"genesyscloud_telephony_providers_edges_trunk":             dataSourceTrunk(),
 				"genesyscloud_telephony_providers_edges_trunkbasesettings": dataSourceTrunkBaseSettings(),
+				"genesyscloud_webdeployments_configuration":                dataSourceWebDeploymentsConfiguration(),
+				"genesyscloud_webdeployments_deployment":                   dataSourceWebDeploymentsDeployment(),
 				"genesyscloud_widget_deployment":                           dataSourceWidgetDeployments(),
 			},
 			ConfigureContextFunc: configure(version),
@@ -236,9 +247,15 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		},
 	}
 
-	err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
-	if err != nil {
-		return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
+	if oauthToken, ok := data.GetOk("oauth_token"); ok {
+		config.AccessToken = oauthToken.(string)
+	} else if oauthclientID != "" && oauthclientSecret != "" {
+		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+		if err != nil {
+			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
+		}
+	} else {
+		return diag.Errorf("No valid authorization information was supplied")
 	}
 	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
 	return nil
