@@ -549,7 +549,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
 
 		if diagErr := readUserRoutingUtilization(d, usersAPI); diagErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", getErr))
+			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
 		log.Printf("Read user %s %s", d.Id(), *currentUser.Email)

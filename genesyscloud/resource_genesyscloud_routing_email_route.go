@@ -390,7 +390,7 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete email route %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingEmailDomainRoute(domainID, d.Id())
 		if err != nil {
 			if isStatus404(resp) {
