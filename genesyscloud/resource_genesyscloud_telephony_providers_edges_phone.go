@@ -188,21 +188,27 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Creating phone %s", name)
-	phone, _, err := edgesAPI.PostTelephonyProvidersEdgesPhones(*createPhone)
-	if err != nil {
-		return diag.Errorf("Failed to create phone %s: %s", name, err)
-	}
-
-	d.SetId(*phone.Id)
-
-	if webRtcUserId != "" {
-		diagErr := assignUserToWebRtcPhone(ctx, sdkConfig, webRtcUserId.(string))
-		if diagErr != nil {
-			return diagErr
+	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		phone, resp, err := edgesAPI.PostTelephonyProvidersEdgesPhones(*createPhone)
+		if err != nil {
+			return resp, diag.Errorf("Failed to create phone %s: %s", name, err)
 		}
-	}
 
-	log.Printf("Created phone %s", *phone.Id)
+		d.SetId(*phone.Id)
+
+		if webRtcUserId != "" {
+			diagErr := assignUserToWebRtcPhone(ctx, sdkConfig, webRtcUserId.(string))
+			if diagErr != nil {
+				return resp, diagErr
+			}
+		}
+
+		log.Printf("Created phone %s", *phone.Id)
+		return nil, nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
 
 	return readPhone(ctx, d, meta)
 }
