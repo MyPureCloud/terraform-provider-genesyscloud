@@ -115,6 +115,7 @@ func routingQueueExporter() *ResourceExporter {
 			"outbound_email_address": {"route_id"},
 			"members":                {"user_id"},
 		},
+		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
 	}
 }
 
@@ -243,7 +244,7 @@ func resourceRoutingQueue() *schema.Resource {
 							Description:  "Seconds to wait in this ring before moving to the next.",
 							Type:         schema.TypeFloat,
 							Required:     true,
-							ValidateFunc: validation.FloatBetween(2, 259200),
+							ValidateFunc: validation.FloatBetween(0, 259200),
 						},
 						"skills_to_remove": {
 							Description: "Skill IDs to remove on ring exit.",
@@ -427,7 +428,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 60*time.Second, d, func() *resource.RetryError {
 		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {

@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"hash/fnv"
 	"io/ioutil"
 	"log"
@@ -14,11 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"time"
 )
 
 const (
@@ -305,16 +305,12 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *Re
 	resourceChan := make(chan resourceInfo, lenResources)
 	removeChan := make(chan string, lenResources)
 
-	// Cancel remaining goroutines if an error occurs
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	resource := provider.ResourcesMap[resType]
-	if resource == nil {
+	res := provider.ResourcesMap[resType]
+	if res == nil {
 		return nil, diag.Errorf("Resource type %s not defined", resType)
 	}
 
-	ctyType := resource.CoreConfigSchema().ImpliedType()
+	ctyType := res.CoreConfigSchema().ImpliedType()
 
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
@@ -322,26 +318,47 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *Re
 		go func(id string, resMeta *ResourceMeta) {
 			defer wg.Done()
 
-			// This calls into the resource's ReadContext method which
-			// will block until it can acquire a pooled client config object.
-			instanceState, err := getResourceState(ctx, resource, id, resMeta, meta)
-			if err != nil {
-				errorChan <- diag.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
-				cancel() // Stop other requests
-				return
+			fetchResourceState := func() error {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(30)*time.Minute)
+				defer cancel()
+				// This calls into the resource's ReadContext method which
+				// will block until it can acquire a pooled client config object.
+				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
+				if err != nil {
+					errString := fmt.Sprintf("Failed to get state for %s instance %s: %v", resType, id, err)
+					return fmt.Errorf(errString)
+				}
+
+				if instanceState == nil {
+					log.Printf("Resource %s no longer exists. Skipping.", resMeta.Name)
+					removeChan <- id // Mark for removal from the map
+					return nil
+				}
+
+				resourceChan <- resourceInfo{
+					State:   instanceState,
+					Name:    resMeta.Name,
+					Type:    resType,
+					CtyType: ctyType,
+				}
+
+				return nil
 			}
 
-			if instanceState == nil {
-				log.Printf("Resource %s no longer exists. Skipping.", resMeta.Name)
-				removeChan <- id // Mark for removal from the map
-				return
+			isTimeoutError := func(err error) bool {
+				return strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") ||
+					strings.Contains(fmt.Sprintf("%v", err), "context deadline exceeded")
 			}
 
-			resourceChan <- resourceInfo{
-				State:   instanceState,
-				Name:    resMeta.Name,
-				Type:    resType,
-				CtyType: ctyType,
+			var err error
+			for ok := true; ok; ok = isTimeoutError(err) {
+				err = fetchResourceState()
+				if err == nil {
+					return
+				}
+				if !isTimeoutError(err) {
+					errorChan <- diag.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
+				}
 			}
 		}(id, resMeta)
 	}
@@ -353,8 +370,8 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *Re
 	}()
 
 	var resources []resourceInfo
-	for resource := range resourceChan {
-		resources = append(resources, resource)
+	for r := range resourceChan {
+		resources = append(resources, r)
 	}
 
 	// Remove resources that weren't found in this pass

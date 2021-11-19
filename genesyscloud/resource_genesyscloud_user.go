@@ -492,7 +492,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Reading user %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 60*time.Second, d, func() *resource.RetryError {
 		currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{
 			// Expands
 			"skills",
@@ -549,7 +549,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
 
 		if diagErr := readUserRoutingUtilization(d, usersAPI); diagErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", getErr))
+			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
 		log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
@@ -629,7 +629,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Finished updating user %s", email)
-	time.Sleep(10 * time.Second)
+	time.Sleep(8 * time.Second)
 	return readUser(ctx, d, meta)
 }
 

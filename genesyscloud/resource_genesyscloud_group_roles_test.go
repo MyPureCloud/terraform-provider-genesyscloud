@@ -10,6 +10,7 @@ import (
 )
 
 func TestAccResourceGroupRolesMembership(t *testing.T) {
+	t.Parallel()
 	var (
 		groupRoleResource = "test-group-roles"
 		groupResource1    = "test-group"

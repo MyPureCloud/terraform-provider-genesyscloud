@@ -449,7 +449,7 @@ func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.Grou
 					if err != nil {
 						return resp, diag.Errorf("Failed to add group members %s: %s", d.Id(), postErr)
 					}
-					time.Sleep(10 * time.Second)
+					time.Sleep(8 * time.Second)
 					return resp, nil
 				}); diagErr != nil {
 					return diagErr

@@ -317,7 +317,10 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}
 
 		d.Set("name", *currentSite.Name)
-		d.Set("location_id", *currentSite.Location.Id)
+		d.Set("location_id", nil)
+		if currentSite.Location != nil {
+			d.Set("location_id", *currentSite.Location.Id)
+		}
 		d.Set("media_model", *currentSite.MediaModel)
 		d.Set("description", nil)
 		if currentSite.Description != nil {
@@ -442,7 +445,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				log.Printf("Deleted site %s", d.Id())
 				// Need to sleep here because if terraform deletes the dependent location straight away
 				// the API will think it's still in use
-				time.Sleep(10 * time.Second)
+				time.Sleep(8 * time.Second)
 				return nil
 			}
 			return resource.NonRetryableError(fmt.Errorf("Error deleting site %s: %s", d.Id(), err))
@@ -453,7 +456,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			log.Printf("Deleted site %s", d.Id())
 			// Need to sleep here because if terraform deletes the dependent location straight away
 			// the API will think it's still in use
-			time.Sleep(10 * time.Second)
+			time.Sleep(8 * time.Second)
 			return nil
 		}
 

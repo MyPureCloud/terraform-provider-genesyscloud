@@ -738,7 +738,7 @@ func resourceArchitectUserPrompt() *schema.Resource {
 			"description": {
 				Description: "Description of the user audio prompt.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 			"resources": {
 				Description: "Audio of TTS resources for the audio prompt.",
@@ -759,11 +759,17 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	log.Printf("Creating user prompt %s", name)
-	userPrompt, _, err := architectApi.PostArchitectPrompts(platformclientv2.Prompt{
+	prompt := platformclientv2.Prompt{
 		Name:        &name,
 		Description: &description,
-	})
+	}
+
+	if description != "" {
+		prompt.Description = &description
+	}
+
+	log.Printf("Creating user prompt %s", name)
+	userPrompt, _, err := architectApi.PostArchitectPrompts(prompt)
 	if err != nil {
 		return diag.Errorf("Failed to create user prompt %s: %s", name, err)
 	}
@@ -865,11 +871,17 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	log.Printf("Updating user prompt %s", name)
-	_, _, err := architectApi.PutArchitectPrompt(d.Id(), platformclientv2.Prompt{
+	prompt := platformclientv2.Prompt{
 		Name:        &name,
 		Description: &description,
-	})
+	}
+
+	if description != "" {
+		prompt.Description = &description
+	}
+
+	log.Printf("Updating user prompt %s", name)
+	_, _, err := architectApi.PutArchitectPrompt(d.Id(), prompt)
 	if err != nil {
 		return diag.Errorf("Failed to update user prompt %s: %s", name, err)
 	}

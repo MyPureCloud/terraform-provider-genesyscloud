@@ -84,6 +84,10 @@ func resourceRoutingUtilization() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
+		Timeouts: &schema.ResourceTimeout{
+			Update: schema.DefaultTimeout(8 * time.Minute),
+			Read:   schema.DefaultTimeout(8 * time.Minute),
+		},
 		Schema: map[string]*schema.Schema{
 			"call": {
 				Description: "Call media settings. If not set, this reverts to the default media type settings.",
@@ -148,7 +152,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Routing Utilization")
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
 		settings, resp, getErr := routingAPI.GetRoutingUtilization()
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -190,7 +194,7 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Updated Routing Utilization")
 	// It takes a very very very long time for the caches to expire
-	time.Sleep(360 * time.Second)
+	time.Sleep(d.Timeout(schema.TimeoutUpdate))
 	return readRoutingUtilization(ctx, d, meta)
 }
 

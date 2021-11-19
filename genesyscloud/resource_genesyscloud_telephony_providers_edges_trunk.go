@@ -27,7 +27,7 @@ func resourceTrunk() *schema.Resource {
 			"trunk_base_settings_id": {
 				Description: "The trunk base settings reference",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 			"edge_group_id": {
 				Description: "The edge group associated with this trunk. Either this or \"edge_id\" must be set",
@@ -51,6 +51,9 @@ func resourceTrunk() *schema.Resource {
 
 func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	trunkBaseSettingsId := d.Get("trunk_base_settings_id").(string)
+	if trunkBaseSettingsId == "" {
+		return diag.Errorf("trunk_base_settings_id must be set when creating a trunk")
+	}
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)

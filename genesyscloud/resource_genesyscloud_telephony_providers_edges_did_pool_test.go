@@ -27,6 +27,13 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	n := rand.Intn(9)
 	didPoolStartPhoneNumber1 := fmt.Sprintf("+1417554001%v", n)
 	didPoolEndPhoneNumber1 := fmt.Sprintf("+1417554001%v", n + 1)
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	deleteDidPoolWithNumber(didPoolStartPhoneNumber1)
+	deleteDidPoolWithNumber(didPoolEndPhoneNumber1)
+
 	didPoolDescription1 := "Test description"
 	didPoolComments1 := "Test comments"
 	didPoolProvider1 := "PURE_CLOUD"

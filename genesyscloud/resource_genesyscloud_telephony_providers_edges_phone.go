@@ -114,6 +114,7 @@ func resourcePhone() *schema.Resource {
 				Description: "Phone Meta Base ID.",
 				Type:        schema.TypeString,
 				Computed:    true,
+				Optional:    true,
 			},
 			"web_rtc_user_id": {
 				Description: "Web RTC User ID. This is necessary when creating a Web RTC phone. This user will be assigned to the phone after it is created.",

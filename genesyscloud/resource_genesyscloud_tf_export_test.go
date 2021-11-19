@@ -32,6 +32,7 @@ type QueueExport struct {
 }
 
 func TestAccResourceTfExport(t *testing.T) {
+	t.Parallel()
 	var (
 		exportResource1 = "test-export1"
 		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
