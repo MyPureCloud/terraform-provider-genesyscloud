@@ -541,7 +541,7 @@ func sdkPostIntegrationAction(body *IntegrationAction, api *platformclientv2.Int
 	response, err := apiClient.CallAPI(path, http.MethodPost, body, headerParams, nil, nil, "", nil)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
-	} else if err == nil && response.Error != nil {
+	} else if response.Error != nil {
 		err = errors.New(response.ErrorMessage)
 	} else {
 		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
@@ -577,7 +577,7 @@ func sdkGetIntegrationAction(actionId string, api *platformclientv2.Integrations
 	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
-	} else if err == nil && response.Error != nil {
+	} else if response.Error != nil {
 		err = errors.New(response.ErrorMessage)
 	} else {
 		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
@@ -610,7 +610,7 @@ func sdkGetIntegrationActionTemplate(actionId, templateName string, api *platfor
 	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
-	} else if err == nil && response.Error != nil {
+	} else if response.Error != nil {
 		err = errors.New(response.ErrorMessage)
 	} else {
 		templateStr := string(response.RawBody)

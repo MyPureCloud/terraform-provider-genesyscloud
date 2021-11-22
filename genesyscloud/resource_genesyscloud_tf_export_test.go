@@ -405,7 +405,9 @@ func TestForExportCycles(t *testing.T) {
 		for _, cycle := range cycles {
 			cycleTemp := make([]string, len(cycle))
 			for j, cycleNode := range cycle {
-				cycleTemp[j] = resNames[cycleNode.ID()]
+				if resNames != nil {
+					cycleTemp[j] = resNames[cycleNode.ID()]
+				}
 			}
 			if !isIgnoredReferenceCycle(cycleTemp) {
 				cycleResources = append(cycleResources, cycleTemp)

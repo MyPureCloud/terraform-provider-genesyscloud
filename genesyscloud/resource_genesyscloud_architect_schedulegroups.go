@@ -119,7 +119,7 @@ func createArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Creating schedule group %s", name)
 	scheduleGroup, _, getErr := archAPI.PostArchitectSchedulegroups(schedGroup)
 	if getErr != nil {
-		return diag.Errorf("Failed to create schedule group %s | ERROR: %s", *scheduleGroup.Name, getErr)
+		return diag.Errorf("Failed to create schedule group %s | ERROR: %s", name, getErr)
 	}
 
 	d.SetId(*scheduleGroup.Id)
