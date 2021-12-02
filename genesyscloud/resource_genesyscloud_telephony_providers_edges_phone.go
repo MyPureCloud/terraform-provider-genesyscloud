@@ -278,9 +278,16 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 	}
 
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
-	_, putErr := usersAPI.PutUserStationDefaultstationStationId(userId, stationId)
-	if putErr != nil {
-		return diag.Errorf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr)
+
+	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		resp, putErr := usersAPI.PutUserStationDefaultstationStationId(userId, stationId)
+		if putErr != nil {
+			return resp, diag.Errorf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return nil

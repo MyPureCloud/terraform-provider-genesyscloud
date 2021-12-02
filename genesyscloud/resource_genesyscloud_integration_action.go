@@ -193,21 +193,27 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		return diagErr
 	}
 
-	action, _, err := sdkPostIntegrationAction(&IntegrationAction{
-		Name:          &name,
-		Category:      &category,
-		IntegrationId: &integrationId,
-		Secure:        &secure,
-		Contract:      actionContract,
-		Config:        buildSdkActionConfig(d),
-	}, integAPI)
-	if err != nil {
-		return diag.Errorf("Failed to create integration action %s: %s", name, err)
+	diagErr = retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		action, resp, err := sdkPostIntegrationAction(&IntegrationAction{
+			Name:          &name,
+			Category:      &category,
+			IntegrationId: &integrationId,
+			Secure:        &secure,
+			Contract:      actionContract,
+			Config:        buildSdkActionConfig(d),
+		}, integAPI)
+		if err != nil {
+			return resp, diag.Errorf("Failed to create integration action %s: %s", name, err)
+		}
+		d.SetId(*action.Id)
+
+		log.Printf("Created integration action %s %s", name, *action.Id)
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
-	d.SetId(*action.Id)
-
-	log.Printf("Created integration action %s %s", name, *action.Id)
 	return readIntegrationAction(ctx, d, meta)
 }
 
