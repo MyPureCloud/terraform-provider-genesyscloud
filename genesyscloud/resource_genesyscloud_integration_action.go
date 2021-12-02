@@ -351,9 +351,14 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting integration action %s", name)
-	_, err := integAPI.DeleteIntegrationsAction(d.Id())
+	resp, err := integAPI.DeleteIntegrationsAction(d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete integration action %s: %s", name, err)
+		if isStatus404(resp) {
+			// Parent integration was probably deleted which caused the action to be deleted
+			log.Printf("Integration action already deleted %s", d.Id())
+			return nil
+		}
+		return diag.Errorf("Failed to delete Integration action %s: %s", d.Id(), err)
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
