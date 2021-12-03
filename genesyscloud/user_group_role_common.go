@@ -246,6 +246,6 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 				return nil
 			}
 		}
-		return fmt.Errorf("Missing expected role for resourceState %s in state: %s", resourceID, roleID)
+		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceID, roleID)
 	}
 }

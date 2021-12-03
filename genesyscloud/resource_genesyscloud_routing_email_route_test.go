@@ -18,7 +18,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 	var (
 		domainRes     = "routing-domain1"
-		domainId      = "tfroutetest" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainId      = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
 		queueResource = "email-queue"
 		queueName     = "Terraform Email Queue-" + uuid.NewString()
 		langResource  = "email-lang"
@@ -38,6 +38,11 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		bccEmail1     = "test1@" + domainId
 		bccEmail2     = "test2@" + domainId
 	)
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
