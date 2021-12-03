@@ -164,6 +164,11 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	customSMTPServer := d.Get("custom_smtp_server_id").(string)
 	mailFromDomain := d.Get("mail_from_domain").(string)
+	domainID := d.Get("domain_id").(string)
+
+	if !strings.Contains(mailFromDomain, domainID) || mailFromDomain == domainID {
+		return diag.Errorf("domain_id must be a subdomain of mail_from_domain")
+	}
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
