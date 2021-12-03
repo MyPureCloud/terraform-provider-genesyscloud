@@ -3,15 +3,44 @@ package genesyscloud
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"math/rand"
+	"strconv"
+	"strings"
 	"testing"
 )
+
+func cleanupRoutingEmailDomains() {
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains()
+	if getErr != nil {
+		return
+	}
+
+	if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
+		return
+	}
+
+	for _, routingEmailDomain := range *routingEmailDomains.Entities {
+		if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
+			routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
+		}
+	}
+}
 
 func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 	var (
 		emailDomainResourceId = "email_domain_test"
-		emailDomainId         = "jcc4234234.thoughtx.com"
+		emailDomainId         = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
 		emailDataResourceId   = "email_domain_data"
 	)
+
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

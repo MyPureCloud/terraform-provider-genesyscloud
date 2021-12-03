@@ -1169,7 +1169,7 @@ func sdkGetRoutingQueueMembers(queueID string, pageNumber int, pageSize int, api
 	response, err := apiClient.CallAPI(path, http.MethodGet, postBody, headerParams, queryParams, formParams, postFileName, fileBytes)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
-	} else if err == nil && response.Error != nil {
+	} else if response.Error != nil {
 		err = fmt.Errorf(response.ErrorMessage)
 	} else {
 		err = json.Unmarshal([]byte(response.RawBody), &successPayload)

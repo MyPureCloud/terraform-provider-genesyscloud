@@ -425,7 +425,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Creating user %s", email)
 	user, resp, err := usersAPI.PostUsers(createUser)
 	if err != nil {
-		if resp.Error != nil && (*resp.Error).Code == "general.conflict" {
+		if resp != nil && resp.Error != nil && (*resp.Error).Code == "general.conflict" {
 			// Check for a deleted user
 			id, diagErr := getDeletedUserId(email, usersAPI)
 			if diagErr != nil {

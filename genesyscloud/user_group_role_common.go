@@ -188,11 +188,11 @@ func generateResourceRoles(skillID string, divisionIds ...string) string {
 
 func validateResourceRole(resourceName string, roleResourceName string, divisions ...string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resource, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[resourceName]
 		if !ok {
 			return fmt.Errorf("Failed to find %s in state", resourceName)
 		}
-		resourceID := resource.Primary.ID
+		resourceID := resourceState.Primary.ID
 
 		roleResource, ok := state.RootModule().Resources[roleResourceName]
 		if !ok {
@@ -220,7 +220,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 			divisions = divisionIDs
 		}
 
-		resourceAttrs := resource.Primary.Attributes
+		resourceAttrs := resourceState.Primary.Attributes
 		numRolesAttr, _ := resourceAttrs["roles.#"]
 		numRoles, _ := strconv.Atoi(numRolesAttr)
 		for i := 0; i < numRoles; i++ {

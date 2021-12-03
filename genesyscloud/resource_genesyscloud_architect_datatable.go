@@ -128,14 +128,14 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Creating datatable %s", name)
 
-	schema, diagErr := buildSdkDatatableSchema(d)
+	datatableSchema, diagErr := buildSdkDatatableSchema(d)
 	if diagErr != nil {
 		return diagErr
 	}
 
 	datatable := &Datatable{
 		Name:   &name,
-		Schema: schema,
+		Schema: datatableSchema,
 	}
 	// Optional
 	if divisionID != "" {
@@ -203,7 +203,7 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Updating datatable %s", name)
 
-	schema, diagErr := buildSdkDatatableSchema(d)
+	datatableSchema, diagErr := buildSdkDatatableSchema(d)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -211,7 +211,7 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	datatable := &Datatable{
 		Id:     &id,
 		Name:   &name,
-		Schema: schema,
+		Schema: datatableSchema,
 	}
 	// Optional
 	if divisionID != "" {
@@ -429,7 +429,7 @@ func sdkPutOrPostArchitectDatatable(method string, body *Datatable, api *platfor
 	response, err := apiClient.CallAPI(path, method, body, headerParams, nil, nil, "", nil)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
-	} else if err == nil && response.Error != nil {
+	} else if response.Error != nil {
 		err = errors.New(response.ErrorMessage)
 	} else {
 		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
@@ -464,7 +464,7 @@ func sdkGetArchitectDatatable(datatableId string, expand string, api *platformcl
 	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
-	} else if err == nil && response.Error != nil {
+	} else if response.Error != nil {
 		err = errors.New(response.ErrorMessage)
 	} else {
 		err = json.Unmarshal(response.RawBody, &successPayload)

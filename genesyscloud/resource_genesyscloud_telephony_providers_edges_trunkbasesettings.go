@@ -145,7 +145,11 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		log.Printf("Updating trunk base settings %s", name)
 		trunkBaseSettings, resp, err := edgesAPI.PutTelephonyProvidersEdgesTrunkbasesetting(d.Id(), trunkBase)
 		if err != nil {
-			return resp, diag.Errorf("Failed to update trunk base settings %s: %s %v", name, err, resp.String())
+			respString := ""
+			if resp != nil {
+				respString = resp.String()
+			}
+			return resp, diag.Errorf("Failed to update trunk base settings %s: %s %v", name, err, respString)
 		}
 		return resp, nil
 	})
@@ -166,7 +170,11 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Updating trunk base settings %s", name)
 	trunkBaseSettings, resp, err := edgesAPI.PutTelephonyProvidersEdgesTrunkbasesetting(d.Id(), trunkBase)
 	if err != nil {
-		return diag.Errorf("Failed to update trunk base settings %s: %s %v", name, err, resp.String())
+		respString := ""
+		if resp != nil {
+			respString = resp.String()
+		}
+		return diag.Errorf("Failed to update trunk base settings %s: %s %v", name, err, respString)
 	}
 
 	log.Printf("Updated trunk base settings %s", *trunkBaseSettings.Id)

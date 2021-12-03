@@ -47,20 +47,20 @@ func generateStringArray(vals ...string) string {
 
 func validateStringInArray(resourceName string, attrName string, value string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resource, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find resource %s in state", resourceName)
+			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
 		}
-		resourceID := resource.Primary.ID
+		resourceID := resourceState.Primary.ID
 
-		numAttr, ok := resource.Primary.Attributes[attrName+".#"]
+		numAttr, ok := resourceState.Primary.Attributes[attrName+".#"]
 		if !ok {
 			return fmt.Errorf("No %s found for %s in state", attrName, resourceID)
 		}
 
 		numValues, _ := strconv.Atoi(numAttr)
 		for i := 0; i < numValues; i++ {
-			if resource.Primary.Attributes[attrName+"."+strconv.Itoa(i)] == value {
+			if resourceState.Primary.Attributes[attrName+"."+strconv.Itoa(i)] == value {
 				// Found value
 				return nil
 			}
@@ -84,13 +84,13 @@ func strArrayEquals(a, b []string) bool {
 
 func validateValueInJsonAttr(resourceName string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resource, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[resourceName]
 		if !ok {
 			return fmt.Errorf("Failed to find resource %s in state", resourceName)
 		}
-		resourceID := resource.Primary.ID
+		resourceID := resourceState.Primary.ID
 
-		jsonAttr, ok := resource.Primary.Attributes[attrName]
+		jsonAttr, ok := resourceState.Primary.Attributes[attrName]
 		if !ok {
 			return fmt.Errorf("No %s found for %s in state", attrName, resourceID)
 		}
@@ -117,7 +117,7 @@ func validateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 				if stringInSlice(jsonValue, interfaceListToStrings(arr)) {
 					return nil
 				}
-				return fmt.Errorf("JSON array property for resource %s.%s does not contain expected %s", resourceName, jsonProp, jsonValue)
+				return fmt.Errorf("JSON array property for resourceState %s.%s does not contain expected %s", resourceName, jsonProp, jsonValue)
 			} else {
 				strVal := interfaceToString(val)
 				if strVal != jsonValue {
@@ -133,13 +133,13 @@ func validateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 
 func validateValueInJsonPropertiesAttr(resourceName string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resource, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find resource %s in state", resourceName)
+			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
 		}
-		resourceID := resource.Primary.ID
+		resourceID := resourceState.Primary.ID
 
-		jsonAttr, ok := resource.Primary.Attributes[attrName]
+		jsonAttr, ok := resourceState.Primary.Attributes[attrName]
 		if !ok {
 			return fmt.Errorf("No %s found for %s in state", attrName, resourceID)
 		}
