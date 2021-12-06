@@ -3,13 +3,14 @@ package genesyscloud
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/google/uuid"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -288,9 +289,9 @@ func TestAccResourceTfExportByName(t *testing.T) {
 func TestAccResourceTfExportByName1(t *testing.T) {
 	var (
 		exportedContents string
-		pathToHclFile = exportTestDir + "/" + defaultTfHCLFile
-		formResource1 = "test-evaluation-form-1"
-		formName = "terraform_form_evaluations_" + uuid.NewString()
+		pathToHclFile    = exportTestDir + "/" + defaultTfHCLFile
+		formResource1    = "test-evaluation-form-1"
+		formName         = "terraform_form_evaluations_" + uuid.NewString()
 
 		// Complete evaluation form
 		evaluationForm1 = evaluationFormStruct{
@@ -402,16 +403,16 @@ func TestAccResourceTfExportByName1(t *testing.T) {
 			{
 				Config: exportedContents,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "name", formName),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "published", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.name", evaluationForm1.questionGroups[0].name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.weight", fmt.Sprintf("%v", evaluationForm1.questionGroups[0].weight)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.questions.1.text", evaluationForm1.questionGroups[0].questions[1].text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.1.questions.0.answer_options.0.text", evaluationForm1.questionGroups[1].questions[0].answerOptions[0].text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.1.questions.0.answer_options.1.value", fmt.Sprintf("%v", evaluationForm1.questionGroups[1].questions[0].answerOptions[1].value)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.questions.1.visibility_condition.0.combining_operation", evaluationForm1.questionGroups[0].questions[1].visibilityCondition.combiningOperation),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.questions.1.visibility_condition.0.predicates.0", evaluationForm1.questionGroups[0].questions[1].visibilityCondition.predicates[0]),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.questions.1.visibility_condition.0.predicates.1", evaluationForm1.questionGroups[0].questions[1].visibilityCondition.predicates[1]),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formName, "name", formName),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formName, "published", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formName, "question_groups.0.name", evaluationForm1.questionGroups[0].name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formName, "question_groups.0.weight", fmt.Sprintf("%v", evaluationForm1.questionGroups[0].weight)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formName, "question_groups.0.questions.1.text", evaluationForm1.questionGroups[0].questions[1].text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formName, "question_groups.1.questions.0.answer_options.0.text", evaluationForm1.questionGroups[1].questions[0].answerOptions[0].text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formName, "question_groups.1.questions.0.answer_options.1.value", fmt.Sprintf("%v", evaluationForm1.questionGroups[1].questions[0].answerOptions[1].value)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formName, "question_groups.0.questions.1.visibility_condition.0.combining_operation", evaluationForm1.questionGroups[0].questions[1].visibilityCondition.combiningOperation),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formName, "question_groups.0.questions.1.visibility_condition.0.predicates.0", evaluationForm1.questionGroups[0].questions[1].visibilityCondition.predicates[0]),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formName, "question_groups.0.questions.1.visibility_condition.0.predicates.1", evaluationForm1.questionGroups[0].questions[1].visibilityCondition.predicates[1]),
 				),
 			},
 		},
@@ -493,17 +494,17 @@ resource "genesyscloud_routing_queue" "%s" {
 	exportContents = removeTfBlock(exportContents)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
+		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: exportContents,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue." + queueID, "name", queueName),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue." + queueID, "description", description),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue." + queueID, "auto_answer_only", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue." + queueID, "default_script_ids.CHAT", chatScriptID),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue." + queueID, "default_script_ids.EMAIL", emailScriptID),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueID, "name", queueName),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueID, "description", description),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueID, "auto_answer_only", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueID, "default_script_ids.CHAT", chatScriptID),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueID, "default_script_ids.EMAIL", emailScriptID),
 					validateMediaSettings(queueID, "media_settings_call", alertTimeoutSec, slPercentage, slDurationMs),
 					validateRoutingRules(queueID, 0, rrOperator, rrThreshold, rrWaitSeconds),
 				),
