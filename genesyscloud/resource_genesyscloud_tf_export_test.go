@@ -273,6 +273,113 @@ func TestAccResourceTfExportByName(t *testing.T) {
 	})
 }
 
+func TestAccResourceTfExportByName1(t *testing.T) {
+	var (
+		formResource1 = "test-evaluation-form-1"
+
+		formName = "terraform-form-evaluations-" + uuid.NewString()
+
+		// Complete evaluation form
+		evaluationForm1 = evaluationFormStruct{
+			name:      formName,
+			published: false,
+			questionGroups: []evaluationFormQuestionGroupStruct{
+				{
+					name:                    "Test Question Group 1",
+					defaultAnswersToHighest: true,
+					defaultAnswersToNA:      true,
+					naEnabled:               true,
+					weight:                  1,
+					manualWeight:            true,
+					questions: []evaluationFormQuestionStruct{
+						{
+							text: "Did the agent perform the opening spiel?",
+							answerOptions: []answerOptionStruct{
+								{
+									text:  "Yes",
+									value: 1,
+								},
+								{
+									text:  "No",
+									value: 0,
+								},
+							},
+						},
+						{
+							text:             "Did the agent greet the customer?",
+							helpText:         "Help text here",
+							naEnabled:        true,
+							commentsRequired: true,
+							isKill:           true,
+							isCritical:       true,
+							visibilityCondition: visibilityConditionStruct{
+								combiningOperation: "AND",
+								predicates:         []string{"/form/questionGroup/0/question/0/answer/1"},
+							},
+							answerOptions: []answerOptionStruct{
+								{
+									text:  "Yes",
+									value: 1,
+								},
+								{
+									text:  "No",
+									value: 0,
+								},
+							},
+						},
+					},
+				},
+				{
+					name:   "Test Question Group 2",
+					weight: 2,
+					questions: []evaluationFormQuestionStruct{
+						{
+							text: "Did the agent offer to sell product?",
+							answerOptions: []answerOptionStruct{
+								{
+									text:  "Yes",
+									value: 1,
+								},
+								{
+									text:  "No",
+									value: 0,
+								},
+							},
+						},
+					},
+					visibilityCondition: visibilityConditionStruct{
+						combiningOperation: "AND",
+						predicates:         []string{"/form/questionGroup/0/question/0/answer/1"},
+					},
+				},
+			},
+		}
+	)
+
+	// TODO Need to see that the exported HCL config matches this. The order of parameters can be different
+	fmt.Println(generateEvaluationFormResource(formResource1, &evaluationForm1))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: generateEvaluationFormResource(formResource1, &evaluationForm1),
+			},
+			{
+				Config: generateEvaluationFormResource(formResource1, &evaluationForm1) + generateTfExportByName(
+					formResource1,
+					exportTestDir,
+					trueValue,
+					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation::" + formName)},
+					"",
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyed,
+	})
+}
+
 func testUserExport(filePath, resourceType, resourceName string, expectedUser *UserExport) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		raw, err := getResourceDefinition(filePath, resourceType)

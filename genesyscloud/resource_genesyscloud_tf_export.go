@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	zclconfCty "github.com/zclconf/go-cty/cty"
 	"hash/fnv"
 	"io/ioutil"
 	"log"
@@ -161,6 +163,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	// Generate the JSON config map
 	resourceTypeJSONMaps := make(map[string]map[string]jsonMap)
+	resourceTypeHCLBlocks := make([][]byte, 0)
 	for _, resource := range resources {
 		jsonResult, diagErr := instanceStateToJSONMap(resource.State, resource.CtyType)
 		if diagErr != nil {
@@ -180,7 +183,11 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 		}
 
-		resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
+		if true { // TODO change to check for export_as_hcl
+			resourceTypeHCLBlocks = append(resourceTypeHCLBlocks, instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
+		} else {
+			resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
+		}
 	}
 
 	providerSource := sourceForVersion(version)
@@ -188,6 +195,11 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		if err := writeTfState(ctx, resources, d, providerSource); err != nil {
 			return err
 		}
+	}
+
+	// TODO write as HCL instead of JSON if export_as_hcl is set
+	for _, resourceTypeHCLBlock := range resourceTypeHCLBlocks {
+		fmt.Printf("%s\n", resourceTypeHCLBlock)
 	}
 
 	rootJSONObject := jsonMap{
@@ -209,6 +221,36 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	d.SetId(filePath)
 
 	return nil
+}
+
+func instanceStateToHCLBlock(resType, resName string, json jsonMap) []byte {
+	f := hclwrite.NewEmptyFile()
+	rootBody := f.Body()
+
+	barBlock := rootBody.AppendNewBlock(resType, []string{resName})
+	barBody := barBlock.Body()
+
+	addBody(barBody, json)
+
+	fmt.Printf("%s\n", f.Bytes())
+	return f.Bytes()
+}
+
+func addBody(body *hclwrite.Body, json jsonMap) {
+	for k, v := range json {
+		addValue(body, k, v)
+	}
+}
+
+func addValue(body *hclwrite.Body, k string, v interface{}) {
+	if vStr, ok := v.(string); ok {
+		body.SetAttributeValue(k, zclconfCty.StringVal(vStr))
+	} else if vBool, ok := v.(bool); ok {
+		body.SetAttributeValue(k, zclconfCty.BoolVal(vBool))
+	} else if vInt, ok := v.(int); ok {
+		body.SetAttributeValue(k, zclconfCty.NumberIntVal(int64(vInt)))
+	}
+	// TODO Need to add support for int32, int64, float32, float64, map[string]interface{} (probably use recursion or call addBody), []interface{} (probably have to iterate over and determine type and use zclconfCty.ListVal())
 }
 
 func sourceForVersion(version string) string {
