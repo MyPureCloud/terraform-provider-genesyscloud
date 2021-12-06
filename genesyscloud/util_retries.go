@@ -3,12 +3,12 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/ronanwatkins/terraform-plugin-sdk/v2/helper/schema"
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/ronanwatkins/terraform-plugin-sdk/v2/diag"
+	"github.com/ronanwatkins/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 

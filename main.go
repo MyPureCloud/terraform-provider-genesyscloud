@@ -5,7 +5,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"github.com/ronanwatkins/terraform-plugin-sdk/v2/plugin"
 	provider "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 )
 

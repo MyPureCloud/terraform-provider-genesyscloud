@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/ronanwatkins/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceGroup(t *testing.T) {

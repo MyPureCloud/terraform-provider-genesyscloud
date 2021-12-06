@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/ronanwatkins/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func suppressEquivalentJsonDiffs(k, old, new string, d *schema.ResourceData) bool {

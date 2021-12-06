@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/ronanwatkins/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceUserPrompt(t *testing.T) {

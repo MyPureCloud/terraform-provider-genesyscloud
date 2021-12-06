@@ -314,8 +314,6 @@ github.com/hashicorp/terraform-plugin-docs v0.5.1 h1:WwrUcamix9x0TqfTw/WGHMRqoTe
 github.com/hashicorp/terraform-plugin-docs v0.5.1/go.mod h1:SQwEgy0/B0UPQ07rNEG1Wpt6E3jvRcCwkVHPNybGgc0=
 github.com/hashicorp/terraform-plugin-go v0.4.0 h1:LFbXNeLDo0J/wR0kUzSPq0RpdmFh2gNedzU0n/gzPAo=
 github.com/hashicorp/terraform-plugin-go v0.4.0/go.mod h1:7u/6nt6vaiwcWE2GuJKbJwNlDFnf5n95xKw4hqIVr58=
-github.com/hashicorp/terraform-plugin-sdk/v2 v2.9.0 h1:me5GUReyzlmNzDEuUzQCr2qDjNluKdvYj/W4LItUqKQ=
-github.com/hashicorp/terraform-plugin-sdk/v2 v2.9.0/go.mod h1:JRe/T0PPn9kGowtePeYnTbDm6ViYNcnyxf1esw5yu90=
 github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb/go.mod h1:+NfK9FKeTrX5uv1uIXGdwYDTeHna2qgaIlx54MXqjAM=
 github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d/go.mod h1:+NfK9FKeTrX5uv1uIXGdwYDTeHna2qgaIlx54MXqjAM=
 github.com/hashicorp/yamux v0.0.0-20210316155119-a95892c5f864 h1:Y4V+SFe7d3iH+9pJCoeWIOS5/xBJIFsltS7E+KJSsJY=
@@ -459,6 +457,10 @@ github.com/prometheus/procfs v0.0.0-20190507164030-5867b95ac084/go.mod h1:TjEm7z
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
+github.com/ronanwatkins/terraform-plugin-sdk/v2 v2.3.2 h1:Np3qjDgdZPHZeTwdqBkL+uSVL6GXMtBZtJcxbqbEOKA=
+github.com/ronanwatkins/terraform-plugin-sdk/v2 v2.3.2/go.mod h1:rLqJ+1YDRiMnSaT9G6bSXuaGOmvMMSBcDL3OXiJIvJs=
+github.com/ronanwatkins/terraform-plugin-sdk/v2 v2.3.3 h1:RhNsvZS9/UUaYa8qEEkZroaeT+B0/JC5UJRIZvmWFkA=
+github.com/ronanwatkins/terraform-plugin-sdk/v2 v2.3.3/go.mod h1:rLqJ+1YDRiMnSaT9G6bSXuaGOmvMMSBcDL3OXiJIvJs=
 github.com/russross/blackfriday v1.6.0 h1:KqfZb0pUVN2lYqZUYRddxF4OR8ZMURnJIG5Y3VRLtww=
 github.com/russross/blackfriday v1.6.0/go.mod h1:ti0ldHuxg49ri4ksnFxlkCfN+hvslNlmVHqNRXXJNAY=
 github.com/ruudk/golang-pdf417 v0.0.0-20181029194003-1af4ab5afa58/go.mod h1:6lfFZQK844Gfx8o5WFuvpxWRwnSoipWe/p622j1v06w=
