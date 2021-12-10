@@ -326,7 +326,8 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diag.Errorf("Failed to delete role %s: %s", name, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	time.Sleep(10 * time.Second)
+	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := authAPI.GetAuthorizationRole(d.Id(), nil)
 		if err != nil {
 			if isStatus404(resp) {

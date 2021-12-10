@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"net/http"
 	"strings"
 	"time"
 
@@ -63,9 +64,10 @@ func isAdditionalCode(statusCode int, additionalCodes ...int) bool {
 func isVersionMismatch(resp *platformclientv2.APIResponse, additionalCodes ...int) bool {
 	// Version mismatch from directory may be a 409 or 400 with specific error message
 	if resp != nil {
-		if resp.StatusCode == 409 ||
+		if resp.StatusCode == http.StatusConflict ||
+			resp.StatusCode == http.StatusRequestTimeout ||
 			isAdditionalCode(resp.StatusCode, additionalCodes...) ||
-			(resp.StatusCode == 400 && resp.Error != nil && strings.Contains((*resp.Error).Message, "does not match the current version")) {
+			(resp.StatusCode == http.StatusBadRequest && resp.Error != nil && strings.Contains((*resp.Error).Message, "does not match the current version")) {
 			return true
 		}
 	}
@@ -74,7 +76,9 @@ func isVersionMismatch(resp *platformclientv2.APIResponse, additionalCodes ...in
 
 func isStatus404(resp *platformclientv2.APIResponse, additionalCodes ...int) bool {
 	if resp != nil {
-		if resp.StatusCode == 404 || isAdditionalCode(resp.StatusCode, additionalCodes...) {
+		if resp.StatusCode == http.StatusNotFound ||
+			resp.StatusCode == http.StatusRequestTimeout ||
+			isAdditionalCode(resp.StatusCode, additionalCodes...) {
 			return true
 		}
 	}
@@ -83,7 +87,9 @@ func isStatus404(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 
 func isStatus400(resp *platformclientv2.APIResponse, additionalCodes ...int) bool {
 	if resp != nil {
-		if resp.StatusCode == 400 || isAdditionalCode(resp.StatusCode, additionalCodes...) {
+		if resp.StatusCode == http.StatusBadRequest ||
+			resp.StatusCode == http.StatusRequestTimeout ||
+			isAdditionalCode(resp.StatusCode, additionalCodes...) {
 			return true
 		}
 	}

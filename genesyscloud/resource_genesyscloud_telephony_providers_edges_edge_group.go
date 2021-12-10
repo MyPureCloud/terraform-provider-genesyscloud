@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 	"log"
-	"net/http"
 	"time"
 )
 
@@ -94,7 +93,7 @@ func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		log.Printf("Created edge group %s", *edgeGroup.Id)
 
 		return resp, nil
-	}, []int{http.StatusRequestTimeout}...)
+	})
 	if diagErr != nil {
 		return diagErr
 	}

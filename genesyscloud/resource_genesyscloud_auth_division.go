@@ -188,8 +188,8 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	// Give public API caches time to expire
-	time.Sleep(20 * time.Second)
-	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	time.Sleep(30 * time.Second)
+	return withRetries(ctx, 180*time.Second, func() *resource.RetryError {
 		_, resp, err := authAPI.GetAuthorizationDivision(d.Id(), false)
 		if err != nil {
 			if isStatus404(resp) {

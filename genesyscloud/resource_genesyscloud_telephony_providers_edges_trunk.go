@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 	"log"
-	"net/http"
 	"time"
 )
 
@@ -203,7 +202,7 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 			const pageSize = 100
 			trunks, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
 			if getErr != nil {
-				if isStatus404(resp, []int{http.StatusRequestTimeout}...) {
+				if isStatus404(resp) {
 					return resource.RetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
 				}
 				return resource.NonRetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))

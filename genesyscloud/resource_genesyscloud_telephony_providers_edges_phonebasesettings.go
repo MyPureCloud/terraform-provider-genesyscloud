@@ -229,30 +229,37 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func getAllPhoneBaseSettings(_ context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		phoneBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of phone base settings: %v", getErr)
-		}
+	err := withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+		for pageNum := 1; ; pageNum++ {
+			const pageSize = 100
+			phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, "")
+			if getErr != nil {
+				if isStatus404(resp) {
+					return resource.RetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
+				}
+				return resource.NonRetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
+			}
 
-		if phoneBaseSettings.Entities == nil || len(*phoneBaseSettings.Entities) == 0 {
-			break
-		}
+			if phoneBaseSettings.Entities == nil || len(*phoneBaseSettings.Entities) == 0 {
+				break
+			}
 
-		for _, phoneBaseSetting := range *phoneBaseSettings.Entities {
-			if phoneBaseSetting.State != nil && *phoneBaseSetting.State != "deleted" {
-				resources[*phoneBaseSetting.Id] = &ResourceMeta{Name: *phoneBaseSetting.Name}
+			for _, phoneBaseSetting := range *phoneBaseSettings.Entities {
+				if phoneBaseSetting.State != nil && *phoneBaseSetting.State != "deleted" {
+					resources[*phoneBaseSetting.Id] = &ResourceMeta{Name: *phoneBaseSetting.Name}
+				}
 			}
 		}
-	}
 
-	return resources, nil
+		return nil
+	})
+
+	return resources, err
 }
 
 func phoneBaseSettingsExporter() *ResourceExporter {
