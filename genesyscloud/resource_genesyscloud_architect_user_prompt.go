@@ -679,7 +679,7 @@ var userPromptResource = &schema.Resource{
 			Optional:    true,
 		},
 		"filename": {
-			Description: "Path to the file to be uploaded as prompt.",
+			Description: "Path or URL to the file to be uploaded as prompt.",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
@@ -923,37 +923,45 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclientv2.Configuration) error {
-	accessToken := sdkConfig.AccessToken
-
-	client := &http.Client{}
-	file, err := os.Open(*filename)
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
+	var reader io.Reader
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
+	defer writer.Close()
 
+	_, err := os.Stat(*filename)
+	if err != nil {
+		resp, err := http.Get(*filename)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+			return fmt.Errorf("HTTP Error downloading file: %v", resp.StatusCode)
+		}
+		reader = resp.Body
+	} else {
+		file, err := os.Open(*filename)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		reader = file
+	}
+
+	part, err := writer.CreateFormFile("file", filepath.Base(*filename))
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(part, reader)
 	if err != nil {
 		return err
 	}
 
-	io.Copy(part, file)
-	writer.Close()
 	request, err := http.NewRequest(http.MethodPost, *uploadUri, body)
-
-	if err != nil {
-		return err
-	}
-
 	request.Header.Add("Content-Type", writer.FormDataContentType())
-	request.Header.Add("Authorization", accessToken)
+	request.Header.Add("Authorization", sdkConfig.AccessToken)
 
+	client := &http.Client{}
 	response, err := client.Do(request)
-
 	if err != nil {
 		return err
 	}
