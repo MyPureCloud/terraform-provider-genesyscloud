@@ -294,8 +294,8 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	})
 
 	// Group deletes are not immediate. Give time for caches to clear, then query until group is no longer found
-	time.Sleep(5 * time.Second)
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	time.Sleep(10 * time.Second)
+	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		group, resp, err := groupsAPI.GetGroup(d.Id())
 		if err != nil {
 			if isStatus404(resp) {

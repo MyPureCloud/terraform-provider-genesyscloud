@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"net/http"
 	"strings"
 	"time"
 
@@ -25,17 +26,17 @@ func withRetriesForRead(ctx context.Context, timeout time.Duration, d *schema.Re
 	return err
 }
 
-type checkResponseFunc func(resp *platformclientv2.APIResponse) bool
+type checkResponseFunc func(resp *platformclientv2.APIResponse, additionalCodes ...int) bool
 type callSdkFunc func() (*platformclientv2.APIResponse, diag.Diagnostics)
 
 // Retries up to 10 times while the shouldRetry condition returns true
 // Useful for adding custom retry logic to normally non-retryable error codes
-func retryWhen(shouldRetry checkResponseFunc, callSdk callSdkFunc) diag.Diagnostics {
+func retryWhen(shouldRetry checkResponseFunc, callSdk callSdkFunc, additionalCodes ...int) diag.Diagnostics {
 	var lastErr diag.Diagnostics
 	for i := 0; i < 10; i++ {
 		resp, sdkErr := callSdk()
 		if sdkErr != nil {
-			if resp != nil && shouldRetry(resp) {
+			if resp != nil && shouldRetry(resp, additionalCodes...) {
 				// Wait a second and try again
 				lastErr = sdkErr
 				time.Sleep(time.Second)
@@ -50,27 +51,47 @@ func retryWhen(shouldRetry checkResponseFunc, callSdk callSdkFunc) diag.Diagnost
 	return diag.Errorf("Exhausted retries. Last error: %v", lastErr)
 }
 
-func isVersionMismatch(resp *platformclientv2.APIResponse) bool {
+func isAdditionalCode(statusCode int, additionalCodes ...int) bool {
+	for _, additionalCode := range additionalCodes {
+		if statusCode == additionalCode {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isVersionMismatch(resp *platformclientv2.APIResponse, additionalCodes ...int) bool {
 	// Version mismatch from directory may be a 409 or 400 with specific error message
 	if resp != nil {
-		if resp.StatusCode == 409 || (resp.StatusCode == 400 &&
-			resp.Error != nil && strings.Contains((*resp.Error).Message, "does not match the current version")) {
+		if resp.StatusCode == http.StatusConflict ||
+			resp.StatusCode == http.StatusRequestTimeout ||
+			isAdditionalCode(resp.StatusCode, additionalCodes...) ||
+			(resp.StatusCode == http.StatusBadRequest && resp.Error != nil && strings.Contains((*resp.Error).Message, "does not match the current version")) {
 			return true
 		}
 	}
 	return false
 }
 
-func isStatus404(resp *platformclientv2.APIResponse) bool {
-	if resp != nil && resp.StatusCode == 404 {
-		return true
+func isStatus404(resp *platformclientv2.APIResponse, additionalCodes ...int) bool {
+	if resp != nil {
+		if resp.StatusCode == http.StatusNotFound ||
+			resp.StatusCode == http.StatusRequestTimeout ||
+			isAdditionalCode(resp.StatusCode, additionalCodes...) {
+			return true
+		}
 	}
 	return false
 }
 
-func isStatus400(resp *platformclientv2.APIResponse) bool {
-	if resp != nil && resp.StatusCode == 400 {
-		return true
+func isStatus400(resp *platformclientv2.APIResponse, additionalCodes ...int) bool {
+	if resp != nil {
+		if resp.StatusCode == http.StatusBadRequest ||
+			resp.StatusCode == http.StatusRequestTimeout ||
+			isAdditionalCode(resp.StatusCode, additionalCodes...) {
+			return true
+		}
 	}
 	return false
 }

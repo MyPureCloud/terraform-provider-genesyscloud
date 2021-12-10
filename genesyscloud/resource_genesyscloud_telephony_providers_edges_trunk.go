@@ -197,23 +197,30 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		trunks, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of trunks: %v", getErr)
-		}
+	err := withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+		for pageNum := 1; ; pageNum++ {
+			const pageSize = 100
+			trunks, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
+			if getErr != nil {
+				if isStatus404(resp) {
+					return resource.RetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
+				}
+				return resource.NonRetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
+			}
 
-		if trunks.Entities == nil || len(*trunks.Entities) == 0 {
-			break
-		}
+			if trunks.Entities == nil || len(*trunks.Entities) == 0 {
+				break
+			}
 
-		for _, trunk := range *trunks.Entities {
-			if trunk.State != nil && *trunk.State != "deleted" {
-				resources[*trunk.Id] = &ResourceMeta{Name: *trunk.Name}
+			for _, trunk := range *trunks.Entities {
+				if trunk.State != nil && *trunk.State != "deleted" {
+					resources[*trunk.Id] = &ResourceMeta{Name: *trunk.Name}
+				}
 			}
 		}
-	}
 
-	return resources, nil
+		return nil
+	})
+
+	return resources, err
 }

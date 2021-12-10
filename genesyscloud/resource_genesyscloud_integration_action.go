@@ -193,21 +193,27 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		return diagErr
 	}
 
-	action, _, err := sdkPostIntegrationAction(&IntegrationAction{
-		Name:          &name,
-		Category:      &category,
-		IntegrationId: &integrationId,
-		Secure:        &secure,
-		Contract:      actionContract,
-		Config:        buildSdkActionConfig(d),
-	}, integAPI)
-	if err != nil {
-		return diag.Errorf("Failed to create integration action %s: %s", name, err)
+	diagErr = retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		action, resp, err := sdkPostIntegrationAction(&IntegrationAction{
+			Name:          &name,
+			Category:      &category,
+			IntegrationId: &integrationId,
+			Secure:        &secure,
+			Contract:      actionContract,
+			Config:        buildSdkActionConfig(d),
+		}, integAPI)
+		if err != nil {
+			return resp, diag.Errorf("Failed to create integration action %s: %s", name, err)
+		}
+		d.SetId(*action.Id)
+
+		log.Printf("Created integration action %s %s", name, *action.Id)
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
-	d.SetId(*action.Id)
-
-	log.Printf("Created integration action %s %s", name, *action.Id)
 	return readIntegrationAction(ctx, d, meta)
 }
 
@@ -351,9 +357,14 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting integration action %s", name)
-	_, err := integAPI.DeleteIntegrationsAction(d.Id())
+	resp, err := integAPI.DeleteIntegrationsAction(d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete integration action %s: %s", name, err)
+		if isStatus404(resp) {
+			// Parent integration was probably deleted which caused the action to be deleted
+			log.Printf("Integration action already deleted %s", d.Id())
+			return nil
+		}
+		return diag.Errorf("Failed to delete Integration action %s: %s", d.Id(), err)
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {

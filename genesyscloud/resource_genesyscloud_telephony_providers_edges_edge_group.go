@@ -82,15 +82,21 @@ func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	log.Printf("Creating edge group %s", name)
-	edgeGroup, _, err := edgesAPI.PostTelephonyProvidersEdgesEdgegroups(*edgeGroup)
-	if err != nil {
-		return diag.Errorf("Failed to create edge group %s: %s", name, err)
+	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Creating edge group %s", name)
+		edgeGroup, resp, err := edgesAPI.PostTelephonyProvidersEdgesEdgegroups(*edgeGroup)
+		if err != nil {
+			return resp, diag.Errorf("Failed to create edge group %s: %s", name, err)
+		}
+
+		d.SetId(*edgeGroup.Id)
+		log.Printf("Created edge group %s", *edgeGroup.Id)
+
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
-
-	d.SetId(*edgeGroup.Id)
-
-	log.Printf("Created edge group %s", *edgeGroup.Id)
 
 	return readEdgeGroup(ctx, d, meta)
 }

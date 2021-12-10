@@ -121,6 +121,14 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
+				),
+			},
+			{
+				// Generate a user and export it
+				Config: generateBasicUserResource(
+					userResource1,
+					userEmail1,
+					userName1,
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
