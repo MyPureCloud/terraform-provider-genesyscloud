@@ -4,7 +4,7 @@
 
 ## Requirements
 
--	[Terraform](https://www.terraform.io/downloads.html) >= 0.13.x
+-	[Terraform](https://www.terraform.io/downloads.html) >= 1.0.x
 -	[Go](https://golang.org/doc/install) >= 1.15
 
 ## Building The Provider
