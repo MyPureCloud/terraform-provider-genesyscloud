@@ -281,6 +281,165 @@ func TestAccResourceTfExportByName(t *testing.T) {
 	})
 }
 
+func TestAccResourceTfExportByName1(t *testing.T) {
+	var (
+		formResource1 = "test-evaluation-form-1"
+
+		formName = "terraform-form-evaluations-" + uuid.NewString()
+
+		// Complete evaluation form
+		evaluationForm1 = evaluationFormStruct{
+			name:      formName,
+			published: false,
+			questionGroups: []evaluationFormQuestionGroupStruct{
+				{
+					name:                    "Test Question Group 1",
+					defaultAnswersToHighest: true,
+					defaultAnswersToNA:      true,
+					naEnabled:               true,
+					weight:                  1,
+					manualWeight:            true,
+					questions: []evaluationFormQuestionStruct{
+						{
+							text: "Did the agent perform the opening spiel?",
+							answerOptions: []answerOptionStruct{
+								{
+									text:  "Yes",
+									value: 1,
+								},
+								{
+									text:  "No",
+									value: 0,
+								},
+							},
+						},
+						{
+							text:             "Did the agent greet the customer?",
+							helpText:         "Help text here",
+							naEnabled:        true,
+							commentsRequired: true,
+							isKill:           true,
+							isCritical:       true,
+							visibilityCondition: visibilityConditionStruct{
+								combiningOperation: "AND",
+								predicates:         []string{"/form/questionGroup/0/question/0/answer/1"},
+							},
+							answerOptions: []answerOptionStruct{
+								{
+									text:  "Yes",
+									value: 1,
+								},
+								{
+									text:  "No",
+									value: 0,
+								},
+							},
+						},
+					},
+				},
+				{
+					name:   "Test Question Group 2",
+					weight: 2,
+					questions: []evaluationFormQuestionStruct{
+						{
+							text: "Did the agent offer to sell product?",
+							answerOptions: []answerOptionStruct{
+								{
+									text:  "Yes",
+									value: 1,
+								},
+								{
+									text:  "No",
+									value: 0,
+								},
+							},
+						},
+					},
+					visibilityCondition: visibilityConditionStruct{
+						combiningOperation: "AND",
+						predicates:         []string{"/form/questionGroup/0/question/0/answer/1"},
+					},
+				},
+			},
+		}
+	)
+
+	// TODO Need to see that the exported HCL config matches this. The order of parameters can be different
+	fmt.Println(generateEvaluationFormResource(formResource1, &evaluationForm1))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: generateEvaluationFormResource(formResource1, &evaluationForm1),
+			},
+			{
+				Config: generateEvaluationFormResource(formResource1, &evaluationForm1) + generateTfExportByName(
+					formResource1,
+					exportTestDir,
+					trueValue,
+					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation::" + formName)},
+					"",
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyed,
+	})
+}
+
+func TestAccResourceTfExportByName2(t *testing.T) {
+	queueName := fmt.Sprintf("Test Queue %v", uuid.NewString())
+
+	config := fmt.Sprintf(`
+resource "genesyscloud_routing_queue" "test_queue" {
+  name                              = "%v"
+  description                       = "This is a test queue"
+  acw_wrapup_prompt                 = "MANDATORY_TIMEOUT"
+  acw_timeout_ms                    = 300000
+  skill_evaluation_method           = "BEST"
+  auto_answer_only                  = true
+  enable_transcription              = true
+  enable_manual_assignment          = true
+  calling_party_name                = "Example Inc."
+  media_settings_call {
+    alerting_timeout_sec      = 30
+    service_level_percentage  = 0.7
+    service_level_duration_ms = 10000
+  }
+  routing_rules {
+    operator     = "MEETS_THRESHOLD"
+    threshold    = 9
+    wait_seconds = 300
+  }
+  default_script_ids = {
+    EMAIL = "153fcff5-597e-4f17-94e5-17eac456a0b2"
+    CHAT  = "81ddba00-9fad-11e7-9a00-3137c42c4ae9"
+  }
+}
+`, queueName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				Config: config + generateTfExportByName(
+					"export",
+					"/Users/cconneel/dev/genesys_src/repos/terraform-provider-genesyscloud",
+					trueValue,
+					[]string{strconv.Quote("genesyscloud_routing_queue::" + queueName)},
+					"",
+				),
+			},
+		},
+		//CheckDestroy: testVerifyExportsDestroyed,
+	})
+}
+
 func testUserExport(filePath, resourceType, resourceName string, expectedUser *UserExport) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		raw, err := getResourceDefinition(filePath, resourceType)
@@ -518,6 +677,7 @@ func generateTfExportByName(
 		include_state_file = %s
 		resource_types = [%s]
 		exclude_attributes = [%s]
+		export_as_hcl = true
     }
 	`, resourceID, directory, includeState, strings.Join(items, ","), excludedAttributes)
 }
