@@ -10,7 +10,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
@@ -77,17 +76,6 @@ func resourceTelephonyExtensionPool() *schema.Resource {
 				Description: "Extension Pool description.",
 				Type:        schema.TypeString,
 				Optional:    true,
-			},
-			"comments": {
-				Description: "Comments for the Extension Pool.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"pool_provider": {
-				Description:  "Provider (PURE_CLOUD | PURE_CLOUD_VOICE).",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"PURE_CLOUD", "PURE_CLOUD_VOICE"}, false),
 			},
 		},
 	}
