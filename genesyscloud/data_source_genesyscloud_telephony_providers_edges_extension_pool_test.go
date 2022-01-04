@@ -40,15 +40,15 @@ func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 
 func generateExtensionPoolDataSource(
 	resourceID string,
-	startPhoneNumber string,
-	endPhoneNumber string,
+	startNumber string,
+	endNumber string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_extension_pool" "%s" {
-		start_phone_number = "%s"
-		end_phone_number = "%s"
+		start_number = "%s"
+		end_number = "%s"
 		depends_on=[%s]
 	}
-	`, resourceID, startPhoneNumber, endPhoneNumber, dependsOnResource)
+	`, resourceID, startNumber, endNumber, dependsOnResource)
 }

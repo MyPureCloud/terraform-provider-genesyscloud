@@ -104,8 +104,8 @@ func deleteExtensionPoolWithNumber(startNumber string) error {
 
 func generateExtensionPoolResource(extensionPool *extensionPoolStruct) string {
 	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_extension_pool" "%s" {
-		start_phone_number = "%s"
-		end_phone_number = "%s"
+		start_number = "%s"
+		end_number = "%s"
 		description = %s
 	}
 	`, extensionPool.resourceID,
