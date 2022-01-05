@@ -1,4 +1,4 @@
 data "genesyscloud_telephony_providers_edges_extension_pool" "extensionPool" {
-  startNumber = "1000"
-  endNumber   = "1099"
+  start_number = "1000"
+  end_number   = "1099"
 }
