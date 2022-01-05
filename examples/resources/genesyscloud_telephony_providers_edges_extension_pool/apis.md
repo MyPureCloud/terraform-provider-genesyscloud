@@ -1,0 +1,5 @@
+* [GET /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-extensionpools)
+* [POST /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#post-api-v2-telephony-providers-edges-extensionpools)
+* [GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
+* [PUT /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#put-api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
+* [DELETE /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#delete-api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)

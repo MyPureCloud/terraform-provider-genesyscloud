@@ -59,12 +59,9 @@ resource "genesyscloud_telephony_providers_edges_phone" "test_phone" {
 - **capabilities** (Block List, Max: 1) Phone Capabilities. (see [below for nested schema](#nestedblock--capabilities))
 - **id** (String) The ID of this resource.
 - **line_addresses** (List of String) Ordered list of Line DIDs for standalone phones.
+- **phone_meta_base_id** (String) Phone Meta Base ID.
 - **state** (String) Indicates if the resource is active, inactive, or deleted. Valid values: active, inactive, deleted. Defaults to `active`.
 - **web_rtc_user_id** (String) Web RTC User ID. This is necessary when creating a Web RTC phone. This user will be assigned to the phone after it is created.
-
-### Read-Only
-
-- **phone_meta_base_id** (String) Phone Meta Base ID.
 
 <a id="nestedblock--capabilities"></a>
 ### Nested Schema for `capabilities`

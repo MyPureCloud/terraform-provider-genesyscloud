@@ -44,11 +44,11 @@ resource "genesyscloud_architect_user_prompt" "welcome_greeting" {
 
 ### Required
 
-- **description** (String) Description of the user audio prompt.
 - **name** (String) Name of the user audio prompt.
 
 ### Optional
 
+- **description** (String) Description of the user audio prompt.
 - **id** (String) The ID of this resource.
 - **resources** (Set of Object) Audio of TTS resources for the audio prompt. (see [below for nested schema](#nestedatt--resources))
 
