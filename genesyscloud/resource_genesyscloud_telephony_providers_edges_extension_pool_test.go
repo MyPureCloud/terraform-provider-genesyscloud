@@ -47,8 +47,8 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 					nullValue, // No description
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "start_phone_number", extensionPoolStartNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "end_phone_number", extensionPoolEndNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "start_number", extensionPoolStartNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "end_number", extensionPoolEndNumber1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "description", ""),
 				),
 			},
@@ -61,8 +61,8 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 					strconv.Quote(extensionPoolDescription1),
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "start_phone_number", extensionPoolStartNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "end_phone_number", extensionPoolEndNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "start_number", extensionPoolStartNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "end_number", extensionPoolEndNumber1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "description", extensionPoolDescription1),
 				),
 			},
