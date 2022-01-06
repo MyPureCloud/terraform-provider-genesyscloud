@@ -23,7 +23,7 @@ var (
 			"number": {
 				Description:      "Phone number. Defaults to US country code.",
 				Type:             schema.TypeString,
-				Required:         true,
+				Optional:         true,
 				ValidateDiagFunc: validatePhoneNumber,
 			},
 			"media_type": {
@@ -540,7 +540,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			d.Set("acd_auto_answer", nil)
 		}
 
-		d.Set("addresses", flattenUserAddresses(currentUser.Addresses))
+		d.Set("addresses", flattenUserAddresses(d, currentUser.Addresses))
 		d.Set("routing_skills", flattenUserSkills(currentUser.Skills))
 		d.Set("routing_languages", flattenUserLanguages(currentUser.Languages))
 		d.Set("locations", flattenUserLocations(currentUser.Locations))
@@ -773,10 +773,10 @@ func buildSdkPhoneNumbers(configPhoneNumbers *schema.Set) ([]platformclientv2.Co
 			VarType:   &phoneType,
 		}
 
-		if phoneNum, ok := phoneMap["number"].(string); ok {
+		if phoneNum, ok := phoneMap["number"].(string); ok && phoneNum != "" {
 			contact.Address = &phoneNum
 		}
-		if phoneExt, ok := phoneMap["extension"].(string); ok {
+		if phoneExt, ok := phoneMap["extension"].(string); ok && phoneExt != "" {
 			contact.Extension = &phoneExt
 		}
 
@@ -861,7 +861,38 @@ func buildSdkCertifications(d *schema.ResourceData) *[]string {
 	return nil
 }
 
-func flattenUserAddresses(addresses *[]platformclientv2.Contact) []interface{} {
+func getNumbers(d *schema.ResourceData, index int) (bool, bool) {
+	isNumber := false
+	isExtension := false
+
+	if addresses1 := d.Get("addresses").([]interface{}); addresses1 != nil {
+		var phoneNumbers *schema.Set
+		if len(addresses1) > 0 {
+			addressMap := addresses1[0].(map[string]interface{})
+			phoneNumbers = addressMap["phone_numbers"].(*schema.Set)
+		}
+
+		if phoneNumbers != nil {
+			phoneNumberSlice := phoneNumbers.List()
+			for ii, configPhone := range phoneNumberSlice {
+				if ii != index {
+					continue
+				}
+				phoneMap := configPhone.(map[string]interface{})
+				if phoneNum, ok := phoneMap["number"].(string); ok && phoneNum != "" {
+					isNumber = true
+				}
+				if phoneExt, ok := phoneMap["extension"].(string); ok && phoneExt != "" {
+					isExtension = true
+				}
+				break
+			}
+		}
+	}
+	return isNumber, isExtension
+}
+
+func flattenUserAddresses(d *schema.ResourceData, addresses *[]platformclientv2.Contact) []interface{} {
 	if addresses == nil || len(*addresses) == 0 {
 		return nil
 	}
@@ -869,7 +900,7 @@ func flattenUserAddresses(addresses *[]platformclientv2.Contact) []interface{} {
 	emailSet := schema.NewSet(schema.HashResource(otherEmailResource), []interface{}{})
 	phoneNumSet := schema.NewSet(phoneNumberHash, []interface{}{})
 
-	for _, address := range *addresses {
+	for i, address := range *addresses {
 		if address.MediaType != nil {
 			if *address.MediaType == "SMS" || *address.MediaType == "PHONE" {
 				phoneNumber := make(map[string]interface{})
@@ -880,7 +911,22 @@ func flattenUserAddresses(addresses *[]platformclientv2.Contact) []interface{} {
 					phoneNumber["number"] = strings.Trim(*address.Address, "()")
 				} else if address.Display != nil {
 					// Some numbers are only returned in Display
-					phoneNumber["number"] = strings.Trim(*address.Display, "()")
+					isNumber, isExtension := getNumbers(d, i)
+
+					if isNumber && phoneNumber["number"] != "" {
+						phoneNumber["number"] = strings.Trim(*address.Display, "()")
+					}
+					if isExtension {
+						phoneNumber["extension"] = strings.Trim(*address.Display, "()")
+					}
+
+					if !isNumber && !isExtension {
+						if address.Extension == nil {
+							phoneNumber["extension"] = strings.Trim(*address.Display, "()")
+						} else if phoneNumber["number"] != "" {
+							phoneNumber["number"] = strings.Trim(*address.Display, "()")
+						}
+					}
 				}
 
 				if address.Extension != nil {
