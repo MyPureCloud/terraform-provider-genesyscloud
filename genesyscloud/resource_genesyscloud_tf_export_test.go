@@ -518,6 +518,58 @@ func removeTfBlock(export string) string {
 	return strings.Replace(export, tfBlock, "", -1)
 }
 
+func TestAccResourceTfExportByName2(t *testing.T) {
+	queueName := fmt.Sprintf("Test Queue %v", uuid.NewString())
+
+	config := fmt.Sprintf(`
+resource "genesyscloud_routing_queue" "test_queue" {
+  name                              = "%v"
+  description                       = "This is a test queue"
+  acw_wrapup_prompt                 = "MANDATORY_TIMEOUT"
+  acw_timeout_ms                    = 300000
+  skill_evaluation_method           = "BEST"
+  auto_answer_only                  = true
+  enable_transcription              = true
+  enable_manual_assignment          = true
+  calling_party_name                = "Example Inc."
+  media_settings_call {
+    alerting_timeout_sec      = 30
+    service_level_percentage  = 0.7
+    service_level_duration_ms = 10000
+  }
+  routing_rules {
+    operator     = "MEETS_THRESHOLD"
+    threshold    = 9
+    wait_seconds = 300
+  }
+  default_script_ids = {
+    EMAIL = "153fcff5-597e-4f17-94e5-17eac456a0b2"
+    CHAT  = "81ddba00-9fad-11e7-9a00-3137c42c4ae9"
+  }
+}
+`, queueName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				Config: config + generateTfExportByName(
+					"export",
+					"/Users/cconneel/dev/genesys_src/repos/terraform-provider-genesyscloud",
+					trueValue,
+					[]string{strconv.Quote("genesyscloud_routing_queue::" + queueName)},
+					"",
+				),
+			},
+		},
+		//CheckDestroy: testVerifyExportsDestroyed,
+	})
+}
+
 func testUserExport(filePath, resourceType, resourceName string, expectedUser *UserExport) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		raw, err := getResourceDefinition(filePath, resourceType)
