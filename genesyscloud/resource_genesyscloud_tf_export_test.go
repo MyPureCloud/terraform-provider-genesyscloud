@@ -121,6 +121,14 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					userResource1,
 					userEmail1,
 					userName1,
+				),
+			},
+			{
+				// Generate a user and export it
+				Config: generateBasicUserResource(
+					userResource1,
+					userEmail1,
+					userName1,
 				) + generateTfExportByName(
 					exportResource1,
 					exportTestDir,
@@ -355,10 +363,6 @@ func TestAccResourceTfExportByName1(t *testing.T) {
 			},
 		}
 	)
-
-	// TODO Need to see that the exported HCL config matches this. The order of parameters can be different
-	fmt.Println(generateEvaluationFormResource(formResource1, &evaluationForm1))
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -369,14 +373,66 @@ func TestAccResourceTfExportByName1(t *testing.T) {
 			{
 				Config: generateEvaluationFormResource(formResource1, &evaluationForm1) + generateTfExportByName(
 					formResource1,
-					exportTestDir,
+					"/Users/ronanwatkins/genesys_src/repos/terraform-provider-genesyscloud",
 					trueValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation::" + formName)},
 					"",
 				),
 			},
 		},
-		CheckDestroy: testVerifyExportsDestroyed,
+		//CheckDestroy: testVerifyExportsDestroyed,
+	})
+}
+
+func TestAccResourceTfExportByName2(t *testing.T) {
+	queueName := fmt.Sprintf("Test Queue %v", uuid.NewString())
+
+	config := fmt.Sprintf(`
+resource "genesyscloud_routing_queue" "test_queue" {
+  name                              = "%v"
+  description                       = "This is a test queue"
+  acw_wrapup_prompt                 = "MANDATORY_TIMEOUT"
+  acw_timeout_ms                    = 300000
+  skill_evaluation_method           = "BEST"
+  auto_answer_only                  = true
+  enable_transcription              = true
+  enable_manual_assignment          = true
+  calling_party_name                = "Example Inc."
+  media_settings_call {
+    alerting_timeout_sec      = 30
+    service_level_percentage  = 0.7
+    service_level_duration_ms = 10000
+  }
+  routing_rules {
+    operator     = "MEETS_THRESHOLD"
+    threshold    = 9
+    wait_seconds = 300
+  }
+  default_script_ids = {
+    EMAIL = "153fcff5-597e-4f17-94e5-17eac456a0b2"
+    CHAT  = "98dff282-c50c-4c36-bc70-80b058564e1b"
+  }
+}
+
+`, queueName)
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				Config: config + generateTfExportByName(
+					"export",
+					"/Users/ronanwatkins/genesys_src/repos/terraform-provider-genesyscloud",
+					trueValue,
+					[]string{strconv.Quote("genesyscloud_routing_queue::" + queueName)},
+					"",
+				),
+			},
+		},
+		//CheckDestroy: testVerifyExportsDestroyed,
 	})
 }
 

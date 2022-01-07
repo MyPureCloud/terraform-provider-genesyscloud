@@ -238,19 +238,34 @@ func instanceStateToHCLBlock(resType, resName string, json jsonMap) []byte {
 
 func addBody(body *hclwrite.Body, json jsonMap) {
 	for k, v := range json {
-		addValue(body, k, v)
+		_, isMap := v.(map[string]interface{})
+		addValue(body, k, v, isMap)
 	}
 }
 
-func addValue(body *hclwrite.Body, k string, v interface{}) {
+func addValue(body *hclwrite.Body, k string, v interface{}, isMap bool) {
 	if vStr, ok := v.(string); ok {
 		body.SetAttributeValue(k, zclconfCty.StringVal(vStr))
 	} else if vBool, ok := v.(bool); ok {
 		body.SetAttributeValue(k, zclconfCty.BoolVal(vBool))
 	} else if vInt, ok := v.(int); ok {
 		body.SetAttributeValue(k, zclconfCty.NumberIntVal(int64(vInt)))
+	} else if vMap, ok := v.(map[string]interface{}); ok {
+		if isMap {
+			vals := make(map[string]zclconfCty.Value)
+			for kk, vv := range vMap {
+				// TODO handle other types
+				if vStr, ok := vv.(string); ok {
+					vals[kk] = zclconfCty.StringVal(vStr)
+				}
+			}
+			body.SetAttributeValue(k, zclconfCty.MapVal(vals))
+		} else {
+			newBlock := body.AppendNewBlock(k, []string{})
+			newBody := newBlock.Body()
+			addBody(newBody, vMap)
+		}
 	}
-	// TODO Need to add support for int32, int64, float32, float64, map[string]interface{} (probably use recursion or call addBody), []interface{} (probably have to iterate over and determine type and use zclconfCty.ListVal())
 }
 
 func sourceForVersion(version string) string {
