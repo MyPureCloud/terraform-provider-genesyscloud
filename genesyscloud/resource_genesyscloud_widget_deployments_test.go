@@ -133,7 +133,7 @@ func TestAccResourceWidgetDeploymentV1Widget(t *testing.T) {
 		authenticationRequired: "true",
 		disabled:               "true",
 		webChatSkin: "basic",
-		authenticationUrl: "https://localhost/",
+		authenticationUrl: "https://localhost",
 	}
 
 	resource.Test(t, resource.TestCase{
