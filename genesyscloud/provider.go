@@ -109,6 +109,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_tf_export":                                   resourceTfExport(),
 				"genesyscloud_user":                                        resourceUser(),
 				"genesyscloud_user_roles":                                  resourceUserRoles(),
+				"genesyscloud_widget_deployments":                          resourceWidgetDeployment(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"genesyscloud_architect_datatable":                         dataSourceArchitectDatatable(),

@@ -180,6 +180,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_telephony_providers_edges_trunk":             trunkExporter(),
 		"genesyscloud_user":                                        userExporter(),
 		"genesyscloud_user_roles":                                  userRolesExporter(),
+		"genesyscloud_widget_deployments":                           widgetDeploymentExporter(),
 	}
 
 	// Include all if no filters
