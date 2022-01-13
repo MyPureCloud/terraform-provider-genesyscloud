@@ -15,6 +15,16 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
+const (
+	V1            = "v1"
+	V1HTTP        = "v1-http"
+	V2            = "v2"
+	THIRDPARTY    = "third-party"
+	HTTPSPROTOCOL = "https"
+	WEBSKINBASIC  = "basic"
+	WEBSKINMODERN = "modern-caret-skin"
+)
+
 var (
 	clientConfigSchemaResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -22,12 +32,12 @@ var (
 				Description:  "Skin for the webchat user. (basic, modern-caret-skin)",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"basic", "modern-caret-skin"}, false),
+				ValidateFunc: validation.StringInSlice([]string{WEBSKINBASIC, WEBSKINMODERN}, false),
 			},
 			"authentication_url": {
-				Description: "Url endpoint to perform_authentication",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "Url endpoint to perform_authentication",
+				Type:             schema.TypeString,
+				Required:         true,
 				ValidateDiagFunc: validateAuthURL,
 			},
 		},
@@ -90,13 +100,13 @@ func validateAuthURL(authUrl interface{}, _ cty.Path) diag.Diagnostics {
 		return diag.Errorf("Authorization url %s provided is not a valid URL", authUrlString)
 	}
 
-	if u.Scheme == "" || u.Host == ""  {
+	if u.Scheme == "" || u.Host == "" {
 		log.Printf("Scheme: %s", u.Scheme)
 		log.Printf("Host: %s", u.Host)
 		return diag.Errorf("Authorization url %s provided is not valid url", authUrlString)
 	}
 
-	if u.Scheme != "https"  {
+	if u.Scheme != HTTPSPROTOCOL {
 		return diag.Errorf("Authorization url %s provided must begin with https", authUrlString)
 	}
 
@@ -107,20 +117,19 @@ func buildSDKClientConfig(clientType string, d *schema.ResourceData) (*platformc
 	widgetClientConfig := &platformclientv2.Widgetclientconfig{}
 	clientConfig := d.Get("client_config").(*schema.Set)
 
-	if (clientType == "v1" || clientType == "v1-http") && clientConfig.Len() == 0 {
+	if (clientType == V1 || clientType == V1HTTP) && clientConfig.Len() == 0 {
 		return nil, fmt.Errorf("V1 and v1-http widget configurations must have a client_config defined. ")
 	}
 
-	if clientType == "v1" {
+	if clientType == V1 {
 		v1Client := &platformclientv2.Widgetclientconfigv1{}
 
 		v1Client.WebChatSkin, v1Client.AuthenticationUrl = parseSdkClientConfigData(d)
 
-
 		widgetClientConfig.V1 = v1Client
 	}
 
-	if clientType == "v1-http" {
+	if clientType == V1HTTP {
 		v1HttpClient := &platformclientv2.Widgetclientconfigv1http{}
 		v1HttpClient.WebChatSkin, v1HttpClient.AuthenticationUrl = parseSdkClientConfigData(d)
 		widgetClientConfig.V1Http = v1HttpClient
@@ -188,7 +197,7 @@ func resourceWidgetDeployment() *schema.Resource {
 				Description:  "The type of display widget for which this Deployment is configured, which controls the administrator settings shown.Valid values: v1, v2, v1-http, third-party.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"v1", "v2", "v1-http", "third-party"}, false),
+				ValidateFunc: validation.StringInSlice([]string{V1, V2, V1HTTP, THIRDPARTY}, false),
 			},
 
 			"client_config": {
@@ -207,7 +216,7 @@ func flattenClientConfig(clientType string, clientConfig platformclientv2.Widget
 
 	clientConfigMap := make(map[string]interface{})
 
-	if clientType == "v1" {
+	if clientType == V1 {
 		if clientConfig.V1.WebChatSkin != nil {
 			clientConfigMap["webchat_skin"] = *clientConfig.V1.WebChatSkin
 		}
@@ -217,7 +226,7 @@ func flattenClientConfig(clientType string, clientConfig platformclientv2.Widget
 		}
 	}
 
-	if clientType == "v1-http" {
+	if clientType == V1HTTP {
 		if clientConfig.V1Http.WebChatSkin != nil {
 			clientConfigMap["webchat_skin"] = *clientConfig.V1Http.WebChatSkin
 		}
