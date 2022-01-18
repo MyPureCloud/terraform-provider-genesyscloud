@@ -37,7 +37,8 @@ var (
 			"authentication_url": {
 				Description:      "Url endpoint to perform_authentication",
 				Type:             schema.TypeString,
-				Required:         true,
+				Required:         false,
+				Optional:         true,
 				ValidateDiagFunc: validateAuthURL,
 			},
 		},

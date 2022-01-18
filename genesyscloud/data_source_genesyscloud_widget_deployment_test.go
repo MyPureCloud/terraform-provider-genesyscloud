@@ -47,6 +47,7 @@ func generateWidgetDeploymentDataSource(
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_widget_deployment" "%s" {
 		name = %s
+        depends_on=[%s]
 	}
-	`, resourceID, name)
+	`, resourceID, name, dependsOnResource)
 }
