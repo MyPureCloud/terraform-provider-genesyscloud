@@ -37,7 +37,6 @@ var (
 			"authentication_url": {
 				Description:      "Url endpoint to perform_authentication",
 				Type:             schema.TypeString,
-				Required:         false,
 				Optional:         true,
 				ValidateDiagFunc: validateAuthURL,
 			},
@@ -183,7 +182,6 @@ func resourceWidgetDeployment() *schema.Resource {
 				Description: "The list of domains that are approved to use this Deployment; the list will be added to CORS headers for ease of web use",
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Required:    false,
 				Optional:    true,
 			},
 			"client_type": {
@@ -192,7 +190,6 @@ func resourceWidgetDeployment() *schema.Resource {
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{V1, V2, V1HTTP, THIRDPARTY}, false),
 			},
-
 			"client_config": {
 				Description: " The V1 and V1-http client configuration options that should be made available to the clients of this Deployment.",
 				Type:        schema.TypeSet,
