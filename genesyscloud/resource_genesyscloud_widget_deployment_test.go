@@ -29,7 +29,7 @@ func generateWidgetDeployV2(widgetDeploymentConfig *widgetDeploymentConfig) stri
 		flow_id = "%s"
 		client_type = "%s"
 		authentication_required = %s
-        disabled = %s
+		disabled = %s
 	}
 	`, widgetDeploymentConfig.resourceID,
 		widgetDeploymentConfig.name,
