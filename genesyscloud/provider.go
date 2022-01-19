@@ -176,6 +176,7 @@ func getRegionMap() map[string]string {
 		"dca":            "inindca.com",
 		"tca":            "inintca.com",
 		"us-east-1":      "mypurecloud.com",
+		"us-east-2":      "use2.us-gov-pure.cloud",
 		"us-west-2":      "usw2.pure.cloud",
 		"eu-west-1":      "mypurecloud.ie",
 		"eu-west-2":      "euw2.pure.cloud",
