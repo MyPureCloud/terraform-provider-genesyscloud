@@ -110,6 +110,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_tf_export":                                   resourceTfExport(),
 				"genesyscloud_user":                                        resourceUser(),
 				"genesyscloud_user_roles":                                  resourceUserRoles(),
+				"genesyscloud_widget_deployment":                           resourceWidgetDeployment(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"genesyscloud_architect_datatable":                         dataSourceArchitectDatatable(),
@@ -144,6 +145,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_telephony_providers_edges_phonebasesettings": dataSourcePhoneBaseSettings(),
 				"genesyscloud_telephony_providers_edges_trunk":             dataSourceTrunk(),
 				"genesyscloud_telephony_providers_edges_trunkbasesettings": dataSourceTrunkBaseSettings(),
+				"genesyscloud_widget_deployment":                           dataSourceWidgetDeployments(),
 			},
 			ConfigureContextFunc: configure(version),
 		}
