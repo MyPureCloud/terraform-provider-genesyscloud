@@ -49,20 +49,13 @@ func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.C
 	resources := make(ResourceIDMetaMap)
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		widgetDeployments, _, getErr := widgetsAPI.GetWidgetsDeployments()
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of widget deployments: %v", getErr)
-		}
+	widgetDeployments, _, getErr := widgetsAPI.GetWidgetsDeployments()
+	if getErr != nil {
+		return nil, diag.Errorf("Failed to get page of widget deployments: %v", getErr)
+	}
 
-		if widgetDeployments.Entities == nil || len(*widgetDeployments.Entities) == 0 {
-			break
-		}
-
-		for _, widgetDeployment := range *widgetDeployments.Entities {
-			resources[*widgetDeployment.Id] = &ResourceMeta{Name: *widgetDeployment.Name}
-		}
+	for _, widgetDeployment := range *widgetDeployments.Entities {
+		resources[*widgetDeployment.Id] = &ResourceMeta{Name: *widgetDeployment.Name}
 	}
 
 	return resources, nil
@@ -165,7 +158,6 @@ func resourceWidgetDeployment() *schema.Resource {
 				Description: "Name of the Widget Deployment.",
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 			},
 			"description": {
 				Description: "Widget Deployment description.",
@@ -252,10 +244,10 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 
 		if getErr != nil {
 			if isStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to widget deployment %s: %s", d.Id(), getErr))
+				return resource.RetryableError(fmt.Errorf("Failed to read widget deployment %s: %s", d.Id(), getErr))
 			}
 
-			return resource.NonRetryableError(fmt.Errorf("Failed to widget deployment %s: %s", d.Id(), getErr))
+			return resource.NonRetryableError(fmt.Errorf("Failed to read widget deployment %s: %s", d.Id(), getErr))
 		}
 
 		d.Set("name", *currentWidget.Name)
@@ -395,11 +387,11 @@ func updateWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	widget, _, err := widgetsAPI.PutWidgetsDeployment(d.Id(), updateWidget)
 
 	if err != nil {
-		return diag.Errorf("Failed to widget deployment %s, %s", name, err)
+		return diag.Errorf("Failed to update widget deployment %s, %s", name, err)
 	}
 	d.SetId(*widget.Id)
 
-	log.Printf("Finished updating queue %s", name)
+	log.Printf("Finished updating widget deployment %s", name)
 	time.Sleep(5 * time.Second)
 	return readWidgetDeployment(ctx, d, meta)
 }
