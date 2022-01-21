@@ -249,6 +249,117 @@ func TestAccResourceUserAddresses(t *testing.T) {
 	})
 }
 
+func TestAccResourceUserPhone(t *testing.T) {
+	var (
+		addrUserResource1 = "test-user-addr"
+		addrUserName      = "Nancy Terraform"
+		addrEmail1        = "terraform-" + uuid.NewString() + "@example.com"
+		addrPhone1        = "3271"
+		addrPhone2        = "3272"
+		addrExt1          = "353"
+		phoneMediaType    = "PHONE"
+		addrTypeWork      = "WORK"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateUserWithCustomAttrs(
+					addrUserResource1,
+					addrEmail1,
+					addrUserName,
+					generateUserAddresses(
+						generateUserPhoneAddress(
+							nullValue, // number
+							nullValue, // Default to type PHONE
+							nullValue, // Default to type WORK
+							strconv.Quote(addrPhone1), // extension
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "email", addrEmail1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "name", addrUserName),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.extension", addrPhone1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.type", addrTypeWork),
+				),
+			},
+			{
+				Config: generateUserWithCustomAttrs(
+					addrUserResource1,
+					addrEmail1,
+					addrUserName,
+					generateUserAddresses(
+						generateUserPhoneAddress(
+							nullValue, // number
+							nullValue, // Default to type PHONE
+							nullValue, // Default to type WORK
+							strconv.Quote(addrPhone2), // extension
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "email", addrEmail1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "name", addrUserName),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.extension", addrPhone2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.type", addrTypeWork),
+				),
+			},
+			{
+				Config: generateUserWithCustomAttrs(
+					addrUserResource1,
+					addrEmail1,
+					addrUserName,
+					generateUserAddresses(
+						generateUserPhoneAddress(
+							strconv.Quote(addrPhone2), // number
+							nullValue, // Default to type PHONE
+							nullValue, // Default to type WORK
+							nullValue, // extension
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "email", addrEmail1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "name", addrUserName),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.number", addrPhone2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.type", addrTypeWork),
+				),
+			},
+			{
+				Config: generateUserWithCustomAttrs(
+					addrUserResource1,
+					addrEmail1,
+					addrUserName,
+					generateUserAddresses(
+						generateUserPhoneAddress(
+							strconv.Quote(addrPhone2), // number
+							nullValue, // Default to type PHONE
+							nullValue, // Default to type WORK
+							strconv.Quote(addrExt1), // extension
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "email", addrEmail1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "name", addrUserName),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.number", addrPhone2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.extension", addrExt1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr("genesyscloud_user."+addrUserResource1, "addresses.0.phone_numbers.0.type", addrTypeWork),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
 func TestAccResourceUserSkills(t *testing.T) {
 	var (
 		userResource1  = "test-user"

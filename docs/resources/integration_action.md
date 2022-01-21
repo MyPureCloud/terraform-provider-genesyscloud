@@ -91,16 +91,16 @@ resource "genesyscloud_integration_action" "test-action" {
 ### Required
 
 - **category** (String) Category of action. Can be up to 256 characters long.
-- **config_request** (Block List, Min: 1, Max: 1) Configuration of outbound request. (see [below for nested schema](#nestedblock--config_request))
 - **contract_input** (String) JSON Schema that defines the body of the request that the client (edge/architect/postman) is sending to the service, on the /execute path. Changes will create a new action.
 - **contract_output** (String) JSON schema that defines the transformed, successful result that will be sent back to the caller. Changes will create a new action.
-- **integration_id** (String) The ID of the integration this action is associated with. Changes will create a new action.
 - **name** (String) Name of the action. Can be up to 256 characters long
 
 ### Optional
 
+- **config_request** (Block List, Max: 1) Configuration of outbound request. (see [below for nested schema](#nestedblock--config_request))
 - **config_response** (Block List, Max: 1) Configuration of response processing. (see [below for nested schema](#nestedblock--config_response))
 - **id** (String) The ID of this resource.
+- **integration_id** (String) The ID of the integration this action is associated with. Changes will create a new action.
 - **secure** (Boolean) Indication of whether or not the action is designed to accept sensitive data. Changes will create a new action. Defaults to `false`.
 
 <a id="nestedblock--config_request"></a>

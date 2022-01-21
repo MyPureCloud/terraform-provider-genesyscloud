@@ -40,4 +40,13 @@ resource "genesyscloud_idp_gsuite" "gsuite" {
 - **id** (String) The ID of this resource.
 - **relying_party_identifier** (String) String used to identify Genesys Cloud to GSuite.
 - **target_uri** (String) Target URI provided by GSuite.
+- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- **read** (String)
+- **update** (String)
 

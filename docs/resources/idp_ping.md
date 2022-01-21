@@ -40,4 +40,13 @@ resource "genesyscloud_idp_ping" "ping" {
 - **id** (String) The ID of this resource.
 - **relying_party_identifier** (String) String used to identify Genesys Cloud to Ping.
 - **target_uri** (String) Target URI provided by Ping.
+- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- **read** (String)
+- **update** (String)
 

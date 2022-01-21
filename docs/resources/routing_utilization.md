@@ -62,6 +62,7 @@ resource "genesyscloud_routing_utilization" "org-utililzation" {
 - **email** (Block List, Max: 1) Email media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--email))
 - **id** (String) The ID of this resource.
 - **message** (Block List, Max: 1) Message media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--message))
+- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **video** (Block List, Max: 1) Video media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--video))
 
 <a id="nestedblock--call"></a>
@@ -127,6 +128,15 @@ Optional:
 
 - **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
 - **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
+
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- **read** (String)
+- **update** (String)
 
 
 <a id="nestedblock--video"></a>

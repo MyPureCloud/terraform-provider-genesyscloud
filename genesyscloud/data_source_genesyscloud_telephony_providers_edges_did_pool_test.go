@@ -3,17 +3,27 @@ package genesyscloud
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"math/rand"
 	"testing"
+	"time"
 )
 
-
 func TestAccDataSourceDidPoolBasic(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+	n := rand.Intn(9)
 	var (
-		didPoolStartPhoneNumber = "+45465550001"
-		didPoolEndPhoneNumber = "+45465550333"
+		didPoolStartPhoneNumber = fmt.Sprintf("+4546555000%v", n)
+		didPoolEndPhoneNumber = fmt.Sprintf("+4546555000%v", n + 1)
 		didPoolRes = "didPool"
 		didPoolDataRes = "didPoolData"
 	)
+
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	deleteDidPoolWithNumber(didPoolStartPhoneNumber)
+	deleteDidPoolWithNumber(didPoolEndPhoneNumber)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

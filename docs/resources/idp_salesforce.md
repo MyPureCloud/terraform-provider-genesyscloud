@@ -38,4 +38,13 @@ resource "genesyscloud_idp_salesforce" "salesforce" {
 - **disabled** (Boolean) True if Salesforce is disabled. Defaults to `false`.
 - **id** (String) The ID of this resource.
 - **target_uri** (String) Target URI provided by Salesforce.
+- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- **read** (String)
+- **update** (String)
 

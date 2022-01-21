@@ -2,12 +2,13 @@
 page_title: "genesyscloud_widget_deployment Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-Data source for Genesys Cloud Widget Deployment. Select a Widget Deployment by name.
+  Data source for Genesys Cloud Widget Deployment. Select a widget deployment.
 ---
 
 # genesyscloud_widget_deployment (Data Source)
 
-Data source for Genesys Cloud Widget deployment. Select a Widget deployment by name.
+Data source for Genesys Cloud Widget Deployment. Select a widget deployment.
+
 
 ## Example Usage
 
@@ -22,7 +23,9 @@ data "genesyscloud_widget_deployment" "mywidget" {
 
 ### Required
 
-- **name** (String) Widget deployment name.
+<<<<<<< HEAD
+- **name** (String) Widget Deployment Name.
+
 
 ### Optional
 

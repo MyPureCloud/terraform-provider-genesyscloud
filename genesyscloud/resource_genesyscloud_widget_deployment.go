@@ -191,7 +191,6 @@ func resourceWidgetDeployment() *schema.Resource {
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{V1, V2, V1HTTP, THIRDPARTY}, false),
 			},
-
 			"client_config": {
 				Description: " The V1 and V1-http client configuration options that should be made available to the clients of this Deployment.",
 				Type:        schema.TypeSet,
@@ -321,9 +320,16 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Creating widgets deployment %s", name)
+
 	widget, resp, err := widgetsAPI.PostWidgetsDeployments(createWidget)
 
 	log.Printf("Widget created %s with correlation id %s", name, resp.CorrelationID)
+
+	if err != nil {
+		return diag.Errorf("Failed to create widget deployment %s, %s", name, err)
+	}
+
+	widget, _, err = widgetsAPI.PostWidgetsDeployments(createWidget)
 
 	if err != nil {
 		return diag.Errorf("Failed to create widget deployment %s, %s", name, err)
@@ -346,7 +352,6 @@ func deleteWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	time.Sleep(5 * time.Second)
-	q
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := widgetAPI.GetWidgetsDeployment(d.Id())
 		if err != nil {
