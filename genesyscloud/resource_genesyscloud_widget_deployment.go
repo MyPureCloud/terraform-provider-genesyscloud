@@ -48,7 +48,6 @@ var (
 func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(clientConfig)
-
 	widgetDeployments, _, getErr := widgetsAPI.GetWidgetsDeployments()
 	if getErr != nil {
 		return nil, diag.Errorf("Failed to get page of widget deployments: %v", getErr)
@@ -269,7 +268,11 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 			d.Set("authentication_required", nil)
 		}
 
-		d.Set("flow_id", *currentWidget.Flow.Id)
+		if currentWidget.Flow != nil {
+			d.Set("flow_id", *currentWidget.Flow.Id)
+		} else {
+			d.Set("flow_id", nil)
+		}
 
 		if currentWidget.AllowedDomains != nil {
 			d.Set("allowed_domains", *currentWidget.AllowedDomains)
@@ -318,10 +321,12 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Creating widgets deployment %s", name)
-	widget, _, err := widgetsAPI.PostWidgetsDeployments(createWidget)
+	widget, resp, err := widgetsAPI.PostWidgetsDeployments(createWidget)
+
+	log.Printf("Widget created %s with correlation id %s", name, resp.CorrelationID)
 
 	if err != nil {
-		return diag.Errorf("Failed to create widget deploynment %s, %s", name, err)
+		return diag.Errorf("Failed to create widget deployment %s, %s", name, err)
 	}
 	d.SetId(*widget.Id)
 
@@ -341,7 +346,7 @@ func deleteWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	time.Sleep(5 * time.Second)
-
+	q
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := widgetAPI.GetWidgetsDeployment(d.Id())
 		if err != nil {
