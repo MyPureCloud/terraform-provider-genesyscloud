@@ -38,7 +38,9 @@ func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclie
 func architectScheduleGroupsExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllArchitectScheduleGroups),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
 	}
 }
 
@@ -59,6 +61,12 @@ func resourceArchitectScheduleGroups() *schema.Resource {
 				Description: "Name of the schedule group.",
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+			"division_id": {
+				Description: "The division to which this schedule group will belong. If not set, the home division will be used.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 			"description": {
 				Description: "Description of the schedule group.",
@@ -94,6 +102,7 @@ func resourceArchitectScheduleGroups() *schema.Resource {
 
 func createArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
+	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 	timeZone := d.Get("time_zone").(string)
 
@@ -108,6 +117,10 @@ func createArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	// Optional attributes
+	if divisionID != "" {
+		schedGroup.Division = &platformclientv2.Division{Id: &divisionID}
+	}
+
 	if description != "" {
 		schedGroup.Description = &description
 	}
@@ -144,6 +157,7 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		d.Set("name", *scheduleGroup.Name)
+		d.Set("division_id", *scheduleGroup.Division.Id)
 		d.Set("description", nil)
 		if scheduleGroup.Description != nil {
 			d.Set("description", *scheduleGroup.Description)
@@ -174,11 +188,14 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 
 func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
+	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 	timeZone := d.Get("time_zone").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	division := platformclientv2.Division{Id: &divisionID}
 
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current schedule group version
@@ -190,6 +207,7 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("Updating schedule group %s", name)
 		_, resp, putErr := archAPI.PutArchitectSchedulegroup(d.Id(), platformclientv2.Schedulegroup{
 			Name:             &name,
+			Division:		&division,
 			Version:          scheduleGroup.Version,
 			Description:      &description,
 			TimeZone:         &timeZone,

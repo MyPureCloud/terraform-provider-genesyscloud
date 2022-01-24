@@ -64,6 +64,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedulegroups."+schedGroupResource1, "time_zone", time_zone),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedulegroups."+schedGroupResource1, "open_schedules_id.0", "genesyscloud_architect_schedules."+schedResource1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedulegroups."+schedGroupResource1, "closed_schedules_id.0", "genesyscloud_architect_schedules."+schedResource2, "id"),
+					testDefaultHomeDivision("genesyscloud_architect_schedulegroups."+schedGroupResource1),
 				),
 			},
 			{
@@ -105,6 +106,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedulegroups."+schedGroupResource1, "open_schedules_id.0", "genesyscloud_architect_schedules."+schedResource1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedulegroups."+schedGroupResource1, "closed_schedules_id.0", "genesyscloud_architect_schedules."+schedResource2, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedulegroups."+schedGroupResource1, "holiday_schedules_id.0", "genesyscloud_architect_schedules."+schedResource3, "id"),
+					testDefaultHomeDivision("genesyscloud_architect_schedulegroups."+schedGroupResource1),
 				),
 			},
 			{

@@ -41,6 +41,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "end", end),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "rrule", rrule),
+					testDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
 				),
 			},
 			{
@@ -59,6 +60,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start2),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "end", end),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "rrule", rrule),
+					testDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
 				),
 			},
 			{
