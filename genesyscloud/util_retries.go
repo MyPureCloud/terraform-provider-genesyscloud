@@ -14,14 +14,25 @@ import (
 )
 
 func withRetries(ctx context.Context, timeout time.Duration, method func() *resource.RetryError) diag.Diagnostics {
-	return diag.FromErr(resource.RetryContext(ctx, timeout, method))
+	err := diag.FromErr(resource.RetryContext(ctx, timeout, method))
+	if err != nil && strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
+		ctx, _ := context.WithTimeout(context.Background(), timeout)
+		return withRetries(ctx, timeout, method)
+	}
+	return err
 }
 
 func withRetriesForRead(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *resource.RetryError) diag.Diagnostics {
 	err := diag.FromErr(resource.RetryContext(ctx, timeout, method))
-	if err != nil && strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
-		// Set ID empty if the object isn't found after the specified timeout
-		d.SetId("")
+	if err != nil {
+		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
+			// Set ID empty if the object isn't found after the specified timeout
+			d.SetId("")
+		}
+		if strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
+			ctx, _ := context.WithTimeout(context.Background(), timeout)
+			return withRetriesForRead(ctx, timeout, d, method)
+		}
 	}
 	return err
 }

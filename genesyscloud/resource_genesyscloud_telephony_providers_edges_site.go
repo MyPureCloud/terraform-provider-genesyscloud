@@ -292,7 +292,13 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	diagErr = updateSiteOutboundRoutes(d, edgesAPI)
+	diagErr = withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+		diagErr = updateSiteOutboundRoutes(d, edgesAPI)
+		if diagErr != nil {
+			return resource.RetryableError(fmt.Errorf(fmt.Sprintf("%v", diagErr), d.Id()))
+		}
+		return nil
+	})
 	if diagErr != nil {
 		return diagErr
 	}
@@ -307,7 +313,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading site %s", d.Id())
-	return withRetriesForRead(ctx, 90*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 60*time.Second, d, func() *resource.RetryError {
 		currentSite, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {

@@ -294,7 +294,7 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	// Give time for public API caches to update
 	// It takes a long time with auth resources
-	time.Sleep(60 * time.Second)
+	time.Sleep(90 * time.Second)
 	return readAuthRole(ctx, d, meta)
 }
 
