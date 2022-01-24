@@ -38,7 +38,7 @@ func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclie
 func architectScheduleGroupsExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllArchitectScheduleGroups),
-		RefAttrs:         map[string]*RefAttrSettings{
+		RefAttrs: map[string]*RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
@@ -207,7 +207,7 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("Updating schedule group %s", name)
 		_, resp, putErr := archAPI.PutArchitectSchedulegroup(d.Id(), platformclientv2.Schedulegroup{
 			Name:             &name,
-			Division:		&division,
+			Division:         &division,
 			Version:          scheduleGroup.Version,
 			Description:      &description,
 			TimeZone:         &timeZone,

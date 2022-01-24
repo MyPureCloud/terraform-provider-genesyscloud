@@ -39,7 +39,7 @@ func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.
 func architectSchedulesExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllArchitectSchedules),
-		RefAttrs:         map[string]*RefAttrSettings{
+		RefAttrs: map[string]*RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
@@ -228,7 +228,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		_, resp, putErr := archAPI.PutArchitectSchedule(d.Id(), platformclientv2.Schedule{
 			Name:        &name,
 			Version:     sched.Version,
-			Division:	&division,
+			Division:    &division,
 			Description: &description,
 			Start:       &schedStart,
 			End:         &schedEnd,
