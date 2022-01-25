@@ -195,8 +195,6 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	division := platformclientv2.Division{Id: &divisionID}
-
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current schedule group version
 		scheduleGroup, resp, getErr := archAPI.GetArchitectSchedulegroup(d.Id())
@@ -207,7 +205,7 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("Updating schedule group %s", name)
 		_, resp, putErr := archAPI.PutArchitectSchedulegroup(d.Id(), platformclientv2.Schedulegroup{
 			Name:             &name,
-			Division:         &division,
+			Division:         &platformclientv2.Division{Id: &divisionID},
 			Version:          scheduleGroup.Version,
 			Description:      &description,
 			TimeZone:         &timeZone,

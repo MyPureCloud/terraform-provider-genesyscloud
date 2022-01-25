@@ -136,7 +136,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Creating schedule %s", name)
 	schedule, _, getErr := archAPI.PostArchitectSchedules(sched)
 	if getErr != nil {
-		return diag.Errorf("Failed to create schedule %s: | Start: %s, | End: %s, | ERROR: %s", *sched.Name, *sched.Start, *sched.End, getErr)
+		return diag.Errorf("Failed to create schedule %s | ERROR: %s", *sched.Name, getErr)
 	}
 
 	d.SetId(*schedule.Id)
@@ -215,8 +215,6 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to parse date %s: %s", end, err)
 	}
 
-	division := platformclientv2.Division{Id: &divisionID}
-
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current schedule version
 		sched, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
@@ -228,7 +226,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		_, resp, putErr := archAPI.PutArchitectSchedule(d.Id(), platformclientv2.Schedule{
 			Name:        &name,
 			Version:     sched.Version,
-			Division:    &division,
+			Division:    &platformclientv2.Division{Id: &divisionID},
 			Description: &description,
 			Start:       &schedStart,
 			End:         &schedEnd,
