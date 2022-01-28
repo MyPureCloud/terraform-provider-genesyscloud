@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"strings"
 	"testing"
 )
 
@@ -20,6 +21,20 @@ type widgetDeploymentConfig struct {
 	clientType             string
 	webChatSkin            string
 	authenticationUrl      string
+}
+
+func deleteWidgetDeploymentWithName(name string) {
+	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
+	widgetDeployments, _, getErr := widgetsAPI.GetWidgetsDeployments()
+	if getErr != nil {
+		return
+	}
+
+	for _, widgetDeployment := range *widgetDeployments.Entities {
+		if strings.Contains(*widgetDeployment.Name, name) {
+			widgetsAPI.DeleteWidgetsDeployment(*widgetDeployment.Id)
+		}
+	}
 }
 
 func generateWidgetDeployV2(widgetDeploymentConfig *widgetDeploymentConfig) string {
@@ -47,8 +62,8 @@ func generateWidgetDeployV1(widgetDeploymentConfig *widgetDeploymentConfig) stri
 		flow_id = "%s"
 		client_type = "%s"
 		authentication_required = %s
-        disabled = %s
-        client_config {
+		disabled = %s
+		client_config {
     		authentication_url = "%s"
     		webchat_skin       = "%s"
   		}
@@ -65,15 +80,22 @@ func generateWidgetDeployV1(widgetDeploymentConfig *widgetDeploymentConfig) stri
 }
 
 func TestAccResourceWidgetDeploymentV2Widget(t *testing.T) {
+	name := "My Test V2 Widget"
 	widgetDeployV2 := &widgetDeploymentConfig{
 		resourceID:             "myTestV2Widget",
-		name:                   "My Test V2 Widget",
+		name:                   name + uuid.NewString(),
 		description:            "This is a test description",
 		flowID:                 uuid.NewString(),
 		clientType:             "v2",
 		authenticationRequired: "false",
 		disabled:               "true",
 	}
+
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	deleteWidgetDeploymentWithName(name)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -124,9 +146,10 @@ func TestAccResourceWidgetDeploymentV2Widget(t *testing.T) {
 }
 
 func TestAccResourceWidgetDeploymentV1Widget(t *testing.T) {
+	name := "My Text V1 Widget"
 	widgetDeployV1 := &widgetDeploymentConfig{
 		resourceID:             "myTestV1Widget",
-		name:                   "My Text V1 Widget",
+		name:                   name + uuid.NewString(),
 		description:            "This is a test description",
 		flowID:                 uuid.NewString(),
 		clientType:             "v1",
@@ -135,6 +158,12 @@ func TestAccResourceWidgetDeploymentV1Widget(t *testing.T) {
 		webChatSkin:            "basic",
 		authenticationUrl:      "https://localhost",
 	}
+
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	deleteWidgetDeploymentWithName(name)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

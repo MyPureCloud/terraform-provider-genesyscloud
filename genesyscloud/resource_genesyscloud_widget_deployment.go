@@ -322,18 +322,10 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Creating widgets deployment %s", name)
 
 	widget, resp, err := widgetsAPI.PostWidgetsDeployments(createWidget)
-
+	if err != nil {
+		return diag.Errorf("Failed to create widget deployment %s, %s", name, err)
+	}
 	log.Printf("Widget created %s with correlation id %s", name, resp.CorrelationID)
-
-	if err != nil {
-		return diag.Errorf("Failed to create widget deployment %s, %s", name, err)
-	}
-
-	widget, _, err = widgetsAPI.PostWidgetsDeployments(createWidget)
-
-	if err != nil {
-		return diag.Errorf("Failed to create widget deployment %s, %s", name, err)
-	}
 	d.SetId(*widget.Id)
 
 	return readWidgetDeployment(ctx, d, meta)
@@ -395,7 +387,6 @@ func updateWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Updating widget deployment %s", name)
 	widget, _, err := widgetsAPI.PutWidgetsDeployment(d.Id(), updateWidget)
-
 	if err != nil {
 		return diag.Errorf("Failed to update widget deployment %s, %s", name, err)
 	}

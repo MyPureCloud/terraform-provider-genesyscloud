@@ -12,12 +12,12 @@ func TestWidgetDeploymentConfig(t *testing.T) {
 	var (
 		widgegetDeploymentsResource = "widget-deployments"
 		widgetDeploymentsDataSource = "widget-deployments-data"
-		widgetDeploymentsName       = "Widget_deployments-" + uuid.NewString()
+		widgetDeploymentsName       = "Widget_deployments-"
 	)
 
 	widgetDeployV1 := &widgetDeploymentConfig{
 		resourceID:             widgegetDeploymentsResource,
-		name:                   widgetDeploymentsName,
+		name:                   widgetDeploymentsName + uuid.NewString(),
 		description:            "This is a test description",
 		flowID:                 uuid.NewString(),
 		clientType:             "v1",
@@ -26,6 +26,12 @@ func TestWidgetDeploymentConfig(t *testing.T) {
 		webChatSkin:            "basic",
 		authenticationUrl:      "https://localhost",
 	}
+
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	deleteWidgetDeploymentWithName(widgetDeploymentsName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
