@@ -135,6 +135,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					trueValue,
 					[]string{strconv.Quote("genesyscloud_user::" + userEmail1)},
 					"",
+					falseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_tf_export."+exportResource1,
@@ -169,6 +170,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 						strconv.Quote("genesyscloud_routing_queue::" + queueName),
 					},
 					"",
+					falseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_tf_export."+exportResource1,
@@ -207,6 +209,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 						strconv.Quote("genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					},
 					"",
+					falseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
@@ -256,6 +259,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 						strconv.Quote("genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					},
 					"",
+					falseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
@@ -283,9 +287,10 @@ func TestAccResourceTfExportByName(t *testing.T) {
 
 func TestAccResourceTfExportByName1(t *testing.T) {
 	var (
+		exportedContents string
+		pathToHclFile = exportTestDir + "/" + defaultTfHCLFile
 		formResource1 = "test-evaluation-form-1"
-
-		formName = "terraform-form-evaluations-" + uuid.NewString()
+		formName = "terraform_form_evaluations_" + uuid.NewString()
 
 		// Complete evaluation form
 		evaluationForm1 = evaluationFormStruct{
@@ -322,7 +327,7 @@ func TestAccResourceTfExportByName1(t *testing.T) {
 							isCritical:       true,
 							visibilityCondition: visibilityConditionStruct{
 								combiningOperation: "AND",
-								predicates:         []string{"/form/questionGroup/0/question/0/answer/1"},
+								predicates:         []string{"/form/questionGroup/0/question/0/answer/0", "/form/questionGroup/0/question/0/answer/1"},
 							},
 							answerOptions: []answerOptionStruct{
 								{
@@ -364,9 +369,6 @@ func TestAccResourceTfExportByName1(t *testing.T) {
 		}
 	)
 
-	// TODO Need to see that the exported HCL config matches this. The order of parameters can be different
-	fmt.Println(generateEvaluationFormResource(formResource1, &evaluationForm1))
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -381,6 +383,35 @@ func TestAccResourceTfExportByName1(t *testing.T) {
 					trueValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation::" + formName)},
 					"",
+					trueValue,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					getExportedFileContents(pathToHclFile, &exportedContents),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyed,
+	})
+
+	exportedContents = removeTfBlock(exportedContents)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: exportedContents,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "name", formName),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "published", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.name", evaluationForm1.questionGroups[0].name),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.weight", fmt.Sprintf("%v", evaluationForm1.questionGroups[0].weight)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.questions.1.text", evaluationForm1.questionGroups[0].questions[1].text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.1.questions.0.answer_options.0.text", evaluationForm1.questionGroups[1].questions[0].answerOptions[0].text),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.1.questions.0.answer_options.1.value", fmt.Sprintf("%v", evaluationForm1.questionGroups[1].questions[0].answerOptions[1].value)),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.questions.1.visibility_condition.0.combining_operation", evaluationForm1.questionGroups[0].questions[1].visibilityCondition.combiningOperation),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.questions.1.visibility_condition.0.predicates.0", evaluationForm1.questionGroups[0].questions[1].visibilityCondition.predicates[0]),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation." + formName, "question_groups.0.questions.1.visibility_condition.0.predicates.1", evaluationForm1.questionGroups[0].questions[1].visibilityCondition.predicates[1]),
 				),
 			},
 		},
@@ -389,35 +420,52 @@ func TestAccResourceTfExportByName1(t *testing.T) {
 }
 
 func TestAccResourceTfExportByName2(t *testing.T) {
-	queueName := fmt.Sprintf("Test Queue %v", uuid.NewString())
+	var exportContents string
+
+	pathToHclFile := exportTestDir + "/" + defaultTfHCLFile
+	queueName := fmt.Sprintf("Charlie_Test_Queue_%v", uuid.NewString())
+	queueID := queueName
+	description := "This is a test queue"
+	autoAnswerOnly := "true"
+
+	alertTimeoutSec := "30"
+	slPercentage := "0.7"
+	slDurationMs := "10000"
+
+	rrOperator := "MEETS_THRESHOLD"
+	rrThreshold := "9"
+	rrWaitSeconds := "300"
+
+	chatScriptID := "81ddba00-9fad-11e7-9a00-3137c42c4ae9"
+	emailScriptID := "153fcff5-597e-4f17-94e5-17eac456a0b2"
 
 	config := fmt.Sprintf(`
-resource "genesyscloud_routing_queue" "test_queue" {
-  name                              = "%v"
-  description                       = "This is a test queue"
-  acw_wrapup_prompt                 = "MANDATORY_TIMEOUT"
-  acw_timeout_ms                    = 300000
-  skill_evaluation_method           = "BEST"
-  auto_answer_only                  = true
-  enable_transcription              = true
-  enable_manual_assignment          = true
-  calling_party_name                = "Example Inc."
-  media_settings_call {
-    alerting_timeout_sec      = 30
-    service_level_percentage  = 0.7
-    service_level_duration_ms = 10000
-  }
-  routing_rules {
-    operator     = "MEETS_THRESHOLD"
-    threshold    = 9
-    wait_seconds = 300
-  }
-  default_script_ids = {
-    EMAIL = "153fcff5-597e-4f17-94e5-17eac456a0b2"
-    CHAT  = "81ddba00-9fad-11e7-9a00-3137c42c4ae9"
-  }
+resource "genesyscloud_routing_queue" "%s" {
+ name                              = "%s"
+ description                       = "%s"
+ acw_wrapup_prompt                 = "MANDATORY_TIMEOUT"
+ acw_timeout_ms                    = 300000
+ skill_evaluation_method           = "BEST"
+ auto_answer_only                  = %s
+ enable_transcription              = true
+ enable_manual_assignment          = true
+ calling_party_name                = "Example Inc."
+ media_settings_call {
+   alerting_timeout_sec      = %s
+   service_level_percentage  = %s
+   service_level_duration_ms = %s
+ }
+ routing_rules {
+   operator     = "%s"
+   threshold    = %s
+   wait_seconds = %s
+ }
+ default_script_ids = {
+   EMAIL = "%s"
+   CHAT  = "%s"
+ }
 }
-`, queueName)
+`, queueID, queueName, description, autoAnswerOnly, alertTimeoutSec, slPercentage, slDurationMs, rrOperator, rrThreshold, rrWaitSeconds, emailScriptID, chatScriptID)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -427,17 +475,46 @@ resource "genesyscloud_routing_queue" "test_queue" {
 				Config: config,
 			},
 			{
-				Config: config + generateTfExportByName(
-					"export",
-					"/Users/cconneel/dev/genesys_src/repos/terraform-provider-genesyscloud",
+				Config: config + generateTfExportByName("export",
+					exportTestDir,
 					trueValue,
 					[]string{strconv.Quote("genesyscloud_routing_queue::" + queueName)},
 					"",
+					trueValue,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					getExportedFileContents(pathToHclFile, &exportContents),
 				),
 			},
 		},
 		//CheckDestroy: testVerifyExportsDestroyed,
 	})
+
+	exportContents = removeTfBlock(exportContents)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: exportContents,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue." + queueID, "name", queueName),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue." + queueID, "description", description),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue." + queueID, "auto_answer_only", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue." + queueID, "default_script_ids.CHAT", chatScriptID),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue." + queueID, "default_script_ids.EMAIL", emailScriptID),
+					validateMediaSettings(queueID, "media_settings_call", alertTimeoutSec, slPercentage, slDurationMs),
+					validateRoutingRules(queueID, 0, rrOperator, rrThreshold, rrWaitSeconds),
+				),
+			},
+		},
+	})
+}
+
+func removeTfBlock(export string) string {
+	tfBlock := "terraform {\n  required_providers {\n    genesyscloud = {\n      source  = \"genesys.com/mypurecloud/genesyscloud\"\n      version = \"0.1.0\"\n    }\n  }\n}\n"
+	return strings.Replace(export, tfBlock, "", -1)
 }
 
 func testUserExport(filePath, resourceType, resourceName string, expectedUser *UserExport) resource.TestCheckFunc {
@@ -671,15 +748,27 @@ func generateTfExportByName(
 	directory string,
 	includeState string,
 	items []string,
-	excludedAttributes string) string {
+	excludedAttributes string,
+	exportAsHCL string) string {
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
 		directory = "%s"
 		include_state_file = %s
 		resource_types = [%s]
 		exclude_attributes = [%s]
-		export_as_hcl = true
+		export_as_hcl = %s
     }
-	`, resourceID, directory, includeState, strings.Join(items, ","), excludedAttributes)
+	`, resourceID, directory, includeState, strings.Join(items, ","), excludedAttributes, exportAsHCL)
+}
+
+func getExportedFileContents(filename string, result *string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		d, err := ioutil.ReadFile(filename)
+		if err != nil {
+			return fmt.Errorf("error reading file: %v\n", err)
+		}
+		*result = string(d)
+		return nil
+	}
 }
 
 func validateFileCreated(filename string) resource.TestCheckFunc {

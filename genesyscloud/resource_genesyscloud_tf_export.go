@@ -4,13 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	zclconfCty "github.com/zclconf/go-cty/cty"
 	"hash/fnv"
 	"io/ioutil"
 	"log"
@@ -21,6 +14,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	zclconfCty "github.com/zclconf/go-cty/cty"
 )
 
 const (
@@ -122,8 +123,9 @@ type resourceInfo struct {
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var defaultFileName string
+	exportAsHCL := d.Get("export_as_hcl").(bool)
 
-	if d.Get("export_as_hcl").(bool) {
+	if exportAsHCL {
 		defaultFileName = defaultTfHCLFile
 	} else {
 		defaultFileName = defaultTfJSONFile
@@ -199,7 +201,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 		}
 
-		if d.Get("export_as_hcl").(bool) {
+		if exportAsHCL {
 			resourceTypeHCLBlocks = append(resourceTypeHCLBlocks, instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
 		} else {
 			resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
@@ -213,7 +215,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 	}
 
-	if d.Get("export_as_hcl").(bool) {
+	if exportAsHCL {
 		f := hclwrite.NewEmptyFile()
 		rootBody := f.Body()
 		tfBlock := rootBody.AppendNewBlock("terraform", nil)
@@ -257,8 +259,9 @@ func instanceStateToHCLBlock(resType, resName string, json jsonMap) []byte {
 
 	addBody(barBody, json)
 
-	fmt.Printf("%s\n", f.Bytes())
-	return f.Bytes()
+	newCopy := strings.Replace(fmt.Sprintf("%s", f.Bytes()), "$${", "${", -1)
+	fmt.Printf("%s\n", newCopy)
+	return []byte(newCopy)
 }
 
 func addBody(body *hclwrite.Body, json jsonMap) {
@@ -323,7 +326,7 @@ func handleInterfaceArray(body *hclwrite.Body, k string, v []interface{}) {
 			for key, value := range valMap {
 				addValue(block.Body(), key, value)
 			}
-		// k = [ ... ]
+			// k = [ ... ]
 		} else {
 			listItems = append(listItems, getCtyValue(val))
 		}
