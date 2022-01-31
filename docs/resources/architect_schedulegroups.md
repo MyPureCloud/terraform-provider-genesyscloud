@@ -42,7 +42,7 @@ resource "genesyscloud_architect_schedulegroups" "test_schedule_groups" {
 
 - **closed_schedules_id** (Set of String) The schedules defining the hours an organization is closed.
 - **description** (String) Description of the schedule group.
-- **division_id** (String) The division to which this schedule group will belong. If not set, the home division will be used.
+- **division_id** (String) The division to which this schedule group will belong. If not set, the home division will be used. If set, you must have all divisions and future divisions selected in your OAuth client role
 - **holiday_schedules_id** (Set of String) The schedules defining the hours an organization is closed for the holidays.
 - **id** (String) The ID of this resource.
 - **open_schedules_id** (Set of String) The schedules defining the hours an organization is open.

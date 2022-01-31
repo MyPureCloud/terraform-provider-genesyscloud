@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -65,7 +66,7 @@ func resourceArchitectSchedules() *schema.Resource {
 				ForceNew:    true,
 			},
 			"division_id": {
-				Description: "The division to which this schedule will belong. If not set, the home division will be used.",
+				Description: "The division to which this schedule group will belong. If not set, the home division will be used. If set, you must have all divisions and future divisions selected in your OAuth client role",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
@@ -136,7 +137,11 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Creating schedule %s", name)
 	schedule, _, getErr := archAPI.PostArchitectSchedules(sched)
 	if getErr != nil {
-		return diag.Errorf("Failed to create schedule %s | ERROR: %s", *sched.Name, getErr)
+		msg := ""
+		if strings.Contains(fmt.Sprintf("%v", getErr), "routing:schedule:add") {
+			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
+		}
+		return diag.Errorf("Failed to create schedule %s | ERROR: %s%s", *sched.Name, getErr, msg)
 	}
 
 	d.SetId(*schedule.Id)
@@ -233,7 +238,11 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 			Rrule:       &rrule,
 		})
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update schedule %s: %s", d.Id(), putErr)
+			msg := ""
+			if strings.Contains(fmt.Sprintf("%v", getErr), "routing:schedule:add") {
+				msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
+			}
+			return resp, diag.Errorf("Failed to update schedule %s | ERROR: %s%s", *sched.Name, getErr, msg)
 		}
 		return resp, nil
 	})

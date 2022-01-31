@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -63,7 +64,7 @@ func resourceArchitectScheduleGroups() *schema.Resource {
 				Required:    true,
 			},
 			"division_id": {
-				Description: "The division to which this schedule group will belong. If not set, the home division will be used.",
+				Description: "The division to which this schedule group will belong. If not set, the home division will be used. If set, you must have all divisions and future divisions selected in your OAuth client role",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
@@ -132,7 +133,11 @@ func createArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Creating schedule group %s", name)
 	scheduleGroup, _, getErr := archAPI.PostArchitectSchedulegroups(schedGroup)
 	if getErr != nil {
-		return diag.Errorf("Failed to create schedule group %s | ERROR: %s", name, getErr)
+		msg := ""
+		if strings.Contains(fmt.Sprintf("%v", getErr), "routing:schedule:add") {
+			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
+		}
+		return diag.Errorf("Failed to create schedule group %s | ERROR: %s%s", *schedGroup.Name, getErr, msg)
 	}
 
 	d.SetId(*scheduleGroup.Id)
@@ -214,7 +219,11 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 			HolidaySchedules: buildSdkDomainEntityRefArr(d, "holiday_schedules_id"),
 		})
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update schedule group %s: %s", d.Id(), putErr)
+			msg := ""
+			if strings.Contains(fmt.Sprintf("%v", getErr), "routing:schedule:add") {
+				msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
+			}
+			return resp, diag.Errorf("Failed to update schedule group %s: %s%s", d.Id(), putErr, msg)
 		}
 		return resp, nil
 	})
