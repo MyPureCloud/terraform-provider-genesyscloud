@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -39,7 +40,9 @@ func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.
 func architectSchedulesExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllArchitectSchedules),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs: map[string]*RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
 	}
 }
 
@@ -61,6 +64,12 @@ func resourceArchitectSchedules() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
+			},
+			"division_id": {
+				Description: "The division to which this schedule group will belong. If not set, the home division will be used. If set, you must have all divisions and future divisions selected in your OAuth client role",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 			"description": {
 				Description: "Description of the schedule.",
@@ -90,6 +99,7 @@ func resourceArchitectSchedules() *schema.Resource {
 
 func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
+	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 	start := d.Get("start").(string)
 	end := d.Get("end").(string)
@@ -120,10 +130,18 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		sched.Description = &description
 	}
 
+	if divisionID != "" {
+		sched.Division = &platformclientv2.Division{Id: &divisionID}
+	}
+
 	log.Printf("Creating schedule %s", name)
 	schedule, _, getErr := archAPI.PostArchitectSchedules(sched)
 	if getErr != nil {
-		return diag.Errorf("Failed to create schedule %s: | Start: %s, | End: %s, | ERROR: %s", *sched.Name, *sched.Start, *sched.End, getErr)
+		msg := ""
+		if strings.Contains(fmt.Sprintf("%v", getErr), "routing:schedule:add") {
+			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
+		}
+		return diag.Errorf("Failed to create schedule %s | ERROR: %s%s", *sched.Name, getErr, msg)
 	}
 
 	d.SetId(*schedule.Id)
@@ -164,6 +182,7 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		d.Set("name", *schedule.Name)
+		d.Set("division_id", *schedule.Division.Id)
 		d.Set("description", nil)
 		if schedule.Description != nil {
 			d.Set("description", *schedule.Description)
@@ -182,6 +201,7 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 
 func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
+	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 	start := d.Get("start").(string)
 	end := d.Get("end").(string)
@@ -211,13 +231,18 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		_, resp, putErr := archAPI.PutArchitectSchedule(d.Id(), platformclientv2.Schedule{
 			Name:        &name,
 			Version:     sched.Version,
+			Division:    &platformclientv2.Division{Id: &divisionID},
 			Description: &description,
 			Start:       &schedStart,
 			End:         &schedEnd,
 			Rrule:       &rrule,
 		})
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update schedule %s: %s", d.Id(), putErr)
+			msg := ""
+			if strings.Contains(fmt.Sprintf("%v", getErr), "routing:schedule:add") {
+				msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
+			}
+			return resp, diag.Errorf("Failed to update schedule %s | ERROR: %s%s", *sched.Name, getErr, msg)
 		}
 		return resp, nil
 	})

@@ -13,12 +13,18 @@ import (
 func TestAccResourceArchitectSchedules(t *testing.T) {
 	var (
 		schedResource1 = "arch-sched1"
-		name           = "CX as Code Schedule" + uuid.NewString()
+		name           = "CX as Code Schedule " + uuid.NewString()
 		description    = "Sample Schedule by CX as Code"
 		start          = "2021-08-04T08:00:00.000000"
 		start2         = "2021-08-04T09:00:00.000000"
 		end            = "2021-08-04T17:00:00.000000"
 		rrule          = "FREQ=DAILY;INTERVAL=1"
+
+		schedResource2 = "arch-sched2"
+		name2          = "CX as Code Schedule 2 " + uuid.NewString()
+
+		divResource = "test-division"
+		divName     = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,6 +36,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 				Config: generateArchitectSchedulesResource(
 					schedResource1,
 					name,
+					nullValue,
 					description,
 					start,
 					end,
@@ -41,6 +48,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "end", end),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "rrule", rrule),
+					testDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
 				),
 			},
 			{
@@ -48,6 +56,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 				Config: generateArchitectSchedulesResource(
 					schedResource1,
 					name,
+					nullValue,
 					description,
 					start2,
 					end,
@@ -59,11 +68,32 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start2),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "end", end),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "rrule", rrule),
+					testDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
+				),
+			},
+			{
+				// Create with new division
+				Config: generateAuthDivisionBasic(divResource, divName) + generateArchitectSchedulesResource(
+					schedResource2,
+					name2,
+					"genesyscloud_auth_division."+divResource+".id",
+					description,
+					start,
+					end,
+					rrule,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource2, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource2, "description", description),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource2, "start", start),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource2, "end", end),
+					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource2, "rrule", rrule),
+					resource.TestCheckResourceAttrPair("genesyscloud_architect_schedules."+schedResource2, "division_id", "genesyscloud_auth_division."+divResource, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_architect_schedules." + schedResource1,
+				ResourceName:      "genesyscloud_architect_schedules." + schedResource2,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -75,18 +105,20 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 func generateArchitectSchedulesResource(
 	schedResource1 string,
 	name string,
+	divisionId string,
 	description string,
 	start string,
 	end string,
 	rrule string) string {
 	return fmt.Sprintf(`resource "genesyscloud_architect_schedules" "%s" {
 		name = "%s"
+		division_id = %s
 		description = "%s"
 		start = "%s"
 		end = "%s"
 		rrule = "%s"
 	}
-	`, schedResource1, name, description, start, end, rrule)
+	`, schedResource1, name, divisionId, description, start, end, rrule)
 }
 
 func testVerifySchedulesDestroyed(state *terraform.State) error {

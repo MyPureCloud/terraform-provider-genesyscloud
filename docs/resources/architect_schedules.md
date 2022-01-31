@@ -41,6 +41,7 @@ resource "genesyscloud_architect_schedules" "test_schedule" {
 ### Optional
 
 - **description** (String) Description of the schedule.
+- **division_id** (String) The division to which this schedule group will belong. If not set, the home division will be used. If set, you must have all divisions and future divisions selected in your OAuth client role
 - **id** (String) The ID of this resource.
 - **rrule** (String) An iCal Recurrence Rule (RRULE) string.
 

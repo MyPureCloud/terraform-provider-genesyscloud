@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -38,7 +39,9 @@ func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclie
 func architectScheduleGroupsExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllArchitectScheduleGroups),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs: map[string]*RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
 	}
 }
 
@@ -59,6 +62,12 @@ func resourceArchitectScheduleGroups() *schema.Resource {
 				Description: "Name of the schedule group.",
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+			"division_id": {
+				Description: "The division to which this schedule group will belong. If not set, the home division will be used. If set, you must have all divisions and future divisions selected in your OAuth client role",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 			"description": {
 				Description: "Description of the schedule group.",
@@ -94,6 +103,7 @@ func resourceArchitectScheduleGroups() *schema.Resource {
 
 func createArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
+	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 	timeZone := d.Get("time_zone").(string)
 
@@ -108,6 +118,10 @@ func createArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	// Optional attributes
+	if divisionID != "" {
+		schedGroup.Division = &platformclientv2.Division{Id: &divisionID}
+	}
+
 	if description != "" {
 		schedGroup.Description = &description
 	}
@@ -119,7 +133,11 @@ func createArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Creating schedule group %s", name)
 	scheduleGroup, _, getErr := archAPI.PostArchitectSchedulegroups(schedGroup)
 	if getErr != nil {
-		return diag.Errorf("Failed to create schedule group %s | ERROR: %s", name, getErr)
+		msg := ""
+		if strings.Contains(fmt.Sprintf("%v", getErr), "routing:schedule:add") {
+			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
+		}
+		return diag.Errorf("Failed to create schedule group %s | ERROR: %s%s", *schedGroup.Name, getErr, msg)
 	}
 
 	d.SetId(*scheduleGroup.Id)
@@ -144,6 +162,7 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		d.Set("name", *scheduleGroup.Name)
+		d.Set("division_id", *scheduleGroup.Division.Id)
 		d.Set("description", nil)
 		if scheduleGroup.Description != nil {
 			d.Set("description", *scheduleGroup.Description)
@@ -174,6 +193,7 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 
 func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
+	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 	timeZone := d.Get("time_zone").(string)
 
@@ -190,6 +210,7 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("Updating schedule group %s", name)
 		_, resp, putErr := archAPI.PutArchitectSchedulegroup(d.Id(), platformclientv2.Schedulegroup{
 			Name:             &name,
+			Division:         &platformclientv2.Division{Id: &divisionID},
 			Version:          scheduleGroup.Version,
 			Description:      &description,
 			TimeZone:         &timeZone,
@@ -198,7 +219,11 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 			HolidaySchedules: buildSdkDomainEntityRefArr(d, "holiday_schedules_id"),
 		})
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update schedule group %s: %s", d.Id(), putErr)
+			msg := ""
+			if strings.Contains(fmt.Sprintf("%v", getErr), "routing:schedule:add") {
+				msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
+			}
+			return resp, diag.Errorf("Failed to update schedule group %s: %s%s", d.Id(), putErr, msg)
 		}
 		return resp, nil
 	})

@@ -33,6 +33,7 @@ func TestAccDataSourceArchitectScheduleGroups(t *testing.T) {
 				Config: generateArchitectSchedulesResource( // Create Open schedule
 					schedResource,
 					openSched,
+					nullValue,
 					schedDesc,
 					start,
 					end,
@@ -40,6 +41,7 @@ func TestAccDataSourceArchitectScheduleGroups(t *testing.T) {
 				) + generateArchitectScheduleGroupsResource(
 					schedGroupResource,
 					name,
+					nullValue,
 					description,
 					time_zone,
 					generateSchedules("open_schedules_id", "genesyscloud_architect_schedules."+schedResource+".id"),
