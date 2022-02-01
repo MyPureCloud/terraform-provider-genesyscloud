@@ -288,6 +288,10 @@ func testUserExport(filePath, resourceType, resourceName string, expectedUser *U
 			return err
 		}
 
+		if raw[resourceName] == nil {
+			return fmt.Errorf("expected a resource name for the resource type %s", resourceType)
+		}
+
 		var r *json.RawMessage
 		if err := json.Unmarshal(*raw[resourceName], &r); err != nil {
 			return err

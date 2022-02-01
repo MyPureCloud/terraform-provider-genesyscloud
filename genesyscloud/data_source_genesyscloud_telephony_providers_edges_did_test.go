@@ -20,6 +20,13 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 		didDataRes              = "didData"
 	)
 
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	deleteDidPoolWithNumber(didPoolStartPhoneNumber)
+	deleteDidPoolWithNumber(didPoolEndPhoneNumber)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
