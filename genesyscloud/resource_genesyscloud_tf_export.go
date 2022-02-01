@@ -26,9 +26,12 @@ import (
 
 const (
 	defaultTfJSONFile  = "genesyscloud.tf.json"
-	defaultTfHCLFile   = "genesyscloud.hcl"
+	defaultTfHCLFile   = "genesyscloud.tf"
 	defaultTfStateFile = "terraform.tfstate"
 )
+
+// Used to store the TF config block as a string so that it can be ignored when testing the exported HCL config file.
+var terraformHCLBlock string
 
 func validateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (warnings []string, errors []error) {
@@ -224,7 +227,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 			"source":  zclconfCty.StringVal(providerSource),
 			"version": zclconfCty.StringVal(version),
 		}))
-
+		terraformHCLBlock = fmt.Sprintf("%s", f.Bytes())
 		// prepend terraform block
 		resourceTypeHCLBlocks = append([][]byte{f.Bytes()}, resourceTypeHCLBlocks...)
 		writeHCLToFile(resourceTypeHCLBlocks, filePath)
@@ -254,13 +257,12 @@ func instanceStateToHCLBlock(resType, resName string, json jsonMap) []byte {
 	f := hclwrite.NewEmptyFile()
 	rootBody := f.Body()
 
-	barBlock := rootBody.AppendNewBlock("resource", []string{resType, resName})
-	barBody := barBlock.Body()
+	block := rootBody.AppendNewBlock("resource", []string{resType, resName})
+	body := block.Body()
 
-	addBody(barBody, json)
+	addBody(body, json)
 
 	newCopy := strings.Replace(fmt.Sprintf("%s", f.Bytes()), "$${", "${", -1)
-	fmt.Printf("%s\n", newCopy)
 	return []byte(newCopy)
 }
 
