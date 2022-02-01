@@ -232,8 +232,9 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (Res
 func siteExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getSites),
-		RefAttrs:         map[string]*RefAttrSettings{
+		RefAttrs: map[string]*RefAttrSettings{
 			"location_id": {RefType: "genesyscloud_location"},
+			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 		},
 	}
 }

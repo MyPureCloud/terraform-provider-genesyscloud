@@ -41,6 +41,9 @@ func credentialExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllCredentials),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No Reference
+		UnResolvableAttributes: map[string]*schema.Schema{
+			"fields":               resourceCredential().Schema["fields"],
+		},
 	}
 }
 
