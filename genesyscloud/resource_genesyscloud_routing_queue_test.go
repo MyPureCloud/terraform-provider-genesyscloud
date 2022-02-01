@@ -440,6 +440,13 @@ func generateRoutingRules(operator string, threshold string, waitSeconds string)
 	`, operator, threshold, waitSeconds)
 }
 
+func generateDefaultScriptIDs(chat string, email string) string {
+	return fmt.Sprintf(`default_script_ids = {
+		CHAT  = "%s"
+		EMAIL = "%s"
+	}`, chat, email)
+}
+
 func generateBullseyeSettings(expTimeout string, skillsToRemove ...string) string {
 	return fmt.Sprintf(`bullseye_rings {
 		expansion_timeout_seconds = %s

@@ -4,11 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"hash/fnv"
 	"io/ioutil"
 	"log"
@@ -19,12 +14,24 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	zclconfCty "github.com/zclconf/go-cty/cty"
 )
 
 const (
 	defaultTfJSONFile  = "genesyscloud.tf.json"
+	defaultTfHCLFile   = "genesyscloud.tf"
 	defaultTfStateFile = "terraform.tfstate"
 )
+
+// Used to store the TF config block as a string so that it can be ignored when testing the exported HCL config file.
+var terraformHCLBlock string
 
 func validateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (warnings []string, errors []error) {
@@ -92,6 +99,13 @@ func resourceTfExport() *schema.Resource {
 				Default:     false,
 				ForceNew:    true,
 			},
+			"export_as_hcl": {
+				Description: "Export the config as HCL.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				ForceNew:    true,
+			},
 			"exclude_attributes": {
 				Description: "Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_name}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.",
 				Type:        schema.TypeList,
@@ -111,7 +125,16 @@ type resourceInfo struct {
 }
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	filePath, diagErr := getFilePath(d, defaultTfJSONFile)
+	var defaultFileName string
+	exportAsHCL := d.Get("export_as_hcl").(bool)
+
+	if exportAsHCL {
+		defaultFileName = defaultTfHCLFile
+	} else {
+		defaultFileName = defaultTfJSONFile
+	}
+
+	filePath, diagErr := getFilePath(d, defaultFileName)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -161,6 +184,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	// Generate the JSON config map
 	resourceTypeJSONMaps := make(map[string]map[string]jsonMap)
+	resourceTypeHCLBlocks := make([][]byte, 0)
 	for _, resource := range resources {
 		jsonResult, diagErr := instanceStateToJSONMap(resource.State, resource.CtyType)
 		if diagErr != nil {
@@ -180,7 +204,11 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 		}
 
-		resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
+		if exportAsHCL {
+			resourceTypeHCLBlocks = append(resourceTypeHCLBlocks, instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
+		} else {
+			resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
+		}
 	}
 
 	providerSource := sourceForVersion(version)
@@ -190,25 +218,124 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 	}
 
-	rootJSONObject := jsonMap{
-		"resource": resourceTypeJSONMaps,
-		"terraform": jsonMap{
-			"required_providers": jsonMap{
-				"genesyscloud": jsonMap{
-					"source":  providerSource,
-					"version": version,
+	if exportAsHCL {
+		f := hclwrite.NewEmptyFile()
+		rootBody := f.Body()
+		tfBlock := rootBody.AppendNewBlock("terraform", nil)
+		requiredProvidersBlock := tfBlock.Body().AppendNewBlock("required_providers", nil)
+		requiredProvidersBlock.Body().SetAttributeValue("genesyscloud", zclconfCty.ObjectVal(map[string]zclconfCty.Value{
+			"source":  zclconfCty.StringVal(providerSource),
+			"version": zclconfCty.StringVal(version),
+		}))
+		terraformHCLBlock = fmt.Sprintf("%s", f.Bytes())
+		// prepend terraform block
+		resourceTypeHCLBlocks = append([][]byte{f.Bytes()}, resourceTypeHCLBlocks...)
+		writeHCLToFile(resourceTypeHCLBlocks, filePath)
+	} else {
+		rootJSONObject := jsonMap{
+			"resource": resourceTypeJSONMaps,
+			"terraform": jsonMap{
+				"required_providers": jsonMap{
+					"genesyscloud": jsonMap{
+						"source":  providerSource,
+						"version": version,
+					},
 				},
 			},
-		},
-	}
+		}
 
-	if err := writeConfig(rootJSONObject, filePath); err != nil {
-		return err
+		if err := writeConfig(rootJSONObject, filePath); err != nil {
+			return err
+		}
 	}
-
 	d.SetId(filePath)
 
 	return nil
+}
+
+func instanceStateToHCLBlock(resType, resName string, json jsonMap) []byte {
+	f := hclwrite.NewEmptyFile()
+	rootBody := f.Body()
+
+	block := rootBody.AppendNewBlock("resource", []string{resType, resName})
+	body := block.Body()
+
+	addBody(body, json)
+
+	newCopy := strings.Replace(fmt.Sprintf("%s", f.Bytes()), "$${", "${", -1)
+	return []byte(newCopy)
+}
+
+func addBody(body *hclwrite.Body, json jsonMap) {
+	for k, v := range json {
+		addValue(body, k, v)
+	}
+}
+
+func addValue(body *hclwrite.Body, k string, v interface{}) {
+	if vInter, ok := v.([]interface{}); ok {
+		handleInterfaceArray(body, k, vInter)
+	} else {
+		ctyVal := getCtyValue(v)
+		if ctyVal != zclconfCty.NilVal {
+			body.SetAttributeValue(k, ctyVal)
+		}
+	}
+}
+
+func getCtyValue(v interface{}) zclconfCty.Value {
+	var value zclconfCty.Value
+	if vStr, ok := v.(string); ok {
+		value = zclconfCty.StringVal(vStr)
+	} else if vBool, ok := v.(bool); ok {
+		value = zclconfCty.BoolVal(vBool)
+	} else if vInt, ok := v.(int); ok {
+		value = zclconfCty.NumberIntVal(int64(vInt))
+	} else if vInt32, ok := v.(int32); ok {
+		value = zclconfCty.NumberIntVal(int64(vInt32))
+	} else if vInt64, ok := v.(int64); ok {
+		value = zclconfCty.NumberIntVal(vInt64)
+	} else if vFloat32, ok := v.(float32); ok {
+		value = zclconfCty.NumberFloatVal(float64(vFloat32))
+	} else if vFloat64, ok := v.(float64); ok {
+		value = zclconfCty.NumberFloatVal(vFloat64)
+	} else if vMapInter, ok := v.(map[string]interface{}); ok {
+		value = createHCLObject(vMapInter)
+	} else {
+		value = zclconfCty.NilVal
+	}
+	return value
+}
+
+// Creates hcl objects in the format name = { item1 = "", item2 = "", ... }
+func createHCLObject(v map[string]interface{}) zclconfCty.Value {
+	obj := make(map[string]zclconfCty.Value)
+	for key, val := range v {
+		ctyVal := getCtyValue(val)
+		if ctyVal != zclconfCty.NilVal {
+			obj[key] = ctyVal
+		}
+	}
+	return zclconfCty.ObjectVal(obj)
+}
+
+func handleInterfaceArray(body *hclwrite.Body, k string, v []interface{}) {
+	var listItems []zclconfCty.Value
+	for _, val := range v {
+		// k { ... }
+		if valMap, ok := val.(map[string]interface{}); ok {
+			block := body.AppendNewBlock(k, nil)
+			for key, value := range valMap {
+				addValue(block.Body(), key, value)
+			}
+			// k = [ ... ]
+		} else {
+			listItems = append(listItems, getCtyValue(val))
+		}
+	}
+	if len(listItems) > 0 {
+		body.SetAttributeValue(k, zclconfCty.ListVal(listItems))
+	}
 }
 
 func sourceForVersion(version string) string {
@@ -426,6 +553,27 @@ func instanceStateToJSONMap(state *terraform.InstanceState, ctyType cty.Type) (j
 		return nil, diag.FromErr(err)
 	}
 	return jsonMap, nil
+}
+
+func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {
+	// clear contents
+	_ = ioutil.WriteFile(path, nil, os.ModePerm)
+	for _, v := range bytes {
+		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return diag.Errorf("Error opening/creating file %s: %v", path, err)
+		}
+		if _, err := f.Write(v); err != nil {
+			return diag.Errorf("Error writing file %s: %v", path, err)
+		}
+
+		_, _ = f.Write([]byte("\n"))
+
+		if err := f.Close(); err != nil {
+			return diag.Errorf("Error closing file %s: %v", path, err)
+		}
+	}
+	return nil
 }
 
 func writeToFile(bytes []byte, path string) diag.Diagnostics {
