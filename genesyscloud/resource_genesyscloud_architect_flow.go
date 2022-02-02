@@ -96,7 +96,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	successPayload := make(map[string]interface{})
 	response, err := apiClient.CallAPI(path, "POST", nil, headerParams, nil, nil, "", nil)
 	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
+		return diag.Errorf("Failed to initiate archy job %s", err)
 	} else if err == nil && response.Error != nil {
 		return diag.Errorf("Failed to register Archy job. %s", err)
 	} else {
@@ -211,7 +211,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	successPayload := make(map[string]interface{})
 	response, err := apiClient.CallAPI(path, "POST", nil, headerParams, nil, nil, "", nil)
 	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
+		return diag.Errorf("Failed to update archy job %s", err)
 	} else if err == nil && response.Error != nil {
 		return diag.Errorf("Failed to register Archy job. %s", err)
 	} else {
