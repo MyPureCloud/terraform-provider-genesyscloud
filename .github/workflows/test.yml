@@ -46,8 +46,7 @@ jobs:
       matrix:
         # list whatever Terraform versions here you would like to support
         terraform:
-          - '0.13.6'
-          - '0.14.7'
+          - '1.1.5'
     steps:
 
     - name: Set up Go

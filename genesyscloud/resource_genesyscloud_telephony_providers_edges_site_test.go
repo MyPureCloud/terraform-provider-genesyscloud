@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestAccResourceSite(t *testing.T) {
@@ -499,8 +500,8 @@ func deleteLocationWithNumber(emergencyNumber string) error {
 					if err != nil {
 						return err
 					}
-					//_, err = locationsAPI.DeleteLocation(*location.Id)
-					//time.Sleep(30 * time.Second)
+					_, err = locationsAPI.DeleteLocation(*location.Id)
+					time.Sleep(30 * time.Second)
 					return err
 				}
 			}
@@ -525,12 +526,11 @@ func deleteSiteWithLocationId(locationId string) error {
 
 		for _, site := range *sites.Entities {
 			if site.Location != nil && *site.Location.Id == locationId {
-				fmt.Printf("Should delete site %v for location %v\n", *site.Id, locationId)
-				//_, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(*site.Id)
-				//if err != nil {
-				//	return err
-				//}
-				//time.Sleep(8 * time.Second)
+				_, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(*site.Id)
+				if err != nil {
+					return err
+				}
+				time.Sleep(8 * time.Second)
 				break
 			}
 		}
