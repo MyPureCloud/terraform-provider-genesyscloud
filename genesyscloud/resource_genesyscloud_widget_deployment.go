@@ -321,14 +321,45 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Creating widgets deployment %s", name)
 
-	widget, resp, err := widgetsAPI.PostWidgetsDeployments(createWidget)
+	// Get all existing deployments
+	resourceIDMetaMap, _ := getAllWidgetDeployments(ctx, sdkConfig)
+
+	widget, _, err := widgetsAPI.PostWidgetsDeployments(createWidget)
 	if err != nil {
 		return diag.Errorf("Failed to create widget deployment %s, %s", name, err)
 	}
-	log.Printf("Widget created %s with correlation id %s", name, resp.CorrelationID)
+	log.Printf("Widget created %s with id %s", name, *widget.Id)
 	d.SetId(*widget.Id)
 
+	time.Sleep(2 * time.Second)
+	// Get all new deployments
+	newResourceIDMetaMap, _ := getAllWidgetDeployments(ctx, sdkConfig)
+	// Delete potential duplicates
+	deletePotentialDuplicateDeployments(widgetsAPI, name, *widget.Id, resourceIDMetaMap, newResourceIDMetaMap)
+
 	return readWidgetDeployment(ctx, d, meta)
+}
+
+// Sometimes the Widget API creates 2 deployments due to a bug. This function will delete any duplicates
+func deletePotentialDuplicateDeployments(widgetAPI *platformclientv2.WidgetsApi, name, id string, existingResourceIDMetaMap, newResourceIDMetaMap ResourceIDMetaMap) {
+	for _, val := range existingResourceIDMetaMap {
+		for key1, val1 := range newResourceIDMetaMap {
+			if val.Name == val1.Name {
+				delete(newResourceIDMetaMap, key1)
+				break
+			}
+		}
+	}
+
+	for key, val := range newResourceIDMetaMap {
+		if key != id && val.Name == name {
+			log.Printf("Deleting duplicate widget deployment %s", name)
+			_, err := widgetAPI.DeleteWidgetsDeployment(key)
+			if err != nil {
+				log.Printf("failed to delete widget deployment %s: %s", name, err)
+			}
+		}
+	}
 }
 
 func deleteWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
