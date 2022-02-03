@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -17,7 +18,7 @@ func TestAccDataSourceArchitectScheduleGroups(t *testing.T) {
 		schedGroupDataSource = "arch-sched-group-ds"
 
 		schedResource = "arch-sched"
-		openSched     = "Open Schedule"
+		openSched     = "Open Schedule " + uuid.NewString()
 		schedDesc     = "Sample Schedule by CX as Code"
 		start         = "2021-08-04T08:00:00.000000"
 		end           = "2021-08-04T17:00:00.000000"

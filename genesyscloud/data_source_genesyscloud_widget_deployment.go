@@ -31,7 +31,7 @@ func dataSourceWidgetDeploymentRead(ctx context.Context, d *schema.ResourceData,
 
 	name := d.Get("name").(string)
 
-	// Query flow by name. Retry in case search has not yet indexed the flow.
+	// Query widget by name. Retry in case search has not yet indexed the widget.
 	return withRetries(ctx, 5*time.Second, func() *resource.RetryError {
 		widgetDeployments, _, getErr := widgetAPI.GetWidgetsDeployments()
 
@@ -50,7 +50,6 @@ func dataSourceWidgetDeploymentRead(ctx context.Context, d *schema.ResourceData,
 			}
 		}
 
-		return resource.NonRetryableError(fmt.Errorf("Unable to located widget deployment name %s. It does not exist", name))
-
+		return resource.NonRetryableError(fmt.Errorf("Unable to locate widget deployment name %s. It does not exist", name))
 	})
 }

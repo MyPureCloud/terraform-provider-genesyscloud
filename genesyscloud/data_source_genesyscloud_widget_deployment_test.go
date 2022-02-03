@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestWidgetDeploymentConfig(t *testing.T) {
+func TestAccDataSourceWidgetDeployment(t *testing.T) {
 	var (
 		widgegetDeploymentsResource = "widget-deployments"
 		widgetDeploymentsDataSource = "widget-deployments-data"
