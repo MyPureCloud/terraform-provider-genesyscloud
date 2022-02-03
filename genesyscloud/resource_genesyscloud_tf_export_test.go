@@ -37,7 +37,7 @@ func TestAccResourceTfExport(t *testing.T) {
 	var (
 		exportResource1 = "test-export1"
 		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
-		//statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
+		statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -57,20 +57,20 @@ func TestAccResourceTfExport(t *testing.T) {
 					validateConfigFile(configPath),
 				),
 			},
-			//{
-			//	// Run export with state file and excluded attribute
-			//	Config: generateTfExportResource(
-			//		exportResource1,
-			//		exportTestDir,
-			//		trueValue,
-			//		strconv.Quote("genesyscloud_auth_role.permission_policies.conditions"),
-			//	),
-			//	Check: resource.ComposeTestCheckFunc(
-			//		validateFileCreated(configPath),
-			//		validateConfigFile(configPath),
-			//		validateFileCreated(statePath),
-			//	),
-			//},
+			{
+				// Run export with state file and excluded attribute
+				Config: generateTfExportResource(
+					exportResource1,
+					exportTestDir,
+					trueValue,
+					strconv.Quote("genesyscloud_auth_role.permission_policies.conditions"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFileCreated(configPath),
+					validateConfigFile(configPath),
+					validateFileCreated(statePath),
+				),
+			},
 		},
 		CheckDestroy: testVerifyExportsDestroyed,
 	})
@@ -224,7 +224,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 						"genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", sanitizeResourceName(userEmail1), testUser1),
 					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizeResourceName(queueName), testQueue),
-					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunk"),
+					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunkbasesettings"),
 				),
 			},
 			{
@@ -278,7 +278,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", sanitizeResourceName(userEmail1), testUser1),
 					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", sanitizeResourceName(userEmail2), testUser2),
 					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizeResourceName(queueName), testQueue),
-					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunk"),
+					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunkbasesettings"),
 				),
 			},
 		},
@@ -700,7 +700,44 @@ func generateTfExportResource(
 		directory = "%s"
         include_state_file = %s
 		resource_types = [
-			"genesyscloud_telephony_providers_edges_trunk"
+			"genesyscloud_architect_datatable",
+			"genesyscloud_architect_datatable_row",
+			"genesyscloud_architect_ivr",
+			"genesyscloud_architect_schedules",
+			"genesyscloud_architect_schedulegroups",
+			"genesyscloud_architect_user_prompt",
+			"genesyscloud_auth_division",
+			"genesyscloud_auth_role",
+			"genesyscloud_group",
+			"genesyscloud_group_roles",
+			"genesyscloud_idp_adfs",
+			"genesyscloud_idp_generic",
+			"genesyscloud_idp_gsuite",
+			"genesyscloud_idp_okta",
+			"genesyscloud_idp_onelogin",
+			"genesyscloud_idp_ping",
+			"genesyscloud_idp_salesforce",
+			"genesyscloud_integration",
+			"genesyscloud_integration_action",
+			"genesyscloud_integration_credential",
+			"genesyscloud_location",
+			"genesyscloud_oauth_client",
+			"genesyscloud_routing_email_domain",
+			"genesyscloud_routing_email_route",
+			"genesyscloud_routing_language",
+			"genesyscloud_routing_queue",
+			"genesyscloud_routing_skill",
+			"genesyscloud_routing_utilization",
+			"genesyscloud_routing_wrapupcode",
+			"genesyscloud_telephony_providers_edges_did_pool",
+			"genesyscloud_telephony_providers_edges_edge_group",
+			"genesyscloud_telephony_providers_edges_phone",
+			"genesyscloud_telephony_providers_edges_site",
+			"genesyscloud_telephony_providers_edges_phonebasesettings",
+			"genesyscloud_telephony_providers_edges_trunkbasesettings",
+			"genesyscloud_telephony_providers_edges_trunk",
+			"genesyscloud_user",
+			"genesyscloud_user_roles"
 		]
 		exclude_attributes = [%s]
     }

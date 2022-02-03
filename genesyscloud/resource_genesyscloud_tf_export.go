@@ -483,11 +483,11 @@ func readTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) diag
 }
 
 func deleteTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
-	//configPath := d.Id()
-	//if _, err := os.Stat(configPath); err == nil {
-	//	log.Printf("Deleting export config %s", configPath)
-	//	os.Remove(configPath)
-	//}
+	configPath := d.Id()
+	if _, err := os.Stat(configPath); err == nil {
+		log.Printf("Deleting export config %s", configPath)
+		os.Remove(configPath)
+	}
 
 	stateFile, _ := getFilePath(d, defaultTfStateFile)
 	if _, err := os.Stat(stateFile); err == nil {

@@ -208,9 +208,29 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (Res
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
+	// Unmanaged
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false)
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of sites: %v", getErr)
+		}
+
+		if sites.Entities == nil || len(*sites.Entities) == 0 {
+			break
+		}
+
+		for _, site := range *sites.Entities {
+			if site.State != nil && *site.State != "deleted" {
+				resources[*site.Id] = &ResourceMeta{Name: *site.Name}
+			}
+		}
+	}
+
+	// Managed
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", true)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of sites: %v", getErr)
 		}

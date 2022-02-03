@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccResourceTrunk(t *testing.T) {
+	t.Skip("Skipping because we need to manage edges in order to successfully implement and test this resource")
 	var (
 		// trunk base settings used to create the trunk
 		trunkBaseSettingsRes = "trunkBaseSettingsRes"
@@ -51,13 +52,17 @@ func TestAccResourceTrunk(t *testing.T) {
 					"edge group description 1",
 					false,
 					false,
-					generatePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes+".id")) + phoneTrunkBaseSettings + trunkBaseSettingsConfig + generateTrunk(
+					generatePhoneTrunkBaseIds(
+						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes+".id",
+						"genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes+".id",
+					),
+				) + phoneTrunkBaseSettings + trunkBaseSettingsConfig + generateTrunk(
 					trunkRes,
 					"genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes+".id",
-					"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes1+".id"),
-				ExpectNonEmptyPlan: true, // Creating the trunk will edit the edge group and cause configuration drift
+					"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes1+".id",
+				),
 			},
-			// Create a new edge group and assign the trunk base settings to a new edge group to update the trunk
+			//Create a new edge group and assign the trunk base settings to a new edge group to update the trunk
 			{
 				Config: generateEdgeGroupResourceWithCustomAttrs(
 					edgeGroupRes2,
@@ -65,11 +70,15 @@ func TestAccResourceTrunk(t *testing.T) {
 					"edge group description 2",
 					false,
 					false,
-					generatePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes+".id")) + phoneTrunkBaseSettings + trunkBaseSettingsConfig + generateTrunk(
+					generatePhoneTrunkBaseIds(
+						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes+".id",
+						"genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes+".id",
+					),
+				) + phoneTrunkBaseSettings + trunkBaseSettingsConfig + generateTrunk(
 					trunkRes,
 					"genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes+".id",
-					"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes2+".id"),
-				ExpectNonEmptyPlan: true, // Creating the trunk will edit the edge group and cause configuration drift
+					"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes2+".id",
+				),
 			},
 		},
 	})

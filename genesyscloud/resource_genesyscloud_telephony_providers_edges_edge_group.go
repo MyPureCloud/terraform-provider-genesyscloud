@@ -230,9 +230,27 @@ func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configurati
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	for pageSize := 1; ; pageSize++ {
-		const pageNum = 100
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
 		edgeGroups, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, "", "", false)
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of edge groups: %v", getErr)
+		}
+
+		if edgeGroups.Entities == nil || len(*edgeGroups.Entities) == 0 {
+			break
+		}
+
+		for _, edgeGroup := range *edgeGroups.Entities {
+			if edgeGroup.State != nil && *edgeGroup.State != "deleted" {
+				resources[*edgeGroup.Id] = &ResourceMeta{Name: *edgeGroup.Name}
+			}
+		}
+	}
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		edgeGroups, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, "", "", true)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of edge groups: %v", getErr)
 		}
