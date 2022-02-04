@@ -119,98 +119,98 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 
 func basicConfigurationResource(name, description string) string {
 	return fmt.Sprintf(`
-  resource "genesyscloud_webdeployments_configuration" "basic" {
-    name = "%s"
-    description = "%s"
-  }
-  `, name, description)
+	resource "genesyscloud_webdeployments_configuration" "basic" {
+		name = "%s"
+		description = "%s"
+	}
+	`, name, description)
 }
 
 func complexConfigurationResource(name, description string) string {
 	return fmt.Sprintf(`
 	resource "genesyscloud_webdeployments_configuration" "complex" {
-	  name = "%s"
-	  description = "%s"
-	  languages = [ "en-us", "ja" ]
-	  default_language = "en-us"
-	  messenger {
-	    enabled = true
-	    launcher_button {
-	      visibility = "OnDemand"
-	    }
-	    styles {
-	      primary_color = "#B0B0B0"
-	    }
-	    file_upload {
-	      mode {
-	        file_types = [ "image/png" ]
-	        max_file_size_kb = 100
-	      }
-	      mode {
-	        file_types = [ "image/jpeg" ]
-	        max_file_size_kb = 123
-	      }
-	    }
-	  }
-	  journey_events {
-	    enabled = true
-	    excluded_query_parameters = [ "excluded-one" ]
+		name = "%s"
+		description = "%s"
+		languages = [ "en-us", "ja" ]
+		default_language = "en-us"
+		messenger {
+			enabled = true
+			launcher_button {
+				visibility = "OnDemand"
+			}
+			styles {
+				primary_color = "#B0B0B0"
+			}
+			file_upload {
+				mode {
+					file_types = [ "image/png" ]
+					max_file_size_kb = 100
+				}
+				mode {
+					file_types = [ "image/jpeg" ]
+					max_file_size_kb = 123
+				}
+			}
+		}
+		journey_events {
+			enabled = true
+			excluded_query_parameters = [ "excluded-one" ]
 
-	    pageview_config = "Auto"
+			pageview_config = "Auto"
 
-	    click_event {
-	      selector = "first-selector"
-	      event_name = "first-click-event-name"
-	    }
-	    click_event {
-	      selector = "second-selector"
-	      event_name = "second-click-event-name"
-	    }
+			click_event {
+				selector = "first-selector"
+				event_name = "first-click-event-name"
+			}
+			click_event {
+				selector = "second-selector"
+				event_name = "second-click-event-name"
+			}
 
-	    form_track_event {
-	      selector = "form-selector-1"
-	      form_name = "form-1"
-	      capture_data_on_form_abandon = true
-	      capture_data_on_form_submit = false
-	    }
+			form_track_event {
+				selector = "form-selector-1"
+				form_name = "form-1"
+				capture_data_on_form_abandon = true
+				capture_data_on_form_submit = false
+			}
 
-	    form_track_event {
-	      selector = "form-selector-2"
-	      form_name = "form-3"
-	      capture_data_on_form_abandon = false
-	      capture_data_on_form_submit = true
-	    }
+			form_track_event {
+				selector = "form-selector-2"
+				form_name = "form-3"
+				capture_data_on_form_abandon = false
+				capture_data_on_form_submit = true
+			}
 
-	    idle_event {
-	      event_name = "idle-event-1"
-	      idle_after_seconds = 88
-	    }
+			idle_event {
+				event_name = "idle-event-1"
+				idle_after_seconds = 88
+			}
 
-	    idle_event {
-	      event_name = "idle-event-2"
-	      idle_after_seconds = 30
-	    }
+			idle_event {
+				event_name = "idle-event-2"
+				idle_after_seconds = 30
+			}
 
-	    in_viewport_event {
-	      selector = "in-viewport-selector-1"
-	      event_name = "in-viewport-event-1"
-	    }
+			in_viewport_event {
+				selector = "in-viewport-selector-1"
+				event_name = "in-viewport-event-1"
+			}
 
-	    in_viewport_event {
-	      selector = "in-viewport-selector-2"
-	      event_name = "in-viewport-event-2"
-	    }
+			in_viewport_event {
+				selector = "in-viewport-selector-2"
+				event_name = "in-viewport-event-2"
+			}
 
-	    scroll_depth_event {
-	      event_name = "scroll-depth-event-1"
-	      percentage = 33
-	    }
+			scroll_depth_event {
+				event_name = "scroll-depth-event-1"
+				percentage = 33
+			}
 
-	    scroll_depth_event {
-	      event_name = "scroll-depth-event-2"
-	      percentage = 66
-	    }
-	  }
+			scroll_depth_event {
+				event_name = "scroll-depth-event-2"
+				percentage = 66
+			}
+		}
 	}
 	`, name, description)
 }

@@ -33,8 +33,8 @@ func TestAccDataSourceWebDeploymentsDeployment(t *testing.T) {
 
 func basicDeploymentDataSource(name string) string {
 	return fmt.Sprintf(`
-  data "genesyscloud_webdeployments_deployment" "basic-data" {
-    name = %s
-  }
-  `, name)
+	data "genesyscloud_webdeployments_deployment" "basic-data" {
+		name = %s
+	}
+	`, name)
 }

@@ -36,22 +36,15 @@ func New(version string) func() *schema.Provider {
 			Schema: map[string]*schema.Schema{
 				"oauthclient_id": {
 					Type:        schema.TypeString,
-					Optional:    true,
+					Required:    true,
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_ID", nil),
 					Description: "OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.",
 				},
 				"oauthclient_secret": {
 					Type:        schema.TypeString,
-					Optional:    true,
+					Required:    true,
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_SECRET", nil),
 					Description: "OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.",
-					Sensitive:   true,
-				},
-				"oauth_token": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTH_TOKEN", nil),
-					Description: "OAuth access token. Can be set with the `GENESYSCLOUD_OAUTH_TOKEN` environment variable.",
 					Sensitive:   true,
 				},
 				"aws_region": {
@@ -247,15 +240,9 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		},
 	}
 
-	if oauthToken, ok := data.GetOk("oauth_token"); ok {
-		config.AccessToken = oauthToken.(string)
-	} else if oauthclientID != "" && oauthclientSecret != "" {
-		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
-		if err != nil {
-			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
-		}
-	} else {
-		return diag.Errorf("No valid authorization information was supplied")
+	err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+	if err != nil {
+		return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
 	}
 	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
 	return nil

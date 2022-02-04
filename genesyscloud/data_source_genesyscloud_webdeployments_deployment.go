@@ -33,19 +33,19 @@ func dataSourceDeploymentRead(ctx context.Context, d *schema.ResourceData, m int
 	name := d.Get("name").(string)
 
 	return withRetries(ctx, 15 * time.Second, func() *resource.RetryError {
-    deployments, _, err := api.GetWebdeploymentsDeployments()
+		deployments, _, err := api.GetWebdeploymentsDeployments()
 
-    if err != nil {
-      return resource.NonRetryableError(fmt.Errorf("Error retrieving web deployment %s: %s", name, err))
-    }
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("Error retrieving web deployment %s: %s", name, err))
+		}
 
-    for _, deployment := range *deployments.Entities {
-      if name == *deployment.Name {
-        d.SetId(*deployment.Id)
-        return nil
-      }
-    }
+		for _, deployment := range *deployments.Entities {
+			if name == *deployment.Name {
+				d.SetId(*deployment.Id)
+				return nil
+			}
+		}
 
-    return resource.NonRetryableError(fmt.Errorf("No web deployment was found with the name %s", name))
+		return resource.NonRetryableError(fmt.Errorf("No web deployment was found with the name %s", name))
 	})
 }

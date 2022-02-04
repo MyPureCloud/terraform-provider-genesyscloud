@@ -99,10 +99,6 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 				Config: versioningDeploymentResource(t, deploymentName, "description 1", "en-us", []string{"en-us"}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullDeploymentResourceName, "name", deploymentName),
-					func(s *terraform.State) error {
-						log.Printf("Deployment state: %s", s.RootModule().String())
-						return nil
-					},
 					resource.TestCheckResourceAttr(fullDeploymentResourceName, "configuration.0.version", "1"),
 					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.id", fullConfigResourceName, "id"),
 					resource.TestCheckResourceAttrPair(fullDeploymentResourceName, "configuration.0.version", fullConfigResourceName, "version"),
@@ -129,20 +125,20 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 
 func basicDeploymentResource(name, description string) string {
 	return fmt.Sprintf(`
-  resource "genesyscloud_webdeployments_configuration" "minimal" {
-    name = "Minimal Config"
-  }
+	resource "genesyscloud_webdeployments_configuration" "minimal" {
+		name = "Minimal Config"
+	}
 
-  resource "genesyscloud_webdeployments_deployment" "basic" {
-    name = "%s"
-    description = "%s"
-    allow_all_domains = true
-    configuration {
-      id = "${genesyscloud_webdeployments_configuration.minimal.id}"
-      version = "${genesyscloud_webdeployments_configuration.minimal.version}"
-    }
-  }
-  `, name, description)
+	resource "genesyscloud_webdeployments_deployment" "basic" {
+		name = "%s"
+		description = "%s"
+		allow_all_domains = true
+		configuration {
+			id = "${genesyscloud_webdeployments_configuration.minimal.id}"
+			version = "${genesyscloud_webdeployments_configuration.minimal.version}"
+		}
+	}
+	`, name, description)
 }
 
 func deploymentResourceWithAllowedDomains(t *testing.T, name string, allowedDomains ...string) string {
@@ -152,19 +148,19 @@ func deploymentResourceWithAllowedDomains(t *testing.T, name string, allowedDoma
 	}
 
 	return fmt.Sprintf(`
-  resource "genesyscloud_webdeployments_configuration" "minimal" {
-    name = "Minimal Config"
-  }
+	resource "genesyscloud_webdeployments_configuration" "minimal" {
+		name = "Minimal Config"
+	}
 
-  resource "genesyscloud_webdeployments_deployment" "basicWithAllowedDomains" {
-    name = "%s"
-    allowed_domains = %s
-    configuration {
-      id = "${genesyscloud_webdeployments_configuration.minimal.id}"
-      version = "${genesyscloud_webdeployments_configuration.minimal.version}"
-    }
-  }
-  `, name, value)
+	resource "genesyscloud_webdeployments_deployment" "basicWithAllowedDomains" {
+		name = "%s"
+		allowed_domains = %s
+		configuration {
+			id = "${genesyscloud_webdeployments_configuration.minimal.id}"
+			version = "${genesyscloud_webdeployments_configuration.minimal.version}"
+		}
+	}
+	`, name, value)
 }
 
 func versioningDeploymentResource(t *testing.T, name, description, defaultLanguage string, languages []string) string {
@@ -174,22 +170,22 @@ func versioningDeploymentResource(t *testing.T, name, description, defaultLangua
 	}
 
 	return fmt.Sprintf(`
-  resource "genesyscloud_webdeployments_configuration" "minimal" {
-    name = "Minimal Config"
-	  languages = %s
-	  default_language = "%s"
-  }
+	resource "genesyscloud_webdeployments_configuration" "minimal" {
+		name = "Minimal Config"
+		languages = %s
+		default_language = "%s"
+	}
 
-  resource "genesyscloud_webdeployments_deployment" "versioning" {
-    name = "%s"
-    description = "%s"
-    allow_all_domains = true
-    configuration {
-      id = "${genesyscloud_webdeployments_configuration.minimal.id}"
-      version = genesyscloud_webdeployments_configuration.minimal.version
-    }
-  }
-  `, value, defaultLanguage, name, description)
+	resource "genesyscloud_webdeployments_deployment" "versioning" {
+		name = "%s"
+		description = "%s"
+		allow_all_domains = true
+		configuration {
+			id = "${genesyscloud_webdeployments_configuration.minimal.id}"
+			version = genesyscloud_webdeployments_configuration.minimal.version
+		}
+	}
+	`, value, defaultLanguage, name, description)
 }
 
 func verifyDeploymentDestroyed(state *terraform.State) error {
