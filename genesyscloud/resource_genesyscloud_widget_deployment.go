@@ -176,7 +176,7 @@ func resourceWidgetDeployment() *schema.Resource {
 			"flow_id": {
 				Description: "The Inbound Chat Flow to run when new chats are initiated under this Deployment",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 			"allowed_domains": {
 				Description: "The list of domains that are approved to use this Deployment; the list will be added to CORS headers for ease of web use",

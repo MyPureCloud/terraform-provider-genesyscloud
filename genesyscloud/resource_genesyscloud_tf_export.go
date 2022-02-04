@@ -73,8 +73,8 @@ func resourceTfExport() *schema.Resource {
 	return &schema.Resource{
 		Description: fmt.Sprintf(`
 		Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
-		The config file is named '%s', and the state file is named '%s'.
-		`, defaultTfJSONFile, defaultTfStateFile),
+		The config file is named '%s' or '%s', and the state file is named '%s'.
+		`, defaultTfJSONFile, defaultTfHCLFile, defaultTfStateFile),
 
 		CreateContext: createTfExport,
 		ReadContext:   readTfExport,
@@ -143,6 +143,11 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	filePath, diagErr := getFilePath(d, defaultFileName)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	tfVarsFilePath, diagErr := getFilePath(d, defaultTfVarsFile)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -216,11 +221,8 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 			unresolvedAttrs = append(unresolvedAttrs, unresolved...)
 		}
 
-		if exportAsHCL {
-			resourceTypeHCLBlocks = append(resourceTypeHCLBlocks, instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
-		} else {
-			resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
-		}
+		resourceTypeHCLBlocks = append(resourceTypeHCLBlocks, instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
+		resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
 	}
 
 	providerSource := sourceForVersion(version)
@@ -230,79 +232,125 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 	}
 
+	var err diag.Diagnostics
 	if exportAsHCL {
-		f := hclwrite.NewEmptyFile()
-		rootBody := f.Body()
-		tfBlock := rootBody.AppendNewBlock("terraform", nil)
-		requiredProvidersBlock := tfBlock.Body().AppendNewBlock("required_providers", nil)
-		requiredProvidersBlock.Body().SetAttributeValue("genesyscloud", zclconfCty.ObjectVal(map[string]zclconfCty.Value{
-			"source":  zclconfCty.StringVal(providerSource),
-			"version": zclconfCty.StringVal(version),
-		}))
-		terraformHCLBlock = fmt.Sprintf("%s", f.Bytes())
-		// prepend terraform block
-		resourceTypeHCLBlocks = append([][]byte{f.Bytes()}, resourceTypeHCLBlocks...)
-		writeHCLToFile(resourceTypeHCLBlocks, filePath)
+		err = exportHCLConfig(resourceTypeHCLBlocks, unresolvedAttrs, providerSource, version, filePath, tfVarsFilePath)
 	} else {
-		rootJSONObject := jsonMap{
-			"resource": resourceTypeJSONMaps,
-			"terraform": jsonMap{
-				"required_providers": jsonMap{
-					"genesyscloud": jsonMap{
-						"source":  providerSource,
-						"version": version,
-					},
-				},
-			},
-		}
+		err = exportJSONConfig(resourceTypeJSONMaps, unresolvedAttrs, providerSource, version, filePath, tfVarsFilePath)
+	}
+	if err != nil {
+		return diagErr
+	}
 
+	d.SetId(filePath)
+
+	return nil
+}
+
+func exportHCLConfig(
+	resourceTypeHCLBlocksSlice [][]byte,
+	unresolvedAttrs []unresolvableAttributeInfo,
+	providerSource,
+	version,
+	filePath,
+	tfVarsFilePath string) diag.Diagnostics {
+	rootFile := hclwrite.NewEmptyFile()
+	rootBody := rootFile.Body()
+	tfBlock := rootBody.AppendNewBlock("terraform", nil)
+	requiredProvidersBlock := tfBlock.Body().AppendNewBlock("required_providers", nil)
+	requiredProvidersBlock.Body().SetAttributeValue("genesyscloud", zclconfCty.ObjectVal(map[string]zclconfCty.Value{
+		"source":  zclconfCty.StringVal(providerSource),
+		"version": zclconfCty.StringVal(version),
+	}))
+	terraformHCLBlock = fmt.Sprintf("%s", rootFile.Bytes())
+	// prepend terraform block
+	first := resourceTypeHCLBlocksSlice[0]
+	resourceTypeHCLBlocksSlice[0] = rootFile.Bytes()
+	resourceTypeHCLBlocksSlice = append(resourceTypeHCLBlocksSlice, first)
+
+	if len(unresolvedAttrs) > 0 {
+		mFile := hclwrite.NewEmptyFile()
 		tfVars := make(map[string]interface{})
-		if len(unresolvedAttrs) > 0 {
-			variable := make(map[string]jsonMap)
-			for _, attr := range unresolvedAttrs {
-				key := fmt.Sprintf("%s_%s_%s", attr.ResourceType, attr.ResourceName, attr.Name)
-				variable[key] = make(jsonMap)
-				tfVars[key] = make(jsonMap)
-				variable[key]["description"] = attr.Schema.Description
-				if variable[key]["description"] == "" {
-					variable[key]["description"] = fmt.Sprintf("%s value for resource %s of type %s", attr.Name, attr.ResourceName, attr.ResourceType)
-				}
-
-				variable[key]["sensitive"] = attr.Schema.Sensitive
-				if attr.Schema.Default != nil {
-					variable[key]["default"] = attr.Schema.Default
-				}
-
-				tfVars[key] = determineVarValue(attr.Schema)
-
-				variable[key]["type"] = determineVarType(attr.Schema)
+		keys := make(map[string]string)
+		for _, attr := range unresolvedAttrs {
+			mBody := mFile.Body()
+			key := fmt.Sprintf("%s_%s_%s", attr.ResourceType, attr.ResourceName, attr.Name)
+			if keys[key] != "" {
+				continue
 			}
-			rootJSONObject["variable"] = variable
+			keys[key] = key
+
+			variableBlock := mBody.AppendNewBlock("variable", []string{key})
+
+			if attr.Schema.Description != "" {
+				variableBlock.Body().SetAttributeValue("description", zclconfCty.StringVal(attr.Schema.Description))
+			}
+			if attr.Schema.Default != nil {
+				variableBlock.Body().SetAttributeValue("default", getCtyValue(attr.Schema.Default))
+			}
+			if attr.Schema.Sensitive {
+				variableBlock.Body().SetAttributeValue("sensitive", zclconfCty.BoolVal(attr.Schema.Sensitive))
+			}
+
+			tfVars[key] = determineVarValue(attr.Schema)
 		}
-		if len(tfVars) > 0 {
-			tfVarsFilePath, diagErr := getFilePath(d, defaultTfVarsFile)
-			if diagErr != nil {
-				return diagErr
-			}
-			if err := writeTfVars(tfVars, tfVarsFilePath); err != nil {
-				return err
-			}
-		}
-		if err := writeConfig(rootJSONObject, filePath); err != nil {
+
+		resourceTypeHCLBlocksSlice = append(resourceTypeHCLBlocksSlice, [][]byte{mFile.Bytes()}...)
+		if err := writeTfVars(tfVars, tfVarsFilePath); err != nil {
 			return err
 		}
 	}
 
-	//configFilePath, diagErr := getFilePath(d, defaultTfJSONFile)
-	//if diagErr != nil {
-	//	return diagErr
-	//}
+	return writeHCLToFile(resourceTypeHCLBlocksSlice, filePath)
+}
 
+func exportJSONConfig(
+	resourceTypeJSONMaps map[string]map[string]jsonMap,
+	unresolvedAttrs []unresolvableAttributeInfo,
+	providerSource,
+	version,
+	filePath,
+	tfVarsFilePath string) diag.Diagnostics {
+	rootJSONObject := jsonMap{
+		"resource": resourceTypeJSONMaps,
+		"terraform": jsonMap{
+			"required_providers": jsonMap{
+				"genesyscloud": jsonMap{
+					"source":  providerSource,
+					"version": version,
+				},
+			},
+		},
+	}
 
+	if len(unresolvedAttrs) > 0 {
+		tfVars := make(map[string]interface{})
+		variable := make(map[string]jsonMap)
+		for _, attr := range unresolvedAttrs {
+			key := fmt.Sprintf("%s_%s_%s", attr.ResourceType, attr.ResourceName, attr.Name)
+			variable[key] = make(jsonMap)
+			tfVars[key] = make(jsonMap)
+			variable[key]["description"] = attr.Schema.Description
+			if variable[key]["description"] == "" {
+				variable[key]["description"] = fmt.Sprintf("%s value for resource %s of type %s", attr.Name, attr.ResourceName, attr.ResourceType)
+			}
 
+			variable[key]["sensitive"] = attr.Schema.Sensitive
+			if attr.Schema.Default != nil {
+				variable[key]["default"] = attr.Schema.Default
+			}
 
+			tfVars[key] = determineVarValue(attr.Schema)
 
-	return nil
+			variable[key]["type"] = determineVarType(attr.Schema)
+		}
+		rootJSONObject["variable"] = variable
+		if err := writeTfVars(tfVars, tfVarsFilePath); err != nil {
+			return err
+		}
+	}
+
+	return writeConfig(rootJSONObject, filePath)
 }
 
 func instanceStateToHCLBlock(resType, resName string, json jsonMap) []byte {
@@ -367,6 +415,9 @@ func createHCLObject(v map[string]interface{}) zclconfCty.Value {
 		if ctyVal != zclconfCty.NilVal {
 			obj[key] = ctyVal
 		}
+	}
+	if len(obj) == 0 {
+		return zclconfCty.NilVal
 	}
 	return zclconfCty.ObjectVal(obj)
 }

@@ -43,7 +43,6 @@ resource "genesyscloud_widget_deployment" "mywidget" {
 - **authentication_required** (Boolean) When true, the customer members starting a chat must be authenticated by supplying their JWT to the create operation.
 - **client_type** (String) The type of display widget for which this Deployment is configured, which controls the administrator settings shown.Valid values: v1, v2, v1-http, third-party.
 - **disabled** (Boolean) When true, all create chat operations using this Deployment will be rejected.
-- **flow_id** (String) The Inbound Chat Flow to run when new chats are initiated under this Deployment
 - **name** (String) Name of the Widget Deployment.
 
 ### Optional
@@ -51,6 +50,7 @@ resource "genesyscloud_widget_deployment" "mywidget" {
 - **allowed_domains** (List of String) The list of domains that are approved to use this Deployment; the list will be added to CORS headers for ease of web use
 - **client_config** (Block Set, Max: 1) The V1 and V1-http client configuration options that should be made available to the clients of this Deployment. (see [below for nested schema](#nestedblock--client_config))
 - **description** (String) Widget Deployment description.
+- **flow_id** (String) The Inbound Chat Flow to run when new chats are initiated under this Deployment
 - **id** (String) The ID of this resource.
 
 <a id="nestedblock--client_config"></a>

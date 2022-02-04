@@ -63,7 +63,7 @@ type ResourceExporter struct {
 	// List of attributes to exclude from config. This is set by the export configuration.
 	ExcludedAttributes []string
 
-	// List that attributes that cannot be resolved. E.g. edge Ids which are locked to an org or properties that cannot be retrieved from the API
+	// Map of attributes that cannot be resolved. E.g. edge Ids which are locked to an org or properties that cannot be retrieved from the API
 	UnResolvableAttributes map[string]*schema.Schema
 }
 

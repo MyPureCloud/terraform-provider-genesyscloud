@@ -325,8 +325,10 @@ func getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig *platformclientv2.Con
 	path := sdkConfig.BasePath + "/api/v2/telephony/providers/edges/trunkbasesettings"
 	response, err := sdkConfig.APIClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
 	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
+		return nil, nil, err
+	}
+
+	if response.Error != nil {
 		err = errors.New(response.ErrorMessage)
 	} else {
 		err = json.Unmarshal(response.RawBody, &successPayload)
