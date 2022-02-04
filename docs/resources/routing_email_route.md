@@ -29,8 +29,8 @@ resource "genesyscloud_routing_email_route" "support-route" {
   priority     = 5
   skill_ids    = [genesyscloud_routing_skill.support.id]
   language_id  = genesyscloud_routing_language.english.id
-  flow_id      = "34c17760-7539-11eb-9439-0242ac130002"
-  spam_flow_id = "3fae0821-2a1a-4ebb-90b1-188b65923243"
+  flow_id      = data.genesyscloud_flow.flow.id
+  spam_flow_id = data.genesyscloud_flow.spam_flow.id
   reply_email_address {
     domain_id = "test.example.com"
     route_id  = genesyscloud_routing_email_route.test.id
