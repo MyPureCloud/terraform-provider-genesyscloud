@@ -27,11 +27,19 @@ import (
 const (
 	defaultTfJSONFile  = "genesyscloud.tf.json"
 	defaultTfHCLFile   = "genesyscloud.tf"
+	defaultTfVarsFile  = "terraform.tfvars"
 	defaultTfStateFile = "terraform.tfstate"
 )
 
 // Used to store the TF config block as a string so that it can be ignored when testing the exported HCL config file.
 var terraformHCLBlock string
+
+type unresolvableAttributeInfo struct {
+	ResourceType string
+	ResourceName string
+	Name         string
+	Schema       *schema.Schema
+}
 
 func validateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (warnings []string, errors []error) {
@@ -65,8 +73,8 @@ func resourceTfExport() *schema.Resource {
 	return &schema.Resource{
 		Description: fmt.Sprintf(`
 		Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory. 
-		The config file is named '%s', and the state file is named '%s'.
-		`, defaultTfJSONFile, defaultTfStateFile),
+		The config file is named '%s' or '%s', and the state file is named '%s'.
+		`, defaultTfJSONFile, defaultTfHCLFile, defaultTfStateFile),
 
 		CreateContext: createTfExport,
 		ReadContext:   readTfExport,
@@ -139,6 +147,11 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diagErr
 	}
 
+	tfVarsFilePath, diagErr := getFilePath(d, defaultTfVarsFile)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	version := meta.(*providerMeta).Version
 
 	var filter []string
@@ -185,14 +198,12 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	// Generate the JSON config map
 	resourceTypeJSONMaps := make(map[string]map[string]jsonMap)
 	resourceTypeHCLBlocks := make([][]byte, 0)
+	unresolvedAttrs := make([]unresolvableAttributeInfo, 0)
 	for _, resource := range resources {
 		jsonResult, diagErr := instanceStateToJSONMap(resource.State, resource.CtyType)
 		if diagErr != nil {
 			return diagErr
 		}
-
-		// Removes zero values and sets proper reference expressions
-		sanitizeConfigMap(resource.Type, jsonResult, "", exporters, includeStateFile)
 
 		if resourceTypeJSONMaps[resource.Type] == nil {
 			resourceTypeJSONMaps[resource.Type] = make(map[string]jsonMap)
@@ -204,11 +215,14 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 		}
 
-		if exportAsHCL {
-			resourceTypeHCLBlocks = append(resourceTypeHCLBlocks, instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
-		} else {
-			resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
+		// Removes zero values and sets proper reference expressions
+		unresolved, _ := sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", exporters, includeStateFile)
+		if len(unresolved) > 0 {
+			unresolvedAttrs = append(unresolvedAttrs, unresolved...)
 		}
+
+		resourceTypeHCLBlocks = append(resourceTypeHCLBlocks, instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
+		resourceTypeJSONMaps[resource.Type][resource.Name] = jsonResult
 	}
 
 	providerSource := sourceForVersion(version)
@@ -218,39 +232,125 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 	}
 
+	var err diag.Diagnostics
 	if exportAsHCL {
-		f := hclwrite.NewEmptyFile()
-		rootBody := f.Body()
-		tfBlock := rootBody.AppendNewBlock("terraform", nil)
-		requiredProvidersBlock := tfBlock.Body().AppendNewBlock("required_providers", nil)
-		requiredProvidersBlock.Body().SetAttributeValue("genesyscloud", zclconfCty.ObjectVal(map[string]zclconfCty.Value{
-			"source":  zclconfCty.StringVal(providerSource),
-			"version": zclconfCty.StringVal(version),
-		}))
-		terraformHCLBlock = fmt.Sprintf("%s", f.Bytes())
-		// prepend terraform block
-		resourceTypeHCLBlocks = append([][]byte{f.Bytes()}, resourceTypeHCLBlocks...)
-		writeHCLToFile(resourceTypeHCLBlocks, filePath)
+		err = exportHCLConfig(resourceTypeHCLBlocks, unresolvedAttrs, providerSource, version, filePath, tfVarsFilePath)
 	} else {
-		rootJSONObject := jsonMap{
-			"resource": resourceTypeJSONMaps,
-			"terraform": jsonMap{
-				"required_providers": jsonMap{
-					"genesyscloud": jsonMap{
-						"source":  providerSource,
-						"version": version,
-					},
-				},
-			},
-		}
-
-		if err := writeConfig(rootJSONObject, filePath); err != nil {
-			return err
-		}
+		err = exportJSONConfig(resourceTypeJSONMaps, unresolvedAttrs, providerSource, version, filePath, tfVarsFilePath)
 	}
+	if err != nil {
+		return diagErr
+	}
+
 	d.SetId(filePath)
 
 	return nil
+}
+
+func exportHCLConfig(
+	resourceTypeHCLBlocksSlice [][]byte,
+	unresolvedAttrs []unresolvableAttributeInfo,
+	providerSource,
+	version,
+	filePath,
+	tfVarsFilePath string) diag.Diagnostics {
+	rootFile := hclwrite.NewEmptyFile()
+	rootBody := rootFile.Body()
+	tfBlock := rootBody.AppendNewBlock("terraform", nil)
+	requiredProvidersBlock := tfBlock.Body().AppendNewBlock("required_providers", nil)
+	requiredProvidersBlock.Body().SetAttributeValue("genesyscloud", zclconfCty.ObjectVal(map[string]zclconfCty.Value{
+		"source":  zclconfCty.StringVal(providerSource),
+		"version": zclconfCty.StringVal(version),
+	}))
+	terraformHCLBlock = fmt.Sprintf("%s", rootFile.Bytes())
+	// prepend terraform block
+	first := resourceTypeHCLBlocksSlice[0]
+	resourceTypeHCLBlocksSlice[0] = rootFile.Bytes()
+	resourceTypeHCLBlocksSlice = append(resourceTypeHCLBlocksSlice, first)
+
+	if len(unresolvedAttrs) > 0 {
+		mFile := hclwrite.NewEmptyFile()
+		tfVars := make(map[string]interface{})
+		keys := make(map[string]string)
+		for _, attr := range unresolvedAttrs {
+			mBody := mFile.Body()
+			key := fmt.Sprintf("%s_%s_%s", attr.ResourceType, attr.ResourceName, attr.Name)
+			if keys[key] != "" {
+				continue
+			}
+			keys[key] = key
+
+			variableBlock := mBody.AppendNewBlock("variable", []string{key})
+
+			if attr.Schema.Description != "" {
+				variableBlock.Body().SetAttributeValue("description", zclconfCty.StringVal(attr.Schema.Description))
+			}
+			if attr.Schema.Default != nil {
+				variableBlock.Body().SetAttributeValue("default", getCtyValue(attr.Schema.Default))
+			}
+			if attr.Schema.Sensitive {
+				variableBlock.Body().SetAttributeValue("sensitive", zclconfCty.BoolVal(attr.Schema.Sensitive))
+			}
+
+			tfVars[key] = determineVarValue(attr.Schema)
+		}
+
+		resourceTypeHCLBlocksSlice = append(resourceTypeHCLBlocksSlice, [][]byte{mFile.Bytes()}...)
+		if err := writeTfVars(tfVars, tfVarsFilePath); err != nil {
+			return err
+		}
+	}
+
+	return writeHCLToFile(resourceTypeHCLBlocksSlice, filePath)
+}
+
+func exportJSONConfig(
+	resourceTypeJSONMaps map[string]map[string]jsonMap,
+	unresolvedAttrs []unresolvableAttributeInfo,
+	providerSource,
+	version,
+	filePath,
+	tfVarsFilePath string) diag.Diagnostics {
+	rootJSONObject := jsonMap{
+		"resource": resourceTypeJSONMaps,
+		"terraform": jsonMap{
+			"required_providers": jsonMap{
+				"genesyscloud": jsonMap{
+					"source":  providerSource,
+					"version": version,
+				},
+			},
+		},
+	}
+
+	if len(unresolvedAttrs) > 0 {
+		tfVars := make(map[string]interface{})
+		variable := make(map[string]jsonMap)
+		for _, attr := range unresolvedAttrs {
+			key := fmt.Sprintf("%s_%s_%s", attr.ResourceType, attr.ResourceName, attr.Name)
+			variable[key] = make(jsonMap)
+			tfVars[key] = make(jsonMap)
+			variable[key]["description"] = attr.Schema.Description
+			if variable[key]["description"] == "" {
+				variable[key]["description"] = fmt.Sprintf("%s value for resource %s of type %s", attr.Name, attr.ResourceName, attr.ResourceType)
+			}
+
+			variable[key]["sensitive"] = attr.Schema.Sensitive
+			if attr.Schema.Default != nil {
+				variable[key]["default"] = attr.Schema.Default
+			}
+
+			tfVars[key] = determineVarValue(attr.Schema)
+
+			variable[key]["type"] = determineVarType(attr.Schema)
+		}
+		rootJSONObject["variable"] = variable
+		if err := writeTfVars(tfVars, tfVarsFilePath); err != nil {
+			return err
+		}
+	}
+
+	return writeConfig(rootJSONObject, filePath)
 }
 
 func instanceStateToHCLBlock(resType, resName string, json jsonMap) []byte {
@@ -316,6 +416,9 @@ func createHCLObject(v map[string]interface{}) zclconfCty.Value {
 			obj[key] = ctyVal
 		}
 	}
+	if len(obj) == 0 {
+		return zclconfCty.NilVal
+	}
 	return zclconfCty.ObjectVal(obj)
 }
 
@@ -336,6 +439,79 @@ func handleInterfaceArray(body *hclwrite.Body, k string, v []interface{}) {
 	if len(listItems) > 0 {
 		body.SetAttributeValue(k, zclconfCty.ListVal(listItems))
 	}
+}
+
+func determineVarValue(s *schema.Schema) interface{} {
+	if s.Default != nil {
+		if m, ok := s.Default.(map[string]string); ok {
+			stringMap := make(map[string]interface{})
+			for k, v := range m {
+				stringMap[k] = v
+			}
+			return stringMap
+		}
+
+		return s.Default
+	}
+
+	switch s.Type {
+	case schema.TypeString:
+		return ""
+	case schema.TypeInt:
+		return 0
+	case schema.TypeFloat:
+		return 0.0
+	case schema.TypeBool:
+		return false
+	default:
+		if properties, ok := s.Elem.(*schema.Resource); ok {
+			propertyMap := make(map[string]interface{})
+			for k, v := range properties.Schema {
+				propertyMap[k] = determineVarValue(v)
+			}
+			return propertyMap
+		}
+	}
+
+	return nil
+}
+
+func determineVarType(s *schema.Schema) string {
+	var varType string
+	switch s.Type {
+	case schema.TypeMap:
+		if elem, ok := s.Elem.(*schema.Schema); ok {
+			varType = fmt.Sprintf("map(%s)", determineVarType(elem))
+		} else {
+			varType = "map"
+		}
+	case schema.TypeBool:
+		varType = "bool"
+	case schema.TypeString:
+		varType = "string"
+	case schema.TypeList:
+		fallthrough
+	case schema.TypeSet:
+		if elem, ok := s.Elem.(*schema.Schema); ok {
+			varType = fmt.Sprintf("list(%s)", determineVarType(elem))
+		} else {
+			if properties, ok := s.Elem.(*schema.Resource); ok {
+				propPairs := ""
+				for k, v := range properties.Schema {
+					propPairs = fmt.Sprintf("%s%v = %v\n", propPairs, k, determineVarType(v))
+				}
+				varType = fmt.Sprintf("object({%s})", propPairs)
+			} else {
+				varType = "object({})"
+			}
+		}
+	case schema.TypeInt:
+		fallthrough
+	case schema.TypeFloat:
+		varType = "number"
+	}
+
+	return varType
 }
 
 func sourceForVersion(version string) string {
@@ -369,6 +545,13 @@ func deleteTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) di
 		log.Printf("Deleting export state %s", stateFile)
 		os.Remove(stateFile)
 	}
+
+	tfVarsFile, _ := getFilePath(d, defaultTfVarsFile)
+	if _, err := os.Stat(tfVarsFile); err == nil {
+		log.Printf("Deleting export vars %s", tfVarsFile)
+		os.Remove(tfVarsFile)
+	}
+
 	return nil
 }
 
@@ -669,6 +852,38 @@ func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
 	return nil
 }
 
+func generateTfVarsContent(vars map[string]interface{}) string {
+	tfVarsContent := ""
+	for k, v := range vars {
+		vStr := v
+		if v == nil {
+			vStr = "null"
+		} else if s, ok := v.(string); ok {
+			vStr = fmt.Sprintf(`"%s"`, s)
+		} else if m, ok := v.(map[string]interface{}); ok {
+			vStr = fmt.Sprintf(`{
+	%s
+}`, strings.Replace(generateTfVarsContent(m), "\n", "\n\t", -1))
+		}
+		newLine := ""
+		if tfVarsContent != "" {
+			newLine = "\n"
+		}
+		tfVarsContent = fmt.Sprintf("%v%s%s = %v", tfVarsContent, newLine, k, vStr)
+	}
+
+	return tfVarsContent
+}
+
+func writeTfVars(tfVars map[string]interface{}, path string) diag.Diagnostics {
+	tfVarsStr := generateTfVarsContent(tfVars)
+	tfVarsStr = fmt.Sprintf("// This file has been autogenerated. The following properties could not be retrieved from the API or would not make sense in a different org e.g. Edge IDs" +
+		"\n// The variables contained in this file have been given default values and should be edited as necessary\n\n%s", tfVarsStr)
+
+	log.Printf("Writing export tfvars file to %s", path)
+	return writeToFile([]byte(tfVarsStr), path)
+}
+
 // Removes empty and zero-valued attributes from the JSON config.
 // Map attributes are removed by setting them to null, as the Terraform
 // attribute syntax requires attributes be set to null
@@ -676,12 +891,13 @@ func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
 // https://www.terraform.io/docs/language/attr-as-blocks.html#arbitrary-expressions-with-argument-syntax
 func sanitizeConfigMap(
 	resourceType string,
+	resourceName string,
 	configMap map[string]interface{},
 	prevAttr string,
 	exporters map[string]*ResourceExporter,
-	exportingState bool) bool {
-
+	exportingState bool) ([]unresolvableAttributeInfo, bool) {
 	exporter := exporters[resourceType]
+	unresolvableAttrs := make([]unresolvableAttributeInfo, 0)
 	for key, val := range configMap {
 		currAttr := key
 		wildcardAttr := "*"
@@ -706,7 +922,8 @@ func sanitizeConfigMap(
 		case map[string]interface{}:
 			// Maps are sanitized in-place
 			currMap := val.(map[string]interface{})
-			if !sanitizeConfigMap(resourceType, val.(map[string]interface{}), currAttr, exporters, exportingState) || len(currMap) == 0 {
+			_, res := sanitizeConfigMap(resourceType, "", val.(map[string]interface{}), currAttr, exporters, exportingState)
+			if !res || len(currMap) == 0 {
 				// Remove empty maps or maps indicating they should be removed
 				configMap[key] = nil
 			}
@@ -731,6 +948,25 @@ func sanitizeConfigMap(
 			}
 		}
 
+		if attr, ok := attrInUnResolvableAttrs(key, exporter.UnResolvableAttributes); ok {
+			varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceName, key)
+			unresolvableAttrs = append(unresolvableAttrs, unresolvableAttributeInfo{
+				ResourceType: resourceType,
+				ResourceName: resourceName,
+				Name:         key,
+				Schema:       attr,
+			})
+			if properties, ok := attr.Elem.(*schema.Resource); ok {
+				propertiesMap := make(map[string]interface{})
+				for k := range properties.Schema {
+					propertiesMap[k] = fmt.Sprintf("${var.%s.%s}", varReference, k)
+				}
+				configMap[key] = propertiesMap
+			} else {
+				configMap[key] = fmt.Sprintf("${var.%s}", varReference)
+			}
+		}
+
 		// The plugin SDK does not yet have a concept of "null" for unset attributes, so they are saved in state as their "zero value".
 		// This can cause invalid config files due to including attributes with limits that don't allow for zero values, so we remove
 		// those attributes from the config by default. Attributes can opt-out of this behavior by being added to a ResourceExporter's
@@ -742,10 +978,19 @@ func sanitizeConfigMap(
 
 	if exporter.removeIfMissing(prevAttr, configMap) {
 		// Missing some inner attributes causes the outer object to be removed
-		return false
+		return unresolvableAttrs, false
 	}
 
-	return true
+	return unresolvableAttrs, true
+}
+
+func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema.Schema, bool) {
+	for k, v := range myMap {
+		if k == a {
+			return v, true
+		}
+	}
+	return nil, false
 }
 
 func removeZeroValues(key string, val interface{}, configMap jsonMap) {
@@ -786,7 +1031,8 @@ func sanitizeConfigArray(
 		case map[string]interface{}:
 			// Only include in the result if sanitizeConfigMap returns true and the map is not empty
 			currMap := val.(map[string]interface{})
-			if sanitizeConfigMap(resourceType, currMap, currAttr, exporters, exportingState) && len(currMap) > 0 {
+			_, res := sanitizeConfigMap(resourceType, "", currMap, currAttr, exporters, exportingState)
+			if res && len(currMap) > 0 {
 				result = append(result, val)
 			}
 		case []interface{}:

@@ -41,9 +41,10 @@ func architectIvrExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllIvrConfigs),
 		RefAttrs: map[string]*RefAttrSettings{
-			"open_hours_flow_id":    {RefType: "genesyscloud_flow"},
-			"closed_hours_flow_id":  {RefType: "genesyscloud_flow"},
-			"holiday_hours_flow_id": {RefType: "genesyscloud_flow"},
+			"open_hours_flow_id":    {}, // Ref type not yet defined
+			"closed_hours_flow_id":  {}, // Ref type not yet defined
+			"holiday_hours_flow_id": {}, // Ref type not yet defined
+			"schedule_group_id":     {RefType: "genesyscloud_architect_schedulegroups"},
 		},
 	}
 }

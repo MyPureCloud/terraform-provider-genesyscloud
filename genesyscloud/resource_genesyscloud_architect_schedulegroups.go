@@ -40,7 +40,10 @@ func architectScheduleGroupsExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllArchitectScheduleGroups),
 		RefAttrs: map[string]*RefAttrSettings{
-			"division_id": {RefType: "genesyscloud_auth_division"},
+			"division_id":          {RefType: "genesyscloud_auth_division"},
+			"open_schedules_id":    {RefType: "genesyscloud_architect_schedules"},
+			"closed_schedules_id":  {RefType: "genesyscloud_architect_schedules"},
+			"holiday_schedules_id": {RefType: "genesyscloud_architect_schedules"},
 		},
 	}
 }
