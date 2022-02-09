@@ -10,9 +10,9 @@ resource "genesyscloud_webdeployments_deployment" "exampleDeployment" {
   name            = "Example Web Deployment"
   description     = "This is an example of a web deployment"
   allowed_domains = ["genesys.com"]
-  flow_id         = genesyscloud_flow.incomingMessageFlow.id
+  flow_id         = data.genesyscloud_flow.incomingMessageFlow.id
   configuration {
-    id      = genesyscloud_webdeployments_configuration.exampleConfiguration.id
-    version = genesyscloud_webdeployments_configuration.exampleConfiguration.version
+    id      = data.genesyscloud_webdeployments_configuration.exampleConfiguration.id
+    version = data.genesyscloud_webdeployments_configuration.exampleConfiguration.version
   }
 }

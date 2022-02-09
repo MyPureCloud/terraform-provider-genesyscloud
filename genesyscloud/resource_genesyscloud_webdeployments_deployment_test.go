@@ -3,7 +3,6 @@ package genesyscloud
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"regexp"
 	"testing"
 
@@ -37,6 +36,7 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 				ResourceName:      fullResourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{ "status" },
 			},
 		},
 		CheckDestroy: testVerifyLanguagesDestroyed,
@@ -78,6 +78,7 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 				ResourceName:      fullResourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{ "status" },
 			},
 		},
 		CheckDestroy: verifyDeploymentDestroyed,
@@ -117,6 +118,7 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 				ResourceName:      fullDeploymentResourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{ "status" },
 			},
 		},
 		CheckDestroy: verifyDeploymentDestroyed,

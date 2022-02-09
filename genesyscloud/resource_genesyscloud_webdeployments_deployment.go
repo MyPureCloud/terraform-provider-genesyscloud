@@ -266,7 +266,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	log.Printf("Finished updating web deployment %s", name)
-	//time.Sleep(5 * time.Second)
+	time.Sleep(5 * time.Second)
 	return readWebDeployment(ctx, d, meta)
 }
 

@@ -718,7 +718,7 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	d.Set("status", configuration.Status)
 
 	log.Printf("Finished updating web deployment configuration %s", name)
-	//	time.Sleep(5 * time.Second)
+	time.Sleep(5 * time.Second)
 	return readWebDeploymentConfiguration(ctx, d, meta)
 }
 

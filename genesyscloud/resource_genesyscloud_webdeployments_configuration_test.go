@@ -12,9 +12,10 @@ import (
 
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 	var (
-		configName        = "Test Configuration " + randString(8)
-		configDescription = "Test Configuration description " + randString(32)
-		fullResourceName  = "genesyscloud_webdeployments_configuration.basic"
+		configName               = "Test Configuration " + randString(8)
+		configDescription        = "Test Configuration description " + randString(32)
+		updatedConfigDescription = configDescription + " Updated"
+		fullResourceName         = "genesyscloud_webdeployments_configuration.basic"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -33,9 +34,21 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      fullResourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				Config: basicConfigurationResource(configName, updatedConfigDescription),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourceName, "name", configName),
+					resource.TestCheckResourceAttr(fullResourceName, "description", updatedConfigDescription),
+					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
+					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
+				),
+			},
+			{
+				ResourceName:            fullResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"status"},
 			},
 		},
 		CheckDestroy: verifyConfigurationDestroyed,
@@ -108,9 +121,10 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      fullResourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            fullResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"status"},
 			},
 		},
 		CheckDestroy: verifyConfigurationDestroyed,
