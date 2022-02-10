@@ -27,7 +27,7 @@ func resourceTrunk() *schema.Resource {
 			"trunk_base_settings_id": {
 				Description: "The trunk base settings reference",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 			"edge_group_id": {
 				Description: "The edge group associated with this trunk. Either this or \"edge_id\" must be set",
