@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -9,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 	"log"
+	"net/http"
 	"time"
 )
 
@@ -265,11 +268,9 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		trunkBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesettings(pageNum, pageSize, "", "", false, true, false, []string{"properties"}, "")
+		trunkBaseSettings, _, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of trunk base settings: %v", getErr)
 		}
@@ -286,6 +287,53 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 	}
 
 	return resources, nil
+}
+
+// The SDK function is too cumbersome because of the various boolean query parameters.
+// This function was written in order to leave them out and make a single API call
+func getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig *platformclientv2.Configuration, pageNumber int, pageSize int) (*platformclientv2.Trunkbaseentitylisting, *platformclientv2.APIResponse, error) {
+	headerParams := make(map[string]string)
+	if sdkConfig.AccessToken != ""{
+		headerParams["Authorization"] =  "Bearer " + sdkConfig.AccessToken
+	}
+	// add default headers if any
+	for key := range sdkConfig.DefaultHeader {
+		headerParams[key] = sdkConfig.DefaultHeader[key]
+	}
+
+	queryParams := make(map[string]string)
+	queryParams["pageNumber"] = sdkConfig.APIClient.ParameterToString(pageNumber, "")
+	queryParams["pageSize"] = sdkConfig.APIClient.ParameterToString(pageSize, "")
+	
+	// to determine the Content-Type header
+	httpContentTypes := []string{ "application/json" }
+
+	// set Content-Type header
+	httpContentType := sdkConfig.APIClient.SelectHeaderContentType(httpContentTypes)
+	if httpContentType != "" {
+		headerParams["Content-Type"] = httpContentType
+	}
+
+	// set Accept header
+	httpHeaderAccept := sdkConfig.APIClient.SelectHeaderAccept([]string{
+		"application/json",
+	})
+	if httpHeaderAccept != "" {
+		headerParams["Accept"] = httpHeaderAccept
+	}
+	var successPayload *platformclientv2.Trunkbaseentitylisting
+	path := sdkConfig.BasePath + "/api/v2/telephony/providers/edges/trunkbasesettings"
+	response, err := sdkConfig.APIClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if response.Error != nil {
+		err = errors.New(response.ErrorMessage)
+	} else {
+		err = json.Unmarshal(response.RawBody, &successPayload)
+	}
+	return successPayload, response, err
 }
 
 func trunkBaseSettingsExporter() *ResourceExporter {

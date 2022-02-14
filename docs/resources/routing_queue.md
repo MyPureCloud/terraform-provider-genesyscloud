@@ -31,8 +31,8 @@ resource "genesyscloud_routing_queue" "test_queue" {
   acw_wrapup_prompt                 = "MANDATORY_TIMEOUT"
   acw_timeout_ms                    = 300000
   skill_evaluation_method           = "BEST"
-  queue_flow_id                     = "34c17760-7539-11eb-9439-0242ac130002"
-  whisper_prompt_id                 = "3fae0821-2a1a-4ebb-90b1-188b65923243"
+  queue_flow_id                     = data.genesyscloud_flow.queue-flow.id
+  whisper_prompt_id                 = data.genesyscloud_architect_user_prompt.whisper.id
   auto_answer_only                  = true
   enable_transcription              = true
   enable_manual_assignment          = true
@@ -57,8 +57,8 @@ resource "genesyscloud_routing_queue" "test_queue" {
     skills_to_remove          = [genesyscloud_routing_skill.test-skill.id]
   }
   default_script_ids = {
-    EMAIL = "153fcff5-597e-4f17-94e5-17eac456a0b2"
-    CHAT  = "98dff282-c50c-4c36-bc70-80b058564e1b"
+    EMAIL = data.genesyscloud_script.email.id
+    CHAT  = data.genesyscloud_script.chat.id
   }
   members {
     user_id  = genesyscloud_user.test-user.id

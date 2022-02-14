@@ -224,7 +224,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 						"genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", sanitizeResourceName(userEmail1), testUser1),
 					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizeResourceName(queueName), testQueue),
-					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunk"),
+					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunkbasesettings"),
 				),
 			},
 			{
@@ -278,7 +278,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", sanitizeResourceName(userEmail1), testUser1),
 					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", sanitizeResourceName(userEmail2), testUser2),
 					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizeResourceName(queueName), testQueue),
-					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunk"),
+					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunkbasesettings"),
 				),
 			},
 		},

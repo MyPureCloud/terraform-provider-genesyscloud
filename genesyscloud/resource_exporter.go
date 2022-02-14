@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"hash/fnv"
 	"regexp"
 	"strconv"
@@ -61,6 +62,9 @@ type ResourceExporter struct {
 
 	// List of attributes to exclude from config. This is set by the export configuration.
 	ExcludedAttributes []string
+
+	// Map of attributes that cannot be resolved. E.g. edge Ids which are locked to an org or properties that cannot be retrieved from the API
+	UnResolvableAttributes map[string]*schema.Schema
 }
 
 func (r *ResourceExporter) loadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
@@ -189,12 +193,21 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 	// Include all if no filters
 	if len(filter) > 0 {
 		for resType := range exporters {
-			if !subStringInSlice(resType, filter) {
+			if !stringInSlice(resType, formatFilter(filter)) {
 				delete(exporters, resType)
 			}
 		}
 	}
 	return exporters
+}
+
+// Removes the ::resource_name from the resource_types list
+func formatFilter(filter []string) []string {
+	newFilter := make([]string, 0)
+	for _, str := range filter {
+		newFilter = append(newFilter, strings.Split(str, "::")[0])
+	}
+	return newFilter
 }
 
 func getAvailableExporterTypes() []string {

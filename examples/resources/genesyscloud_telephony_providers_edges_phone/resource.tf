@@ -1,11 +1,11 @@
 resource "genesyscloud_telephony_providers_edges_phone" "test_phone" {
   name                   = "test phone"
   state                  = "active"
-  site_id                = "48382f1b-fbbe-4232-8dd6-42a4fa70c1b6"
-  phone_base_settings_id = genesyscloud_telephony_providers_edges_phonebasesettings.id
-  line_base_settings_id  = "e9069894-b078-4905-b14f-488a6309b82b"
+  site_id                = genesyscloud_telephony_providers_edges_site.site.id
+  phone_base_settings_id = genesyscloud_telephony_providers_edges_phonebasesettings.phone-base-settings.id
+  line_base_settings_id  = data.genesyscloud_telephony_providers_edges_linebasesettings.line-base-settings.id
   line_addresses         = ["+13175550000"]
-  web_rtc_user_id        = genesyscloud_user.id
+  web_rtc_user_id        = genesyscloud_user.user.id
 
   capabilities {
     provisions            = false

@@ -36,8 +36,8 @@ func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2
 func routingEmailDomainExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllRoutingEmailDomains),
-		RefAttrs: map[string]*RefAttrSettings{
-			"custom_smtp_server_id": {}, // Ref type not yet defined
+		UnResolvableAttributes: map[string]*schema.Schema{
+			"custom_smtp_server_id": resourceRoutingEmailDomain().Schema["custom_smtp_server_id"],
 		},
 	}
 }

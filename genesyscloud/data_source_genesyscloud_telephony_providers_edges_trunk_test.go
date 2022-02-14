@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccDataSourceTrunk(t *testing.T) {
+	t.Skip("Skipping because we need to manage edges in order to successfully implement and test this resource")
 	var (
 		// trunk base settings used to create the trunk
 		trunkBaseSettingsRes = "trunkBaseSettingsRes"
