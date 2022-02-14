@@ -317,6 +317,7 @@ func resourceWebDeploymentConfiguration() *schema.Resource {
 				Description: "The version of the configuration.",
 				Type:        schema.TypeString,
 				Computed:    true,
+				Optional:    true,
 			},
 			"messenger": {
 				Description: "Settings concerning messenger",
