@@ -698,7 +698,7 @@ func generateTfExportResource(
 	excludedAttributes string) string {
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
 		directory = "%s"
-        include_state_file = %s
+		include_state_file = %s
 		resource_types = [
 			"genesyscloud_architect_datatable",
 			"genesyscloud_architect_datatable_row",
@@ -737,10 +737,12 @@ func generateTfExportResource(
 			"genesyscloud_telephony_providers_edges_trunkbasesettings",
 			"genesyscloud_telephony_providers_edges_trunk",
 			"genesyscloud_user",
-			"genesyscloud_user_roles"
+			"genesyscloud_user_roles",
+			"genesyscloud_webdeployments_configuration",
+			"genesyscloud_webdeployments_deployment"
 		]
 		exclude_attributes = [%s]
-    }
+	}
 	`, resourceID, directory, includeState, excludedAttributes)
 }
 
@@ -757,7 +759,7 @@ func generateTfExportByName(
 		resource_types = [%s]
 		exclude_attributes = [%s]
 		export_as_hcl = %s
-    }
+	}
 	`, resourceID, directory, includeState, strings.Join(items, ","), excludedAttributes, exportAsHCL)
 }
 
