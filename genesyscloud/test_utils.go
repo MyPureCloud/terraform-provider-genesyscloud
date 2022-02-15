@@ -3,8 +3,10 @@ package genesyscloud
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -243,4 +245,17 @@ func generateMapAttr(name string, properties ...string) string {
 		%s
 	}
 	`, name, strings.Join(properties, "\n"))
+}
+
+func randString(length int) string {
+	rand.Seed(time.Now().UnixNano())
+
+	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+	s := make([]rune, length)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+
+	return string(s)
 }
