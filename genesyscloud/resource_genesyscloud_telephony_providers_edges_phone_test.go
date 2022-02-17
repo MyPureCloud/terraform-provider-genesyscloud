@@ -205,6 +205,7 @@ func deleteDidPoolWithNumber(number string) {
 			if (didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == number) ||
 				(didPool.EndPhoneNumber != nil && *didPool.EndPhoneNumber == number) {
 				edgesAPI.DeleteTelephonyProvidersEdgesDidpool(*didPool.Id)
+				time.Sleep(5 * time.Second)
 			}
 		}
 	}

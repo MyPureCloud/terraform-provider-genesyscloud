@@ -128,6 +128,11 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		ivrBody.Description = &description
 	}
 
+	// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which
+	// would result in the error "Field 'didPoolId' is required and cannot be empty."
+	if ivrBody.Dnis != nil {
+		time.Sleep(3 * time.Second)
+	}
 	log.Printf("Creating IVR config %s", name)
 	ivrConfig, _, err := architectApi.PostArchitectIvrs(ivrBody)
 	if err != nil {
@@ -229,6 +234,11 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			ivrBody.Description = &description
 		}
 
+		// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which
+		// would result in the error "Field 'didPoolId' is required and cannot be empty."
+		if ivrBody.Dnis != nil {
+			time.Sleep(3 * time.Second)
+		}
 		log.Printf("Updating IVR config %s", name)
 		_, resp, putErr := architectApi.PutArchitectIvr(d.Id(), ivrBody)
 
