@@ -202,7 +202,8 @@ func deleteDidPoolWithNumber(number string) {
 		}
 
 		for _, didPool := range *didPools.Entities {
-			if didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == number {
+			if (didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == number) ||
+				(didPool.EndPhoneNumber != nil && *didPool.EndPhoneNumber == number) {
 				edgesAPI.DeleteTelephonyProvidersEdgesDidpool(*didPool.Id)
 			}
 		}
