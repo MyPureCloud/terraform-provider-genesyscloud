@@ -9,6 +9,7 @@ import (
 )
 
 func TestAccDataSourcePhone(t *testing.T) {
+	t.Parallel()
 	var (
 		phoneRes     = "phone1234"
 		phoneDataRes = "phoneData"

@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
+	t.Parallel()
 	var (
 		extensionPoolStartNumber = "1400"
 		extensionPoolEndNumber   = "1499"

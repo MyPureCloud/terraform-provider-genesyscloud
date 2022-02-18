@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
+	t.Parallel()
 	var (
 		trunkBaseSettingsRes     = "trunkBaseSettings"
 		trunkBaseSettingsDataRes = "trunkBaseSettingsData"

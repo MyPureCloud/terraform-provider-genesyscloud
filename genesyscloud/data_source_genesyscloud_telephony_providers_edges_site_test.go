@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccDataSourceSite(t *testing.T) {
+	t.Parallel()
 	var (
 		// site
 		siteRes      = "site"

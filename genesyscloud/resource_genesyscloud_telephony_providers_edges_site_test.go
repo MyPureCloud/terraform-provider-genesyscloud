@@ -13,6 +13,7 @@ import (
 )
 
 func TestAccResourceSite(t *testing.T) {
+	t.Parallel()
 	var (
 		// site
 		siteRes      = "site"
@@ -146,6 +147,7 @@ func TestAccResourceSite(t *testing.T) {
 }
 
 func TestAccResourceSiteNumberPlans(t *testing.T) {
+	t.Parallel()
 	var (
 		// site
 		siteRes     = "site"
@@ -337,6 +339,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 }
 
 func TestAccResourceSiteOutboundRoutes(t *testing.T) {
+	t.Parallel()
 	var (
 		// site
 		siteRes     = "site"

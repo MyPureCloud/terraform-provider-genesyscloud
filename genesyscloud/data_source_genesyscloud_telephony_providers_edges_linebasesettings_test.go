@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccDataSourceLineBaseSettings(t *testing.T) {
+	t.Parallel()
 	phoneBaseSettingsRes := "phoneBaseSettings1234"
 	phoneBaseSettingsName := "phoneBaseSettings " + uuid.NewString()
 
