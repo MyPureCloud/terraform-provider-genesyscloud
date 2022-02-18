@@ -143,7 +143,7 @@ func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *pl
 					if err != nil {
 						return resp, diag.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err)
 					}
-					time.Sleep(60 * time.Second)
+					time.Sleep(10 * time.Second)
 					return nil, nil
 				})
 				if diagErr != nil {

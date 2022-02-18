@@ -167,15 +167,49 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		inputDeployment.Flow = flow
 	}
 
-	deployment, _, err := api.PostWebdeploymentsDeployments(inputDeployment)
-	if err != nil {
-		return diag.Errorf("Failed to create web deployment %s: %s", name, err)
+	diagErr := withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		deployment, resp, err := api.PostWebdeploymentsDeployments(inputDeployment)
+		if err != nil {
+			if isStatus400(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
+		}
+
+		d.SetId(*deployment.Id)
+
+		log.Printf("Created web deployment %s %s", name, *deployment.Id)
+
+		return nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
-	d.SetId(*deployment.Id)
+	activeError := waitForDeploymentToBeActive(ctx, api, d.Id())
+	if activeError != nil {
+		return diag.Errorf("Web deployment %s did not become active and could not be created", name)
+	}
 
-	log.Printf("Created web deployment %s %s", name, *deployment.Id)
 	return readWebDeployment(ctx, d, meta)
+}
+
+func waitForDeploymentToBeActive(ctx context.Context, api *platformclientv2.WebDeploymentsApi, id string) diag.Diagnostics {
+	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+		deployment, resp, err := api.GetWebdeploymentsDeployment(id)
+		if err != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
+		}
+
+		if *deployment.Status == "Active" {
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("Web deployment %s not active yet. Status: %s", id, *deployment.Status))
+	})
 }
 
 func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -260,9 +294,24 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		inputDeployment.Flow = flow
 	}
 
-	_, _, err = api.PutWebdeploymentsDeployment(d.Id(), inputDeployment)
-	if err != nil {
-		return diag.Errorf("Error updating web deployment %s: %s", name, err)
+	diagErr := withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := api.PutWebdeploymentsDeployment(d.Id(), inputDeployment)
+		if err != nil {
+			if isStatus400(resp) {
+				return resource.RetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
+		}
+
+		return nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
+
+	activeError := waitForDeploymentToBeActive(ctx, api, d.Id())
+	if activeError != nil {
+		return diag.Errorf("Web deployment %s did not become active and could not be created", name)
 	}
 
 	log.Printf("Finished updating web deployment %s", name)

@@ -12,6 +12,7 @@ import (
 )
 
 func TestAccResourceTrunkBaseSettings(t *testing.T) {
+	t.Parallel()
 	var (
 		trunkBaseSettingsRes = "trunkBaseSettings1234"
 		name1                = "test trunk base settings " + uuid.NewString()

@@ -11,6 +11,7 @@ import (
 )
 
 func TestAccResourceEdgeGroup(t *testing.T) {
+	t.Parallel()
 	var (
 		edgeGroupRes          = "edgeGroup1234"
 		edgeGroupName1        = "test edge group " + uuid.NewString()

@@ -47,7 +47,7 @@ func dataSourceConfigurationRead(ctx context.Context, d *schema.ResourceData, m 
 		for _, config := range *configs.Entities {
 			if name == *config.Name {
 				d.SetId(*config.Id)
-				version := determineLatestVersion(api, *config.Id)
+				version := determineLatestVersion(ctx, api, *config.Id)
 				if version == "draft" {
 					return resource.NonRetryableError(fmt.Errorf("Web deployment configuration %s has no published versions and so cannot be used", name))
 				}

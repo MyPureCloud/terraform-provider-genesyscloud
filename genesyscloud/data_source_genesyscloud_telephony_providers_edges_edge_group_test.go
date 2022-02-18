@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccDataSourceEdgeGroup(t *testing.T) {
+	t.Parallel()
 	var (
 		edgeGroupRes          = "edgeGroup1234"
 		edgeGroupData         = "edgeGroupData"

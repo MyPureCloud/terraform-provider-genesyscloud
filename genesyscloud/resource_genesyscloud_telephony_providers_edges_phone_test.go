@@ -31,6 +31,7 @@ type phoneConfig struct {
 }
 
 func TestAccResourcePhoneBasic(t *testing.T) {
+	t.Parallel()
 	var (
 		phoneRes    = "phone1234"
 		name1       = "test-phone_" + uuid.NewString()
@@ -212,6 +213,7 @@ func deleteDidPoolWithNumber(number string) {
 }
 
 func TestAccResourcePhoneStandalone(t *testing.T) {
+	t.Parallel()
 	didPoolResource1 := "test-didpool1"
 	rand.Seed(time.Now().Unix())
 	n := rand.Intn(9)

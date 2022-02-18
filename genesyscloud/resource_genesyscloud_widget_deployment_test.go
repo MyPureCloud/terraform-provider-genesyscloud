@@ -80,6 +80,7 @@ func generateWidgetDeployV1(widgetDeploymentConfig *widgetDeploymentConfig) stri
 }
 
 func TestAccResourceWidgetDeploymentV2Widget(t *testing.T) {
+	t.Parallel()
 	name := "My Test V2 Widget"
 	widgetDeployV2 := &widgetDeploymentConfig{
 		resourceID:             "myTestV2Widget",
@@ -146,6 +147,7 @@ func TestAccResourceWidgetDeploymentV2Widget(t *testing.T) {
 }
 
 func TestAccResourceWidgetDeploymentV1Widget(t *testing.T) {
+	t.Parallel()
 	name := "My Text V1 Widget"
 	widgetDeployV1 := &widgetDeploymentConfig{
 		resourceID:             "myTestV1Widget",

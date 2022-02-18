@@ -11,6 +11,7 @@ import (
 )
 
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
+	t.Parallel()
 	var (
 		configName               = "Test Configuration " + randString(8)
 		configDescription        = "Test Configuration description " + randString(32)
@@ -56,6 +57,7 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 }
 
 func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
+	t.Parallel()
 	var (
 		configName        = "Test Configuration " + randString(8)
 		configDescription = "Test Configuration description " + randString(32)

@@ -20,6 +20,7 @@ type extensionPoolStruct struct {
 }
 
 func TestAccResourceExtensionPoolBasic(t *testing.T) {
+	t.Parallel()
 	extensionPoolResource1 := "test-extensionpool1"
 	rand.Seed(time.Now().Unix())
 	n := rand.Intn(9)

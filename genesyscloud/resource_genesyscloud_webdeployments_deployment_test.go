@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"regexp"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 )
 
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
+	t.Parallel()
 	var (
 		deploymentName        = "Test Deployment " + randString(8)
 		deploymentDescription = "Test Deployment description " + randString(32)
@@ -44,6 +46,7 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 }
 
 func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
+	t.Parallel()
 	var (
 		deploymentName   = "Test Deployment " + randString(8)
 		fullResourceName = "genesyscloud_webdeployments_deployment.basicWithAllowedDomains"
@@ -86,6 +89,7 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 }
 
 func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
+	t.Parallel()
 	var (
 		deploymentName             = "Test Deployment " + randString(8)
 		fullDeploymentResourceName = "genesyscloud_webdeployments_deployment.versioning"
@@ -148,10 +152,11 @@ func deploymentResourceWithAllowedDomains(t *testing.T, name string, allowedDoma
 	if err != nil {
 		t.Error(err)
 	}
+	minimalConfigName := "Minimal Config " + uuid.NewString()
 
 	return fmt.Sprintf(`
 	resource "genesyscloud_webdeployments_configuration" "minimal" {
-		name = "Minimal Config"
+		name = "%s"
 	}
 
 	resource "genesyscloud_webdeployments_deployment" "basicWithAllowedDomains" {
@@ -162,7 +167,7 @@ func deploymentResourceWithAllowedDomains(t *testing.T, name string, allowedDoma
 			version = "${genesyscloud_webdeployments_configuration.minimal.version}"
 		}
 	}
-	`, name, value)
+	`, minimalConfigName, name, value)
 }
 
 func versioningDeploymentResource(t *testing.T, name, description, defaultLanguage string, languages []string) string {
@@ -170,10 +175,11 @@ func versioningDeploymentResource(t *testing.T, name, description, defaultLangua
 	if err != nil {
 		t.Error(err)
 	}
+	minimalConfigName := "Minimal Config " + uuid.NewString()
 
 	return fmt.Sprintf(`
 	resource "genesyscloud_webdeployments_configuration" "minimal" {
-		name = "Minimal Config"
+		name = "%s"
 		languages = %s
 		default_language = "%s"
 	}
@@ -187,7 +193,7 @@ func versioningDeploymentResource(t *testing.T, name, description, defaultLangua
 			version = genesyscloud_webdeployments_configuration.minimal.version
 		}
 	}
-	`, value, defaultLanguage, name, description)
+	`, minimalConfigName, value, defaultLanguage, name, description)
 }
 
 func verifyDeploymentDestroyed(state *terraform.State) error {
