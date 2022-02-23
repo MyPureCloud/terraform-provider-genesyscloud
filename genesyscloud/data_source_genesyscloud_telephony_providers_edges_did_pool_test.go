@@ -3,17 +3,13 @@ package genesyscloud
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"math/rand"
 	"testing"
-	"time"
 )
 
 func TestAccDataSourceDidPoolBasic(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-	n := rand.Intn(9)
 	var (
-		didPoolStartPhoneNumber = fmt.Sprintf("+4546555000%v", n)
-		didPoolEndPhoneNumber = fmt.Sprintf("+4546555000%v", n + 1)
+		didPoolStartPhoneNumber = "+45465550001"
+		didPoolEndPhoneNumber = "+45465550002"
 		didPoolRes = "didPool"
 		didPoolDataRes = "didPoolData"
 	)

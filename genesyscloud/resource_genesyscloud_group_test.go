@@ -13,6 +13,7 @@ import (
 )
 
 func TestAccResourceGroupBasic(t *testing.T) {
+	t.Parallel()
 	var (
 		groupResource1 = "test-group1"
 		groupName      = "terraform-" + uuid.NewString()
@@ -75,6 +76,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 }
 
 func TestAccResourceGroupAddresses(t *testing.T) {
+	t.Parallel()
 	var (
 		groupResource1 = "test-group-addr"
 		groupName      = "TF Group" + uuid.NewString()
@@ -136,6 +138,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 }
 
 func TestAccResourceGroupMembers(t *testing.T) {
+	t.Parallel()
 	var (
 		groupResource = "test-group-members"
 		groupName     = "Terraform Test Group-" + uuid.NewString()

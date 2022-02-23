@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"fmt"
-	"math/rand"
 	"strconv"
 	"testing"
 	"time"
@@ -23,10 +22,8 @@ type didPoolStruct struct {
 
 func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
-	rand.Seed(time.Now().Unix())
-	n := rand.Intn(9)
-	didPoolStartPhoneNumber1 := fmt.Sprintf("+1417554001%v", n)
-	didPoolEndPhoneNumber1 := fmt.Sprintf("+1417554001%v", n + 1)
+	didPoolStartPhoneNumber1 := "+14175540014"
+	didPoolEndPhoneNumber1 := "+14175540015"
 	err := authorizeSdk()
 	if err != nil {
 		t.Fatal(err)

@@ -282,6 +282,9 @@ func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration)
 		configName = *config.Name
 	}
 	if config.Notes != nil {
+		if *config.Notes == "node_dynamodb_empty_string" {
+			*config.Notes = ""
+		}
 		configNotes = *config.Notes
 	}
 	if config.Properties != nil {
