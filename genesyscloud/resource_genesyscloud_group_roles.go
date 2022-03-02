@@ -2,12 +2,10 @@ package genesyscloud
 
 import (
 	"context"
-	"log"
-	"time"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"log"
 )
 
 func groupRolesExporter() *ResourceExporter {
@@ -88,7 +86,6 @@ func updateGroupRoles(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updated group roles for %s", d.Id())
-	time.Sleep(10 * time.Second)
 	return readGroupRoles(ctx, d, meta)
 }
 

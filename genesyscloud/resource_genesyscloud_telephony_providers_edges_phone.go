@@ -257,7 +257,7 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 	stationsAPI := platformclientv2.NewStationsApiWithConfig(sdkConfig)
 	stationId := ""
 
-	retryErr := withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	retryErr := withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		stations, _, getErr := stationsAPI.GetStations(pageSize, pageNum, "", "", "", userId, "", "")

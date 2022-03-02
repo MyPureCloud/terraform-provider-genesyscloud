@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"fmt"
-	"math/rand"
 	"strconv"
 	"testing"
 	"time"
@@ -22,10 +21,8 @@ type extensionPoolStruct struct {
 func TestAccResourceExtensionPoolBasic(t *testing.T) {
 	t.Parallel()
 	extensionPoolResource1 := "test-extensionpool1"
-	rand.Seed(time.Now().Unix())
-	n := rand.Intn(9)
-	extensionPoolStartNumber1 := fmt.Sprintf("1500%v", n)
-	extensionPoolEndNumber1 := fmt.Sprintf("1509%v", n+1)
+	extensionPoolStartNumber1 := "15000"
+	extensionPoolEndNumber1 := "15001"
 	err := authorizeSdk()
 	if err != nil {
 		t.Fatal(err)

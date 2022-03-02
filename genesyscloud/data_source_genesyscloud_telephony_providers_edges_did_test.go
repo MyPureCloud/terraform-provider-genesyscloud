@@ -12,7 +12,7 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 	t.Parallel()
 	var (
 		didPoolStartPhoneNumber = "+45465550001"
-		didPoolEndPhoneNumber   = "+45465550333"
+		didPoolEndPhoneNumber   = "+45465550003"
 		didPoolRes              = "didPool"
 		ivrConfigRes            = "ivrConfig"
 		ivrConfigName           = "test-config" + uuid.NewString()
@@ -25,6 +25,7 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	deleteIvrStartingWith("test-config")
 	deleteDidPoolWithNumber(didPoolStartPhoneNumber)
 	deleteDidPoolWithNumber(didPoolEndPhoneNumber)
 

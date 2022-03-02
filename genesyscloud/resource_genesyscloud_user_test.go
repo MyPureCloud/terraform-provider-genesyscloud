@@ -13,6 +13,7 @@ import (
 )
 
 func TestAccResourceUserBasic(t *testing.T) {
+	t.Parallel()
 	var (
 		userResource1 = "test-user1"
 		userResource2 = "test-user2"
@@ -160,6 +161,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 }
 
 func TestAccResourceUserAddresses(t *testing.T) {
+	t.Parallel()
 	var (
 		addrUserResource1 = "test-user-addr"
 		addrUserName      = "Nancy Terraform"
@@ -250,6 +252,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 }
 
 func TestAccResourceUserPhone(t *testing.T) {
+	t.Parallel()
 	var (
 		addrUserResource1 = "test-user-addr"
 		addrUserName      = "Nancy Terraform"
@@ -361,6 +364,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 }
 
 func TestAccResourceUserSkills(t *testing.T) {
+	t.Parallel()
 	var (
 		userResource1  = "test-user"
 		email1         = "terraform-" + uuid.NewString() + "@example.com"
@@ -442,6 +446,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 }
 
 func TestAccResourceUserLanguages(t *testing.T) {
+	t.Parallel()
 	var (
 		userResource1 = "test-user"
 		email1        = "terraform-" + uuid.NewString() + "@example.com"
@@ -523,6 +528,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 }
 
 func TestAccResourceUserLocations(t *testing.T) {
+	t.Parallel()
 	var (
 		userResource1 = "test-user-loc"
 		email         = "terraform-" + uuid.NewString() + "@example.com"
@@ -579,6 +585,7 @@ func TestAccResourceUserLocations(t *testing.T) {
 }
 
 func TestAccResourceUserEmployerInfo(t *testing.T) {
+	t.Parallel()
 	var (
 		userResource1 = "test-user-info"
 		userName      = "Info Terraform"
@@ -683,6 +690,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 }
 
 func TestAccResourceUserRoutingUtil(t *testing.T) {
+	t.Parallel()
 	var (
 		userResource1 = "test-user-util"
 		userName      = "Terraform Util"
@@ -786,6 +794,7 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 }
 
 func TestAccResourceUserRestore(t *testing.T) {
+	t.Parallel()
 	var (
 		userResource1 = "test-user"
 		email1        = "terraform-" + uuid.NewString() + "@example.com"

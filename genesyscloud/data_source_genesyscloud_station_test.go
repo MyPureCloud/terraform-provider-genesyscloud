@@ -28,17 +28,7 @@ func TestAccDataSourceStation(t *testing.T) {
 		stationDataRes = "station1234"
 	)
 
-	err := authorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	siteId, err := getDefaultSiteId()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	config := generateUserResource(
+	config := generateOrganizationMe() + generateUserResource(
 		userRes1,
 		userEmail1,
 		userName1,
@@ -58,7 +48,7 @@ func TestAccDataSourceStation(t *testing.T) {
 		phoneRes,
 		name1,
 		stateActive,
-		siteId,
+		"data.genesyscloud_organizations_me.me.default_site_id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".line_base_settings_id",
 		nil, // no line addresses

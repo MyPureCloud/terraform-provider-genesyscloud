@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
-	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
@@ -21,18 +20,40 @@ type ivrConfigStruct struct {
 	depends_on  string
 }
 
+func deleteIvrStartingWith(name string) {
+	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		ivrs, _, getErr := archAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "")
+		if getErr != nil {
+			return
+		}
+
+		if ivrs.Entities == nil || len(*ivrs.Entities) == 0 {
+			break
+		}
+
+		for _, ivr := range *ivrs.Entities {
+			if strings.HasPrefix(*ivr.Name, name) {
+				archAPI.DeleteArchitectIvr(*ivr.Id)
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
+}
+
 func TestAccResourceIvrConfigBasic(t *testing.T) {
 	ivrConfigResource1 := "test-ivrconfig1"
 	ivrConfigName := "terraform-ivrconfig-" + uuid.NewString()
 	ivrConfigDescription := "Terraform IVR config"
-	rand.Seed(time.Now().Unix())
-	n := rand.Intn(9)
-	number1 := fmt.Sprintf("+1417555001%v", n)
-	number2 := fmt.Sprintf("+1417555001%v", n + 1)
+	number1 := "+14175550011"
+	number2 := "+14175550012"
 	err := authorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
+	deleteIvrStartingWith("terraform-ivrconfig-")
 	deleteDidPoolWithNumber(number1)
 	deleteDidPoolWithNumber(number2)
 	ivrConfigDnis := []string{number1, number2}
