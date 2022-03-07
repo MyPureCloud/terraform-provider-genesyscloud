@@ -11,14 +11,6 @@ Genesys Cloud Web Deployment
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/webdeployments/configurations](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations)
-* [POST /api/v2/webdeployments/configurations](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#post-api-v2-webdeployments-configurations)
-* [DELETE /api/v2/webdeployments/configurations/{configurationId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#delete-api-v2-webdeployments-configurations--configurationId-)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations--configurationId--versions)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations--configurationId--versions-draft)
-* [PUT /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#put-api-v2-webdeployments-configurations--configurationId--versions-draft)
-* [POST /api/v2/webdeployments/configurations/{configurationId}/versions/draft/publish](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#post-api-v2-webdeployments-configurations--configurationId--versions-draft-publish)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/{versionId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations--configurationId--versions--versionId-)
 * [GET /api/v2/webdeployments/deployments](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-deployments)
 * [POST /api/v2/webdeployments/deployments](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#post-api-v2-webdeployments-deployments)
 * [DELETE /api/v2/webdeployments/deployments/{deploymentId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#delete-api-v2-webdeployments-deployments--deploymentId-)

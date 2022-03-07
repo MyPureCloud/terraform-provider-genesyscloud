@@ -1,0 +1,24 @@
+inboundEmail:
+    name: Terraform Flow Test-b42da769-a2f4-438a-b84b-2fd90b53f4bc
+    division: Home
+    startUpRef: "/inboundEmail/states/state[Initial State_10]"
+    defaultLanguage: en-us
+    supportedLanguages:
+        en-us:
+            defaultLanguageSkill:
+                noValue: true
+    settingsInboundEmailHandling:
+        emailHandling:
+            disconnect:
+                none: true
+    settingsErrorHandling:
+        errorHandling:
+            disconnect:
+                none: true
+    states:
+        - state:
+            name: Initial State
+            refId: Initial State_10
+            actions:
+                - disconnect:
+                    name: Disconnect
