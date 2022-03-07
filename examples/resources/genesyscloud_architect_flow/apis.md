@@ -1,2 +1,0 @@
-* [POST /api/v2/flows/jobs](https://developer.mypurecloud.com/api/rest/v2/architect/#post-api-v2-flows-jobs)
-* [GET /api/v2/flows/jobs/{jobId}](https://developer.mypurecloud.com/api/rest/v2/architect/#get-api-v2-flows-jobs--jobId-)

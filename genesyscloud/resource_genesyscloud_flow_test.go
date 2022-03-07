@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"testing"
@@ -20,9 +21,9 @@ func TestAccResourceFlow(t *testing.T) {
 		flowName2     = "Terraform Flow Test-" + uuid.NewString()
 		flowType1     = "INBOUNDCALL"
 		flowType2     = "INBOUNDEMAIL"
-		filePath1     = "../examples/resources/genesyscloud_architect_flow/inboundcall_flow_example.yaml"
-		filePath2     = "../examples/resources/genesyscloud_architect_flow/inboundcall_flow_example2.yaml"
-		filePath3     = "../examples/resources/genesyscloud_architect_flow/inboundcall_flow_example3.yaml"
+		filePath1     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		filePath2     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
+		filePath3     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName1)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName2)
@@ -66,7 +67,7 @@ func TestAccResourceFlow(t *testing.T) {
 					inboundcallConfig1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_architect_flow."+flowResource1, flowName1, flowType1),
+					validateFlow("genesyscloud_flow."+flowResource1, flowName1, flowType1),
 				),
 			},
 			{
@@ -77,12 +78,12 @@ func TestAccResourceFlow(t *testing.T) {
 					inboundcallConfig2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_architect_flow."+flowResource1, flowName2, flowType1),
+					validateFlow("genesyscloud_flow."+flowResource1, flowName2, flowType1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_architect_flow." + flowResource1,
+				ResourceName:            "genesyscloud_flow." + flowResource1,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"filepath"},
@@ -95,7 +96,7 @@ func TestAccResourceFlow(t *testing.T) {
 					inboundemailConfig1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_architect_flow."+flowResource2, flowName1, flowType2),
+					validateFlow("genesyscloud_flow."+flowResource2, flowName1, flowType2),
 				),
 			},
 			{
@@ -106,12 +107,12 @@ func TestAccResourceFlow(t *testing.T) {
 					inboundcallConfig2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_architect_flow."+flowResource2, flowName2, flowType1),
+					validateFlow("genesyscloud_flow."+flowResource2, flowName2, flowType1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_architect_flow." + flowResource2,
+				ResourceName:            "genesyscloud_flow." + flowResource2,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"filepath"},
@@ -122,10 +123,9 @@ func TestAccResourceFlow(t *testing.T) {
 }
 
 func generateFlowResource(resourceID string, filepath string, filecontent string) string {
-
 	updateFile(filepath, filecontent)
 
-	return fmt.Sprintf(`resource "genesyscloud_architect_flow" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
         filepath = %s
 	}
 	`, resourceID, strconv.Quote(filepath))
@@ -135,13 +135,12 @@ func updateFile(filepath string, content string) {
 	file, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	defer file.Close()
 
 	file.WriteString(content)
-
 }
 
 // Check if flow is published, then check if flow name and type are correct
@@ -179,7 +178,7 @@ func validateFlow(flowResourceName string, name string, flowType string) resourc
 func testVerifyFlowDestroyed(state *terraform.State) error {
 	architectAPI := platformclientv2.NewArchitectApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_architect_flow" {
+		if rs.Type != "genesyscloud_flow" {
 			continue
 		}
 

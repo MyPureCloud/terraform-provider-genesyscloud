@@ -1,10 +1,11 @@
 ---
-page_title: "genesyscloud_architect_flow Resource - terraform-provider-genesyscloud"
+page_title: "genesyscloud_flow Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
   Genesys Cloud Flow
+  NOTE: This component is currently in beta. If you are interested in participating in the beta, please contact Becky Powell (becky.powell@genesys.com) to be added to the beta. If you attempt to use this resource and you are not part of the beta program, your flow deploy will fail with HTTP status 403, no permissions.
 ---
-# genesyscloud_architect_flow (Resource)
+# genesyscloud_flow (Resource)
 
 Genesys Cloud Flow
 
@@ -14,13 +15,16 @@ Genesys Cloud Flow
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [POST /api/v2/flows/jobs](https://developer.mypurecloud.com/api/rest/v2/architect/#post-api-v2-flows-jobs)
+* [GET /api/v2/flows](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-flows)
+* [GET /api/v2/flows/{flowId}](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-flows--flowId-)
 * [GET /api/v2/flows/jobs/{jobId}](https://developer.mypurecloud.com/api/rest/v2/architect/#get-api-v2-flows-jobs--jobId-)
+* [DELETE /api/v2/flows/{flowId}](https://developer.genesys.cloud/api/rest/v2/architect/#delete-api-v2-flows--flowId-)
 
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_architect_flow" "test_flow1" {
-  filepath = "the flow configuration file path here"
+resource "genesyscloud_flow" "test_flow1" {
+  filepath = "the flow configuration file path or URL"
 }
 ```
 
@@ -29,7 +33,7 @@ resource "genesyscloud_architect_flow" "test_flow1" {
 
 ### Required
 
-- **filepath** (String) YAML file path for flow configuration.
+- **filepath** (String) YAML file path or URL for flow configuration.
 
 ### Optional
 

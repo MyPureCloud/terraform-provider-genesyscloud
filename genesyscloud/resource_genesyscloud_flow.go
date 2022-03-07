@@ -24,7 +24,8 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		flows, _, err := architectAPI.GetFlows(nil, pageNum, 25, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
+		const pageSize = 50
+		flows, _, err := architectAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
 		if err != nil {
 			return nil, diag.Errorf("Failed to get page of flows: %v", err)
 		}
@@ -41,7 +42,7 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 	return resources, nil
 }
 
-func architectFlowExporter() *ResourceExporter {
+func flowExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllFlows),
 		RefAttrs:         map[string]*RefAttrSettings{},
@@ -50,7 +51,9 @@ func architectFlowExporter() *ResourceExporter {
 
 func resourceFlow() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Flow",
+		Description: `Genesys Cloud Flow
+
+**NOTE: This component is currently in beta. If you are interested in participating in the beta, please contact Becky Powell (becky.powell@genesys.com) to be added to the beta. If you attempt to use this resource and you are not part of the beta program, your flow deploy will fail with HTTP status 403, no permissions.**`,
 
 		CreateContext: createWithPooledClient(createFlow),
 		ReadContext:   readWithPooledClient(readFlow),
@@ -62,7 +65,7 @@ func resourceFlow() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"filepath": {
-				Description: "YAML file path for flow configuration.",
+				Description: "YAML file path or URL for flow configuration.",
 				Type:        schema.TypeString,
 				Required:    true,
 				StateFunc: func(v interface{}) string {
@@ -74,7 +77,6 @@ func resourceFlow() *schema.Resource {
 }
 
 func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
@@ -109,14 +111,12 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	// Once the endpoint is ready for SDK, can extract data from the InitiateArchitectJobResponse type, instead of map of string interface
 	presignedUrl := successPayload["presignedUrl"].(string)
 	jobId := successPayload["id"].(string)
-	correlationId := response.CorrelationID
 	headers := successPayload["headers"].(map[string]interface{})
-	orgID := headers["x-amz-meta-organizationid"].(string)
 
 	filePath := d.Get("filepath").(string)
 
 	// Upload flow configuration file
-	_, err = prepareAndUploadFile(filePath, headers, presignedUrl, jobId, orgID, correlationId)
+	_, err = prepareAndUploadFile(filePath, headers, presignedUrl)
 
 	if err != nil {
 		return diag.Errorf(err.Error())
@@ -172,21 +172,21 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	flow, resp, err := architectAPI.GetFlow(d.Id(), false)
-	if err != nil {
-		if isStatus404(resp) {
-			d.SetId("")
-			return nil
+	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+		flow, resp, err := architectAPI.GetFlow(d.Id(), false)
+		if err != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 		}
-		return diag.Errorf("Failed to read flow %s: %s", d.Id(), err)
-	}
 
-	log.Printf("Read flow %s %s", d.Id(), *flow.Name)
-	return nil
+		log.Printf("Read flow %s %s", d.Id(), *flow.Name)
+		return nil
+	})
 }
 
 func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -224,14 +224,11 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	// Once the endpoint is ready for SDK, can extract data from the InitiateArchitectJobResponse type, instead of map of string interface
 	presignedUrl := successPayload["presignedUrl"].(string)
 	jobId := successPayload["id"].(string)
-	correlationId := response.CorrelationID
 	headers := successPayload["headers"].(map[string]interface{})
-	orgID := headers["x-amz-meta-organizationid"].(string)
 
 	filePath := d.Get("filepath").(string)
 
-	_, err = prepareAndUploadFile(filePath, headers, presignedUrl, jobId, orgID, correlationId)
-
+	_, err = prepareAndUploadFile(filePath, headers, presignedUrl)
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
@@ -289,12 +286,18 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	_, err := architectAPI.DeleteFlow(d.Id())
-	if err != nil {
-		return diag.Errorf("Failed to delete the flow %s: %s", d.Id(), err)
-	}
-	log.Printf("Deleted flow %s", d.Id())
-	return nil
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		resp, err := architectAPI.DeleteFlow(d.Id())
+		if err != nil {
+			if isStatus404(resp) {
+				// Flow deleted
+				log.Printf("Deleted Flow %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
+		}
+		return nil
+	})
 }
 
 // Hash file content, used in stateFunc for "filepath"
@@ -314,17 +317,30 @@ func hashFileContent(path string) string {
 }
 
 // Read and upload input file path to S3 pre-signed URL
-func prepareAndUploadFile(filename string, headers map[string]interface{}, presignedUrl string, jobId string, orgId string, correlationId string) ([]byte, error) {
-
+func prepareAndUploadFile(filename string, headers map[string]interface{}, presignedUrl string) ([]byte, error) {
 	bodyBuf := &bytes.Buffer{}
+	var reader io.Reader
 
-	fh, err := os.Open(filename)
+	_, err := os.Stat(filename)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to open the file. Error: %s ", err)
+		resp, err := http.Get(filename)
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+			return nil, fmt.Errorf("HTTP Error downloading file: %v", resp.StatusCode)
+		}
+		reader = resp.Body
+	} else {
+		file, err := os.Open(filename)
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+		reader = file
 	}
-	defer fh.Close()
 
-	_, err = io.Copy(bodyBuf, fh)
+	_, err = io.Copy(bodyBuf, reader)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to copy file content to the handler. Error: %s ", err)
 	}

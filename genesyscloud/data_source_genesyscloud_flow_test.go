@@ -8,12 +8,13 @@ import (
 )
 
 func TestAccDataSourceFlow(t *testing.T) {
-	// TODO: Generate a real flow once the resource has been added
-	t.Skip("skipping flow data source test until resource is defined")
-
 	var (
-		flowDataSource = "flow-data"
-		flowName       = "test flow"
+		flowDataSource    = "flow-data"
+		flowName          = "test flow"
+		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
+
+		flowResource = "test_flow"
+		filePath     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -21,12 +22,17 @@ func TestAccDataSourceFlow(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateFlowDataSource(
+				Config: generateFlowResource(
+					flowResource,
+					filePath,
+					inboundcallConfig,
+				) + generateFlowDataSource(
 					flowDataSource,
+					"genesyscloud_flow." + flowResource,
 					flowName,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_flow."+flowDataSource, "id", "88985b85-924a-4c4b-ad1b-2c43da23b6a8"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_flow."+flowDataSource, "id", "genesyscloud_flow."+flowResource, "id"),
 				),
 			},
 		},
@@ -34,10 +40,12 @@ func TestAccDataSourceFlow(t *testing.T) {
 }
 
 func generateFlowDataSource(
-	resourceID string,
+	resourceID,
+	dependsOn,
 	name string) string {
 	return fmt.Sprintf(`data "genesyscloud_flow" "%s" {
 		name = "%s"
+		depends_on = [%s]
 	}
-	`, resourceID, name)
+	`, resourceID, name, dependsOn)
 }

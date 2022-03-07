@@ -1,0 +1,5 @@
+* [POST /api/v2/flows/jobs](https://developer.mypurecloud.com/api/rest/v2/architect/#post-api-v2-flows-jobs)
+* [GET /api/v2/flows](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-flows)
+* [GET /api/v2/flows/{flowId}](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-flows--flowId-)
+* [GET /api/v2/flows/jobs/{jobId}](https://developer.mypurecloud.com/api/rest/v2/architect/#get-api-v2-flows-jobs--jobId-)
+* [DELETE /api/v2/flows/{flowId}](https://developer.genesys.cloud/api/rest/v2/architect/#delete-api-v2-flows--flowId-)
