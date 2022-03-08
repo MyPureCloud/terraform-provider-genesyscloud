@@ -263,10 +263,16 @@ func exportHCLConfig(
 		"version": zclconfCty.StringVal(version),
 	}))
 	terraformHCLBlock = fmt.Sprintf("%s", rootFile.Bytes())
-	// prepend terraform block
-	first := resourceTypeHCLBlocksSlice[0]
-	resourceTypeHCLBlocksSlice[0] = rootFile.Bytes()
-	resourceTypeHCLBlocksSlice = append(resourceTypeHCLBlocksSlice, first)
+
+	if len(resourceTypeHCLBlocksSlice) > 0 {
+		// prepend terraform block
+		first := resourceTypeHCLBlocksSlice[0]
+		resourceTypeHCLBlocksSlice[0] = rootFile.Bytes()
+		resourceTypeHCLBlocksSlice = append(resourceTypeHCLBlocksSlice, first)
+	} else {
+		// no resources exist - prepend terraform block alone
+		resourceTypeHCLBlocksSlice = append(resourceTypeHCLBlocksSlice, rootFile.Bytes())
+	}
 
 	if len(unresolvedAttrs) > 0 {
 		mFile := hclwrite.NewEmptyFile()
