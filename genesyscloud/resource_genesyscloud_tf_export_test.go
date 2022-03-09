@@ -3,9 +3,11 @@ package genesyscloud
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -137,6 +139,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					[]string{strconv.Quote("genesyscloud_user::" + userEmail1)},
 					"",
 					falseValue,
+					falseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_tf_export."+exportResource1,
@@ -171,6 +174,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 						strconv.Quote("genesyscloud_routing_queue::" + queueName),
 					},
 					"",
+					falseValue,
 					falseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -210,6 +214,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 						strconv.Quote("genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					},
 					"",
+					falseValue,
 					falseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -261,6 +266,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					},
 					"",
 					falseValue,
+					falseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
@@ -289,7 +295,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 	var (
 		exportedContents string
-		pathToHclFile    = exportTestDir + "/" + defaultTfHCLFile
+		pathToHclFile    = filepath.Join(exportTestDir, defaultTfHCLFile)
 		formName         = "terraform_form_evaluations_" + uuid.NewString()
 		formResourceName = formName
 
@@ -388,6 +394,7 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation::" + formName)},
 					"",
 					trueValue,
+					falseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					getExportedFileContents(pathToHclFile, &exportedContents),
@@ -417,7 +424,7 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 	var (
 		exportContents string
-		pathToHclFile  = exportTestDir + "/" + defaultTfHCLFile
+		pathToHclFile  = filepath.Join(exportTestDir, defaultTfHCLFile)
 	)
 
 	// routing queue attributes
@@ -479,6 +486,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 					[]string{strconv.Quote("genesyscloud_routing_queue::" + queueName)},
 					"",
 					trueValue,
+					falseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					getExportedFileContents(pathToHclFile, &exportContents),
@@ -508,6 +516,85 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
+	var (
+		configPath              = filepath.Join(exportTestDir, defaultTfJSONFile)
+		permissionsErrorMessage = "API Error 403 - Missing view permissions."
+		otherErrorMessage       = "API Error 411 - Another type of error."
+
+		err1    = diag.Diagnostic{Summary: permissionsErrorMessage}
+		err2    = diag.Diagnostic{Summary: otherErrorMessage}
+		errors1 = diag.Diagnostics{err1}
+		errors2 = diag.Diagnostics{err1, err2}
+	)
+
+	mockError = errors1
+
+	// Checking that the config file is created when the error is 403 & log_permission_errors = true
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: generateTfExportByName("test-export",
+					exportTestDir,
+					falseValue,
+					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
+					"",
+					falseValue,
+					trueValue),
+				Check: resource.ComposeTestCheckFunc(
+					validateFileCreated(configPath),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyed,
+	})
+
+	// Check that the export fails when a non-403 error exists
+	mockError = errors2
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: generateTfExportByName("test-export",
+					exportTestDir,
+					falseValue,
+					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
+					"",
+					falseValue,
+					trueValue),
+				ExpectError: regexp.MustCompile(otherErrorMessage),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyed,
+	})
+
+	// Check that info about attr exists in error summary when 403 is found & log_permission_errors = false
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: generateTfExportByName("test-export",
+					exportTestDir,
+					falseValue,
+					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
+					"",
+					falseValue,
+					falseValue),
+				ExpectError: regexp.MustCompile(logAttrInfo),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyed,
+	})
+
+	// Clean up
+	mockError = nil
 }
 
 func removeTfConfigBlock(export string) string {
@@ -753,15 +840,17 @@ func generateTfExportByName(
 	includeState string,
 	items []string,
 	excludedAttributes string,
-	exportAsHCL string) string {
+	exportAsHCL string,
+	logErrors string) string {
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
 		directory = "%s"
 		include_state_file = %s
 		resource_types = [%s]
 		exclude_attributes = [%s]
 		export_as_hcl = %s
+		log_permission_errors = %s
 	}
-	`, resourceID, directory, includeState, strings.Join(items, ","), excludedAttributes, exportAsHCL)
+	`, resourceID, directory, includeState, strings.Join(items, ","), excludedAttributes, exportAsHCL, logErrors)
 }
 
 func getExportedFileContents(filename string, result *string) resource.TestCheckFunc {
