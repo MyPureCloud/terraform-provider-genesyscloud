@@ -102,7 +102,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	} else if err == nil && response.Error != nil {
 		return diag.Errorf("Failed to register Archy job. %s", err)
 	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
+		err = json.Unmarshal(response.RawBody, &successPayload)
 		if err != nil {
 			return diag.Errorf("Failed to unmarshal response after registering the Archy job. %s", err)
 		}
@@ -117,7 +117,6 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	// Upload flow configuration file
 	_, err = prepareAndUploadFile(filePath, headers, presignedUrl)
-
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
@@ -137,7 +136,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		} else if err == nil && response.Error != nil {
 			resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 		} else {
-			err = json.Unmarshal([]byte(response.RawBody), &res)
+			err = json.Unmarshal(response.RawBody, &res)
 			if err != nil {
 				resource.NonRetryableError(fmt.Errorf("Unable to unmarshal response when retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 			}
@@ -247,7 +246,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		} else if err == nil && response.Error != nil {
 			resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 		} else {
-			err = json.Unmarshal([]byte(response.RawBody), &res)
+			err = json.Unmarshal(response.RawBody, &res)
 			if err != nil {
 				resource.NonRetryableError(fmt.Errorf("Unable to unmarshal response when retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 			}
@@ -302,15 +301,20 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 // Hash file content, used in stateFunc for "filepath"
 func hashFileContent(path string) string {
+	_, err := os.Stat(path)
+	if err != nil {
+		return err.Error()
+	}
+
 	file, err := os.Open(path)
 	if err != nil {
-		log.Fatal(err)
+		return err.Error()
 	}
 	defer file.Close()
 
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
-		log.Fatal(err)
+		return err.Error()
 	}
 
 	return hex.EncodeToString(hash.Sum(nil))
@@ -319,25 +323,13 @@ func hashFileContent(path string) string {
 // Read and upload input file path to S3 pre-signed URL
 func prepareAndUploadFile(filename string, headers map[string]interface{}, presignedUrl string) ([]byte, error) {
 	bodyBuf := &bytes.Buffer{}
-	var reader io.Reader
 
-	_, err := os.Stat(filename)
+	reader, file, err := downloadOrOpenFile(filename)
 	if err != nil {
-		resp, err := http.Get(filename)
-		if err != nil {
-			return nil, err
-		}
-		if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-			return nil, fmt.Errorf("HTTP Error downloading file: %v", resp.StatusCode)
-		}
-		reader = resp.Body
-	} else {
-		file, err := os.Open(filename)
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
+	}
+	if file != nil {
 		defer file.Close()
-		reader = file
 	}
 
 	_, err = io.Copy(bodyBuf, reader)

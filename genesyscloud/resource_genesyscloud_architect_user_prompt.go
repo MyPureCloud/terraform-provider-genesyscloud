@@ -9,7 +9,6 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -815,6 +814,12 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 			resourceFilenameStr := resourceFilename.(string)
 
 			if err := uploadPrompt(uploadUri, &resourceFilenameStr, sdkConfig); err != nil {
+				d.SetId(*userPrompt.Id)
+				diagErr := deleteUserPrompt(ctx, d, meta)
+				if diagErr != nil {
+					log.Printf("Error deleting user prompt resource %s: %v", *userPrompt.Id, diagErr)
+				}
+				d.SetId("")
 				return diag.Errorf("Failed to upload user prompt resource %s: %s", name, err)
 			}
 
@@ -923,28 +928,16 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclientv2.Configuration) error {
-	var reader io.Reader
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	defer writer.Close()
 
-	_, err := os.Stat(*filename)
+	reader, file, err := downloadOrOpenFile(*filename)
 	if err != nil {
-		resp, err := http.Get(*filename)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-			return fmt.Errorf("HTTP Error downloading file: %v", resp.StatusCode)
-		}
-		reader = resp.Body
-	} else {
-		file, err := os.Open(*filename)
-		if err != nil {
-			return err
-		}
+		return err
+	}
+	if file != nil {
 		defer file.Close()
-		reader = file
 	}
 
 	part, err := writer.CreateFormFile("file", filepath.Base(*filename))
