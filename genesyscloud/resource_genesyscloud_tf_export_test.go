@@ -20,8 +20,6 @@ import (
 	"gonum.org/v1/gonum/graph/topo"
 )
 
-const exportTestDir = "../.terraform"
-
 type UserExport struct {
 	Email string `json:"email"`
 	Name  string `json:"name"`
@@ -37,6 +35,7 @@ type QueueExport struct {
 func TestAccResourceTfExport(t *testing.T) {
 	t.Parallel()
 	var (
+		exportTestDir = "../.terraform" + uuid.NewString()
 		exportResource1 = "test-export1"
 		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
 		statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
@@ -74,12 +73,14 @@ func TestAccResourceTfExport(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyExportsDestroyed,
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 }
 
 func TestAccResourceTfExportByName(t *testing.T) {
+	t.Parallel()
 	var (
+		exportTestDir = "../.terraform" + uuid.NewString()
 		exportResource1 = "test-export1"
 
 		userResource1 = "test-user1"
@@ -288,12 +289,14 @@ func TestAccResourceTfExportByName(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyExportsDestroyed,
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 }
 
 func TestAccResourceTfExportFormAsHCL(t *testing.T) {
+	t.Parallel()
 	var (
+		exportTestDir = "../.terraform" + uuid.NewString()
 		exportedContents string
 		pathToHclFile    = filepath.Join(exportTestDir, defaultTfHCLFile)
 		formName         = "terraform_form_evaluations_" + uuid.NewString()
@@ -401,7 +404,7 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyExportsDestroyed,
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 
 	exportedContents = removeTfConfigBlock(exportedContents)
@@ -417,12 +420,14 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyExportsDestroyed,
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 }
 
 func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
+	t.Parallel()
 	var (
+		exportTestDir = "../.terraform" + uuid.NewString()
 		exportContents string
 		pathToHclFile  = filepath.Join(exportTestDir, defaultTfHCLFile)
 	)
@@ -493,7 +498,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyExportsDestroyed,
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 
 	exportContents = removeTfConfigBlock(exportContents)
@@ -874,21 +879,23 @@ func validateFileCreated(filename string) resource.TestCheckFunc {
 	}
 }
 
-func testVerifyExportsDestroyed(state *terraform.State) error {
-	// Check config file deleted
-	jsonConfigPath := filepath.Join(exportTestDir, defaultTfJSONFile)
-	_, err := os.Stat(jsonConfigPath)
-	if !os.IsNotExist(err) {
-		return fmt.Errorf("Failed to delete JSON config file %s", jsonConfigPath)
-	}
+func testVerifyExportsDestroyedFunc(exportTestDir string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		// Check config file deleted
+		jsonConfigPath := filepath.Join(exportTestDir, defaultTfJSONFile)
+		_, err := os.Stat(jsonConfigPath)
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("Failed to delete JSON config file %s", jsonConfigPath)
+		}
 
-	// Check state file deleted
-	statePath := filepath.Join(exportTestDir, defaultTfStateFile)
-	_, err = os.Stat(statePath)
-	if !os.IsNotExist(err) {
-		return fmt.Errorf("Failed to delete state file %s", statePath)
+		// Check state file deleted
+		statePath := filepath.Join(exportTestDir, defaultTfStateFile)
+		_, err = os.Stat(statePath)
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("Failed to delete state file %s", statePath)
+		}
+		return nil
 	}
-	return nil
 }
 
 func validateEvaluationFormAttributes(resourceName string, form evaluationFormStruct) resource.TestCheckFunc {

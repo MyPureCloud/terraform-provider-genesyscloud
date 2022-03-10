@@ -183,6 +183,7 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 			return resource.NonRetryableError(fmt.Errorf("Failed to read oauth client %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *client.Name)
 
 		if client.Description != nil {
@@ -228,7 +229,7 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		log.Printf("Read oauth client %s %s", d.Id(), *client.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -264,7 +265,6 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	log.Printf("Updated oauth client %s", name)
 
-	time.Sleep(5 * time.Second)
 	return readOAuthClient(ctx, d, meta)
 }
 

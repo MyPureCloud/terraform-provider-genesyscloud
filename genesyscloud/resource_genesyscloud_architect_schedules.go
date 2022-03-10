@@ -181,6 +181,7 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 			End = nil
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *schedule.Name)
 		d.Set("division_id", *schedule.Division.Id)
 		d.Set("description", nil)
@@ -195,7 +196,7 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		log.Printf("Read schedule %s %s", d.Id(), *schedule.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -251,7 +252,6 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("Finished updating schedule %s", name)
-	time.Sleep(5 * time.Second)
 	return readArchitectSchedules(ctx, d, meta)
 }
 

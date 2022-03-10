@@ -227,6 +227,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *currentPhone.Name)
 		d.Set("state", *currentPhone.State)
 		d.Set("site_id", *currentPhone.Site.Id)
@@ -249,7 +250,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		log.Printf("Read phone %s %s", d.Id(), *currentPhone.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -344,7 +345,6 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 	}
 
-	time.Sleep(5 * time.Second)
 	return readPhone(ctx, d, meta)
 }
 

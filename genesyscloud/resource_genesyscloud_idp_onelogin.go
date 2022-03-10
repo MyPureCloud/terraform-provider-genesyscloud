@@ -100,6 +100,7 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Onelogin: %s", getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if onelogin.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*onelogin.Certificate}))
 		} else if onelogin.Certificates != nil {
@@ -127,7 +128,7 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		log.Printf("Read IDP Onelogin")
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -161,9 +162,6 @@ func updateIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	log.Printf("Updated IDP Onelogin")
-	// Give time for public API caches to update
-	// It takes a very very long time with idp resources
-	time.Sleep(d.Timeout(schema.TimeoutUpdate))
 	return readIdpOnelogin(ctx, d, meta)
 }
 

@@ -251,6 +251,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read success template for integration action %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if action.Name != nil {
 			d.Set("name", *action.Name)
 		} else {
@@ -310,7 +311,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		log.Printf("Read integration action %s %s", d.Id(), *action.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -346,7 +347,6 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	log.Printf("Updated integration action %s", name)
-	time.Sleep(5 * time.Second)
 	return readIntegrationAction(ctx, d, meta)
 }
 

@@ -100,6 +100,7 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if salesforce.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*salesforce.Certificate}))
 		} else if salesforce.Certificates != nil {
@@ -127,7 +128,7 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 		}
 
 		log.Printf("Read IDP Salesforce")
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -161,9 +162,6 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	log.Printf("Updated IDP Salesforce")
-	// Give time for public API caches to update
-	// It takes a very very long time with idp resources
-	time.Sleep(d.Timeout(schema.TimeoutUpdate))
 	return readIdpSalesforce(ctx, d, meta)
 }
 
@@ -177,7 +175,7 @@ func deleteIdpSalesforce(ctx context.Context, _ *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to delete IDP Salesforce: %s", err)
 	}
 
-	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 180*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersSalesforce()
 		if err != nil {
 			if isStatus404(resp) {

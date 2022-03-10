@@ -105,9 +105,10 @@ func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta inter
 			return nil
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *language.Name)
 		log.Printf("Read language %s %s", d.Id(), *language.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 

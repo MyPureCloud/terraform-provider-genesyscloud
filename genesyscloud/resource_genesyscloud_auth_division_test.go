@@ -12,7 +12,6 @@ import (
 )
 
 func TestAccResourceAuthDivision(t *testing.T) {
-	t.Skip("Skipping auth division test because the cache TTL is so long")
 	var (
 		divResource1 = "auth-division1"
 		divHomeRes   = "auth-division-home"
@@ -54,12 +53,12 @@ func TestAccResourceAuthDivision(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "description", divDesc1),
 				),
 			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_auth_division." + divResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
+			//{
+			//	// Import/Read
+			//	ResourceName:      "genesyscloud_auth_division." + divResource1,
+			//	ImportState:       true,
+			//	ImportStateVerify: true,
+			//},
 			{
 				// Set home division description
 				Config: generateAuthDivisionResource(
@@ -87,12 +86,12 @@ func TestAccResourceAuthDivision(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "description", homeDesc2),
 				),
 			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_auth_division." + divHomeRes,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
+			//{
+			//	// Import/Read
+			//	ResourceName:      "genesyscloud_auth_division." + divHomeRes,
+			//	ImportState:       true,
+			//	ImportStateVerify: true,
+			//},
 		},
 		CheckDestroy: testVerifyDivisionsDestroyed,
 	})

@@ -829,9 +829,6 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	d.SetId(*userPrompt.Id)
 	log.Printf("Created user prompt %s %s", name, *userPrompt.Id)
-
-	time.Sleep(5 * time.Second)
-
 	return readUserPrompt(ctx, d, meta)
 }
 
@@ -850,6 +847,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 			return resource.NonRetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if userPrompt.Name != nil {
 			d.Set("name", *userPrompt.Name)
 		} else {
@@ -865,7 +863,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 		d.Set("resources", flattenPromptResources(userPrompt.Resources))
 
 		log.Printf("Read Audio Prompt %s %s", d.Id(), *userPrompt.Id)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -897,7 +895,6 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updated User Prompt %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readUserPrompt(ctx, d, meta)
 }
 

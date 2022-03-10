@@ -227,11 +227,12 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 			return resource.NonRetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *deployment.Name)
 		if deployment.Description != nil {
 			d.Set("description", *deployment.Description)
 		}
-		d.Set("allow_all_domains", deployment.AllowAllDomains)
+		d.Set("allow_all_domains", *deployment.AllowAllDomains)
 		d.Set("configuration", flattenConfiguration(deployment.Configuration))
 		d.Set("allowed_domains", *deployment.AllowedDomains)
 		if deployment.AllowedDomains != nil && len(*deployment.AllowedDomains) > 0 {
@@ -243,7 +244,7 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 		d.Set("status", *deployment.Status)
 
 		log.Printf("Read web deployment %s %s", d.Id(), *deployment.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -316,7 +317,6 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	log.Printf("Finished updating web deployment %s", name)
-	time.Sleep(5 * time.Second)
 	return readWebDeployment(ctx, d, meta)
 }
 

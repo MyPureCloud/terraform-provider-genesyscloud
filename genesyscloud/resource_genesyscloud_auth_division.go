@@ -102,9 +102,6 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.Errorf("Failed to create division %s: %s", name, err)
 	}
 
-	// Give auth service's indexes time to update
-	time.Sleep(60 * time.Second)
-
 	d.SetId(*division.Id)
 	log.Printf("Created division %s %s", name, *division.Id)
 	return readAuthDivision(ctx, d, meta)
@@ -125,6 +122,7 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 			return resource.NonRetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *division.Name)
 
 		if division.Description != nil {
@@ -140,7 +138,7 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		log.Printf("Read division %s %s", d.Id(), *division.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -162,9 +160,6 @@ func updateAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 
 	log.Printf("Updated division %s", name)
 
-	// Give time for public API caches to update
-	// It takes a really long time with auth resources
-	time.Sleep(360 * time.Second)
 	return readAuthDivision(ctx, d, meta)
 }
 
@@ -187,8 +182,6 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.Errorf("Failed to delete division %s: %s", name, err)
 	}
 
-	// Give public API caches time to expire
-	time.Sleep(30 * time.Second)
 	return withRetries(ctx, 180*time.Second, func() *resource.RetryError {
 		_, resp, err := authAPI.GetAuthorizationDivision(d.Id(), false)
 		if err != nil {

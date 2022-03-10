@@ -122,7 +122,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Reading routing email domain %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 360*time.Second, d, func() *resource.RetryError {
 		domain, resp, getErr := routingAPI.GetRoutingEmailDomain(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -131,6 +131,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 			return resource.NonRetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if domain.SubDomain != nil && *domain.SubDomain {
 			// Strip off the regional domain suffix added by the server
 			d.Set("domain_id", strings.SplitN(*domain.Id, ".", 2)[0])
@@ -157,7 +158,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		log.Printf("Read routing email domain %s", d.Id())
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -188,7 +189,6 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("Updated routing email domain %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readRoutingEmailDomain(ctx, d, meta)
 }
 

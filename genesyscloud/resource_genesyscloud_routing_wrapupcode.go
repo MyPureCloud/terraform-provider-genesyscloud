@@ -97,10 +97,11 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read wrapupcode %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *wrapupcode.Name)
 
 		log.Printf("Read wrapupcode %s %s", d.Id(), *wrapupcode.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -120,8 +121,6 @@ func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Updated wrapupcode %s", name)
 
-	// Give time for public API caches to update
-	time.Sleep(5 * time.Second)
 	return readRoutingWrapupCode(ctx, d, meta)
 }
 

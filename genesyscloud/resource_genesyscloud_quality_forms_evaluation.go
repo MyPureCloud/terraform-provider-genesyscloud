@@ -273,6 +273,7 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			return resource.NonRetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if evaluationForm.Name != nil {
 			d.Set("name", *evaluationForm.Name)
 		}
@@ -283,7 +284,7 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))
 		}
 
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -331,7 +332,6 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	log.Printf("Updated evaluation form %s %s", name, *form.Id)
-	time.Sleep(5 * time.Second)
 	return readEvaluationForm(ctx, d, meta)
 }
 

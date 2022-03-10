@@ -161,6 +161,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if settings.Utilization != nil {
 			for sdkType, schemaType := range utilizationMediaTypes {
 				if mediaSettings, ok := (*settings.Utilization)[sdkType]; ok {
@@ -172,7 +173,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		log.Printf("Read Routing Utilization")
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -193,8 +194,6 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("Updated Routing Utilization")
-	// It takes a very very very long time for the caches to expire
-	time.Sleep(d.Timeout(schema.TimeoutUpdate))
 	return readRoutingUtilization(ctx, d, meta)
 }
 

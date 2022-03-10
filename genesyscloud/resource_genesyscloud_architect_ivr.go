@@ -164,6 +164,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return nil
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *ivrConfig.Name)
 		d.Set("dnis", flattenIvrDnis(ivrConfig.Dnis))
 
@@ -198,7 +199,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 
 		log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -252,7 +253,6 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Updated IVR config %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readIvrConfig(ctx, d, meta)
 }
 

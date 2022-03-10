@@ -145,8 +145,6 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Updated edge group %s", *edgeGroup.Id)
-
-	time.Sleep(5 * time.Second)
 	return readEdgeGroup(ctx, d, meta)
 }
 
@@ -195,6 +193,7 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *edgeGroup.Name)
 		d.Set("state", *edgeGroup.State)
 		if edgeGroup.Description != nil {
@@ -213,7 +212,7 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 		log.Printf("Read edge group %s %s", d.Id(), *edgeGroup.Name)
 
-		return nil
+		return cc.CheckErr()
 	})
 }
 

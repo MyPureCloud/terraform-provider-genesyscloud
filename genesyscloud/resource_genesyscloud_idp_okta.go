@@ -100,6 +100,7 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if okta.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*okta.Certificate}))
 		} else if okta.Certificates != nil {
@@ -127,7 +128,7 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP Okta")
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -161,9 +162,6 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updated IDP Okta")
-	// Give time for public API caches to update
-	// It takes a very very long time with idp resources
-	time.Sleep(d.Timeout(schema.TimeoutUpdate))
 	return readIdpOkta(ctx, d, meta)
 }
 

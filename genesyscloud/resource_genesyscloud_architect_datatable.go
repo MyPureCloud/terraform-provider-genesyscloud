@@ -171,6 +171,7 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read datatable %s: %s", d.Id(), getErr))
 		}
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *datatable.Name)
 		d.Set("division_id", *datatable.Division.Id)
 
@@ -188,7 +189,7 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 
 		log.Printf("Read datatable %s %s", d.Id(), *datatable.Name)
 
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -228,7 +229,6 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	log.Printf("Updated datatable %s", name)
-	time.Sleep(5 * time.Second)
 	return readArchitectDatatable(ctx, d, meta)
 }
 

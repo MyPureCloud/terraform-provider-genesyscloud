@@ -125,12 +125,13 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 			return resource.NonRetryableError(fmt.Errorf("Failed to read credential %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *currentCredential.Name)
 		d.Set("credential_type_name", *currentCredential.VarType.Name)
 
 		log.Printf("Read credential %s %s", d.Id(), *currentCredential.Name)
 
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -158,7 +159,6 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updated credential %s %s", name, d.Id())
-	time.Sleep(5 * time.Second)
 	return readCredential(ctx, d, meta)
 }
 

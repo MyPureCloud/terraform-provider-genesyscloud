@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 	"time"
 )
 
@@ -26,14 +25,13 @@ func dataSourceTrunkBaseSettings() *schema.Resource {
 
 func dataSourceTrunkBaseSettingsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*providerMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			trunkBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesettings(pageNum, pageSize, "", "", false, true, false, []string{"properties"}, name)
+			trunkBaseSettings, _, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting trunk base settings %s: %s", name, getErr))

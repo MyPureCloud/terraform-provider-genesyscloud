@@ -198,6 +198,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *group.Name)
 		d.Set("type", *group.VarType)
 		d.Set("visibility", *group.Visibility)
@@ -228,7 +229,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("member_ids", members)
 
 		log.Printf("Read group %s %s", d.Id(), *group.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -273,7 +274,6 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Updated group %s", name)
-	time.Sleep(5 * time.Second)
 	return readGroup(ctx, d, meta)
 }
 
@@ -293,8 +293,6 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return nil, nil
 	})
 
-	// Group deletes are not immediate. Give time for caches to clear, then query until group is no longer found
-	time.Sleep(10 * time.Second)
 	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		group, resp, err := groupsAPI.GetGroup(d.Id())
 		if err != nil {
@@ -327,6 +325,7 @@ func groupAddressHash(val interface{}) int {
 			phoneMap["number"] = phonenumbers.Format(number, phonenumbers.E164)
 		}
 	}
+
 	return schema.HashResource(groupAddressResource)(phoneMap)
 }
 
@@ -449,7 +448,6 @@ func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.Grou
 					if err != nil {
 						return resp, diag.Errorf("Failed to add group members %s: %s", d.Id(), postErr)
 					}
-					time.Sleep(8 * time.Second)
 					return resp, nil
 				}); diagErr != nil {
 					return diagErr

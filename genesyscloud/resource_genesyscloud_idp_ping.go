@@ -105,6 +105,7 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if ping.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*ping.Certificate}))
 		} else if ping.Certificates != nil {
@@ -138,7 +139,7 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP Ping")
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -174,9 +175,6 @@ func updateIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updated IDP Ping")
-	// Give time for public API caches to update
-	// It takes a very very long time with idp resources
-	time.Sleep(5 * time.Minute)
 	return readIdpPing(ctx, d, meta)
 }
 

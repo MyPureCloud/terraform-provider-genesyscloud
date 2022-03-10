@@ -343,6 +343,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return resource.NonRetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *currentSite.Name)
 		d.Set("location_id", nil)
 		if currentSite.Location != nil {
@@ -360,16 +361,16 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			d.Set("edge_auto_update_config", flattenSdkEdgeAutoUpdateConfig(currentSite.EdgeAutoUpdateConfig))
 		}
 
-		if diagErr := readSiteNumberPlans(d, edgesAPI); diagErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+		if retryErr := readSiteNumberPlans(d, edgesAPI); retryErr != nil {
+			return retryErr
 		}
 
-		if diagErr := readSiteOutboundRoutes(d, edgesAPI); diagErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+		if retryErr := readSiteOutboundRoutes(d, edgesAPI); retryErr != nil {
+			return retryErr
 		}
 
 		log.Printf("Read site %s %s", d.Id(), *currentSite.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -445,8 +446,6 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Updated site %s", *site.Id)
-
-	time.Sleep(5 * time.Second)
 	return readSite(ctx, d, meta)
 }
 
@@ -570,9 +569,6 @@ func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Te
 				numberPlansFromTf = append(numberPlansFromTf, numberPlanFromTf)
 			}
 
-			// The default plans won't be assigned yet if there isn't a wait
-			time.Sleep(5 * time.Second)
-
 			numberPlansFromAPI, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(d.Id())
 			if err != nil {
 				return diag.Errorf("Failed to get number plans for site %s: %s", d.Id(), err)
@@ -618,8 +614,6 @@ func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Te
 			if diagErr != nil {
 				return diagErr
 			}
-			// Wait for the update before reading
-			time.Sleep(5 * time.Second)
 		}
 	}
 	return nil
@@ -663,9 +657,6 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 
 				outboundRoutesFromTf = append(outboundRoutesFromTf, outboundRouteFromTf)
 			}
-
-			// The default outbound routes won't be assigned yet if there isn't a wait
-			time.Sleep(5 * time.Second)
 
 			outboundRoutesFromAPI := make([]platformclientv2.Outboundroutebase, 0)
 			for pageNum := 1; ; pageNum++ {
@@ -712,8 +703,6 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 				}
 			}
 
-			// Wait for the update before reading
-			time.Sleep(5 * time.Second)
 		}
 	}
 	return nil
@@ -729,14 +718,14 @@ func isDefaultPlan(name string) bool {
 	return false
 }
 
-func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) diag.Diagnostics {
+func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) *resource.RetryError {
 	numberPlans, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(d.Id())
 	if getErr != nil {
 		if isStatus404(resp) {
 			d.SetId("") // Site doesn't exist
 			return nil
 		}
-		return diag.Errorf("Failed to read number plans for site %s: %s", d.Id(), getErr)
+		return resource.NonRetryableError(fmt.Errorf("Failed to read number plans for site %s: %s", d.Id(), getErr))
 	}
 
 	dNumberPlans := make([]interface{}, 0)
@@ -799,13 +788,13 @@ func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Tele
 	return nil
 }
 
-func readSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) diag.Diagnostics {
+func readSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) *resource.RetryError {
 	outboundRoutes := make([]platformclientv2.Outboundroutebase, 0)
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		outboundRouteEntityListing, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), pageSize, pageNum, "", "", "")
 		if err != nil {
-			return diag.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err)
+			return resource.NonRetryableError(fmt.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err))
 		}
 		if outboundRouteEntityListing.Entities == nil || len(*outboundRouteEntityListing.Entities) == 0 {
 			break

@@ -138,6 +138,7 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if generic.Name != nil {
 			d.Set("name", *generic.Name)
 		} else {
@@ -195,7 +196,7 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		log.Printf("Read IDP Generic")
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -239,9 +240,6 @@ func updateIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updated IDP Generic")
-	// Give time for public API caches to update
-	// It takes a very very long time with idp resources
-	time.Sleep(d.Timeout(schema.TimeoutUpdate))
 	return readIdpGeneric(ctx, d, meta)
 }
 

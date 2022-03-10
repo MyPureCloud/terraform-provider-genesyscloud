@@ -105,6 +105,7 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if gsuite.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*gsuite.Certificate}))
 		} else if gsuite.Certificates != nil {
@@ -138,7 +139,7 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 
 		log.Printf("Read IDP GSuite")
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -174,9 +175,6 @@ func updateIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Updated IDP GSuite")
-	// Give time for public API caches to update
-	// It takes a very very long time with idp resources
-	time.Sleep(d.Timeout(schema.TimeoutUpdate))
 	return readIdpGsuite(ctx, d, meta)
 }
 

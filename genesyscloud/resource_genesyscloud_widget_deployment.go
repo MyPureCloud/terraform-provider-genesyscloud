@@ -247,7 +247,8 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 
 			return resource.NonRetryableError(fmt.Errorf("Failed to read widget deployment %s: %s", d.Id(), getErr))
 		}
-
+		
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *currentWidget.Name)
 		if currentWidget.Description != nil {
 			d.Set("description", *currentWidget.Description)
@@ -256,15 +257,15 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 
 		if currentWidget.AuthenticationRequired != nil {
-			d.Set("authentication_required", currentWidget.AuthenticationRequired)
+			d.Set("authentication_required", *currentWidget.AuthenticationRequired)
 		} else {
 			d.Set("authentication_required", nil)
 		}
 
 		if currentWidget.Disabled != nil {
-			d.Set("disabled", currentWidget.Disabled)
+			d.Set("disabled", *currentWidget.Disabled)
 		} else {
-			d.Set("authentication_required", nil)
+			d.Set("disabled", nil)
 		}
 
 		if currentWidget.Flow != nil {
@@ -279,7 +280,11 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 			d.Set("allowed_domains", nil)
 		}
 
-		d.Set("client_type", *currentWidget.ClientType)
+		if currentWidget.ClientType != nil {
+			d.Set("client_type", *currentWidget.ClientType)
+		} else {
+			d.Set("client_type", nil)
+		}
 
 		if currentWidget.ClientConfig != nil {
 			d.Set("client_config", flattenClientConfig(*currentWidget.ClientType, *currentWidget.ClientConfig))
@@ -287,7 +292,7 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 			d.Set("client_config", nil)
 		}
 
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -374,7 +379,6 @@ func deleteWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.Errorf("Failed to delete widget deployment %s: %s", name, err)
 	}
 
-	time.Sleep(5 * time.Second)
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := widgetAPI.GetWidgetsDeployment(d.Id())
 		if err != nil {
@@ -424,6 +428,5 @@ func updateWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	d.SetId(*widget.Id)
 
 	log.Printf("Finished updating widget deployment %s", name)
-	time.Sleep(5 * time.Second)
 	return readWidgetDeployment(ctx, d, meta)
 }

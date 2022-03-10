@@ -154,6 +154,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("datatable_id", tableId)
 		d.Set("key_value", keyStr)
 
@@ -167,7 +168,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 		d.Set("properties_json", string(valueBytes))
 
 		log.Printf("Read Datatable Row %s", d.Id())
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -192,7 +193,6 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	log.Printf("Updated Datatable Row %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readArchitectDatatableRow(ctx, d, meta)
 }
 

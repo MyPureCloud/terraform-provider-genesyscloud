@@ -9,7 +9,6 @@ import (
 )
 
 func TestAccDataSourceIntegrationCredential(t *testing.T) {
-
 	var (
 		credResource1 = "test_credential_1"
 		credResource2 = "test_credential_2"

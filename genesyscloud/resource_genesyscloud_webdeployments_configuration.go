@@ -706,6 +706,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 			return resource.NonRetryableError(fmt.Errorf("Failed to read web deployment configuration %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *configuration.Name)
 		if configuration.Description != nil {
 			d.Set("description", *configuration.Description)
@@ -722,7 +723,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 		}
 
 		log.Printf("Read web deployment configuration %s %s", d.Id(), *configuration.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -770,7 +771,6 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	}
 
 	log.Printf("Finished updating web deployment configuration %s", name)
-	time.Sleep(5 * time.Second)
 	return readWebDeploymentConfiguration(ctx, d, meta)
 }
 

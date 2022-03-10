@@ -100,6 +100,7 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 			return resource.NonRetryableError(fmt.Errorf("Failed to read skill %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		if skill.State != nil && *skill.State == "deleted" {
 			d.SetId("")
 			return nil
@@ -107,7 +108,7 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		d.Set("name", *skill.Name)
 		log.Printf("Read skill %s %s", d.Id(), *skill.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 

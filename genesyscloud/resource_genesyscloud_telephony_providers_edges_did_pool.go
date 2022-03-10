@@ -139,6 +139,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("start_phone_number", *didPool.StartPhoneNumber)
 		d.Set("end_phone_number", *didPool.EndPhoneNumber)
 
@@ -161,7 +162,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read DID pool %s %s", d.Id(), *didPool.StartPhoneNumber)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -189,7 +190,6 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updated DID pool %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readDidPool(ctx, d, meta)
 }
 

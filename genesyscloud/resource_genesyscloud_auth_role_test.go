@@ -12,10 +12,64 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
+func TestAccResourceAuthRoleDefault(t *testing.T) {
+	var (
+		roleResource2         = "auth-role2"
+		roleDesc1             = "Terraform test role"
+		perm1                 = "group_creation"
+		directoryDom          = "directory"
+		userEntity            = "user"
+		addAction             = "add"
+		viewAction            = "view"
+		defaultRoleName       = "Trusted External User"
+		defaultRoleID         = "trustedUser"
+		authDom               = "authorization"
+		orgTrusteeGroupEntity = "orgTrusteeGroup"
+		orgTrusteeUserEntity  = "orgTrusteeUser"
+		orgTrustorEntity      = "orgTrustor"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Modify default role
+				Config: generateAuthRoleResource(
+					roleResource2,
+					defaultRoleName,
+					roleDesc1,
+					"default_role_id = "+strconv.Quote(defaultRoleID),
+					generateRolePermissions(strconv.Quote(perm1)),
+					generateRolePermPolicy(directoryDom, userEntity, strconv.Quote(addAction)),
+					// Keep existing permissions on default role
+					generateRolePermPolicy(authDom, orgTrusteeGroupEntity, strconv.Quote(viewAction)),
+					generateRolePermPolicy(authDom, orgTrusteeUserEntity, strconv.Quote(viewAction)),
+					generateRolePermPolicy(authDom, orgTrustorEntity, strconv.Quote(viewAction)),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource2, "name", defaultRoleName),
+					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource2, "description", roleDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource2, "default_role_id", defaultRoleID),
+					// New permissions
+					validateRolePermissions("genesyscloud_auth_role."+roleResource2, perm1),
+					validatePermissionPolicy("genesyscloud_auth_role."+roleResource2, directoryDom, userEntity, addAction),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_auth_role." + roleResource2,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyRolesDestroyed,
+	})
+}
+
 func TestAccResourceAuthRoleBasic(t *testing.T) {
 	var (
 		roleResource1         = "auth-role1"
-		roleResource2         = "auth-role2"
 		roleName1             = "Terraform Role-" + uuid.NewString()
 		roleDesc1             = "Terraform test role"
 		roleDesc2             = "Terraform test role updated"
@@ -27,13 +81,6 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 		allAction             = "*"
 		addAction             = "add"
 		editAction            = "edit"
-		viewAction            = "view"
-		defaultRoleName       = "Trusted External User"
-		defaultRoleID         = "trustedUser"
-		authDom               = "authorization"
-		orgTrusteeGroupEntity = "orgTrusteeGroup"
-		orgTrusteeUserEntity  = "orgTrusteeUser"
-		orgTrustorEntity      = "orgTrustor"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -77,35 +124,6 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_auth_role." + roleResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-			{
-				// Modify default role
-				Config: generateAuthRoleResource(
-					roleResource2,
-					defaultRoleName,
-					roleDesc1,
-					"default_role_id = "+strconv.Quote(defaultRoleID),
-					generateRolePermissions(strconv.Quote(perm1)),
-					generateRolePermPolicy(directoryDom, userEntity, strconv.Quote(addAction)),
-					// Keep existing permissions on default role
-					generateRolePermPolicy(authDom, orgTrusteeGroupEntity, strconv.Quote(viewAction)),
-					generateRolePermPolicy(authDom, orgTrusteeUserEntity, strconv.Quote(viewAction)),
-					generateRolePermPolicy(authDom, orgTrustorEntity, strconv.Quote(viewAction)),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource2, "name", defaultRoleName),
-					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource2, "description", roleDesc1),
-					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource2, "default_role_id", defaultRoleID),
-					// New permissions
-					validateRolePermissions("genesyscloud_auth_role."+roleResource2, perm1),
-					validatePermissionPolicy("genesyscloud_auth_role."+roleResource2, directoryDom, userEntity, addAction),
-				),
-			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_auth_role." + roleResource2,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

@@ -182,7 +182,6 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Updated trunk base settings %s", *trunkBaseSettings.Id)
 
-	time.Sleep(5 * time.Second)
 	return readTrunkBaseSettings(ctx, d, meta)
 }
 
@@ -200,6 +199,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *trunkBaseSettings.Name)
 		d.Set("state", *trunkBaseSettings.State)
 		if trunkBaseSettings.Description != nil {
@@ -224,7 +224,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		log.Printf("Read trunk base settings %s %s", d.Id(), *trunkBaseSettings.Name)
 
-		return nil
+		return cc.CheckErr()
 	})
 }
 

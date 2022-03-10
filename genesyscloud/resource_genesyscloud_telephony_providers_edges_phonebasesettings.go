@@ -149,7 +149,6 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Updated phone base settings %s", d.Id())
 
-	time.Sleep(5 * time.Second)
 	return readPhoneBaseSettings(ctx, d, meta)
 }
 
@@ -167,6 +166,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *phoneBaseSettings.Name)
 		if phoneBaseSettings.Description != nil {
 			d.Set("description", *phoneBaseSettings.Description)
@@ -194,7 +194,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		log.Printf("Read phone base settings %s %s", d.Id(), *phoneBaseSettings.Name)
 
-		return nil
+		return cc.CheckErr()
 	})
 }
 

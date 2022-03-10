@@ -124,6 +124,7 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 			return nil
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("start_number", *extensionPool.StartNumber)
 		d.Set("end_number", *extensionPool.EndNumber)
 
@@ -134,7 +135,7 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 		}
 
 		log.Printf("Read Extension pool %s %s", d.Id(), *extensionPool.StartNumber)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -158,7 +159,6 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	log.Printf("Updated Extension pool %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readExtensionPool(ctx, d, meta)
 }
 

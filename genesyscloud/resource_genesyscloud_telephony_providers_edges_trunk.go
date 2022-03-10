@@ -119,7 +119,6 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Created trunk %s", *trunk.Id)
 
-	time.Sleep(5 * time.Second)
 	return readTrunk(ctx, d, meta)
 }
 
@@ -168,6 +167,7 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *trunk.Name)
 		if trunk.TrunkBase != nil {
 			d.Set("trunk_base_settings_id", *trunk.TrunkBase.Id)
@@ -181,7 +181,7 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		log.Printf("Read trunk %s %s", d.Id(), *trunk.Name)
 
-		return nil
+		return cc.CheckErr()
 	})
 }
 

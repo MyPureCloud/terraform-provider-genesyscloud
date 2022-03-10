@@ -230,7 +230,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Reading role %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, 180*time.Second, d, func() *resource.RetryError {
 		role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), nil)
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -239,6 +239,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 			return resource.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
 		d.Set("name", *role.Name)
 
 		if role.Description != nil {
@@ -266,7 +267,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		}
 
 		log.Printf("Read role %s %s", d.Id(), *role.Name)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -292,9 +293,6 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Updated role %s", name)
 
-	// Give time for public API caches to update
-	// It takes a long time with auth resources
-	time.Sleep(90 * time.Second)
 	return readAuthRole(ctx, d, meta)
 }
 
@@ -326,7 +324,6 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diag.Errorf("Failed to delete role %s: %s", name, err)
 	}
 
-	time.Sleep(10 * time.Second)
 	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := authAPI.GetAuthorizationRole(d.Id(), nil)
 		if err != nil {

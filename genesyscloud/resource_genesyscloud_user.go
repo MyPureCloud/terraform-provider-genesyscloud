@@ -510,6 +510,8 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return resource.NonRetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
 		}
 
+		cc := NewConsistencyCheck(d)
+
 		// Required attributes
 		d.Set("name", *currentUser.Name)
 		d.Set("email", *currentUser.Email)
@@ -553,7 +555,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}
 
 		log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
-		return nil
+		return cc.CheckErr()
 	})
 }
 
@@ -629,7 +631,6 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Finished updating user %s", email)
-	time.Sleep(8 * time.Second)
 	return readUser(ctx, d, meta)
 }
 

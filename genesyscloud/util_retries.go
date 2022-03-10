@@ -29,7 +29,9 @@ func withRetriesForRead(ctx context.Context, timeout time.Duration, d *schema.Re
 			// Set ID empty if the object isn't found after the specified timeout
 			d.SetId("")
 		}
-		if strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
+		errStringLower := strings.ToLower(fmt.Sprintf("%v", err))
+		if strings.Contains(errStringLower, "timeout while waiting for state to become") ||
+			strings.Contains(errStringLower, "context deadline exceeded") {
 			ctx, _ := context.WithTimeout(context.Background(), timeout)
 			return withRetriesForRead(ctx, timeout, d, method)
 		}
