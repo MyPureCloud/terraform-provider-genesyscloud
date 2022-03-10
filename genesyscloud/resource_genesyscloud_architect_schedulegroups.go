@@ -171,6 +171,11 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 			d.Set("description", *scheduleGroup.Description)
 		}
 
+		d.Set("time_zone", nil)
+		if scheduleGroup.TimeZone != nil {
+			d.Set("time_zone", *scheduleGroup.TimeZone)
+		}
+
 		if scheduleGroup.OpenSchedules != nil {
 			d.Set("open_schedules_id", sdkDomainEntityRefArrToSet(*scheduleGroup.OpenSchedules))
 		} else {
