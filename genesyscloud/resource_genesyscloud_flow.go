@@ -3,8 +3,6 @@ package genesyscloud
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -15,7 +13,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -297,27 +294,6 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 		return nil
 	})
-}
-
-// Hash file content, used in stateFunc for "filepath"
-func hashFileContent(path string) string {
-	_, err := os.Stat(path)
-	if err != nil {
-		return err.Error()
-	}
-
-	file, err := os.Open(path)
-	if err != nil {
-		return err.Error()
-	}
-	defer file.Close()
-
-	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return err.Error()
-	}
-
-	return hex.EncodeToString(hash.Sum(nil))
 }
 
 // Read and upload input file path to S3 pre-signed URL
