@@ -1,6 +1,8 @@
 package genesyscloud
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,7 +17,7 @@ func downloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 	_, err := os.Stat(path)
 	if err != nil {
 		_, err = url.Parse(path)
-		if err != nil {
+		if err == nil {
 			resp, err := http.Get(path)
 			if err != nil {
 				return nil, nil, err
@@ -36,4 +38,28 @@ func downloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 	}
 
 	return reader, file, nil
+}
+
+// Hash file content, used in stateFunc for "filepath" type attributes
+func hashFileContent(path string) string {
+	reader, file, err := downloadOrOpenFile(path)
+	if err != nil {
+		return err.Error()
+	}
+	if file != nil {
+		defer file.Close()
+	}
+
+	hash := sha256.New()
+	if file == nil {
+		if _, err := io.Copy(hash, reader); err != nil {
+			return err.Error()
+		}
+	} else {
+		if _, err := io.Copy(hash, file); err != nil {
+			return err.Error()
+		}
+	}
+
+	return hex.EncodeToString(hash.Sum(nil))
 }
