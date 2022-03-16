@@ -55,7 +55,7 @@ func resourceEdgeGroup() *schema.Resource {
 			"phone_trunk_base_ids": {
 				Description: "A list of trunk base settings IDs of trunkType \"PHONE\" to inherit to edge logical interface for phone communication.",
 				Type:        schema.TypeSet,
-				Optional:    true,
+				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
