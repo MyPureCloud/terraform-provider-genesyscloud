@@ -31,9 +31,8 @@ require (
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/zclconf/go-cty v1.10.0
-	golang.org/x/net v0.0.0-20210505024714-0287a6fb4125 // indirect
 	golang.org/x/oauth2 v0.0.0-20210427180440-81ed05c6b58c // indirect
-	gonum.org/v1/gonum v0.9.3
+	gonum.org/v1/gonum v0.11.0
 	google.golang.org/genproto v0.0.0-20210504143626-3b2ad6ccc450 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
