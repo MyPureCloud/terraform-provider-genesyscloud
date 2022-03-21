@@ -563,6 +563,13 @@ func deleteTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) di
 
 func getFilePath(d *schema.ResourceData, filename string) (string, diag.Diagnostics) {
 	directory := d.Get("directory").(string)
+	if strings.HasPrefix(directory, "~") {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", diag.Errorf("Failed to evaluate home directory: %v", err)
+		}
+		directory = strings.Replace(directory, "~", homeDir, 1)
+	}
 	if err := os.MkdirAll(directory, os.ModePerm); err != nil {
 		return "", diag.FromErr(err)
 	}
