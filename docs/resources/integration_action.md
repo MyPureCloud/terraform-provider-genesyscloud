@@ -108,7 +108,7 @@ resource "genesyscloud_integration_action" "test-action" {
 
 Required:
 
-- **request_type** (String) HTTP method to use for request (GET | PUT | POST | PATCH).
+- **request_type** (String) HTTP method to use for request (GET | PUT | POST | PATCH | DELETE).
 - **request_url_template** (String) URL that may include placeholders for requests to 3rd party service.
 
 Optional:

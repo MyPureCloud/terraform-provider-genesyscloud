@@ -26,10 +26,10 @@ var (
 				Required:    true,
 			},
 			"request_type": {
-				Description:  "HTTP method to use for request (GET | PUT | POST | PATCH).",
+				Description:  "HTTP method to use for request (GET | PUT | POST | PATCH | DELETE).",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"GET", "PUT", "POST", "PATCH"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"GET", "PUT", "POST", "PATCH", "DELETE"}, false),
 			},
 			"request_template": {
 				Description: "Velocity template to define request body sent to 3rd party service. Any instances of '${' must be properly escaped as '$${'",
