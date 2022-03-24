@@ -35,7 +35,8 @@ func webDeploymentExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllWebDeployments),
 		RefAttrs: map[string]*RefAttrSettings{
-			"flow_id": {RefType: "genesyscloud_flow"},
+			"flow_id":          {RefType: "genesyscloud_flow"},
+			"configuration.id": {RefType: "genesyscloud_webdeployments_configuration"},
 		},
 	}
 }
