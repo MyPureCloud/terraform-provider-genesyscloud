@@ -101,7 +101,7 @@ func routingQueueExporter() *ResourceExporter {
 		GetResourcesFunc: getAllWithPooledClient(getAllRoutingQueues),
 		RefAttrs: map[string]*RefAttrSettings{
 			"division_id":                       {RefType: "genesyscloud_auth_division"},
-			"queue_flow_id":                     {}, // Ref type not yet defined
+			"queue_flow_id":                     {RefType: "genesyscloud_flow"},
 			"whisper_prompt_id":                 {}, // Ref type not yet defined
 			"outbound_messaging_sms_address_id": {}, // Ref type not yet defined
 			"default_script_ids.*":              {}, // Ref type not yet defined
