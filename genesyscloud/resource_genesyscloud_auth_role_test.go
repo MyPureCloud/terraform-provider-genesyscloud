@@ -69,18 +69,18 @@ func TestAccResourceAuthRoleDefault(t *testing.T) {
 
 func TestAccResourceAuthRoleBasic(t *testing.T) {
 	var (
-		roleResource1         = "auth-role1"
-		roleName1             = "Terraform Role-" + uuid.NewString()
-		roleDesc1             = "Terraform test role"
-		roleDesc2             = "Terraform test role updated"
-		perm1                 = "group_creation"
-		perm2                 = "admin"
-		directoryDom          = "directory"
-		userEntity            = "user"
-		groupEntity           = "group"
-		allAction             = "*"
-		addAction             = "add"
-		editAction            = "edit"
+		roleResource1 = "auth-role1"
+		roleName1     = "Terraform Role-" + uuid.NewString()
+		roleDesc1     = "Terraform test role"
+		roleDesc2     = "Terraform test role updated"
+		perm1         = "group_creation"
+		perm2         = "admin"
+		directoryDom  = "directory"
+		userEntity    = "user"
+		groupEntity   = "group"
+		allAction     = "*"
+		addAction     = "add"
+		editAction    = "edit"
 	)
 
 	resource.Test(t, resource.TestCase{

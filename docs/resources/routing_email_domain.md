@@ -33,12 +33,12 @@ resource "genesyscloud_routing_email_domain" "test-example-com" {
 
 ### Required
 
-- **domain_id** (String) Unique Id of the domain such as: 'example.com'. If subdomain is true, the Genesys Cloud regional domain is appended.
+- `domain_id` (String) Unique Id of the domain such as: 'example.com'. If subdomain is true, the Genesys Cloud regional domain is appended.
 
 ### Optional
 
-- **custom_smtp_server_id** (String) The ID of the custom SMTP server integration to use when sending outbound emails from this domain.
-- **id** (String) The ID of this resource.
-- **mail_from_domain** (String) The custom MAIL FROM domain. This must be a subdomain of your email domain
-- **subdomain** (Boolean) Indicates if this a Genesys Cloud sub-domain. If true, then the appropriate DNS records are created for sending/receiving email. Defaults to `false`.
+- `custom_smtp_server_id` (String) The ID of the custom SMTP server integration to use when sending outbound emails from this domain.
+- `id` (String) The ID of this resource.
+- `mail_from_domain` (String) The custom MAIL FROM domain. This must be a subdomain of your email domain
+- `subdomain` (Boolean) Indicates if this a Genesys Cloud sub-domain. If true, then the appropriate DNS records are created for sending/receiving email. Defaults to `false`.
 

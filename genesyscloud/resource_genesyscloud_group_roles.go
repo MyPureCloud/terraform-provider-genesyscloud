@@ -7,8 +7,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
-	"time"
 )
 
 func groupRolesExporter() *ResourceExporter {
@@ -66,8 +66,8 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading roles for group %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
-		cc := NewConsistencyCheck(d)
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceGroupRoles())
 		d.Set("group_id", d.Id())
 
 		roles, resp, err := readSubjectRoles(d.Id(), authAPI)
@@ -81,7 +81,7 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 		d.Set("roles", roles)
 
 		log.Printf("Read roles for group %s", d.Id())
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

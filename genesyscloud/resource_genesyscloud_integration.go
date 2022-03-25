@@ -174,7 +174,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading integration %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		currentIntegration, resp, getErr := integrationAPI.GetIntegration(d.Id(), pageSize, pageNum, "", nil, "", "")
@@ -196,7 +196,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		integrationConfig, _, err := integrationAPI.GetIntegrationConfigCurrent(*currentIntegration.Id)
 
 		if err != nil {
-			return  resource.NonRetryableError(fmt.Errorf("Failed to read config of integration %s: %s", d.Id(), getErr))
+			return resource.NonRetryableError(fmt.Errorf("Failed to read config of integration %s: %s", d.Id(), getErr))
 		}
 
 		d.Set("config", flattenIntegrationConfig(integrationConfig))

@@ -50,7 +50,7 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 					"genesyscloud_telephony_providers_edges_did_pool." + didPoolRes,
 				}) + generateDidDataSource(didDataRes,
 					didPhoneNumber,
-					"genesyscloud_architect_ivr." + ivrConfigRes),
+					"genesyscloud_architect_ivr."+ivrConfigRes),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_did."+didDataRes, "phone_number", didPhoneNumber),
 				),

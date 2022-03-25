@@ -33,11 +33,11 @@ resource "genesyscloud_telephony_providers_edges_extension_pool" "test_extension
 
 ### Required
 
-- **end_number** (String) Ending phone number of the Extension Pool range.
-- **start_number** (String) Starting phone number of the Extension Pool range.
+- `end_number` (String) Ending phone number of the Extension Pool range.
+- `start_number` (String) Starting phone number of the Extension Pool range.
 
 ### Optional
 
-- **description** (String) Extension Pool description.
-- **id** (String) The ID of this resource.
+- `description` (String) Extension Pool description.
+- `id` (String) The ID of this resource.
 

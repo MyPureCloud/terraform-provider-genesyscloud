@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"net/http"
 	"strings"
 	"time"
@@ -22,7 +23,8 @@ func withRetries(ctx context.Context, timeout time.Duration, method func() *reso
 	return err
 }
 
-func withRetriesForRead(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *resource.RetryError) diag.Diagnostics {
+func withRetriesForRead(ctx context.Context, d *schema.ResourceData, method func() *resource.RetryError) diag.Diagnostics {
+	timeout := 5 * time.Minute
 	err := diag.FromErr(resource.RetryContext(ctx, timeout, method))
 	if err != nil {
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
@@ -33,7 +35,10 @@ func withRetriesForRead(ctx context.Context, timeout time.Duration, d *schema.Re
 		if strings.Contains(errStringLower, "timeout while waiting for state to become") ||
 			strings.Contains(errStringLower, "context deadline exceeded") {
 			ctx, _ := context.WithTimeout(context.Background(), timeout)
-			return withRetriesForRead(ctx, timeout, d, method)
+			return withRetriesForRead(ctx, d, method)
+		}
+		if d.Id() != "" {
+			consistency_checker.DeleteConsistencyCheck(d.Id())
 		}
 	}
 	return err

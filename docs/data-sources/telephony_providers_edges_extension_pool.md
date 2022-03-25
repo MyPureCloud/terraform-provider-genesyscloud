@@ -24,11 +24,11 @@ data "genesyscloud_telephony_providers_edges_extension_pool" "extensionPool" {
 
 ### Required
 
-- **end_number** (String) Ending number of the Extension Pool range.
-- **start_number** (String) Starting number of the Extension Pool range.
+- `end_number` (String) Ending number of the Extension Pool range.
+- `start_number` (String) Starting number of the Extension Pool range.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

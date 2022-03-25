@@ -29,9 +29,9 @@ resource "genesyscloud_routing_skill" "test_skill" {
 
 ### Required
 
-- **name** (String) Skill name.
+- `name` (String) Skill name.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 

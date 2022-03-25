@@ -23,10 +23,10 @@ data "genesyscloud_auth_role" "employee" {
 
 ### Required
 
-- **name** (String) Role name.
+- `name` (String) Role name.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

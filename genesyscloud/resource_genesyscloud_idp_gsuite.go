@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -48,10 +49,7 @@ func resourceIdpGsuite() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
-		Timeouts: &schema.ResourceTimeout{
-			Update: schema.DefaultTimeout(8 * time.Minute),
-			Read:   schema.DefaultTimeout(8 * time.Minute),
-		},
+
 		Schema: map[string]*schema.Schema{
 			"certificates": {
 				Description: "PEM or DER encoded public X.509 certificates for SAML signature validation.",
@@ -96,16 +94,17 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Reading IDP GSuite")
 
-	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		gsuite, resp, getErr := idpAPI.GetIdentityprovidersGsuite()
 		if getErr != nil {
 			if isStatus404(resp) {
+				createIdpGsuite(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpGsuite())
 		if gsuite.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*gsuite.Certificate}))
 		} else if gsuite.Certificates != nil {
@@ -139,7 +138,7 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 
 		log.Printf("Read IDP GSuite")
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

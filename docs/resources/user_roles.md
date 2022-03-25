@@ -33,21 +33,21 @@ resource "genesyscloud_user_roles" "user1-roles" {
 
 ### Required
 
-- **user_id** (String) User ID that will be managed by this resource.
+- `user_id` (String) User ID that will be managed by this resource.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **roles** (Block Set) Roles and their divisions assigned to this user. (see [below for nested schema](#nestedblock--roles))
+- `id` (String) The ID of this resource.
+- `roles` (Block Set) Roles and their divisions assigned to this user. (see [below for nested schema](#nestedblock--roles))
 
 <a id="nestedblock--roles"></a>
 ### Nested Schema for `roles`
 
 Required:
 
-- **role_id** (String) Role ID.
+- `role_id` (String) Role ID.
 
 Optional:
 
-- **division_ids** (Set of String) Division IDs applied to this resource. If not set, the home division will be used. '*' may be set for all divisions.
+- `division_ids` (Set of String) Division IDs applied to this resource. If not set, the home division will be used. '*' may be set for all divisions.
 

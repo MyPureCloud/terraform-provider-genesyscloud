@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -48,10 +49,7 @@ func resourceIdpPing() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
-		Timeouts: &schema.ResourceTimeout{
-			Update: schema.DefaultTimeout(8 * time.Minute),
-			Read:   schema.DefaultTimeout(8 * time.Minute),
-		},
+
 		Schema: map[string]*schema.Schema{
 			"certificates": {
 				Description: "PEM or DER encoded public X.509 certificates for SAML signature validation.",
@@ -96,16 +94,17 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading IDP Ping")
 
-	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		ping, resp, getErr := idpAPI.GetIdentityprovidersPing()
 		if getErr != nil {
 			if isStatus404(resp) {
+				createIdpPing(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpPing())
 		if ping.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*ping.Certificate}))
 		} else if ping.Certificates != nil {
@@ -139,7 +138,7 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP Ping")
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

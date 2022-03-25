@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -113,7 +114,7 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	log.Printf("Reading division %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		division, resp, getErr := authAPI.GetAuthorizationDivision(d.Id(), false)
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -122,7 +123,7 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 			return resource.NonRetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceAuthDivision())
 		d.Set("name", *division.Name)
 
 		if division.Description != nil {
@@ -138,7 +139,7 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		log.Printf("Read division %s %s", d.Id(), *division.Name)
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

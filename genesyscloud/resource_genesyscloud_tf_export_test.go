@@ -35,11 +35,13 @@ type QueueExport struct {
 func TestAccResourceTfExport(t *testing.T) {
 	t.Parallel()
 	var (
-		exportTestDir = "../.terraform" + uuid.NewString()
+		exportTestDir   = "../.terraform" + uuid.NewString()
 		exportResource1 = "test-export1"
 		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
 		statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
 	)
+
+	defer os.RemoveAll(exportTestDir)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -80,7 +82,7 @@ func TestAccResourceTfExport(t *testing.T) {
 func TestAccResourceTfExportByName(t *testing.T) {
 	t.Parallel()
 	var (
-		exportTestDir = "../.terraform" + uuid.NewString()
+		exportTestDir   = "../.terraform" + uuid.NewString()
 		exportResource1 = "test-export1"
 
 		userResource1 = "test-user1"
@@ -96,6 +98,8 @@ func TestAccResourceTfExportByName(t *testing.T) {
 		queueDesc       = "This is a test"
 		queueAcwTimeout = 200000
 	)
+
+	defer os.RemoveAll(exportTestDir)
 
 	testUser1 := &UserExport{
 		Name:  userName1,
@@ -296,7 +300,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 	t.Parallel()
 	var (
-		exportTestDir = "../.terraform" + uuid.NewString()
+		exportTestDir    = "../.terraform" + uuid.NewString()
 		exportedContents string
 		pathToHclFile    = filepath.Join(exportTestDir, defaultTfHCLFile)
 		formName         = "terraform_form_evaluations_" + uuid.NewString()
@@ -379,6 +383,8 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 		}
 	)
 
+	defer os.RemoveAll(exportTestDir)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -427,10 +433,12 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 	t.Parallel()
 	var (
-		exportTestDir = "../.terraform" + uuid.NewString()
+		exportTestDir  = "../.terraform" + uuid.NewString()
 		exportContents string
 		pathToHclFile  = filepath.Join(exportTestDir, defaultTfHCLFile)
 	)
+
+	defer os.RemoveAll(exportTestDir)
 
 	// routing queue attributes
 	var (
@@ -525,6 +533,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 
 func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 	var (
+		exportTestDir           = "../.terraform" + uuid.NewString()
 		configPath              = filepath.Join(exportTestDir, defaultTfJSONFile)
 		permissionsErrorMessage = "API Error 403 - Missing view permissions."
 		otherErrorMessage       = "API Error 411 - Another type of error."
@@ -534,6 +543,8 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 		errors1 = diag.Diagnostics{err1}
 		errors2 = diag.Diagnostics{err1, err2}
 	)
+
+	defer os.RemoveAll(exportTestDir)
 
 	mockError = errors1
 
@@ -555,7 +566,7 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyExportsDestroyed,
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 
 	// Check that the export fails when a non-403 error exists
@@ -576,7 +587,7 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 				ExpectError: regexp.MustCompile(otherErrorMessage),
 			},
 		},
-		CheckDestroy: testVerifyExportsDestroyed,
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 
 	// Check that info about attr exists in error summary when 403 is found & log_permission_errors = false
@@ -595,7 +606,7 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 				ExpectError: regexp.MustCompile(logAttrInfo),
 			},
 		},
-		CheckDestroy: testVerifyExportsDestroyed,
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 
 	// Clean up
@@ -829,7 +840,6 @@ func generateTfExportResource(
 			"genesyscloud_telephony_providers_edges_phonebasesettings",
 			"genesyscloud_telephony_providers_edges_trunkbasesettings",
 			"genesyscloud_telephony_providers_edges_trunk",
-			"genesyscloud_user",
 			"genesyscloud_user_roles",
 			"genesyscloud_webdeployments_configuration",
 			"genesyscloud_webdeployments_deployment"

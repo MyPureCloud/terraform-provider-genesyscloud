@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -48,10 +49,7 @@ func resourceIdpOkta() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
-		Timeouts: &schema.ResourceTimeout{
-			Update: schema.DefaultTimeout(8 * time.Minute),
-			Read:   schema.DefaultTimeout(8 * time.Minute),
-		},
+
 		Schema: map[string]*schema.Schema{
 			"certificates": {
 				Description: "PEM or DER encoded public X.509 certificates for SAML signature validation.",
@@ -91,16 +89,17 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading IDP Okta")
 
-	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		okta, resp, getErr := idpAPI.GetIdentityprovidersOkta()
 		if getErr != nil {
 			if isStatus404(resp) {
+				createIdpOkta(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpOkta())
 		if okta.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*okta.Certificate}))
 		} else if okta.Certificates != nil {
@@ -128,7 +127,7 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP Okta")
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

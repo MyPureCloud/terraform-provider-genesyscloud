@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -157,7 +158,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading phone base settings %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -166,7 +167,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourcePhoneBaseSettings())
 		d.Set("name", *phoneBaseSettings.Name)
 		if phoneBaseSettings.Description != nil {
 			d.Set("description", *phoneBaseSettings.Description)
@@ -194,7 +195,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		log.Printf("Read phone base settings %s %s", d.Id(), *phoneBaseSettings.Name)
 
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

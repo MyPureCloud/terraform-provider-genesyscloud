@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strings"
 	"time"
@@ -242,7 +243,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 
 	// The normal GET route API has a long cache TTL (5 minutes) which can result in stale data.
 	// This can be bypassed by issuing a domain query instead.
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		var route *platformclientv2.Inboundroute
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
@@ -273,7 +274,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 			return nil
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingEmailRoute())
 		if route.Pattern != nil {
 			d.Set("pattern", *route.Pattern)
 		} else {
@@ -341,7 +342,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		log.Printf("Read routing email route %s", d.Id())
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

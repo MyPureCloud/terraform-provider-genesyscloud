@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -49,10 +50,7 @@ func resourceIdpGeneric() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
-		Timeouts: &schema.ResourceTimeout{
-			Update: schema.DefaultTimeout(8 * time.Minute),
-			Read:   schema.DefaultTimeout(8 * time.Minute),
-		},
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Name of the provider.",
@@ -129,16 +127,17 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading IDP Generic")
 
-	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		generic, resp, getErr := idpAPI.GetIdentityprovidersGeneric()
 		if getErr != nil {
 			if isStatus404(resp) {
+				createIdpGeneric(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpGeneric())
 		if generic.Name != nil {
 			d.Set("name", *generic.Name)
 		} else {
@@ -196,7 +195,7 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		log.Printf("Read IDP Generic")
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

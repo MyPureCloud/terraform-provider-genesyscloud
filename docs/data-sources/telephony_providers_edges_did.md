@@ -23,10 +23,10 @@ data "genesyscloud_telephony_providers_edges_did" "didNumber" {
 
 ### Required
 
-- **phone_number** (String) Phone number for the DID.
+- `phone_number` (String) Phone number for the DID.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

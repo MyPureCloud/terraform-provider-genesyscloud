@@ -23,10 +23,10 @@ data "genesyscloud_script" "test-script" {
 
 ### Required
 
-- **name** (String) Script name.
+- `name` (String) Script name.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

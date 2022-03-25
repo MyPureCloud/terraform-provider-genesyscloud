@@ -41,27 +41,27 @@ resource "genesyscloud_oauth_client" "test-client" {
 
 ### Required
 
-- **authorized_grant_type** (String) The OAuth Grant/Client type supported by this client (CODE | TOKEN | SAML2BEARER | PASSWORD | CLIENT-CREDENTIALS).
-- **name** (String) The name of the OAuth client.
+- `authorized_grant_type` (String) The OAuth Grant/Client type supported by this client (CODE | TOKEN | SAML2BEARER | PASSWORD | CLIENT-CREDENTIALS).
+- `name` (String) The name of the OAuth client.
 
 ### Optional
 
-- **access_token_validity_seconds** (Number) The number of seconds, between 5mins and 48hrs, until tokens created with this client expire. Defaults to `86400`.
-- **description** (String) The description of the OAuth client.
-- **id** (String) The ID of this resource.
-- **registered_redirect_uris** (Set of String) List of allowed callbacks for this client. For example: https://myapp.example.com/auth/callback.
-- **roles** (Block Set) Set of roles and their corresponding divisions associated with this client. Roles must be set for clients using the CLIENT-CREDENTIALS grant. The roles must also already be assigned to the OAuth Client used by Terraform. (see [below for nested schema](#nestedblock--roles))
-- **scopes** (Set of String) The scopes requested by this client. Scopes must be set for clients not using the CLIENT-CREDENTIALS grant.
-- **state** (String) The state of the OAuth client (active | inactive). Access tokens cannot be created with inactive clients. Defaults to `active`.
+- `access_token_validity_seconds` (Number) The number of seconds, between 5mins and 48hrs, until tokens created with this client expire. Defaults to `86400`.
+- `description` (String) The description of the OAuth client.
+- `id` (String) The ID of this resource.
+- `registered_redirect_uris` (Set of String) List of allowed callbacks for this client. For example: https://myapp.example.com/auth/callback.
+- `roles` (Block Set) Set of roles and their corresponding divisions associated with this client. Roles must be set for clients using the CLIENT-CREDENTIALS grant. The roles must also already be assigned to the OAuth Client used by Terraform. (see [below for nested schema](#nestedblock--roles))
+- `scopes` (Set of String) The scopes requested by this client. Scopes must be set for clients not using the CLIENT-CREDENTIALS grant.
+- `state` (String) The state of the OAuth client (active | inactive). Access tokens cannot be created with inactive clients. Defaults to `active`.
 
 <a id="nestedblock--roles"></a>
 ### Nested Schema for `roles`
 
 Required:
 
-- **role_id** (String) Role to be associated with the given division which forms a grant.
+- `role_id` (String) Role to be associated with the given division which forms a grant.
 
 Optional:
 
-- **division_id** (String) Division associated with the given role which forms a grant. If not set, the home division will be used. '*' may be set for all divisions.
+- `division_id` (String) Division associated with the given role which forms a grant. If not set, the home division will be used. '*' may be set for all divisions.
 

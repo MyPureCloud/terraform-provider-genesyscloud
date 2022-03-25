@@ -82,28 +82,28 @@ resource "genesyscloud_telephony_providers_edges_site" "site" {
 
 ### Required
 
-- **location_id** (String) Site location ID
-- **media_model** (String) Media model for the site Valid Values: Premises, Cloud
-- **name** (String) The name of the entity.
+- `location_id` (String) Site location ID
+- `media_model` (String) Media model for the site Valid Values: Premises, Cloud
+- `name` (String) The name of the entity.
 
 ### Optional
 
-- **description** (String) The resource's description.
-- **edge_auto_update_config** (Block List, Max: 1) Recurrence rule, time zone, and start/end settings for automatic edge updates for this site (see [below for nested schema](#nestedblock--edge_auto_update_config))
-- **id** (String) The ID of this resource.
-- **media_regions_use_latency_based** (Boolean) Latency based on media region Defaults to `false`.
-- **number_plans** (Block List) Number plans for the site. The order of the plans in the resource file determines the priority of the plans. Specifying number plans will not result in the default plans being overwritten. (see [below for nested schema](#nestedblock--number_plans))
-- **outbound_routes** (Block List) Outbound Routes for the site. The default outbound route will not be delete if routes are specified (see [below for nested schema](#nestedblock--outbound_routes))
+- `description` (String) The resource's description.
+- `edge_auto_update_config` (Block List, Max: 1) Recurrence rule, time zone, and start/end settings for automatic edge updates for this site (see [below for nested schema](#nestedblock--edge_auto_update_config))
+- `id` (String) The ID of this resource.
+- `media_regions_use_latency_based` (Boolean) Latency based on media region Defaults to `false`.
+- `number_plans` (Block List) Number plans for the site. The order of the plans in the resource file determines the priority of the plans. Specifying number plans will not result in the default plans being overwritten. (see [below for nested schema](#nestedblock--number_plans))
+- `outbound_routes` (Block List) Outbound Routes for the site. The default outbound route will not be delete if routes are specified (see [below for nested schema](#nestedblock--outbound_routes))
 
 <a id="nestedblock--edge_auto_update_config"></a>
 ### Nested Schema for `edge_auto_update_config`
 
 Required:
 
-- **end** (String) Date time is represented as an ISO-8601 string without a timezone. For example: yyyy-MM-ddTHH:mm:ss.SSS
-- **rrule** (String) The recurrence rule for updating the Edges assigned to the site. The only supported frequencies are daily and weekly. Weekly frequencies require a day list with at least oneday specified. All other configurations are not supported.
-- **start** (String) Date time is represented as an ISO-8601 string without a timezone. For example: yyyy-MM-ddTHH:mm:ss.SSS
-- **time_zone** (String) The timezone of the window in which any updates to the edges assigned to the site can be applied. The minimum size of the window is 2 hours.
+- `end` (String) Date time is represented as an ISO-8601 string without a timezone. For example: yyyy-MM-ddTHH:mm:ss.SSS
+- `rrule` (String) The recurrence rule for updating the Edges assigned to the site. The only supported frequencies are daily and weekly. Weekly frequencies require a day list with at least oneday specified. All other configurations are not supported.
+- `start` (String) Date time is represented as an ISO-8601 string without a timezone. For example: yyyy-MM-ddTHH:mm:ss.SSS
+- `time_zone` (String) The timezone of the window in which any updates to the edges assigned to the site can be applied. The minimum size of the window is 2 hours.
 
 
 <a id="nestedblock--number_plans"></a>
@@ -111,24 +111,24 @@ Required:
 
 Required:
 
-- **classification** (String) Used to classify this number plan
-- **match_type** (String)
-- **name** (String) The name of the entity.
+- `classification` (String) Used to classify this number plan
+- `match_type` (String)
+- `name` (String) The name of the entity.
 
 Optional:
 
-- **digit_length** (Block List, Max: 1) Allowed values are between 1-20 digits. (see [below for nested schema](#nestedblock--number_plans--digit_length))
-- **match_format** (String) Use regular expression capture groups to build the normalized number
-- **normalized_format** (String) Use regular expression capture groups to build the normalized number
-- **numbers** (Block List) Numbers must be 2-9 digits long. Numbers within ranges must be the same length. (e.g. 888, 888-999, 55555-77777, 800). (see [below for nested schema](#nestedblock--number_plans--numbers))
+- `digit_length` (Block List, Max: 1) Allowed values are between 1-20 digits. (see [below for nested schema](#nestedblock--number_plans--digit_length))
+- `match_format` (String) Use regular expression capture groups to build the normalized number
+- `normalized_format` (String) Use regular expression capture groups to build the normalized number
+- `numbers` (Block List) Numbers must be 2-9 digits long. Numbers within ranges must be the same length. (e.g. 888, 888-999, 55555-77777, 800). (see [below for nested schema](#nestedblock--number_plans--numbers))
 
 <a id="nestedblock--number_plans--digit_length"></a>
 ### Nested Schema for `number_plans.digit_length`
 
 Optional:
 
-- **end** (String)
-- **start** (String)
+- `end` (String)
+- `start` (String)
 
 
 <a id="nestedblock--number_plans--numbers"></a>
@@ -136,8 +136,8 @@ Optional:
 
 Optional:
 
-- **end** (String)
-- **start** (String)
+- `end` (String)
+- `start` (String)
 
 
 
@@ -146,13 +146,13 @@ Optional:
 
 Required:
 
-- **classification_types** (List of String) Used to classify this outbound route.
-- **name** (String) The name of the entity.
+- `classification_types` (List of String) Used to classify this outbound route.
+- `name` (String) The name of the entity.
 
 Optional:
 
-- **description** (String) The resource's description.
-- **distribution** (String) Valid values: SEQUENTIAL, RANDOM. Defaults to `SEQUENTIAL`.
-- **enabled** (Boolean) Enable or disable the outbound route Defaults to `false`.
-- **external_trunk_base_ids** (List of String) Trunk base settings of trunkType "EXTERNAL". This base must also be set on an edge logical interface for correct routing. The order of the IDs determines the distribution if "distribution" is set to "SEQUENTIAL"
+- `description` (String) The resource's description.
+- `distribution` (String) Valid values: SEQUENTIAL, RANDOM. Defaults to `SEQUENTIAL`.
+- `enabled` (Boolean) Enable or disable the outbound route Defaults to `false`.
+- `external_trunk_base_ids` (List of String) Trunk base settings of trunkType "EXTERNAL". This base must also be set on an edge logical interface for correct routing. The order of the IDs determines the distribution if "distribution" is set to "SEQUENTIAL"
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -91,7 +92,7 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading skill %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		skill, resp, getErr := routingAPI.GetRoutingSkill(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -100,7 +101,7 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 			return resource.NonRetryableError(fmt.Errorf("Failed to read skill %s: %s", d.Id(), getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSkill())
 		if skill.State != nil && *skill.State == "deleted" {
 			d.SetId("")
 			return nil
@@ -108,7 +109,7 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		d.Set("name", *skill.Name)
 		log.Printf("Read skill %s %s", d.Id(), *skill.Name)
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

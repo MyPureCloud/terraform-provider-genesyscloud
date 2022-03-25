@@ -35,26 +35,26 @@ resource "genesyscloud_idp_generic" "generic" {
 
 ### Required
 
-- **certificates** (Set of String) PEM or DER encoded public X.509 certificates for SAML signature validation.
-- **issuer_uri** (String) Issuer URI provided by the provider.
-- **name** (String) Name of the provider.
+- `certificates` (Set of String) PEM or DER encoded public X.509 certificates for SAML signature validation.
+- `issuer_uri` (String) Issuer URI provided by the provider.
+- `name` (String) Name of the provider.
 
 ### Optional
 
-- **disabled** (Boolean) True if Generic provider is disabled. Defaults to `false`.
-- **endpoint_compression** (Boolean) True if the Genesys Cloud authentication request should be compressed. Defaults to `false`.
-- **id** (String) The ID of this resource.
-- **logo_image_data** (String) Base64 encoded SVG image.
-- **name_identifier_format** (String) SAML name identifier format. (urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified | urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress | urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName | urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName | urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos | urn:oasis:names:tc:SAML:2.0:nameid-format:entity | urn:oasis:names:tc:SAML:2.0:nameid-format:persistent | urn:oasis:names:tc:SAML:2.0:nameid-format:transient) Defaults to `urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified`.
-- **relying_party_identifier** (String) String used to identify Genesys Cloud to the identity provider.
-- **target_uri** (String) Target URI provided by the provider.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `disabled` (Boolean) True if Generic provider is disabled. Defaults to `false`.
+- `endpoint_compression` (Boolean) True if the Genesys Cloud authentication request should be compressed. Defaults to `false`.
+- `id` (String) The ID of this resource.
+- `logo_image_data` (String) Base64 encoded SVG image.
+- `name_identifier_format` (String) SAML name identifier format. (urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified | urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress | urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName | urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName | urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos | urn:oasis:names:tc:SAML:2.0:nameid-format:entity | urn:oasis:names:tc:SAML:2.0:nameid-format:persistent | urn:oasis:names:tc:SAML:2.0:nameid-format:transient) Defaults to `urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified`.
+- `relying_party_identifier` (String) String used to identify Genesys Cloud to the identity provider.
+- `target_uri` (String) Target URI provided by the provider.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **read** (String)
-- **update** (String)
+- `read` (String)
+- `update` (String)
 

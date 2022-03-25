@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strings"
 	"time"
@@ -189,7 +190,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 	log.Printf("Reading group %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		group, resp, getErr := groupsAPI.GetGroup(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -198,7 +199,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceGroup())
 		d.Set("name", *group.Name)
 		d.Set("type", *group.VarType)
 		d.Set("visibility", *group.Visibility)
@@ -229,7 +230,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("member_ids", members)
 
 		log.Printf("Read group %s %s", d.Id(), *group.Name)
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

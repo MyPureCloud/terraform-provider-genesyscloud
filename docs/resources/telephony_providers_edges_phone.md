@@ -49,32 +49,32 @@ resource "genesyscloud_telephony_providers_edges_phone" "test_phone" {
 
 ### Required
 
-- **line_base_settings_id** (String) Line Base Settings ID.
-- **name** (String) The name of the entity.
-- **phone_base_settings_id** (String) Phone Base Settings ID.
-- **site_id** (String) The site ID associated to the phone.
+- `line_base_settings_id` (String) Line Base Settings ID.
+- `name` (String) The name of the entity.
+- `phone_base_settings_id` (String) Phone Base Settings ID.
+- `site_id` (String) The site ID associated to the phone.
 
 ### Optional
 
-- **capabilities** (Block List, Max: 1) Phone Capabilities. (see [below for nested schema](#nestedblock--capabilities))
-- **id** (String) The ID of this resource.
-- **line_addresses** (List of String) Ordered list of Line DIDs for standalone phones.
-- **phone_meta_base_id** (String) Phone Meta Base ID.
-- **state** (String) Indicates if the resource is active, inactive, or deleted. Valid values: active, inactive, deleted. Defaults to `active`.
-- **web_rtc_user_id** (String) Web RTC User ID. This is necessary when creating a Web RTC phone. This user will be assigned to the phone after it is created.
+- `capabilities` (Block List, Max: 1) Phone Capabilities. (see [below for nested schema](#nestedblock--capabilities))
+- `id` (String) The ID of this resource.
+- `line_addresses` (List of String) Ordered list of Line DIDs for standalone phones.
+- `phone_meta_base_id` (String) Phone Meta Base ID.
+- `state` (String) Indicates if the resource is active, inactive, or deleted. Valid values: active, inactive, deleted. Defaults to `active`.
+- `web_rtc_user_id` (String) Web RTC User ID. This is necessary when creating a Web RTC phone. This user will be assigned to the phone after it is created.
 
 <a id="nestedblock--capabilities"></a>
 ### Nested Schema for `capabilities`
 
 Optional:
 
-- **allow_reboot** (Boolean) Allow Reboot
-- **cdm** (Boolean) CDM
-- **dual_registers** (Boolean) Dual Registers
-- **hardware_id_type** (String) HardwareId Type
-- **media_codecs** (List of String) Media Codecs
-- **no_cloud_provisioning** (Boolean) No Cloud Provisioning
-- **no_rebalance** (Boolean) No Rebalance
-- **provisions** (Boolean) Provisions
-- **registers** (Boolean) Registers
+- `allow_reboot` (Boolean) Allow Reboot
+- `cdm` (Boolean) CDM
+- `dual_registers` (Boolean) Dual Registers
+- `hardware_id_type` (String) HardwareId Type
+- `media_codecs` (List of String) Media Codecs
+- `no_cloud_provisioning` (Boolean) No Cloud Provisioning
+- `no_rebalance` (Boolean) No Rebalance
+- `provisions` (Boolean) Provisions
+- `registers` (Boolean) Registers
 

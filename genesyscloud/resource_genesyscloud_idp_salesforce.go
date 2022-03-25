@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -48,10 +49,7 @@ func resourceIdpSalesforce() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
-		Timeouts: &schema.ResourceTimeout{
-			Update: schema.DefaultTimeout(8 * time.Minute),
-			Read:   schema.DefaultTimeout(8 * time.Minute),
-		},
+
 		Schema: map[string]*schema.Schema{
 			"certificates": {
 				Description: "PEM or DER encoded public X.509 certificates for SAML signature validation.",
@@ -91,16 +89,17 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	log.Printf("Reading IDP Salesforce")
 
-	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		salesforce, resp, getErr := idpAPI.GetIdentityprovidersSalesforce()
 		if getErr != nil {
 			if isStatus404(resp) {
+				createIdpSalesforce(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpSalesforce())
 		if salesforce.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*salesforce.Certificate}))
 		} else if salesforce.Certificates != nil {
@@ -128,7 +127,7 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 		}
 
 		log.Printf("Read IDP Salesforce")
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

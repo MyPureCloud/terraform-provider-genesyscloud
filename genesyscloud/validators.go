@@ -42,5 +42,3 @@ func validateLocalDateTimes(date interface{}, _ cty.Path) diag.Diagnostics {
 	}
 	return diag.Errorf("Date %v is not a string", date)
 }
-
-

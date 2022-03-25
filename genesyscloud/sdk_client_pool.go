@@ -44,21 +44,41 @@ func InitSDKClientPool(max int, version string, providerConfig *schema.ResourceD
 }
 
 func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version string) diag.Diagnostics {
-	for cap(p.pool) > 0 {
-		sdkConfig := platformclientv2.NewConfiguration()
-		err := initClientConfig(providerConfig, version, sdkConfig)
-		if err != nil {
-			return err
-		}
+	errorChan := make(chan diag.Diagnostics)
+	wgDone := make(chan bool)
+	var wg sync.WaitGroup
 
-		select {
-		case p.pool <- sdkConfig:
-			continue
-		default:
-			return nil
-		}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	for i := 0; i < cap(p.pool); i++ {
+		sdkConfig := platformclientv2.NewConfiguration()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := initClientConfig(providerConfig, version, sdkConfig)
+			if err != nil {
+				select {
+				case <-ctx.Done():
+				case errorChan <- err:
+				}
+				cancel()
+				return
+			}
+		}()
+		p.pool <- sdkConfig
 	}
-	return nil
+	go func() {
+		wg.Wait()
+		close(wgDone)
+	}()
+
+	// Wait until either WaitGroup is done or an error is received
+	select {
+	case <-wgDone:
+		return nil
+	case err := <-errorChan:
+		return err
+	}
 }
 
 func (p *SDKClientPool) acquire() *platformclientv2.Configuration {

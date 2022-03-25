@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strings"
 	"time"
@@ -122,7 +123,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Reading routing email domain %s", d.Id())
 
-	return withRetriesForRead(ctx, 360*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		domain, resp, getErr := routingAPI.GetRoutingEmailDomain(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -131,7 +132,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 			return resource.NonRetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingEmailDomain())
 		if domain.SubDomain != nil && *domain.SubDomain {
 			// Strip off the regional domain suffix added by the server
 			d.Set("domain_id", strings.SplitN(*domain.Id, ".", 2)[0])
@@ -158,7 +159,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		log.Printf("Read routing email domain %s", d.Id())
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 
@@ -202,7 +203,7 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to delete routing email domain %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 90*time.Second, func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingEmailDomain(d.Id())
 		if err != nil {
 			if isStatus404(resp) {
@@ -213,6 +214,7 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 			return resource.NonRetryableError(fmt.Errorf("Error deleting Routing email domain %s: %s", d.Id(), err))
 		}
 
+		routingAPI.DeleteRoutingEmailDomain(d.Id())
 		return resource.RetryableError(fmt.Errorf("Routing email domain %s still exists", d.Id()))
 	})
 }

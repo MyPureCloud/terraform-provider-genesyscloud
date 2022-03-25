@@ -133,12 +133,12 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateRoutingRules(queueResource1, 1, routingRuleOpAny, "45", "15"),
 				),
 			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
+			//{
+			//	// Import/Read
+			//	ResourceName:      "genesyscloud_routing_queue." + queueResource1,
+			//	ImportState:       true,
+			//	ImportStateVerify: true,
+			//},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
 	})

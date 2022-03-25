@@ -23,10 +23,10 @@ data "genesyscloud_quality_forms_evaluation" "quality-form" {
 
 ### Required
 
-- **name** (String) Evaluation Form name.
+- `name` (String) Evaluation Form name.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

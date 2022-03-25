@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"net/url"
 	"time"
@@ -237,7 +238,7 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading widget deployment %s", d.Id())
-	return withRetriesForRead(ctx, 60*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentWidget, resp, getErr := widgetsAPI.GetWidgetsDeployment(d.Id())
 
 		if getErr != nil {
@@ -247,8 +248,8 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 
 			return resource.NonRetryableError(fmt.Errorf("Failed to read widget deployment %s: %s", d.Id(), getErr))
 		}
-		
-		cc := NewConsistencyCheck(d)
+
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceWidgetDeployment())
 		d.Set("name", *currentWidget.Name)
 		if currentWidget.Description != nil {
 			d.Set("description", *currentWidget.Description)
@@ -292,7 +293,7 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 			d.Set("client_config", nil)
 		}
 
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

@@ -3,15 +3,14 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/nyaruka/phonenumbers"
 	"log"
-	"reflect"
 	"time"
 )
 
@@ -179,7 +178,7 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading location %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		location, resp, getErr := locationsAPI.GetLocation(d.Id(), nil)
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -193,7 +192,7 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 			return nil
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceLocation())
 		d.Set("name", *location.Name)
 
 		if location.Notes != nil {
@@ -211,55 +210,9 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 		d.Set("emergency_number", flattenLocationEmergencyNumber(location.EmergencyNumber))
 		d.Set("address", flattenLocationAddress(location.Address))
 
-		//configValues := valueMap(d.GetRawConfig())
-		//fmt.Println("configValues" ,configValues)
-		//if configValues != nil {
-		//	//t := terraform.NewResourceConfigRaw(configValues)
-		//	t := &terraform.ResourceConfig{
-		//		Config: configValues,
-		//	}
-		//	//ii := &terraform.InstanceState{
-		//	//	Attributes: map[string]string{},
-		//	//}
-		//	diff, err := resourceLocation().Diff(ctx, nil, t, nil)
-		//	if err != nil {
-		//		fmt.Println("ronan err", err)
-		//		return nil
-		//	}
-		//	fmt.Println("ronan diff", diff)
-		//}
-
 		log.Printf("Read location %s %s", d.Id(), *location.Name)
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
-}
-
-func valueMap(value cty.Value) map[string]interface{} {
-	rvf := reflect.ValueOf(value).FieldByName("v")
-	if rvf.IsNil() {
-		return nil
-	}
-
-	elem := rvf.Elem()
-	vMap := make(map[string]interface{})
-	for _, k := range elem.MapKeys() {
-		v := elem.MapIndex(k)
-		//t := v.Interface().(type)
-		switch t := v.Interface().(type) {
-		case int:
-			fmt.Println(t)
-		case string:
-			fmt.Println(t)
-		case bool:
-			fmt.Println(t)
-		default:
-			fmt.Println("not found")
-
-		}
-		//vMap[k.String()] = elem.MapIndex(k).Interface()
-	}
-
-	return vMap
 }
 
 func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

@@ -11,7 +11,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
-
 func dataSourceWebDeploymentsDeployment() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Web Deployments. Select a deployment by name.",
@@ -32,7 +31,7 @@ func dataSourceDeploymentRead(ctx context.Context, d *schema.ResourceData, m int
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15 * time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		deployments, _, err := api.GetWebdeploymentsDeployments()
 
 		if err != nil {

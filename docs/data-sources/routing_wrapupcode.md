@@ -23,10 +23,10 @@ data "genesyscloud_routing_wrapupcode" "test-routing-wrapupcode" {
 
 ### Required
 
-- **name** (String) Wrap-up code name.
+- `name` (String) Wrap-up code name.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

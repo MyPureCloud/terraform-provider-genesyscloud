@@ -33,9 +33,9 @@ resource "genesyscloud_flow" "test_flow1" {
 
 ### Required
 
-- **filepath** (String) YAML file path or URL for flow configuration.
+- `filepath` (String) YAML file path or URL for flow configuration.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 

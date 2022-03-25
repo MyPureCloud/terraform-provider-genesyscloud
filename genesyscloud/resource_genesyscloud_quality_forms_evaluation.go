@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -178,7 +179,7 @@ func evaluationFormExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllEvaluationForms),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
-		AllowZeroValues: []string{"question_groups.questions.answer_options.value", "question_groups.weight"},
+		AllowZeroValues:  []string{"question_groups.questions.answer_options.value", "question_groups.weight"},
 	}
 }
 
@@ -264,7 +265,7 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 	log.Printf("Reading evaluation form %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		evaluationForm, resp, getErr := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -273,7 +274,7 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			return resource.NonRetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceEvaluationForm())
 		if evaluationForm.Name != nil {
 			d.Set("name", *evaluationForm.Name)
 		}
@@ -284,7 +285,7 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))
 		}
 
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

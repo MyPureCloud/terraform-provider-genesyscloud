@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strconv"
 	"time"
@@ -694,7 +695,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 
 	version := d.Get("version").(string)
 	log.Printf("Reading web deployment configuration %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		if version == "" {
 			version = determineLatestVersion(ctx, api, d.Id())
 		}
@@ -706,7 +707,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 			return resource.NonRetryableError(fmt.Errorf("Failed to read web deployment configuration %s: %s", d.Id(), getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceWebDeploymentConfiguration())
 		d.Set("name", *configuration.Name)
 		if configuration.Description != nil {
 			d.Set("description", *configuration.Description)
@@ -723,7 +724,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 		}
 
 		log.Printf("Read web deployment configuration %s %s", d.Id(), *configuration.Name)
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

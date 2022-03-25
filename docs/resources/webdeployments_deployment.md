@@ -45,26 +45,26 @@ resource "genesyscloud_webdeployments_deployment" "exampleDeployment" {
 
 ### Required
 
-- **configuration** (Block List, Min: 1, Max: 1) The published configuration version used by this deployment (see [below for nested schema](#nestedblock--configuration))
-- **name** (String) Deployment name
+- `configuration` (Block List, Min: 1, Max: 1) The published configuration version used by this deployment (see [below for nested schema](#nestedblock--configuration))
+- `name` (String) Deployment name
 
 ### Optional
 
-- **allow_all_domains** (Boolean) Whether all domains are allowed or not. allowedDomains must be empty when this is true. Defaults to `false`.
-- **allowed_domains** (List of String) The list of domains that are approved to use this deployment; the list will be added to CORS headers for ease of web use.
-- **description** (String) Deployment description
-- **flow_id** (String) A reference to the inboundshortmessage flow used by this deployment.
-- **id** (String) The ID of this resource.
-- **status** (String) The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.
+- `allow_all_domains` (Boolean) Whether all domains are allowed or not. allowedDomains must be empty when this is true. Defaults to `false`.
+- `allowed_domains` (List of String) The list of domains that are approved to use this deployment; the list will be added to CORS headers for ease of web use.
+- `description` (String) Deployment description
+- `flow_id` (String) A reference to the inboundshortmessage flow used by this deployment.
+- `id` (String) The ID of this resource.
+- `status` (String) The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.
 
 <a id="nestedblock--configuration"></a>
 ### Nested Schema for `configuration`
 
 Required:
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 Optional:
 
-- **version** (String)
+- `version` (String)
 

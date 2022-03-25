@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -125,7 +126,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading DID pool %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		didPool, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -139,7 +140,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceTelephonyDidPool())
 		d.Set("start_phone_number", *didPool.StartPhoneNumber)
 		d.Set("end_phone_number", *didPool.EndPhoneNumber)
 
@@ -162,7 +163,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read DID pool %s %s", d.Id(), *didPool.StartPhoneNumber)
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

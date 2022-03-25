@@ -23,10 +23,10 @@ data "genesyscloud_routing_language" "english" {
 
 ### Required
 
-- **name** (String) Language name.
+- `name` (String) Language name.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

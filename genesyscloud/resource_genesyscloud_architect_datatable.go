@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"net/http"
 	"sort"
@@ -163,7 +164,7 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Reading datatable %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		datatable, resp, getErr := sdkGetArchitectDatatable(d.Id(), "schema", archAPI)
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -171,7 +172,7 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read datatable %s: %s", d.Id(), getErr))
 		}
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectDatatable())
 		d.Set("name", *datatable.Name)
 		d.Set("division_id", *datatable.Division.Id)
 
@@ -189,7 +190,7 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 
 		log.Printf("Read datatable %s %s", d.Id(), *datatable.Name)
 
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

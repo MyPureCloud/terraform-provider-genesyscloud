@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"sort"
 	"strings"
@@ -152,7 +153,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Routing Utilization")
-	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		settings, resp, getErr := routingAPI.GetRoutingUtilization()
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -161,7 +162,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSkill())
 		if settings.Utilization != nil {
 			for sdkType, schemaType := range utilizationMediaTypes {
 				if mediaSettings, ok := (*settings.Utilization)[sdkType]; ok {
@@ -173,7 +174,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		log.Printf("Read Routing Utilization")
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

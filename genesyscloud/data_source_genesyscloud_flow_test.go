@@ -29,7 +29,7 @@ func TestAccDataSourceFlow(t *testing.T) {
 					inboundcallConfig,
 				) + generateFlowDataSource(
 					flowDataSource,
-					"genesyscloud_flow." + flowResource,
+					"genesyscloud_flow."+flowResource,
 					flowName,
 				),
 				Check: resource.ComposeTestCheckFunc(

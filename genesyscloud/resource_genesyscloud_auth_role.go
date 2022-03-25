@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -230,7 +231,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Reading role %s", d.Id())
 
-	return withRetriesForRead(ctx, 180*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), nil)
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -239,7 +240,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 			return resource.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
 		}
 
-		cc := NewConsistencyCheck(d)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceAuthRole())
 		d.Set("name", *role.Name)
 
 		if role.Description != nil {
@@ -267,7 +268,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		}
 
 		log.Printf("Read role %s %s", d.Id(), *role.Name)
-		return cc.CheckErr()
+		return cc.CheckState()
 	})
 }
 

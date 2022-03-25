@@ -23,10 +23,10 @@ data "genesyscloud_architect_schedules" "schedule" {
 
 ### Required
 
-- **name** (String) Schedule name.
+- `name` (String) Schedule name.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

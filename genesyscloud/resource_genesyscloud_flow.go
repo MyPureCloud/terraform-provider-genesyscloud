@@ -171,7 +171,7 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		flow, resp, err := architectAPI.GetFlow(d.Id(), false)
 		if err != nil {
 			if isStatus404(resp) {

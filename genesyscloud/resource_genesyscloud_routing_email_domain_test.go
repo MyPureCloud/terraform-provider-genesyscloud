@@ -38,7 +38,7 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 					nullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId ),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", trueValue),
 				),
 			},
@@ -52,6 +52,12 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 		CheckDestroy: testVerifyRoutingEmailDomainDestroyed,
 	})
 }
+
+//func TestAccResourceRoutingEmailDomainCustomLoop(t *testing.T) {
+//	for {
+//		TestAccResourceRoutingEmailDomainCustom(t)
+//	}
+//}
 
 func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
@@ -119,8 +125,7 @@ func generateRoutingEmailDomainResource(
 func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
 
-	//ctx, _ := context.WithTimeout(nil, 60 * time.Second)
-	diagErr := withRetries(context.Background(), 60*time.Second, func() *resource.RetryError {
+	diagErr := withRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "genesyscloud_routing_email_domain" {
 				continue

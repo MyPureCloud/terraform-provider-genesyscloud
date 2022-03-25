@@ -36,11 +36,11 @@ resource "genesyscloud_integration_credential" "credential1" {
 
 ### Required
 
-- **credential_type_name** (String) Credential type name. Use [GET /api/v2/integrations/credentials/types](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-credentials-types) to see the list of available integration credential types.
+- `credential_type_name` (String) Credential type name. Use [GET /api/v2/integrations/credentials/types](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-credentials-types) to see the list of available integration credential types.
 
 ### Optional
 
-- **fields** (Map of String, Sensitive) Credential fields. Different credential types require different fields. Missing any correct required fields will result API request failure. Use [GET /api/v2/integrations/credentials/types](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-credentials-types) to check out the specific credential type schema to find out what fields are required.
-- **id** (String) The ID of this resource.
-- **name** (String) Credential name.
+- `fields` (Map of String, Sensitive) Credential fields. Different credential types require different fields. Missing any correct required fields will result API request failure. Use [GET /api/v2/integrations/credentials/types](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-credentials-types) to check out the specific credential type schema to find out what fields are required.
+- `id` (String) The ID of this resource.
+- `name` (String) Credential name.
 

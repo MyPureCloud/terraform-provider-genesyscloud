@@ -48,25 +48,25 @@ resource "genesyscloud_architect_datatable" "customers" {
 
 ### Required
 
-- **name** (String) Name of the datatable.
-- **properties** (Block List, Min: 1) Schema properties of the datatable. This must at a minimum contain a string property 'key' that will serve as the row key. Properties cannot be removed from a schema once they have been added (see [below for nested schema](#nestedblock--properties))
+- `name` (String) Name of the datatable.
+- `properties` (Block List, Min: 1) Schema properties of the datatable. This must at a minimum contain a string property 'key' that will serve as the row key. Properties cannot be removed from a schema once they have been added (see [below for nested schema](#nestedblock--properties))
 
 ### Optional
 
-- **description** (String) Description of the datatable.
-- **division_id** (String) The division to which this datatable will belong. If not set, the home division will be used.
-- **id** (String) The ID of this resource.
+- `description` (String) Description of the datatable.
+- `division_id` (String) The division to which this datatable will belong. If not set, the home division will be used.
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--properties"></a>
 ### Nested Schema for `properties`
 
 Required:
 
-- **name** (String) Name of the property.
-- **type** (String) Type of the property (boolean | string | integer | number).
+- `name` (String) Name of the property.
+- `type` (String) Type of the property (boolean | string | integer | number).
 
 Optional:
 
-- **default** (String) Default value of the property. This is converted to the proper type for non-strings (e.g. set 'true' or 'false' for booleans).
-- **title** (String) Display title of the property.
+- `default` (String) Default value of the property. This is converted to the proper type for non-strings (e.g. set 'true' or 'false' for booleans).
+- `title` (String) Display title of the property.
 

@@ -23,10 +23,10 @@ data "genesyscloud_integration" "integration" {
 
 ### Required
 
-- **name** (String) The name of the integration
+- `name` (String) The name of the integration
 
 ### Optional
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 
