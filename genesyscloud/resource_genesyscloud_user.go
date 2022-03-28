@@ -34,11 +34,11 @@ var (
 				ValidateFunc: validation.StringInSlice([]string{"PHONE", "SMS"}, false),
 			},
 			"type": {
-				Description:  "Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE).",
+				Description:  "Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE | OTHER).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "WORK",
-				ValidateFunc: validation.StringInSlice([]string{"WORK", "WORK2", "WORK3", "WORK4", "HOME", "MOBILE"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"WORK", "WORK2", "WORK3", "WORK4", "HOME", "MOBILE", "OTHER"}, false),
 			},
 			"extension": {
 				Description: "Phone number extension",
