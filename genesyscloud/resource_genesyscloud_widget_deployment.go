@@ -135,7 +135,7 @@ func widgetDeploymentExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllWidgetDeployments),
 		RefAttrs: map[string]*RefAttrSettings{
-			"flow_id": {},
+			"flow_id": {RefType: "genesyscloud_flow"},
 		},
 	}
 }

@@ -79,8 +79,8 @@ func routingEmailRouteExporter() *ResourceExporter {
 			"queue_id":                      {RefType: "genesyscloud_routing_queue"},
 			"skill_ids":                     {RefType: "genesyscloud_routing_skill"},
 			"language_id":                   {RefType: "genesyscloud_routing_language"},
-			"flow_id":                       {}, // Ref type not yet defined
-			"spam_flow_id":                  {}, // Ref type not yet defined
+			"flow_id":                       {RefType: "genesyscloud_flow"},
+			"spam_flow_id":                  {RefType: "genesyscloud_flow"},
 			"reply_email_address.domain_id": {RefType: "genesyscloud_routing_email_domain"},
 			"reply_email_address.route_id":  {RefType: "genesyscloud_routing_email_route"},
 		},
