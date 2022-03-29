@@ -24,11 +24,11 @@ data "genesyscloud_telephony_providers_edges_did_pool" "didPool" {
 
 ### Required
 
-- `end_phone_number` (String) Ending phone number of the DID Pool range.
-- `start_phone_number` (String) Starting phone number of the DID Pool range.
+- **end_phone_number** (String) Ending phone number of the DID Pool range.
+- **start_phone_number** (String) Starting phone number of the DID Pool range.
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 

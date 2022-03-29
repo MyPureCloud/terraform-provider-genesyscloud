@@ -31,22 +31,22 @@ resource "genesyscloud_idp_gsuite" "gsuite" {
 
 ### Required
 
-- `certificates` (Set of String) PEM or DER encoded public X.509 certificates for SAML signature validation.
-- `issuer_uri` (String) Issuer URI provided by GSuite.
+- **certificates** (Set of String) PEM or DER encoded public X.509 certificates for SAML signature validation.
+- **issuer_uri** (String) Issuer URI provided by GSuite.
 
 ### Optional
 
-- `disabled` (Boolean) True if GSuite is disabled. Defaults to `false`.
-- `id` (String) The ID of this resource.
-- `relying_party_identifier` (String) String used to identify Genesys Cloud to GSuite.
-- `target_uri` (String) Target URI provided by GSuite.
-- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **disabled** (Boolean) True if GSuite is disabled. Defaults to `false`.
+- **id** (String) The ID of this resource.
+- **relying_party_identifier** (String) String used to identify Genesys Cloud to GSuite.
+- **target_uri** (String) Target URI provided by GSuite.
+- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- `read` (String)
-- `update` (String)
+- **read** (String)
+- **update** (String)
 

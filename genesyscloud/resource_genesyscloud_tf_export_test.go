@@ -33,7 +33,6 @@ type QueueExport struct {
 }
 
 func TestAccResourceTfExport(t *testing.T) {
-	t.Parallel()
 	var (
 		exportTestDir   = "../.terraform" + uuid.NewString()
 		exportResource1 = "test-export1"
@@ -80,7 +79,6 @@ func TestAccResourceTfExport(t *testing.T) {
 }
 
 func TestAccResourceTfExportByName(t *testing.T) {
-	t.Parallel()
 	var (
 		exportTestDir   = "../.terraform" + uuid.NewString()
 		exportResource1 = "test-export1"

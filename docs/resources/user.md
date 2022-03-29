@@ -107,43 +107,43 @@ resource "genesyscloud_user" "test_user" {
 
 ### Required
 
-- `email` (String) User's primary email and username.
-- `name` (String) User's full name.
+- **email** (String) User's primary email and username.
+- **name** (String) User's full name.
 
 ### Optional
 
-- `acd_auto_answer` (Boolean) Enable ACD auto-answer. Defaults to `false`.
-- `addresses` (List of Object) The address settings for this user. If not set, this resource will not manage addresses. (see [below for nested schema](#nestedatt--addresses))
-- `certifications` (Set of String) Certifications for this user. If not set, this resource will not manage certifications.
-- `department` (String) User's department.
-- `division_id` (String) The division to which this user will belong. If not set, the home division will be used.
-- `employer_info` (List of Object) The employer info for this user. If not set, this resource will not manage employer info. (see [below for nested schema](#nestedatt--employer_info))
-- `id` (String) The ID of this resource.
-- `locations` (Set of Object) The user placement at each site location. If not set, this resource will not manage user locations. (see [below for nested schema](#nestedatt--locations))
-- `manager` (String) User ID of this user's manager.
-- `password` (String, Sensitive) User's password. If specified, this is only set on user create.
-- `profile_skills` (Set of String) Profile skills for this user. If not set, this resource will not manage profile skills.
-- `routing_languages` (Set of Object) Languages and proficiencies for this user. If not set, this resource will not manage user languages. (see [below for nested schema](#nestedatt--routing_languages))
-- `routing_skills` (Set of Object) Skills and proficiencies for this user. If not set, this resource will not manage user skills. (see [below for nested schema](#nestedatt--routing_skills))
-- `routing_utilization` (List of Object) The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings. (see [below for nested schema](#nestedatt--routing_utilization))
-- `state` (String) User's state (active | inactive). Default is 'active'. Defaults to `active`.
-- `title` (String) User's title.
+- **acd_auto_answer** (Boolean) Enable ACD auto-answer. Defaults to `false`.
+- **addresses** (List of Object) The address settings for this user. If not set, this resource will not manage addresses. (see [below for nested schema](#nestedatt--addresses))
+- **certifications** (Set of String) Certifications for this user. If not set, this resource will not manage certifications.
+- **department** (String) User's department.
+- **division_id** (String) The division to which this user will belong. If not set, the home division will be used.
+- **employer_info** (List of Object) The employer info for this user. If not set, this resource will not manage employer info. (see [below for nested schema](#nestedatt--employer_info))
+- **id** (String) The ID of this resource.
+- **locations** (Set of Object) The user placement at each site location. If not set, this resource will not manage user locations. (see [below for nested schema](#nestedatt--locations))
+- **manager** (String) User ID of this user's manager.
+- **password** (String, Sensitive) User's password. If specified, this is only set on user create.
+- **profile_skills** (Set of String) Profile skills for this user. If not set, this resource will not manage profile skills.
+- **routing_languages** (Set of Object) Languages and proficiencies for this user. If not set, this resource will not manage user languages. (see [below for nested schema](#nestedatt--routing_languages))
+- **routing_skills** (Set of Object) Skills and proficiencies for this user. If not set, this resource will not manage user skills. (see [below for nested schema](#nestedatt--routing_skills))
+- **routing_utilization** (List of Object) The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings. (see [below for nested schema](#nestedatt--routing_utilization))
+- **state** (String) User's state (active | inactive). Default is 'active'. Defaults to `active`.
+- **title** (String) User's title.
 
 <a id="nestedatt--addresses"></a>
 ### Nested Schema for `addresses`
 
 Optional:
 
-- `other_emails` (Set of Object) (see [below for nested schema](#nestedobjatt--addresses--other_emails))
-- `phone_numbers` (Set of Object) (see [below for nested schema](#nestedobjatt--addresses--phone_numbers))
+- **other_emails** (Set of Object) (see [below for nested schema](#nestedobjatt--addresses--other_emails))
+- **phone_numbers** (Set of Object) (see [below for nested schema](#nestedobjatt--addresses--phone_numbers))
 
 <a id="nestedobjatt--addresses--other_emails"></a>
 ### Nested Schema for `addresses.other_emails`
 
 Optional:
 
-- `address` (String)
-- `type` (String)
+- **address** (String)
+- **type** (String)
 
 
 <a id="nestedobjatt--addresses--phone_numbers"></a>
@@ -151,10 +151,10 @@ Optional:
 
 Optional:
 
-- `extension` (String)
-- `media_type` (String)
-- `number` (String)
-- `type` (String)
+- **extension** (String)
+- **media_type** (String)
+- **number** (String)
+- **type** (String)
 
 
 
@@ -163,10 +163,10 @@ Optional:
 
 Optional:
 
-- `date_hire` (String)
-- `employee_id` (String)
-- `employee_type` (String)
-- `official_name` (String)
+- **date_hire** (String)
+- **employee_id** (String)
+- **employee_type** (String)
+- **official_name** (String)
 
 
 <a id="nestedatt--locations"></a>
@@ -174,8 +174,8 @@ Optional:
 
 Optional:
 
-- `location_id` (String)
-- `notes` (String)
+- **location_id** (String)
+- **notes** (String)
 
 
 <a id="nestedatt--routing_languages"></a>
@@ -183,8 +183,8 @@ Optional:
 
 Optional:
 
-- `language_id` (String)
-- `proficiency` (Number)
+- **language_id** (String)
+- **proficiency** (Number)
 
 
 <a id="nestedatt--routing_skills"></a>
@@ -192,8 +192,8 @@ Optional:
 
 Optional:
 
-- `proficiency` (Number)
-- `skill_id` (String)
+- **proficiency** (Number)
+- **skill_id** (String)
 
 
 <a id="nestedatt--routing_utilization"></a>
@@ -201,21 +201,21 @@ Optional:
 
 Optional:
 
-- `call` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--call))
-- `callback` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--callback))
-- `chat` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--chat))
-- `email` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--email))
-- `message` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--message))
-- `video` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--video))
+- **call** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--call))
+- **callback** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--callback))
+- **chat** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--chat))
+- **email** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--email))
+- **message** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--message))
+- **video** (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--video))
 
 <a id="nestedobjatt--routing_utilization--call"></a>
 ### Nested Schema for `routing_utilization.call`
 
 Optional:
 
-- `include_non_acd` (Boolean)
-- `interruptible_media_types` (Set of String)
-- `maximum_capacity` (Number)
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
 
 
 <a id="nestedobjatt--routing_utilization--callback"></a>
@@ -223,9 +223,9 @@ Optional:
 
 Optional:
 
-- `include_non_acd` (Boolean)
-- `interruptible_media_types` (Set of String)
-- `maximum_capacity` (Number)
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
 
 
 <a id="nestedobjatt--routing_utilization--chat"></a>
@@ -233,9 +233,9 @@ Optional:
 
 Optional:
 
-- `include_non_acd` (Boolean)
-- `interruptible_media_types` (Set of String)
-- `maximum_capacity` (Number)
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
 
 
 <a id="nestedobjatt--routing_utilization--email"></a>
@@ -243,9 +243,9 @@ Optional:
 
 Optional:
 
-- `include_non_acd` (Boolean)
-- `interruptible_media_types` (Set of String)
-- `maximum_capacity` (Number)
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
 
 
 <a id="nestedobjatt--routing_utilization--message"></a>
@@ -253,9 +253,9 @@ Optional:
 
 Optional:
 
-- `include_non_acd` (Boolean)
-- `interruptible_media_types` (Set of String)
-- `maximum_capacity` (Number)
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
 
 
 <a id="nestedobjatt--routing_utilization--video"></a>
@@ -263,7 +263,7 @@ Optional:
 
 Optional:
 
-- `include_non_acd` (Boolean)
-- `interruptible_media_types` (Set of String)
-- `maximum_capacity` (Number)
+- **include_non_acd** (Boolean)
+- **interruptible_media_types** (Set of String)
+- **maximum_capacity** (Number)
 

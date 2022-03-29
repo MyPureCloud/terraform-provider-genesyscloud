@@ -114,42 +114,42 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
 
 ### Required
 
-- `name` (String) Deployment name
+- **name** (String) Deployment name
 
 ### Optional
 
-- `default_language` (String) The default language to use for the configuration.
-- `description` (String) Deployment description
-- `id` (String) The ID of this resource.
-- `journey_events` (Block List, Max: 1) Settings concerning journey events (see [below for nested schema](#nestedblock--journey_events))
-- `languages` (List of String) A list of languages supported on the configuration.
-- `messenger` (Block List, Max: 1) Settings concerning messenger (see [below for nested schema](#nestedblock--messenger))
-- `status` (String) The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.
-- `version` (String) The version of the configuration.
+- **default_language** (String) The default language to use for the configuration.
+- **description** (String) Deployment description
+- **id** (String) The ID of this resource.
+- **journey_events** (Block List, Max: 1) Settings concerning journey events (see [below for nested schema](#nestedblock--journey_events))
+- **languages** (List of String) A list of languages supported on the configuration.
+- **messenger** (Block List, Max: 1) Settings concerning messenger (see [below for nested schema](#nestedblock--messenger))
+- **status** (String) The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.
+- **version** (String) The version of the configuration.
 
 <a id="nestedblock--journey_events"></a>
 ### Nested Schema for `journey_events`
 
 Optional:
 
-- `click_event` (Block List) Details about a selector event trigger (see [below for nested schema](#nestedblock--journey_events--click_event))
-- `enabled` (Boolean) Whether or not journey event collection is enabled Defaults to `true`.
-- `excluded_query_parameters` (List of String) List of parameters to be excluded from the query string
-- `form_track_event` (Block List) Details about a forms tracking event trigger (see [below for nested schema](#nestedblock--journey_events--form_track_event))
-- `idle_event` (Block List) Details about an idle event trigger (see [below for nested schema](#nestedblock--journey_events--idle_event))
-- `in_viewport_event` (Block List) Details about a selector event trigger (see [below for nested schema](#nestedblock--journey_events--in_viewport_event))
-- `pageview_config` (String) Controls how the pageview events are tracked.Valid values: Auto, Once, Off
-- `scroll_depth_event` (Block List) Details about a scroll percentage event trigger (see [below for nested schema](#nestedblock--journey_events--scroll_depth_event))
-- `search_query_parameters` (List of String) List of query parameters used for search (e.g. 'q')
-- `should_keep_url_fragment` (Boolean) Whether or not to keep the URL fragment
+- **click_event** (Block List) Details about a selector event trigger (see [below for nested schema](#nestedblock--journey_events--click_event))
+- **enabled** (Boolean) Whether or not journey event collection is enabled Defaults to `true`.
+- **excluded_query_parameters** (List of String) List of parameters to be excluded from the query string
+- **form_track_event** (Block List) Details about a forms tracking event trigger (see [below for nested schema](#nestedblock--journey_events--form_track_event))
+- **idle_event** (Block List) Details about an idle event trigger (see [below for nested schema](#nestedblock--journey_events--idle_event))
+- **in_viewport_event** (Block List) Details about a selector event trigger (see [below for nested schema](#nestedblock--journey_events--in_viewport_event))
+- **pageview_config** (String) Controls how the pageview events are tracked.Valid values: Auto, Once, Off
+- **scroll_depth_event** (Block List) Details about a scroll percentage event trigger (see [below for nested schema](#nestedblock--journey_events--scroll_depth_event))
+- **search_query_parameters** (List of String) List of query parameters used for search (e.g. 'q')
+- **should_keep_url_fragment** (Boolean) Whether or not to keep the URL fragment
 
 <a id="nestedblock--journey_events--click_event"></a>
 ### Nested Schema for `journey_events.click_event`
 
 Required:
 
-- `event_name` (String) Name of event triggered when element matching selector is interacted with
-- `selector` (String) Element that triggers event
+- **event_name** (String) Name of event triggered when element matching selector is interacted with
+- **selector** (String) Element that triggers event
 
 
 <a id="nestedblock--journey_events--form_track_event"></a>
@@ -157,10 +157,10 @@ Required:
 
 Required:
 
-- `capture_data_on_form_abandon` (Boolean) Whether to capture the form data in the form abandoned event
-- `capture_data_on_form_submit` (Boolean) Whether to capture the form data in the form submitted event
-- `form_name` (String) Prefix for the form submitted or abandoned event name
-- `selector` (String) Form element that triggers the form submitted or abandoned event
+- **capture_data_on_form_abandon** (Boolean) Whether to capture the form data in the form abandoned event
+- **capture_data_on_form_submit** (Boolean) Whether to capture the form data in the form submitted event
+- **form_name** (String) Prefix for the form submitted or abandoned event name
+- **selector** (String) Form element that triggers the form submitted or abandoned event
 
 
 <a id="nestedblock--journey_events--idle_event"></a>
@@ -168,11 +168,11 @@ Required:
 
 Required:
 
-- `event_name` (String) Name of event triggered after period of inactivity
+- **event_name** (String) Name of event triggered after period of inactivity
 
 Optional:
 
-- `idle_after_seconds` (Number) Number of seconds of inactivity before an event is triggered
+- **idle_after_seconds** (Number) Number of seconds of inactivity before an event is triggered
 
 
 <a id="nestedblock--journey_events--in_viewport_event"></a>
@@ -180,8 +180,8 @@ Optional:
 
 Required:
 
-- `event_name` (String) Name of event triggered when element matching selector is interacted with
-- `selector` (String) Element that triggers event
+- **event_name** (String) Name of event triggered when element matching selector is interacted with
+- **selector** (String) Element that triggers event
 
 
 <a id="nestedblock--journey_events--scroll_depth_event"></a>
@@ -189,8 +189,8 @@ Required:
 
 Required:
 
-- `event_name` (String) Name of event triggered after scrolling to the specified percentage
-- `percentage` (Number) Percentage of a webpage at which an event is triggered
+- **event_name** (String) Name of event triggered after scrolling to the specified percentage
+- **percentage** (Number) Percentage of a webpage at which an event is triggered
 
 
 
@@ -199,25 +199,25 @@ Required:
 
 Optional:
 
-- `enabled` (Boolean) Whether or not messenger is enabled Defaults to `true`.
-- `file_upload` (Block List, Max: 1) File upload settings for messenger (see [below for nested schema](#nestedblock--messenger--file_upload))
-- `launcher_button` (Block List, Max: 1) The settings for the launcher button (see [below for nested schema](#nestedblock--messenger--launcher_button))
-- `styles` (Block List, Max: 1) The style settings for messenger (see [below for nested schema](#nestedblock--messenger--styles))
+- **enabled** (Boolean) Whether or not messenger is enabled Defaults to `true`.
+- **file_upload** (Block List, Max: 1) File upload settings for messenger (see [below for nested schema](#nestedblock--messenger--file_upload))
+- **launcher_button** (Block List, Max: 1) The settings for the launcher button (see [below for nested schema](#nestedblock--messenger--launcher_button))
+- **styles** (Block List, Max: 1) The style settings for messenger (see [below for nested schema](#nestedblock--messenger--styles))
 
 <a id="nestedblock--messenger--file_upload"></a>
 ### Nested Schema for `messenger.file_upload`
 
 Optional:
 
-- `mode` (Block List) The list of supported file upload modes (see [below for nested schema](#nestedblock--messenger--file_upload--mode))
+- **mode** (Block List) The list of supported file upload modes (see [below for nested schema](#nestedblock--messenger--file_upload--mode))
 
 <a id="nestedblock--messenger--file_upload--mode"></a>
 ### Nested Schema for `messenger.file_upload.mode`
 
 Optional:
 
-- `file_types` (List of String) A list of supported content types for uploading files.Valid values: image/jpeg, image/gif, image/png
-- `max_file_size_kb` (Number) The maximum file size for file uploads in kilobytes. Default is 10240 (10 MB)
+- **file_types** (List of String) A list of supported content types for uploading files.Valid values: image/jpeg, image/gif, image/png
+- **max_file_size_kb** (Number) The maximum file size for file uploads in kilobytes. Default is 10240 (10 MB)
 
 
 
@@ -226,7 +226,7 @@ Optional:
 
 Optional:
 
-- `visibility` (String) The visibility settings for the button.Valid values: On, Off, OnDemand
+- **visibility** (String) The visibility settings for the button.Valid values: On, Off, OnDemand
 
 
 <a id="nestedblock--messenger--styles"></a>
@@ -234,5 +234,5 @@ Optional:
 
 Optional:
 
-- `primary_color` (String) The primary color of messenger in hexadecimal
+- **primary_color** (String) The primary color of messenger in hexadecimal
 

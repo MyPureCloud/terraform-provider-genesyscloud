@@ -53,12 +53,6 @@ func TestAccResourceAuthDivision(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "description", divDesc1),
 				),
 			},
-			//{
-			//	// Import/Read
-			//	ResourceName:      "genesyscloud_auth_division." + divResource1,
-			//	ImportState:       true,
-			//	ImportStateVerify: true,
-			//},
 			{
 				// Set home division description
 				Config: generateAuthDivisionResource(
@@ -86,12 +80,6 @@ func TestAccResourceAuthDivision(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "description", homeDesc2),
 				),
 			},
-			//{
-			//	// Import/Read
-			//	ResourceName:      "genesyscloud_auth_division." + divHomeRes,
-			//	ImportState:       true,
-			//	ImportStateVerify: true,
-			//},
 		},
 		CheckDestroy: testVerifyDivisionsDestroyed,
 	})

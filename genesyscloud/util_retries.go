@@ -24,7 +24,10 @@ func withRetries(ctx context.Context, timeout time.Duration, method func() *reso
 }
 
 func withRetriesForRead(ctx context.Context, d *schema.ResourceData, method func() *resource.RetryError) diag.Diagnostics {
-	timeout := 5 * time.Minute
+	return withRetriesForReadCustomTimeout(ctx, 5*time.Minute, d, method)
+}
+
+func withRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *resource.RetryError) diag.Diagnostics {
 	err := diag.FromErr(resource.RetryContext(ctx, timeout, method))
 	if err != nil {
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {

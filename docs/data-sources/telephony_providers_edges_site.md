@@ -23,10 +23,10 @@ data "genesyscloud_telephony_providers_edges_site" "site" {
 
 ### Required
 
-- `name` (String) Site name.
+- **name** (String) Site name.
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 

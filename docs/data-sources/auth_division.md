@@ -23,10 +23,10 @@ data "genesyscloud_auth_division" "marketing" {
 
 ### Required
 
-- `name` (String) Division name.
+- **name** (String) Division name.
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 

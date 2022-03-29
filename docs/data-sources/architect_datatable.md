@@ -23,10 +23,10 @@ data "genesyscloud_architect_datatable" "arch-table" {
 
 ### Required
 
-- `name` (String) Datatable name.
+- **name** (String) Datatable name.
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 

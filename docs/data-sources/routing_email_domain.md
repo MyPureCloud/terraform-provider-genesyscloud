@@ -24,10 +24,10 @@ data "genesyscloud_routing_email_domain" "email_domain" {
 
 ### Required
 
-- `name` (String) Email domain name.
+- **name** (String) Email domain name.
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 

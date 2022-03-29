@@ -151,52 +151,31 @@ func filterMap(m map[string]interface{}) map[string]interface{} {
 	return newM
 }
 
-func compareValues(oldValue, newValue interface{}, index, index2 int, key string) bool {
+func compareValues(oldValue, newValue interface{}, slice1Index, slice2Index int, key string) bool {
 	switch oldValueType := oldValue.(type) {
 	case []interface{}:
-		if index >= len(oldValueType) {
+		if slice1Index >= len(oldValueType) {
+			for i := 0; i < len(oldValueType); i++ {
+				if compareValues(oldValue, newValue, i, slice2Index, key) {
+					return true
+				}
+			}
 			return false
 		}
-		ov := oldValueType[index]
+		ov := oldValueType[slice1Index]
 		switch t := ov.(type) {
 		case map[string]interface{}:
-			return compareValues(t[key], newValue, index2, 0, "")
+			return compareValues(t[key], newValue, slice2Index, 0, "")
 		default:
 			return cmp.Equal(ov, newValue)
 		}
+	case *schema.Set:
+		return compareValues(oldValueType.List(), newValue, slice1Index, slice2Index, key)
 	case string:
 		return cmp.Equal(oldValue, newValue)
 	}
 
 	return true
-}
-
-func isNilOrEmpty(value interface{}) bool {
-	if value == nil {
-		return true
-	}
-
-	switch valueType := value.(type) {
-	case int:
-		return valueType == 0
-	case string:
-		return valueType == ""
-	case []interface{}:
-		return len(valueType) == 0
-	case *schema.Set:
-		if valueType == nil {
-			return true
-		}
-		return valueType.Len() == 0
-	default:
-		// An interface holding a nil value is not nil. Need to use reflection to see if it's nil
-		kind := reflect.ValueOf(value).Kind()
-		if kind == reflect.Map {
-			return reflect.ValueOf(value).IsNil()
-		}
-	}
-
-	return false
 }
 
 func (c *consistencyCheck) isComputed(key string) bool {
@@ -230,52 +209,43 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 		Raw:          originalState,
 	}
 	diff, _ := c.r.SimpleDiff(c.ctx, c.d.State(), resourceConfig, c.meta)
-	if diff != nil {
-		//fmt.Println(diff)
+	if diff != nil && len(diff.Attributes) > 0 {
 		for k, v := range diff.Attributes {
 			if strings.HasSuffix(k, "#") {
 				continue
 			}
 
-			//fmt.Println("!c.d.HasChange(k)", !c.d.HasChange(k))
-			//fmt.Println("isNilOrEmpty(c.d.Get(k))", isNilOrEmpty(c.d.Get(k)))
-			//fmt.Println("isNilOrEmpty(c.originalState[k])", isNilOrEmpty(c.originalState[k]))
-			//fmt.Println("c.isComputed(k)", c.isComputed(k))
-			//fmt.Println("key", k)
-			if !c.d.HasChange(k) /*&& (isNilOrEmpty(c.d.Get(k)) || isNilOrEmpty(c.originalState[k]))*/ && c.isComputed(k) {
-				//fmt.Println("continue")
-				continue
-			}
-
-			//if c.d.HasChange(k) {
-			//fmt.Println("has change", k)
-			if strings.Contains(k, ".") {
-				//fmt.Println("contains")
-				parts := strings.Split(k, ".")
-				i, _ := strconv.Atoi(parts[1])
-				index2 := 0
-				key := ""
-				if len(parts) >= 3 {
-					key = parts[2]
-				}
-				if len(parts) == 4 {
-					index2, _ = strconv.Atoi(parts[3])
-				}
-				if !compareValues(c.originalState[parts[0]], v.Old, i, index2, key) {
+			if c.d.HasChange(k) {
+				if strings.Contains(k, ".") {
+					parts := strings.Split(k, ".")
+					slice1Index, _ := strconv.Atoi(parts[1])
+					slice2Index := 0
+					key := ""
+					if len(parts) >= 3 {
+						key = parts[2]
+						if len(parts) == 4 {
+							slice2Index, _ = strconv.Atoi(parts[3])
+						}
+					}
+					vv := v.Old
+					if vv == "" {
+						vv = v.New
+					}
+					if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
+						return resource.RetryableError(&consistencyError{
+							key:      k,
+							oldValue: c.originalState[k],
+							newValue: c.d.Get(k),
+						})
+					}
+				} else {
 					return resource.RetryableError(&consistencyError{
 						key:      k,
 						oldValue: c.originalState[k],
 						newValue: c.d.Get(k),
 					})
 				}
-			} else {
-				return resource.RetryableError(&consistencyError{
-					key:      k,
-					oldValue: c.originalState[k],
-					newValue: c.d.Get(k),
-				})
 			}
-			//}
 		}
 	}
 

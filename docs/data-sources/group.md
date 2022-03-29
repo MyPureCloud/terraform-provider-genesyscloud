@@ -23,10 +23,10 @@ data "genesyscloud_group" "group" {
 
 ### Required
 
-- `name` (String) Group name.
+- **name** (String) Group name.
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 

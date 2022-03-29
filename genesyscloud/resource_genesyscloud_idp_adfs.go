@@ -49,7 +49,10 @@ func resourceIdpAdfs() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
-
+		Timeouts: &schema.ResourceTimeout{
+			Update: schema.DefaultTimeout(8 * time.Minute),
+			Read:   schema.DefaultTimeout(8 * time.Minute),
+		},
 		Schema: map[string]*schema.Schema{
 			"certificates": {
 				Description: "PEM or DER encoded public X.509 certificates for SAML signature validation.",
@@ -93,7 +96,7 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP ADFS")
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return withRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
 		adfs, resp, getErr := idpAPI.GetIdentityprovidersAdfs()
 		if getErr != nil {
 			if isStatus404(resp) {

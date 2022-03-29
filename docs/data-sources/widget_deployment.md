@@ -23,10 +23,10 @@ data "genesyscloud_widget_deployment" "mywidget" {
 
 ### Required
 
-- `name` (String) Widget Deployment Name.
+- **name** (String) Widget Deployment Name.
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 

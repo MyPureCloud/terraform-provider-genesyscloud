@@ -23,8 +23,8 @@ data "genesyscloud_user" "user" {
 
 ### Optional
 
-- `email` (String) User email.
-- `id` (String) The ID of this resource.
-- `name` (String) User name.
+- **email** (String) User email.
+- **id** (String) The ID of this resource.
+- **name** (String) User name.
 
 

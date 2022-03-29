@@ -33,11 +33,11 @@ resource "genesyscloud_auth_division" "marketing" {
 
 ### Required
 
-- `name` (String) Division name.
+- **name** (String) Division name.
 
 ### Optional
 
-- `description` (String) Division description.
-- `home` (Boolean) True if this is the home division. This can be set to manage the pre-existing home division.
-- `id` (String) The ID of this resource.
+- **description** (String) Division description.
+- **home** (Boolean) True if this is the home division. This can be set to manage the pre-existing home division.
+- **id** (String) The ID of this resource.
 

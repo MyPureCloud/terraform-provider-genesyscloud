@@ -23,10 +23,10 @@ data "genesyscloud_telephony_providers_edges_linebasesettings" "lineBaseSetting"
 
 ### Required
 
-- `name` (String) Line Base Settings name.
+- **name** (String) Line Base Settings name.
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 

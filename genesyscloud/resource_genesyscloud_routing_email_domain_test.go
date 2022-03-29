@@ -53,12 +53,6 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 	})
 }
 
-//func TestAccResourceRoutingEmailDomainCustomLoop(t *testing.T) {
-//	for {
-//		TestAccResourceRoutingEmailDomainCustom(t)
-//	}
-//}
-
 func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 	var (

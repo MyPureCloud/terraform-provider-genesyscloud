@@ -23,10 +23,10 @@ data "genesyscloud_oauth_client" "oauth_client" {
 
 ### Required
 
-- `name` (String) OAuth Client name.
+- **name** (String) OAuth Client name.
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 

@@ -23,10 +23,10 @@ data "genesyscloud_architect_schedulegroups" "arch-sched-group" {
 
 ### Required
 
-- `name` (String) Schedule Group name.
+- **name** (String) Schedule Group name.
 
 ### Optional
 
-- `id` (String) The ID of this resource.
+- **id** (String) The ID of this resource.
 
 

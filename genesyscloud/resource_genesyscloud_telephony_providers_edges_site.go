@@ -447,6 +447,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Updated site %s", *site.Id)
+	time.Sleep(5 * time.Second)
 	return readSite(ctx, d, meta)
 }
 
@@ -570,6 +571,9 @@ func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Te
 				numberPlansFromTf = append(numberPlansFromTf, numberPlanFromTf)
 			}
 
+			// The default plans won't be assigned yet if there isn't a wait
+			time.Sleep(5 * time.Second)
+
 			numberPlansFromAPI, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(d.Id())
 			if err != nil {
 				return diag.Errorf("Failed to get number plans for site %s: %s", d.Id(), err)
@@ -615,6 +619,8 @@ func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Te
 			if diagErr != nil {
 				return diagErr
 			}
+			// Wait for the update before reading
+			time.Sleep(5 * time.Second)
 		}
 	}
 	return nil
@@ -659,6 +665,9 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 				outboundRoutesFromTf = append(outboundRoutesFromTf, outboundRouteFromTf)
 			}
 
+			// The default outbound routes won't be assigned yet if there isn't a wait
+			time.Sleep(5 * time.Second)
+
 			outboundRoutesFromAPI := make([]platformclientv2.Outboundroutebase, 0)
 			for pageNum := 1; ; pageNum++ {
 				const pageSize = 100
@@ -697,13 +706,18 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 			for _, outboundRouteFromAPI := range outboundRoutesFromAPI {
 				// Delete route if no reference to it
 				if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, outboundRoutesFromTf); !ok {
-					_, err := edgesAPI.DeleteTelephonyProvidersEdgesSiteOutboundroute(d.Id(), *outboundRouteFromAPI.Id)
+					resp, err := edgesAPI.DeleteTelephonyProvidersEdgesSiteOutboundroute(d.Id(), *outboundRouteFromAPI.Id)
 					if err != nil {
+						if isStatus404(resp) {
+							return nil
+						}
 						return diag.Errorf("Failed to delete outbound route from site %s: %s", d.Id(), err)
 					}
 				}
 			}
 
+			// Wait for the update before reading
+			time.Sleep(5 * time.Second)
 		}
 	}
 	return nil

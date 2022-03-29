@@ -50,7 +50,10 @@ func resourceIdpGeneric() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
-
+		Timeouts: &schema.ResourceTimeout{
+			Update: schema.DefaultTimeout(8 * time.Minute),
+			Read:   schema.DefaultTimeout(8 * time.Minute),
+		},
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Name of the provider.",
@@ -127,7 +130,7 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading IDP Generic")
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return withRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
 		generic, resp, getErr := idpAPI.GetIdentityprovidersGeneric()
 		if getErr != nil {
 			if isStatus404(resp) {

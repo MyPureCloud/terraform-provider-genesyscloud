@@ -9,7 +9,6 @@ import (
 )
 
 func TestAccDataSourceDidBasic(t *testing.T) {
-	t.Parallel()
 	var (
 		didPoolStartPhoneNumber = "+45465550001"
 		didPoolEndPhoneNumber   = "+45465550003"
