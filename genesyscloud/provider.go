@@ -71,6 +71,7 @@ func New(version string) func() *schema.Provider {
 			ResourcesMap: map[string]*schema.Resource{
 				"genesyscloud_architect_datatable":                         resourceArchitectDatatable(),
 				"genesyscloud_architect_datatable_row":                     resourceArchitectDatatableRow(),
+				"genesyscloud_architect_emergencygroup":                    resourceArchitectEmergencyGroup(),
 				"genesyscloud_flow":                                        resourceFlow(),
 				"genesyscloud_architect_ivr":                               resourceArchitectIvrConfig(),
 				"genesyscloud_architect_schedules":                         resourceArchitectSchedules(),
