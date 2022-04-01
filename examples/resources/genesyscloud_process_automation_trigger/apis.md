@@ -1,0 +1,5 @@
+* [GET /api/v2/processAutomation/triggers](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-processautomation-triggers)
+* [POST /api/v2/processAutomation/triggers](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-processautomation-triggers)
+* [GET /api/v2/processAutomation/triggers/{triggerId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-processautomation-triggers--triggerId-)
+* [PUT /api/v2/processAutomation/triggers/{triggerId}](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-processautomation-triggers--triggerId-)
+* [DELETE /api/v2/processAutomation/triggers/{triggerId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-processautomation-triggers--triggerId-)
