@@ -18,7 +18,9 @@ import (
 
 func resourceProcessAutomationTrigger() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Process Automation Trigger.",
+		Description: `Genesys Cloud Process Automation Trigger
+
+**NOTE: This component is currently in beta. If you wish to use this provider make sure your client has the correct permissions**`,
 
 		CreateContext: createWithPooledClient(createProcessAutomationTrigger),
 		ReadContext:   readWithPooledClient(readProcessAutomationTrigger),
