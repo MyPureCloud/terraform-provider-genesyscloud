@@ -1,0 +1,31 @@
+workflow:
+ name: terraform-provider-test-8e83c60e-b68f-45f3-b9f2-9cc913894bc1
+ division: Home
+ startUpRef: "/workflow/states/state[Initial State_10]"
+ defaultLanguage: en-us
+ variables:
+     - stringVariable:
+         name: Flow.dateActiveQueuesChanged
+         initialValue:
+           noValue: true
+         isInput: true
+         isOutput: false
+     - stringVariable:
+         name: Flow.id
+         initialValue:
+           noValue: true
+         isInput: true
+         isOutput: false
+ settingsErrorHandling:
+   errorHandling:
+     endWorkflow:
+       none: true
+ states:
+   - state:
+       name: Initial State
+       refId: Initial State_10
+       actions:
+         - endWorkflow:
+             name: End Workflow
+             exitReason:
+               noValue: true

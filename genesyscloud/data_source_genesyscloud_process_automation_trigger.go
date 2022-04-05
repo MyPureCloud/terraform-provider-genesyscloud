@@ -29,15 +29,16 @@ func dataSourceProcessAutomationTrigger() *schema.Resource {
 
 func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*providerMeta).ClientConfig
-	integrationAPI :=
-	platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	triggerName := d.Get("name").(string)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	    // create path
+    	path := integrationAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
+
 		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			processAutomationTriggers, _, getErr := getAllProcessAutomationTriggers(integrationAPI)
+			processAutomationTriggers, _, getErr := getAllProcessAutomationTriggers(path, integrationAPI)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("failed to get page of process automation triggers: %s", getErr))
@@ -54,15 +55,17 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 				}
 			}
 
+			if processAutomationTriggers.NextUri == nil {
+                return resource.NonRetryableError(fmt.Errorf("no process automation triggers found with name: %s", getErr))
+            }
+
+			path = integrationAPI.Configuration.BasePath + *processAutomationTriggers.NextUri
 		}
 	})
 }
 
-func getAllProcessAutomationTriggers(api *platformclientv2.IntegrationsApi) (*ProcessAutomationTriggers, *platformclientv2.APIResponse, error) {
+func getAllProcessAutomationTriggers(path string, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTriggers, *platformclientv2.APIResponse, error) {
 	apiClient := &api.Configuration.APIClient
-
-	// create path and map variables
-	path := api.Configuration.BasePath + "/api/v2/processAutomation/triggers"
 
 	headerParams := make(map[string]string)
 
@@ -78,18 +81,20 @@ func getAllProcessAutomationTriggers(api *platformclientv2.IntegrationsApi) (*Pr
 	headerParams["Content-Type"] = "application/json"
 	headerParams["Accept"] = "application/json"
 
-	var successPayload *ProcessAutomationTriggers
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil)
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-	}
+    var successPayload *ProcessAutomationTriggers
+    response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil)
+    if err != nil {
+        // Nothing special to do here, but do avoid processing the response
+    } else if response.Error != nil {
+        err = errors.New(response.ErrorMessage)
+    } else {
+        err = json.Unmarshal([]byte(response.RawBody), &successPayload)
+    }
+
 	return successPayload, response, err
 }
 
 type ProcessAutomationTriggers struct {
-	Entities        *[]ProcessAutomationTrigger       `json:"entities,omitempty"`
+	Entities        *[]ProcessAutomationTrigger     `json:"entities,omitempty"`
+	NextUri         *string                         `json:"nextUri,omitempty"`
 }

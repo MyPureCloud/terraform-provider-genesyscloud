@@ -35,8 +35,11 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 					triggerName1,
 					topicName1,
 					enabled1,
-					targetId1,
-					targetType1,
+					fmt.Sprintf(`jsonencode(%s)`, generateJsonObject(
+                            generateJsonProperty("id", strconv.Quote(targetId1)),
+                            generateJsonProperty("type", strconv.Quote(targetType1)),
+                        ),
+                    ),
                     fmt.Sprintf(`jsonencode([%s])`, generateJsonObject(
                             generateJsonProperty("jsonPath", strconv.Quote(match_criteria_json_path)),
                             generateJsonProperty("operator", strconv.Quote(match_criteria_operator)),

@@ -46,18 +46,14 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
-			"target_id": {
-				Description: "Id of the target to invoke when the trigger is fired",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"target_type": {
-				Description:      "Type of target to invoke when the trigger fires",
+			"target": {
+				Description: "JSON that defines the target to invoke when the trigger is fired",
 				Type:             schema.TypeString,
-				Required:         true,
+                Required:         true,
+                DiffSuppressFunc: suppressEquivalentJsonDiffs,
 			},
             "match_criteria": {
-                Description:      "JSON schema that defines the match criteria of the trigger.",
+                Description:      "JSON that defines the match criteria of the trigger.",
                 Type:             schema.TypeString,
                 Required:         false,
                 Optional:         true,
@@ -73,6 +69,15 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 	}
 }
 
+func processAutomationTriggerExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllProcessAutomationTriggersResourceMap),
+		RefAttrs: map[string]*RefAttrSettings{
+			"target.id":          {RefType: "genesyscloud_flow"},
+		},
+	}
+}
+
 func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	topic_name := d.Get("topic_name").(string)
@@ -80,13 +85,17 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	eventTTLSeconds := d.Get("event_ttl_seconds").(int)
 
     //make target of trigger
-	target := buildTriggerTarget(d)
+	target := d.Get("target").(string)
+    targetVal, err := jsonStringToInterface(target)
+    if err != nil {
+        return diag.Errorf("Failed to parse target %s: %v", target, err)
+    }
 
 	//make match criteria for the trigger
 	matchCriteria := d.Get("match_criteria").(string)
     matchCriteriaVal, err := jsonStringToInterface(matchCriteria)
     if err != nil {
-        return diag.Errorf("Failed to parse contract input %s: %v", matchCriteria, err)
+        return diag.Errorf("Failed to parse match criteria %s: %v", matchCriteria, err)
     }
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
@@ -98,13 +107,13 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		trigger, resp, err := postProcessAutomationTrigger(&ProcessAutomationTrigger{
             TopicName:       &topic_name,
             Name:            &name,
-            Target:          target,
+            Target:          &targetVal,
             MatchCriteria:   &matchCriteriaVal,
             Enabled:         &enabled,
             EventTTLSeconds: &eventTTLSeconds,
 		}, integAPI)
 		if err != nil {
-			return resp, diag.Errorf("Failed to create process automation trigger %s: %s: topicName:%s, Name:%s, Target:%+v, MatchCriteria:%v, Enabled:%t, EventTTLSeconds:%d", name, err, topic_name, name, target, matchCriteriaVal, enabled, eventTTLSeconds)
+			return resp, diag.Errorf("Failed to create process automation trigger %s: %s", name, err)
 		}
 		d.SetId(*trigger.Id)
 
@@ -146,19 +155,17 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
         }
 
         if trigger.Target != nil {
-            d.Set("target_id", *trigger.Target.Id)
+            input, err := flattenTriggerJsonField(*trigger.Target)
+            if err != nil {
+                return resource.NonRetryableError(fmt.Errorf("%v", err))
+            }
+            d.Set("target", input)
         } else {
-            d.Set("target_id", nil)
-        }
-
-        if trigger.Target != nil {
-            d.Set("target_type", *trigger.Target.Type)
-        } else {
-            d.Set("target_type", nil)
+            d.Set("target", nil)
         }
 
         if trigger.MatchCriteria != nil {
-            input, err := flattenActionContract(*trigger.MatchCriteria)
+            input, err := flattenTriggerJsonField(*trigger.MatchCriteria)
             if err != nil {
                 return resource.NonRetryableError(fmt.Errorf("%v", err))
             }
@@ -190,7 +197,11 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	eventTTLSeconds := d.Get("event_ttl_seconds").(int)
 
     //make target of trigger
-	target := buildTriggerTarget(d)
+	target := d.Get("target").(string)
+    targetVal, err := jsonStringToInterface(target)
+    if err != nil {
+        return diag.Errorf("Failed to parse target %s: %v", target, err)
+    }
 
 	//make match criteria for the trigger
     matchCriteria := d.Get("match_criteria").(string)
@@ -215,7 +226,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 			Name:               &name,
 			Enabled:            &enabled,
 			EventTTLSeconds:    &eventTTLSeconds,
-            Target:             target,
+            Target:             &targetVal,
 			MatchCriteria:      &matchCriteriaVal,
 			Version:            trigger.Version,
 		}, integAPI)
@@ -263,25 +274,15 @@ func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
     })
 }
 
-func buildTriggerTarget(d *schema.ResourceData) (*Target){
-	target_id := d.Get("target_id").(string)
-	target_type := d.Get("target_type").(string)
-
-    return &Target{
-    		Type:   &target_type,
-    		Id:     &target_id,
-    	}
-}
-
-func flattenMatchCriteria(schema interface{}) (string, diag.Diagnostics) {
-	if schema == nil {
+func flattenTriggerJsonField(jsonField interface{}) (string, diag.Diagnostics) {
+	if jsonField == nil {
 		return "", nil
 	}
-	schemaBytes, err := json.Marshal(schema)
+	jsonFieldBytes, err := json.Marshal(jsonField)
 	if err != nil {
-		return "", diag.Errorf("Error marshalling match criteria %v: %v", schema, err)
+		return "", diag.Errorf("Error marshalling match criteria %v: %v", jsonField, err)
 	}
-	return string(schemaBytes), nil
+	return string(jsonFieldBytes), nil
 }
 
 func postProcessAutomationTrigger(body *ProcessAutomationTrigger, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {
@@ -407,12 +408,44 @@ func deleteProcessAutomationTrigger(triggerId string, api *platformclientv2.Inte
 	return response, err
 }
 
+func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	integAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
+
+	// create path and map variables
+    path := integAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
+
+	for pageNum := 1; ; pageNum++ {
+        processAutomationTriggers, _, getErr := getAllProcessAutomationTriggers(path, integAPI)
+
+        if getErr != nil {
+            return nil, diag.Errorf("failed to get page of process automation triggers: %v", getErr)
+        }
+
+        if processAutomationTriggers.Entities == nil || len(*processAutomationTriggers.Entities) == 0 {
+            break
+        }
+
+        for _, trigger := range *processAutomationTriggers.Entities {
+            resources[*trigger.Id] = &ResourceMeta{Name: *trigger.Name}
+        }
+
+        if processAutomationTriggers.NextUri == nil {
+            break
+        }
+
+        path = integAPI.Configuration.BasePath + *processAutomationTriggers.NextUri
+	}
+
+	return resources, nil
+}
+
 type ProcessAutomationTrigger struct {
 	Id              *string             `json:"id,omitempty"`
 	TopicName       *string             `json:"topicName,omitempty"`
 	Name            *string             `json:"name,omitempty"`
-	Target          *Target             `json:"target,omitempty"`
-	MatchCriteria   *interface{}    `json:"matchCriteria,omitempty"`
+	Target          *interface{}        `json:"target,omitempty"`
+	MatchCriteria   *interface{}        `json:"matchCriteria,omitempty"`
 	Enabled         *bool               `json:"enabled,omitempty"`
 	EventTTLSeconds *int                `json:"eventTTLSeconds,omitempty"`
 	Version         *int                `json:"version,omitempty"`
@@ -420,20 +453,9 @@ type ProcessAutomationTrigger struct {
 
 type UpdateTriggerInput struct {
 	Name            *string             `json:"name,omitempty"`
-	Target          *Target             `json:"target,omitempty"`
+	Target          *interface{}        `json:"target,omitempty"`
 	MatchCriteria   *interface{}        `json:"matchCriteria,omitempty"`
 	Enabled         *bool               `json:"enabled,omitempty"`
 	EventTTLSeconds *int                `json:"eventTTLSeconds,omitempty"`
 	Version         *int                `json:"version,omitempty"`
-}
-
-type Target struct {
-	Type    *string `json:"type,omitempty"`
-	Id      *string  `json:"id,omitempty"`
-}
-
-type MatchCriteria struct {
-	JsonPath    *string     `json:"jsonPath,omitempty"`
-	Operator    *string     `json:"operator,omitempty"`
-	Value       *string     `json:"value,omitempty"`
 }
