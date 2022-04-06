@@ -1,11 +1,11 @@
 ---
-page_title: "genesyscloud_process_automation_trigger Resource - terraform-provider-genesyscloud"
+page_title: "genesyscloud_processautomation_trigger Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
   Genesys Cloud Process Automation Trigger
   NOTE: This component is currently in beta. If you wish to use this provider make sure your client has the correct permissions
 ---
-# genesyscloud_process_automation_trigger (Resource)
+# genesyscloud_processautomation_trigger (Resource)
 
 Genesys Cloud Process Automation Trigger
 
@@ -23,7 +23,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_process_automation_trigger" "test-trigger" {
+resource "genesyscloud_processautomation_trigger" "test-trigger" {
   name       = "Test Trigger"
   topic_name = "v2.detail.events.conversation.{id}.customer.end"
   enabled    = true

@@ -13,6 +13,11 @@ import (
 	"errors"
 )
 
+type ProcessAutomationTriggers struct {
+	Entities        *[]ProcessAutomationTrigger     `json:"entities,omitempty"`
+	NextUri         *string                         `json:"nextUri,omitempty"`
+}
+
 func dataSourceProcessAutomationTrigger() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud process automation trigger. Select a trigger by name",
@@ -92,9 +97,4 @@ func getAllProcessAutomationTriggers(path string, api *platformclientv2.Integrat
     }
 
 	return successPayload, response, err
-}
-
-type ProcessAutomationTriggers struct {
-	Entities        *[]ProcessAutomationTrigger     `json:"entities,omitempty"`
-	NextUri         *string                         `json:"nextUri,omitempty"`
 }

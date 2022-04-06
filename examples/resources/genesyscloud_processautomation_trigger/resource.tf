@@ -1,4 +1,4 @@
-resource "genesyscloud_process_automation_trigger" "test-trigger" {
+resource "genesyscloud_processautomation_trigger" "test-trigger" {
   name       = "Test Trigger"
   topic_name = "v2.detail.events.conversation.{id}.customer.end"
   enabled    = true
