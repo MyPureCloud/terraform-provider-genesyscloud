@@ -3,7 +3,7 @@ page_title: "genesyscloud_processautomation_trigger Resource - terraform-provide
 subcategory: ""
 description: |-
   Genesys Cloud Process Automation Trigger
-  NOTE: This component is currently in beta. If you wish to use this provider make sure your client has the correct permissions
+  NOTE: This component is currently in beta. If you are interested in participating in the beta contact Tyler Bath (tyler.bath@genesys.com) to be added to the beta
 ---
 # genesyscloud_processautomation_trigger (Resource)
 

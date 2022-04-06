@@ -16,12 +16,46 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
         triggerName1                = "Terraform trigger1-" + uuid.NewString()
         topicName1                  = "v2.detail.events.conversation.{id}.customer.end"
         enabled1                    = "true"
-        targetId1                   = "ae1e0cde-875d-4d13-a498-615e7a9fe956"
         targetType1                 = "Workflow"
         match_criteria_json_path    = "mediaType"
         match_criteria_operator     = "Equal"
         match_criteria_value        = "CHAT"
         eventTtlSeconds1            = "60"
+
+        flowResource1 = "test_flow1"
+        filePath1     = "../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
+        flowName1     = "terraform-provider-test-" + uuid.NewString()
+        workflowConfig1 = fmt.Sprintf(`workflow:
+ name: %s
+ division: Home
+ startUpRef: "/workflow/states/state[Initial State_10]"
+ defaultLanguage: en-us
+ variables:
+     - stringVariable:
+         name: Flow.dateActiveQueuesChanged
+         initialValue:
+           noValue: true
+         isInput: true
+         isOutput: false
+     - stringVariable:
+         name: Flow.id
+         initialValue:
+           noValue: true
+         isInput: true
+         isOutput: false
+ settingsErrorHandling:
+   errorHandling:
+     endWorkflow:
+       none: true
+ states:
+   - state:
+       name: Initial State
+       refId: Initial State_10
+       actions:
+         - endWorkflow:
+             name: End Workflow
+             exitReason:
+               noValue: true`, flowName1)
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,13 +64,17 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create a trigger
-				Config: generateProcessAutomationTriggerResource(
+				Config: generateFlowResource(
+                    flowResource1,
+                    filePath1,
+                    workflowConfig1,
+                ) + generateProcessAutomationTriggerResource(
 					triggerResource1,
 					triggerName1,
 					topicName1,
 					enabled1,
 					fmt.Sprintf(`jsonencode(%s)`, generateJsonObject(
-                            generateJsonProperty("id", strconv.Quote(targetId1)),
+                            generateJsonProperty("id", "genesyscloud_flow."+flowResource1+".id"),
                             generateJsonProperty("type", strconv.Quote(targetType1)),
                         ),
                     ),

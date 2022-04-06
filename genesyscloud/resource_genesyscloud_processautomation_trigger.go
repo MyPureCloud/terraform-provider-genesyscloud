@@ -16,6 +16,26 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
 )
 
+type ProcessAutomationTrigger struct {
+	Id              *string             `json:"id,omitempty"`
+	TopicName       *string             `json:"topicName,omitempty"`
+	Name            *string             `json:"name,omitempty"`
+	Target          *interface{}        `json:"target,omitempty"`
+	MatchCriteria   *interface{}        `json:"matchCriteria,omitempty"`
+	Enabled         *bool               `json:"enabled,omitempty"`
+	EventTTLSeconds *int                `json:"eventTTLSeconds,omitempty"`
+	Version         *int                `json:"version,omitempty"`
+}
+
+type UpdateTriggerInput struct {
+	Name            *string             `json:"name,omitempty"`
+	Target          *interface{}        `json:"target,omitempty"`
+	MatchCriteria   *interface{}        `json:"matchCriteria,omitempty"`
+	Enabled         *bool               `json:"enabled,omitempty"`
+	EventTTLSeconds *int                `json:"eventTTLSeconds,omitempty"`
+	Version         *int                `json:"version,omitempty"`
+}
+
 func resourceProcessAutomationTrigger() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Process Automation Trigger
@@ -440,24 +460,4 @@ func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig 
 	}
 
 	return resources, nil
-}
-
-type ProcessAutomationTrigger struct {
-	Id              *string             `json:"id,omitempty"`
-	TopicName       *string             `json:"topicName,omitempty"`
-	Name            *string             `json:"name,omitempty"`
-	Target          *interface{}        `json:"target,omitempty"`
-	MatchCriteria   *interface{}        `json:"matchCriteria,omitempty"`
-	Enabled         *bool               `json:"enabled,omitempty"`
-	EventTTLSeconds *int                `json:"eventTTLSeconds,omitempty"`
-	Version         *int                `json:"version,omitempty"`
-}
-
-type UpdateTriggerInput struct {
-	Name            *string             `json:"name,omitempty"`
-	Target          *interface{}        `json:"target,omitempty"`
-	MatchCriteria   *interface{}        `json:"matchCriteria,omitempty"`
-	Enabled         *bool               `json:"enabled,omitempty"`
-	EventTTLSeconds *int                `json:"eventTTLSeconds,omitempty"`
-	Version         *int                `json:"version,omitempty"`
 }
