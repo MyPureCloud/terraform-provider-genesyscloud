@@ -5,7 +5,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"testing"
-	"strconv"
 )
 
 func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
@@ -73,17 +72,17 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 					triggerName1,
 					topicName1,
 					enabled1,
-					fmt.Sprintf(`jsonencode(%s)`, generateJsonObject(
-                            generateJsonProperty("id", "genesyscloud_flow."+flowResource1+".id"),
-                            generateJsonProperty("type", strconv.Quote(targetType1)),
-                        ),
-                    ),
-                    fmt.Sprintf(`jsonencode([%s])`, generateJsonObject(
-                            generateJsonProperty("jsonPath", strconv.Quote(match_criteria_json_path)),
-                            generateJsonProperty("operator", strconv.Quote(match_criteria_operator)),
-                            generateJsonProperty("value", strconv.Quote(match_criteria_value)),
-                        ),
-                    ),
+					fmt.Sprintf(`target {
+                        id = %s
+                        type = "%s"
+                    }
+                    `, "genesyscloud_flow."+flowResource1+".id", targetType1),
+                    fmt.Sprintf(`match_criteria {
+                        json_path = "%s"
+                        operator = "%s"
+                        value = "%s"
+                    }
+                    `, match_criteria_json_path, match_criteria_operator, match_criteria_value),
 					eventTtlSeconds1,
 				) + generateProcessAutomationTriggerDataSource(
 					triggerResource2,

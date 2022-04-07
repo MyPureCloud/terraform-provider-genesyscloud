@@ -20,8 +20,8 @@ type ProcessAutomationTrigger struct {
 	Id              *string             `json:"id,omitempty"`
 	TopicName       *string             `json:"topicName,omitempty"`
 	Name            *string             `json:"name,omitempty"`
-	Target          *interface{}        `json:"target,omitempty"`
-	MatchCriteria   *interface{}        `json:"matchCriteria,omitempty"`
+	Target          *Target             `json:"target,omitempty"`
+	MatchCriteria   *[]MatchCriteria    `json:"matchCriteria,omitempty"`
 	Enabled         *bool               `json:"enabled,omitempty"`
 	EventTTLSeconds *int                `json:"eventTTLSeconds,omitempty"`
 	Version         *int                `json:"version,omitempty"`
@@ -29,12 +29,67 @@ type ProcessAutomationTrigger struct {
 
 type UpdateTriggerInput struct {
 	Name            *string             `json:"name,omitempty"`
-	Target          *interface{}        `json:"target,omitempty"`
-	MatchCriteria   *interface{}        `json:"matchCriteria,omitempty"`
+	Target          *Target             `json:"target,omitempty"`
+	MatchCriteria   *[]MatchCriteria    `json:"matchCriteria,omitempty"`
 	Enabled         *bool               `json:"enabled,omitempty"`
 	EventTTLSeconds *int                `json:"eventTTLSeconds,omitempty"`
 	Version         *int                `json:"version,omitempty"`
 }
+
+type MatchCriteria struct {
+    JsonPath        *string             `json:"jsonPath,omitempty"`
+    Operator        *string             `json:"operator,omitempty"`
+    Value           *string             `json:"value,omitempty"`
+    Values          *[]string           `json:"values,omitempty"`
+}
+
+type Target struct {
+    Type        *string             `json:"type,omitempty"`
+    Id          *string             `json:"id,omitempty"`
+}
+
+var (
+	target = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"type": {
+				Description: "Type of the target the trigger is configured to hit",
+				Type:           schema.TypeString,
+				Required:       true,
+			},
+			"id": {
+				Description:  "Id of the target the trigger is configured to hit",
+				Type:           schema.TypeString,
+				Required:       true,
+			},
+		},
+	}
+
+	matchCriteria = &schema.Resource{
+        Schema: map[string]*schema.Schema{
+            "json_path": {
+                Description: "The json path of the topic event to be compared to match criteria value",
+                Type:           schema.TypeString,
+                Required:       true,
+            },
+            "operator": {
+                Description:  "The operator used to compare the json path against the value of the match criteria",
+                Type:           schema.TypeString,
+                Required:       true,
+            },
+            "value": {
+                Description:  "Value the jsonPath is compared against",
+                Type:           schema.TypeString,
+                Optional:       true,
+            },
+            "values": {
+                Description:  "Values the jsonPath are compared against",
+                Type:           schema.TypeList,
+                Optional:       true,
+                Elem:           &schema.Schema{Type: schema.TypeString},
+            },
+        },
+    }
+)
 
 func resourceProcessAutomationTrigger() *schema.Resource {
 	return &schema.Resource{
@@ -69,17 +124,18 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				Optional:    true,
 			},
 			"target": {
-				Description: "JSON that defines the target to invoke when the trigger is fired",
-				Type:             schema.TypeString,
-                Required:         true,
-                DiffSuppressFunc: suppressEquivalentJsonDiffs,
+				Description: "Target the trigger will invoke when fired",
+                Type:        schema.TypeSet,
+                Optional:    false,
+                Required:     true,
+                MaxItems:    1,
+                Elem:        target,
 			},
             "match_criteria": {
-                Description:      "JSON that defines the match criteria of the trigger.",
-                Type:             schema.TypeString,
-                Required:         false,
-                Optional:         true,
-                DiffSuppressFunc: suppressEquivalentJsonDiffs,
+                Description:      "Match criteria that controls when the trigger will fire.",
+                Type:        schema.TypeSet,
+                Optional:    true,
+                Elem:        matchCriteria,
             },
 			"event_ttl_seconds": {
                 Description:      "How old an event can be to fire the trigger",
@@ -106,20 +162,6 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	enabled := d.Get("enabled").(bool)
 	eventTTLSeconds := d.Get("event_ttl_seconds").(int)
 
-    //make target of trigger
-	target := d.Get("target").(string)
-    targetVal, err := jsonStringToInterface(target)
-    if err != nil {
-        return diag.Errorf("Failed to parse target %s: %v", target, err)
-    }
-
-	//make match criteria for the trigger
-	matchCriteria := d.Get("match_criteria").(string)
-    matchCriteriaVal, err := jsonStringToInterface(matchCriteria)
-    if err != nil {
-        return diag.Errorf("Failed to parse match criteria %s: %v", matchCriteria, err)
-    }
-
 	sdkConfig := meta.(*providerMeta).ClientConfig
     integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
@@ -129,13 +171,13 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		trigger, resp, err := postProcessAutomationTrigger(&ProcessAutomationTrigger{
             TopicName:       &topic_name,
             Name:            &name,
-            Target:          &targetVal,
-            MatchCriteria:   &matchCriteriaVal,
+            Target:          buildTarget(d),
+            MatchCriteria:   buildMatchCriteria(d),
             Enabled:         &enabled,
             EventTTLSeconds: &eventTTLSeconds,
 		}, integAPI)
 		if err != nil {
-			return resp, diag.Errorf("Failed to create process automation trigger %s: %s", name, err)
+			return resp, diag.Errorf("Failed to create process automation trigger %s: %s match_criteria: %#v", name, err, buildMatchCriteria(d))
 		}
 		d.SetId(*trigger.Id)
 
@@ -176,25 +218,8 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
             d.Set("topic_name", nil)
         }
 
-        if trigger.Target != nil {
-            input, err := flattenTriggerJsonField(*trigger.Target)
-            if err != nil {
-                return resource.NonRetryableError(fmt.Errorf("%v", err))
-            }
-            d.Set("target", input)
-        } else {
-            d.Set("target", nil)
-        }
-
-        if trigger.MatchCriteria != nil {
-            input, err := flattenTriggerJsonField(*trigger.MatchCriteria)
-            if err != nil {
-                return resource.NonRetryableError(fmt.Errorf("%v", err))
-            }
-            d.Set("match_criteria", input)
-        } else {
-            d.Set("match_criteria", nil)
-        }
+        d.Set("match_criteria", flattenMatchCriteria(trigger.MatchCriteria))
+        d.Set("target", flattenTarget(trigger.Target))
 
         if trigger.Enabled != nil {
             d.Set("enabled", *trigger.Enabled)
@@ -218,20 +243,6 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	enabled := d.Get("enabled").(bool)
 	eventTTLSeconds := d.Get("event_ttl_seconds").(int)
 
-    //make target of trigger
-	target := d.Get("target").(string)
-    targetVal, err := jsonStringToInterface(target)
-    if err != nil {
-        return diag.Errorf("Failed to parse target %s: %v", target, err)
-    }
-
-	//make match criteria for the trigger
-    matchCriteria := d.Get("match_criteria").(string)
-    matchCriteriaVal, err := jsonStringToInterface(matchCriteria)
-    if err != nil {
-        return diag.Errorf("Failed to parse match criteria %s: %v", matchCriteria, err)
-    }
-
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
@@ -248,12 +259,12 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 			Name:               &name,
 			Enabled:            &enabled,
 			EventTTLSeconds:    &eventTTLSeconds,
-            Target:             &targetVal,
-			MatchCriteria:      &matchCriteriaVal,
+            Target:             buildTarget(d),
+			MatchCriteria:      buildMatchCriteria(d),
 			Version:            trigger.Version,
 		}, integAPI)
 		if err != nil {
-			return resp, diag.Errorf("Failed to update process automation trigger %s: %s", name, err)
+			return resp, diag.Errorf("Failed to update process automation trigger %s: %s match_criteria:%#v", name, err, buildMatchCriteria(d))
 		}
 		return resp, nil
 	})
@@ -296,13 +307,122 @@ func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
     })
 }
 
+func buildTarget(d *schema.ResourceData) *Target {
+    if target := d.Get("target"); target != nil {
+        if targetList := target.(*schema.Set).List(); len(targetList) > 0 {
+            targetMap := targetList[0].(map[string]interface{})
+
+            targetType := targetMap["type"].(string)
+            id := targetMap["id"].(string)
+
+            return &Target{
+                Type:   &targetType,
+                Id:     &id,
+            }
+        }
+    }
+
+    return &Target{}
+}
+
+func buildMatchCriteria(d *schema.ResourceData) *[]MatchCriteria {
+	if matchCriteriaVal := d.Get("match_criteria"); matchCriteriaVal != nil {
+		if matchCriteriaList := matchCriteriaVal.(*schema.Set).List(); len(matchCriteriaList) > 0 {
+
+            var matchCriteriaObjectList []MatchCriteria = []MatchCriteria{}
+
+            for item := 0; item < len(matchCriteriaList); item++ {
+                matchCriteriaMap := matchCriteriaList[item].(map[string]interface{})
+
+                jsonPath := matchCriteriaMap["json_path"].(string)
+                operator := matchCriteriaMap["operator"].(string)
+                value := matchCriteriaMap["value"].(string)
+                valuesInt := matchCriteriaMap["values"].([]interface{})
+
+                values := make([]string, len(valuesInt))
+                for i, v := range valuesInt {
+                    values[i] = fmt.Sprint(v)
+                }
+
+                if(len(values) < 1){
+                    criteria := MatchCriteria{
+                                    JsonPath:       &jsonPath,
+                                    Operator:       &operator,
+                                    Value:          &value,
+                                }
+
+			        matchCriteriaObjectList = append(matchCriteriaObjectList, criteria)
+                }else{
+                    criteria := MatchCriteria{
+                                    JsonPath:       &jsonPath,
+                                    Operator:       &operator,
+                                    Values:         &values,
+                                }
+
+			        matchCriteriaObjectList = append(matchCriteriaObjectList, criteria)
+                }
+
+			}
+
+			log.Printf("LIST OF MATCH CRITERIA %v", matchCriteriaObjectList)
+
+			return &matchCriteriaObjectList
+		}
+	}
+	return &[]MatchCriteria{}
+}
+
+func flattenTarget(inputTarget *Target) *schema.Set {
+	if inputTarget == nil {
+		return nil
+	}
+
+	targetSet := schema.NewSet(schema.HashResource(target), []interface{}{})
+
+    flattendedTarget := make(map[string]interface{})
+    flattendedTarget["id"] = *inputTarget.Id
+    flattendedTarget["type"] = *inputTarget.Type
+    targetSet.Add(flattendedTarget)
+
+	return targetSet
+}
+
+func flattenMatchCriteria(inputMatchCriteria *[]MatchCriteria) *schema.Set {
+	if inputMatchCriteria == nil {
+		return nil
+	}
+
+	matchCriteriaSet := schema.NewSet(schema.HashResource(matchCriteria), []interface{}{})
+	for _, sdkMatchCriteria := range *inputMatchCriteria {
+		flattendedMatchCriteria := make(map[string]interface{})
+		flattendedMatchCriteria["json_path"] = *sdkMatchCriteria.JsonPath
+		flattendedMatchCriteria["operator"] = *sdkMatchCriteria.Operator
+
+		if sdkMatchCriteria.Value != nil{
+		    flattendedMatchCriteria["value"] = *sdkMatchCriteria.Value
+		}
+
+		if sdkMatchCriteria.Values != nil{
+
+		    t := *sdkMatchCriteria.Values
+            s := make([]interface{}, len(t))
+            for i, v := range t {
+                s[i] = v
+            }
+		    flattendedMatchCriteria["values"] = s
+		}
+		matchCriteriaSet.Add(flattendedMatchCriteria)
+	}
+	return matchCriteriaSet
+}
+
 func flattenTriggerJsonField(jsonField interface{}) (string, diag.Diagnostics) {
 	if jsonField == nil {
 		return "", nil
 	}
 	jsonFieldBytes, err := json.Marshal(jsonField)
 	if err != nil {
-		return "", diag.Errorf("Error marshalling match criteria %v: %v", jsonField, err)
+		return "", diag.Errorf("Error marshalling json field %v: %v", jsonField, err)
 	}
 	return string(jsonFieldBytes), nil
 }
