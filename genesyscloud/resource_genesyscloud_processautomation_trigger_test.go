@@ -257,8 +257,8 @@ func validateMatchCriteriaWithValues(triggerResourceName string, jsonPathVal str
             return fmt.Errorf("Match Criteria operator in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".operator"])
         }
 
-        if values[0] != triggerResource.Primary.Attributes["match_criteria."+strconv.Itoa(position)+".values"+strconv.Itoa(0)] {
-            return fmt.Errorf("Match Criteria values in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".values"+strconv.Itoa(0)])
+        if values[0] != triggerResource.Primary.Attributes["match_criteria."+strconv.Itoa(position)+".values."+strconv.Itoa(0)] {
+            return fmt.Errorf("Match Criteria values in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".values."+strconv.Itoa(0)])
         }
 
 		return nil
