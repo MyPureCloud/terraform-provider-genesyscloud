@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -145,8 +146,6 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Updated edge group %s", *edgeGroup.Id)
-
-	time.Sleep(5 * time.Second)
 	return readEdgeGroup(ctx, d, meta)
 }
 
@@ -186,7 +185,7 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading edge group %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		edgeGroup, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -195,6 +194,7 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceEdgeGroup())
 		d.Set("name", *edgeGroup.Name)
 		d.Set("state", *edgeGroup.State)
 		if edgeGroup.Description != nil {
@@ -213,7 +213,7 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 		log.Printf("Read edge group %s %s", d.Id(), *edgeGroup.Name)
 
-		return nil
+		return cc.CheckState()
 	})
 }
 

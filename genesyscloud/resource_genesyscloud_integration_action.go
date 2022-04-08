@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"net/http"
 	"strings"
@@ -223,7 +224,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading integration action %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		action, resp, getErr := sdkGetIntegrationAction(d.Id(), integAPI)
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -251,6 +252,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read success template for integration action %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIntegrationAction())
 		if action.Name != nil {
 			d.Set("name", *action.Name)
 		} else {
@@ -310,7 +312,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		log.Printf("Read integration action %s %s", d.Id(), *action.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -346,7 +348,6 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	log.Printf("Updated integration action %s", name)
-	time.Sleep(5 * time.Second)
 	return readIntegrationAction(ctx, d, meta)
 }
 

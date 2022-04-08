@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccResourceRoutingUtilization(t *testing.T) {
-	t.Skip("Skipping routing utilization test because the cache TTL is so long")
+	t.Parallel()
 	var (
 		maxCapacity1  = "3"
 		maxCapacity2  = "4"

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -110,7 +111,7 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Extension pool %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		extensionPool, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesExtensionpool(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -124,6 +125,7 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 			return nil
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceTelephonyExtensionPool())
 		d.Set("start_number", *extensionPool.StartNumber)
 		d.Set("end_number", *extensionPool.EndNumber)
 
@@ -134,7 +136,7 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 		}
 
 		log.Printf("Read Extension pool %s %s", d.Id(), *extensionPool.StartNumber)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -158,7 +160,6 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	log.Printf("Updated Extension pool %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readExtensionPool(ctx, d, meta)
 }
 

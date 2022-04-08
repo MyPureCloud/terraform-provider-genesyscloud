@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -150,7 +151,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IVR config %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		ivrConfig, resp, getErr := architectApi.GetArchitectIvr(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -164,6 +165,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return nil
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectIvrConfig())
 		d.Set("name", *ivrConfig.Name)
 		d.Set("dnis", flattenIvrDnis(ivrConfig.Dnis))
 
@@ -198,7 +200,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 
 		log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -252,7 +254,6 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Updated IVR config %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readIvrConfig(ctx, d, meta)
 }
 

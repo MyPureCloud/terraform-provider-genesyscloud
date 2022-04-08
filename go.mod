@@ -11,6 +11,7 @@ require (
 	github.com/aws/aws-sdk-go v1.38.33 // indirect
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/go-test/deep v1.0.7 // indirect
+	github.com/google/go-cmp v0.5.7
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320

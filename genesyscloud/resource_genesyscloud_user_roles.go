@@ -2,12 +2,13 @@ package genesyscloud
 
 import (
 	"context"
-	"log"
-	"time"
-
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"log"
 )
 
 func userRolesExporter() *ResourceExporter {
@@ -59,22 +60,23 @@ func createUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 	return updateUserRoles(ctx, d, meta)
 }
 
-func readUserRoles(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading roles for user %s", d.Id())
-
 	d.Set("user_id", d.Id())
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+		roles, _, err := readSubjectRoles(d.Id(), authAPI)
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("%v", err))
+		}
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceUserRoles())
+		d.Set("roles", roles)
 
-	roles, err := readSubjectRoles(d.Id(), authAPI)
-	if err != nil {
-		return err
-	}
-	d.Set("roles", roles)
-
-	log.Printf("Read roles for user %s", d.Id())
-	return nil
+		log.Printf("Read roles for user %s", d.Id())
+		return cc.CheckState()
+	})
 }
 
 func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -88,7 +90,6 @@ func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Updated user roles for %s", d.Id())
-	time.Sleep(60 * time.Second)
 	return readUserRoles(ctx, d, meta)
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -91,15 +92,17 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading IDP Okta")
 
-	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return withRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
 		okta, resp, getErr := idpAPI.GetIdentityprovidersOkta()
 		if getErr != nil {
 			if isStatus404(resp) {
+				createIdpOkta(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpOkta())
 		if okta.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*okta.Certificate}))
 		} else if okta.Certificates != nil {
@@ -127,7 +130,7 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP Okta")
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -161,9 +164,6 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updated IDP Okta")
-	// Give time for public API caches to update
-	// It takes a very very long time with idp resources
-	time.Sleep(d.Timeout(schema.TimeoutUpdate))
 	return readIdpOkta(ctx, d, meta)
 }
 

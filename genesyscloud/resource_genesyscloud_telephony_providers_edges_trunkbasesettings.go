@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"net/http"
 	"time"
@@ -182,7 +183,6 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Updated trunk base settings %s", *trunkBaseSettings.Id)
 
-	time.Sleep(5 * time.Second)
 	return readTrunkBaseSettings(ctx, d, meta)
 }
 
@@ -191,7 +191,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading trunk base settings %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -200,6 +200,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceTrunkBaseSettings())
 		d.Set("name", *trunkBaseSettings.Name)
 		d.Set("state", *trunkBaseSettings.State)
 		if trunkBaseSettings.Description != nil {
@@ -224,7 +225,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		log.Printf("Read trunk base settings %s %s", d.Id(), *trunkBaseSettings.Name)
 
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -270,7 +271,7 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		trunkBaseSettings, _, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize)
+		trunkBaseSettings, _, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of trunk base settings: %v", getErr)
 		}
@@ -291,10 +292,10 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 // The SDK function is too cumbersome because of the various boolean query parameters.
 // This function was written in order to leave them out and make a single API call
-func getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig *platformclientv2.Configuration, pageNumber int, pageSize int) (*platformclientv2.Trunkbaseentitylisting, *platformclientv2.APIResponse, error) {
+func getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig *platformclientv2.Configuration, pageNumber int, pageSize int, name string) (*platformclientv2.Trunkbaseentitylisting, *platformclientv2.APIResponse, error) {
 	headerParams := make(map[string]string)
-	if sdkConfig.AccessToken != ""{
-		headerParams["Authorization"] =  "Bearer " + sdkConfig.AccessToken
+	if sdkConfig.AccessToken != "" {
+		headerParams["Authorization"] = "Bearer " + sdkConfig.AccessToken
 	}
 	// add default headers if any
 	for key := range sdkConfig.DefaultHeader {
@@ -304,9 +305,12 @@ func getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig *platformclientv2.Con
 	queryParams := make(map[string]string)
 	queryParams["pageNumber"] = sdkConfig.APIClient.ParameterToString(pageNumber, "")
 	queryParams["pageSize"] = sdkConfig.APIClient.ParameterToString(pageSize, "")
-	
+	if name != "" {
+		queryParams["name"] = sdkConfig.APIClient.ParameterToString(name, "")
+	}
+
 	// to determine the Content-Type header
-	httpContentTypes := []string{ "application/json" }
+	httpContentTypes := []string{"application/json"}
 
 	// set Content-Type header
 	httpContentType := sdkConfig.APIClient.SelectHeaderContentType(httpContentTypes)

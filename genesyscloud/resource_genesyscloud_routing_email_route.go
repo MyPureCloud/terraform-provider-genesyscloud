@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strings"
 	"time"
@@ -232,7 +233,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	return readRoutingEmailRoute(ctx, d, meta)
 }
 
-func readRoutingEmailRoute(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	domainID := d.Get("domain_id").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
@@ -242,104 +243,107 @@ func readRoutingEmailRoute(_ context.Context, d *schema.ResourceData, meta inter
 
 	// The normal GET route API has a long cache TTL (5 minutes) which can result in stale data.
 	// This can be bypassed by issuing a domain query instead.
-	var route *platformclientv2.Inboundroute
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(domainID, pageSize, pageNum, "")
-		if getErr != nil {
-			if isStatus404(resp) {
-				// Domain not found, so route also does not exist
-				d.SetId("")
-				return nil
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+		var route *platformclientv2.Inboundroute
+		for pageNum := 1; ; pageNum++ {
+			const pageSize = 100
+			routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(domainID, pageSize, pageNum, "")
+			if getErr != nil {
+				if isStatus404(resp) {
+					// Domain not found, so route also does not exist
+					d.SetId("")
+					return resource.RetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
+				}
+				return resource.NonRetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
 			}
-			return diag.Errorf("Failed to get page of email routes for domain %s: %v", domainID, getErr)
-		}
 
-		if routes.Entities == nil || len(*routes.Entities) == 0 {
-			break
-		}
-
-		for _, queryRoute := range *routes.Entities {
-			if queryRoute.Id != nil && *queryRoute.Id == d.Id() {
-				route = &queryRoute
+			if routes.Entities == nil || len(*routes.Entities) == 0 {
 				break
 			}
+
+			for _, queryRoute := range *routes.Entities {
+				if queryRoute.Id != nil && *queryRoute.Id == d.Id() {
+					route = &queryRoute
+					break
+				}
+			}
 		}
-	}
 
-	if route == nil {
-		d.SetId("")
-		return nil
-	}
+		if route == nil {
+			d.SetId("")
+			return nil
+		}
 
-	if route.Pattern != nil {
-		d.Set("pattern", *route.Pattern)
-	} else {
-		d.Set("pattern", nil)
-	}
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingEmailRoute())
+		if route.Pattern != nil {
+			d.Set("pattern", *route.Pattern)
+		} else {
+			d.Set("pattern", nil)
+		}
 
-	if route.FromEmail != nil {
-		d.Set("from_email", *route.FromEmail)
-	} else {
-		d.Set("from_email", nil)
-	}
+		if route.FromEmail != nil {
+			d.Set("from_email", *route.FromEmail)
+		} else {
+			d.Set("from_email", nil)
+		}
 
-	if route.FromName != nil {
-		d.Set("from_name", *route.FromName)
-	} else {
-		d.Set("from_name", nil)
-	}
+		if route.FromName != nil {
+			d.Set("from_name", *route.FromName)
+		} else {
+			d.Set("from_name", nil)
+		}
 
-	if route.Priority != nil {
-		d.Set("priority", *route.Priority)
-	} else {
-		d.Set("priority", nil)
-	}
+		if route.Priority != nil {
+			d.Set("priority", *route.Priority)
+		} else {
+			d.Set("priority", nil)
+		}
 
-	if route.Queue != nil && route.Queue.Id != nil {
-		d.Set("queue_id", *route.Queue.Id)
-	} else {
-		d.Set("queue_id", nil)
-	}
+		if route.Queue != nil && route.Queue.Id != nil {
+			d.Set("queue_id", *route.Queue.Id)
+		} else {
+			d.Set("queue_id", nil)
+		}
 
-	if route.Language != nil && route.Language.Id != nil {
-		d.Set("language_id", *route.Language.Id)
-	} else {
-		d.Set("language_id", nil)
-	}
+		if route.Language != nil && route.Language.Id != nil {
+			d.Set("language_id", *route.Language.Id)
+		} else {
+			d.Set("language_id", nil)
+		}
 
-	if route.Flow != nil && route.Flow.Id != nil {
-		d.Set("flow_id", *route.Flow.Id)
-	} else {
-		d.Set("flow_id", nil)
-	}
+		if route.Flow != nil && route.Flow.Id != nil {
+			d.Set("flow_id", *route.Flow.Id)
+		} else {
+			d.Set("flow_id", nil)
+		}
 
-	if route.SpamFlow != nil && route.SpamFlow.Id != nil {
-		d.Set("spam_flow_id", *route.SpamFlow.Id)
-	} else {
-		d.Set("spam_flow_id", nil)
-	}
+		if route.SpamFlow != nil && route.SpamFlow.Id != nil {
+			d.Set("spam_flow_id", *route.SpamFlow.Id)
+		} else {
+			d.Set("spam_flow_id", nil)
+		}
 
-	if route.Skills != nil {
-		d.Set("skill_ids", sdkDomainEntityRefArrToSet(*route.Skills))
-	} else {
-		d.Set("skill_ids", nil)
-	}
+		if route.Skills != nil {
+			d.Set("skill_ids", sdkDomainEntityRefArrToSet(*route.Skills))
+		} else {
+			d.Set("skill_ids", nil)
+		}
 
-	if route.ReplyEmailAddress != nil && *route.ReplyEmailAddress != nil {
-		d.Set("reply_email_address", []interface{}{flattenQueueEmailAddress(**route.ReplyEmailAddress)})
-	} else {
-		d.Set("reply_email_address", nil)
-	}
+		if route.ReplyEmailAddress != nil && *route.ReplyEmailAddress != nil {
+			d.Set("reply_email_address", []interface{}{flattenQueueEmailAddress(**route.ReplyEmailAddress)})
+		} else {
+			d.Set("reply_email_address", nil)
+		}
 
-	if route.AutoBcc != nil {
-		d.Set("auto_bcc", flattenAutoBccEmailAddresses(*route.AutoBcc))
-	} else {
-		d.Set("auto_bcc", nil)
-	}
+		if route.AutoBcc != nil {
+			d.Set("auto_bcc", flattenAutoBccEmailAddresses(*route.AutoBcc))
+		} else {
+			d.Set("auto_bcc", nil)
+		}
 
-	log.Printf("Read routing email route %s", d.Id())
-	return nil
+		log.Printf("Read routing email route %s", d.Id())
+		return cc.CheckState()
+	})
 }
 
 func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -374,7 +378,6 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	log.Printf("Updated routing email route %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readRoutingEmailRoute(ctx, d, meta)
 }
 

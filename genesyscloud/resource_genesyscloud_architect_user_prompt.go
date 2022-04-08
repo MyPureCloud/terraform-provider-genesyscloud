@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"io"
 	"io/ioutil"
 	"log"
@@ -829,9 +830,6 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	d.SetId(*userPrompt.Id)
 	log.Printf("Created user prompt %s %s", name, *userPrompt.Id)
-
-	time.Sleep(5 * time.Second)
-
 	return readUserPrompt(ctx, d, meta)
 }
 
@@ -841,7 +839,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading User Prompt %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		userPrompt, resp, getErr := architectAPI.GetArchitectPrompt(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -850,6 +848,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 			return resource.NonRetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectUserPrompt())
 		if userPrompt.Name != nil {
 			d.Set("name", *userPrompt.Name)
 		} else {
@@ -865,7 +864,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 		d.Set("resources", flattenPromptResources(userPrompt.Resources))
 
 		log.Printf("Read Audio Prompt %s %s", d.Id(), *userPrompt.Id)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -897,7 +896,6 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 
 	log.Printf("Updated User Prompt %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readUserPrompt(ctx, d, meta)
 }
 

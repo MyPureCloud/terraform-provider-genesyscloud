@@ -3,15 +3,13 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"strconv"
+	"strings"
 )
 
 var (
@@ -34,12 +32,12 @@ var (
 )
 
 // Get subject grants and filters out inherited grants
-func getAssignedGrants(subjectID string, authAPI *platformclientv2.AuthorizationApi) ([]platformclientv2.Authzgrant, diag.Diagnostics) {
+func getAssignedGrants(subjectID string, authAPI *platformclientv2.AuthorizationApi) ([]platformclientv2.Authzgrant, *platformclientv2.APIResponse, diag.Diagnostics) {
 	var grants []platformclientv2.Authzgrant
 
-	subject, _, err := authAPI.GetAuthorizationSubject(subjectID)
+	subject, resp, err := authAPI.GetAuthorizationSubject(subjectID)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get current grants for subject %s: %s", subjectID, err)
+		return nil, resp, diag.Errorf("Failed to get current grants for subject %s: %s", subjectID, err)
 	}
 
 	if subject != nil && subject.Grants != nil {
@@ -50,13 +48,13 @@ func getAssignedGrants(subjectID string, authAPI *platformclientv2.Authorization
 		}
 	}
 
-	return grants, nil
+	return grants, resp, nil
 }
 
-func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationApi) (*schema.Set, diag.Diagnostics) {
-	grants, err := getAssignedGrants(subjectID, authAPI)
+func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationApi) (*schema.Set, *platformclientv2.APIResponse, diag.Diagnostics) {
+	grants, resp, err := getAssignedGrants(subjectID, authAPI)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
 	roleDivsMap := make(map[string]*schema.Set)
@@ -75,7 +73,7 @@ func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationA
 		role["division_ids"] = divs
 		roleSet.Add(role)
 	}
-	return roleSet, nil
+	return roleSet, resp, nil
 }
 
 func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {
@@ -83,7 +81,7 @@ func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *pl
 		rolesConfig := d.Get("roles")
 		if rolesConfig != nil {
 			// Get existing roles/divisions
-			grants, err := getAssignedGrants(d.Id(), authAPI)
+			grants, _, err := getAssignedGrants(d.Id(), authAPI)
 			if err != nil {
 				return err
 			}
@@ -143,7 +141,6 @@ func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *pl
 					if err != nil {
 						return resp, diag.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err)
 					}
-					time.Sleep(40 * time.Second)
 					return nil, nil
 				})
 				if diagErr != nil {

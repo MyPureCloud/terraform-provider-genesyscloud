@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strings"
 	"time"
@@ -155,7 +156,7 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading schedule group %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		scheduleGroup, resp, getErr := archAPI.GetArchitectSchedulegroup(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -164,6 +165,7 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 			return resource.NonRetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectScheduleGroups())
 		d.Set("name", *scheduleGroup.Name)
 		d.Set("division_id", *scheduleGroup.Division.Id)
 		d.Set("description", nil)
@@ -195,7 +197,7 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		log.Printf("Read schedule group %s %s", d.Id(), *scheduleGroup.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -240,7 +242,6 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	log.Printf("Finished updating schedule group %s", name)
-	time.Sleep(5 * time.Second)
 	return readArchitectScheduleGroups(ctx, d, meta)
 }
 

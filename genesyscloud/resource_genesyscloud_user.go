@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strings"
 	"time"
@@ -150,7 +151,7 @@ func userExporter() *ResourceExporter {
 			"routing_languages": {"language_id"},
 			"locations":         {"location_id"},
 		},
-		AllowZeroValues: []string{"routing_skills.proficiency" ,"routing_languages.proficiency"},
+		AllowZeroValues: []string{"routing_skills.proficiency", "routing_languages.proficiency"},
 	}
 }
 
@@ -492,7 +493,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Reading user %s", d.Id())
-	return withRetriesForRead(ctx, 60*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{
 			// Expands
 			"skills",
@@ -509,6 +510,8 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
 		}
+
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceUser())
 
 		// Required attributes
 		d.Set("name", *currentUser.Name)
@@ -553,7 +556,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}
 
 		log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -629,7 +632,6 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Finished updating user %s", email)
-	time.Sleep(8 * time.Second)
 	return readUser(ctx, d, meta)
 }
 
@@ -655,7 +657,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	// Verify user in deleted state and search index has been updated
-	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 180*time.Second, func() *resource.RetryError {
 		id, err := getDeletedUserId(email, usersAPI)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error searching for deleted user %s: %v", email, err))

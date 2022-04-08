@@ -344,7 +344,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		// site
 		siteRes     = "site"
 		name        = "site " + uuid.NewString()
-		description = "TestAccResourceSiteOutboundRoutes description 1"
+		description = "terraform description 1"
 		mediaModel  = "Cloud"
 
 		// location

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"net/http"
 	"net/url"
@@ -428,7 +429,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
-	return withRetriesForRead(ctx, 60*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -437,6 +438,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingQueue())
 		d.Set("name", *currentQueue.Name)
 		d.Set("division_id", *currentQueue.Division.Id)
 
@@ -579,7 +581,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("wrapup_codes", wrapupCodes)
 
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -637,7 +639,6 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Finished updating queue %s", name)
-	time.Sleep(5 * time.Second)
 	return readQueue(ctx, d, meta)
 }
 

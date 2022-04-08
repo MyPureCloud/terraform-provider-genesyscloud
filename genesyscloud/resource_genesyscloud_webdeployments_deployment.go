@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -218,7 +219,7 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading web deployment %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		deployment, resp, getErr := api.GetWebdeploymentsDeployment(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -227,11 +228,12 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 			return resource.NonRetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceWebDeployment())
 		d.Set("name", *deployment.Name)
 		if deployment.Description != nil {
 			d.Set("description", *deployment.Description)
 		}
-		d.Set("allow_all_domains", deployment.AllowAllDomains)
+		d.Set("allow_all_domains", *deployment.AllowAllDomains)
 		d.Set("configuration", flattenConfiguration(deployment.Configuration))
 		d.Set("allowed_domains", *deployment.AllowedDomains)
 		if deployment.AllowedDomains != nil && len(*deployment.AllowedDomains) > 0 {
@@ -243,7 +245,7 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 		d.Set("status", *deployment.Status)
 
 		log.Printf("Read web deployment %s %s", d.Id(), *deployment.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -316,7 +318,6 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	log.Printf("Finished updating web deployment %s", name)
-	time.Sleep(5 * time.Second)
 	return readWebDeployment(ctx, d, meta)
 }
 

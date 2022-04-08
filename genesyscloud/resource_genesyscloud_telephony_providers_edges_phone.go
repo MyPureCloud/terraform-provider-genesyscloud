@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strconv"
 	"time"
@@ -241,7 +242,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading phone %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentPhone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -250,6 +251,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourcePhone())
 		d.Set("name", *currentPhone.Name)
 		d.Set("state", *currentPhone.State)
 		d.Set("site_id", *currentPhone.Site.Id)
@@ -272,7 +274,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		log.Printf("Read phone %s %s", d.Id(), *currentPhone.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -376,7 +378,6 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 	}
 
-	time.Sleep(5 * time.Second)
 	return readPhone(ctx, d, meta)
 }
 

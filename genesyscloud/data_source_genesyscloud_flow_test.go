@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -10,7 +11,7 @@ import (
 func TestAccDataSourceFlow(t *testing.T) {
 	var (
 		flowDataSource    = "flow-data"
-		flowName          = "test flow"
+		flowName          = "test flow " + uuid.NewString()
 		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 
 		flowResource = "test_flow"
@@ -28,7 +29,7 @@ func TestAccDataSourceFlow(t *testing.T) {
 					inboundcallConfig,
 				) + generateFlowDataSource(
 					flowDataSource,
-					"genesyscloud_flow." + flowResource,
+					"genesyscloud_flow."+flowResource,
 					flowName,
 				),
 				Check: resource.ComposeTestCheckFunc(

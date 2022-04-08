@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -119,7 +120,6 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Created trunk %s", *trunk.Id)
 
-	time.Sleep(5 * time.Second)
 	return readTrunk(ctx, d, meta)
 }
 
@@ -159,7 +159,7 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading trunk %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		trunk, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunk(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -168,6 +168,7 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceTrunk())
 		d.Set("name", *trunk.Name)
 		if trunk.TrunkBase != nil {
 			d.Set("trunk_base_settings_id", *trunk.TrunkBase.Id)
@@ -181,7 +182,7 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		log.Printf("Read trunk %s %s", d.Id(), *trunk.Name)
 
-		return nil
+		return cc.CheckState()
 	})
 }
 
