@@ -86,6 +86,7 @@ resource "genesyscloud_routing_queue" "test_queue" {
 - **default_script_ids** (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - **description** (String) Queue description.
 - **division_id** (String) The division to which this queue will belong. If not set, the home division will be used.
+- **email_in_queue_flow_id** (String) The in-queue flow ID to use for email conversations waiting in queue.
 - **enable_manual_assignment** (Boolean) Indicates whether manual assignment is enabled for this queue. Defaults to `false`.
 - **enable_transcription** (Boolean) Indicates whether voice transcription is enabled for this queue. Defaults to `false`.
 - **id** (String) The ID of this resource.
@@ -97,9 +98,10 @@ resource "genesyscloud_routing_queue" "test_queue" {
 - **media_settings_social** (Block List, Max: 1) Social media settings. (see [below for nested schema](#nestedblock--media_settings_social))
 - **media_settings_video** (Block List, Max: 1) Video media settings. (see [below for nested schema](#nestedblock--media_settings_video))
 - **members** (Set of Object) Users in the queue. If not set, this resource will not manage members. (see [below for nested schema](#nestedatt--members))
+- **message_in_queue_flow_id** (String) The in-queue flow ID to use for message conversations waiting in queue.
 - **outbound_email_address** (Block List, Max: 1) The outbound email address settings for this queue. (see [below for nested schema](#nestedblock--outbound_email_address))
 - **outbound_messaging_sms_address_id** (String) The unique ID of the outbound messaging SMS address for the queue.
-- **queue_flow_id** (String) The in-queue flow ID to use for conversations waiting in queue.
+- **queue_flow_id** (String) The in-queue flow ID to use for call conversations waiting in queue.
 - **routing_rules** (Block List, Max: 6) The routing rules for the queue, used for routing to known or preferred agents. (see [below for nested schema](#nestedblock--routing_rules))
 - **skill_evaluation_method** (String) The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to `ALL`.
 - **whisper_prompt_id** (String) The prompt ID used for whisper on the queue, if configured.
