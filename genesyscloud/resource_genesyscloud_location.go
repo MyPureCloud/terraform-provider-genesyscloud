@@ -3,15 +3,15 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"log"
-	"time"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/nyaruka/phonenumbers"
+	"log"
+	"time"
 )
 
 func getAllLocations(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -178,8 +178,7 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading location %s", d.Id())
-
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		location, resp, getErr := locationsAPI.GetLocation(d.Id(), nil)
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -193,6 +192,7 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 			return nil
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceLocation())
 		d.Set("name", *location.Name)
 
 		if location.Notes != nil {
@@ -211,7 +211,7 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 		d.Set("address", flattenLocationAddress(location.Address))
 
 		log.Printf("Read location %s %s", d.Id(), *location.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -254,7 +254,6 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	log.Printf("Updated location %s %s", name, d.Id())
-	time.Sleep(5 * time.Second)
 	return readLocation(ctx, d, meta)
 }
 

@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 var (
@@ -164,9 +164,6 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 		}
 	}
 
-	// Give integration caches time to update
-	time.Sleep(2 * time.Second)
-
 	log.Printf("Created integration %s %s", name, *integration.Id)
 	return readIntegration(ctx, d, meta)
 }
@@ -177,7 +174,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading integration %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		currentIntegration, resp, getErr := integrationAPI.GetIntegration(d.Id(), pageSize, pageNum, "", nil, "", "")
@@ -199,7 +196,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		integrationConfig, _, err := integrationAPI.GetIntegrationConfigCurrent(*currentIntegration.Id)
 
 		if err != nil {
-			return  resource.NonRetryableError(fmt.Errorf("Failed to read config of integration %s: %s", d.Id(), getErr))
+			return resource.NonRetryableError(fmt.Errorf("Failed to read config of integration %s: %s", d.Id(), getErr))
 		}
 
 		d.Set("config", flattenIntegrationConfig(integrationConfig))
@@ -236,7 +233,6 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	log.Printf("Updated integration %s %s", name, d.Id())
-	time.Sleep(5 * time.Second)
 	return readIntegration(ctx, d, meta)
 }
 

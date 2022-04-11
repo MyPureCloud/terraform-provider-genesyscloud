@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 	"os"
 	"strconv"
 	"strings"
@@ -23,7 +23,6 @@ type phoneConfig struct {
 	state               string
 	siteId              string
 	phoneBaseSettingsId string
-	lineBaseSettingsId  string
 	lineAddresses       []string
 	webRtcUserId        string
 	depends_on          string
@@ -74,7 +73,6 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		stateActive,
 		"data.genesyscloud_organizations_me.me.default_site_id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".line_base_settings_id",
 		nil, // no line addresses
 		"genesyscloud_user." + userRes1 + ".id",
 		"", // no depends on
@@ -140,7 +138,6 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 					stateActive,
 					"data.genesyscloud_organizations_me.me.default_site_id",
 					"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-					"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".line_base_settings_id",
 					nil, // no line addresses
 					"genesyscloud_user." + userRes2 + ".id",
 					"", // no depends_on
@@ -249,7 +246,6 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		stateActive,
 		"data.genesyscloud_organizations_me.me.default_site_id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".line_base_settings_id",
 		lineAddresses,
 		"", // no web rtc user
 		"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
@@ -341,7 +337,6 @@ func generatePhoneResourceWithCustomAttrs(config *phoneConfig, otherAttrs ...str
 		state = "%s"
 		site_id = %s
 		phone_base_settings_id = %s
-		line_base_settings_id = %s
 		line_addresses = [%s]
 		depends_on=[%s]
 		%s
@@ -352,7 +347,6 @@ func generatePhoneResourceWithCustomAttrs(config *phoneConfig, otherAttrs ...str
 		config.state,
 		config.siteId,
 		config.phoneBaseSettingsId,
-		config.lineBaseSettingsId,
 		strings.Join(lineStrs, ","),
 		config.depends_on,
 		webRtcUser,

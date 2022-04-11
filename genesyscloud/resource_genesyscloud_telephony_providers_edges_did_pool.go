@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -125,7 +126,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading DID pool %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		didPool, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -139,6 +140,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceTelephonyDidPool())
 		d.Set("start_phone_number", *didPool.StartPhoneNumber)
 		d.Set("end_phone_number", *didPool.EndPhoneNumber)
 
@@ -161,7 +163,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read DID pool %s %s", d.Id(), *didPool.StartPhoneNumber)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -189,7 +191,6 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updated DID pool %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readDidPool(ctx, d, meta)
 }
 

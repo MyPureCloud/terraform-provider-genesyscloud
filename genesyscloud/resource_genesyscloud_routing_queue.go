@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 var (
@@ -102,7 +103,9 @@ func routingQueueExporter() *ResourceExporter {
 		RefAttrs: map[string]*RefAttrSettings{
 			"division_id":                       {RefType: "genesyscloud_auth_division"},
 			"queue_flow_id":                     {RefType: "genesyscloud_flow"},
-			"whisper_prompt_id":                 {}, // Ref type not yet defined
+			"email_in_queue_flow_id":            {RefType: "genesyscloud_flow"},
+			"message_in_queue_flow_id":          {RefType: "genesyscloud_flow"},
+			"whisper_prompt_id":                 {RefType: "genesyscloud_architect_user_prompt"},
 			"outbound_messaging_sms_address_id": {}, // Ref type not yet defined
 			"default_script_ids.*":              {}, // Ref type not yet defined
 			"outbound_email_address.route_id":   {RefType: "genesyscloud_routing_email_route"},
@@ -277,7 +280,17 @@ func resourceRoutingQueue() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"NONE", "BEST", "ALL"}, false),
 			},
 			"queue_flow_id": {
-				Description: "The in-queue flow ID to use for conversations waiting in queue.",
+				Description: "The in-queue flow ID to use for call conversations waiting in queue.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"email_in_queue_flow_id": {
+				Description: "The in-queue flow ID to use for email conversations waiting in queue.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"message_in_queue_flow_id": {
+				Description: "The in-queue flow ID to use for message conversations waiting in queue.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -388,6 +401,8 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		AcwSettings:                buildSdkAcwSettings(d),
 		SkillEvaluationMethod:      &skillEvaluationMethod,
 		QueueFlow:                  buildSdkDomainEntityRef(d, "queue_flow_id"),
+		EmailInQueueFlow:           buildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
+		MessageInQueueFlow:         buildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
 		WhisperPrompt:              buildSdkDomainEntityRef(d, "whisper_prompt_id"),
 		AutoAnswerOnly:             &autoAnswerOnly,
 		CallingPartyName:           &callingPartyName,
@@ -428,7 +443,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
-	return withRetriesForRead(ctx, 60*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -437,6 +452,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingQueue())
 		d.Set("name", *currentQueue.Name)
 		d.Set("division_id", *currentQueue.Division.Id)
 
@@ -512,6 +528,18 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("queue_flow_id", nil)
 		}
 
+		if currentQueue.MessageInQueueFlow != nil && currentQueue.MessageInQueueFlow.Id != nil {
+			d.Set("message_in_queue_flow_id", *currentQueue.MessageInQueueFlow.Id)
+		} else {
+			d.Set("message_in_queue_flow_id", nil)
+		}
+
+		if currentQueue.EmailInQueueFlow != nil && currentQueue.EmailInQueueFlow.Id != nil {
+			d.Set("email_in_queue_flow_id", *currentQueue.EmailInQueueFlow.Id)
+		} else {
+			d.Set("email_in_queue_flow_id", nil)
+		}
+
 		if currentQueue.WhisperPrompt != nil && currentQueue.WhisperPrompt.Id != nil {
 			d.Set("whisper_prompt_id", *currentQueue.WhisperPrompt.Id)
 		} else {
@@ -579,7 +607,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("wrapup_codes", wrapupCodes)
 
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -607,6 +635,8 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		AcwSettings:                buildSdkAcwSettings(d),
 		SkillEvaluationMethod:      &skillEvaluationMethod,
 		QueueFlow:                  buildSdkDomainEntityRef(d, "queue_flow_id"),
+		EmailInQueueFlow:           buildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
+		MessageInQueueFlow:         buildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
 		WhisperPrompt:              buildSdkDomainEntityRef(d, "whisper_prompt_id"),
 		AutoAnswerOnly:             &autoAnswerOnly,
 		CallingPartyName:           &callingPartyName,
@@ -637,7 +667,6 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Finished updating queue %s", name)
-	time.Sleep(5 * time.Second)
 	return readQueue(ctx, d, meta)
 }
 

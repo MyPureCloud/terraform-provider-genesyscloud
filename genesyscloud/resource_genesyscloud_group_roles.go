@@ -2,9 +2,12 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 )
 
@@ -57,22 +60,29 @@ func createGroupRoles(ctx context.Context, d *schema.ResourceData, meta interfac
 	return updateGroupRoles(ctx, d, meta)
 }
 
-func readGroupRoles(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading roles for group %s", d.Id())
 
-	d.Set("group_id", d.Id())
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceGroupRoles())
+		d.Set("group_id", d.Id())
 
-	roles, err := readSubjectRoles(d.Id(), authAPI)
-	if err != nil {
-		return err
-	}
-	d.Set("roles", roles)
+		roles, resp, err := readSubjectRoles(d.Id(), authAPI)
+		if err != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))
+			}
+			return resource.NonRetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))
+		}
 
-	log.Printf("Read roles for group %s", d.Id())
-	return nil
+		d.Set("roles", roles)
+
+		log.Printf("Read roles for group %s", d.Id())
+		return cc.CheckState()
+	})
 }
 
 func updateGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

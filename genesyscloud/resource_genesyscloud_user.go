@@ -3,15 +3,17 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -109,30 +111,84 @@ var (
 	}
 )
 
-func getAllUsers(_ context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		users, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of users: %v", getErr)
-		}
+	errorChan := make(chan error)
+	wgDone := make(chan bool)
+	// Cancel remaining goroutines if an error occurs
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-		if users.Entities == nil || len(*users.Entities) == 0 {
-			break
-		}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		// get all inactive users
+		for pageNum := 1; ; pageNum++ {
+			const pageSize = 100
+			users, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "inactive")
+			if getErr != nil {
+				select {
+				case <-ctx.Done():
+				case errorChan <- getErr:
+				}
+				cancel()
+				return
+			}
 
-		for _, user := range *users.Entities {
-			resources[*user.Id] = &ResourceMeta{Name: *user.Email}
+			if users.Entities == nil || len(*users.Entities) == 0 {
+				break
+			}
+
+			for _, user := range *users.Entities {
+				resources[*user.Id] = &ResourceMeta{Name: *user.Email}
+			}
 		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		// get all active users
+		for pageNum := 1; ; pageNum++ {
+			const pageSize = 100
+			users, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "active")
+			if getErr != nil {
+				select {
+				case <-ctx.Done():
+				case errorChan <- getErr:
+				}
+				cancel()
+				return
+			}
+
+			if users.Entities == nil || len(*users.Entities) == 0 {
+				break
+			}
+
+			for _, user := range *users.Entities {
+				resources[*user.Id] = &ResourceMeta{Name: *user.Email}
+			}
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(wgDone)
+	}()
+
+	// Wait until either WaitGroup is done or an error is received
+	select {
+	case <-wgDone:
+		return resources, nil
+	case err := <-errorChan:
+		return nil, diag.Errorf("Failed to get page of users: %v", err)
 	}
-
-	return resources, nil
 }
 
 func userExporter() *ResourceExporter {
@@ -150,7 +206,7 @@ func userExporter() *ResourceExporter {
 			"routing_languages": {"language_id"},
 			"locations":         {"location_id"},
 		},
-		AllowZeroValues: []string{"routing_skills.proficiency" ,"routing_languages.proficiency"},
+		AllowZeroValues: []string{"routing_skills.proficiency", "routing_languages.proficiency"},
 	}
 }
 
@@ -492,7 +548,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Reading user %s", d.Id())
-	return withRetriesForRead(ctx, 60*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{
 			// Expands
 			"skills",
@@ -509,6 +565,8 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
 		}
+
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceUser())
 
 		// Required attributes
 		d.Set("name", *currentUser.Name)
@@ -553,7 +611,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}
 
 		log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -629,7 +687,6 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Finished updating user %s", email)
-	time.Sleep(8 * time.Second)
 	return readUser(ctx, d, meta)
 }
 
@@ -655,7 +712,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	// Verify user in deleted state and search index has been updated
-	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 180*time.Second, func() *resource.RetryError {
 		id, err := getDeletedUserId(email, usersAPI)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error searching for deleted user %s: %v", email, err))

@@ -118,12 +118,6 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					resource.TestCheckNoResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles"),
 				),
 			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_user_roles." + userRoleResource,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
 		},
 	})
 }

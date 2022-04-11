@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strconv"
 	"time"
@@ -11,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 var (
@@ -108,7 +109,8 @@ func resourcePhone() *schema.Resource {
 			"line_base_settings_id": {
 				Description: "Line Base Settings ID.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 			"phone_meta_base_id": {
 				Description: "Phone Meta Base ID.",
@@ -140,13 +142,42 @@ func resourcePhone() *schema.Resource {
 	}
 }
 
+func getLineBaseSettingsID(api *platformclientv2.TelephonyProvidersEdgeApi, phoneBaseSettingsId string) (string, error) {
+	phoneBase, _, err := api.GetTelephonyProvidersEdgesPhonebasesetting(phoneBaseSettingsId)
+	if err != nil {
+		return "", err
+	}
+	if len(*phoneBase.Lines) == 0 {
+		return "", nil
+	}
+	return *(*phoneBase.Lines)[0].Id, nil
+}
+
 func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	state := d.Get("state").(string)
 	site := buildSdkDomainEntityRef(d, "site_id")
 	phoneBaseSettings := buildSdkDomainEntityRef(d, "phone_base_settings_id")
-	lineBaseSettings := buildSdkDomainEntityRef(d, "line_base_settings_id")
-	phoneMetaBaseId, err := getPhoneMetaBaseId(meta, *phoneBaseSettings.Id)
+
+	capabilities := buildSdkCapabilities(d)
+	webRtcUserId := d.Get("web_rtc_user_id")
+
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+
+	var err error
+	lineBaseSettingsID := d.Get("line_base_settings_id").(string)
+	if lineBaseSettingsID == "" {
+		lineBaseSettingsID, err = getLineBaseSettingsID(edgesAPI, *phoneBaseSettings.Id)
+		if err != nil {
+			return diag.Errorf("Failed to get line base settings for %s: %s", name, err)
+		}
+	}
+
+	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
+	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
+
+	phoneMetaBaseId, err := getPhoneMetaBaseId(edgesAPI, *phoneBaseSettings.Id)
 	if err != nil {
 		return diag.Errorf("Failed to get phone meta base for %s: %s", name, err)
 	}
@@ -154,13 +185,6 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	phoneMetaBase := &platformclientv2.Domainentityref{
 		Id: &phoneMetaBaseId,
 	}
-
-	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
-	capabilities := buildSdkCapabilities(d)
-	webRtcUserId := d.Get("web_rtc_user_id")
-
-	sdkConfig := meta.(*providerMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	createPhone := &platformclientv2.Phone{
 		Name:              &name,
@@ -218,7 +242,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading phone %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentPhone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -227,6 +251,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourcePhone())
 		d.Set("name", *currentPhone.Name)
 		d.Set("state", *currentPhone.State)
 		d.Set("site_id", *currentPhone.Site.Id)
@@ -249,7 +274,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		log.Printf("Read phone %s %s", d.Id(), *currentPhone.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -297,13 +322,22 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	name := d.Get("name").(string)
 	site := buildSdkDomainEntityRef(d, "site_id")
 	phoneBaseSettings := buildSdkDomainEntityRef(d, "phone_base_settings_id")
-	lineBaseSettings := buildSdkDomainEntityRef(d, "line_base_settings_id")
 	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
-	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
 	webRtcUserId := d.Get("web_rtc_user_id")
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+
+	var err error
+	lineBaseSettingsID := d.Get("line_base_settings_id").(string)
+	if lineBaseSettingsID == "" {
+		lineBaseSettingsID, err = getLineBaseSettingsID(edgesAPI, *phoneBaseSettings.Id)
+		if err != nil {
+			return diag.Errorf("Failed to get line base settings for %s: %s", name, err)
+		}
+	}
+	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
+	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
 
 	updatePhoneBody := &platformclientv2.Phone{
 		Name:              &name,
@@ -344,7 +378,6 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 	}
 
-	time.Sleep(5 * time.Second)
 	return readPhone(ctx, d, meta)
 }
 
@@ -379,11 +412,8 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	})
 }
 
-func getPhoneMetaBaseId(meta interface{}, phoneBaseSettingsId string) (string, error) {
-	sdkConfig := meta.(*providerMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
-	phoneBase, _, err := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(phoneBaseSettingsId)
+func getPhoneMetaBaseId(api *platformclientv2.TelephonyProvidersEdgeApi, phoneBaseSettingsId string) (string, error) {
+	phoneBase, _, err := api.GetTelephonyProvidersEdgesPhonebasesetting(phoneBaseSettingsId)
 	if err != nil {
 		return "", err
 	}

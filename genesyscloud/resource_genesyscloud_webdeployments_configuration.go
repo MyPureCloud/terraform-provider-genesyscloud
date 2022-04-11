@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strconv"
 	"time"
@@ -12,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 var (
@@ -694,7 +695,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 
 	version := d.Get("version").(string)
 	log.Printf("Reading web deployment configuration %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		if version == "" {
 			version = determineLatestVersion(ctx, api, d.Id())
 		}
@@ -706,6 +707,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 			return resource.NonRetryableError(fmt.Errorf("Failed to read web deployment configuration %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceWebDeploymentConfiguration())
 		d.Set("name", *configuration.Name)
 		if configuration.Description != nil {
 			d.Set("description", *configuration.Description)
@@ -722,7 +724,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 		}
 
 		log.Printf("Read web deployment configuration %s %s", d.Id(), *configuration.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -770,7 +772,6 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	}
 
 	log.Printf("Finished updating web deployment configuration %s", name)
-	time.Sleep(5 * time.Second)
 	return readWebDeploymentConfiguration(ctx, d, meta)
 }
 

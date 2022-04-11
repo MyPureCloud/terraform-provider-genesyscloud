@@ -13,7 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 type ProcessAutomationTrigger struct {
@@ -75,6 +76,20 @@ var (
                 Description:  "The operator used to compare the json path against the value of the match criteria",
                 Type:           schema.TypeString,
                 Required:       true,
+                ValidateFunc: validation.StringInSlice([]string{
+                					"GreaterThanOrEqual",
+                					"LessThanOrEqual",
+                					"Equal",
+                					"NotEqual",
+                					"LessThan",
+                					"GreaterThan",
+                					"NotIn",
+                					"In",
+                					"Contains",
+                					"All",
+                					"Exists",
+                					"Size",
+                				}, false),
             },
             "value": {
                 Description:  "Value the jsonPath is compared against",
@@ -197,7 +212,7 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("Reading process automation trigger %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 	    trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 	    if getErr != nil {
             if isStatus404(resp) {
@@ -234,7 +249,9 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
         }
 
         log.Printf("Read process automation trigger %s %s", d.Id(), *trigger.Name)
-        return nil
+
+        cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceProcessAutomationTrigger())
+        return cc.CheckState()
 	})
 }
 
@@ -273,7 +290,6 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	}
 
 	log.Printf("Updated process automation trigger %s", name)
-	time.Sleep(5 * time.Second)
 	return readProcessAutomationTrigger(ctx, d, meta)
 }
 
@@ -364,8 +380,6 @@ func buildMatchCriteria(d *schema.ResourceData) *[]MatchCriteria {
 
 			}
 
-			log.Printf("LIST OF MATCH CRITERIA %v", matchCriteriaObjectList)
-
 			return &matchCriteriaObjectList
 		}
 	}
@@ -414,17 +428,6 @@ func flattenMatchCriteria(inputMatchCriteria *[]MatchCriteria) *schema.Set {
 		matchCriteriaSet.Add(flattendedMatchCriteria)
 	}
 	return matchCriteriaSet
-}
-
-func flattenTriggerJsonField(jsonField interface{}) (string, diag.Diagnostics) {
-	if jsonField == nil {
-		return "", nil
-	}
-	jsonFieldBytes, err := json.Marshal(jsonField)
-	if err != nil {
-		return "", diag.Errorf("Error marshalling json field %v: %v", jsonField, err)
-	}
-	return string(jsonFieldBytes), nil
 }
 
 func postProcessAutomationTrigger(body *ProcessAutomationTrigger, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {

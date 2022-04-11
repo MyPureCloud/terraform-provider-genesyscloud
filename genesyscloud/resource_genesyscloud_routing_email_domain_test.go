@@ -1,6 +1,7 @@
 package genesyscloud
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -9,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
@@ -37,7 +38,7 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 					nullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId ),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", trueValue),
 				),
 			},
@@ -97,12 +98,6 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "mail_from_domain", mailFromDomain1),
 				),
 			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_routing_email_domain." + domainRes,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
 		},
 		CheckDestroy: testVerifyRoutingEmailDomainDestroyed,
 	})
@@ -123,22 +118,29 @@ func generateRoutingEmailDomainResource(
 
 func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
-	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_routing_email_domain" {
-			continue
-		}
 
-		domain, resp, err := routingAPI.GetRoutingEmailDomain(rs.Primary.ID)
-		if domain != nil {
-			return fmt.Errorf("Domain (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
-			// Domain not found as expected
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+	diagErr := withRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
+		for _, rs := range state.RootModule().Resources {
+			if rs.Type != "genesyscloud_routing_email_domain" {
+				continue
+			}
+			_, resp, err := routingAPI.GetRoutingEmailDomain(rs.Primary.ID)
+			if err != nil {
+				if isStatus404(resp) {
+					continue
+				}
+				return resource.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
+			}
+
+			return resource.RetryableError(fmt.Errorf("Routing email domain %s still exists", rs.Primary.ID))
 		}
+		return nil
+	})
+
+	if diagErr != nil {
+		return fmt.Errorf(fmt.Sprintf("%v", diagErr))
 	}
+
 	// Success. All Domains destroyed
 	return nil
 }

@@ -13,11 +13,11 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.16'
+          go-version: '1.18'
         id: go
 
       - name: Setup Terraform CLI
-        uses: hashicorp/setup-terraform@v1.3.2
+        uses: hashicorp/setup-terraform@v1.4.0
         with:
           terraform_version: ${{ matrix.terraform }}
 

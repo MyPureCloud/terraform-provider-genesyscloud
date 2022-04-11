@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 	"strconv"
 	"strings"
 	"testing"
@@ -344,7 +344,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		// site
 		siteRes     = "site"
 		name        = "site " + uuid.NewString()
-		description = "TestAccResourceSiteOutboundRoutes description 1"
+		description = "terraform description 1"
 		mediaModel  = "Cloud"
 
 		// location

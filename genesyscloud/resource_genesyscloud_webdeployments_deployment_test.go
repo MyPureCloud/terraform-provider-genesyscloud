@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
@@ -35,10 +35,10 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      fullResourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{ "status" },
+				ResourceName:            fullResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"status"},
 			},
 		},
 		CheckDestroy: testVerifyLanguagesDestroyed,
@@ -78,10 +78,10 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      fullResourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{ "status" },
+				ResourceName:            fullResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"status"},
 			},
 		},
 		CheckDestroy: verifyDeploymentDestroyed,
@@ -119,10 +119,10 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      fullDeploymentResourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{ "status" },
+				ResourceName:            fullDeploymentResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"status"},
 			},
 		},
 		CheckDestroy: verifyDeploymentDestroyed,

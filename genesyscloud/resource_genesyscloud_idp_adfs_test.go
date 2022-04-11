@@ -7,11 +7,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func TestAccResourceIdpAdfs(t *testing.T) {
-	t.Skip("Skipping IDP tests because the cache TTL is so long")
+	t.Parallel()
 	var (
 		uri1            = "https://test.com/1"
 		uri2            = "https://test.com/2"

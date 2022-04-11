@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 var (
@@ -178,7 +179,7 @@ func evaluationFormExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllEvaluationForms),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
-		AllowZeroValues: []string{"question_groups.questions.answer_options.value", "question_groups.weight"},
+		AllowZeroValues:  []string{"question_groups.questions.answer_options.value", "question_groups.weight"},
 	}
 }
 
@@ -264,7 +265,7 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 	log.Printf("Reading evaluation form %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		evaluationForm, resp, getErr := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -273,6 +274,7 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			return resource.NonRetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceEvaluationForm())
 		if evaluationForm.Name != nil {
 			d.Set("name", *evaluationForm.Name)
 		}
@@ -283,7 +285,7 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))
 		}
 
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -331,7 +333,6 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	log.Printf("Updated evaluation form %s %s", name, *form.Id)
-	time.Sleep(5 * time.Second)
 	return readEvaluationForm(ctx, d, meta)
 }
 

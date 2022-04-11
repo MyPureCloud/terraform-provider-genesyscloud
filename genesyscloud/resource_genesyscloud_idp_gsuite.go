@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func getAllIdpGsuite(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -96,15 +97,17 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Reading IDP GSuite")
 
-	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return withRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
 		gsuite, resp, getErr := idpAPI.GetIdentityprovidersGsuite()
 		if getErr != nil {
 			if isStatus404(resp) {
+				createIdpGsuite(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpGsuite())
 		if gsuite.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*gsuite.Certificate}))
 		} else if gsuite.Certificates != nil {
@@ -138,7 +141,7 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 
 		log.Printf("Read IDP GSuite")
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -174,9 +177,6 @@ func updateIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Updated IDP GSuite")
-	// Give time for public API caches to update
-	// It takes a very very long time with idp resources
-	time.Sleep(d.Timeout(schema.TimeoutUpdate))
 	return readIdpGsuite(ctx, d, meta)
 }
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strings"
 	"sync"
@@ -12,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 // Row IDs structured as {table-id}/{key-value}
@@ -145,7 +146,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 
 	log.Printf("Reading Datatable Row %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		row, resp, getErr := archAPI.GetFlowsDatatableRow(tableId, keyStr, false)
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -154,6 +155,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectDatatableRow())
 		d.Set("datatable_id", tableId)
 		d.Set("key_value", keyStr)
 
@@ -167,7 +169,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 		d.Set("properties_json", string(valueBytes))
 
 		log.Printf("Read Datatable Row %s", d.Id())
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -192,7 +194,6 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	log.Printf("Updated Datatable Row %s", d.Id())
-	time.Sleep(5 * time.Second)
 	return readArchitectDatatableRow(ctx, d, meta)
 }
 

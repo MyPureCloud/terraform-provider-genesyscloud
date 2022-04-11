@@ -11,6 +11,7 @@ require (
 	github.com/aws/aws-sdk-go v1.38.33 // indirect
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/go-test/deep v1.0.7 // indirect
+	github.com/google/go-cmp v0.5.7
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
@@ -24,7 +25,7 @@ require (
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/mypurecloud/platform-client-sdk-go/v56 v56.0.1
+	github.com/mypurecloud/platform-client-sdk-go/v67 v67.0.1 // indirect
 	github.com/nsf/jsondiff v0.0.0-20210303162244-6ea32392771e // indirect
 	github.com/nyaruka/phonenumbers v1.0.74
 	github.com/oklog/run v1.1.0 // indirect

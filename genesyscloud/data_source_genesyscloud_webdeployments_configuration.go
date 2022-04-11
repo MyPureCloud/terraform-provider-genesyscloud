@@ -8,9 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
-
 
 func dataSourceWebDeploymentsConfiguration() *schema.Resource {
 	return &schema.Resource{
@@ -37,7 +36,7 @@ func dataSourceConfigurationRead(ctx context.Context, d *schema.ResourceData, m 
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15 * time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		configs, _, err := api.GetWebdeploymentsConfigurations(false)
 
 		if err != nil {

@@ -8,7 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -334,7 +335,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading site %s", d.Id())
-	return withRetriesForRead(ctx, 60*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentSite, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -343,6 +344,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return resource.NonRetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceSite())
 		d.Set("name", *currentSite.Name)
 		d.Set("location_id", nil)
 		if currentSite.Location != nil {
@@ -360,16 +362,16 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			d.Set("edge_auto_update_config", flattenSdkEdgeAutoUpdateConfig(currentSite.EdgeAutoUpdateConfig))
 		}
 
-		if diagErr := readSiteNumberPlans(d, edgesAPI); diagErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+		if retryErr := readSiteNumberPlans(d, edgesAPI); retryErr != nil {
+			return retryErr
 		}
 
-		if diagErr := readSiteOutboundRoutes(d, edgesAPI); diagErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+		if retryErr := readSiteOutboundRoutes(d, edgesAPI); retryErr != nil {
+			return retryErr
 		}
 
 		log.Printf("Read site %s %s", d.Id(), *currentSite.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -445,7 +447,6 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Updated site %s", *site.Id)
-
 	time.Sleep(5 * time.Second)
 	return readSite(ctx, d, meta)
 }
@@ -705,8 +706,11 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 			for _, outboundRouteFromAPI := range outboundRoutesFromAPI {
 				// Delete route if no reference to it
 				if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, outboundRoutesFromTf); !ok {
-					_, err := edgesAPI.DeleteTelephonyProvidersEdgesSiteOutboundroute(d.Id(), *outboundRouteFromAPI.Id)
+					resp, err := edgesAPI.DeleteTelephonyProvidersEdgesSiteOutboundroute(d.Id(), *outboundRouteFromAPI.Id)
 					if err != nil {
+						if isStatus404(resp) {
+							return nil
+						}
 						return diag.Errorf("Failed to delete outbound route from site %s: %s", d.Id(), err)
 					}
 				}
@@ -729,14 +733,14 @@ func isDefaultPlan(name string) bool {
 	return false
 }
 
-func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) diag.Diagnostics {
+func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) *resource.RetryError {
 	numberPlans, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(d.Id())
 	if getErr != nil {
 		if isStatus404(resp) {
 			d.SetId("") // Site doesn't exist
 			return nil
 		}
-		return diag.Errorf("Failed to read number plans for site %s: %s", d.Id(), getErr)
+		return resource.NonRetryableError(fmt.Errorf("Failed to read number plans for site %s: %s", d.Id(), getErr))
 	}
 
 	dNumberPlans := make([]interface{}, 0)
@@ -799,13 +803,13 @@ func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Tele
 	return nil
 }
 
-func readSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) diag.Diagnostics {
+func readSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) *resource.RetryError {
 	outboundRoutes := make([]platformclientv2.Outboundroutebase, 0)
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		outboundRouteEntityListing, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), pageSize, pageNum, "", "", "")
 		if err != nil {
-			return diag.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err)
+			return resource.NonRetryableError(fmt.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err))
 		}
 		if outboundRouteEntityListing.Entities == nil || len(*outboundRouteEntityListing.Entities) == 0 {
 			break

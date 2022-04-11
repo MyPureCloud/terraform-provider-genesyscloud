@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func getAllIdpAdfs(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -95,16 +96,17 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP ADFS")
-
-	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return withRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
 		adfs, resp, getErr := idpAPI.GetIdentityprovidersAdfs()
 		if getErr != nil {
 			if isStatus404(resp) {
+				createIdpAdfs(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpAdfs())
 		if adfs.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*adfs.Certificate}))
 		} else if adfs.Certificates != nil {
@@ -138,7 +140,7 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP ADFS")
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -174,9 +176,6 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updated IDP ADFS")
-	// Give time for public API caches to update
-	// It takes a very very long time with idp resources
-	time.Sleep(d.Timeout(schema.TimeoutUpdate))
 	return readIdpAdfs(ctx, d, meta)
 }
 
@@ -190,7 +189,7 @@ func deleteIdpAdfs(ctx context.Context, _ *schema.ResourceData, meta interface{}
 		return diag.Errorf("Failed to delete IDP ADFS: %s", err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return withRetries(ctx, 180*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersAdfs()
 		if err != nil {
 			if isStatus404(resp) {

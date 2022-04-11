@@ -50,7 +50,6 @@ func TestAccDataSourceStation(t *testing.T) {
 		stateActive,
 		"data.genesyscloud_organizations_me.me.default_site_id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".line_base_settings_id",
 		nil, // no line addresses
 		"genesyscloud_user." + userRes1 + ".id",
 		"", // no depends on
@@ -64,10 +63,10 @@ func TestAccDataSourceStation(t *testing.T) {
 			{
 				Config: config + generateStationDataSource(
 					stationDataRes,
-					"genesyscloud_telephony_providers_edges_phone." + phoneRes + ".name",
-					"genesyscloud_telephony_providers_edges_phone." + phoneRes,
-					),
-				Check:  resource.ComposeTestCheckFunc(
+					"genesyscloud_telephony_providers_edges_phone."+phoneRes+".name",
+					"genesyscloud_telephony_providers_edges_phone."+phoneRes,
+				),
+				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_station."+stationDataRes, "name", "genesyscloud_telephony_providers_edges_phone."+phoneRes, "name"),
 				),
 			},
@@ -79,8 +78,8 @@ func TestAccDataSourceStation(t *testing.T) {
 func generateStationDataSource(
 	resourceID string,
 	name string,
-// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_station" "%s" {
 		name = %s

@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 	"time"
 )
 
@@ -16,9 +16,9 @@ func dataSourceIntegration() *schema.Resource {
 		ReadContext: readWithPooledClient(dataSourceIntegrationRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description:      "The name of the integration",
-				Type:             schema.TypeString,
-				Required:         true,
+				Description: "The name of the integration",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
@@ -44,7 +44,7 @@ func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m in
 			}
 
 			for _, integration := range *integrations.Entities {
-				if  integration.Name != nil && *integration.Name ==  integrationName {
+				if integration.Name != nil && *integration.Name == integrationName {
 					d.SetId(*integration.Id)
 					return nil
 				}

@@ -8,11 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func TestAccResourceAuthDivision(t *testing.T) {
-	t.Skip("Skipping auth division test because the cache TTL is so long")
 	var (
 		divResource1 = "auth-division1"
 		divHomeRes   = "auth-division-home"
@@ -55,12 +54,6 @@ func TestAccResourceAuthDivision(t *testing.T) {
 				),
 			},
 			{
-				// Import/Read
-				ResourceName:      "genesyscloud_auth_division." + divResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-			{
 				// Set home division description
 				Config: generateAuthDivisionResource(
 					divHomeRes,
@@ -86,12 +79,6 @@ func TestAccResourceAuthDivision(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "name", divHomeName),
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "description", homeDesc2),
 				),
-			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_auth_division." + divHomeRes,
-				ImportState:       true,
-				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyDivisionsDestroyed,

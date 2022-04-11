@@ -7,7 +7,7 @@ import (
     "testing"
     "strconv"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func TestAccResourceProcessAutomationTrigger(t *testing.T) {

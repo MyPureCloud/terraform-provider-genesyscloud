@@ -54,7 +54,6 @@ func TestAccDataSourcePhone(t *testing.T) {
 					stateActive,
 					"data.genesyscloud_organizations_me.me.default_site_id",
 					"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-					"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".line_base_settings_id",
 					nil, // no line addresses
 					"genesyscloud_user." + userRes1 + ".id",
 					"", // no depends on

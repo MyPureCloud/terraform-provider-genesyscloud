@@ -198,12 +198,41 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	// Read the instance data from each exporter
 	var resources []resourceInfo
+
+	errorChan := make(chan diag.Diagnostics)
+	wgDone := make(chan bool)
+	var wg sync.WaitGroup
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	for resType, exporter := range exporters {
-		typeResources, err := getResourcesForType(resType, provider, exporter, meta)
-		if err != nil {
-			return err
-		}
-		resources = append(resources, typeResources...)
+		wg.Add(1)
+		go func(resType string, exporter *ResourceExporter) {
+			defer wg.Done()
+			typeResources, err := getResourcesForType(resType, provider, exporter, meta)
+			if err != nil {
+				select {
+				case <-ctx.Done():
+				case errorChan <- err:
+				}
+				cancel()
+				return
+			}
+			resources = append(resources, typeResources...)
+		}(resType, exporter)
+	}
+
+	go func() {
+		wg.Wait()
+		close(wgDone)
+	}()
+
+	// Wait until either WaitGroup is done or an error is received
+	select {
+	case <-wgDone:
+	case err := <-errorChan:
+		return err
 	}
 
 	// Generate the JSON config map
@@ -771,7 +800,8 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 
 	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
 	if err != nil {
-		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
+		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") ||
+			strings.Contains(fmt.Sprintf("%v", err), "API Error: 410") {
 			return nil, nil
 		}
 		return nil, err

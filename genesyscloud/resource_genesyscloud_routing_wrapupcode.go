@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func getAllRoutingWrapupCodes(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -88,7 +89,7 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading wrapupcode %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		wrapupcode, resp, getErr := routingAPI.GetRoutingWrapupcode(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -97,10 +98,11 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read wrapupcode %s: %s", d.Id(), getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingWrapupCode())
 		d.Set("name", *wrapupcode.Name)
 
 		log.Printf("Read wrapupcode %s %s", d.Id(), *wrapupcode.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -120,8 +122,6 @@ func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Updated wrapupcode %s", name)
 
-	// Give time for public API caches to update
-	time.Sleep(5 * time.Second)
 	return readRoutingWrapupCode(ctx, d, meta)
 }
 

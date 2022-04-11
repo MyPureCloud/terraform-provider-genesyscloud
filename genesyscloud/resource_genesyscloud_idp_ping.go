@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func getAllIdpPing(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -96,15 +97,17 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading IDP Ping")
 
-	return withRetriesForRead(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return withRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
 		ping, resp, getErr := idpAPI.GetIdentityprovidersPing()
 		if getErr != nil {
 			if isStatus404(resp) {
+				createIdpPing(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
 		}
 
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpPing())
 		if ping.Certificate != nil {
 			d.Set("certificates", stringListToSet([]string{*ping.Certificate}))
 		} else if ping.Certificates != nil {
@@ -138,7 +141,7 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Read IDP Ping")
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -174,9 +177,6 @@ func updateIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	log.Printf("Updated IDP Ping")
-	// Give time for public API caches to update
-	// It takes a very very long time with idp resources
-	time.Sleep(5 * time.Minute)
 	return readIdpPing(ctx, d, meta)
 }
 
