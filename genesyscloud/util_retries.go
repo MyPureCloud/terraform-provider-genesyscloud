@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func withRetries(ctx context.Context, timeout time.Duration, method func() *resource.RetryError) diag.Diagnostics {
@@ -99,6 +99,7 @@ func isStatus404(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 	if resp != nil {
 		if resp.StatusCode == http.StatusNotFound ||
 			resp.StatusCode == http.StatusRequestTimeout ||
+			resp.StatusCode == http.StatusGone ||
 			isAdditionalCode(resp.StatusCode, additionalCodes...) {
 			return true
 		}

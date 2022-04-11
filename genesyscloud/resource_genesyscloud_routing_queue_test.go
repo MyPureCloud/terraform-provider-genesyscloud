@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -131,6 +131,123 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateBullseyeSettings(queueResource1, 3, alertTimeout2, ""),
 					validateRoutingRules(queueResource1, 0, routingRuleOpMeetsThresh, "90", "30"),
 					validateRoutingRules(queueResource1, 1, routingRuleOpAny, "45", "15"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
+}
+
+func TestAccResourceRoutingQueueFlows(t *testing.T) {
+	t.Parallel()
+	var (
+		queueResource1 = "test-queue"
+		queueName1     = "Terraform Test Queue1-" + uuid.NewString()
+
+		queueFlowResource1          = "test_flow1"
+		queueFlowResource2          = "test_flow2"
+		emailInQueueFlowResource1   = "email_test_flow1"
+		emailInQueueFlowResource2   = "email_test_flow2"
+		messageInQueueFlowResource1 = "message_test_flow1"
+		messageInQueueFlowResource2 = "message_test_flow2"
+		queueFlowName1              = "Terraform Flow Test-" + uuid.NewString()
+		queueFlowName2              = "Terraform Flow Test-" + uuid.NewString()
+		queueFlowName3              = "Terraform Flow Test-" + uuid.NewString()
+		queueFlowFilePath1          = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		queueFlowFilePath2          = "../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
+		queueFlowFilePath3          = "../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
+
+		queueFlowInboundcallConfig1        = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName1)
+		emailInQueueFlowInboundcallConfig2 = fmt.Sprintf(`inboundEmail:
+    name: %s
+    division: Home
+    startUpRef: "/inboundEmail/states/state[Initial State_10]"
+    defaultLanguage: en-us
+    supportedLanguages:
+        en-us:
+            defaultLanguageSkill:
+                noValue: true
+    settingsInboundEmailHandling:
+        emailHandling:
+            disconnect:
+                none: true
+    settingsErrorHandling:
+        errorHandling:
+            disconnect:
+                none: true
+    states:
+        - state:
+            name: Initial State
+            refId: Initial State_10
+            actions:
+                - disconnect:
+                    name: Disconnect
+`, queueFlowName2)
+		messageInQueueFlowInboundcallConfig3 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName3)
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateFlowResource(
+					queueFlowResource1,
+					queueFlowFilePath1,
+					queueFlowInboundcallConfig1,
+				) + generateFlowResource(
+					emailInQueueFlowResource1,
+					queueFlowFilePath2,
+					emailInQueueFlowInboundcallConfig2,
+				) + generateFlowResource(
+					messageInQueueFlowResource1,
+					queueFlowFilePath3,
+					messageInQueueFlowInboundcallConfig3,
+				) + generateRoutingQueueResourceBasic(
+					queueResource1,
+					queueName1,
+					"queue_flow_id = genesyscloud_flow."+queueFlowResource1+".id",
+					"email_in_queue_flow_id = genesyscloud_flow."+emailInQueueFlowResource1+".id",
+					"message_in_queue_flow_id = genesyscloud_flow."+messageInQueueFlowResource1+".id",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "queue_flow_id", "genesyscloud_flow."+queueFlowResource1, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResource1, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResource1, "id"),
+				),
+			},
+			{
+				// Update the flows
+				Config: generateFlowResource(
+					queueFlowResource2,
+					queueFlowFilePath1,
+					queueFlowInboundcallConfig1,
+				) + generateFlowResource(
+					emailInQueueFlowResource2,
+					queueFlowFilePath2,
+					emailInQueueFlowInboundcallConfig2,
+				) + generateFlowResource(
+					messageInQueueFlowResource2,
+					queueFlowFilePath3,
+					messageInQueueFlowInboundcallConfig3,
+				) + generateRoutingQueueResourceBasic(
+					queueResource1,
+					queueName1,
+					"queue_flow_id = genesyscloud_flow."+queueFlowResource2+".id",
+					"email_in_queue_flow_id = genesyscloud_flow."+emailInQueueFlowResource2+".id",
+					"message_in_queue_flow_id = genesyscloud_flow."+messageInQueueFlowResource2+".id",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "queue_flow_id", "genesyscloud_flow."+queueFlowResource2, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResource2, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResource2, "id"),
 				),
 			},
 			{

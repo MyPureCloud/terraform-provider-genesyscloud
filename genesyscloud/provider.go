@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 func init() {
@@ -234,7 +234,7 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
 		RetryWaitMin: time.Second * 1,
 		RetryWaitMax: time.Second * 30,
-		RetryMax:     20,
+		RetryMax:     1,
 		RequestLogHook: func(request *http.Request, count int) {
 			if count > 0 && request != nil {
 				log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
