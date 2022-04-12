@@ -9,22 +9,22 @@ import (
 
 func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 	var (
-        triggerResource1 = "test-trigger1"
-        triggerResource2 = "test-trigger2"
+		triggerResource1 = "test-trigger1"
+		triggerResource2 = "test-trigger2"
 
-        triggerName1                = "Terraform trigger1-" + uuid.NewString()
-        topicName1                  = "v2.detail.events.conversation.{id}.customer.end"
-        enabled1                    = "true"
-        targetType1                 = "Workflow"
-        match_criteria_json_path    = "mediaType"
-        match_criteria_operator     = "Equal"
-        match_criteria_value        = "CHAT"
-        eventTtlSeconds1            = "60"
+		triggerName1             = "Terraform trigger1-" + uuid.NewString()
+		topicName1               = "v2.detail.events.conversation.{id}.customer.end"
+		enabled1                 = "true"
+		targetType1              = "Workflow"
+		match_criteria_json_path = "mediaType"
+		match_criteria_operator  = "Equal"
+		match_criteria_value     = "CHAT"
+		eventTtlSeconds1         = "60"
 
-        flowResource1 = "test_flow1"
-        filePath1     = "../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
-        flowName1     = "terraform-provider-test-" + uuid.NewString()
-        workflowConfig1 = fmt.Sprintf(`workflow:
+		flowResource1   = "test_flow1"
+		filePath1       = "../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
+		flowName1       = "terraform-provider-test-" + uuid.NewString()
+		workflowConfig1 = fmt.Sprintf(`workflow:
  name: %s
  division: Home
  startUpRef: "/workflow/states/state[Initial State_10]"
@@ -64,10 +64,10 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 			{
 				// Create a trigger
 				Config: generateFlowResource(
-                    flowResource1,
-                    filePath1,
-                    workflowConfig1,
-                ) + generateProcessAutomationTriggerResource(
+					flowResource1,
+					filePath1,
+					workflowConfig1,
+				) + generateProcessAutomationTriggerResource(
 					triggerResource1,
 					triggerName1,
 					topicName1,
@@ -77,7 +77,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
                         type = "%s"
                     }
                     `, "genesyscloud_flow."+flowResource1+".id", targetType1),
-                    fmt.Sprintf(`match_criteria {
+					fmt.Sprintf(`match_criteria {
                         json_path = "%s"
                         operator = "%s"
                         value = "%s"

@@ -2,20 +2,20 @@ package genesyscloud
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
-	"time"
 	"net/http"
-	"encoding/json"
-	"errors"
+	"time"
 )
 
 type ProcessAutomationTriggers struct {
-	Entities        *[]ProcessAutomationTrigger     `json:"entities,omitempty"`
-	NextUri         *string                         `json:"nextUri,omitempty"`
+	Entities *[]ProcessAutomationTrigger `json:"entities,omitempty"`
+	NextUri  *string                     `json:"nextUri,omitempty"`
 }
 
 func dataSourceProcessAutomationTrigger() *schema.Resource {
@@ -39,8 +39,8 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 	triggerName := d.Get("name").(string)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-	    // create path
-    	path := integrationAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
+		// create path
+		path := integrationAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
 
 		for pageNum := 1; ; pageNum++ {
 			processAutomationTriggers, _, getErr := getAllProcessAutomationTriggers(path, integrationAPI)
@@ -61,8 +61,8 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 			}
 
 			if processAutomationTriggers.NextUri == nil {
-                return resource.NonRetryableError(fmt.Errorf("no process automation triggers found with name: %s", getErr))
-            }
+				return resource.NonRetryableError(fmt.Errorf("no process automation triggers found with name: %s", getErr))
+			}
 
 			path = integrationAPI.Configuration.BasePath + *processAutomationTriggers.NextUri
 		}
@@ -86,15 +86,15 @@ func getAllProcessAutomationTriggers(path string, api *platformclientv2.Integrat
 	headerParams["Content-Type"] = "application/json"
 	headerParams["Accept"] = "application/json"
 
-    var successPayload *ProcessAutomationTriggers
-    response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil)
-    if err != nil {
-        // Nothing special to do here, but do avoid processing the response
-    } else if response.Error != nil {
-        err = errors.New(response.ErrorMessage)
-    } else {
-        err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-    }
+	var successPayload *ProcessAutomationTriggers
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil)
+	if err != nil {
+		// Nothing special to do here, but do avoid processing the response
+	} else if response.Error != nil {
+		err = errors.New(response.ErrorMessage)
+	} else {
+		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
+	}
 
 	return successPayload, response, err
 }

@@ -2,37 +2,37 @@ package genesyscloud
 
 import (
 	"fmt"
-    "github.com/google/uuid"
-    "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-    "testing"
-    "strconv"
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"strconv"
+	"testing"
 )
 
 func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 	var (
-        triggerResource1 = "test-trigger1"
+		triggerResource1 = "test-trigger1"
 
-        triggerName1                = "Terraform trigger1-" + uuid.NewString()
-        topicName1                  = "v2.detail.events.conversation.{id}.customer.end"
-        enabled1                    = "true"
-        targetType1                 = "Workflow"
-        match_criteria_json_path1   = "mediaType"
-        match_criteria_operator1    = "Equal"
-        match_criteria_value1       = "CHAT"
-        eventTtlSeconds1            = "60"
+		triggerName1              = "Terraform trigger1-" + uuid.NewString()
+		topicName1                = "v2.detail.events.conversation.{id}.customer.end"
+		enabled1                  = "true"
+		targetType1               = "Workflow"
+		match_criteria_json_path1 = "mediaType"
+		match_criteria_operator1  = "Equal"
+		match_criteria_value1     = "CHAT"
+		eventTtlSeconds1          = "60"
 
-        triggerName2                = "Terraform trigger2-" + uuid.NewString()
-        enabled2                    = "false"
-        match_criteria_json_path2   = "disconnectType"
-        match_criteria_operator2    = "In"
-        match_criteria_value2       = "CLIENT"
-        eventTtlSeconds2            = "120"
+		triggerName2              = "Terraform trigger2-" + uuid.NewString()
+		enabled2                  = "false"
+		match_criteria_json_path2 = "disconnectType"
+		match_criteria_operator2  = "In"
+		match_criteria_value2     = "CLIENT"
+		eventTtlSeconds2          = "120"
 
-		flowResource1 = "test_flow1"
-        filePath1     = "../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
-		flowName1     = "terraform-provider-test-" + uuid.NewString()
+		flowResource1   = "test_flow1"
+		filePath1       = "../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
+		flowName1       = "terraform-provider-test-" + uuid.NewString()
 		workflowConfig1 = fmt.Sprintf(`workflow:
  name: %s
  division: Home
@@ -72,21 +72,21 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create flow and trigger
-                Config: generateFlowResource(
-                    flowResource1,
-                    filePath1,
-                    workflowConfig1,
-                ) + generateProcessAutomationTriggerResource(
+				Config: generateFlowResource(
+					flowResource1,
+					filePath1,
+					workflowConfig1,
+				) + generateProcessAutomationTriggerResource(
 					triggerResource1,
 					triggerName1,
 					topicName1,
 					enabled1,
-                    fmt.Sprintf(`target {
+					fmt.Sprintf(`target {
                         id = %s
                         type = "%s"
                     }
                     `, "genesyscloud_flow."+flowResource1+".id", targetType1),
-                    fmt.Sprintf(`match_criteria {
+					fmt.Sprintf(`match_criteria {
                         json_path = "%s"
                         operator = "%s"
                         value = "%s"
@@ -95,55 +95,55 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 					eventTtlSeconds1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-                    resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "name", triggerName1),
-                    resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "topic_name", topicName1),
-                    resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "enabled", enabled1),
-                    resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "event_ttl_seconds", eventTtlSeconds1),
-                    validateTargetFlowId("genesyscloud_flow."+flowResource1, "genesyscloud_processautomation_trigger."+triggerResource1),
-                    validateTargetType("genesyscloud_processautomation_trigger."+triggerResource1, targetType1),
-                    validateMatchCriteriaWithValue("genesyscloud_processautomation_trigger."+triggerResource1, match_criteria_json_path1, match_criteria_operator1, match_criteria_value1, 0),
-                ),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "name", triggerName1),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "topic_name", topicName1),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "enabled", enabled1),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "event_ttl_seconds", eventTtlSeconds1),
+					validateTargetFlowId("genesyscloud_flow."+flowResource1, "genesyscloud_processautomation_trigger."+triggerResource1),
+					validateTargetType("genesyscloud_processautomation_trigger."+triggerResource1, targetType1),
+					validateMatchCriteriaWithValue("genesyscloud_processautomation_trigger."+triggerResource1, match_criteria_json_path1, match_criteria_operator1, match_criteria_value1, 0),
+				),
 			},
 			{
-                // Update trigger name, enabled, eventTTLSeconds and match criteria
-                Config: generateFlowResource(
-                    flowResource1,
-                    filePath1,
-                    workflowConfig1,
-                ) + generateProcessAutomationTriggerResource(
-                    triggerResource1,
-                    triggerName2,
-                    topicName1,
-                    enabled2,
-                    fmt.Sprintf(`target {
+				// Update trigger name, enabled, eventTTLSeconds and match criteria
+				Config: generateFlowResource(
+					flowResource1,
+					filePath1,
+					workflowConfig1,
+				) + generateProcessAutomationTriggerResource(
+					triggerResource1,
+					triggerName2,
+					topicName1,
+					enabled2,
+					fmt.Sprintf(`target {
                         id = %s
                         type = "%s"
                     }
                     `, "genesyscloud_flow."+flowResource1+".id", targetType1),
-                    fmt.Sprintf(`match_criteria {
+					fmt.Sprintf(`match_criteria {
                         json_path = "%s"
                         operator = "%s"
                         values = ["%s"]
                     }
                     `, match_criteria_json_path2, match_criteria_operator2, match_criteria_value2),
-                    eventTtlSeconds2,
-                ),
-                Check: resource.ComposeTestCheckFunc(
-                    resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "name", triggerName2),
-                    resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "topic_name", topicName1),
-                    resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "enabled", enabled2),
-                    resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "event_ttl_seconds", eventTtlSeconds2),
-                    validateTargetFlowId("genesyscloud_flow."+flowResource1, "genesyscloud_processautomation_trigger."+triggerResource1),
-                    validateTargetType("genesyscloud_processautomation_trigger."+triggerResource1, targetType1),
-                    validateMatchCriteriaWithValues("genesyscloud_processautomation_trigger."+triggerResource1, match_criteria_json_path2, match_criteria_operator2, []string{match_criteria_value2}, 0),
-                ),
-            },
-            {
-                // Import/Read
-                ResourceName:      "genesyscloud_processautomation_trigger." + triggerResource1,
-                ImportState:       true,
-                ImportStateVerify: true,
-            },
+					eventTtlSeconds2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "name", triggerName2),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "topic_name", topicName1),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "enabled", enabled2),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "event_ttl_seconds", eventTtlSeconds2),
+					validateTargetFlowId("genesyscloud_flow."+flowResource1, "genesyscloud_processautomation_trigger."+triggerResource1),
+					validateTargetType("genesyscloud_processautomation_trigger."+triggerResource1, targetType1),
+					validateMatchCriteriaWithValues("genesyscloud_processautomation_trigger."+triggerResource1, match_criteria_json_path2, match_criteria_operator2, []string{match_criteria_value2}, 0),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_processautomation_trigger." + triggerResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 		CheckDestroy: testVerifyProcessAutomationTriggerDestroyed,
 	})
@@ -191,8 +191,8 @@ func validateTargetFlowId(flowResourceName string, triggerResourceName string) r
 		}
 		triggerResource, ok := state.RootModule().Resources[triggerResourceName]
 		if !ok {
-            return fmt.Errorf("Failed to find trigger %s in state", triggerResourceName)
-        }
+			return fmt.Errorf("Failed to find trigger %s in state", triggerResourceName)
+		}
 
 		flowID := flowResource.Primary.ID
 
@@ -208,8 +208,8 @@ func validateTargetType(triggerResourceName string, typeVal string) resource.Tes
 	return func(state *terraform.State) error {
 		triggerResource, ok := state.RootModule().Resources[triggerResourceName]
 		if !ok {
-            return fmt.Errorf("Failed to find trigger %s in state", triggerResourceName)
-        }
+			return fmt.Errorf("Failed to find trigger %s in state", triggerResourceName)
+		}
 
 		if typeVal != triggerResource.Primary.Attributes["target."+strconv.Itoa(0)+".type"] {
 			return fmt.Errorf("Type in trigger target was not created correctly. Expect: %s, Actual: %s", typeVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(0)+".type"])
@@ -223,20 +223,20 @@ func validateMatchCriteriaWithValue(triggerResourceName string, jsonPathVal stri
 	return func(state *terraform.State) error {
 		triggerResource, ok := state.RootModule().Resources[triggerResourceName]
 		if !ok {
-            return fmt.Errorf("Failed to find trigger %s in state", triggerResourceName)
-        }
+			return fmt.Errorf("Failed to find trigger %s in state", triggerResourceName)
+		}
 
 		if jsonPathVal != triggerResource.Primary.Attributes["match_criteria."+strconv.Itoa(position)+".json_path"] {
 			return fmt.Errorf("Match Criteria json_path in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".json_path"])
 		}
 
 		if operatorVal != triggerResource.Primary.Attributes["match_criteria."+strconv.Itoa(position)+".operator"] {
-            return fmt.Errorf("Match Criteria operator in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".operator"])
-        }
+			return fmt.Errorf("Match Criteria operator in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".operator"])
+		}
 
-        if value != triggerResource.Primary.Attributes["match_criteria."+strconv.Itoa(position)+".value"] {
-            return fmt.Errorf("Match Criteria value in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".value"])
-        }
+		if value != triggerResource.Primary.Attributes["match_criteria."+strconv.Itoa(position)+".value"] {
+			return fmt.Errorf("Match Criteria value in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".value"])
+		}
 
 		return nil
 	}
@@ -246,20 +246,20 @@ func validateMatchCriteriaWithValues(triggerResourceName string, jsonPathVal str
 	return func(state *terraform.State) error {
 		triggerResource, ok := state.RootModule().Resources[triggerResourceName]
 		if !ok {
-            return fmt.Errorf("Failed to find trigger %s in state", triggerResourceName)
-        }
+			return fmt.Errorf("Failed to find trigger %s in state", triggerResourceName)
+		}
 
 		if jsonPathVal != triggerResource.Primary.Attributes["match_criteria."+strconv.Itoa(position)+".json_path"] {
 			return fmt.Errorf("Match Criteria json_path in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".json_path"])
 		}
 
 		if operatorVal != triggerResource.Primary.Attributes["match_criteria."+strconv.Itoa(position)+".operator"] {
-            return fmt.Errorf("Match Criteria operator in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".operator"])
-        }
+			return fmt.Errorf("Match Criteria operator in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".operator"])
+		}
 
-        if values[0] != triggerResource.Primary.Attributes["match_criteria."+strconv.Itoa(position)+".values."+strconv.Itoa(0)] {
-            return fmt.Errorf("Match Criteria values in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".values."+strconv.Itoa(0)])
-        }
+		if values[0] != triggerResource.Primary.Attributes["match_criteria."+strconv.Itoa(position)+".values."+strconv.Itoa(0)] {
+			return fmt.Errorf("Match Criteria values in trigger was not created correctly. Expect: %s, Actual: %s", jsonPathVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(position)+".values."+strconv.Itoa(0)])
+		}
 
 		return nil
 	}
