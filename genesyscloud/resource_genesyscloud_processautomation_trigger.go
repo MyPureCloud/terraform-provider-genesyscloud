@@ -56,6 +56,9 @@ var (
 				Description: "Type of the target the trigger is configured to hit",
 				Type:        schema.TypeString,
 				Required:    true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"Workflow",
+				}, false),
 			},
 			"id": {
 				Description: "Id of the target the trigger is configured to hit",
@@ -368,7 +371,7 @@ func buildMatchCriteria(d *schema.ResourceData) *[]MatchCriteria {
 					}
 
 					matchCriteriaObjectList = append(matchCriteriaObjectList, criteria)
-				} else{
+				} else {
 					criteria := MatchCriteria{
 						JsonPath: &jsonPath,
 						Operator: &operator,
