@@ -93,10 +93,10 @@ func resourceOAuthClient() *schema.Resource {
 				Optional:    true,
 			},
 			"access_token_validity_seconds": {
-				Description:  "The number of seconds, between 5mins and 48hrs, until tokens created with this client expire.",
+				Description:  "The number of seconds, between 5mins and 48hrs, until tokens created with this client expire. Only clients using Genesys Cloud SCIM (Identity Management) can have a maximum duration of 38880000secs/450 days.",
 				Type:         schema.TypeInt,
 				Optional:     true,
-				ValidateFunc: validation.IntBetween(300, 172800),
+				ValidateFunc: validation.IntBetween(300, 38880000),
 				Default:      86400,
 			},
 			"registered_redirect_uris": {
