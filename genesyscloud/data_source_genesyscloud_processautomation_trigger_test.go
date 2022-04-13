@@ -26,7 +26,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 		flowName1       = "terraform-provider-test-" + uuid.NewString()
 		workflowConfig1 = fmt.Sprintf(`workflow:
  name: %s
- division: Home
+ division: New Home
  startUpRef: "/workflow/states/state[Initial State_10]"
  defaultLanguage: en-us
  variables:
