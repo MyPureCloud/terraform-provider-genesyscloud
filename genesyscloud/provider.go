@@ -236,7 +236,7 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
 		RetryWaitMin: time.Second * 1,
 		RetryWaitMax: time.Second * 30,
-		RetryMax:     1,
+		RetryMax:     20,
 		RequestLogHook: func(request *http.Request, count int) {
 			if count > 0 && request != nil {
 				log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
