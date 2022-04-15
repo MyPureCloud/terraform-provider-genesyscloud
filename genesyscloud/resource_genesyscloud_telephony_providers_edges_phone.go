@@ -565,6 +565,9 @@ func buildSdkCapabilities(d *schema.ResourceData) *platformclientv2.Phonecapabil
 	if capabilities := d.Get("capabilities").([]interface{}); capabilities != nil {
 		sdkPhoneCapabilities := platformclientv2.Phonecapabilities{}
 		if len(capabilities) > 0 {
+			if _, ok := capabilities[0].(map[string]interface{}); !ok {
+				return nil
+			}
 			capabilitiesMap := capabilities[0].(map[string]interface{})
 
 			// Only set non-empty values.
