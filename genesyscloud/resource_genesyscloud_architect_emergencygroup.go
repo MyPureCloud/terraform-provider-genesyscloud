@@ -6,10 +6,47 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
+
+func getAllEmergencyGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		emergencyGroupConfigs, _, getErr := architectAPI.GetArchitectEmergencygroups(pageNum, pageSize, "", "", "")
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of emergency group configs: %v", getErr)
+		}
+
+		if emergencyGroupConfigs.Entities == nil || len(*emergencyGroupConfigs.Entities) == 0 {
+			break
+		}
+
+		for _, emergencyGroupConfig := range *emergencyGroupConfigs.Entities {
+			if emergencyGroupConfig.State != nil && *emergencyGroupConfig.State != "deleted" {
+				resources[*emergencyGroupConfig.Id] = &ResourceMeta{Name: *emergencyGroupConfig.Name}
+			}
+		}
+	}
+
+	return resources, nil
+}
+
+func architectEmergencyGroupExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllEmergencyGroups),
+		RefAttrs: map[string]*RefAttrSettings{
+			"division_id":                            {RefType: "genesyscloud_auth_division"},
+			"emergency_call_flows.emergency_flow_id": {RefType: "genesyscloud_flow"},
+			"emergency_call_flows.ivr_ids":           {RefType: "genesyscloud_architect_ivr"},
+		},
+	}
+}
 
 func resourceArchitectEmergencyGroup() *schema.Resource {
 	return &schema.Resource{
@@ -81,8 +118,8 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	emergencyGroup := platformclientv2.Emergencygroup{
-		Name:    &name,
-		Enabled: &enabled,
+		Name:               &name,
+		Enabled:            &enabled,
 		EmergencyCallFlows: buildSdkEmergencyGroupCallFlows(d),
 	}
 
@@ -113,7 +150,7 @@ func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interf
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading emergency group %s", d.Id())
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		emergencyGroup, resp, getErr := architectApi.GetArchitectEmergencygroup(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
@@ -121,6 +158,8 @@ func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interf
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
 		}
+
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectEmergencyGroup())
 
 		if emergencyGroup.State != nil && *emergencyGroup.State == "deleted" {
 			d.SetId("")
@@ -149,7 +188,7 @@ func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 
 		log.Printf("Read emergency group %s %s", d.Id(), *emergencyGroup.Name)
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -190,7 +229,6 @@ func updateEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	log.Printf("Finished updating emergency group %s", name)
-	time.Sleep(5 * time.Second)
 	return readEmergencyGroup(ctx, d, meta)
 }
 

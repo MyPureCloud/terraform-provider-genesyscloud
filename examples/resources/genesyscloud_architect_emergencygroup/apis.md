@@ -1,0 +1,5 @@
+* [GET /api/v2/architect/emergencygroups](https://developer.genesys.cloud/routing/architect/#get-api-v2-architect-emergencygroups)
+* [GET /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/routing/architect/#get-api-v2-architect-emergencygroups--emergencyGroupId-)
+* [POST /api/v2/architect/emergencygroups](https://developer.genesys.cloud/routing/architect/#post-api-v2-architect-emergencygroups)
+* [DELETE /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/routing/architect/#delete-api-v2-architect-emergencygroups--emergencyGroupId-)
+* [PUT /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/routing/architect/#put-api-v2-architect-emergencygroups--emergencyGroupId-)

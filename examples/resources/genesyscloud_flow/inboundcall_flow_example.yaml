@@ -1,5 +1,5 @@
 inboundCall:
-  name: Conneely Test Flow 5a0037b3-bb11-4ebd-a9b6-9ae6c0c82cec
+  name: Terraform Test Flow bea6339a-bf94-486a-b0a1-0e32642bfaad
   defaultLanguage: en-us
   startUpRef: ./menus/menu[mainMenu]
   initialGreeting:

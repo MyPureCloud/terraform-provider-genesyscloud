@@ -5,23 +5,26 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 	"strings"
 	"testing"
 )
 
 func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
+	t.Parallel()
 	var (
-		resourceType   = "genesyscloud_architect_emergencygroup"
-		resourceName   = "test_emergency_group"
-		name           = "Test Group " + uuid.NewString()
-		description    = "The test description"
+		resourceType = "genesyscloud_architect_emergencygroup"
+		resourceName = "test_emergency_group"
+		name         = "Test Group " + uuid.NewString()
+		description  = "The test description"
+
+		updatedDescription = description + " updated"
 
 		ivrResourceID = "test-ivr"
-		ivrName       = "cc-test-ivr-" + uuid.NewString()
+		ivrName       = "Test IVR " + uuid.NewString()
 
 		flowResource      = "test_flow"
-		flowName          = "Conneely Test Flow " + uuid.NewString()
+		flowName          = "Terraform Test Flow " + uuid.NewString()
 		flowFilePath      = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 		inboundCallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 	)
@@ -57,6 +60,38 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", description),
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", trueValue),
+					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.emergency_flow_id",
+						"data.genesyscloud_flow.flow", "id"),
+				),
+			},
+			{
+				// Update
+				Config: generateIvrConfigResource(&ivrConfigStruct{
+					ivrResourceID,
+					ivrName,
+					"",
+					nil,
+					"",
+				}) + generateFlowResource(
+					flowResource,
+					flowFilePath,
+					inboundCallConfig,
+				) + generateArchitectEmergencyGroupResource(
+					resourceName,
+					name,
+					nullValue,
+					updatedDescription,
+					falseValue,
+					generateEmergencyCallFlow("genesyscloud_flow."+flowResource+".id", "genesyscloud_architect_ivr."+ivrResourceID+".id"),
+				) + generateFlowDataSource(
+					"flow",
+					"genesyscloud_flow."+flowResource,
+					flowName,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
+					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", updatedDescription),
+					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", falseValue),
 					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.emergency_flow_id",
 						"data.genesyscloud_flow.flow", "id"),
 				),
