@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -26,6 +28,14 @@ type ProcessAutomationTrigger struct {
 	Enabled         *bool            `json:"enabled,omitempty"`
 	EventTTLSeconds *int             `json:"eventTTLSeconds,omitempty"`
 	Version         *int             `json:"version,omitempty"`
+}
+
+// String returns a JSON representation of the model
+func (o *ProcessAutomationTrigger) String() string {
+	j, _ := json.Marshal(o)
+	str, _ := strconv.Unquote(strings.Replace(strconv.Quote(string(j)), `\\u`, `\u`, -1))
+
+	return str
 }
 
 type UpdateTriggerInput struct {
@@ -185,21 +195,26 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Creating process automation trigger %s", name)
 
+	createTrigger := &ProcessAutomationTrigger{
+		TopicName:     &topic_name,
+		Name:          &name,
+		Target:        buildTarget(d),
+		MatchCriteria: buildMatchCriteria(d),
+		Enabled:       &enabled,
+	}
+	if eventTTLSeconds > 0 {
+		createTrigger.EventTTLSeconds = &eventTTLSeconds
+	}
+
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		trigger, resp, err := postProcessAutomationTrigger(&ProcessAutomationTrigger{
-			TopicName:       &topic_name,
-			Name:            &name,
-			Target:          buildTarget(d),
-			MatchCriteria:   buildMatchCriteria(d),
-			Enabled:         &enabled,
-			EventTTLSeconds: &eventTTLSeconds,
-		}, integAPI)
+		trigger, resp, err := postProcessAutomationTrigger(createTrigger, integAPI)
 		if err != nil {
 			return resp, diag.Errorf("Failed to create process automation trigger %s: %s match_criteria: %#v", name, err, buildMatchCriteria(d))
 		}
 		d.SetId(*trigger.Id)
 
 		log.Printf("Created process automation trigger %s %s", name, *trigger.Id)
+		fmt.Println("after create", trigger.String())
 		return resp, nil
 	})
 	if diagErr != nil {
@@ -266,6 +281,16 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
+	updateTrigger := &UpdateTriggerInput{
+		Name:          &name,
+		Enabled:       &enabled,
+		Target:        buildTarget(d),
+		MatchCriteria: buildMatchCriteria(d),
+	}
+	if eventTTLSeconds > 0 {
+		updateTrigger.EventTTLSeconds = &eventTTLSeconds
+	}
+
 	log.Printf("Updating process automation trigger %s", name)
 
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -274,18 +299,13 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr)
 		}
+		updateTrigger.Version = trigger.Version
 
-		_, _, err := putProcessAutomationTrigger(d.Id(), &UpdateTriggerInput{
-			Name:            &name,
-			Enabled:         &enabled,
-			EventTTLSeconds: &eventTTLSeconds,
-			Target:          buildTarget(d),
-			MatchCriteria:   buildMatchCriteria(d),
-			Version:         trigger.Version,
-		}, integAPI)
+		trigger, _, err := putProcessAutomationTrigger(d.Id(), updateTrigger, integAPI)
 		if err != nil {
 			return resp, diag.Errorf("Failed to update process automation trigger %s: %s match_criteria:%#v", name, err, buildMatchCriteria(d))
 		}
+		fmt.Println("after update", trigger.String())
 		return resp, nil
 	})
 	if diagErr != nil {
