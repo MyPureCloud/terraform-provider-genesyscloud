@@ -46,7 +46,7 @@ resource "genesyscloud_oauth_client" "test-client" {
 
 ### Optional
 
-- **access_token_validity_seconds** (Number) The number of seconds, between 5mins and 48hrs, until tokens created with this client expire. Defaults to `86400`.
+- **access_token_validity_seconds** (Number) The number of seconds, between 5mins and 48hrs, until tokens created with this client expire. Only clients using Genesys Cloud SCIM (Identity Management) can have a maximum duration of 38880000secs/450 days. Defaults to `86400`.
 - **description** (String) The description of the OAuth client.
 - **id** (String) The ID of this resource.
 - **registered_redirect_uris** (Set of String) List of allowed callbacks for this client. For example: https://myapp.example.com/auth/callback.

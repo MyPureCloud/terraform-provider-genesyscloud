@@ -848,9 +848,12 @@ func buildSdkAddresses(d *schema.ResourceData) (*[]platformclientv2.Contact, dia
 		var otherEmails *schema.Set
 		var phoneNumbers *schema.Set
 		if len(addresses) > 0 {
-			addressMap := addresses[0].(map[string]interface{})
-			otherEmails = addressMap["other_emails"].(*schema.Set)
-			phoneNumbers = addressMap["phone_numbers"].(*schema.Set)
+			if addressMap, ok := addresses[0].(map[string]interface{}); ok {
+				otherEmails = addressMap["other_emails"].(*schema.Set)
+				phoneNumbers = addressMap["phone_numbers"].(*schema.Set)
+			} else {
+				return nil, nil
+			}
 		}
 
 		if otherEmails != nil {
@@ -891,6 +894,9 @@ func buildSdkEmployerInfo(d *schema.ResourceData) *platformclientv2.Employerinfo
 	if configInfo := d.Get("employer_info").([]interface{}); configInfo != nil {
 		var sdkInfo platformclientv2.Employerinfo
 		if len(configInfo) > 0 {
+			if _, ok := configInfo[0].(map[string]interface{}); !ok {
+				return nil
+			}
 			infoMap := configInfo[0].(map[string]interface{})
 			// Only set non-empty values.
 			if offName := infoMap["official_name"].(string); len(offName) > 0 {

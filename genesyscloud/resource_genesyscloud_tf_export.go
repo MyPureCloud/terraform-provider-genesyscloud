@@ -891,6 +891,7 @@ func writeTfState(ctx context.Context, resources []resourceInfo, d *schema.Resou
 
 	tfpath, err := exec.LookPath("terraform")
 	if err != nil {
+		log.Println("Failed to find terraform path")
 		log.Println(cliError)
 		return nil
 	}
@@ -898,12 +899,14 @@ func writeTfState(ctx context.Context, resources []resourceInfo, d *schema.Resou
 	// exec.CommandContext does not auto-resolve symlinks
 	fileInfo, err := os.Lstat(tfpath)
 	if err != nil {
+		log.Println("Failed to Lstat terraform path")
 		log.Println(cliError)
 		return nil
 	}
 	if fileInfo.Mode()&os.ModeSymlink != 0 {
 		tfpath, err = os.Readlink(tfpath)
 		if err != nil {
+			log.Println("Failed to resolve terraform path symlink")
 			log.Println(cliError)
 			return nil
 		}

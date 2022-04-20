@@ -255,9 +255,9 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
 			if isStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
+				return resource.RetryableError(fmt.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
+			return resource.NonRetryableError(fmt.Errorf("Failed to process read automation trigger %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceProcessAutomationTrigger())
@@ -364,8 +364,8 @@ func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		_, resp, err := getProcessAutomationTrigger(d.Id(), integAPI)
 		if err != nil {
 			if isStatus404(resp) {
-				// Integration action deleted
-				log.Printf("Deleted Integration action %s", d.Id())
+				// process Automation trigger deleted
+				log.Printf("Deleted process Automation trigger %s", d.Id())
 				return nil
 			}
 			return resource.NonRetryableError(fmt.Errorf("Error deleting process automation trigger %s: %s", d.Id(), err))

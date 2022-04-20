@@ -453,7 +453,12 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingQueue())
-		d.Set("name", *currentQueue.Name)
+		if currentQueue.Name != nil {
+			d.Set("name", *currentQueue.Name)
+		} else {
+			d.Set("name", nil)
+		}
+
 		d.Set("division_id", *currentQueue.Division.Id)
 
 		if currentQueue.Description != nil {
