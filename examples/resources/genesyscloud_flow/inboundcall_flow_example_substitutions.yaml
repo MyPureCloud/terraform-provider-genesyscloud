@@ -1,0 +1,16 @@
+inboundCall:
+  name: "{{flow_name}}"
+  defaultLanguage: "{{default_language}}"
+  startUpRef: ./menus/menu[mainMenu]
+  initialGreeting:
+    tts: "{{greeting}}"
+  menus:
+    - menu:
+        name: Main Menu
+        audio:
+          tts: You are at the Main Menu, press 9 to disconnect.
+        refId: mainMenu
+        choices:
+          - menuDisconnect:
+              name: "{{menu_disconnect_name}}"
+              dtmf: digit_9

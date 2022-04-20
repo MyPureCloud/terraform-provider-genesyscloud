@@ -1,6 +1,7 @@
 package genesyscloud
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -41,4 +42,28 @@ func validateLocalDateTimes(date interface{}, _ cty.Path) diag.Diagnostics {
 		return nil
 	}
 	return diag.Errorf("Date %v is not a string", date)
+}
+
+// Validates a file path or URL
+func validatePath(i interface{}, k string) (warnings []string, errors []error) {
+	v, ok := i.(string)
+	if !ok {
+		errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
+		return warnings, errors
+	}
+
+	if v == "" {
+		errors = append(errors, fmt.Errorf("empty file path specified"))
+		return warnings, errors
+	}
+
+	_, file, err := downloadOrOpenFile(v)
+	if err != nil {
+		errors = append(errors, err)
+	}
+	if file != nil {
+		defer file.Close()
+	}
+
+	return warnings, errors
 }
