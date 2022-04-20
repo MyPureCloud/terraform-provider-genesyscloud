@@ -157,7 +157,7 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				Elem:        matchCriteria,
 			},
 			"event_ttl_seconds": {
-				Description:  "How old an event can be to fire the trigger. Must be an integer greater than or equal to 10",
+				Description:  "How old an event can be to fire the trigger. Must be an number greater than or equal to 10",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validateEventTTLGreaterThanOrEqualTo10(),

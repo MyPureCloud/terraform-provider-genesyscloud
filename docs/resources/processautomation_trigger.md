@@ -52,7 +52,7 @@ resource "genesyscloud_processautomation_trigger" "test-trigger" {
 
 ### Optional
 
-- **event_ttl_seconds** (String) How old an event can be to fire the trigger. Must be an integer greater than or equal to 10
+- **event_ttl_seconds** (String) How old an event can be to fire the trigger. Must be an number greater than or equal to 10
 - **id** (String) The ID of this resource.
 - **match_criteria** (Block Set) Match criteria that controls when the trigger will fire. (see [below for nested schema](#nestedblock--match_criteria))
 
