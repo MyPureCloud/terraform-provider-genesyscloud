@@ -11,5 +11,5 @@ resource "genesyscloud_processautomation_trigger" "test-trigger" {
     operator  = "Equal"
     value     = "CHAT"
   }
-  event_ttl_seconds = 60
+  event_ttl_seconds = "60"
 }

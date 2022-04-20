@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -139,7 +140,7 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 			"enabled": {
 				Description: "Whether or not the trigger should be fired on events",
 				Type:        schema.TypeBool,
-				Optional:    true,
+				Required:    true,
 			},
 			"target": {
 				Description: "Target the trigger will invoke when fired",
@@ -156,12 +157,35 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				Elem:        matchCriteria,
 			},
 			"event_ttl_seconds": {
-				Description: "How old an event can be to fire the trigger",
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Required:    false,
+				Description:  "How old an event can be to fire the trigger. Must be an integer greater than or equal to 10",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validateEventTTLGreaterThanOrEqualTo10(),
 			},
 		},
+	}
+}
+
+func validateEventTTLGreaterThanOrEqualTo10() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (warnings []string, errors []error) {
+		v, ok := i.(string)
+		if !ok {
+			errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
+			return warnings, errors
+		}
+
+		if v != "" {
+			intVar, parseErr := strconv.Atoi(v)
+			if parseErr != nil {
+				errors = append(errors, fmt.Errorf("Failed to parse int from event_ttl_seconds: %s", v))
+				return warnings, errors
+			}
+			if intVar < 10 {
+				errors = append(errors, fmt.Errorf("event_ttl_seconds must be greater than or equal to 10"))
+			}
+		}
+
+		return warnings, errors
 	}
 }
 
@@ -178,24 +202,36 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	name := d.Get("name").(string)
 	topic_name := d.Get("topic_name").(string)
 	enabled := d.Get("enabled").(bool)
-	eventTTLSeconds := d.Get("event_ttl_seconds").(int)
+	eventTTLSeconds := d.Get("event_ttl_seconds").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Creating process automation trigger %s", name)
 
+	triggerInput := &ProcessAutomationTrigger{
+		TopicName:     &topic_name,
+		Name:          &name,
+		Target:        buildTarget(d),
+		MatchCriteria: buildMatchCriteria(d),
+		Enabled:       &enabled,
+	}
+
+	if eventTTLSeconds != "" {
+		intVar, parseErr := strconv.Atoi(eventTTLSeconds)
+		if parseErr != nil {
+			return diag.Errorf("Failed to parse int from event_ttl_seconds: %s", eventTTLSeconds)
+		}
+		if intVar > 0 {
+			triggerInput.EventTTLSeconds = &intVar
+		}
+	}
+
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		trigger, resp, err := postProcessAutomationTrigger(&ProcessAutomationTrigger{
-			TopicName:       &topic_name,
-			Name:            &name,
-			Target:          buildTarget(d),
-			MatchCriteria:   buildMatchCriteria(d),
-			Enabled:         &enabled,
-			EventTTLSeconds: &eventTTLSeconds,
-		}, integAPI)
+		trigger, resp, err := postProcessAutomationTrigger(triggerInput, integAPI)
+
 		if err != nil {
-			return resp, diag.Errorf("Failed to create process automation trigger %s: %s match_criteria: %#v", name, err, buildMatchCriteria(d))
+			return resp, diag.Errorf("Failed to create process automation trigger %s: %s", name, err)
 		}
 		d.SetId(*trigger.Id)
 
@@ -248,9 +284,9 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		if trigger.EventTTLSeconds != nil {
-			d.Set("event_ttl_seconds", *trigger.EventTTLSeconds)
+			d.Set("event_ttl_seconds", strconv.Itoa(*trigger.EventTTLSeconds))
 		} else {
-			d.Set("event_ttl_seconds", nil)
+			d.Set("event_ttl_seconds", "")
 		}
 
 		log.Printf("Read process automation trigger %s %s", d.Id(), *trigger.Name)
@@ -261,7 +297,7 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	enabled := d.Get("enabled").(bool)
-	eventTTLSeconds := d.Get("event_ttl_seconds").(int)
+	eventTTLSeconds := d.Get("event_ttl_seconds").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
@@ -275,14 +311,26 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 			return resp, diag.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr)
 		}
 
-		_, _, err := putProcessAutomationTrigger(d.Id(), &UpdateTriggerInput{
-			Name:            &name,
-			Enabled:         &enabled,
-			EventTTLSeconds: &eventTTLSeconds,
-			Target:          buildTarget(d),
-			MatchCriteria:   buildMatchCriteria(d),
-			Version:         trigger.Version,
-		}, integAPI)
+		triggerInput := &UpdateTriggerInput{
+			Name:          &name,
+			Enabled:       &enabled,
+			Target:        buildTarget(d),
+			MatchCriteria: buildMatchCriteria(d),
+			Version:       trigger.Version,
+		}
+
+		if eventTTLSeconds != "" {
+			intVar, parseErr := strconv.Atoi(eventTTLSeconds)
+			if parseErr != nil {
+				return resp, diag.Errorf("Failed to parse int from event_ttl_seconds: %s", eventTTLSeconds)
+			}
+			if intVar > 0 {
+				triggerInput.EventTTLSeconds = &intVar
+			}
+		}
+
+		_, _, err := putProcessAutomationTrigger(d.Id(), triggerInput, integAPI)
+
 		if err != nil {
 			return resp, diag.Errorf("Failed to update process automation trigger %s: %s match_criteria:%#v", name, err, buildMatchCriteria(d))
 		}

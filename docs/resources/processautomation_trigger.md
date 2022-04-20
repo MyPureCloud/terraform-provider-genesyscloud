@@ -36,7 +36,7 @@ resource "genesyscloud_processautomation_trigger" "test-trigger" {
     operator  = "Equal"
     value     = "CHAT"
   }
-  event_ttl_seconds = 60
+  event_ttl_seconds = "60"
 }
 ```
 
@@ -45,14 +45,14 @@ resource "genesyscloud_processautomation_trigger" "test-trigger" {
 
 ### Required
 
+- **enabled** (Boolean) Whether or not the trigger should be fired on events
 - **name** (String) Name of the Trigger
 - **target** (Block Set, Min: 1, Max: 1) Target the trigger will invoke when fired (see [below for nested schema](#nestedblock--target))
 - **topic_name** (String) Topic name that will fire trigger
 
 ### Optional
 
-- **enabled** (Boolean) Whether or not the trigger should be fired on events
-- **event_ttl_seconds** (Number) How old an event can be to fire the trigger
+- **event_ttl_seconds** (String) How old an event can be to fire the trigger. Must be an integer greater than or equal to 10
 - **id** (String) The ID of this resource.
 - **match_criteria** (Block Set) Match criteria that controls when the trigger will fire. (see [below for nested schema](#nestedblock--match_criteria))
 
