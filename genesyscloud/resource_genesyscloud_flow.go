@@ -67,9 +67,12 @@ func resourceFlow() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validatePath,
-				StateFunc: func(v interface{}) string {
-					return hashFileContent(v.(string)) // Use file hash as state, so when the file content changes, Terraform can detect and recognize it as an "update" operation instead of "create"
-				},
+			},
+			"file_content_hash": {
+				Description: "Hash value of the YAML file content. Used to detect changes.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 			"substitutions": {
 				Description: "A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.",
@@ -170,6 +173,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
 	}
 
+	d.Set("file_content_hash", hashFileContent(d.Get("filepath").(string)))
 	d.SetId(flowID)
 	log.Printf("Created flow %s.", d.Id())
 	return readFlow(ctx, d, meta)
@@ -178,6 +182,16 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	filePath := d.Get("filepath").(string)
+	if filePath != "" {
+		fileContentHash := hashFileContent(filePath)
+		if fileContentHash != d.Get("file_content_hash") {
+			d.Set("file_content_hash", fileContentHash)
+			log.Println("Detected change to config file, updating")
+			return updateFlow(ctx, d, meta)
+		}
+	}
 
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		flow, resp, err := architectAPI.GetFlow(d.Id(), false)
@@ -233,7 +247,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	filePath := d.Get("filepath").(string)
 	substitutions := d.Get("substitutions").(map[string]interface{})
 
-	_, err = prepareAndUploadFile(strings.Split(filePath, " ")[0], substitutions, headers, presignedUrl)
+	_, err = prepareAndUploadFile(filePath, substitutions, headers, presignedUrl)
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
@@ -281,6 +295,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
 	}
 
+	d.Set("file_content_hash", hashFileContent(d.Get("filepath").(string)))
 	d.SetId(flowID)
 
 	log.Printf("Updated flow %s. ", d.Id())

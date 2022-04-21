@@ -61,5 +61,5 @@ func hashFileContent(path string) string {
 		}
 	}
 
-	return fmt.Sprintf("%s %s", path, hex.EncodeToString(hash.Sum(nil)))
+	return hex.EncodeToString(hash.Sum(nil))
 }

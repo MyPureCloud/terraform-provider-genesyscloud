@@ -145,7 +145,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 }
 
 func TestAccResourceRoutingQueueFlows(t *testing.T) {
-	t.Parallel()
 	var (
 		queueResource1 = "test-queue"
 		queueName1     = "Terraform Test Queue1-" + uuid.NewString()

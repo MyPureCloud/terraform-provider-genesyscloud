@@ -15,7 +15,6 @@ import (
 )
 
 func TestAccResourceFlow(t *testing.T) {
-	t.Parallel()
 	var (
 		flowResource1 = "test_flow1"
 		flowResource2 = "test_flow2"
@@ -102,7 +101,7 @@ func TestAccResourceFlow(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResource1,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath"},
+				ImportStateVerifyIgnore: []string{"filepath", "file_content_hash"},
 			},
 			{
 				// Create inboundemail flow
@@ -131,7 +130,7 @@ func TestAccResourceFlow(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResource2,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath"},
+				ImportStateVerifyIgnore: []string{"filepath", "file_content_hash"},
 			},
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
@@ -139,7 +138,6 @@ func TestAccResourceFlow(t *testing.T) {
 }
 
 func TestAccResourceFlowSubstitutions(t *testing.T) {
-	t.Parallel()
 	var (
 		flowResource1 = "test_flow1"
 		flowName1     = "Terraform Flow Test-" + uuid.NewString()
