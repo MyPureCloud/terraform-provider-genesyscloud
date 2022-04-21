@@ -30,12 +30,28 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 		match_criteria_value2     = "CLIENT"
 		eventTtlSeconds2          = "120"
 
-		flowResource1   = "test_flow1"
-		filePath1       = "../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
-		flowName1       = "terraform-provider-test-" + uuid.NewString()
-		workflowConfig1 = fmt.Sprintf(`workflow:
+		flowResource1 = "test_flow1"
+		filePath1     = "../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
+		flowName1     = "terraform-provider-test-" + uuid.NewString()
+	)
+
+	var homeDivisionName string
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
+				Check: resource.ComposeTestCheckFunc(
+					getHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
+				),
+			},
+		},
+	})
+
+	workflowConfig1 := fmt.Sprintf(`workflow:
  name: %s
- division: Home
+ division: %s
  startUpRef: "/workflow/states/state[Initial State_10]"
  defaultLanguage: en-us
  variables:
@@ -63,8 +79,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
          - endWorkflow:
              name: End Workflow
              exitReason:
-               noValue: true`, flowName1)
-	)
+               noValue: true`, flowName1, homeDivisionName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

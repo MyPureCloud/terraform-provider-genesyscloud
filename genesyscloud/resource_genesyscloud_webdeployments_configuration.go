@@ -712,10 +712,18 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 		if configuration.Description != nil {
 			d.Set("description", *configuration.Description)
 		}
-		d.Set("languages", *configuration.Languages)
-		d.Set("default_language", *configuration.DefaultLanguage)
-		d.Set("status", *configuration.Status)
-		d.Set("version", *configuration.Version)
+		if configuration.Languages != nil {
+			d.Set("languages", *configuration.Languages)
+		}
+		if configuration.DefaultLanguage != nil {
+			d.Set("default_language", *configuration.DefaultLanguage)
+		}
+		if configuration.Status != nil {
+			d.Set("status", *configuration.Status)
+		}
+		if configuration.Version != nil {
+			d.Set("version", *configuration.Version)
+		}
 		if configuration.Messenger != nil {
 			d.Set("messenger", flattenMessengerSettings(configuration.Messenger))
 		}
