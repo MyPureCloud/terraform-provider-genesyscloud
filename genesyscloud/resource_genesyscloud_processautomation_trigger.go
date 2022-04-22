@@ -299,6 +299,8 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	enabled := d.Get("enabled").(bool)
 	eventTTLSeconds := d.Get("event_ttl_seconds").(string)
 
+	topic_name := d.Get("topic_name").(string)
+
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
@@ -309,6 +311,11 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr)
+		}
+
+		//make sure that topic name is not updated
+		if(topic_name != *trigger.TopicName){
+			return resp, diag.Errorf("Cannot update topic_name of an existing trigger")
 		}
 
 		triggerInput := &UpdateTriggerInput{
@@ -329,12 +336,12 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 			}
 		}
 
-		_, _, err := putProcessAutomationTrigger(d.Id(), triggerInput, integAPI)
+		_, putResp, err := putProcessAutomationTrigger(d.Id(), triggerInput, integAPI)
 
 		if err != nil {
-			return resp, diag.Errorf("Failed to update process automation trigger %s: %s match_criteria:%#v", name, err, buildMatchCriteria(d))
+			return putResp, diag.Errorf("Failed to update process automation trigger %s: %s match_criteria:%#v", name, err, buildMatchCriteria(d))
 		}
-		return resp, nil
+		return putResp, nil
 	})
 	if diagErr != nil {
 		return diagErr
