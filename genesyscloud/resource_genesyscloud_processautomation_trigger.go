@@ -314,7 +314,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		}
 
 		//make sure that topic name is not updated
-		if(topic_name != *trigger.TopicName){
+		if topic_name != *trigger.TopicName {
 			return resp, diag.Errorf("Cannot update topic_name of an existing trigger")
 		}
 
