@@ -163,10 +163,27 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		queueFlowFilePath2          = "../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
 		queueFlowFilePath3          = "../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
 
-		queueFlowInboundcallConfig1        = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName1)
-		emailInQueueFlowInboundcallConfig2 = fmt.Sprintf(`inboundEmail:
+		queueFlowInboundcallConfig1          = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName1)
+		messageInQueueFlowInboundcallConfig3 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName3)
+	)
+
+	var homeDivisionName string
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
+				Check: resource.ComposeTestCheckFunc(
+					getHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
+				),
+			},
+		},
+	})
+
+	emailInQueueFlowInboundcallConfig2 := fmt.Sprintf(`inboundEmail:
     name: %s
-    division: Home
+    division: %s
     startUpRef: "/inboundEmail/states/state[Initial State_10]"
     defaultLanguage: en-us
     supportedLanguages:
@@ -188,9 +205,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
             actions:
                 - disconnect:
                     name: Disconnect
-`, queueFlowName2)
-		messageInQueueFlowInboundcallConfig3 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName3)
-	)
+`, queueFlowName2, homeDivisionName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

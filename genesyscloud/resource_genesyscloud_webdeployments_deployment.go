@@ -233,16 +233,19 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 		if deployment.Description != nil {
 			d.Set("description", *deployment.Description)
 		}
-		d.Set("allow_all_domains", *deployment.AllowAllDomains)
+		if deployment.AllowAllDomains != nil {
+			d.Set("allow_all_domains", *deployment.AllowAllDomains)
+		}
 		d.Set("configuration", flattenConfiguration(deployment.Configuration))
-		d.Set("allowed_domains", *deployment.AllowedDomains)
 		if deployment.AllowedDomains != nil && len(*deployment.AllowedDomains) > 0 {
 			d.Set("allowed_domains", *deployment.AllowedDomains)
 		}
 		if deployment.Flow != nil {
 			d.Set("flow_id", *deployment.Flow.Id)
 		}
-		d.Set("status", *deployment.Status)
+		if deployment.Status != nil {
+			d.Set("status", *deployment.Status)
+		}
 
 		log.Printf("Read web deployment %s %s", d.Id(), *deployment.Name)
 		return cc.CheckState()

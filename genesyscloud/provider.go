@@ -123,6 +123,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_architect_user_prompt":                       dataSourceUserPrompt(),
 				"genesyscloud_auth_role":                                   dataSourceAuthRole(),
 				"genesyscloud_auth_division":                               dataSourceAuthDivision(),
+				"genesyscloud_auth_division_home":                          dataSourceAuthDivisionHome(),
 				"genesyscloud_flow":                                        dataSourceFlow(),
 				"genesyscloud_group":                                       dataSourceGroup(),
 				"genesyscloud_integration":                                 dataSourceIntegration(),

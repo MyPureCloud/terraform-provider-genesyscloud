@@ -321,8 +321,9 @@ func prepareAndUploadFile(filename string, headers map[string]interface{}, presi
 	client := &http.Client{}
 
 	resp, err := client.Do(req)
-
-	defer resp.Body.Close()
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
 
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("Failed to upload flow configuration file to S3 bucket. Error: %s ", err)
