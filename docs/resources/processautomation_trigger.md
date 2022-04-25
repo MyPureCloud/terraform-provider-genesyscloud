@@ -48,7 +48,7 @@ resource "genesyscloud_processautomation_trigger" "test-trigger" {
 - **enabled** (Boolean) Whether or not the trigger should be fired on events
 - **name** (String) Name of the Trigger
 - **target** (Block Set, Min: 1, Max: 1) Target the trigger will invoke when fired (see [below for nested schema](#nestedblock--target))
-- **topic_name** (String) Topic name that will fire trigger. (cannot be updated after creation)
+- **topic_name** (String) Topic name that will fire trigger. (Updating requires replacement of trigger)
 
 ### Optional
 

@@ -132,9 +132,10 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(1, 256),
 			},
 			"topic_name": {
-				Description:  "Topic name that will fire trigger. (cannot be updated after creation)",
+				Description:  "Topic name that will fire trigger. (Updating requires replacement of trigger)",
 				Type:         schema.TypeString,
 				Required:     true,
+				ForceNew:    true,
 				ValidateFunc: validation.StringLenBetween(1, 256),
 			},
 			"enabled": {
