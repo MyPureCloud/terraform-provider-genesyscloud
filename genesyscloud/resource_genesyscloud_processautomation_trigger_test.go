@@ -171,7 +171,7 @@ func generateProcessAutomationTriggerResource(resourceID, name, topic_name, enab
         enabled = %s
         %s
         %s
-        event_ttl_seconds = "%s"
+        event_ttl_seconds = %s
 	}
 	`, resourceID, name, topic_name, enabled, target, match_criteria, event_ttl_seconds)
 }
