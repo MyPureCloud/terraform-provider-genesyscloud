@@ -891,7 +891,7 @@ func writeTfState(ctx context.Context, resources []resourceInfo, d *schema.Resou
 
 	tfpath, err := exec.LookPath("terraform")
 	if err != nil {
-		log.Println("Failed to find terraform path")
+		log.Println("Failed to find terraform path:", err)
 		log.Println(cliError)
 		return nil
 	}
@@ -899,14 +899,14 @@ func writeTfState(ctx context.Context, resources []resourceInfo, d *schema.Resou
 	// exec.CommandContext does not auto-resolve symlinks
 	fileInfo, err := os.Lstat(tfpath)
 	if err != nil {
-		log.Println("Failed to Lstat terraform path")
+		log.Println("Failed to Lstat terraform path:", err)
 		log.Println(cliError)
 		return nil
 	}
 	if fileInfo.Mode()&os.ModeSymlink != 0 {
-		tfpath, err = os.Readlink(tfpath)
+		tfpath, err = filepath.EvalSymlinks(tfpath)
 		if err != nil {
-			log.Println("Failed to resolve terraform path symlink")
+			log.Println("Failed to resolve terraform path symlink:", err)
 			log.Println(cliError)
 			return nil
 		}
@@ -923,7 +923,8 @@ func writeTfState(ctx context.Context, resources []resourceInfo, d *schema.Resou
 	}...)
 
 	log.Printf("Running 'terraform state replace-provider' on %s", stateFilePath)
-	if err := cmd.Run(); err != nil {
+	if err = cmd.Run(); err != nil {
+		log.Println("Failed to run command:", err)
 		log.Println(cliError)
 		return nil
 	}

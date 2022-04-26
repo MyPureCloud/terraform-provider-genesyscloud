@@ -679,9 +679,10 @@ var userPromptResource = &schema.Resource{
 			Optional:    true,
 		},
 		"filename": {
-			Description: "Path or URL to the file to be uploaded as prompt.",
-			Type:        schema.TypeString,
-			Optional:    true,
+			Description:  "Path or URL to the file to be uploaded as prompt.",
+			Type:         schema.TypeString,
+			ValidateFunc: validatePath,
+			Optional:     true,
 		},
 	},
 }

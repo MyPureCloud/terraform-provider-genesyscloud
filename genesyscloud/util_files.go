@@ -16,7 +16,7 @@ func downloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 
 	_, err := os.Stat(path)
 	if err != nil {
-		_, err = url.Parse(path)
+		_, err = url.ParseRequestURI(path)
 		if err == nil {
 			resp, err := http.Get(path)
 			if err != nil {

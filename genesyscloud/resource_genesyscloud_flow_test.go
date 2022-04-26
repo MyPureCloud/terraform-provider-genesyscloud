@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -100,7 +101,7 @@ func TestAccResourceFlow(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResource1,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath"},
+				ImportStateVerifyIgnore: []string{"filepath", "file_content_hash"},
 			},
 			{
 				// Create inboundemail flow
@@ -129,23 +130,86 @@ func TestAccResourceFlow(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResource2,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath"},
+				ImportStateVerifyIgnore: []string{"filepath", "file_content_hash"},
 			},
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
 	})
 }
 
-func generateFlowResource(resourceID string, filepath string, filecontent string) string {
-	updateFile(filepath, filecontent)
+func TestAccResourceFlowSubstitutions(t *testing.T) {
+	var (
+		flowResource1 = "test_flow1"
+		flowName1     = "Terraform Flow Test-" + uuid.NewString()
+		flowName2     = "Terraform Flow Test-" + uuid.NewString()
+		filePath1     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create flow
+				Config: generateFlowResource(
+					flowResource1,
+					filePath1,
+					"",
+					generateFlowSubstitutions(map[string]string{
+						"flow_name":            flowName1,
+						"default_language":     "en-us",
+						"greeting":             "Archy says hi!!!",
+						"menu_disconnect_name": "Disconnect",
+					}),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow("genesyscloud_flow."+flowResource1, flowName1, "INBOUNDCALL"),
+				),
+			},
+			{
+				// Update
+				Config: generateFlowResource(
+					flowResource1,
+					filePath1,
+					"",
+					generateFlowSubstitutions(map[string]string{
+						"flow_name":            flowName2,
+						"default_language":     "en-us",
+						"greeting":             "Archy says hi!!!",
+						"menu_disconnect_name": "Disconnect",
+					}),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow("genesyscloud_flow."+flowResource1, flowName2, "INBOUNDCALL"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyFlowDestroyed,
+	})
+}
+
+func generateFlowSubstitutions(substitutions map[string]string) string {
+	var substitutionsStr string
+	for k, v := range substitutions {
+		substitutionsStr += fmt.Sprintf("\t%s = \"%s\"\n", k, v)
+	}
+	return fmt.Sprintf(`substitutions = {
+%s}`, substitutionsStr)
+}
+
+func generateFlowResource(resourceID, filepath, filecontent string, substitutions ...string) string {
+	if filecontent != "" {
+		updateFile(filepath, filecontent)
+	}
 
 	return fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
         filepath = %s
+		%s
 	}
-	`, resourceID, strconv.Quote(filepath))
+	`, resourceID, strconv.Quote(filepath), strings.Join(substitutions, "\n"))
 }
 
-func updateFile(filepath string, content string) {
+func updateFile(filepath, content string) {
 	file, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 
 	if err != nil {
@@ -158,7 +222,7 @@ func updateFile(filepath string, content string) {
 }
 
 // Check if flow is published, then check if flow name and type are correct
-func validateFlow(flowResourceName string, name string, flowType string) resource.TestCheckFunc {
+func validateFlow(flowResourceName, name, flowType string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		flowResource, ok := state.RootModule().Resources[flowResourceName]
 		if !ok {

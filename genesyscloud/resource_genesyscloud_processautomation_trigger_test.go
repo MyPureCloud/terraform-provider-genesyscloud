@@ -11,6 +11,7 @@ import (
 )
 
 func TestAccResourceProcessAutomationTrigger(t *testing.T) {
+	t.Parallel()
 	var (
 		triggerResource1 = "test-trigger1"
 

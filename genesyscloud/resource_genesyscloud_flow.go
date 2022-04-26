@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -62,12 +63,21 @@ func resourceFlow() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"filepath": {
-				Description: "YAML file path or URL for flow configuration.",
+				Description:  "YAML file path or URL for flow configuration.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validatePath,
+			},
+			"file_content_hash": {
+				Description: "Hash value of the YAML file content. Used to detect changes.",
 				Type:        schema.TypeString,
-				Required:    true,
-				StateFunc: func(v interface{}) string {
-					return hashFileContent(v.(string)) // Use file hash as state, so when the file content changes, Terraform can detect and recognize as "update" operation instead of "create"
-				},
+				Optional:    true,
+				Computed:    true,
+			},
+			"substitutions": {
+				Description: "A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.",
+				Type:        schema.TypeMap,
+				Optional:    true,
 			},
 		},
 	}
@@ -111,9 +121,10 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	headers := successPayload["headers"].(map[string]interface{})
 
 	filePath := d.Get("filepath").(string)
+	substitutions := d.Get("substitutions").(map[string]interface{})
 
 	// Upload flow configuration file
-	_, err = prepareAndUploadFile(filePath, headers, presignedUrl)
+	_, err = prepareAndUploadFile(filePath, substitutions, headers, presignedUrl)
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
@@ -162,6 +173,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
 	}
 
+	d.Set("file_content_hash", hashFileContent(d.Get("filepath").(string)))
 	d.SetId(flowID)
 	log.Printf("Created flow %s.", d.Id())
 	return readFlow(ctx, d, meta)
@@ -170,6 +182,16 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	filePath := d.Get("filepath").(string)
+	if filePath != "" {
+		fileContentHash := hashFileContent(filePath)
+		if fileContentHash != d.Get("file_content_hash") {
+			d.Set("file_content_hash", fileContentHash)
+			log.Println("Detected change to config file, updating")
+			return updateFlow(ctx, d, meta)
+		}
+	}
 
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		flow, resp, err := architectAPI.GetFlow(d.Id(), false)
@@ -223,8 +245,9 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	headers := successPayload["headers"].(map[string]interface{})
 
 	filePath := d.Get("filepath").(string)
+	substitutions := d.Get("substitutions").(map[string]interface{})
 
-	_, err = prepareAndUploadFile(filePath, headers, presignedUrl)
+	_, err = prepareAndUploadFile(filePath, substitutions, headers, presignedUrl)
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
@@ -272,6 +295,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
 	}
 
+	d.Set("file_content_hash", hashFileContent(d.Get("filepath").(string)))
 	d.SetId(flowID)
 
 	log.Printf("Updated flow %s. ", d.Id())
@@ -297,7 +321,7 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 // Read and upload input file path to S3 pre-signed URL
-func prepareAndUploadFile(filename string, headers map[string]interface{}, presignedUrl string) ([]byte, error) {
+func prepareAndUploadFile(filename string, substitutions map[string]interface{}, headers map[string]interface{}, presignedUrl string) ([]byte, error) {
 	bodyBuf := &bytes.Buffer{}
 
 	reader, file, err := downloadOrOpenFile(filename)
@@ -311,6 +335,15 @@ func prepareAndUploadFile(filename string, headers map[string]interface{}, presi
 	_, err = io.Copy(bodyBuf, reader)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to copy file content to the handler. Error: %s ", err)
+	}
+
+	if len(substitutions) > 0 {
+		fileContents := bodyBuf.String()
+		for k, v := range substitutions {
+			fileContents = strings.Replace(fileContents, fmt.Sprintf("{{%s}}", k), v.(string), -1)
+		}
+		bodyBuf.Reset()
+		bodyBuf.WriteString(fileContents)
 	}
 
 	req, _ := http.NewRequest("PUT", presignedUrl, bodyBuf)
