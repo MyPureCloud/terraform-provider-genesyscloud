@@ -459,7 +459,11 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("name", nil)
 		}
 
-		d.Set("division_id", *currentQueue.Division.Id)
+		if currentQueue.Division != nil && currentQueue.Division.Id != nil {
+			d.Set("division_id", *currentQueue.Division.Id)
+		} else {
+			d.Set("division_id", nil)
+		}
 
 		if currentQueue.Description != nil {
 			d.Set("description", *currentQueue.Description)
