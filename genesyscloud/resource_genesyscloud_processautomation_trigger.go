@@ -131,15 +131,16 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(1, 256),
 			},
 			"topic_name": {
-				Description:  "Topic name that will fire trigger",
+				Description:  "Topic name that will fire trigger. (Updating requires replacement of trigger)",
 				Type:         schema.TypeString,
 				Required:     true,
+				ForceNew:     true,
 				ValidateFunc: validation.StringLenBetween(1, 256),
 			},
 			"enabled": {
 				Description: "Whether or not the trigger should be fired on events",
 				Type:        schema.TypeBool,
-				Optional:    true,
+				Required:    true,
 			},
 			"target": {
 				Description: "Target the trigger will invoke when fired",
@@ -156,10 +157,10 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				Elem:        matchCriteria,
 			},
 			"event_ttl_seconds": {
-				Description: "How old an event can be to fire the trigger",
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Required:    false,
+				Description:  "How old an event can be to fire the trigger. Must be an number greater than or equal to 10",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(10),
 			},
 		},
 	}
@@ -185,17 +186,23 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Creating process automation trigger %s", name)
 
+	triggerInput := &ProcessAutomationTrigger{
+		TopicName:     &topic_name,
+		Name:          &name,
+		Target:        buildTarget(d),
+		MatchCriteria: buildMatchCriteria(d),
+		Enabled:       &enabled,
+	}
+
+	if eventTTLSeconds > 0 {
+		triggerInput.EventTTLSeconds = &eventTTLSeconds
+	}
+
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		trigger, resp, err := postProcessAutomationTrigger(&ProcessAutomationTrigger{
-			TopicName:       &topic_name,
-			Name:            &name,
-			Target:          buildTarget(d),
-			MatchCriteria:   buildMatchCriteria(d),
-			Enabled:         &enabled,
-			EventTTLSeconds: &eventTTLSeconds,
-		}, integAPI)
+		trigger, resp, err := postProcessAutomationTrigger(triggerInput, integAPI)
+
 		if err != nil {
-			return resp, diag.Errorf("Failed to create process automation trigger %s: %s match_criteria: %#v", name, err, buildMatchCriteria(d))
+			return resp, diag.Errorf("Failed to create process automation trigger %s: %s", name, err)
 		}
 		d.SetId(*trigger.Id)
 
@@ -263,6 +270,8 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	enabled := d.Get("enabled").(bool)
 	eventTTLSeconds := d.Get("event_ttl_seconds").(int)
 
+	topic_name := d.Get("topic_name").(string)
+
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
@@ -275,18 +284,29 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 			return resp, diag.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr)
 		}
 
-		_, _, err := putProcessAutomationTrigger(d.Id(), &UpdateTriggerInput{
-			Name:            &name,
-			Enabled:         &enabled,
-			EventTTLSeconds: &eventTTLSeconds,
-			Target:          buildTarget(d),
-			MatchCriteria:   buildMatchCriteria(d),
-			Version:         trigger.Version,
-		}, integAPI)
-		if err != nil {
-			return resp, diag.Errorf("Failed to update process automation trigger %s: %s match_criteria:%#v", name, err, buildMatchCriteria(d))
+		//make sure that topic name is not updated
+		if topic_name != *trigger.TopicName {
+			return resp, diag.Errorf("Cannot update topic_name of an existing trigger")
 		}
-		return resp, nil
+
+		triggerInput := &UpdateTriggerInput{
+			Name:          &name,
+			Enabled:       &enabled,
+			Target:        buildTarget(d),
+			MatchCriteria: buildMatchCriteria(d),
+			Version:       trigger.Version,
+		}
+
+		if eventTTLSeconds > 0 {
+			triggerInput.EventTTLSeconds = &eventTTLSeconds
+		}
+
+		_, putResp, err := putProcessAutomationTrigger(d.Id(), triggerInput, integAPI)
+
+		if err != nil {
+			return putResp, diag.Errorf("Failed to update process automation trigger %s: %s", name, err)
+		}
+		return putResp, nil
 	})
 	if diagErr != nil {
 		return diagErr
