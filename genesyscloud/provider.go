@@ -71,6 +71,7 @@ func New(version string) func() *schema.Provider {
 			ResourcesMap: map[string]*schema.Resource{
 				"genesyscloud_architect_datatable":                         resourceArchitectDatatable(),
 				"genesyscloud_architect_datatable_row":                     resourceArchitectDatatableRow(),
+				"genesyscloud_architect_emergencygroup":                    resourceArchitectEmergencyGroup(),
 				"genesyscloud_flow":                                        resourceFlow(),
 				"genesyscloud_architect_ivr":                               resourceArchitectIvrConfig(),
 				"genesyscloud_architect_schedules":                         resourceArchitectSchedules(),
@@ -119,6 +120,7 @@ func New(version string) func() *schema.Provider {
 			DataSourcesMap: map[string]*schema.Resource{
 				"genesyscloud_architect_datatable":                         dataSourceArchitectDatatable(),
 				"genesyscloud_architect_ivr":                               dataSourceArchitectIvr(),
+				"genesyscloud_architect_emergencygroup":                    dataSourceArchitectEmergencyGroup(),
 				"genesyscloud_architect_schedules":                         dataSourceSchedule(),
 				"genesyscloud_architect_schedulegroups":                    dataSourceArchitectScheduleGroups(),
 				"genesyscloud_architect_user_prompt":                       dataSourceUserPrompt(),

@@ -314,6 +314,9 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				log.Printf("Deleted Flow %s", d.Id())
 				return nil
 			}
+			if resp.StatusCode == http.StatusConflict {
+				return resource.RetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
+			}
 			return resource.NonRetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
 		}
 		return nil
