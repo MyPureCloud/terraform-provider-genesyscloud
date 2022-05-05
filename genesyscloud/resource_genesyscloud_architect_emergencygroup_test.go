@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -87,6 +88,10 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					"flow",
 					"genesyscloud_flow."+flowResource,
 					flowName,
+				) + generateIvrDataSource(
+					"ivr",
+					strconv.Quote(ivrName),
+					"genesyscloud_architect_ivr."+ivrResourceID,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
@@ -94,6 +99,8 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", falseValue),
 					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.emergency_flow_id",
 						"data.genesyscloud_flow.flow", "id"),
+					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.ivr_ids.0",
+						"data.genesyscloud_architect_ivr.ivr", "id"),
 				),
 			},
 			{
