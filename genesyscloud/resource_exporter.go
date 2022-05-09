@@ -65,6 +65,9 @@ type ResourceExporter struct {
 
 	// Map of attributes that cannot be resolved. E.g. edge Ids which are locked to an org or properties that cannot be retrieved from the API
 	UnResolvableAttributes map[string]*schema.Schema
+
+	// List of attributes which can and should be exported in a jsonencode object rather than as a long escaped string of JSON data.
+	JsonEncodeAttributes []string
 }
 
 func (r *ResourceExporter) loadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
@@ -111,6 +114,10 @@ func (r *ResourceExporter) getRefAttrSettings(attribute string) *RefAttrSettings
 
 func (r *ResourceExporter) allowZeroValues(attribute string) bool {
 	return stringInSlice(attribute, r.AllowZeroValues)
+}
+
+func (r *ResourceExporter) isJsonEncodable(attribute string) bool {
+	return stringInSlice(attribute, r.JsonEncodeAttributes)
 }
 
 func (r *ResourceExporter) addExcludedAttribute(attribute string) {

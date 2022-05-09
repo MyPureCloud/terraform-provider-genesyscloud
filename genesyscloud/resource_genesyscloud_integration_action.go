@@ -104,6 +104,7 @@ func integrationActionExporter() *ResourceExporter {
 		RefAttrs: map[string]*RefAttrSettings{
 			"integration_id": {RefType: "genesyscloud_integration"},
 		},
+		JsonEncodeAttributes: []string{"contract_input", "contract_output"},
 	}
 }
 
