@@ -81,6 +81,7 @@ func integrationExporter() *ResourceExporter {
 		RefAttrs: map[string]*RefAttrSettings{
 			"config.credentials.*": {RefType: "genesyscloud_integration_credential"},
 		},
+		JsonEncodeAttributes: []string{"config.properties", "config.advanced"},
 	}
 }
 

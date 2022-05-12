@@ -265,7 +265,8 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 func phoneBaseSettingsExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllPhoneBaseSettings),
-		RefAttrs:         map[string]*RefAttrSettings{},
+		GetResourcesFunc:     getAllWithPooledClient(getAllPhoneBaseSettings),
+		RefAttrs:             map[string]*RefAttrSettings{},
+		JsonEncodeAttributes: []string{"properties"},
 	}
 }

@@ -68,6 +68,7 @@ func architectDatatableRowExporter() *ResourceExporter {
 		RefAttrs: map[string]*RefAttrSettings{
 			"datatable_id": {RefType: "genesyscloud_architect_datatable"},
 		},
+		JsonEncodeAttributes: []string{"properties_json"},
 	}
 }
 
