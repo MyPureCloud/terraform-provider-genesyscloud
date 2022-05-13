@@ -342,7 +342,8 @@ func getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig *platformclientv2.Con
 
 func trunkBaseSettingsExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllTrunkBaseSettings),
-		RefAttrs:         map[string]*RefAttrSettings{},
+		GetResourcesFunc:     getAllWithPooledClient(getAllTrunkBaseSettings),
+		RefAttrs:             map[string]*RefAttrSettings{},
+		JsonEncodeAttributes: []string{"properties"},
 	}
 }

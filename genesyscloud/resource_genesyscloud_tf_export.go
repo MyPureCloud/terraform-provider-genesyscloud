@@ -35,6 +35,12 @@ const (
 var (
 	terraformHCLBlock string
 	mockError         diag.Diagnostics
+
+	// UID : "jsonencode({decoded representation of json string})"
+	// Attrs which can be exported in jsonencode objects are populated with a UID
+	// The same UID is stored as the key in attributesDecoded, with the value being the jsonencode representation of the json string.
+	// When the bytes are being written to the file, the UID is found and replaced with the unquoted jsonencode object
+	attributesDecoded = make(map[string]string)
 )
 
 type unresolvableAttributeInfo struct {
@@ -560,6 +566,27 @@ func determineVarType(s *schema.Schema) string {
 	return varType
 }
 
+func getDecodedData(jsonString string) (string, error) {
+	var jsonVar interface{}
+	err := json.Unmarshal([]byte(jsonString), &jsonVar)
+	if err != nil {
+		return "", err
+	}
+
+	formattedJson, err := json.MarshalIndent(jsonVar, "", "\t")
+	if err != nil {
+		return "", err
+	}
+
+	// replace : with = as is expected syntax in a jsonencode object
+	decodedJson := strings.Replace(string(formattedJson), "\": ", "\" = ", -1)
+	// fix indentation
+	decodedJson = strings.Replace(decodedJson, "\t", "\t  ", -1)
+	decodedJson = fmt.Sprintf("%v  }", decodedJson[:len(decodedJson)-1])
+	decodedJson = fmt.Sprintf("jsonencode(%v)", decodedJson)
+	return decodedJson, nil
+}
+
 func sourceForVersion(version string) string {
 	providerSource := "registry.terraform.io/mypurecloud/genesyscloud"
 	if version == "0.1.0" {
@@ -826,6 +853,18 @@ func instanceStateToJSONMap(state *terraform.InstanceState, ctyType cty.Type) (j
 	return jsonMap, nil
 }
 
+func replaceDecodableStrings(resource []byte) []byte {
+	resourceStr := string(resource)
+	for key, val := range attributesDecoded {
+		placeholderId := key
+		if strings.Contains(resourceStr, placeholderId) {
+			// replace placeholderId with the unquoted jsonencode object
+			resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
+		}
+	}
+	return []byte(resourceStr)
+}
+
 func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {
 	// clear contents
 	_ = ioutil.WriteFile(path, nil, os.ModePerm)
@@ -834,6 +873,9 @@ func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {
 		if err != nil {
 			return diag.Errorf("Error opening/creating file %s: %v", path, err)
 		}
+
+		v = replaceDecodableStrings(v)
+
 		if _, err := f.Write(v); err != nil {
 			return diag.Errorf("Error writing file %s: %v", path, err)
 		}
@@ -1065,6 +1107,20 @@ func sanitizeConfigMap(
 		// AllowZeroValues list.
 		if !exporter.allowZeroValues(currAttr) {
 			removeZeroValues(key, configMap[key], configMap)
+		}
+
+		if exporter.isJsonEncodable(currAttr) {
+			if vStr, ok := configMap[key].(string); ok {
+				decodedData, err := getDecodedData(vStr)
+				if err != nil {
+					log.Printf("error decoding json string: %v\n", err)
+					configMap[key] = vStr
+				} else {
+					uid := uuid.NewString()
+					attributesDecoded[uid] = decodedData
+					configMap[key] = uid
+				}
+			}
 		}
 	}
 
