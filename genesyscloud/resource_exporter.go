@@ -3,12 +3,13 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"hash/fnv"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
@@ -205,6 +206,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_integration_action":                          integrationActionExporter(),
 		"genesyscloud_integration_credential":                      credentialExporter(),
 		"genesyscloud_location":                                    locationExporter(),
+		"genesyscloud_media_retention_policy":                      mediaRetentionPolicyExporter(),
 		"genesyscloud_oauth_client":                                oauthClientExporter(),
 		"genesyscloud_processautomation_trigger":                   processAutomationTriggerExporter(),
 		"genesyscloud_quality_forms_evaluation":                    evaluationFormExporter(),

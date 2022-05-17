@@ -92,6 +92,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_integration_action":                          resourceIntegrationAction(),
 				"genesyscloud_integration_credential":                      resourceCredential(),
 				"genesyscloud_location":                                    resourceLocation(),
+				"genesyscloud_media_retention_policy":                      resourceMediaRetentionPolicy(),
 				"genesyscloud_oauth_client":                                resourceOAuthClient(),
 				"genesyscloud_processautomation_trigger":                   resourceProcessAutomationTrigger(),
 				"genesyscloud_quality_forms_evaluation":                    resourceEvaluationForm(),
