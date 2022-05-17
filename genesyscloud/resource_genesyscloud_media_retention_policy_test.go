@@ -152,92 +152,35 @@ type Mediasetting struct {
 }
 
 type Queue struct {
-	// Id - The globally unique identifier for the object.
-	Id string `json:"id,omitempty"`
-
-	// Name
-	Name string `json:"name,omitempty"`
-
-	// Division - The division to which this entity belongs.
-	Division Division `json:"division,omitempty"`
-
-	// Description - The queue description.
-	Description string `json:"description,omitempty"`
-
-	// DateCreated - The date the queue was created. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
-	DateCreated time.Time `json:"dateCreated,omitempty"`
-
-	// DateModified - The date of the last modification to the queue. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
-	DateModified time.Time `json:"dateModified,omitempty"`
-
-	// ModifiedBy - The ID of the user that last modified the queue.
-	ModifiedBy string `json:"modifiedBy,omitempty"`
-
-	// CreatedBy - The ID of the user that created the queue.
-	CreatedBy string `json:"createdBy,omitempty"`
-
-	// MemberCount - The total number of members in the queue.
-	MemberCount int `json:"memberCount,omitempty"`
-
-	// UserMemberCount - The number of user members (i.e., non-group members) in the queue.
-	UserMemberCount int `json:"userMemberCount,omitempty"`
-
-	// JoinedMemberCount - The number of joined members in the queue.
-	JoinedMemberCount int `json:"joinedMemberCount,omitempty"`
-
-	// MediaSettings - The media settings for the queue. Valid key values: CALL, CALLBACK, CHAT, EMAIL, MESSAGE, SOCIAL_EXPRESSION, VIDEO_COMM
-	MediaSettings map[string]Mediasetting `json:"mediaSettings,omitempty"`
-
-	// RoutingRules - The routing rules for the queue, used for Preferred Agent Routing.
-	RoutingRules []Routingrule `json:"routingRules,omitempty"`
-
-	// Bullseye - The bullseye settings for the queue.
-	Bullseye Bullseye `json:"bullseye,omitempty"`
-
-	// AcwSettings - The ACW settings for the queue.
-	AcwSettings Acwsettings `json:"acwSettings,omitempty"`
-
-	// SkillEvaluationMethod - The skill evaluation method to use when routing conversations.
-	SkillEvaluationMethod string `json:"skillEvaluationMethod,omitempty"`
-
-	// QueueFlow - The in-queue flow to use for call conversations waiting in queue.
-	QueueFlow Domainentityref `json:"queueFlow,omitempty"`
-
-	// EmailInQueueFlow - The in-queue flow to use for email conversations waiting in queue.
-	EmailInQueueFlow Domainentityref `json:"emailInQueueFlow,omitempty"`
-
-	// MessageInQueueFlow - The in-queue flow to use for message conversations waiting in queue.
-	MessageInQueueFlow Domainentityref `json:"messageInQueueFlow,omitempty"`
-
-	// WhisperPrompt - The prompt used for whisper on the queue, if configured.
-	WhisperPrompt Domainentityref `json:"whisperPrompt,omitempty"`
-
-	// OnHoldPrompt - The audio to be played when calls on this queue are on hold. If not configured, the default on-hold music will play.
-	OnHoldPrompt Domainentityref `json:"onHoldPrompt,omitempty"`
-
-	// AutoAnswerOnly - Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered.
-	AutoAnswerOnly bool `json:"autoAnswerOnly,omitempty"`
-
-	// EnableTranscription - Indicates whether voice transcription is enabled for this queue.
-	EnableTranscription bool `json:"enableTranscription,omitempty"`
-
-	// EnableManualAssignment - Indicates whether manual assignment is enabled for this queue.
-	EnableManualAssignment bool `json:"enableManualAssignment,omitempty"`
-
-	// CallingPartyName - The name to use for caller identification for outbound calls from this queue.
-	CallingPartyName string `json:"callingPartyName,omitempty"`
-
-	// CallingPartyNumber - The phone number to use for caller identification for outbound calls from this queue.
-	CallingPartyNumber string `json:"callingPartyNumber,omitempty"`
-
-	// OutboundMessagingAddresses - The messaging addresses for the queue.
-	OutboundMessagingAddresses Queuemessagingaddresses `json:"outboundMessagingAddresses,omitempty"`
-
-	// OutboundEmailAddress
-	OutboundEmailAddress Queueemailaddress `json:"outboundEmailAddress,omitempty"`
-
-	// SelfUri - The URI for this object
-	SelfUri string `json:"selfUri,omitempty"`
+	Id                         string
+	Name                       string
+	Division                   Division
+	Description                string
+	DateCreated                time.Time
+	DateModified               time.Time
+	ModifiedBy                 string
+	CreatedBy                  string
+	MemberCount                int
+	UserMemberCount            int
+	JoinedMemberCount          int
+	MediaSettings              map[string]Mediasetting
+	RoutingRules               []Routingrule
+	Bullseye                   Bullseye
+	AcwSettings                Acwsettings
+	SkillEvaluationMethod      string
+	QueueFlow                  Domainentityref
+	EmailInQueueFlow           Domainentityref
+	MessageInQueueFlow         Domainentityref
+	WhisperPrompt              Domainentityref
+	OnHoldPrompt               Domainentityref
+	AutoAnswerOnly             bool
+	EnableTranscription        bool
+	EnableManualAssignment     bool
+	CallingPartyName           string
+	CallingPartyNumber         string
+	OutboundMessagingAddresses Queuemessagingaddresses
+	OutboundEmailAddress       Queueemailaddress
+	SelfUri                    string
 }
 
 type Publishedsurveyformreference struct {
@@ -560,10 +503,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				AssignEvaluations: []Evaluationassignment{
 					{
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -616,10 +557,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						},
 						MaxNumberEvaluations: 1,
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -663,10 +602,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						},
 						MaxNumberEvaluations: 1,
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -725,10 +662,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 							},
 						},
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -867,10 +802,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				AssignEvaluations: []Evaluationassignment{
 					{
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -923,10 +856,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						},
 						MaxNumberEvaluations: 1,
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -970,10 +901,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						},
 						MaxNumberEvaluations: 1,
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -1032,10 +961,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 							},
 						},
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -1177,10 +1104,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				AssignEvaluations: []Evaluationassignment{
 					{
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -1233,10 +1158,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						},
 						MaxNumberEvaluations: 1,
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -1280,10 +1203,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						},
 						MaxNumberEvaluations: 1,
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -1342,10 +1263,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 							},
 						},
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -1484,10 +1403,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				AssignEvaluations: []Evaluationassignment{
 					{
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -1540,10 +1457,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						},
 						MaxNumberEvaluations: 1,
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -1587,10 +1502,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						},
 						MaxNumberEvaluations: 1,
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,
@@ -1649,10 +1562,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 							},
 						},
 						EvaluationForm: Evaluationform{
-							// Id: "fe901e3c-0c67-435f-afca-3e4738defa43",
 							QuestionGroups: []Evaluationquestiongroup{
 								{
-									// Id:                      "42c596d8-b7e4-451d-bc52-457100244c84",
 									Name:                    "Test group",
 									DefaultAnswersToHighest: true,
 									DefaultAnswersToNA:      false,

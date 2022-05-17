@@ -1,0 +1,4 @@
+* [GET /api/v2/recording/crossplatform/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/analyticsdatamanagement/recording/#get-api-v2-recording-crossplatform-mediaretentionpolicies--policyId-)
+* [PUT /api/v2/recording/crossplatform/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/analyticsdatamanagement/recording/#put-api-v2-recording-crossplatform-mediaretentionpolicies--policyId-)
+* [POST /api/v2/recording/crossplatform/mediaretentionpolicies](https://developer.genesys.cloud/analyticsdatamanagement/recording/#post-api-v2-recording-crossplatform-mediaretentionpolicies)
+* [DELETE /api/v2/recording/crossplatform/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/analyticsdatamanagement/recording/#delete-api-v2-recording-crossplatform-mediaretentionpolicies--policyId-)

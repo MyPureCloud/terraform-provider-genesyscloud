@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v56/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 )
 
 var (
@@ -5064,15 +5064,15 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Reading media retention policy %s", d.Id())
 
-	return withRetriesForRead(ctx, 30*time.Second, d, func() *resource.RetryError {
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		retentionPolicy, resp, getErr := recordingAPI.GetRecordingMediaretentionpolicy(d.Id())
 		// fmt.Printf("media retention policy GET response data %v", retentionPolicy)
 
 		if getErr != nil {
 			if isStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read media retention policy %s: %s", d.Id(), getErr))
+				return resource.RetryableError(fmt.Errorf("failed to read media retention policy %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read media retention policy %s: %s", d.Id(), getErr))
+			return resource.NonRetryableError(fmt.Errorf("failed to read media retention policy %s: %s", d.Id(), getErr))
 		}
 
 		if retentionPolicy.Name != nil {
@@ -5107,18 +5107,6 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 		if retentionPolicy.PolicyErrors != nil {
 			d.Set("policy_errors", flattenPolicyErrors(retentionPolicy.PolicyErrors))
 		}
-
-		// fmt.Printf("ID %s \n", d.Id())
-		// fmt.Printf("NAME %s \n", d.Get("name"))
-		// fmt.Printf("MODIFIED DATE %s \n", d.Get("modified_date"))
-		// fmt.Printf("CREATED DATE %s \n", d.Get("created_date"))
-		// fmt.Printf("ORDER %s \n", d.Get("order"))
-		// fmt.Printf("DESCRIPTION %s \n", d.Get("description"))
-		// fmt.Printf("ENABLED %v \n", d.Get("enabled"))
-		// fmt.Printf("MEDIA POLICIES %#v \n", d.Get("media_policies").([]interface{})[0].(map[string]interface{})["call_policy"].([]interface{})[0].(map[string]interface{})["actions"])
-		// fmt.Printf("CONDITIONS %#v \n", d.Get("conditions"))
-		// fmt.Printf("ACTIONS %#v \n", d.Get("actions"))
-		// fmt.Printf("POLICY ERRORS %#v \n", d.Get("policy_errors"))
 
 		return nil
 	})
@@ -5169,16 +5157,6 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 
 	fmt.Printf("Media retention policy creation status %#v", apiResponse.Status)
 
-	// fmt.Printf("NAME %s \n", *policy.Name)
-	// fmt.Printf("MODIFIED DATE %s \n", *policy.ModifiedDate)
-	// fmt.Printf("CREATED DATE %s \n", *policy.CreatedDate)
-	// fmt.Printf("ORDER %v \n", policy.Order)
-	// fmt.Printf("DESCRIPTION %s \n", *policy.Description)
-	// fmt.Printf("ENABLED %v \n", *policy.Enabled)
-	// fmt.Printf("MEDIA POLICIES %#v \n", policy.MediaPolicies.CallPolicy.Conditions.ForQueues)
-	// fmt.Printf("CONDITIONS %#v \n", policy.Conditions)
-	// fmt.Printf("ACTIONS %#v \n", policy.Actions)
-	// fmt.Printf("POLICY ERRORS %#v \n", policy.PolicyErrors)
 	if err != nil {
 		return diag.Errorf("Failed to create media retention policy %s: %s", name, err)
 	}
@@ -5272,7 +5250,7 @@ func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 				log.Printf("Deleted media retention policy %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting media retention policy %s: %s", d.Id(), err))
+			return resource.NonRetryableError(fmt.Errorf("error deleting media retention policy %s: %s", d.Id(), err))
 		}
 
 		return resource.RetryableError(fmt.Errorf("media retention policy %s still exists", d.Id()))
