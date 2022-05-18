@@ -23,8 +23,8 @@ type Chatmediapolicy struct {
 }
 
 type Callmediapolicy struct {
-	Actions    Policyactions             `json:"actions,omitempty"`
-	Conditions Callmediapolicyconditions `json:"conditions,omitempty"`
+	Actions    Policyactions
+	Conditions Callmediapolicyconditions
 }
 
 type Emailmediapolicy struct {
@@ -419,14 +419,14 @@ type Actions struct {
 }
 
 type Callmediapolicyconditions struct {
-	ForUsers    []User            `json:"forUsers,omitempty"`
-	DateRanges  []string          `json:"dateRanges,omitempty"`
-	ForQueues   []Queue           `json:"forQueues,omitempty"`
-	WrapupCodes []Wrapupcode      `json:"wrapupCodes,omitempty"`
-	Languages   []Language        `json:"languages,omitempty"`
-	TimeAllowed Timeallowed       `json:"timeAllowed,omitempty"`
-	Directions  []string          `json:"directions,omitempty"`
-	Duration    Durationcondition `json:"duration,omitempty"`
+	ForUsers    []User
+	DateRanges  []string
+	ForQueues   []Queue
+	WrapupCodes []Wrapupcode
+	Languages   []Language
+	TimeAllowed Timeallowed
+	Directions  []string
+	Duration    Durationcondition
 }
 
 type Chatmediapolicyconditions struct {
@@ -458,14 +458,14 @@ type Messagemediapolicyconditions struct {
 }
 
 type Policyconditions struct {
-	ForUsers    []User            `json:"forUsers,omitempty"`
-	Directions  []string          `json:"directions,omitempty"`
-	DateRanges  []string          `json:"dateRanges,omitempty"`
-	MediaTypes  []string          `json:"mediaTypes,omitempty"`
-	ForQueues   []Queue           `json:"forQueues,omitempty"`
-	Duration    Durationcondition `json:"duration,omitempty"`
-	WrapupCodes []Wrapupcode      `json:"wrapupCodes,omitempty"`
-	TimeAllowed Timeallowed       `json:"timeAllowed,omitempty"`
+	ForUsers    []User
+	Directions  []string
+	DateRanges  []string
+	MediaTypes  []string
+	ForQueues   []Queue
+	Duration    Durationcondition
+	WrapupCodes []Wrapupcode
+	TimeAllowed Timeallowed
 }
 
 type Policycreate struct {
