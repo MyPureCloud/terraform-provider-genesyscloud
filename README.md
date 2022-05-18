@@ -41,8 +41,11 @@ The following environment variables may be set to avoid hardcoding OAuth Client 
 ```
 GENESYSCLOUD_OAUTHCLIENT_ID
 GENESYSCLOUD_OAUTHCLIENT_SECRET
+GENESYSCLOUD_ACCESS_TOKEN
 GENESYSCLOUD_REGION
 ```
+
+*Note:* If `GENESYSCLOUD_ACCESS_TOKEN` is set, the Oauth client will use the access token instead of client credentials to make requests.
 
 *Note:* The provider makes Public API calls to perform all of the CRUD operations necessary to manage Genesys Cloud resources. All of these API calls require specific permissions and OAuth scopes. Therefore it is important that you verify your OAuth Client is authorized for all necessary scopes and is assigned an admin role capable of creating, reading, updating, and deleting all resources that your Terraform configuration will manage.
 
