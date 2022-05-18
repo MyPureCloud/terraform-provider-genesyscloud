@@ -30,5 +30,6 @@ provider "genesyscloud" {
 
 ### Optional
 
+- **access_token** (String) A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.
 - **sdk_debug** (Boolean) Enables debug tracing in the Genesys Cloud SDK. Output will be written to the local file 'sdk_debug.log'.
 - **token_pool_size** (Number) Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.

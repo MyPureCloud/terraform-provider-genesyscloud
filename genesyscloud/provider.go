@@ -34,11 +34,11 @@ func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
 		return &schema.Provider{
 			Schema: map[string]*schema.Schema{
-				"oauthaccess_token": {
+				"access_token": {
 					Type:        schema.TypeString,
 					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_ACCESS_TOKEN", nil),
-					Description: "OAuthAccess token. A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.",
+					Description: "A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.",
 				},
 				"oauthclient_id": {
 					Type:        schema.TypeString,
@@ -232,7 +232,7 @@ func getRegionBasePath(region string) string {
 }
 
 func initClientConfig(data *schema.ResourceData, version string, config *platformclientv2.Configuration) diag.Diagnostics {
-	oauthaccessToken := data.Get("oauthaccess_token").(string)
+	accessToken := data.Get("access_token").(string)
 	oauthclientID := data.Get("oauthclient_id").(string)
 	oauthclientSecret := data.Get("oauthclient_secret").(string)
 	basePath := getRegionBasePath(data.Get("aws_region").(string))
@@ -260,8 +260,8 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		},
 	}
 
-	if oauthaccessToken != "" {
-		config.AccessToken = oauthaccessToken
+	if accessToken != "" {
+		config.AccessToken = accessToken
 	} else {
 		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
 		if err != nil {
