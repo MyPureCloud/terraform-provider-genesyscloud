@@ -3,9 +3,10 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -178,7 +179,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	log.Printf("Deleting division %s", name)
-	_, err := authAPI.DeleteAuthorizationDivision(d.Id(), true)
+	_, err := authAPI.DeleteAuthorizationDivision(d.Id(), false)
 	if err != nil {
 		return diag.Errorf("Failed to delete division %s: %s", name, err)
 	}
