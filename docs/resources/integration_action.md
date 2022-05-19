@@ -90,31 +90,34 @@ resource "genesyscloud_integration_action" "test-action" {
 
 ### Required
 
-- **category** (String) Category of action. Can be up to 256 characters long.
-- **contract_input** (String) JSON Schema that defines the body of the request that the client (edge/architect/postman) is sending to the service, on the /execute path. Changes will create a new action.
-- **contract_output** (String) JSON schema that defines the transformed, successful result that will be sent back to the caller. Changes will create a new action.
-- **name** (String) Name of the action. Can be up to 256 characters long
+- `category` (String) Category of action. Can be up to 256 characters long.
+- `contract_input` (String) JSON Schema that defines the body of the request that the client (edge/architect/postman) is sending to the service, on the /execute path. Changes will create a new action.
+- `contract_output` (String) JSON schema that defines the transformed, successful result that will be sent back to the caller. Changes will create a new action.
+- `name` (String) Name of the action. Can be up to 256 characters long
 
 ### Optional
 
-- **config_request** (Block List, Max: 1) Configuration of outbound request. (see [below for nested schema](#nestedblock--config_request))
-- **config_response** (Block List, Max: 1) Configuration of response processing. (see [below for nested schema](#nestedblock--config_response))
-- **id** (String) The ID of this resource.
-- **integration_id** (String) The ID of the integration this action is associated with. Changes will create a new action.
-- **secure** (Boolean) Indication of whether or not the action is designed to accept sensitive data. Changes will create a new action. Defaults to `false`.
+- `config_request` (Block List, Max: 1) Configuration of outbound request. (see [below for nested schema](#nestedblock--config_request))
+- `config_response` (Block List, Max: 1) Configuration of response processing. (see [below for nested schema](#nestedblock--config_response))
+- `integration_id` (String) The ID of the integration this action is associated with. Changes will create a new action.
+- `secure` (Boolean) Indication of whether or not the action is designed to accept sensitive data. Changes will create a new action. Defaults to `false`.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--config_request"></a>
 ### Nested Schema for `config_request`
 
 Required:
 
-- **request_type** (String) HTTP method to use for request (GET | PUT | POST | PATCH | DELETE).
-- **request_url_template** (String) URL that may include placeholders for requests to 3rd party service.
+- `request_type` (String) HTTP method to use for request (GET | PUT | POST | PATCH | DELETE).
+- `request_url_template` (String) URL that may include placeholders for requests to 3rd party service.
 
 Optional:
 
-- **headers** (Map of String) Map of headers in name, value pairs to include in request.
-- **request_template** (String) Velocity template to define request body sent to 3rd party service. Any instances of '${' must be properly escaped as '$${'
+- `headers` (Map of String) Map of headers in name, value pairs to include in request.
+- `request_template` (String) Velocity template to define request body sent to 3rd party service. Any instances of '${' must be properly escaped as '$${'
 
 
 <a id="nestedblock--config_response"></a>
@@ -122,7 +125,7 @@ Optional:
 
 Optional:
 
-- **success_template** (String) Velocity template to build response to return from Action. Any instances of '${' must be properly escaped as '$${'.
-- **translation_map** (Map of String) Map 'attribute name' and 'JSON path' pairs used to extract data from REST response.
-- **translation_map_defaults** (Map of String) Map 'attribute name' and 'default value' pairs used as fallback values if JSON path extraction fails for specified key.
+- `success_template` (String) Velocity template to build response to return from Action. Any instances of '${' must be properly escaped as '$${'.
+- `translation_map` (Map of String) Map 'attribute name' and 'JSON path' pairs used to extract data from REST response.
+- `translation_map_defaults` (Map of String) Map 'attribute name' and 'default value' pairs used as fallback values if JSON path extraction fails for specified key.
 

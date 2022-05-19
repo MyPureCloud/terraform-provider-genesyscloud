@@ -60,11 +60,14 @@ resource "genesyscloud_flow" "flow" {
 
 ### Required
 
-- **filepath** (String) YAML file path or URL for flow configuration.
+- `filepath` (String) YAML file path or URL for flow configuration.
 
 ### Optional
 
-- **file_content_hash** (String) Hash value of the YAML file content. Used to detect changes.
-- **id** (String) The ID of this resource.
-- **substitutions** (Map of String) A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.
+- `file_content_hash` (String) Hash value of the YAML file content. Used to detect changes.
+- `substitutions` (Map of String) A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 

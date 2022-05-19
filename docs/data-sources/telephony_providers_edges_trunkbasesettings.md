@@ -23,10 +23,10 @@ data "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSettin
 
 ### Required
 
-- **name** (String) Trunk Base Settings name.
+- `name` (String) Trunk Base Settings name.
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

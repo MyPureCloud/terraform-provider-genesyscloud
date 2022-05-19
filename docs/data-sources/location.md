@@ -23,10 +23,10 @@ data "genesyscloud_location" "location" {
 
 ### Required
 
-- **name** (String) Location name.
+- `name` (String) Location name.
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

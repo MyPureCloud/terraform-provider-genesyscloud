@@ -23,10 +23,10 @@ data "genesyscloud_flow" "test-flow" {
 
 ### Required
 
-- **name** (String) Flow name.
+- `name` (String) Flow name.
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

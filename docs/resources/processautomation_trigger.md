@@ -45,24 +45,27 @@ resource "genesyscloud_processautomation_trigger" "test-trigger" {
 
 ### Required
 
-- **enabled** (Boolean) Whether or not the trigger should be fired on events
-- **name** (String) Name of the Trigger
-- **target** (Block Set, Min: 1, Max: 1) Target the trigger will invoke when fired (see [below for nested schema](#nestedblock--target))
-- **topic_name** (String) Topic name that will fire trigger. (Updating requires replacement of trigger)
+- `enabled` (Boolean) Whether or not the trigger should be fired on events
+- `name` (String) Name of the Trigger
+- `target` (Block Set, Min: 1, Max: 1) Target the trigger will invoke when fired (see [below for nested schema](#nestedblock--target))
+- `topic_name` (String) Topic name that will fire trigger. (Updating requires replacement of trigger)
 
 ### Optional
 
-- **event_ttl_seconds** (Number) How old an event can be to fire the trigger. Must be an number greater than or equal to 10
-- **id** (String) The ID of this resource.
-- **match_criteria** (Block Set) Match criteria that controls when the trigger will fire. (see [below for nested schema](#nestedblock--match_criteria))
+- `event_ttl_seconds` (Number) How old an event can be to fire the trigger. Must be an number greater than or equal to 10
+- `match_criteria` (Block Set) Match criteria that controls when the trigger will fire. (see [below for nested schema](#nestedblock--match_criteria))
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--target"></a>
 ### Nested Schema for `target`
 
 Required:
 
-- **id** (String) Id of the target the trigger is configured to hit
-- **type** (String) Type of the target the trigger is configured to hit
+- `id` (String) Id of the target the trigger is configured to hit
+- `type` (String) Type of the target the trigger is configured to hit
 
 
 <a id="nestedblock--match_criteria"></a>
@@ -70,11 +73,11 @@ Required:
 
 Required:
 
-- **json_path** (String) The json path of the topic event to be compared to match criteria value
-- **operator** (String) The operator used to compare the json path against the value of the match criteria
+- `json_path` (String) The json path of the topic event to be compared to match criteria value
+- `operator` (String) The operator used to compare the json path against the value of the match criteria
 
 Optional:
 
-- **value** (String) Value the jsonPath is compared against
-- **values** (List of String) Values the jsonPath are compared against
+- `value` (String) Value the jsonPath is compared against
+- `values` (List of String) Values the jsonPath are compared against
 

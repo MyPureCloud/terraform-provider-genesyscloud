@@ -23,10 +23,10 @@ data "genesyscloud_telephony_providers_edges_phone" "phoneData" {
 
 ### Required
 
-- **name** (String) Phone name.
+- `name` (String) Phone name.
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

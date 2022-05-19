@@ -23,10 +23,10 @@ data "genesyscloud_integration_credential" "integrationCredential" {
 
 ### Required
 
-- **name** (String) The name of the integration credential
+- `name` (String) The name of the integration credential
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

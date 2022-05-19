@@ -36,11 +36,14 @@ resource "genesyscloud_architect_datatable_row" "john-smith-2749" {
 
 ### Required
 
-- **datatable_id** (String) Datatable ID that contains this row. If this is changed, a new row is created.
-- **key_value** (String) Value for this row's key. If this is changed, a new row is created.
+- `datatable_id` (String) Datatable ID that contains this row. If this is changed, a new row is created.
+- `key_value` (String) Value for this row's key. If this is changed, a new row is created.
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **properties_json** (String) JSON object containing properties and values for this row. Defaults will be set for missing properties.
+- `properties_json` (String) JSON object containing properties and values for this row. Defaults will be set for missing properties.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 

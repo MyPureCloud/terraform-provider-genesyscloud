@@ -15,6 +15,3 @@ updates:
     schedule:
       # Check for updates to Go modules every weekday
       interval: "daily"
-    ignore:
-      - dependency-name: "github.com/hashicorp/terraform-plugin-docs"
-      - dependency-name: "github.com/hashicorp/terraform-plugin-sdk/v2"

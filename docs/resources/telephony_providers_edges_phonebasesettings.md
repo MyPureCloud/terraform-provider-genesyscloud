@@ -64,29 +64,32 @@ resource "genesyscloud_telephony_providers_edges_phonebasesettings" "examplePhon
 
 ### Required
 
-- **name** (String) The name of the entity.
-- **phone_meta_base_id** (String) A phone metabase is essentially a database for storing phone configuration settings, which simplifies the configuration process.
+- `name` (String) The name of the entity.
+- `phone_meta_base_id` (String) A phone metabase is essentially a database for storing phone configuration settings, which simplifies the configuration process.
 
 ### Optional
 
-- **capabilities** (Block List, Max: 1) Phone Capabilities. (see [below for nested schema](#nestedblock--capabilities))
-- **description** (String) The resource's description.
-- **id** (String) The ID of this resource.
-- **line_base_settings_id** (String) Computed line base settings id
-- **properties** (String) phone base settings properties
+- `capabilities` (Block List, Max: 1) Phone Capabilities. (see [below for nested schema](#nestedblock--capabilities))
+- `description` (String) The resource's description.
+- `line_base_settings_id` (String) Computed line base settings id
+- `properties` (String) phone base settings properties
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--capabilities"></a>
 ### Nested Schema for `capabilities`
 
 Optional:
 
-- **allow_reboot** (Boolean) Allow Reboot
-- **cdm** (Boolean) CDM
-- **dual_registers** (Boolean) Dual Registers
-- **hardware_id_type** (String) HardwareId Type
-- **media_codecs** (List of String) Media Codecs
-- **no_cloud_provisioning** (Boolean) No Cloud Provisioning
-- **no_rebalance** (Boolean) No Rebalance
-- **provisions** (Boolean) Provisions
-- **registers** (Boolean) Registers
+- `allow_reboot` (Boolean) Allow Reboot
+- `cdm` (Boolean) CDM
+- `dual_registers` (Boolean) Dual Registers
+- `hardware_id_type` (String) HardwareId Type
+- `media_codecs` (List of String) Media Codecs
+- `no_cloud_provisioning` (Boolean) No Cloud Provisioning
+- `no_rebalance` (Boolean) No Rebalance
+- `provisions` (Boolean) Provisions
+- `registers` (Boolean) Registers
 

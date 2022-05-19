@@ -35,21 +35,24 @@ resource "genesyscloud_architect_emergencygroup" "emergency-group" {
 
 ### Required
 
-- **name** (String) Name of the emergency group.
+- `name` (String) Name of the emergency group.
 
 ### Optional
 
-- **description** (String) Description of the emergency group.
-- **division_id** (String) The division to which this emergency group will belong. If not set, the home division will be used.
-- **emergency_call_flows** (Block List) The emergency call flows for this emergency group. (see [below for nested schema](#nestedblock--emergency_call_flows))
-- **enabled** (Boolean) The state of the emergency group. Defaults to false/inactive. Defaults to `false`.
-- **id** (String) The ID of this resource.
+- `description` (String) Description of the emergency group.
+- `division_id` (String) The division to which this emergency group will belong. If not set, the home division will be used.
+- `emergency_call_flows` (Block List) The emergency call flows for this emergency group. (see [below for nested schema](#nestedblock--emergency_call_flows))
+- `enabled` (Boolean) The state of the emergency group. Defaults to false/inactive. Defaults to `false`.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--emergency_call_flows"></a>
 ### Nested Schema for `emergency_call_flows`
 
 Required:
 
-- **emergency_flow_id** (String) The ID of the connected call flow.
-- **ivr_ids** (Set of String) The IDs of the connected IVRs.
+- `emergency_flow_id` (String) The ID of the connected call flow.
+- `ivr_ids` (Set of String) The IDs of the connected IVRs.
 

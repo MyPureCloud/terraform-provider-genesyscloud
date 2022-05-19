@@ -56,26 +56,29 @@ resource "genesyscloud_routing_utilization" "org-utililzation" {
 
 ### Optional
 
-- **call** (Block List, Max: 1) Call media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--call))
-- **callback** (Block List, Max: 1) Callback media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--callback))
-- **chat** (Block List, Max: 1) Chat media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--chat))
-- **email** (Block List, Max: 1) Email media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--email))
-- **id** (String) The ID of this resource.
-- **message** (Block List, Max: 1) Message media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--message))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **video** (Block List, Max: 1) Video media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--video))
+- `call` (Block List, Max: 1) Call media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--call))
+- `callback` (Block List, Max: 1) Callback media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--callback))
+- `chat` (Block List, Max: 1) Chat media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--chat))
+- `email` (Block List, Max: 1) Email media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--email))
+- `message` (Block List, Max: 1) Message media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--message))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `video` (Block List, Max: 1) Video media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--video))
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--call"></a>
 ### Nested Schema for `call`
 
 Required:
 
-- **maximum_capacity** (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
+- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
 
 Optional:
 
-- **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
+- `include_non_acd` (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
+- `interruptible_media_types` (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 
 
 <a id="nestedblock--callback"></a>
@@ -83,12 +86,12 @@ Optional:
 
 Required:
 
-- **maximum_capacity** (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
+- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
 
 Optional:
 
-- **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
+- `include_non_acd` (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
+- `interruptible_media_types` (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 
 
 <a id="nestedblock--chat"></a>
@@ -96,12 +99,12 @@ Optional:
 
 Required:
 
-- **maximum_capacity** (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
+- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
 
 Optional:
 
-- **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
+- `include_non_acd` (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
+- `interruptible_media_types` (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 
 
 <a id="nestedblock--email"></a>
@@ -109,12 +112,12 @@ Optional:
 
 Required:
 
-- **maximum_capacity** (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
+- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
 
 Optional:
 
-- **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
+- `include_non_acd` (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
+- `interruptible_media_types` (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 
 
 <a id="nestedblock--message"></a>
@@ -122,12 +125,12 @@ Optional:
 
 Required:
 
-- **maximum_capacity** (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
+- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
 
 Optional:
 
-- **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
+- `include_non_acd` (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
+- `interruptible_media_types` (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 
 
 <a id="nestedblock--timeouts"></a>
@@ -135,8 +138,8 @@ Optional:
 
 Optional:
 
-- **read** (String)
-- **update** (String)
+- `read` (String)
+- `update` (String)
 
 
 <a id="nestedblock--video"></a>
@@ -144,10 +147,10 @@ Optional:
 
 Required:
 
-- **maximum_capacity** (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
+- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
 
 Optional:
 
-- **include_non_acd** (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
-- **interruptible_media_types** (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
+- `include_non_acd` (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
+- `interruptible_media_types` (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message | videoComm).
 

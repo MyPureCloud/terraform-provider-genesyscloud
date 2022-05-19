@@ -61,15 +61,18 @@ resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSe
 
 ### Required
 
-- **name** (String) The name of the entity.
-- **trunk_meta_base_id** (String) The meta-base this trunk is based on.
-- **trunk_type** (String) The type of this trunk base.Valid values: EXTERNAL, PHONE, EDGE.
+- `name` (String) The name of the entity.
+- `trunk_meta_base_id` (String) The meta-base this trunk is based on.
+- `trunk_type` (String) The type of this trunk base.Valid values: EXTERNAL, PHONE, EDGE.
 
 ### Optional
 
-- **description** (String) The resource's description.
-- **id** (String) The ID of this resource.
-- **managed** (Boolean) Is this trunk being managed remotely. This property is synchronized with the managed property of the Edge Group to which it is assigned.
-- **properties** (String) trunk base settings properties
-- **state** (String) The resource's state.
+- `description` (String) The resource's description.
+- `managed` (Boolean) Is this trunk being managed remotely. This property is synchronized with the managed property of the Edge Group to which it is assigned.
+- `properties` (String) trunk base settings properties
+- `state` (String) The resource's state.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 

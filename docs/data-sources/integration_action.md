@@ -23,10 +23,10 @@ data "genesyscloud_integration_action" "integrationAction" {
 
 ### Required
 
-- **name** (String) The name of the integration action
+- `name` (String) The name of the integration action
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

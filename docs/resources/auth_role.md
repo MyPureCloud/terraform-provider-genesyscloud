@@ -49,56 +49,59 @@ resource "genesyscloud_auth_role" "agent_role" {
 
 ### Required
 
-- **name** (String) Role name. This cannot be modified for default roles.
+- `name` (String) Role name. This cannot be modified for default roles.
 
 ### Optional
 
-- **default_role_id** (String) Internal ID for an existing default role, e.g. 'employee'. This can be set to manage permissions on existing default roles.
-- **description** (String) Role description.
-- **id** (String) The ID of this resource.
-- **permission_policies** (Block Set) Role permission policies. (see [below for nested schema](#nestedblock--permission_policies))
-- **permissions** (Set of String) General role permissions. e.g. 'group_creation'
+- `default_role_id` (String) Internal ID for an existing default role, e.g. 'employee'. This can be set to manage permissions on existing default roles.
+- `description` (String) Role description.
+- `permission_policies` (Block Set) Role permission policies. (see [below for nested schema](#nestedblock--permission_policies))
+- `permissions` (Set of String) General role permissions. e.g. 'group_creation'
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--permission_policies"></a>
 ### Nested Schema for `permission_policies`
 
 Required:
 
-- **action_set** (Set of String) Actions allowed on the entity or '*' for all. e.g. 'add'
-- **domain** (String) Permission domain. e.g 'directory'
-- **entity_name** (String) Permission entity or '*' for all. e.g. 'user'
+- `action_set` (Set of String) Actions allowed on the entity or '*' for all. e.g. 'add'
+- `domain` (String) Permission domain. e.g 'directory'
+- `entity_name` (String) Permission entity or '*' for all. e.g. 'user'
 
 Optional:
 
-- **conditions** (Block List, Max: 1) Conditions specific to this resource. This is only applicable to some permission types. (see [below for nested schema](#nestedblock--permission_policies--conditions))
+- `conditions` (Block List, Max: 1) Conditions specific to this resource. This is only applicable to some permission types. (see [below for nested schema](#nestedblock--permission_policies--conditions))
 
 <a id="nestedblock--permission_policies--conditions"></a>
 ### Nested Schema for `permission_policies.conditions`
 
 Required:
 
-- **conjunction** (String) Conjunction for condition terms (AND | OR).
-- **terms** (Block Set, Min: 1) Terms of the condition. (see [below for nested schema](#nestedblock--permission_policies--conditions--terms))
+- `conjunction` (String) Conjunction for condition terms (AND | OR).
+- `terms` (Block Set, Min: 1) Terms of the condition. (see [below for nested schema](#nestedblock--permission_policies--conditions--terms))
 
 <a id="nestedblock--permission_policies--conditions--terms"></a>
 ### Nested Schema for `permission_policies.conditions.terms`
 
 Required:
 
-- **operands** (Block Set, Min: 1) Operands for this condition. (see [below for nested schema](#nestedblock--permission_policies--conditions--terms--operands))
-- **operator** (String) Operator type (EQ | IN | GE | GT | LE | LT).
-- **variable_name** (String) Variable name being compared. This varies depending on the permission.
+- `operands` (Block Set, Min: 1) Operands for this condition. (see [below for nested schema](#nestedblock--permission_policies--conditions--terms--operands))
+- `operator` (String) Operator type (EQ | IN | GE | GT | LE | LT).
+- `variable_name` (String) Variable name being compared. This varies depending on the permission.
 
 <a id="nestedblock--permission_policies--conditions--terms--operands"></a>
 ### Nested Schema for `permission_policies.conditions.terms.variable_name`
 
 Required:
 
-- **type** (String) Value type (USER | QUEUE | SCALAR | VARIABLE).
+- `type` (String) Value type (USER | QUEUE | SCALAR | VARIABLE).
 
 Optional:
 
-- **queue_id** (String) Queue ID for QUEUE types.
-- **user_id** (String) User ID for USER types.
-- **value** (String) Value for operand. For USER or QUEUE types, use user_id or queue_id instead.
+- `queue_id` (String) Queue ID for QUEUE types.
+- `user_id` (String) User ID for USER types.
+- `value` (String) Value for operand. For USER or QUEUE types, use user_id or queue_id instead.
 

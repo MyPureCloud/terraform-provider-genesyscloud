@@ -34,14 +34,17 @@ resource "genesyscloud_telephony_providers_edges_edge_group" "test_edge_group" {
 
 ### Required
 
-- **name** (String) The name of the entity.
-- **phone_trunk_base_ids** (Set of String) A list of trunk base settings IDs of trunkType "PHONE" to inherit to edge logical interface for phone communication.
+- `name` (String) The name of the entity.
+- `phone_trunk_base_ids` (Set of String) A list of trunk base settings IDs of trunkType "PHONE" to inherit to edge logical interface for phone communication.
 
 ### Optional
 
-- **description** (String) The resource's description.
-- **hybrid** (Boolean) Is this edge group hybrid. Defaults to `false`.
-- **id** (String) The ID of this resource.
-- **managed** (Boolean) Is this edge group being managed remotely. Defaults to `false`.
-- **state** (String) Indicates if the resource is active, inactive, or deleted.
+- `description` (String) The resource's description.
+- `hybrid` (Boolean) Is this edge group hybrid. Defaults to `false`.
+- `managed` (Boolean) Is this edge group being managed remotely. Defaults to `false`.
+- `state` (String) Indicates if the resource is active, inactive, or deleted.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 

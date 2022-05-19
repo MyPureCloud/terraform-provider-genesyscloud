@@ -23,10 +23,10 @@ data "genesyscloud_telephony_providers_edges_trunk" "trunk" {
 
 ### Required
 
-- **name** (String) Trunk name.
+- `name` (String) Trunk name.
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 
