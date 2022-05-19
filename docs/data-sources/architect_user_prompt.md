@@ -23,10 +23,10 @@ data "genesyscloud_architect_user_prompt" "welcome_greeting" {
 
 ### Required
 
-- **name** (String) User Prompt name.
+- `name` (String) User Prompt name.
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

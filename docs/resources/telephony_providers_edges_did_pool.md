@@ -35,13 +35,16 @@ resource "genesyscloud_telephony_providers_edges_did_pool" "test_did_pool" {
 
 ### Required
 
-- **end_phone_number** (String) Ending phone number of the DID Pool range.
-- **start_phone_number** (String) Starting phone number of the DID Pool range.
+- `end_phone_number` (String) Ending phone number of the DID Pool range.
+- `start_phone_number` (String) Starting phone number of the DID Pool range.
 
 ### Optional
 
-- **comments** (String) Comments for the DID Pool.
-- **description** (String) DID Pool description.
-- **id** (String) The ID of this resource.
-- **pool_provider** (String) Provider (PURE_CLOUD | PURE_CLOUD_VOICE).
+- `comments` (String) Comments for the DID Pool.
+- `description` (String) DID Pool description.
+- `pool_provider` (String) Provider (PURE_CLOUD | PURE_CLOUD_VOICE).
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 

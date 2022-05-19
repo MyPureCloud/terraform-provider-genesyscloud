@@ -23,10 +23,10 @@ data "genesyscloud_architect_emergencygroup" "emergency_group" {
 
 ### Required
 
-- **name** (String) Emergency Group name.
+- `name` (String) Emergency Group name.
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

@@ -34,14 +34,17 @@ resource "genesyscloud_architect_schedules" "test_schedule" {
 
 ### Required
 
-- **end** (String) Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
-- **name** (String) Name of the schedule.
-- **start** (String) Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
+- `end` (String) Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
+- `name` (String) Name of the schedule.
+- `start` (String) Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
 
 ### Optional
 
-- **description** (String) Description of the schedule.
-- **division_id** (String) The division to which this schedule group will belong. If not set, the home division will be used. If set, you must have all divisions and future divisions selected in your OAuth client role
-- **id** (String) The ID of this resource.
-- **rrule** (String) An iCal Recurrence Rule (RRULE) string.
+- `description` (String) Description of the schedule.
+- `division_id` (String) The division to which this schedule group will belong. If not set, the home division will be used. If set, you must have all divisions and future divisions selected in your OAuth client role
+- `rrule` (String) An iCal Recurrence Rule (RRULE) string.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 

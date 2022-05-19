@@ -23,10 +23,10 @@ data "genesyscloud_webdeployments_deployment" "exampleDeployment" {
 
 ### Required
 
-- **name** (String) The name of the deployment
+- `name` (String) The name of the deployment
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

@@ -23,10 +23,10 @@ data "genesyscloud_architect_ivr" "arch-ivr" {
 
 ### Required
 
-- **name** (String) IVR name.
+- `name` (String) IVR name.
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

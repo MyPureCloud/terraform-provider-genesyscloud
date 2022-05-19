@@ -34,9 +34,12 @@ resource "genesyscloud_telephony_providers_edges_trunk" "test_trunk" {
 
 ### Optional
 
-- **edge_group_id** (String) The edge group associated with this trunk. Either this or "edge_id" must be set
-- **edge_id** (String) The edge associated with this trunk. Either this or "edge_group_id" must be set
-- **id** (String) The ID of this resource.
-- **name** (String) The name of the trunk. This property is read only and populated with the auto generated name.
-- **trunk_base_settings_id** (String) The trunk base settings reference
+- `edge_group_id` (String) The edge group associated with this trunk. Either this or "edge_id" must be set
+- `edge_id` (String) The edge associated with this trunk. Either this or "edge_group_id" must be set
+- `name` (String) The name of the trunk. This property is read only and populated with the auto generated name.
+- `trunk_base_settings_id` (String) The trunk base settings reference
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 

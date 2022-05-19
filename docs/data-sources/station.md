@@ -23,7 +23,10 @@ data "genesyscloud_station" "test-station" {
 
 ### Optional
 
-- **id** (String) The ID of this resource.
-- **name** (String) Station name.
+- `name` (String) Station name.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 

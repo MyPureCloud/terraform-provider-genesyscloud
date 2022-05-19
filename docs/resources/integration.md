@@ -51,22 +51,25 @@ resource "genesyscloud_integration" "integration1" {
 
 ### Required
 
-- **integration_type** (String) Integration type.
+- `integration_type` (String) Integration type.
 
 ### Optional
 
-- **config** (Block List, Max: 1) Integration config. Each integration type has different schema, use [GET /api/v2/integrations/types/{typeId}/configschemas/{configType}](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations-types--typeId--configschemas--configType-) to check schema, then use the correct attribute names for properties. (see [below for nested schema](#nestedblock--config))
-- **id** (String) The ID of this resource.
-- **intended_state** (String) Integration state (ENABLED | DISABLED | DELETED). Defaults to `DISABLED`.
+- `config` (Block List, Max: 1) Integration config. Each integration type has different schema, use [GET /api/v2/integrations/types/{typeId}/configschemas/{configType}](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations-types--typeId--configschemas--configType-) to check schema, then use the correct attribute names for properties. (see [below for nested schema](#nestedblock--config))
+- `intended_state` (String) Integration state (ENABLED | DISABLED | DELETED). Defaults to `DISABLED`.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--config"></a>
 ### Nested Schema for `config`
 
 Optional:
 
-- **advanced** (String) Integration advanced config (JSON string).
-- **credentials** (Map of String) Credentials required for the integration. The required keys are indicated in the credentials property of the Integration Type.
-- **name** (String) Integration name.
-- **notes** (String) Integration notes.
-- **properties** (String) Integration config properties (JSON string).
+- `advanced` (String) Integration advanced config (JSON string).
+- `credentials` (Map of String) Credentials required for the integration. The required keys are indicated in the credentials property of the Integration Type.
+- `name` (String) Integration name.
+- `notes` (String) Integration notes.
+- `properties` (String) Integration config properties (JSON string).
 

@@ -31,22 +31,25 @@ resource "genesyscloud_idp_adfs" "adfs" {
 
 ### Required
 
-- **certificates** (Set of String) PEM or DER encoded public X.509 certificates for SAML signature validation.
-- **issuer_uri** (String) Issuer URI provided by ADFS.
+- `certificates` (Set of String) PEM or DER encoded public X.509 certificates for SAML signature validation.
+- `issuer_uri` (String) Issuer URI provided by ADFS.
 
 ### Optional
 
-- **disabled** (Boolean) True if ADFS is disabled. Defaults to `false`.
-- **id** (String) The ID of this resource.
-- **relying_party_identifier** (String) String used to identify Genesys Cloud to ADFS.
-- **target_uri** (String) Target URI provided by ADFS.
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `disabled` (Boolean) True if ADFS is disabled. Defaults to `false`.
+- `relying_party_identifier` (String) String used to identify Genesys Cloud to ADFS.
+- `target_uri` (String) Target URI provided by ADFS.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- **read** (String)
-- **update** (String)
+- `read` (String)
+- `update` (String)
 

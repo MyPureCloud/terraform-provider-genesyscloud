@@ -25,15 +25,18 @@ output "genesys_cloud_org_id" {
 
 ### Optional
 
-- **default_country_code** (String)
-- **default_language** (String)
-- **default_site_id** (String)
-- **domain** (String)
-- **id** (String) The ID of this resource.
-- **name** (String)
-- **product_platform** (String)
-- **support_uri** (String)
-- **third_party_org_name** (String)
-- **voicemail_enabled** (Boolean)
+- `default_country_code` (String)
+- `default_language` (String)
+- `default_site_id` (String)
+- `domain` (String)
+- `name` (String)
+- `product_platform` (String)
+- `support_uri` (String)
+- `third_party_org_name` (String)
+- `voicemail_enabled` (Boolean)
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 

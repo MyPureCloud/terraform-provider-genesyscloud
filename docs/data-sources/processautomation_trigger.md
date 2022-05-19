@@ -23,10 +23,10 @@ data "genesyscloud_processautomation_trigger" "test-trigger" {
 
 ### Required
 
-- **name** (String) The name of the trigger
+- `name` (String) The name of the trigger
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

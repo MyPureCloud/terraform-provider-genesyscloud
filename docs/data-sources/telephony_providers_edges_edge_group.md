@@ -23,10 +23,10 @@ data "genesyscloud_telephony_providers_edges_edge_group" "edgeGroup" {
 
 ### Required
 
-- **name** (String) Edge Group name.
+- `name` (String) Edge Group name.
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

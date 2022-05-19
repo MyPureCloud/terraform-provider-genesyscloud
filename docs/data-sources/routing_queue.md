@@ -23,10 +23,10 @@ data "genesyscloud_routing_queue" "sales-queue" {
 
 ### Required
 
-- **name** (String) Queue name.
+- `name` (String) Queue name.
 
-### Optional
+### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 

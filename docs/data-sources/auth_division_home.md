@@ -25,8 +25,11 @@ output "home_name" {
 
 ### Optional
 
-- **description** (String) Home division description.
-- **id** (String) The ID of this resource.
-- **name** (String) Home division name.
+- `description` (String) Home division description.
+- `name` (String) Home division name.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 

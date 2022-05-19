@@ -37,15 +37,18 @@ resource "genesyscloud_architect_ivr" "test_ivr" {
 
 ### Required
 
-- **name** (String) Name of the IVR config.
+- `name` (String) Name of the IVR config.
 
 ### Optional
 
-- **closed_hours_flow_id** (String) ID of inbound call flow for closed hours.
-- **description** (String) IVR Config description.
-- **dnis** (Set of String) The phone number(s) to contact the IVR by.
-- **holiday_hours_flow_id** (String) ID of inbound call flow for holidays.
-- **id** (String) The ID of this resource.
-- **open_hours_flow_id** (String) ID of inbound call flow for open hours.
-- **schedule_group_id** (String) Schedule group ID.
+- `closed_hours_flow_id` (String) ID of inbound call flow for closed hours.
+- `description` (String) IVR Config description.
+- `dnis` (Set of String) The phone number(s) to contact the IVR by.
+- `holiday_hours_flow_id` (String) ID of inbound call flow for holidays.
+- `open_hours_flow_id` (String) ID of inbound call flow for open hours.
+- `schedule_group_id` (String) Schedule group ID.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 

@@ -42,30 +42,33 @@ resource "genesyscloud_location" "hq1" {
 
 ### Required
 
-- **name** (String) Location name.
+- `name` (String) Location name.
 
 ### Optional
 
-- **address** (Block List, Max: 1) Address for this location. This cannot be changed while an emergency number is assigned. (see [below for nested schema](#nestedblock--address))
-- **emergency_number** (Block List, Max: 1) Emergency phone number for this location. (see [below for nested schema](#nestedblock--emergency_number))
-- **id** (String) The ID of this resource.
-- **notes** (String) Notes for this location.
-- **path** (List of String) A list of ancestor location IDs. This can be used to create sublocations.
+- `address` (Block List, Max: 1) Address for this location. This cannot be changed while an emergency number is assigned. (see [below for nested schema](#nestedblock--address))
+- `emergency_number` (Block List, Max: 1) Emergency phone number for this location. (see [below for nested schema](#nestedblock--emergency_number))
+- `notes` (String) Notes for this location.
+- `path` (List of String) A list of ancestor location IDs. This can be used to create sublocations.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--address"></a>
 ### Nested Schema for `address`
 
 Required:
 
-- **city** (String) Location city.
-- **country** (String) Country abbreviation.
-- **street1** (String) Street address 1.
-- **zip_code** (String) Location zip code.
+- `city` (String) Location city.
+- `country` (String) Country abbreviation.
+- `street1` (String) Street address 1.
+- `zip_code` (String) Location zip code.
 
 Optional:
 
-- **state** (String) Location state. Required for countries with states.
-- **street2** (String) Street address 2.
+- `state` (String) Location state. Required for countries with states.
+- `street2` (String) Street address 2.
 
 
 <a id="nestedblock--emergency_number"></a>
@@ -73,9 +76,9 @@ Optional:
 
 Required:
 
-- **number** (String) Emergency phone number.
+- `number` (String) Emergency phone number.
 
 Optional:
 
-- **type** (String) Type of emergency number (default | elin). Defaults to `default`.
+- `type` (String) Type of emergency number (default | elin). Defaults to `default`.
 

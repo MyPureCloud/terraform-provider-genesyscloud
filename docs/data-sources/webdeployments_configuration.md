@@ -23,14 +23,11 @@ data "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
 
 ### Required
 
-- **name** (String) The name of the configuration
-
-### Optional
-
-- **id** (String) The ID of this resource.
+- `name` (String) The name of the configuration
 
 ### Read-Only
 
-- **version** (String) The version of the configuration.
+- `id` (String) The ID of this resource.
+- `version` (String) The version of the configuration.
 
 
