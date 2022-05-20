@@ -262,7 +262,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		// Removes zero values and sets proper reference expressions
-		unresolved, _ := sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", exporters, includeStateFile)
+		unresolved, _ := sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", exporters, includeStateFile, exportAsHCL)
 		if len(unresolved) > 0 {
 			unresolvedAttrs = append(unresolvedAttrs, unresolved...)
 		}
@@ -1029,7 +1029,8 @@ func sanitizeConfigMap(
 	configMap map[string]interface{},
 	prevAttr string,
 	exporters map[string]*ResourceExporter,
-	exportingState bool) ([]unresolvableAttributeInfo, bool) {
+	exportingState bool,
+	exportingAsHCL bool) ([]unresolvableAttributeInfo, bool) {
 	exporter := exporters[resourceType]
 	unresolvableAttrs := make([]unresolvableAttributeInfo, 0)
 	for key, val := range configMap {
@@ -1056,19 +1057,30 @@ func sanitizeConfigMap(
 		case map[string]interface{}:
 			// Maps are sanitized in-place
 			currMap := val.(map[string]interface{})
-			_, res := sanitizeConfigMap(resourceType, "", val.(map[string]interface{}), currAttr, exporters, exportingState)
+			_, res := sanitizeConfigMap(resourceType, "", val.(map[string]interface{}), currAttr, exporters, exportingState, exportingAsHCL)
 			if !res || len(currMap) == 0 {
 				// Remove empty maps or maps indicating they should be removed
 				configMap[key] = nil
 			}
 		case []interface{}:
-			if arr := sanitizeConfigArray(resourceType, val.([]interface{}), currAttr, exporters, exportingState); len(arr) > 0 {
+			if arr := sanitizeConfigArray(resourceType, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
 				configMap[key] = arr
 			} else {
 				// Remove empty arrays
 				configMap[key] = nil
 			}
 		case string:
+			// Check if string contains nested Ref Attributes (can occur if the string is escaped json)
+			if _, ok := exporter.containsNestedRefAttrs(currAttr); ok {
+				resolvedJsonString, err := resolveRefAttributesInJsonString(currAttr, val.(string), exporter, exporters, exportingState)
+				if err != nil {
+					log.Println(err)
+				} else {
+					keys := strings.Split(currAttr, ".")
+					configMap[keys[len(keys)-1]] = resolvedJsonString
+					break
+				}
+			}
 			// Check if we are on a reference attribute and update as needed
 			refSettings := exporter.getRefAttrSettings(currAttr)
 			if refSettings == nil {
@@ -1109,7 +1121,7 @@ func sanitizeConfigMap(
 			removeZeroValues(key, configMap[key], configMap)
 		}
 
-		if exporter.isJsonEncodable(currAttr) {
+		if exportingAsHCL && exporter.isJsonEncodable(currAttr) {
 			if vStr, ok := configMap[key].(string); ok {
 				decodedData, err := getDecodedData(vStr)
 				if err != nil {
@@ -1130,6 +1142,37 @@ func sanitizeConfigMap(
 	}
 
 	return unresolvableAttrs, true
+}
+
+func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *ResourceExporter, exporters map[string]*ResourceExporter, exportingState bool) (string, error) {
+	var jsonData interface{}
+	err := json.Unmarshal([]byte(currVal), &jsonData)
+	if err != nil {
+		return "", err
+	}
+
+	nestedAttrs, _ := exporter.containsNestedRefAttrs(currAttr)
+	for _, value := range nestedAttrs {
+		refSettings := exporter.getNestedRefAttrSettings(value)
+		if data, ok := jsonData.(map[string]interface{}); ok {
+			switch data[value].(type) {
+			case string:
+				data[value] = resolveReference(refSettings, data[value].(string), exporters, exportingState)
+			case []interface{}:
+				array := data[value].([]interface{})
+				for k, v := range array {
+					array[k] = resolveReference(refSettings, v.(string), exporters, exportingState)
+				}
+				data[value] = array
+			}
+			jsonData = data
+		}
+	}
+	jsonDataMarshalled, err := json.Marshal(jsonData)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonDataMarshalled), nil
 }
 
 func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema.Schema, bool) {
@@ -1171,7 +1214,8 @@ func sanitizeConfigArray(
 	anArray []interface{},
 	currAttr string,
 	exporters map[string]*ResourceExporter,
-	exportingState bool) []interface{} {
+	exportingState bool,
+	exportingAsHCL bool) []interface{} {
 	exporter := exporters[resourceType]
 	result := []interface{}{}
 	for _, val := range anArray {
@@ -1179,12 +1223,12 @@ func sanitizeConfigArray(
 		case map[string]interface{}:
 			// Only include in the result if sanitizeConfigMap returns true and the map is not empty
 			currMap := val.(map[string]interface{})
-			_, res := sanitizeConfigMap(resourceType, "", currMap, currAttr, exporters, exportingState)
+			_, res := sanitizeConfigMap(resourceType, "", currMap, currAttr, exporters, exportingState, exportingAsHCL)
 			if res && len(currMap) > 0 {
 				result = append(result, val)
 			}
 		case []interface{}:
-			if arr := sanitizeConfigArray(resourceType, val.([]interface{}), currAttr, exporters, exportingState); len(arr) > 0 {
+			if arr := sanitizeConfigArray(resourceType, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
 				result = append(result, arr)
 			}
 		case string:
