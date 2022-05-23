@@ -1,0 +1,8 @@
+* [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys)
+* [GET /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys--formId-)
+* [POST /api/v2/quality/forms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-forms-surveys)
+* [PUT /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#put-api-v2-quality-forms-surveys--formId-)
+* [DELETE /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#delete-api-v2-quality-forms-surveys--formId-)
+* [POST /api/v2/quality/publishedforms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-publishedforms-surveys)
+* [GET /api/v2/quality/publishedforms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-publishedforms-surveys--formId-)
+* [GET /api/v2/quality/forms/surveys/{formId}/versions](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys--formId--versions)

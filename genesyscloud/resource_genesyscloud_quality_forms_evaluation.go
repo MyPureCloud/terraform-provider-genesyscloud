@@ -201,6 +201,12 @@ func resourceEvaluationForm() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"context_id": {
+				Description: "The context id of the entity.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"published": {
 				Description: "Specifies if the evalutaion form is published.",
 				Type:        schema.TypeBool,
@@ -236,7 +242,7 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		QuestionGroups: questionGroups,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create evaluation form %s", name)
+		return diag.Errorf("Failed to create evaluation form %s: %s", name, err)
 	}
 
 	// Make sure form is properly created
@@ -278,6 +284,9 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceEvaluationForm())
 		if evaluationForm.Name != nil {
 			d.Set("name", *evaluationForm.Name)
+		}
+		if evaluationForm.ContextId != nil {
+			d.Set("context_id", *evaluationForm.ContextId)
 		}
 		if evaluationForm.Published != nil {
 			d.Set("published", *evaluationForm.Published)
