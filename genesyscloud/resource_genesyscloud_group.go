@@ -200,10 +200,29 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceGroup())
-		d.Set("name", *group.Name)
-		d.Set("type", *group.VarType)
-		d.Set("visibility", *group.Visibility)
-		d.Set("rules_visible", *group.RulesVisible)
+		if group.Name != nil {
+			d.Set("name", *group.Name)
+		} else {
+			d.Set("name", nil)
+		}
+
+		if group.VarType != nil {
+			d.Set("type", *group.VarType)
+		} else {
+			d.Set("type", nil)
+		}
+
+		if group.Visibility != nil {
+			d.Set("visibility", *group.Visibility)
+		} else {
+			d.Set("visibility", nil)
+		}
+
+		if group.RulesVisible != nil {
+			d.Set("rules_visible", *group.RulesVisible)
+		} else {
+			d.Set("rules_visible", nil)
+		}
 
 		if group.Description != nil {
 			d.Set("description", *group.Description)
