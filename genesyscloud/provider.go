@@ -182,10 +182,21 @@ type providerMeta struct {
 
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		// Initialize the SDK Client pool
-		err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
-		if err != nil {
-			return nil, err
+		// Initialize a single client if we have an access token
+		if data.Get("access_token") != "" {
+			log.Print("Found access token.")
+			log.Print("Initializing default SDK client.")
+			err := initClientConfig(data, version, platformclientv2.GetDefaultConfiguration())
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			log.Print("Found client credentials.")
+			// Initialize the SDK Client pool
+			err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
+			if err != nil {
+				return nil, err
+			}
 		}
 		return &providerMeta{
 			Version:      version,
@@ -261,8 +272,10 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 	}
 
 	if accessToken != "" {
+		log.Printf("Setting access token set on configuration instance.")
 		config.AccessToken = accessToken
 	} else {
+		log.Printf("Authorizing with client credentials.")
 		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
 		if err != nil {
 			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
