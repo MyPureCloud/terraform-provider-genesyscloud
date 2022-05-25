@@ -37,6 +37,14 @@ type RefAttrSettings struct {
 	AltValues []string
 }
 
+type JsonEncodeRefAttr struct {
+	// The outer key
+	Attr string
+
+	// The RefAttr nested inside the json data
+	NestedAttr string
+}
+
 // ResourceExporter is an interface to implement for resources that can be exported
 type ResourceExporter struct {
 
@@ -68,6 +76,9 @@ type ResourceExporter struct {
 
 	// List of attributes which can and should be exported in a jsonencode object rather than as a long escaped string of JSON data.
 	JsonEncodeAttributes []string
+
+	// Attributes that are jsonencode objects, and that contain nested RefAttrs
+	EncodedRefAttrs map[*JsonEncodeRefAttr]*RefAttrSettings
 }
 
 func (r *ResourceExporter) loadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
@@ -110,6 +121,25 @@ func (r *ResourceExporter) getRefAttrSettings(attribute string) *RefAttrSettings
 		return nil
 	}
 	return r.RefAttrs[attribute]
+}
+
+func (r *ResourceExporter) getNestedRefAttrSettings(attribute string) *RefAttrSettings {
+	for key, val := range r.EncodedRefAttrs {
+		if key.NestedAttr == attribute {
+			return val
+		}
+	}
+	return nil
+}
+
+func (r *ResourceExporter) containsNestedRefAttrs(attribute string) ([]string, bool) {
+	var nestedAttributes []string
+	for key, _ := range r.EncodedRefAttrs {
+		if key.Attr == attribute {
+			nestedAttributes = append(nestedAttributes, key.NestedAttr)
+		}
+	}
+	return nestedAttributes, len(nestedAttributes) > 0
 }
 
 func (r *ResourceExporter) allowZeroValues(attribute string) bool {
