@@ -233,13 +233,23 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 		update := platformclientv2.Locationupdatedefinition{
 			Version:         location.Version,
 			Name:            &name,
-			Notes:           &notes,
 			Path:            buildSdkLocationPath(d),
 			EmergencyNumber: buildSdkLocationEmergencyNumber(d),
 		}
 		if d.HasChange("address") {
 			// Even if address is the same, the API does not allow it in the patch request if a number is assigned
 			update.Address = buildSdkLocationAddress(d)
+		}
+		if notes != "" {
+			update.Notes = &notes
+		} else {
+			// nil will result in no change occurring, and an empty string is invalid for this field
+			filler := " "
+			update.Notes = &filler
+			err := d.Set("notes", filler)
+			if err != nil {
+				return nil, diag.Errorf("error setting the value of 'notes' attribute: %v", err)
+			}
 		}
 
 		log.Printf("Updating location %s", name)
