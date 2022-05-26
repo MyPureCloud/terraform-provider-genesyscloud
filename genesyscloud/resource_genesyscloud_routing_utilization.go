@@ -182,9 +182,6 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
-	log.Printf("Reset first to attempt to avoid caching issue")
-	deleteRoutingUtilization(ctx, d, meta)
-
 	log.Printf("Updating Routing Utilization")
 
 	_, _, err := routingAPI.PutRoutingUtilization(platformclientv2.Utilization{
