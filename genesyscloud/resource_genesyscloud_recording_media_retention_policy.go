@@ -229,11 +229,11 @@ var (
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"evaluators": {
+			"evaluator_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        user,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"max_number_evaluations": {
 				Description: "",
@@ -272,11 +272,11 @@ var (
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"evaluators": {
+			"evaluator_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        user,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"max_number_evaluations": {
 				Description: "",
@@ -315,11 +315,11 @@ var (
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"evaluators": {
+			"evaluator_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        user,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"evaluation_form_id": {
 				Description: "",
@@ -349,7 +349,7 @@ var (
 				Elem:        publishedSurveyFormReference,
 			},
 			"flow_id": {
-				Description: "The URI reference to the flow associated with this survey.",
+				Description: "The UUID reference to the flow associated with this survey.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -605,26 +605,6 @@ var (
 		},
 	}
 
-	wrapupCode = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"wrapup_code_id": {
-				Description: "",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-
-	language = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"language_id": {
-				Description: "The language name.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-
 	timeSlot = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"start_time": {
@@ -685,20 +665,21 @@ var (
 				Optional:    true,
 			},
 			"duration_mode": {
-				Description: "",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:  "",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Between", "Over", "Under"}, false),
 			},
 		},
 	}
 
 	callMediaPolicyConditions = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"for_users": {
+			"for_user_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        user,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"date_ranges": {
 				Description: "",
@@ -707,23 +688,23 @@ var (
 				Default:     nil,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"for_queues": {
+			"for_queue_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        queue,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"wrapup_codes": {
+			"wrapup_code_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        wrapupCode,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"languages": {
+			"language_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        language,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"time_allowed": {
 				Description: "",
@@ -752,11 +733,11 @@ var (
 
 	chatMediaPolicyConditions = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"for_users": {
+			"for_user_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        user,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"date_ranges": {
 				Description: "",
@@ -765,23 +746,23 @@ var (
 				Default:     nil,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"for_queues": {
+			"for_queue_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        queue,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"wrapup_codes": {
+			"wrapup_code_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        wrapupCode,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"languages": {
+			"language_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        language,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"time_allowed": {
 				Description: "",
@@ -802,11 +783,11 @@ var (
 
 	emailMediaPolicyConditions = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"for_users": {
+			"for_user_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        user,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"date_ranges": {
 				Description: "",
@@ -815,23 +796,23 @@ var (
 				Default:     nil,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"for_queues": {
+			"for_queue_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        queue,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"wrapup_codes": {
+			"wrapup_code_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        wrapupCode,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"languages": {
+			"language_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        language,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"time_allowed": {
 				Description: "",
@@ -845,11 +826,11 @@ var (
 
 	messageMediaPolicyConditions = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"for_users": {
+			"for_user_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        user,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"date_ranges": {
 				Description: "",
@@ -858,23 +839,23 @@ var (
 				Default:     nil,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"for_queues": {
+			"for_queue_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        queue,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"wrapup_codes": {
+			"wrapup_code_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        wrapupCode,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"languages": {
+			"language_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        language,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"time_allowed": {
 				Description: "",
@@ -888,11 +869,11 @@ var (
 
 	policyConditions = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"for_users": {
+			"for_user_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        user,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"directions": {
 				Description: "",
@@ -916,11 +897,11 @@ var (
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				// Valid values "CALL", "CHAT"
 			},
-			"for_queues": {
+			"for_queue_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        queue,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"duration": {
 				Description: "",
@@ -929,11 +910,11 @@ var (
 				Optional:    true,
 				Elem:        durationCondition,
 			},
-			"wrapup_codes": {
+			"wrapup_code_ids": {
 				Description: "",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        wrapupCode,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"time_allowed": {
 				Description: "",
@@ -965,17 +946,17 @@ func resourceMediaRetentionPolicy() *schema.Resource {
 				ForceNew:    true,
 			},
 			"order": {
-				Description: "",
+				Description: "The ordinal number for the policy",
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
 			"description": {
-				Description: "",
+				Description: "The description for the policy",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 			"enabled": {
-				Description: "",
+				Description: "The policy will be enabled if true, otherwise it will be disabled",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
@@ -1001,7 +982,7 @@ func resourceMediaRetentionPolicy() *schema.Resource {
 				Elem:        policyActions,
 			},
 			"policy_errors": {
-				Description: "",
+				Description: "A list of errors in the policy configuration",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -1020,7 +1001,7 @@ func getAllMediaRetentionPolicies(_ context.Context, clientConfig *platformclien
 		retentionPolicies, _, getErr := recordingAPI.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", []string{}, "", "", "", true, false, false)
 
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of media retention policys %v", getErr)
+			return nil, diag.Errorf("Failed to get page of media retention policies %v", getErr)
 		}
 
 		if retentionPolicies.Entities == nil || len(*retentionPolicies.Entities) == 0 {
@@ -1035,16 +1016,16 @@ func getAllMediaRetentionPolicies(_ context.Context, clientConfig *platformclien
 	return resources, nil
 }
 
-func buildUser(user []interface{}) *platformclientv2.User {
-	if user == nil || len(user) <= 0 {
-		return nil
-	}
+// func buildUser(user []interface{}) *platformclientv2.User {
+// 	if user == nil || len(user) <= 0 {
+// 		return nil
+// 	}
 
-	userMap := user[0].(map[string]interface{})
-	userId := userMap["user_id"].(string)
+// 	userMap := user[0].(map[string]interface{})
+// 	userId := userMap["user_id"].(string)
 
-	return &platformclientv2.User{Id: &userId}
-}
+// 	return &platformclientv2.User{Id: &userId}
+// }
 
 func buildEvaluationAssignments(evaluations []interface{}) *[]platformclientv2.Evaluationassignment {
 	assignEvaluations := make([]platformclientv2.Evaluationassignment, 0)
@@ -1089,32 +1070,32 @@ func flattenEvaluationAssignments(assignments *[]platformclientv2.Evaluationassi
 	return evaluationAssignments
 }
 
-func buildUsers(users []interface{}) *[]platformclientv2.User {
-	userList := make([]platformclientv2.User, 0)
+// func buildUsers(users []interface{}) *[]platformclientv2.User {
+// 	userList := make([]platformclientv2.User, 0)
 
-	for _, user := range users {
-		userList = append(userList, *buildUser([]interface{}{user}))
-	}
+// 	for _, user := range users {
+// 		userList = append(userList, *buildUser([]interface{}{user}))
+// 	}
 
-	return &userList
-}
+// 	return &userList
+// }
 
-func flattenUsers(users *[]platformclientv2.User) []interface{} {
-	if users == nil {
-		return nil
-	}
+// func flattenUsers(users *[]platformclientv2.User) []interface{} {
+// 	if users == nil {
+// 		return nil
+// 	}
 
-	userList := []interface{}{}
+// 	userList := []interface{}{}
 
-	for _, user := range *users {
-		userMap := make(map[string]interface{})
-		if user.Id != nil {
-			userMap["user_id"] = *user.Id
-		}
-		userList = append(userList, userMap)
-	}
-	return userList
-}
+// 	for _, user := range *users {
+// 		userMap := make(map[string]interface{})
+// 		if user.Id != nil {
+// 			userMap["user_id"] = *user.Id
+// 		}
+// 		userList = append(userList, userMap)
+// 	}
+// 	return userList
+// }
 
 func buildTimeInterval(timeInterval []interface{}) *platformclientv2.Timeinterval {
 	if timeInterval == nil || len(timeInterval) <= 0 {
@@ -1168,10 +1149,21 @@ func buildAssignMeteredEvaluations(assignments []interface{}) *[]platformclientv
 		assignToActiveUser := assignmentMap["assign_to_active_user"].(bool)
 		evaluationFormId := assignmentMap["evaluation_form_id"].(string)
 		evaluationFormContextId := assignmentMap["evaluation_form_context_id"].(string)
+		evaluatorIds := assignmentMap["evaluator_ids"].([]interface{})
+
+		idStrings := make([]string, 0)
+		for _, evaluatorId := range evaluatorIds {
+			idStrings = append(idStrings, fmt.Sprintf("%v", evaluatorId))
+		}
+
+		evaluators := make([]platformclientv2.User, 0)
+		for _, evaluatorId := range idStrings {
+			evaluators = append(evaluators, platformclientv2.User{Id: &evaluatorId})
+		}
 
 		temp := platformclientv2.Meteredevaluationassignment{
 			EvaluationContextId:  &evaluationContextId,
-			Evaluators:           buildUsers(assignmentMap["evaluators"].([]interface{})),
+			Evaluators:           &evaluators,
 			MaxNumberEvaluations: &maxNumberEvaluations,
 			AssignToActiveUser:   &assignToActiveUser,
 			TimeInterval:         buildTimeInterval(assignmentMap["time_interval"].([]interface{})),
@@ -1199,7 +1191,11 @@ func flattenAssignMeteredEvaluations(assignments *[]platformclientv2.Meteredeval
 			assignmentMap["evaluation_context_id"] = *assignment.EvaluationContextId
 		}
 		if assignment.Evaluators != nil {
-			assignmentMap["evaluators"] = flattenUsers(assignment.Evaluators)
+			evaluatorIds := make([]string, 0)
+			for _, evaluator := range *assignment.Evaluators {
+				evaluatorIds = append(evaluatorIds, *evaluator.Id)
+			}
+			assignmentMap["evaluator_ids"] = evaluatorIds
 		}
 		if assignment.MaxNumberEvaluations != nil {
 			assignmentMap["max_number_evaluations"] = *assignment.MaxNumberEvaluations
@@ -1230,10 +1226,21 @@ func buildAssignMeteredAssignmentByAgent(assignments []interface{}) *[]platformc
 		timeZone := assignmentMap["time_zone"].(string)
 		evaluationFormId := assignmentMap["evaluation_form_id"].(string)
 		evaluationFormContextId := assignmentMap["evaluation_form_context_id"].(string)
+		evaluatorIds := assignmentMap["evaluator_ids"].([]interface{})
+
+		idStrings := make([]string, 0)
+		for _, evaluatorId := range evaluatorIds {
+			idStrings = append(idStrings, fmt.Sprintf("%v", evaluatorId))
+		}
+
+		evaluators := make([]platformclientv2.User, 0)
+		for _, evaluatorId := range idStrings {
+			evaluators = append(evaluators, platformclientv2.User{Id: &evaluatorId})
+		}
 
 		temp := platformclientv2.Meteredassignmentbyagent{
 			EvaluationContextId:  &evaluationContextId,
-			Evaluators:           buildUsers(assignmentMap["evaluators"].([]interface{})),
+			Evaluators:           &evaluators,
 			MaxNumberEvaluations: &maxNumberEvaluations,
 			TimeInterval:         buildTimeInterval(assignmentMap["time_interval"].([]interface{})),
 			TimeZone:             &timeZone,
@@ -1262,7 +1269,11 @@ func flattenAssignMeteredAssignmentByAgent(assignments *[]platformclientv2.Meter
 			assignmentMap["evaluation_context_id"] = *assignment.EvaluationContextId
 		}
 		if assignment.Evaluators != nil {
-			assignmentMap["evaluators"] = flattenUsers(assignment.Evaluators)
+			evaluatorIds := make([]string, 0)
+			for _, evaluator := range *assignment.Evaluators {
+				evaluatorIds = append(evaluatorIds, *evaluator.Id)
+			}
+			assignmentMap["evaluator_ids"] = evaluatorIds
 		}
 		if assignment.MaxNumberEvaluations != nil {
 			assignmentMap["max_number_evaluations"] = *assignment.MaxNumberEvaluations
@@ -1292,9 +1303,20 @@ func buildAssignCalibrations(assignments []interface{}) *[]platformclientv2.Cali
 		evaluationFormContextId := assignmentMap["evaluation_form_context_id"].(string)
 		calibratorId := assignmentMap["calibrator_id"].(string)
 		expertEvaluatorId := assignmentMap["expert_evaluator_id"].(string)
+		evaluatorIds := assignmentMap["evaluator_ids"].([]interface{})
+
+		idStrings := make([]string, 0)
+		for _, evaluatorId := range evaluatorIds {
+			idStrings = append(idStrings, fmt.Sprintf("%v", evaluatorId))
+		}
+
+		evaluators := make([]platformclientv2.User, 0)
+		for _, evaluatorId := range idStrings {
+			evaluators = append(evaluators, platformclientv2.User{Id: &evaluatorId})
+		}
 
 		temp := platformclientv2.Calibrationassignment{
-			Evaluators: buildUsers(assignmentMap["evaluators"].([]interface{})),
+			Evaluators: &evaluators,
 		}
 
 		if evaluationFormId != "" || evaluationFormContextId != "" {
@@ -1327,7 +1349,11 @@ func flattenAssignCalibrations(assignments *[]platformclientv2.Calibrationassign
 			assignmentMap["calibrator_id"] = *assignment.Calibrator.Id
 		}
 		if assignment.Evaluators != nil {
-			assignmentMap["evaluators"] = flattenUsers(assignment.Evaluators)
+			evaluatorIds := make([]string, 0)
+			for _, evaluator := range *assignment.Evaluators {
+				evaluatorIds = append(evaluatorIds, *evaluator.Id)
+			}
+			assignmentMap["evaluator_ids"] = evaluatorIds
 		}
 		if assignment.EvaluationForm != nil {
 			assignmentMap["evaluation_form_id"] = *assignment.EvaluationForm.Id
@@ -1703,114 +1729,6 @@ func flattenPolicyActions(actions *platformclientv2.Policyactions) []interface{}
 	return []interface{}{actionsMap}
 }
 
-func buildQueue(queue []interface{}) *platformclientv2.Queue {
-	if queue == nil || len(queue) <= 0 {
-		return nil
-	}
-
-	queueMap := queue[0].(map[string]interface{})
-	queueId := queueMap["queue_id"].(string)
-
-	formattedQueue := platformclientv2.Queue{Id: &queueId}
-	return &formattedQueue
-}
-
-func buildQueues(queues []interface{}) *[]platformclientv2.Queue {
-	queueList := make([]platformclientv2.Queue, 0)
-
-	for _, queue := range queues {
-		queueList = append(queueList, *buildQueue([]interface{}{queue}))
-	}
-
-	return &queueList
-}
-
-func flattenQueues(queues *[]platformclientv2.Queue) []interface{} {
-	if queues == nil {
-		return nil
-	}
-
-	queueList := []interface{}{}
-
-	for _, queue := range *queues {
-		queueMap := make(map[string]interface{})
-		if queue.Id != nil {
-			queueMap["queue_id"] = *queue.Id
-
-		}
-		queueList = append(queueList, queueMap)
-	}
-	return queueList
-}
-
-func buildWrapupCodes(codes []interface{}) *[]platformclientv2.Wrapupcode {
-	wrapupCodes := make([]platformclientv2.Wrapupcode, 0)
-
-	for _, code := range codes {
-		codeMap := code.(map[string]interface{})
-		wrapupCodeId := codeMap["wrapup_code_id"].(string)
-
-		wrapupCode := platformclientv2.Wrapupcode{
-			Id: &wrapupCodeId,
-		}
-
-		wrapupCodes = append(wrapupCodes, wrapupCode)
-	}
-
-	return &wrapupCodes
-}
-
-func flattenWrapupCodes(codes *[]platformclientv2.Wrapupcode) []interface{} {
-	if codes == nil {
-		return nil
-	}
-
-	codeList := []interface{}{}
-
-	for _, code := range *codes {
-		codeMap := make(map[string]interface{})
-		if code.Id != nil {
-			codeMap["wrapup_code_id"] = *code.Id
-		}
-
-		codeList = append(codeList, codeMap)
-	}
-
-	return codeList
-}
-
-func buildLanguages(languages []interface{}) *[]platformclientv2.Language {
-	languageList := make([]platformclientv2.Language, 0)
-
-	for _, language := range languages {
-		languageMap := language.(map[string]interface{})
-		languageId := languageMap["language_id"].(string)
-
-		temp := platformclientv2.Language{Id: &languageId}
-		languageList = append(languageList, temp)
-	}
-
-	return &languageList
-}
-
-func flattenLanguages(languages *[]platformclientv2.Language) []interface{} {
-	if languages == nil {
-		return nil
-	}
-
-	LanguageList := []interface{}{}
-
-	for _, language := range *languages {
-		languageMap := make(map[string]interface{})
-		if language.Id != nil {
-			languageMap["language_id"] = *language.Id
-		}
-		LanguageList = append(LanguageList, languageMap)
-	}
-
-	return LanguageList
-}
-
 func buildTimeSlots(slots []interface{}) *[]platformclientv2.Timeslot {
 	timeSlots := make([]platformclientv2.Timeslot, 0)
 
@@ -1951,12 +1869,56 @@ func buildCallMediaPolicyConditions(callMediaPolicyConditions []interface{}) *pl
 		dateRanges = append(dateRanges, dateRange)
 	}
 
+	forUserIds := conditionsMap["for_user_ids"].([]interface{})
+	idStrings := make([]string, 0)
+	for _, id := range forUserIds {
+		idStrings = append(idStrings, fmt.Sprintf("%v", id))
+	}
+
+	forUsers := make([]platformclientv2.User, 0)
+	for _, id := range idStrings {
+		forUsers = append(forUsers, platformclientv2.User{Id: &id})
+	}
+
+	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
+	wrapupCodeIdStrings := make([]string, 0)
+	for _, id := range wrapupCodeIds {
+		wrapupCodeIdStrings = append(wrapupCodeIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	wrapupCodes := make([]platformclientv2.Wrapupcode, 0)
+	for _, id := range wrapupCodeIdStrings {
+		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &id})
+	}
+
+	languageIds := conditionsMap["language_ids"].([]interface{})
+	languageIdStrings := make([]string, 0)
+	for _, id := range languageIds {
+		languageIdStrings = append(languageIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	languages := make([]platformclientv2.Language, 0)
+	for _, id := range languageIdStrings {
+		languages = append(languages, platformclientv2.Language{Id: &id})
+	}
+
+	forQueueIds := conditionsMap["for_queue_ids"].([]interface{})
+	queueIdStrings := make([]string, 0)
+	for _, id := range forQueueIds {
+		queueIdStrings = append(queueIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	forQueues := make([]platformclientv2.Queue, 0)
+	for _, id := range queueIdStrings {
+		forQueues = append(forQueues, platformclientv2.Queue{Id: &id})
+	}
+
 	return &platformclientv2.Callmediapolicyconditions{
-		ForUsers:    buildUsers(conditionsMap["for_users"].([]interface{})),
+		ForUsers:    &forUsers,
 		DateRanges:  &dateRanges,
-		ForQueues:   buildQueues(conditionsMap["for_queues"].([]interface{})),
-		WrapupCodes: buildWrapupCodes(conditionsMap["wrapup_codes"].([]interface{})),
-		Languages:   buildLanguages(conditionsMap["languages"].([]interface{})),
+		ForQueues:   &forQueues,
+		WrapupCodes: &wrapupCodes,
+		Languages:   &languages,
 		TimeAllowed: buildTimeAllowed(conditionsMap["time_allowed"].([]interface{})),
 		Directions:  &directions,
 		Duration:    buildDurationCondition(conditionsMap["duration"].([]interface{})),
@@ -1975,12 +1937,56 @@ func buildChatMediaPolicyConditions(chatMediaPolicyConditions []interface{}) *pl
 		dateRanges = append(dateRanges, dateRange)
 	}
 
+	forUserIds := conditionsMap["for_user_ids"].([]interface{})
+	idStrings := make([]string, 0)
+	for _, id := range forUserIds {
+		idStrings = append(idStrings, fmt.Sprintf("%v", id))
+	}
+
+	forUsers := make([]platformclientv2.User, 0)
+	for _, id := range idStrings {
+		forUsers = append(forUsers, platformclientv2.User{Id: &id})
+	}
+
+	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
+	wrapupCodeIdStrings := make([]string, 0)
+	for _, id := range wrapupCodeIds {
+		wrapupCodeIdStrings = append(wrapupCodeIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	wrapupCodes := make([]platformclientv2.Wrapupcode, 0)
+	for _, id := range wrapupCodeIdStrings {
+		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &id})
+	}
+
+	languageIds := conditionsMap["language_ids"].([]interface{})
+	languageIdStrings := make([]string, 0)
+	for _, id := range languageIds {
+		languageIdStrings = append(languageIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	languages := make([]platformclientv2.Language, 0)
+	for _, id := range languageIdStrings {
+		languages = append(languages, platformclientv2.Language{Id: &id})
+	}
+
+	forQueueIds := conditionsMap["for_queue_ids"].([]interface{})
+	queueIdStrings := make([]string, 0)
+	for _, id := range forQueueIds {
+		queueIdStrings = append(queueIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	forQueues := make([]platformclientv2.Queue, 0)
+	for _, id := range queueIdStrings {
+		forQueues = append(forQueues, platformclientv2.Queue{Id: &id})
+	}
+
 	return &platformclientv2.Chatmediapolicyconditions{
-		ForUsers:    buildUsers(conditionsMap["for_users"].([]interface{})),
+		ForUsers:    &forUsers,
 		DateRanges:  &dateRanges,
-		ForQueues:   buildQueues(conditionsMap["for_queues"].([]interface{})),
-		WrapupCodes: buildWrapupCodes(conditionsMap["wrapup_codes"].([]interface{})),
-		Languages:   buildLanguages(conditionsMap["languages"].([]interface{})),
+		ForQueues:   &forQueues,
+		WrapupCodes: &wrapupCodes,
+		Languages:   &languages,
 		TimeAllowed: buildTimeAllowed(conditionsMap["time_allowed"].([]interface{})),
 		Duration:    buildDurationCondition(conditionsMap["duration"].([]interface{})),
 	}
@@ -1993,19 +1999,35 @@ func flattenChatMediaPolicyConditions(conditions *platformclientv2.Chatmediapoli
 
 	conditionsMap := make(map[string]interface{})
 	if conditions.ForUsers != nil {
-		conditionsMap["for_users"] = flattenUsers(conditions.ForUsers)
+		userIds := make([]string, 0)
+		for _, user := range *conditions.ForUsers {
+			userIds = append(userIds, *user.Id)
+		}
+		conditionsMap["for_user_ids"] = userIds
 	}
 	if conditions.DateRanges != nil {
 		conditionsMap["date_ranges"] = *conditions.DateRanges
 	}
 	if conditions.ForQueues != nil {
-		conditionsMap["for_queues"] = flattenQueues(conditions.ForQueues)
+		queueIds := make([]string, 0)
+		for _, queue := range *conditions.ForQueues {
+			queueIds = append(queueIds, *queue.Id)
+		}
+		conditionsMap["for_queue_ids"] = queueIds
 	}
 	if conditions.WrapupCodes != nil {
-		conditionsMap["wrapup_codes"] = flattenWrapupCodes(conditions.WrapupCodes)
+		wrapupCodeIds := make([]string, 0)
+		for _, code := range *conditions.WrapupCodes {
+			wrapupCodeIds = append(wrapupCodeIds, *code.Id)
+		}
+		conditionsMap["wrapup_code_ids"] = wrapupCodeIds
 	}
 	if conditions.Languages != nil {
-		conditionsMap["languages"] = flattenLanguages(conditions.Languages)
+		languageIds := make([]string, 0)
+		for _, code := range *conditions.Languages {
+			languageIds = append(languageIds, *code.Id)
+		}
+		conditionsMap["language_ids"] = languageIds
 	}
 	if conditions.TimeAllowed != nil {
 		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
@@ -2023,18 +2045,63 @@ func buildEmailMediaPolicyConditions(emailMediaPolicyConditions []interface{}) *
 	}
 
 	conditionsMap := emailMediaPolicyConditions[0].(map[string]interface{})
+
 	dateRanges := make([]string, 0)
 	for _, v := range conditionsMap["date_ranges"].([]interface{}) {
 		dateRange := fmt.Sprintf("%v", v)
 		dateRanges = append(dateRanges, dateRange)
 	}
 
+	forUserIds := conditionsMap["for_user_ids"].([]interface{})
+	idStrings := make([]string, 0)
+	for _, id := range forUserIds {
+		idStrings = append(idStrings, fmt.Sprintf("%v", id))
+	}
+
+	forUsers := make([]platformclientv2.User, 0)
+	for _, id := range idStrings {
+		forUsers = append(forUsers, platformclientv2.User{Id: &id})
+	}
+
+	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
+	wrapupCodeIdStrings := make([]string, 0)
+	for _, id := range wrapupCodeIds {
+		wrapupCodeIdStrings = append(wrapupCodeIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	wrapupCodes := make([]platformclientv2.Wrapupcode, 0)
+	for _, id := range wrapupCodeIdStrings {
+		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &id})
+	}
+
+	languageIds := conditionsMap["language_ids"].([]interface{})
+	languageIdStrings := make([]string, 0)
+	for _, id := range languageIds {
+		languageIdStrings = append(languageIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	languages := make([]platformclientv2.Language, 0)
+	for _, id := range languageIdStrings {
+		languages = append(languages, platformclientv2.Language{Id: &id})
+	}
+
+	forQueueIds := conditionsMap["for_queue_ids"].([]interface{})
+	queueIdStrings := make([]string, 0)
+	for _, id := range forQueueIds {
+		queueIdStrings = append(queueIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	forQueues := make([]platformclientv2.Queue, 0)
+	for _, id := range queueIdStrings {
+		forQueues = append(forQueues, platformclientv2.Queue{Id: &id})
+	}
+
 	return &platformclientv2.Emailmediapolicyconditions{
-		ForUsers:    buildUsers(conditionsMap["for_users"].([]interface{})),
+		ForUsers:    &forUsers,
 		DateRanges:  &dateRanges,
-		ForQueues:   buildQueues(conditionsMap["for_queues"].([]interface{})),
-		WrapupCodes: buildWrapupCodes(conditionsMap["wrapup_codes"].([]interface{})),
-		Languages:   buildLanguages(conditionsMap["languages"].([]interface{})),
+		ForQueues:   &forQueues,
+		WrapupCodes: &wrapupCodes,
+		Languages:   &languages,
 		TimeAllowed: buildTimeAllowed(conditionsMap["time_allowed"].([]interface{})),
 	}
 }
@@ -2046,19 +2113,35 @@ func flattenEmailMediaPolicyConditions(conditions *platformclientv2.Emailmediapo
 
 	conditionsMap := make(map[string]interface{})
 	if conditions.ForUsers != nil {
-		conditionsMap["for_users"] = flattenUsers(conditions.ForUsers)
+		userIds := make([]string, 0)
+		for _, user := range *conditions.ForUsers {
+			userIds = append(userIds, *user.Id)
+		}
+		conditionsMap["for_user_ids"] = userIds
 	}
 	if conditions.DateRanges != nil {
 		conditionsMap["date_ranges"] = *conditions.DateRanges
 	}
 	if conditions.ForQueues != nil {
-		conditionsMap["for_queues"] = flattenQueues(conditions.ForQueues)
+		queueIds := make([]string, 0)
+		for _, queue := range *conditions.ForQueues {
+			queueIds = append(queueIds, *queue.Id)
+		}
+		conditionsMap["for_queue_ids"] = queueIds
 	}
 	if conditions.WrapupCodes != nil {
-		conditionsMap["wrapup_codes"] = flattenWrapupCodes(conditions.WrapupCodes)
+		wrapupCodeIds := make([]string, 0)
+		for _, code := range *conditions.WrapupCodes {
+			wrapupCodeIds = append(wrapupCodeIds, *code.Id)
+		}
+		conditionsMap["wrapup_code_ids"] = wrapupCodeIds
 	}
 	if conditions.Languages != nil {
-		conditionsMap["languages"] = flattenLanguages(conditions.Languages)
+		languageIds := make([]string, 0)
+		for _, code := range *conditions.Languages {
+			languageIds = append(languageIds, *code.Id)
+		}
+		conditionsMap["language_ids"] = languageIds
 	}
 	if conditions.TimeAllowed != nil {
 		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
@@ -2080,12 +2163,56 @@ func buildMessageMediaPolicyConditions(messageMediaPolicyConditions []interface{
 		dateRanges = append(dateRanges, dateRange)
 	}
 
+	forUserIds := conditionsMap["for_user_ids"].([]interface{})
+	idStrings := make([]string, 0)
+	for _, id := range forUserIds {
+		idStrings = append(idStrings, fmt.Sprintf("%v", id))
+	}
+
+	forUsers := make([]platformclientv2.User, 0)
+	for _, id := range idStrings {
+		forUsers = append(forUsers, platformclientv2.User{Id: &id})
+	}
+
+	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
+	wrapupCodeIdStrings := make([]string, 0)
+	for _, id := range wrapupCodeIds {
+		wrapupCodeIdStrings = append(wrapupCodeIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	wrapupCodes := make([]platformclientv2.Wrapupcode, 0)
+	for _, id := range wrapupCodeIdStrings {
+		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &id})
+	}
+
+	languageIds := conditionsMap["language_ids"].([]interface{})
+	languageIdStrings := make([]string, 0)
+	for _, id := range languageIds {
+		languageIdStrings = append(languageIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	languages := make([]platformclientv2.Language, 0)
+	for _, id := range languageIdStrings {
+		languages = append(languages, platformclientv2.Language{Id: &id})
+	}
+
+	forQueueIds := conditionsMap["for_queue_ids"].([]interface{})
+	queueIdStrings := make([]string, 0)
+	for _, id := range forQueueIds {
+		queueIdStrings = append(queueIdStrings, fmt.Sprintf("%v", id))
+	}
+
+	forQueues := make([]platformclientv2.Queue, 0)
+	for _, id := range queueIdStrings {
+		forQueues = append(forQueues, platformclientv2.Queue{Id: &id})
+	}
+
 	return &platformclientv2.Messagemediapolicyconditions{
-		ForUsers:    buildUsers(conditionsMap["for_users"].([]interface{})),
+		ForUsers:    &forUsers,
 		DateRanges:  &dateRanges,
-		ForQueues:   buildQueues(conditionsMap["for_queues"].([]interface{})),
-		WrapupCodes: buildWrapupCodes(conditionsMap["wrapup_codes"].([]interface{})),
-		Languages:   buildLanguages(conditionsMap["languages"].([]interface{})),
+		ForQueues:   &forQueues,
+		WrapupCodes: &wrapupCodes,
+		Languages:   &languages,
 		TimeAllowed: buildTimeAllowed(conditionsMap["time_allowed"].([]interface{})),
 	}
 }
@@ -2097,19 +2224,35 @@ func flattenMessageMediaPolicyConditions(conditions *platformclientv2.Messagemed
 
 	conditionsMap := make(map[string]interface{})
 	if conditions.ForUsers != nil {
-		conditionsMap["for_users"] = flattenUsers(conditions.ForUsers)
+		userIds := make([]string, 0)
+		for _, user := range *conditions.ForUsers {
+			userIds = append(userIds, *user.Id)
+		}
+		conditionsMap["for_user_ids"] = userIds
 	}
 	if conditions.DateRanges != nil {
 		conditionsMap["date_ranges"] = *conditions.DateRanges
 	}
 	if conditions.ForQueues != nil {
-		conditionsMap["for_queues"] = flattenQueues(conditions.ForQueues)
+		queueIds := make([]string, 0)
+		for _, queue := range *conditions.ForQueues {
+			queueIds = append(queueIds, *queue.Id)
+		}
+		conditionsMap["for_queue_ids"] = queueIds
 	}
 	if conditions.WrapupCodes != nil {
-		conditionsMap["wrapup_codes"] = flattenWrapupCodes(conditions.WrapupCodes)
+		wrapupCodeIds := make([]string, 0)
+		for _, code := range *conditions.WrapupCodes {
+			wrapupCodeIds = append(wrapupCodeIds, *code.Id)
+		}
+		conditionsMap["wrapup_code_ids"] = wrapupCodeIds
 	}
 	if conditions.Languages != nil {
-		conditionsMap["languages"] = flattenLanguages(conditions.Languages)
+		languageIds := make([]string, 0)
+		for _, code := range *conditions.Languages {
+			languageIds = append(languageIds, *code.Id)
+		}
+		conditionsMap["language_ids"] = languageIds
 	}
 	if conditions.TimeAllowed != nil {
 		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
@@ -2125,7 +2268,11 @@ func flattenCallMediaPolicyConditions(conditions *platformclientv2.Callmediapoli
 
 	conditionsMap := make(map[string]interface{})
 	if conditions.ForUsers != nil {
-		conditionsMap["for_users"] = flattenUsers(conditions.ForUsers)
+		userIds := make([]string, 0)
+		for _, user := range *conditions.ForUsers {
+			userIds = append(userIds, *user.Id)
+		}
+		conditionsMap["for_user_ids"] = userIds
 	}
 	if conditions.DateRanges != nil {
 		conditionsMap["date_ranges"] = *conditions.DateRanges
@@ -2134,13 +2281,25 @@ func flattenCallMediaPolicyConditions(conditions *platformclientv2.Callmediapoli
 		conditionsMap["directions"] = *conditions.Directions
 	}
 	if conditions.ForQueues != nil {
-		conditionsMap["for_queues"] = flattenQueues(conditions.ForQueues)
+		queueIds := make([]string, 0)
+		for _, queue := range *conditions.ForQueues {
+			queueIds = append(queueIds, *queue.Id)
+		}
+		conditionsMap["for_queue_ids"] = queueIds
 	}
 	if conditions.WrapupCodes != nil {
-		conditionsMap["wrapup_codes"] = flattenWrapupCodes(conditions.WrapupCodes)
+		wrapupCodeIds := make([]string, 0)
+		for _, code := range *conditions.WrapupCodes {
+			wrapupCodeIds = append(wrapupCodeIds, *code.Id)
+		}
+		conditionsMap["wrapup_code_ids"] = wrapupCodeIds
 	}
 	if conditions.Languages != nil {
-		conditionsMap["languages"] = flattenLanguages(conditions.Languages)
+		languageIds := make([]string, 0)
+		for _, code := range *conditions.Languages {
+			languageIds = append(languageIds, *code.Id)
+		}
+		conditionsMap["language_ids"] = languageIds
 	}
 	if conditions.TimeAllowed != nil {
 		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
@@ -2335,14 +2494,47 @@ func buildConditions(d *schema.ResourceData) *platformclientv2.Policyconditions 
 			mediaTypes = append(mediaTypes, mediaType)
 		}
 
+		forUserIds := conditionsMap["for_user_ids"].([]interface{})
+		idStrings := make([]string, 0)
+		for _, id := range forUserIds {
+			idStrings = append(idStrings, fmt.Sprintf("%v", id))
+		}
+
+		forUsers := make([]platformclientv2.User, 0)
+		for _, id := range idStrings {
+			forUsers = append(forUsers, platformclientv2.User{Id: &id})
+		}
+
+		wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
+		wrapupCodeIdStrings := make([]string, 0)
+		for _, id := range wrapupCodeIds {
+			wrapupCodeIdStrings = append(wrapupCodeIdStrings, fmt.Sprintf("%v", id))
+		}
+
+		wrapupCodes := make([]platformclientv2.Wrapupcode, 0)
+		for _, id := range wrapupCodeIdStrings {
+			wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &id})
+		}
+
+		forQueueIds := conditionsMap["for_queue_ids"].([]interface{})
+		queueIdStrings := make([]string, 0)
+		for _, id := range forQueueIds {
+			queueIdStrings = append(queueIdStrings, fmt.Sprintf("%v", id))
+		}
+
+		forQueues := make([]platformclientv2.Queue, 0)
+		for _, id := range queueIdStrings {
+			forQueues = append(forQueues, platformclientv2.Queue{Id: &id})
+		}
+
 		return &platformclientv2.Policyconditions{
-			ForUsers:    buildUsers(conditionsMap["for_users"].([]interface{})),
+			ForUsers:    &forUsers,
 			Directions:  &directions,
 			DateRanges:  &dateRanges,
 			MediaTypes:  &mediaTypes,
-			ForQueues:   buildQueues(conditionsMap["for_queues"].([]interface{})),
+			ForQueues:   &forQueues,
 			Duration:    buildDurationCondition(conditionsMap["duration"].([]interface{})),
-			WrapupCodes: buildWrapupCodes(conditionsMap["wrapup_codes"].([]interface{})),
+			WrapupCodes: &wrapupCodes,
 			TimeAllowed: buildTimeAllowed(conditionsMap["time_allowed"].([]interface{})),
 		}
 	}
@@ -2357,7 +2549,11 @@ func flattenConditions(conditions *platformclientv2.Policyconditions) []interfac
 
 	conditionsMap := make(map[string]interface{})
 	if conditions.ForUsers != nil {
-		conditionsMap["for_users"] = flattenUsers(conditions.ForUsers)
+		userIds := make([]string, 0)
+		for _, user := range *conditions.ForUsers {
+			userIds = append(userIds, *user.Id)
+		}
+		conditionsMap["for_user_ids"] = userIds
 	}
 	if conditions.Directions != nil {
 		conditionsMap["directions"] = *conditions.Directions
@@ -2369,13 +2565,21 @@ func flattenConditions(conditions *platformclientv2.Policyconditions) []interfac
 		conditionsMap["media_types"] = *conditions.MediaTypes
 	}
 	if conditions.ForQueues != nil {
-		conditionsMap["for_queues"] = flattenQueues(conditions.ForQueues)
+		queueIds := make([]string, 0)
+		for _, queue := range *conditions.ForQueues {
+			queueIds = append(queueIds, *queue.Id)
+		}
+		conditionsMap["for_queue_ids"] = queueIds
 	}
 	if conditions.Duration != nil {
 		conditionsMap["duration"] = flattenDurationCondition(conditions.Duration)
 	}
 	if conditions.WrapupCodes != nil {
-		conditionsMap["wrapup_codes"] = flattenWrapupCodes(conditions.WrapupCodes)
+		wrapupCodeIds := make([]string, 0)
+		for _, code := range *conditions.WrapupCodes {
+			wrapupCodeIds = append(wrapupCodeIds, *code.Id)
+		}
+		conditionsMap["wrapup_code_ids"] = wrapupCodeIds
 	}
 	if conditions.TimeAllowed != nil {
 		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
@@ -2552,8 +2756,6 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		retentionPolicy, resp, getErr := recordingAPI.GetRecordingMediaretentionpolicy(d.Id())
-		// log.Printf("media retention policy GET response data %v", retentionPolicy)
-
 		if getErr != nil {
 			if isStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("failed to read media retention policy %s: %s", d.Id(), getErr))
@@ -2586,9 +2788,8 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 		if retentionPolicy.PolicyErrors != nil {
 			d.Set("policy_errors", flattenPolicyErrors(retentionPolicy.PolicyErrors))
 		}
-		cc.CheckState()
 
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -2616,11 +2817,8 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	log.Printf("Creating media retention policy %s", name)
-	// log.Printf("media retention policy POST request body %v", reqBody)
-
 	policy, apiResponse, err := recordingAPI.PostRecordingMediaretentionpolicies(reqBody)
-
-	fmt.Printf("Media retention policy creation status %#v", apiResponse.Status)
+	log.Printf("Media retention policy creation status %#v", apiResponse.Status)
 
 	if err != nil {
 		return diag.Errorf("Failed to create media retention policy %s: %s", name, err)

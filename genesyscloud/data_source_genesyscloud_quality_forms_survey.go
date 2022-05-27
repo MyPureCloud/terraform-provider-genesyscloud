@@ -13,7 +13,7 @@ import (
 
 func dataSourceQualityFormsSurvey() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud survey form. Select aform by name",
+		Description: "Data source for Genesys Cloud survey form. Select a form by name",
 		ReadContext: readWithPooledClient(dataSourceQualityFormsSurveyRead),
 		Schema: map[string]*schema.Schema{
 			"name": {

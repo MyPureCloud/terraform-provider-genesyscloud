@@ -164,13 +164,6 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						"genesyscloud_recording_media_retention_policy."+policyResource,
 					),
 
-				// Config: generateMediaRetentionPolicyResource(
-				// 	policyResource, &mediaRetentionPolicy,
-				// ) + generateRecordingMediaRetentionPolicyDataSource(
-				// 	policyDataResource,
-				// 	policyName,
-				// 	"genesyscloud_recording_media_retention_policy."+policyResource,
-				// ),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_recording_media_retention_policy."+policyDataResource, "id", "genesyscloud_recording_media_retention_policy."+policyResource, "id"),
 				),

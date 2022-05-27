@@ -397,7 +397,6 @@ func generateSurveyFormResource(resourceID string, surveyForm *surveyFormStruct)
 		generateSurveyFormQuestionGroups(&surveyForm.questionGroups),
 		generateLifeCycle(),
 	)
-	fmt.Printf("FORM %v", form)
 
 	return form
 }

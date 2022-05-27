@@ -354,48 +354,54 @@ func updateSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
-	// Get the latest unpublished version of the form
-	formVersions, _, err := qualityAPI.GetQualityFormsSurveyVersions(d.Id(), 25, 1)
-	if err != nil {
-		return diag.Errorf("Failed to get survey form versions %s", name)
-	}
+	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
-	versions := *formVersions.Entities
-	latestUnpublishedVersion := ""
-	for _, v := range versions {
-		if !*v.Published {
-			latestUnpublishedVersion = *v.Id
+		// Get the latest unpublished version of the form
+		formVersions, getResp, err := qualityAPI.GetQualityFormsSurveyVersions(d.Id(), 25, 1)
+		if err != nil {
+			return getResp, diag.Errorf("Failed to get survey form versions %s", name)
 		}
-	}
 
-	log.Printf("Updating Survey Form %s", name)
-	form, _, err := qualityAPI.PutQualityFormsSurvey(latestUnpublishedVersion, platformclientv2.Surveyform{
-		Name:           &name,
-		Disabled:       &disabled,
-		Language:       &language,
-		Header:         &header,
-		Footer:         &footer,
-		QuestionGroups: questionGroups,
-	})
-	if err != nil {
-		return diag.Errorf("Failed to update survey form %s: %v", name, err)
-	}
+		versions := *formVersions.Entities
+		latestUnpublishedVersion := ""
+		for _, v := range versions {
+			if !*v.Published {
+				latestUnpublishedVersion = *v.Id
+			}
+		}
 
-	// Set published property on survey form update.
-	if published {
-		_, _, err := qualityAPI.PostQualityPublishedformsSurveys(platformclientv2.Publishform{
-			Id:        form.Id,
-			Published: &published,
+		log.Printf("Updating Survey Form %s", name)
+		form, putResp, err := qualityAPI.PutQualityFormsSurvey(latestUnpublishedVersion, platformclientv2.Surveyform{
+			Name:           &name,
+			Disabled:       &disabled,
+			Language:       &language,
+			Header:         &header,
+			Footer:         &footer,
+			QuestionGroups: questionGroups,
 		})
 		if err != nil {
-			return diag.Errorf("Failed to publish survey form %s", name)
+			return putResp, diag.Errorf("Failed to update survey form %s: %v", name, err)
 		}
-	} else {
-		// If published property is reset to false, set the resource Id to the latest unpublished form
-		d.SetId(*form.Id)
-	}
+		log.Printf("Updated survey form %s %s", name, *form.Id)
 
-	log.Printf("Updated survey form %s %s", name, *form.Id)
+		// Set published property on survey form update.
+		if published {
+			_, postResp, err := qualityAPI.PostQualityPublishedformsSurveys(platformclientv2.Publishform{
+				Id:        form.Id,
+				Published: &published,
+			})
+			if err != nil {
+				return postResp, diag.Errorf("Failed to publish survey form %s", name)
+			}
+		} else {
+			// If published property is reset to false, set the resource Id to the latest unpublished form
+			d.SetId(*form.Id)
+		}
+		return putResp, nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
 	return readSurveyForm(ctx, d, meta)
 }
 
