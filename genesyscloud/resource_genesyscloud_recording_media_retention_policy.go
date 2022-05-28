@@ -452,26 +452,6 @@ var (
 		},
 	}
 
-	user = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"user_id": {
-				Description: "",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-
-	queue = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"queue_id": {
-				Description: "",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-
 	publishedSurveyFormReference = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -1069,33 +1049,6 @@ func flattenEvaluationAssignments(assignments *[]platformclientv2.Evaluationassi
 	}
 	return evaluationAssignments
 }
-
-// func buildUsers(users []interface{}) *[]platformclientv2.User {
-// 	userList := make([]platformclientv2.User, 0)
-
-// 	for _, user := range users {
-// 		userList = append(userList, *buildUser([]interface{}{user}))
-// 	}
-
-// 	return &userList
-// }
-
-// func flattenUsers(users *[]platformclientv2.User) []interface{} {
-// 	if users == nil {
-// 		return nil
-// 	}
-
-// 	userList := []interface{}{}
-
-// 	for _, user := range *users {
-// 		userMap := make(map[string]interface{})
-// 		if user.Id != nil {
-// 			userMap["user_id"] = *user.Id
-// 		}
-// 		userList = append(userList, userMap)
-// 	}
-// 	return userList
-// }
 
 func buildTimeInterval(timeInterval []interface{}) *platformclientv2.Timeinterval {
 	if timeInterval == nil || len(timeInterval) <= 0 {
@@ -2825,7 +2778,6 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	// Make sure form is properly created
-	time.Sleep(2 * time.Second)
 	policyId := policy.Id
 	d.SetId(*policyId)
 	log.Printf("Created media retention policy %s %s", name, *policy.Id)
@@ -2864,7 +2816,6 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	log.Printf("Updated media retention policy %s %s", name, *policy.Id)
-	time.Sleep(5 * time.Second)
 	return readMediaRetentionPolicy(ctx, d, meta)
 }
 
@@ -2872,15 +2823,84 @@ func mediaRetentionPolicyExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllMediaRetentionPolicies),
 		RefAttrs: map[string]*RefAttrSettings{
-			"queue_id":            {RefType: "genesyscloud_routing_queue"},
-			"evaluation_form_id":  {RefType: "genesyscloud_quality_forms_evaluation_form"},
-			"user_id":             {RefType: "genesyscloud_user"},
-			"calibrator_id":       {RefType: "genesyscloud_user"},
-			"expert_evaluator_id": {RefType: "genesyscloud_user"},
-			"language_id":         {RefType: "genesyscloud_routing_language"},
-			"wrapup_code_id":      {RefType: "genesyscloud_routing_wrapupcode"},
-			"integration_id":      {RefType: "genesyscloud_integration"},
-			"flow_id":             {RefType: "genesyscloud_flow"},
+			"media_policies.chat_policy.conditions.for_queue_ids":                                         {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
+			"media_policies.call_policy.conditions.for_queue_ids":                                         {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
+			"media_policies.message_policy.conditions.for_queue_ids":                                      {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
+			"media_policies.email_policy.conditions.for_queue_ids":                                        {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
+			"media_policies.conditions.for_queue_ids":                                                     {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
+			"media_policies.call_policy.conditions.for_user_ids":                                          {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.chat_policy.conditions.for_user_ids":                                          {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.email_policy.conditions.for_user_ids":                                         {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.message_policy.conditions.for_user_ids":                                       {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.conditions.for_user_ids":                                                      {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.call_policy.actions.assign_evaluations.evaluation_form_id":                    {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.call_policy.actions.assign_calibrations.evaluation_form_id":                   {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.call_policy.actions.assign_metered_evaluations.evaluation_form_id":            {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.call_policy.actions.assign_metered_assignment_by_agent.evaluation_form_id":    {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.chat_policy.actions.assign_evaluations.evaluation_form_id":                    {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.chat_policy.actions.assign_calibrations.evaluation_form_id":                   {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.chat_policy.actions.assign_metered_evaluations.evaluation_form_id":            {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.chat_policy.actions.assign_metered_assignment_by_agent.evaluation_form_id":    {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.message_policy.actions.assign_evaluations.evaluation_form_id":                 {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.message_policy.actions.assign_calibrations.evaluation_form_id":                {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.message_policy.actions.assign_metered_evaluations.evaluation_form_id":         {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.message_policy.actions.assign_metered_assignment_by_agent.evaluation_form_id": {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.email_policy.actions.assign_evaluations.evaluation_form_id":                   {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.email_policy.actions.assign_calibrations.evaluation_form_id":                  {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.email_policy.actions.assign_metered_evaluations.evaluation_form_id":           {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.email_policy.actions.assign_metered_assignment_by_agent.evaluation_form_id":   {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.actions.assign_evaluations.evaluation_form_id":                                {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.actions.assign_calibrations.evaluation_form_id":                               {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.actions.assign_metered_evaluations.evaluation_form_id":                        {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.actions.assign_metered_assignment_by_agent.evaluation_form_id":                {RefType: "genesyscloud_quality_forms_evaluation_form"},
+			"media_policies.call_policy.actions.assign_evaluations.evaluator_ids":                         {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.call_policy.actions.assign_calibrations.evaluator_ids":                        {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.call_policy.actions.assign_metered_evaluations.evaluator_ids":                 {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.call_policy.actions.assign_metered_assignment_by_agent.evaluator_ids":         {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.chat_policy.actions.assign_evaluations.evaluator_ids":                         {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.chat_policy.actions.assign_calibrations.evaluator_ids":                        {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.chat_policy.actions.assign_metered_evaluations.evaluator_ids":                 {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.chat_policy.actions.assign_metered_assignment_by_agent.evaluator_ids":         {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.message_policy.actions.assign_evaluations.evaluator_ids":                      {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.message_policy.actions.assign_calibrations.evaluator_ids":                     {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.message_policy.actions.assign_metered_evaluations.evaluator_ids":              {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.message_policy.actions.assign_metered_assignment_by_agent.evaluator_ids":      {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.email_policy.actions.assign_evaluations.evaluator_ids":                        {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.email_policy.actions.assign_calibrations.evaluator_ids":                       {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.email_policy.actions.assign_metered_evaluations.evaluator_ids":                {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.email_policy.actions.assign_metered_assignment_by_agent.evaluator_ids":        {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.actions.assign_evaluations.evaluator_ids":                                     {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.actions.assign_calibrations.evaluator_ids":                                    {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.actions.assign_metered_evaluations.evaluator_ids":                             {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.actions.assign_metered_assignment_by_agent.evaluator_ids":                     {RefType: "genesyscloud_user", AltValues: []string{"*"}},
+			"media_policies.call_policy.actions.assign_calibrations.calibrator_id":                        {RefType: "genesyscloud_user"},
+			"media_policies.chat_policy.actions.assign_calibrations.calibrator_id":                        {RefType: "genesyscloud_user"},
+			"media_policies.message_policy.actions.assign_calibrations.calibrator_id":                     {RefType: "genesyscloud_user"},
+			"media_policies.email_policy.actions.assign_calibrations.calibrator_id":                       {RefType: "genesyscloud_user"},
+			"media_policies.call_policy.actions.assign_calibrations.expert_evaluator_id":                  {RefType: "genesyscloud_user"},
+			"media_policies.chat_policy.actions.assign_calibrations.expert_evaluator_id":                  {RefType: "genesyscloud_user"},
+			"media_policies.message_policy.actions.assign_calibrations.expert_evaluator_id":               {RefType: "genesyscloud_user"},
+			"media_policies.email_policy.actions.assign_calibrations.expert_evaluator_id":                 {RefType: "genesyscloud_user"},
+			"media_policies.actions.assign_calibrations.expert_evaluator_id":                              {RefType: "genesyscloud_user"},
+			"media_policies.call_policy.conditions.language_ids":                                          {RefType: "genesyscloud_routing_language", AltValues: []string{"*"}},
+			"media_policies.chat_policy.conditions.language_ids":                                          {RefType: "genesyscloud_routing_language", AltValues: []string{"*"}},
+			"media_policies.message_policy.conditions.language_ids":                                       {RefType: "genesyscloud_routing_language", AltValues: []string{"*"}},
+			"media_policies.email_policy.conditions.language_ids":                                         {RefType: "genesyscloud_routing_language", AltValues: []string{"*"}},
+			"media_policies.call_policy.conditions.wrapup_code_ids":                                       {RefType: "genesyscloud_routing_wrapupcode", AltValues: []string{"*"}},
+			"media_policies.chat_policy.conditions.wrapup_code_ids":                                       {RefType: "genesyscloud_routing_wrapupcode", AltValues: []string{"*"}},
+			"media_policies.message_policy.conditions.wrapup_code_ids":                                    {RefType: "genesyscloud_routing_wrapupcode", AltValues: []string{"*"}},
+			"media_policies.email_policy.conditions.wrapup_code_ids":                                      {RefType: "genesyscloud_routing_wrapupcode", AltValues: []string{"*"}},
+			"media_policies.conditions.wrapup_code_ids":                                                   {RefType: "genesyscloud_routing_wrapupcode", AltValues: []string{"*"}},
+			"media_policies.call_policy.actions.media_transcriptions.integration_id":                      {RefType: "genesyscloud_integration"},
+			"media_policies.chat_policy.actions.media_transcriptions.integration_id":                      {RefType: "genesyscloud_integration"},
+			"media_policies.message_policy.actions.media_transcriptions.integration_id":                   {RefType: "genesyscloud_integration"},
+			"media_policies.email_policy.actions.media_transcriptions.integration_id":                     {RefType: "genesyscloud_integration"},
+			"media_policies.actions.media_transcriptions.integration_id":                                  {RefType: "genesyscloud_integration"},
+			"media_policies.call_policy.actions.assign_surveys.flow_id":                                   {RefType: "genesyscloud_flow"},
+			"media_policies.chat_policy.actions.assign_surveys.flow_id":                                   {RefType: "genesyscloud_flow"},
+			"media_policies.message_policy.actions.assign_surveys.flow_id":                                {RefType: "genesyscloud_flow"},
+			"media_policies.email_policy.actions.assign_surveys.flow_id":                                  {RefType: "genesyscloud_flow"},
+			"media_policies.actions.assign_surveys.flow_id":                                               {RefType: "genesyscloud_flow"},
 		},
 		AllowZeroValues: []string{"media_policies.conditions.actions.order"},
 	}

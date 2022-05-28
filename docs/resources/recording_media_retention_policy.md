@@ -150,11 +150,11 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
 
 - `actions` (Block List, Max: 1) Actions (see [below for nested schema](#nestedblock--actions))
 - `conditions` (Block List, Max: 1) Conditions (see [below for nested schema](#nestedblock--conditions))
-- `description` (String)
-- `enabled` (Boolean)
+- `description` (String) The description for the policy
+- `enabled` (Boolean) The policy will be enabled if true, otherwise it will be disabled
 - `media_policies` (Block List, Max: 1) Conditions and actions per media type (see [below for nested schema](#nestedblock--media_policies))
-- `order` (Number)
-- `policy_errors` (Block List, Max: 1) (see [below for nested schema](#nestedblock--policy_errors))
+- `order` (Number) The ordinal number for the policy
+- `policy_errors` (Block List, Max: 1) A list of errors in the policy configuration (see [below for nested schema](#nestedblock--policy_errors))
 
 ### Read-Only
 
@@ -186,16 +186,8 @@ Optional:
 - `calibrator_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--actions--assign_calibrations--evaluators))
+- `evaluator_ids` (List of String)
 - `expert_evaluator_id` (String)
-
-<a id="nestedblock--actions--assign_calibrations--evaluators"></a>
-### Nested Schema for `actions.assign_calibrations.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 
 <a id="nestedblock--actions--assign_evaluations"></a>
@@ -216,18 +208,10 @@ Optional:
 - `evaluation_context_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--actions--assign_metered_assignment_by_agent--evaluators))
+- `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
 - `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--actions--assign_metered_assignment_by_agent--time_interval))
 - `time_zone` (String)
-
-<a id="nestedblock--actions--assign_metered_assignment_by_agent--evaluators"></a>
-### Nested Schema for `actions.assign_metered_assignment_by_agent.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 <a id="nestedblock--actions--assign_metered_assignment_by_agent--time_interval"></a>
 ### Nested Schema for `actions.assign_metered_assignment_by_agent.time_interval`
@@ -250,17 +234,9 @@ Optional:
 - `evaluation_context_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--actions--assign_metered_evaluations--evaluators))
+- `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
 - `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--actions--assign_metered_evaluations--time_interval))
-
-<a id="nestedblock--actions--assign_metered_evaluations--evaluators"></a>
-### Nested Schema for `actions.assign_metered_evaluations.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 <a id="nestedblock--actions--assign_metered_evaluations--time_interval"></a>
 ### Nested Schema for `actions.assign_metered_evaluations.time_interval`
@@ -283,7 +259,7 @@ Required:
 
 Optional:
 
-- `flow_id` (String) The URI reference to the flow associated with this survey.
+- `flow_id` (String) The UUID reference to the flow associated with this survey.
 - `invite_time_interval` (String) An ISO 8601 repeated interval consisting of the number of repetitions, the start datetime, and the interval (e.g. R2/2018-03-01T13:00:00Z/P1M10DT2H30M). Total duration must not exceed 90 days. Defaults to `R1/P0M`.
 - `sending_user` (String) User together with sendingDomain used to send email, null to use no-reply
 - `survey_form` (Block List, Max: 1) The survey form used for this survey. (see [below for nested schema](#nestedblock--actions--assign_surveys--survey_form))
@@ -379,11 +355,11 @@ Optional:
 - `date_ranges` (List of String)
 - `directions` (List of String)
 - `duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--conditions--duration))
-- `for_queues` (Block List) (see [below for nested schema](#nestedblock--conditions--for_queues))
-- `for_users` (Block List) (see [below for nested schema](#nestedblock--conditions--for_users))
+- `for_queue_ids` (List of String)
+- `for_user_ids` (List of String)
 - `media_types` (List of String)
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--conditions--time_allowed))
-- `wrapup_codes` (Block List) (see [below for nested schema](#nestedblock--conditions--wrapup_codes))
+- `wrapup_code_ids` (List of String)
 
 <a id="nestedblock--conditions--duration"></a>
 ### Nested Schema for `conditions.duration`
@@ -394,22 +370,6 @@ Optional:
 - `duration_operator` (String)
 - `duration_range` (String)
 - `duration_target` (String)
-
-
-<a id="nestedblock--conditions--for_queues"></a>
-### Nested Schema for `conditions.for_queues`
-
-Optional:
-
-- `queue_id` (String)
-
-
-<a id="nestedblock--conditions--for_users"></a>
-### Nested Schema for `conditions.for_users`
-
-Optional:
-
-- `user_id` (String)
 
 
 <a id="nestedblock--conditions--time_allowed"></a>
@@ -430,14 +390,6 @@ Optional:
 - `start_time` (String) start time in xx:xx:xx.xxx format
 - `stop_time` (String) stop time in xx:xx:xx.xxx format
 
-
-
-<a id="nestedblock--conditions--wrapup_codes"></a>
-### Nested Schema for `conditions.wrapup_codes`
-
-Required:
-
-- `wrapup_code_id` (String)
 
 
 
@@ -485,16 +437,8 @@ Optional:
 - `calibrator_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `expert_evaluator_id` (String)
-
-<a id="nestedblock--media_policies--call_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 
 <a id="nestedblock--media_policies--call_policy--actions--assign_evaluations"></a>
@@ -515,18 +459,10 @@ Optional:
 - `evaluation_context_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
 - `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration--time_interval))
 - `time_zone` (String)
-
-<a id="nestedblock--media_policies--call_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 <a id="nestedblock--media_policies--call_policy--actions--retention_duration--time_interval"></a>
 ### Nested Schema for `media_policies.call_policy.actions.retention_duration.time_interval`
@@ -549,17 +485,9 @@ Optional:
 - `evaluation_context_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
 - `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration--time_interval))
-
-<a id="nestedblock--media_policies--call_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 <a id="nestedblock--media_policies--call_policy--actions--retention_duration--time_interval"></a>
 ### Nested Schema for `media_policies.call_policy.actions.retention_duration.time_interval`
@@ -582,7 +510,7 @@ Required:
 
 Optional:
 
-- `flow_id` (String) The URI reference to the flow associated with this survey.
+- `flow_id` (String) The UUID reference to the flow associated with this survey.
 - `invite_time_interval` (String) An ISO 8601 repeated interval consisting of the number of repetitions, the start datetime, and the interval (e.g. R2/2018-03-01T13:00:00Z/P1M10DT2H30M). Total duration must not exceed 90 days. Defaults to `R1/P0M`.
 - `sending_user` (String) User together with sendingDomain used to send email, null to use no-reply
 - `survey_form` (Block List, Max: 1) The survey form used for this survey. (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration--survey_form))
@@ -678,14 +606,14 @@ Optional:
 - `date_ranges` (List of String)
 - `directions` (List of String)
 - `duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--duration))
-- `for_queues` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--for_queues))
-- `for_users` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--for_users))
-- `languages` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--languages))
+- `for_queue_ids` (List of String)
+- `for_user_ids` (List of String)
+- `language_ids` (List of String)
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--time_allowed))
-- `wrapup_codes` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--wrapup_codes))
+- `wrapup_code_ids` (List of String)
 
 <a id="nestedblock--media_policies--call_policy--conditions--duration"></a>
-### Nested Schema for `media_policies.call_policy.conditions.wrapup_codes`
+### Nested Schema for `media_policies.call_policy.conditions.wrapup_code_ids`
 
 Optional:
 
@@ -695,41 +623,17 @@ Optional:
 - `duration_target` (String)
 
 
-<a id="nestedblock--media_policies--call_policy--conditions--for_queues"></a>
-### Nested Schema for `media_policies.call_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `queue_id` (String)
-
-
-<a id="nestedblock--media_policies--call_policy--conditions--for_users"></a>
-### Nested Schema for `media_policies.call_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `user_id` (String)
-
-
-<a id="nestedblock--media_policies--call_policy--conditions--languages"></a>
-### Nested Schema for `media_policies.call_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `language_id` (String) The language name.
-
-
 <a id="nestedblock--media_policies--call_policy--conditions--time_allowed"></a>
-### Nested Schema for `media_policies.call_policy.conditions.wrapup_codes`
+### Nested Schema for `media_policies.call_policy.conditions.wrapup_code_ids`
 
 Optional:
 
 - `empty` (Boolean)
-- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--wrapup_codes--time_slots))
+- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--wrapup_code_ids--time_slots))
 - `time_zone_id` (String)
 
-<a id="nestedblock--media_policies--call_policy--conditions--wrapup_codes--time_slots"></a>
-### Nested Schema for `media_policies.call_policy.conditions.wrapup_codes.time_slots`
+<a id="nestedblock--media_policies--call_policy--conditions--wrapup_code_ids--time_slots"></a>
+### Nested Schema for `media_policies.call_policy.conditions.wrapup_code_ids.time_slots`
 
 Optional:
 
@@ -737,14 +641,6 @@ Optional:
 - `start_time` (String) start time in xx:xx:xx.xxx format
 - `stop_time` (String) stop time in xx:xx:xx.xxx format
 
-
-
-<a id="nestedblock--media_policies--call_policy--conditions--wrapup_codes"></a>
-### Nested Schema for `media_policies.call_policy.conditions.wrapup_codes`
-
-Required:
-
-- `wrapup_code_id` (String)
 
 
 
@@ -783,16 +679,8 @@ Optional:
 - `calibrator_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `expert_evaluator_id` (String)
-
-<a id="nestedblock--media_policies--chat_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 
 <a id="nestedblock--media_policies--chat_policy--actions--assign_evaluations"></a>
@@ -813,18 +701,10 @@ Optional:
 - `evaluation_context_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
 - `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration--time_interval))
 - `time_zone` (String)
-
-<a id="nestedblock--media_policies--chat_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 <a id="nestedblock--media_policies--chat_policy--actions--retention_duration--time_interval"></a>
 ### Nested Schema for `media_policies.chat_policy.actions.retention_duration.time_interval`
@@ -847,17 +727,9 @@ Optional:
 - `evaluation_context_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
 - `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration--time_interval))
-
-<a id="nestedblock--media_policies--chat_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 <a id="nestedblock--media_policies--chat_policy--actions--retention_duration--time_interval"></a>
 ### Nested Schema for `media_policies.chat_policy.actions.retention_duration.time_interval`
@@ -880,7 +752,7 @@ Required:
 
 Optional:
 
-- `flow_id` (String) The URI reference to the flow associated with this survey.
+- `flow_id` (String) The UUID reference to the flow associated with this survey.
 - `invite_time_interval` (String) An ISO 8601 repeated interval consisting of the number of repetitions, the start datetime, and the interval (e.g. R2/2018-03-01T13:00:00Z/P1M10DT2H30M). Total duration must not exceed 90 days. Defaults to `R1/P0M`.
 - `sending_user` (String) User together with sendingDomain used to send email, null to use no-reply
 - `survey_form` (Block List, Max: 1) The survey form used for this survey. (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration--survey_form))
@@ -975,14 +847,14 @@ Optional:
 
 - `date_ranges` (List of String)
 - `duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--duration))
-- `for_queues` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--for_queues))
-- `for_users` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--for_users))
-- `languages` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--languages))
+- `for_queue_ids` (List of String)
+- `for_user_ids` (List of String)
+- `language_ids` (List of String)
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--time_allowed))
-- `wrapup_codes` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--wrapup_codes))
+- `wrapup_code_ids` (List of String)
 
 <a id="nestedblock--media_policies--chat_policy--conditions--duration"></a>
-### Nested Schema for `media_policies.chat_policy.conditions.wrapup_codes`
+### Nested Schema for `media_policies.chat_policy.conditions.wrapup_code_ids`
 
 Optional:
 
@@ -992,41 +864,17 @@ Optional:
 - `duration_target` (String)
 
 
-<a id="nestedblock--media_policies--chat_policy--conditions--for_queues"></a>
-### Nested Schema for `media_policies.chat_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `queue_id` (String)
-
-
-<a id="nestedblock--media_policies--chat_policy--conditions--for_users"></a>
-### Nested Schema for `media_policies.chat_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `user_id` (String)
-
-
-<a id="nestedblock--media_policies--chat_policy--conditions--languages"></a>
-### Nested Schema for `media_policies.chat_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `language_id` (String) The language name.
-
-
 <a id="nestedblock--media_policies--chat_policy--conditions--time_allowed"></a>
-### Nested Schema for `media_policies.chat_policy.conditions.wrapup_codes`
+### Nested Schema for `media_policies.chat_policy.conditions.wrapup_code_ids`
 
 Optional:
 
 - `empty` (Boolean)
-- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--wrapup_codes--time_slots))
+- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--wrapup_code_ids--time_slots))
 - `time_zone_id` (String)
 
-<a id="nestedblock--media_policies--chat_policy--conditions--wrapup_codes--time_slots"></a>
-### Nested Schema for `media_policies.chat_policy.conditions.wrapup_codes.time_slots`
+<a id="nestedblock--media_policies--chat_policy--conditions--wrapup_code_ids--time_slots"></a>
+### Nested Schema for `media_policies.chat_policy.conditions.wrapup_code_ids.time_slots`
 
 Optional:
 
@@ -1034,14 +882,6 @@ Optional:
 - `start_time` (String) start time in xx:xx:xx.xxx format
 - `stop_time` (String) stop time in xx:xx:xx.xxx format
 
-
-
-<a id="nestedblock--media_policies--chat_policy--conditions--wrapup_codes"></a>
-### Nested Schema for `media_policies.chat_policy.conditions.wrapup_codes`
-
-Required:
-
-- `wrapup_code_id` (String)
 
 
 
@@ -1080,16 +920,8 @@ Optional:
 - `calibrator_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `expert_evaluator_id` (String)
-
-<a id="nestedblock--media_policies--email_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 
 <a id="nestedblock--media_policies--email_policy--actions--assign_evaluations"></a>
@@ -1110,18 +942,10 @@ Optional:
 - `evaluation_context_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
 - `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration--time_interval))
 - `time_zone` (String)
-
-<a id="nestedblock--media_policies--email_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 <a id="nestedblock--media_policies--email_policy--actions--retention_duration--time_interval"></a>
 ### Nested Schema for `media_policies.email_policy.actions.retention_duration.time_interval`
@@ -1144,17 +968,9 @@ Optional:
 - `evaluation_context_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
 - `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration--time_interval))
-
-<a id="nestedblock--media_policies--email_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 <a id="nestedblock--media_policies--email_policy--actions--retention_duration--time_interval"></a>
 ### Nested Schema for `media_policies.email_policy.actions.retention_duration.time_interval`
@@ -1177,7 +993,7 @@ Required:
 
 Optional:
 
-- `flow_id` (String) The URI reference to the flow associated with this survey.
+- `flow_id` (String) The UUID reference to the flow associated with this survey.
 - `invite_time_interval` (String) An ISO 8601 repeated interval consisting of the number of repetitions, the start datetime, and the interval (e.g. R2/2018-03-01T13:00:00Z/P1M10DT2H30M). Total duration must not exceed 90 days. Defaults to `R1/P0M`.
 - `sending_user` (String) User together with sendingDomain used to send email, null to use no-reply
 - `survey_form` (Block List, Max: 1) The survey form used for this survey. (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration--survey_form))
@@ -1271,47 +1087,23 @@ Optional:
 Optional:
 
 - `date_ranges` (List of String)
-- `for_queues` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--conditions--for_queues))
-- `for_users` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--conditions--for_users))
-- `languages` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--conditions--languages))
+- `for_queue_ids` (List of String)
+- `for_user_ids` (List of String)
+- `language_ids` (List of String)
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--conditions--time_allowed))
-- `wrapup_codes` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--conditions--wrapup_codes))
-
-<a id="nestedblock--media_policies--email_policy--conditions--for_queues"></a>
-### Nested Schema for `media_policies.email_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `queue_id` (String)
-
-
-<a id="nestedblock--media_policies--email_policy--conditions--for_users"></a>
-### Nested Schema for `media_policies.email_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `user_id` (String)
-
-
-<a id="nestedblock--media_policies--email_policy--conditions--languages"></a>
-### Nested Schema for `media_policies.email_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `language_id` (String) The language name.
-
+- `wrapup_code_ids` (List of String)
 
 <a id="nestedblock--media_policies--email_policy--conditions--time_allowed"></a>
-### Nested Schema for `media_policies.email_policy.conditions.wrapup_codes`
+### Nested Schema for `media_policies.email_policy.conditions.wrapup_code_ids`
 
 Optional:
 
 - `empty` (Boolean)
-- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--conditions--wrapup_codes--time_slots))
+- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--conditions--wrapup_code_ids--time_slots))
 - `time_zone_id` (String)
 
-<a id="nestedblock--media_policies--email_policy--conditions--wrapup_codes--time_slots"></a>
-### Nested Schema for `media_policies.email_policy.conditions.wrapup_codes.time_slots`
+<a id="nestedblock--media_policies--email_policy--conditions--wrapup_code_ids--time_slots"></a>
+### Nested Schema for `media_policies.email_policy.conditions.wrapup_code_ids.time_slots`
 
 Optional:
 
@@ -1319,14 +1111,6 @@ Optional:
 - `start_time` (String) start time in xx:xx:xx.xxx format
 - `stop_time` (String) stop time in xx:xx:xx.xxx format
 
-
-
-<a id="nestedblock--media_policies--email_policy--conditions--wrapup_codes"></a>
-### Nested Schema for `media_policies.email_policy.conditions.wrapup_codes`
-
-Required:
-
-- `wrapup_code_id` (String)
 
 
 
@@ -1365,16 +1149,8 @@ Optional:
 - `calibrator_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `expert_evaluator_id` (String)
-
-<a id="nestedblock--media_policies--message_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 
 <a id="nestedblock--media_policies--message_policy--actions--assign_evaluations"></a>
@@ -1395,18 +1171,10 @@ Optional:
 - `evaluation_context_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
 - `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration--time_interval))
 - `time_zone` (String)
-
-<a id="nestedblock--media_policies--message_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 <a id="nestedblock--media_policies--message_policy--actions--retention_duration--time_interval"></a>
 ### Nested Schema for `media_policies.message_policy.actions.retention_duration.time_interval`
@@ -1429,17 +1197,9 @@ Optional:
 - `evaluation_context_id` (String)
 - `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
-- `evaluators` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration--evaluators))
+- `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
 - `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration--time_interval))
-
-<a id="nestedblock--media_policies--message_policy--actions--retention_duration--evaluators"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration.evaluators`
-
-Optional:
-
-- `user_id` (String)
-
 
 <a id="nestedblock--media_policies--message_policy--actions--retention_duration--time_interval"></a>
 ### Nested Schema for `media_policies.message_policy.actions.retention_duration.time_interval`
@@ -1462,7 +1222,7 @@ Required:
 
 Optional:
 
-- `flow_id` (String) The URI reference to the flow associated with this survey.
+- `flow_id` (String) The UUID reference to the flow associated with this survey.
 - `invite_time_interval` (String) An ISO 8601 repeated interval consisting of the number of repetitions, the start datetime, and the interval (e.g. R2/2018-03-01T13:00:00Z/P1M10DT2H30M). Total duration must not exceed 90 days. Defaults to `R1/P0M`.
 - `sending_user` (String) User together with sendingDomain used to send email, null to use no-reply
 - `survey_form` (Block List, Max: 1) The survey form used for this survey. (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration--survey_form))
@@ -1556,47 +1316,23 @@ Optional:
 Optional:
 
 - `date_ranges` (List of String)
-- `for_queues` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--conditions--for_queues))
-- `for_users` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--conditions--for_users))
-- `languages` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--conditions--languages))
+- `for_queue_ids` (List of String)
+- `for_user_ids` (List of String)
+- `language_ids` (List of String)
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--conditions--time_allowed))
-- `wrapup_codes` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--conditions--wrapup_codes))
-
-<a id="nestedblock--media_policies--message_policy--conditions--for_queues"></a>
-### Nested Schema for `media_policies.message_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `queue_id` (String)
-
-
-<a id="nestedblock--media_policies--message_policy--conditions--for_users"></a>
-### Nested Schema for `media_policies.message_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `user_id` (String)
-
-
-<a id="nestedblock--media_policies--message_policy--conditions--languages"></a>
-### Nested Schema for `media_policies.message_policy.conditions.wrapup_codes`
-
-Optional:
-
-- `language_id` (String) The language name.
-
+- `wrapup_code_ids` (List of String)
 
 <a id="nestedblock--media_policies--message_policy--conditions--time_allowed"></a>
-### Nested Schema for `media_policies.message_policy.conditions.wrapup_codes`
+### Nested Schema for `media_policies.message_policy.conditions.wrapup_code_ids`
 
 Optional:
 
 - `empty` (Boolean)
-- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--conditions--wrapup_codes--time_slots))
+- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--conditions--wrapup_code_ids--time_slots))
 - `time_zone_id` (String)
 
-<a id="nestedblock--media_policies--message_policy--conditions--wrapup_codes--time_slots"></a>
-### Nested Schema for `media_policies.message_policy.conditions.wrapup_codes.time_slots`
+<a id="nestedblock--media_policies--message_policy--conditions--wrapup_code_ids--time_slots"></a>
+### Nested Schema for `media_policies.message_policy.conditions.wrapup_code_ids.time_slots`
 
 Optional:
 
@@ -1604,14 +1340,6 @@ Optional:
 - `start_time` (String) start time in xx:xx:xx.xxx format
 - `stop_time` (String) stop time in xx:xx:xx.xxx format
 
-
-
-<a id="nestedblock--media_policies--message_policy--conditions--wrapup_codes"></a>
-### Nested Schema for `media_policies.message_policy.conditions.wrapup_codes`
-
-Required:
-
-- `wrapup_code_id` (String)
 
 
 

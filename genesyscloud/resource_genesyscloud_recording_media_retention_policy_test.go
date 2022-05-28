@@ -127,22 +127,7 @@ type Evaluationform struct {
 }
 
 type User struct {
-	Id              string
-	Name            string
-	Division        Division
-	Chat            Chat
-	Department      string
-	Email           string
-	Addresses       []Contact
-	Title           string
-	Username        string
-	Images          []Userimage
-	Version         int
-	Certifications  []string
-	Biography       Biography
-	EmployerInfo    Employerinfo
-	AcdAutoAnswer   bool
-	LastTokenIssued Oauthlasttokenissued
+	Id string
 }
 
 type Servicelevel struct {
@@ -156,35 +141,7 @@ type Mediasetting struct {
 }
 
 type Queue struct {
-	Id                         string
-	Name                       string
-	Division                   Division
-	Description                string
-	DateCreated                time.Time
-	DateModified               time.Time
-	ModifiedBy                 string
-	CreatedBy                  string
-	MemberCount                int
-	UserMemberCount            int
-	JoinedMemberCount          int
-	MediaSettings              map[string]Mediasetting
-	RoutingRules               []Routingrule
-	Bullseye                   Bullseye
-	AcwSettings                Acwsettings
-	SkillEvaluationMethod      string
-	QueueFlow                  Domainentityref
-	EmailInQueueFlow           Domainentityref
-	MessageInQueueFlow         Domainentityref
-	WhisperPrompt              Domainentityref
-	OnHoldPrompt               Domainentityref
-	AutoAnswerOnly             bool
-	EnableTranscription        bool
-	EnableManualAssignment     bool
-	CallingPartyName           string
-	CallingPartyNumber         string
-	OutboundMessagingAddresses Queuemessagingaddresses
-	OutboundEmailAddress       Queueemailaddress
-	SelfUri                    string
+	Id string
 }
 
 type Publishedsurveyformreference struct {
@@ -359,20 +316,11 @@ type Queueemailaddress struct {
 }
 
 type Wrapupcode struct {
-	Id           string
-	Name         string
-	DateCreated  time.Time
-	DateModified time.Time
-	ModifiedBy   string
-	CreatedBy    string
+	Id string
 }
 
 type Language struct {
-	Id           string
-	Name         string
-	DateModified time.Time
-	State        string
-	Version      string
+	Id string
 }
 
 type Timeslot struct {
