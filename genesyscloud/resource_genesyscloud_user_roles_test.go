@@ -122,6 +122,121 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 	})
 }
 
+//func TestUserRolesLoop(t *testing.T) {
+//	for {
+//		os.Remove("/Users/ronanwatkins/genesys_src/repos/terraform-provider-genesyscloud/genesyscloud/sdk_debug.log")
+//		TestUserRoles(t)
+//	}
+//}
+
+func TestUserRoles(t *testing.T) {
+	config := fmt.Sprintf(`# Built-in roles, not managed by terraform
+data "genesyscloud_auth_role" "employee" {
+  name = "employee"
+}
+data "genesyscloud_auth_role" "admin" {
+  name = "admin"
+}
+
+# Custom roles
+resource "genesyscloud_auth_role" "merge_role" {
+  name                = "%s"
+  description         = "Merge-only role"
+  permission_policies {
+    domain      = "externalContacts"
+    entity_name = "contact"
+    action_set  = ["view"]
+  }
+  permission_policies {
+    domain      = "externalContacts"
+    entity_name = "identity"
+    action_set  = ["merge"]
+  }
+}
+resource "genesyscloud_auth_role" "promote_role" {
+  name                = "%s"
+  description         = "Promote-only role"
+  permission_policies {
+    domain      = "externalContacts"
+    entity_name = "contact"
+    action_set  = ["view"]
+  }
+  permission_policies {
+    domain      = "externalContacts"
+    entity_name = "identity"
+    action_set  = ["promote"]
+  }
+}
+resource "genesyscloud_auth_role" "restricted_role" {
+  name                = "%s"
+  description         = "No relate permissions role"
+}
+
+# Users and their role associations
+resource "genesyscloud_user" "employee" {
+  email    = "%s"
+  name     = "employee"
+  password = "Test1234!"
+}
+resource "genesyscloud_user_roles" "employee-roles" {
+  user_id = genesyscloud_user.employee.id
+  roles {
+    role_id = data.genesyscloud_auth_role.employee.id
+  }
+}
+
+resource "genesyscloud_user" "merge_user" {
+  email    = "%s"
+  name     = "merge_user"
+  password = "Test1234!"
+}
+resource "genesyscloud_user_roles" "merge_user-roles" {
+  user_id = genesyscloud_user.merge_user.id
+  roles {
+    role_id = genesyscloud_auth_role.merge_role.id
+  }
+}
+
+resource "genesyscloud_user" "promote_user" {
+  email    = "%s"
+  name     = "promote_user"
+  password = "Test1234!"
+}
+resource "genesyscloud_user_roles" "promote_user-roles" {
+  user_id = genesyscloud_user.promote_user.id
+  roles {
+    role_id = genesyscloud_auth_role.promote_role.id
+  }
+}
+
+resource "genesyscloud_user" "restricted_user" {
+  email    = "%s"
+  name     = "restricted_user"
+  password = "Test1234!"
+}
+resource "genesyscloud_user_roles" "restricted_user-roles" {
+  user_id = genesyscloud_user.restricted_user.id
+  roles {
+    role_id = genesyscloud_auth_role.restricted_role.id
+  }
+}`, "Merge Role"+uuid.NewString(), "Promote Role"+uuid.NewString(), "Restricted Role"+uuid.NewString(), uuid.NewString()+"employee@relatetest.com", uuid.NewString()+"merge_user@relatetest.com", uuid.NewString()+"promote_user@relatetest.com", uuid.NewString()+"restricted_user@relatetest.com")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create user with 1 role in default division
+				// Also add employee role reference as new user's automatically get this role
+				Config: config,
+				//Check: resource.ComposeTestCheckFunc(
+				//	validateResourceRole("genesyscloud_user_roles.restricted_user-roles", "genesyscloud_auth_role.restricted_role"),
+				//),
+			},
+		},
+	})
+}
+
 func generateUserRoles(resourceID string, userResource string, roles ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user_roles" "%s" {
 		user_id = genesyscloud_user.%s.id

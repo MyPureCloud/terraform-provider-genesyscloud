@@ -172,10 +172,13 @@ func compareValues(oldValue, newValue interface{}, slice1Index, slice2Index int,
 	case *schema.Set:
 		return compareValues(oldValueType.List(), newValue, slice1Index, slice2Index, key)
 	case string:
+		if oldValue != "" && newValue == "" {
+			return true
+		}
+		return cmp.Equal(oldValue, newValue)
+	default:
 		return cmp.Equal(oldValue, newValue)
 	}
-
-	return true
 }
 
 func (c *consistencyCheck) isComputed(key string) bool {
@@ -199,7 +202,7 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 	}
 
 	if *c.isEmptyState {
-		return nil
+		fmt.Println("emptyState")
 	}
 
 	originalState := filterMap(c.originalState)
@@ -214,37 +217,50 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 			if strings.HasSuffix(k, "#") {
 				continue
 			}
+			vTemp := v.Old
+			v.Old = v.New
+			v.New = vTemp
 
-			if c.d.HasChange(k) {
-				if strings.Contains(k, ".") {
-					parts := strings.Split(k, ".")
-					slice1Index, _ := strconv.Atoi(parts[1])
-					slice2Index := 0
-					key := ""
-					if len(parts) >= 3 {
-						key = parts[2]
-						if len(parts) == 4 {
-							slice2Index, _ = strconv.Atoi(parts[3])
+			if strings.Contains(k, ".") {
+				parts := strings.Split(k, ".")
+				slice1Index, _ := strconv.Atoi(parts[1])
+				slice2Index := 0
+				key := ""
+				if len(parts) >= 3 {
+					key = parts[2]
+					if len(parts) == 4 {
+						slice2Index, _ = strconv.Atoi(parts[3])
+					}
+				}
+
+				if !c.d.HasChange(k) {
+					if v.New != "" {
+						if !compareValues(c.originalState[parts[0]], v.New, slice1Index, slice2Index, key) {
+							fmt.Println("returning error 0")
+							return resource.RetryableError(&consistencyError{
+								key:      k,
+								oldValue: c.originalState[k],
+								newValue: c.d.Get(k),
+							})
 						}
 					}
-					vv := v.Old
-					if vv == "" {
-						vv = v.New
-					}
-					if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
+				} else {
+					if !compareValues(c.originalState[parts[0]], v.New, slice1Index, slice2Index, key) {
+						fmt.Println("returning error 1")
 						return resource.RetryableError(&consistencyError{
 							key:      k,
 							oldValue: c.originalState[k],
 							newValue: c.d.Get(k),
 						})
 					}
-				} else {
-					return resource.RetryableError(&consistencyError{
-						key:      k,
-						oldValue: c.originalState[k],
-						newValue: c.d.Get(k),
-					})
 				}
+			} else {
+				fmt.Println("returning error 2")
+				return resource.RetryableError(&consistencyError{
+					key:      k,
+					oldValue: c.originalState[k],
+					newValue: c.d.Get(k),
+				})
 			}
 		}
 	}
