@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
 )
 
 func dataSourceScript() *schema.Resource {
@@ -36,7 +36,7 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		const pageNum = 1
-		scripts, _, getErr := scriptsAPI.GetScripts(pageSize, pageNum, "", name, "", "", "", "", "")
+		scripts, _, getErr := scriptsAPI.GetScripts(pageSize, pageNum, "", name, "", "", "", "", "", "")
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting script %s: %s", name, getErr))
 		}

@@ -3,15 +3,16 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
 )
 
 var (
@@ -35,7 +36,7 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
-	domains, _, getErr := routingAPI.GetRoutingEmailDomains()
+	domains, _, getErr := routingAPI.GetRoutingEmailDomains(false)
 	if getErr != nil {
 		return nil, diag.Errorf("Failed to get routing email domains: %v", getErr)
 	}
