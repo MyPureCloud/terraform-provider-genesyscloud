@@ -2060,12 +2060,10 @@ func generateAssignCalibrations(assignments *[]Calibrationassignment) string {
 				calibrator_id = genesyscloud_user.%s.id
 				evaluator_ids = [%s]
 				evaluation_form_id = genesyscloud_quality_forms_evaluation.%s.id
-				evaluation_form_context_id = genesyscloud_quality_forms_evaluation.%s.context_id
 				expert_evaluator_id = genesyscloud_user.%s.id
         	}
         	`, userResource1,
 			evaluatorIdsString,
-			evaluationFormResource1,
 			evaluationFormResource1,
 			userResource1,
 		)
@@ -2096,14 +2094,12 @@ func generateAssignMeteredAssignmentByAgent(assignments *[]Meteredassignmentbyag
         	    evaluator_ids = [%s]
 				max_number_evaluations = %v
 				evaluation_form_id = genesyscloud_quality_forms_evaluation.%s.id
-				evaluation_form_context_id = genesyscloud_quality_forms_evaluation.%s.context_id
 				%s
 				time_zone = "%s"
         	}
         	`, assignment.EvaluationContextId,
 			evaluatorIdsString,
 			assignment.MaxNumberEvaluations,
-			evaluationFormResource1,
 			evaluationFormResource1,
 			generateTimeInterval(&assignment.TimeInterval),
 			assignment.TimeZone,
@@ -2135,14 +2131,12 @@ func generateAssignMeteredEvaluations(assignments *[]Meteredevaluationassignment
         	    evaluator_ids = [%s]
 				max_number_evaluations = %v
 				evaluation_form_id = genesyscloud_quality_forms_evaluation.%s.id
-				evaluation_form_context_id = genesyscloud_quality_forms_evaluation.%s.context_id
 				assign_to_active_user = %v
 				%s
         	}
         	`, assignment.EvaluationContextId,
 			evaluatorIdsString,
 			assignment.MaxNumberEvaluations,
-			evaluationFormResource1,
 			evaluationFormResource1,
 			assignment.AssignToActiveUser,
 			generateTimeInterval(&assignment.TimeInterval),
@@ -2158,11 +2152,9 @@ func generateAssignEvaluations() string {
 	assignmentString := fmt.Sprintf(`
     	assign_evaluations {
 			evaluation_form_id = genesyscloud_quality_forms_evaluation.%s.id
-			evaluation_form_context_id = genesyscloud_quality_forms_evaluation.%s.context_id
     	    user_id = genesyscloud_user.%s.id
     	}
     	`, evaluationFormResource1,
-		evaluationFormResource1,
 		userResource1,
 	)
 	return assignmentString

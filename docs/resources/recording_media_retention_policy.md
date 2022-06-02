@@ -16,6 +16,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/recording/crossplatform/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/analyticsdatamanagement/recording/#put-api-v2-recording-crossplatform-mediaretentionpolicies--policyId-)
 * [POST /api/v2/recording/crossplatform/mediaretentionpolicies](https://developer.genesys.cloud/analyticsdatamanagement/recording/#post-api-v2-recording-crossplatform-mediaretentionpolicies)
 * [DELETE /api/v2/recording/crossplatform/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/analyticsdatamanagement/recording/#delete-api-v2-recording-crossplatform-mediaretentionpolicies--policyId-)
+* [GET /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations--formId-)
+* [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations--formId--versions)
 
 ## Example Usage
 
@@ -32,19 +34,15 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
         delete_recording = false
         always_delete    = false
         assign_evaluations {
-          evaluation_form_id         = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.id
-          evaluation_form_context_id = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.context_id
-          user_id                    = genesyscloud_user.test-user-1.id
+          evaluation_form_id = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.id
+          user_id            = genesyscloud_user.test-user-1.id
         }
         assign_metered_evaluations {
-          evaluation_context_id = ""
-          evaluators {
-            user_id = genesyscloud_user.test-user-1.id
-          }
-          max_number_evaluations     = 1
-          evaluation_form_id         = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.id
-          evaluation_form_context_id = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.context_id
-          assign_to_active_user      = true
+          evaluation_context_id  = ""
+          evaluator_ids          = [genesyscloud_user.test-user-1.id]
+          max_number_evaluations = 1
+          evaluation_form_id     = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.id
+          assign_to_active_user  = true
           time_interval {
             months = 1
             weeks  = 1
@@ -53,13 +51,10 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
           }
         }
         assign_metered_assignment_by_agent {
-          evaluation_context_id = ""
-          evaluators {
-            user_id = genesyscloud_user.test-user-1.id
-          }
-          max_number_evaluations     = 1
-          evaluation_form_id         = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.id
-          evaluation_form_context_id = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.context_id
+          evaluation_context_id  = ""
+          evaluator_ids          = [genesyscloud_user.test-user-1.id]
+          max_number_evaluations = 1
+          evaluation_form_id     = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.id
           time_interval {
             months = 1
             weeks  = 1
@@ -69,13 +64,10 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
           time_zone = "EST"
         }
         assign_calibrations {
-          calibrator_id = genesyscloud_user.test-user-1.id
-          evaluators {
-            user_id = genesyscloud_user.test-user-1.id
-          }
-          evaluation_form_id         = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.id
-          evaluation_form_context_id = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.context_id
-          expert_evaluator_id        = genesyscloud_user.test-user-1.id
+          calibrator_id       = genesyscloud_user.test-user-1.id
+          evaluator_ids       = [genesyscloud_user.test-user-1.id]
+          evaluation_form_id  = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.id
+          expert_evaluator_id = genesyscloud_user.test-user-1.id
         }
         assign_surveys {
           sending_domain = "surveys.mypurecloud.com"
@@ -111,19 +103,11 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
         }
       }
       conditions {
-        for_users {
-          user_id = genesyscloud_user.test-user-1.id
-        }
-        date_ranges = ["2022-05-12T04:00:00.000Z/2022-05-13T04:00:00.000Z"]
-        for_queues {
-          queue_id = genesyscloud_routing_queue.test-queue-1.id
-        }
-        wrapup_codes {
-          wrapup_code_id = genesyscloud_routing_wrapupcode.test-wrapup-code-1.id
-        }
-        languages {
-          language_id = genesyscloud_routing_language.test-language-1.id
-        }
+        for_user_ids    = [genesyscloud_user.test-user-1.id]
+        date_ranges     = ["2022-05-12T04:00:00.000Z/2022-05-13T04:00:00.000Z"]
+        for_queue_ids   = [genesyscloud_routing_queue.test-queue-1.id]
+        wrapup_code_ids = [genesyscloud_routing_wrapupcode.test-wrapup-code-1.id]
+        language_ids    = [genesyscloud_routing_language.test-language-1.id]
         time_allowed {
           time_slots {
             start_time = "10:10:10.010"
@@ -184,7 +168,6 @@ Optional:
 Optional:
 
 - `calibrator_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `expert_evaluator_id` (String)
@@ -195,7 +178,6 @@ Optional:
 
 Optional:
 
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `user_id` (String)
 
@@ -206,7 +188,6 @@ Optional:
 Optional:
 
 - `evaluation_context_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
@@ -232,7 +213,6 @@ Optional:
 
 - `assign_to_active_user` (Boolean)
 - `evaluation_context_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
@@ -435,7 +415,6 @@ Optional:
 Optional:
 
 - `calibrator_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `expert_evaluator_id` (String)
@@ -446,7 +425,6 @@ Optional:
 
 Optional:
 
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `user_id` (String)
 
@@ -457,7 +435,6 @@ Optional:
 Optional:
 
 - `evaluation_context_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
@@ -483,7 +460,6 @@ Optional:
 
 - `assign_to_active_user` (Boolean)
 - `evaluation_context_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
@@ -677,7 +653,6 @@ Optional:
 Optional:
 
 - `calibrator_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `expert_evaluator_id` (String)
@@ -688,7 +663,6 @@ Optional:
 
 Optional:
 
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `user_id` (String)
 
@@ -699,7 +673,6 @@ Optional:
 Optional:
 
 - `evaluation_context_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
@@ -725,7 +698,6 @@ Optional:
 
 - `assign_to_active_user` (Boolean)
 - `evaluation_context_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
@@ -918,7 +890,6 @@ Optional:
 Optional:
 
 - `calibrator_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `expert_evaluator_id` (String)
@@ -929,7 +900,6 @@ Optional:
 
 Optional:
 
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `user_id` (String)
 
@@ -940,7 +910,6 @@ Optional:
 Optional:
 
 - `evaluation_context_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
@@ -966,7 +935,6 @@ Optional:
 
 - `assign_to_active_user` (Boolean)
 - `evaluation_context_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
@@ -1147,7 +1115,6 @@ Optional:
 Optional:
 
 - `calibrator_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `expert_evaluator_id` (String)
@@ -1158,7 +1125,6 @@ Optional:
 
 Optional:
 
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `user_id` (String)
 
@@ -1169,7 +1135,6 @@ Optional:
 Optional:
 
 - `evaluation_context_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
@@ -1195,7 +1160,6 @@ Optional:
 
 - `assign_to_active_user` (Boolean)
 - `evaluation_context_id` (String)
-- `evaluation_form_context_id` (String)
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)

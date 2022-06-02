@@ -102,7 +102,6 @@ resource "genesyscloud_quality_forms_evaluation" "test-evaluation-form" {
 
 ### Optional
 
-- `context_id` (String) The context id of the entity.
 - `published` (Boolean) Specifies if the evalutaion form is published. Defaults to `false`.
 
 ### Read-Only
