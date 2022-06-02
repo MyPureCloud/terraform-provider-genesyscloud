@@ -177,7 +177,7 @@ func surveyFormExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllSurveyForms),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
-		AllowZeroValues:  []string{"question_groups.questions.answer_options.value", "question_groups.weight"},
+		AllowZeroValues:  []string{"question_groups.questions.answer_options.value"},
 	}
 }
 
@@ -209,12 +209,6 @@ func resourceSurveyForm() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-			},
-			"context_id": {
-				Description: "The context id of the entity.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
 			},
 			"language": {
 				Description:  "Language for survey viewer localization. Currently localized languages: da, de, en-US, es, fi, fr, it, ja, ko, nl, no, pl, pt-BR, sv, th, tr, zh-CH, zh-TW",
@@ -323,9 +317,6 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 		if surveyForm.Footer != nil {
 			d.Set("footer", *surveyForm.Footer)
-		}
-		if surveyForm.ContextId != nil {
-			d.Set("context_id", *surveyForm.ContextId)
 		}
 		if surveyForm.Published != nil {
 			d.Set("published", *surveyForm.Published)
