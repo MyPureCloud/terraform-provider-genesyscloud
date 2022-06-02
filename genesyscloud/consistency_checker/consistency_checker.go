@@ -204,11 +204,6 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 		panic("consistencyCheck must be initialized with NewConsistencyCheck")
 	}
 
-	if *c.isEmptyState {
-		fmt.Println("emptyState")
-		//return nil
-	}
-
 	if c.r == nil {
 		return nil
 	}
@@ -231,7 +226,6 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 			v.Old = v.New
 			v.New = vTemp
 			parts := strings.Split(k, ".")
-
 			if strings.Contains(k, ".") {
 				slice1Index, _ := strconv.Atoi(parts[1])
 				slice2Index := 0
@@ -247,7 +241,6 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 				if !c.d.HasChange(k) {
 					if v.New != "" {
 						if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
-							fmt.Println("returning error 1", compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key))
 							return resource.RetryableError(&consistencyError{
 								key:      k,
 								oldValue: c.originalState[k],
@@ -257,7 +250,6 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 					}
 				} else {
 					if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
-						fmt.Println("returning error 2")
 						return resource.RetryableError(&consistencyError{
 							key:      k,
 							oldValue: c.originalState[k],
@@ -265,13 +257,6 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 						})
 					}
 				}
-			} else {
-				//fmt.Println("returning error 3")
-				//return resource.RetryableError(&consistencyError{
-				//	key:      k,
-				//	oldValue: c.originalState[k],
-				//	newValue: c.d.Get(k),
-				//})
 			}
 		}
 	}

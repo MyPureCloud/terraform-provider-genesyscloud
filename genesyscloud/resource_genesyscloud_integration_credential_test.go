@@ -49,7 +49,7 @@ func TestAccResourceCredential(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "name", credName1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "credential_type_name", typeName1),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration_credential."+credResource1, "fields"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key1, val1),
 				),
 			},
 			{
@@ -65,7 +65,7 @@ func TestAccResourceCredential(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "name", credName2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "credential_type_name", typeName1),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration_credential."+credResource1, "fields"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key1, val1_2),
 				),
 			},
 			{
@@ -82,7 +82,8 @@ func TestAccResourceCredential(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "name", credName2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "credential_type_name", typeName1),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration_credential."+credResource1, "fields"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key1, val1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key2, val2),
 				),
 			},
 			{
@@ -99,7 +100,8 @@ func TestAccResourceCredential(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "name", credName2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "credential_type_name", typeName1),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration_credential."+credResource1, "fields"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key1, val1),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource1, "fields."+key2, val2_2),
 				),
 			},
 			{
@@ -122,7 +124,7 @@ func TestAccResourceCredential(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "name", credName1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "credential_type_name", typeName2),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration_credential."+credResource2, "fields"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "fields."+key3, val3),
 				),
 			},
 			{
@@ -138,7 +140,7 @@ func TestAccResourceCredential(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "name", credName2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "credential_type_name", typeName2),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration_credential."+credResource2, "fields"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_credential."+credResource2, "fields."+key3, val3),
 				),
 			},
 			{

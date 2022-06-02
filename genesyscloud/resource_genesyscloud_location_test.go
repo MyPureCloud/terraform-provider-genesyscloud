@@ -53,8 +53,8 @@ func TestAccResourceLocationBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "name", locName1),
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "notes", locNotes1),
-					resource.TestCheckNoResourceAttr("genesyscloud_location."+locResource1, "path"),
-					resource.TestCheckNoResourceAttr("genesyscloud_location."+locResource1, "emergency_number"),
+					resource.TestCheckNoResourceAttr("genesyscloud_location."+locResource1, "path.%"),
+					resource.TestCheckNoResourceAttr("genesyscloud_location."+locResource1, "emergency_number.%"),
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "address.0.street1", street1),
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "address.0.city", city1),
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "address.0.state", state1),
@@ -98,7 +98,7 @@ func TestAccResourceLocationBasic(t *testing.T) {
 				) + generateLocationResourceBasic(locResource2, locName3),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "name", locName2),
-					resource.TestCheckNoResourceAttr("genesyscloud_location."+locResource1, "path"),
+					resource.TestCheckNoResourceAttr("genesyscloud_location."+locResource1, "path.%"),
 					testCheckEmergencyNumber("genesyscloud_location."+locResource1, emergencyNum2),
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "emergency_number.0.type", locNumberElin),
 				),
@@ -114,8 +114,8 @@ func TestAccResourceLocationBasic(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "name", locName2),
-					resource.TestCheckNoResourceAttr("genesyscloud_location."+locResource1, "path"),
-					resource.TestCheckNoResourceAttr("genesyscloud_location."+locResource1, "emergency_number"),
+					resource.TestCheckNoResourceAttr("genesyscloud_location."+locResource1, "path.%"),
+					resource.TestCheckNoResourceAttr("genesyscloud_location."+locResource1, "emergency_number.%"),
 				),
 			},
 			{

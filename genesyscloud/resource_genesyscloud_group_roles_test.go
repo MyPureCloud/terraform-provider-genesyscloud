@@ -102,7 +102,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 					groupResource1,
 				) + generateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("genesyscloud_group_roles."+groupRoleResource, "roles"),
+					resource.TestCheckNoResourceAttr("genesyscloud_group_roles."+groupRoleResource, "roles.%"),
 				),
 			},
 			{
