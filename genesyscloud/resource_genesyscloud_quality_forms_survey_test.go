@@ -15,6 +15,7 @@ type surveyFormStruct struct {
 	name           string
 	published      bool
 	disabled       bool
+	contextId      int
 	language       string
 	header         string
 	footer         string

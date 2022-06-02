@@ -210,6 +210,12 @@ func resourceSurveyForm() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 			},
+			"context_id": {
+				Description: "The context id of the entity.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"language": {
 				Description:  "Language for survey viewer localization. Currently localized languages: da, de, en-US, es, fi, fr, it, ja, ko, nl, no, pl, pt-BR, sv, th, tr, zh-CH, zh-TW",
 				Type:         schema.TypeString,
@@ -317,6 +323,9 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 		if surveyForm.Footer != nil {
 			d.Set("footer", *surveyForm.Footer)
+		}
+		if surveyForm.ContextId != nil {
+			d.Set("context_id", *surveyForm.ContextId)
 		}
 		if surveyForm.Published != nil {
 			d.Set("published", *surveyForm.Published)
