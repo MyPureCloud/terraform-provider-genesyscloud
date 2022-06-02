@@ -17,7 +17,7 @@ Data source for Genesys Cloud survey form. Select a form by name
 
 ### Required
 
-- `name` (String) Survey form policy name.
+- `name` (String) Survey form name.
 
 ### Read-Only
 

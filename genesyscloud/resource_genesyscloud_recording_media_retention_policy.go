@@ -321,12 +321,10 @@ var (
 
 	surveyAssignment = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"survey_form": {
+			"survey_form_name": {
 				Description: "The survey form used for this survey.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
+				Type:        schema.TypeString,
 				Optional:    true,
-				Elem:        publishedSurveyFormReference,
 			},
 			"flow_id": {
 				Description: "The UUID reference to the flow associated with this survey.",
@@ -428,21 +426,6 @@ var (
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-			},
-		},
-	}
-
-	publishedSurveyFormReference = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"context_id": {
-				Description: "The context id of this form.",
-				Type:        schema.TypeString,
-				Optional:    true,
 			},
 		},
 	}
@@ -985,8 +968,9 @@ func buildEvaluationAssignments(evaluations []interface{}) *[]platformclientv2.E
 		assignEvaluationMap := assignEvaluation.(map[string]interface{})
 		evaluationFormId := assignEvaluationMap["evaluation_form_id"].(string)
 		userId := assignEvaluationMap["user_id"].(string)
-
 		assignment := platformclientv2.Evaluationassignment{}
+
+		// if evaluation form id is present, get the context id and build the evaluation form
 		if evaluationFormId != "" {
 			form, _, err := qualityAPI.GetQualityFormsEvaluation(evaluationFormId)
 			if err != nil {
@@ -1013,11 +997,15 @@ func flattenEvaluationAssignments(assignments *[]platformclientv2.Evaluationassi
 	evaluationAssignments := []interface{}{}
 	for _, assignment := range *assignments {
 		assignmentMap := make(map[string]interface{})
+
+		// if form is present in the response, assign the most recent unpublished version id to align with evaluation form resource behavior for export purposes.
 		if assignment.EvaluationForm != nil {
 			formId := *assignment.EvaluationForm.Id
 			formVersions, _, err := qualityAPI.GetQualityFormsEvaluationVersions(formId, 25, 1, "desc")
 			if err != nil {
 				fmt.Errorf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+			} else if formVersions.Entities == nil || len(*formVersions.Entities) == 0 {
+				fmt.Errorf("No versions found for form %s", formId)
 			} else {
 				formId = *(*formVersions.Entities)[0].Id
 			}
@@ -1103,6 +1091,7 @@ func buildAssignMeteredEvaluations(assignments []interface{}) *[]platformclientv
 			TimeInterval:         buildTimeInterval(assignmentMap["time_interval"].([]interface{})),
 		}
 
+		// if evaluation form id is present, get the context id and build the evaluation form
 		if evaluationFormId != "" {
 			form, _, err := qualityAPI.GetQualityFormsEvaluation(evaluationFormId)
 			if err != nil {
@@ -1139,11 +1128,14 @@ func flattenAssignMeteredEvaluations(assignments *[]platformclientv2.Meteredeval
 		if assignment.MaxNumberEvaluations != nil {
 			assignmentMap["max_number_evaluations"] = *assignment.MaxNumberEvaluations
 		}
+		// if form is present in the response, assign the most recent unpublished version id to align with evaluation form resource behavior for export purposes.
 		if assignment.EvaluationForm != nil {
 			formId := *assignment.EvaluationForm.Id
 			formVersions, _, err := qualityAPI.GetQualityFormsEvaluationVersions(formId, 25, 1, "desc")
 			if err != nil {
 				fmt.Errorf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+			} else if formVersions.Entities == nil || len(*formVersions.Entities) == 0 {
+				fmt.Errorf("No versions found for form %s", formId)
 			} else {
 				formId = *(*formVersions.Entities)[0].Id
 			}
@@ -1190,6 +1182,7 @@ func buildAssignMeteredAssignmentByAgent(assignments []interface{}) *[]platformc
 			TimeZone:             &timeZone,
 		}
 
+		// if evaluation form id is present, get the context id and build the evaluation form
 		if evaluationFormId != "" {
 			form, _, err := qualityAPI.GetQualityFormsEvaluation(evaluationFormId)
 			if err != nil {
@@ -1227,11 +1220,14 @@ func flattenAssignMeteredAssignmentByAgent(assignments *[]platformclientv2.Meter
 		if assignment.MaxNumberEvaluations != nil {
 			assignmentMap["max_number_evaluations"] = *assignment.MaxNumberEvaluations
 		}
+		// if form is present in the response, assign the most recent unpublished version id to align with evaluation form resource behavior for export purposes.
 		if assignment.EvaluationForm != nil {
 			formId := *assignment.EvaluationForm.Id
 			formVersions, _, err := qualityAPI.GetQualityFormsEvaluationVersions(formId, 25, 1, "desc")
 			if err != nil {
 				fmt.Errorf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+			} else if formVersions.Entities == nil || len(*formVersions.Entities) == 0 {
+				fmt.Errorf("No versions found for form %s", formId)
 			} else {
 				formId = *(*formVersions.Entities)[0].Id
 			}
@@ -1274,6 +1270,7 @@ func buildAssignCalibrations(assignments []interface{}) *[]platformclientv2.Cali
 			Evaluators: &evaluators,
 		}
 
+		// if evaluation form id is present, get the context id and build the evaluation form
 		if evaluationFormId != "" {
 			form, _, err := qualityAPI.GetQualityFormsEvaluation(evaluationFormId)
 			if err != nil {
@@ -1315,11 +1312,14 @@ func flattenAssignCalibrations(assignments *[]platformclientv2.Calibrationassign
 			}
 			assignmentMap["evaluator_ids"] = evaluatorIds
 		}
+		// if form is present in the response, assign the most recent unpublished version id to align with evaluation form resource behavior for export purposes.
 		if assignment.EvaluationForm != nil {
 			formId := *assignment.EvaluationForm.Id
 			formVersions, _, err := qualityAPI.GetQualityFormsEvaluationVersions(formId, 25, 1, "desc")
 			if err != nil {
 				fmt.Errorf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+			} else if formVersions.Entities == nil || len(*formVersions.Entities) == 0 {
+				fmt.Errorf("No versions found for form %s", formId)
 			} else {
 				formId = *(*formVersions.Entities)[0].Id
 			}
@@ -1333,37 +1333,6 @@ func flattenAssignCalibrations(assignments *[]platformclientv2.Calibrationassign
 		calibrationAssignments = append(calibrationAssignments, assignmentMap)
 	}
 	return calibrationAssignments
-}
-
-func buildPublishedSurveyFormReference(publishedSurveyFormReference []interface{}) *platformclientv2.Publishedsurveyformreference {
-	if publishedSurveyFormReference == nil || len(publishedSurveyFormReference) <= 0 {
-		return nil
-	}
-
-	referenceMap := publishedSurveyFormReference[0].(map[string]interface{})
-	name := referenceMap["name"].(string)
-	contextId := referenceMap["context_id"].(string)
-
-	return &platformclientv2.Publishedsurveyformreference{
-		Name:      &name,
-		ContextId: &contextId,
-	}
-}
-
-func flattenPublishedSurveyFormReference(reference *platformclientv2.Publishedsurveyformreference) []interface{} {
-	if reference == nil {
-		return nil
-	}
-
-	referenceMap := make(map[string]interface{})
-	if reference.Name != nil {
-		referenceMap["name"] = *reference.Name
-	}
-	if reference.ContextId != nil {
-		referenceMap["context_id"] = *reference.ContextId
-	}
-
-	return []interface{}{referenceMap}
 }
 
 func buildDomainEntityRef(idVal string) *platformclientv2.Domainentityref {
@@ -1384,14 +1353,31 @@ func buildAssignSurveys(assignments []interface{}) *[]platformclientv2.Surveyass
 		sendingUser := assignmentMap["sending_user"].(string)
 		sendingDomain := assignmentMap["sending_domain"].(string)
 		inviteTimeInterval := assignmentMap["invite_time_interval"].(string)
+		surveyFormName := assignmentMap["survey_form_name"].(string)
 
-		surveyAssignments = append(surveyAssignments, platformclientv2.Surveyassignment{
-			SurveyForm:         buildPublishedSurveyFormReference(assignmentMap["survey_form"].([]interface{})),
+		temp := platformclientv2.Surveyassignment{
 			Flow:               buildDomainEntityRef(assignmentMap["flow_id"].(string)),
 			InviteTimeInterval: &inviteTimeInterval,
 			SendingUser:        &sendingUser,
 			SendingDomain:      &sendingDomain,
-		})
+		}
+
+		// If a survey form name is provided, get the context id and build the published survey form reference
+		if surveyFormName != "" {
+			const pageNum = 1
+			const pageSize = 100
+			forms, _, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", surveyFormName, "desc")
+			if getErr != nil {
+				fmt.Errorf("Error requesting survey forms %s: %s", surveyFormName, getErr)
+			} else if forms.Entities == nil || len(*forms.Entities) == 0 {
+				fmt.Errorf("No survey forms found with name %s", surveyFormName)
+			} else {
+				surveyFormReference := platformclientv2.Publishedsurveyformreference{Name: &surveyFormName, ContextId: (*forms.Entities)[0].ContextId}
+				temp.SurveyForm = &surveyFormReference
+			}
+		}
+
+		surveyAssignments = append(surveyAssignments, temp)
 	}
 
 	return &surveyAssignments
@@ -1407,7 +1393,7 @@ func flattenAssignSurveys(assignments *[]platformclientv2.Surveyassignment) []in
 	for _, assignment := range *assignments {
 		assignmentMap := make(map[string]interface{})
 		if assignment.SurveyForm != nil {
-			assignmentMap["survey_form"] = flattenPublishedSurveyFormReference(assignment.SurveyForm)
+			assignmentMap["survey_form_name"] = *assignment.SurveyForm.Name
 		}
 		if assignment.Flow != nil {
 			assignmentMap["flow_id"] = *assignment.Flow.Id

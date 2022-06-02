@@ -17,7 +17,7 @@ func dataSourceQualityFormsSurvey() *schema.Resource {
 		ReadContext: readWithPooledClient(dataSourceQualityFormsSurveyRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Survey form policy name.",
+				Description: "Survey form name.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -34,17 +34,17 @@ func dataSourceQualityFormsSurveyRead(ctx context.Context, d *schema.ResourceDat
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			policy, _, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", name, "desc")
+			forms, _, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", name, "desc")
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting media retention policy %s: %s", name, getErr))
+				return resource.NonRetryableError(fmt.Errorf("Error requesting survey forms %s: %s", name, getErr))
 			}
 
-			if policy.Entities == nil || len(*policy.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No media retention policy found with name %s", name))
+			if forms.Entities == nil || len(*forms.Entities) == 0 {
+				return resource.RetryableError(fmt.Errorf("No survey forms found with name %s", name))
 			}
 
-			d.SetId(*(*policy.Entities)[0].Id)
+			d.SetId(*(*forms.Entities)[0].Id)
 			return nil
 		}
 	})

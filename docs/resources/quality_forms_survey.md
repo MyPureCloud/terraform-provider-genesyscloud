@@ -63,7 +63,6 @@ resource "genesyscloud_quality_forms_survey" "test-survey-form-1" {
         value = 0
       }
       max_response_characters = 0
-      explanation_prompt      = "explanation-prompt"
     }
   }
   question_groups {
@@ -108,7 +107,6 @@ resource "genesyscloud_quality_forms_survey" "test-survey-form-1" {
 
 ### Optional
 
-- `context_id` (String) The context id of the entity.
 - `disabled` (Boolean) Is this form disabled Defaults to `false`.
 - `footer` (String) Markdown text for the bottom of the form.
 - `header` (String) Markdown text for the top of the form.

@@ -5,3 +5,4 @@
 * [DELETE /api/v2/recording/crossplatform/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/analyticsdatamanagement/recording/#delete-api-v2-recording-crossplatform-mediaretentionpolicies--policyId-)
 * [GET /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations--formId-)
 * [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations--formId--versions)
+* [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys)

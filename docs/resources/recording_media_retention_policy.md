@@ -18,6 +18,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/recording/crossplatform/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/analyticsdatamanagement/recording/#delete-api-v2-recording-crossplatform-mediaretentionpolicies--policyId-)
 * [GET /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations--formId-)
 * [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations--formId--versions)
+* [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys)
+
 
 ## Example Usage
 
@@ -242,16 +244,7 @@ Optional:
 - `flow_id` (String) The UUID reference to the flow associated with this survey.
 - `invite_time_interval` (String) An ISO 8601 repeated interval consisting of the number of repetitions, the start datetime, and the interval (e.g. R2/2018-03-01T13:00:00Z/P1M10DT2H30M). Total duration must not exceed 90 days. Defaults to `R1/P0M`.
 - `sending_user` (String) User together with sendingDomain used to send email, null to use no-reply
-- `survey_form` (Block List, Max: 1) The survey form used for this survey. (see [below for nested schema](#nestedblock--actions--assign_surveys--survey_form))
-
-<a id="nestedblock--actions--assign_surveys--survey_form"></a>
-### Nested Schema for `actions.assign_surveys.survey_form`
-
-Optional:
-
-- `context_id` (String) The context id of this form.
-- `name` (String)
-
+- `survey_form_name` (String) The survey form used for this survey.
 
 
 <a id="nestedblock--actions--initiate_screen_recording"></a>
@@ -489,16 +482,7 @@ Optional:
 - `flow_id` (String) The UUID reference to the flow associated with this survey.
 - `invite_time_interval` (String) An ISO 8601 repeated interval consisting of the number of repetitions, the start datetime, and the interval (e.g. R2/2018-03-01T13:00:00Z/P1M10DT2H30M). Total duration must not exceed 90 days. Defaults to `R1/P0M`.
 - `sending_user` (String) User together with sendingDomain used to send email, null to use no-reply
-- `survey_form` (Block List, Max: 1) The survey form used for this survey. (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration--survey_form))
-
-<a id="nestedblock--media_policies--call_policy--actions--retention_duration--survey_form"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration.survey_form`
-
-Optional:
-
-- `context_id` (String) The context id of this form.
-- `name` (String)
-
+- `survey_form_name` (String) The survey form used for this survey.
 
 
 <a id="nestedblock--media_policies--call_policy--actions--initiate_screen_recording"></a>
@@ -727,16 +711,7 @@ Optional:
 - `flow_id` (String) The UUID reference to the flow associated with this survey.
 - `invite_time_interval` (String) An ISO 8601 repeated interval consisting of the number of repetitions, the start datetime, and the interval (e.g. R2/2018-03-01T13:00:00Z/P1M10DT2H30M). Total duration must not exceed 90 days. Defaults to `R1/P0M`.
 - `sending_user` (String) User together with sendingDomain used to send email, null to use no-reply
-- `survey_form` (Block List, Max: 1) The survey form used for this survey. (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration--survey_form))
-
-<a id="nestedblock--media_policies--chat_policy--actions--retention_duration--survey_form"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration.survey_form`
-
-Optional:
-
-- `context_id` (String) The context id of this form.
-- `name` (String)
-
+- `survey_form_name` (String) The survey form used for this survey.
 
 
 <a id="nestedblock--media_policies--chat_policy--actions--initiate_screen_recording"></a>
@@ -964,16 +939,7 @@ Optional:
 - `flow_id` (String) The UUID reference to the flow associated with this survey.
 - `invite_time_interval` (String) An ISO 8601 repeated interval consisting of the number of repetitions, the start datetime, and the interval (e.g. R2/2018-03-01T13:00:00Z/P1M10DT2H30M). Total duration must not exceed 90 days. Defaults to `R1/P0M`.
 - `sending_user` (String) User together with sendingDomain used to send email, null to use no-reply
-- `survey_form` (Block List, Max: 1) The survey form used for this survey. (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration--survey_form))
-
-<a id="nestedblock--media_policies--email_policy--actions--retention_duration--survey_form"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration.survey_form`
-
-Optional:
-
-- `context_id` (String) The context id of this form.
-- `name` (String)
-
+- `survey_form_name` (String) The survey form used for this survey.
 
 
 <a id="nestedblock--media_policies--email_policy--actions--initiate_screen_recording"></a>
@@ -1189,16 +1155,7 @@ Optional:
 - `flow_id` (String) The UUID reference to the flow associated with this survey.
 - `invite_time_interval` (String) An ISO 8601 repeated interval consisting of the number of repetitions, the start datetime, and the interval (e.g. R2/2018-03-01T13:00:00Z/P1M10DT2H30M). Total duration must not exceed 90 days. Defaults to `R1/P0M`.
 - `sending_user` (String) User together with sendingDomain used to send email, null to use no-reply
-- `survey_form` (Block List, Max: 1) The survey form used for this survey. (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration--survey_form))
-
-<a id="nestedblock--media_policies--message_policy--actions--retention_duration--survey_form"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration.survey_form`
-
-Optional:
-
-- `context_id` (String) The context id of this form.
-- `name` (String)
-
+- `survey_form_name` (String) The survey form used for this survey.
 
 
 <a id="nestedblock--media_policies--message_policy--actions--initiate_screen_recording"></a>

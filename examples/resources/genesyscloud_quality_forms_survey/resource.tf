@@ -38,7 +38,6 @@ resource "genesyscloud_quality_forms_survey" "test-survey-form-1" {
         value = 0
       }
       max_response_characters = 0
-      explanation_prompt      = "explanation-prompt"
     }
   }
   question_groups {

@@ -982,8 +982,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.call_policy.0.actions.0.assign_calibrations.0.expert_evaluator_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.call_policy.0.actions.0.assign_surveys.#", fmt.Sprint(len(mediaRetentionCallPolicy.MediaPolicies.CallPolicy.Actions.AssignSurveys))),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.call_policy.0.actions.0.assign_surveys.0.survey_form.0.name", surveyFormName),
-					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.call_policy.0.actions.0.assign_surveys.0.survey_form.0.context_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.call_policy.0.actions.0.assign_surveys.0.survey_form_name", surveyFormName),
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.call_policy.0.actions.0.assign_surveys.0.flow_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.call_policy.0.actions.0.retention_duration.0.archive_retention.0.storage_medium", mediaRetentionCallPolicy.MediaPolicies.CallPolicy.Actions.RetentionDuration.ArchiveRetention.StorageMedium),
@@ -1086,8 +1085,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.chat_policy.0.actions.0.assign_calibrations.0.expert_evaluator_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.chat_policy.0.actions.0.assign_surveys.#", fmt.Sprint(len(mediaRetentionChatPolicy.MediaPolicies.ChatPolicy.Actions.AssignSurveys))),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.chat_policy.0.actions.0.assign_surveys.0.survey_form.0.name", surveyFormName),
-					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.chat_policy.0.actions.0.assign_surveys.0.survey_form.0.context_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.chat_policy.0.actions.0.assign_surveys.0.survey_form_name", surveyFormName),
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.chat_policy.0.actions.0.assign_surveys.0.flow_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.chat_policy.0.actions.0.retention_duration.0.archive_retention.0.storage_medium", mediaRetentionChatPolicy.MediaPolicies.ChatPolicy.Actions.RetentionDuration.ArchiveRetention.StorageMedium),
@@ -1188,8 +1186,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.message_policy.0.actions.0.assign_calibrations.0.expert_evaluator_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.message_policy.0.actions.0.assign_surveys.#", fmt.Sprint(len(mediaRetentionMessagePolicy.MediaPolicies.MessagePolicy.Actions.AssignSurveys))),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.message_policy.0.actions.0.assign_surveys.0.survey_form.0.name", surveyFormName),
-					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.message_policy.0.actions.0.assign_surveys.0.survey_form.0.context_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.message_policy.0.actions.0.assign_surveys.0.survey_form_name", surveyFormName),
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.message_policy.0.actions.0.assign_surveys.0.flow_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.message_policy.0.actions.0.retention_duration.0.archive_retention.0.storage_medium", mediaRetentionMessagePolicy.MediaPolicies.MessagePolicy.Actions.RetentionDuration.ArchiveRetention.StorageMedium),
@@ -1290,8 +1287,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.email_policy.0.actions.0.assign_calibrations.0.expert_evaluator_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.email_policy.0.actions.0.assign_surveys.#", fmt.Sprint(len(mediaRetentionEmailPolicy.MediaPolicies.EmailPolicy.Actions.AssignSurveys))),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.email_policy.0.actions.0.assign_surveys.0.survey_form.0.name", surveyFormName),
-					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.email_policy.0.actions.0.assign_surveys.0.survey_form.0.context_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.email_policy.0.actions.0.assign_surveys.0.survey_form_name", surveyFormName),
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.email_policy.0.actions.0.assign_surveys.0.flow_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.email_policy.0.actions.0.retention_duration.0.archive_retention.0.storage_medium", mediaRetentionEmailPolicy.MediaPolicies.EmailPolicy.Actions.RetentionDuration.ArchiveRetention.StorageMedium),
@@ -1371,6 +1367,7 @@ func generateMediaRetentionPolicyResource(resourceID string, mediaRetentionPolic
         %s
         %s
 		%s
+		%s
 	}
 	`, resourceID,
 		mediaRetentionPolicy.Name,
@@ -1381,9 +1378,39 @@ func generateMediaRetentionPolicyResource(resourceID string, mediaRetentionPolic
 		generateConditions(&mediaRetentionPolicy.Conditions),
 		generatePolicyActions(&mediaRetentionPolicy.Actions),
 		generatePolicyErrors(&mediaRetentionPolicy.PolicyErrors),
+		generateMediaRetentionPolicyLifeCycle(),
 	)
 
 	return policy
+}
+
+func generateMediaRetentionPolicyLifeCycle() string {
+	return `
+	lifecycle {
+		ignore_changes = [
+			"media_policies[0].call_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",                  
+			"media_policies[0].call_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",              
+			"media_policies[0].call_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id",       
+			"media_policies[0].call_policy[0].actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id",
+			"media_policies[0].chat_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",             
+			"media_policies[0].chat_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",            
+			"media_policies[0].chat_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id",      
+			"media_policies[0].chat_policy[0].actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id", 
+			"media_policies[0].message_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",        
+			"media_policies[0].message_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",       
+			"media_policies[0].message_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id", 
+			"media_policies[0].message_policy[0].actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id",
+			"media_policies[0].email_policy[0].actions[0].assign_evaluations[0].evaluation_form_id",               
+			"media_policies[0].email_policy[0].actions[0].assign_calibrations[0].evaluation_form_id",               
+			"media_policies[0].email_policy[0].actions[0].assign_metered_evaluations[0].evaluation_form_id",     
+			"media_policies[0].email_policy[0].actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id",
+			"actions[0].assign_evaluations[0].evaluation_form_id",                                         
+			"actions[0].assign_calibrations[0].evaluation_form_id",                                       
+			"actions[0].assign_metered_evaluations[0].evaluation_form_id",                              
+			"actions[0].assign_metered_assignment_by_agent[0].evaluation_form_id",                           
+		]
+	}
+	`
 }
 
 func generatePolicyErrors(policyErrors *Policyerrors) string {
@@ -2181,18 +2208,6 @@ func generateTimeInterval(timeInterval *Timeinterval) string {
 	return timeIntervalString
 }
 
-func generateUser(propertyName string, user *User) string {
-	userString := fmt.Sprintf(`
-		%s {
-			user_id = genesyscloud_user.%s.id
-		}
-	`, propertyName,
-		userResource1,
-	)
-
-	return userString
-}
-
 func generateCallMediaPolicyConditions(conditions *Callmediapolicyconditions) string {
 	if reflect.DeepEqual(*conditions, Callmediapolicyconditions{}) {
 		return ""
@@ -2283,11 +2298,11 @@ func generateAssignSurveys(assignSurveys *[]Surveyassignment) string {
 		assignSurveyString := fmt.Sprintf(`
         assign_surveys {
             sending_domain = "%s"
-            %s
+            survey_form_name = "%s"
             flow_id = genesyscloud_flow.%s.id
         }
         `, assignSurvey.SendingDomain,
-			generateSurveyForm(&assignSurvey.SurveyForm),
+			surveyFormName,
 			flowResource1,
 		)
 
@@ -2295,17 +2310,4 @@ func generateAssignSurveys(assignSurveys *[]Surveyassignment) string {
 	}
 
 	return assignSurveysString
-}
-
-func generateSurveyForm(surveyForm *Publishedsurveyformreference) string {
-	surveyFormString := fmt.Sprintf(`
-        survey_form {
-            name = "%s"
-            context_id = genesyscloud_quality_forms_survey.%s.context_id
-        }
-        `, surveyFormName,
-		surveyFormResource1,
-	)
-
-	return surveyFormString
 }
