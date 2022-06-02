@@ -662,7 +662,6 @@ var (
 				Optional:    true,
 				Default:     nil,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				// Valid values: "INBOUND", "OUTBOUND"
 			},
 			"duration": {
 				Description: "",
@@ -824,7 +823,6 @@ var (
 				Optional:    true,
 				Default:     nil,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				// Valid values: "INBOUND", "OUTBOUND"
 			},
 			"date_ranges": {
 				Description: "",
@@ -838,7 +836,6 @@ var (
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				// Valid values "CALL", "CHAT"
 			},
 			"for_queue_ids": {
 				Description: "",
