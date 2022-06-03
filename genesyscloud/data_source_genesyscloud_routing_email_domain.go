@@ -3,11 +3,12 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
-	"time"
+	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
 )
 
 // Returns the schema for the routing email domain
@@ -34,7 +35,7 @@ func dataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceDat
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			domains, _, getErr := routingAPI.GetRoutingEmailDomains()
+			domains, _, getErr := routingAPI.GetRoutingEmailDomains(false)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting email domain %s: %s", name, getErr))

@@ -2,18 +2,19 @@ package genesyscloud
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
 	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
 )
 
 func cleanupRoutingEmailDomains() {
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
-	routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains()
+	routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(false)
 	if getErr != nil {
 		return
 	}

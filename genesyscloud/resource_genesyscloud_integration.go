@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"log"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
 )
 
 var (
@@ -159,9 +160,9 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 		log.Printf("Updating additional attributes for integration %s", name)
 		const pageSize = 25
 		const pageNum = 1
-		_, _, patchErr := integrationAPI.PatchIntegration(d.Id(), platformclientv2.Integration{
+		_, _, patchErr := integrationAPI.PatchIntegration(d.Id(), pageSize, pageNum, "", nil, "", "", platformclientv2.Integration{
 			IntendedState: &intendedState,
-		}, pageSize, pageNum, "", nil, "", "")
+		})
 
 		if patchErr != nil {
 			return diag.Errorf("Failed to update integration %s: %v", name, patchErr)
@@ -228,9 +229,9 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 		log.Printf("Updating integration %s", name)
 		const pageSize = 25
 		const pageNum = 1
-		_, _, patchErr := integrationAPI.PatchIntegration(d.Id(), platformclientv2.Integration{
+		_, _, patchErr := integrationAPI.PatchIntegration(d.Id(), pageSize, pageNum, "", nil, "", "", platformclientv2.Integration{
 			IntendedState: &intendedState,
-		}, pageSize, pageNum, "", nil, "", "")
+		})
 		if patchErr != nil {
 			return diag.Errorf("Failed to update integration %s: %s", name, patchErr)
 		}
