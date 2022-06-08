@@ -62,7 +62,6 @@ type Evaluationassignment struct {
 }
 
 type Meteredevaluationassignment struct {
-	EvaluationContextId  string
 	Evaluators           []User
 	MaxNumberEvaluations int
 	EvaluationForm       Evaluationform
@@ -71,7 +70,6 @@ type Meteredevaluationassignment struct {
 }
 
 type Meteredassignmentbyagent struct {
-	EvaluationContextId  string
 	Evaluators           []User
 	MaxNumberEvaluations int
 	EvaluationForm       Evaluationform
@@ -2117,15 +2115,13 @@ func generateAssignMeteredAssignmentByAgent(assignments *[]Meteredassignmentbyag
 		}
 		assignmentString := fmt.Sprintf(`
         	assign_metered_assignment_by_agent {
-				evaluation_context_id = "%s"
         	    evaluator_ids = [%s]
 				max_number_evaluations = %v
 				evaluation_form_id = genesyscloud_quality_forms_evaluation.%s.id
 				%s
 				time_zone = "%s"
         	}
-        	`, assignment.EvaluationContextId,
-			evaluatorIdsString,
+        	`, evaluatorIdsString,
 			assignment.MaxNumberEvaluations,
 			evaluationFormResource1,
 			generateTimeInterval(&assignment.TimeInterval),
@@ -2154,15 +2150,13 @@ func generateAssignMeteredEvaluations(assignments *[]Meteredevaluationassignment
 		}
 		assignmentString := fmt.Sprintf(`
         	assign_metered_evaluations {
-				evaluation_context_id = "%s"
         	    evaluator_ids = [%s]
 				max_number_evaluations = %v
 				evaluation_form_id = genesyscloud_quality_forms_evaluation.%s.id
 				assign_to_active_user = %v
 				%s
         	}
-        	`, assignment.EvaluationContextId,
-			evaluatorIdsString,
+        	`, evaluatorIdsString,
 			assignment.MaxNumberEvaluations,
 			evaluationFormResource1,
 			assignment.AssignToActiveUser,

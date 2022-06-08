@@ -46,12 +46,9 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
           expert_evaluator_id = genesyscloud_user.test-user-1.id
         }
         assign_surveys {
-          sending_domain = "surveys.mypurecloud.com"
-          survey_form {
-            name       = "survey-form-name"
-            context_id = genesyscloud_quality_forms_survey.test-survey-form-1.context_id
-          }
-          flow_id = genesyscloud_flow.test-flow-resource-1.id
+          sending_domain   = "surveys.mypurecloud.com"
+          survey_form_name = "survey-form-name"
+          flow_id          = genesyscloud_flow.test-flow-resource-1.id
         }
         retention_duration {
           archive_retention {

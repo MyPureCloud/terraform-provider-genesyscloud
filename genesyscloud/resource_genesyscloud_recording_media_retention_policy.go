@@ -219,11 +219,6 @@ var (
 
 	meteredEvaluationAssignment = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"evaluation_context_id": {
-				Description: "",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
 			"evaluator_ids": {
 				Description: "",
 				Type:        schema.TypeList,
@@ -257,11 +252,6 @@ var (
 
 	meteredAssignmentByAgent = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"evaluation_context_id": {
-				Description: "",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
 			"evaluator_ids": {
 				Description: "",
 				Type:        schema.TypeList,
@@ -1064,7 +1054,6 @@ func buildAssignMeteredEvaluations(assignments []interface{}) *[]platformclientv
 
 	for _, assignment := range assignments {
 		assignmentMap := assignment.(map[string]interface{})
-		evaluationContextId := assignmentMap["evaluation_context_id"].(string)
 		maxNumberEvaluations := assignmentMap["max_number_evaluations"].(int)
 		assignToActiveUser := assignmentMap["assign_to_active_user"].(bool)
 		evaluationFormId := assignmentMap["evaluation_form_id"].(string)
@@ -1081,7 +1070,6 @@ func buildAssignMeteredEvaluations(assignments []interface{}) *[]platformclientv
 		}
 
 		temp := platformclientv2.Meteredevaluationassignment{
-			EvaluationContextId:  &evaluationContextId,
 			Evaluators:           &evaluators,
 			MaxNumberEvaluations: &maxNumberEvaluations,
 			AssignToActiveUser:   &assignToActiveUser,
@@ -1112,9 +1100,6 @@ func flattenAssignMeteredEvaluations(assignments *[]platformclientv2.Meteredeval
 	meteredAssignments := []interface{}{}
 	for _, assignment := range *assignments {
 		assignmentMap := make(map[string]interface{})
-		if assignment.EvaluationContextId != nil {
-			assignmentMap["evaluation_context_id"] = *assignment.EvaluationContextId
-		}
 		if assignment.Evaluators != nil {
 			evaluatorIds := make([]string, 0)
 			for _, evaluator := range *assignment.Evaluators {
@@ -1155,7 +1140,6 @@ func buildAssignMeteredAssignmentByAgent(assignments []interface{}) *[]platformc
 	meteredAssignments := make([]platformclientv2.Meteredassignmentbyagent, 0)
 	for _, assignment := range assignments {
 		assignmentMap := assignment.(map[string]interface{})
-		evaluationContextId := assignmentMap["evaluation_context_id"].(string)
 		maxNumberEvaluations := assignmentMap["max_number_evaluations"].(int)
 		timeZone := assignmentMap["time_zone"].(string)
 		evaluationFormId := assignmentMap["evaluation_form_id"].(string)
@@ -1172,7 +1156,6 @@ func buildAssignMeteredAssignmentByAgent(assignments []interface{}) *[]platformc
 		}
 
 		temp := platformclientv2.Meteredassignmentbyagent{
-			EvaluationContextId:  &evaluationContextId,
 			Evaluators:           &evaluators,
 			MaxNumberEvaluations: &maxNumberEvaluations,
 			TimeInterval:         buildTimeInterval(assignmentMap["time_interval"].([]interface{})),
@@ -1204,9 +1187,6 @@ func flattenAssignMeteredAssignmentByAgent(assignments *[]platformclientv2.Meter
 	meteredAssignments := []interface{}{}
 	for _, assignment := range *assignments {
 		assignmentMap := make(map[string]interface{})
-		if assignment.EvaluationContextId != nil {
-			assignmentMap["evaluation_context_id"] = *assignment.EvaluationContextId
-		}
 		if assignment.Evaluators != nil {
 			evaluatorIds := make([]string, 0)
 			for _, evaluator := range *assignment.Evaluators {
