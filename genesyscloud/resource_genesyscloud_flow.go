@@ -50,9 +50,7 @@ func flowExporter() *ResourceExporter {
 
 func resourceFlow() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud Flow
-
-**NOTE: This component is currently in beta. If you are interested in participating in the beta, please contact Becky Powell (becky.powell@genesys.com) to be added to the beta. If you attempt to use this resource and you are not part of the beta program, your flow deploy will fail with HTTP status 403, no permissions.**`,
+		Description: `Genesys Cloud Flow`,
 
 		CreateContext: createWithPooledClient(createFlow),
 		ReadContext:   readWithPooledClient(readFlow),

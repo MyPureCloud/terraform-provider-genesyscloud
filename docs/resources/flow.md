@@ -3,13 +3,10 @@ page_title: "genesyscloud_flow Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
   Genesys Cloud Flow
-  NOTE: This component is currently in beta. If you are interested in participating in the beta, please contact Becky Powell (becky.powell@genesys.com) to be added to the beta. If you attempt to use this resource and you are not part of the beta program, your flow deploy will fail with HTTP status 403, no permissions.
 ---
 # genesyscloud_flow (Resource)
 
 Genesys Cloud Flow
-
-**NOTE: This component is currently in beta. If you are interested in participating in the beta, please contact Becky Powell (becky.powell@genesys.com) to be added to the beta. If you attempt to use this resource and you are not part of the beta program, your flow deploy will fail with HTTP status 403, no permissions.**
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
