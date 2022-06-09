@@ -200,6 +200,7 @@ func getRegionMap() map[string]string {
 		"ca-central-1":   "cac1.pure.cloud",
 		"ap-northeast-2": "apne2.pure.cloud",
 		"ap-south-1":     "aps1.pure.cloud",
+		"sa-east-1":      "sae1.pure.cloud",
 	}
 }
 
