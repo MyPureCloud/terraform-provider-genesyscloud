@@ -236,7 +236,7 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		QuestionGroups: questionGroups,
 	})
 	if err != nil {
-		return diag.Errorf("Failed to create evaluation form %s", name)
+		return diag.Errorf("Failed to create evaluation form %s: %s", name, err)
 	}
 
 	// Make sure form is properly created
@@ -354,7 +354,7 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Deleting evaluation form %s", name)
 	if _, err := qualityAPI.DeleteQualityFormsEvaluation(d.Id()); err != nil {
-		return diag.Errorf("Failed to delete evaluation form %s: %s", name, err)
+		return diag.Errorf("Failed to delete evaluation form %s: %v", name, err)
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
