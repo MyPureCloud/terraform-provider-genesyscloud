@@ -54,7 +54,6 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "end_phone_number", didPoolEndPhoneNumber1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "description", ""),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "comments", ""),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_did_pool."+didPoolResource1, "pool_provider", ""),
 				),
 			},
 			{

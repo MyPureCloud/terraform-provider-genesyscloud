@@ -88,6 +88,7 @@ func resourceTelephonyDidPool() *schema.Resource {
 				Description:  "Provider (PURE_CLOUD | PURE_CLOUD_VOICE).",
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"PURE_CLOUD", "PURE_CLOUD_VOICE"}, false),
 			},
 		},

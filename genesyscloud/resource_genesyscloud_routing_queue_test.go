@@ -368,7 +368,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 					generateBullseyeSettings("10"),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "members"),
+					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "members.%"),
 				),
 			},
 			{
@@ -462,7 +462,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					generateQueueWrapupCodes(),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "wrapup_codes"),
+					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueResource, "wrapup_codes.%"),
 				),
 			},
 			{

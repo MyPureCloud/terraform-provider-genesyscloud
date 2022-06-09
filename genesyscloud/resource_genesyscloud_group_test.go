@@ -235,7 +235,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					userName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResource, "member_ids"),
+					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResource, "member_ids.%"),
 				),
 			},
 			{
