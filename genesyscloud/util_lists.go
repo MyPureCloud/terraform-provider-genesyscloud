@@ -73,15 +73,29 @@ func buildSdkStringList(d *schema.ResourceData, attrName string) *[]string {
 	return nil
 }
 
-func buildSdkGenericList[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(interface{}) T) *[]T {
+func buildSdkGenericList[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(d *schema.ResourceData) *T) *[]T {
 	if child, ok := d.GetOk(attrName); ok {
 		list := child.(*schema.Set).List()
 		sdkList := make([]T, len(list))
 		for i, element := range list {
-			sdkList[i] = elementBuilder(element)
+			sdkList[i] = *elementBuilder(element.(*schema.ResourceData))
 		}
 		return &sdkList
 	}
 
+	return nil
+}
+
+func buildSdkGeneric1ElementList[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(*schema.ResourceData) *T) *T {
+	child := d.Get(attrName).([]interface{})
+	if child != nil {
+		if len(child) > 0 {
+			if _, ok := child[0].(map[string]interface{}); !ok {
+				return nil
+			}
+			return elementBuilder(child[0].(*schema.ResourceData))
+		}
+		return new(T)
+	}
 	return nil
 }

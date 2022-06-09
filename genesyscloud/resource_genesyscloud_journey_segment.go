@@ -291,9 +291,9 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	color := d.Get("color").(string)
 	scope := d.Get("scope").(string)
 	shouldDisplayToAgent := d.Get("shouldDisplayToAgent").(bool)
-	sdkContext := buildSdkContext(d)
+	sdkContext := buildSdkGeneric1ElementList(d, "context", buildSdkContext)
 	//journey := d.Get("journey").(journey)
-	externalSegment := buildSdkExternalSegment(d)
+	externalSegment := buildSdkGeneric1ElementList(d, "externalSegment", buildSdkExternalSegment)
 
 	assignmentExpirationDays := d.Get("assignmentExpirationDays").(int)
 	selfUri := d.Get("selfUri").(string)
@@ -434,77 +434,41 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 }
 */
 
-func buildSdkContext(d *schema.ResourceData) *platformclientv2.Context {
-	contextArray := d.Get("context").([]interface{})
-	if contextArray != nil {
-		sdkContext := platformclientv2.Context{}
-		if len(contextArray) > 0 {
-			if _, ok := contextArray[0].(map[string]interface{}); !ok {
-				return nil
-			}
-			contextSchema := contextArray[0].(*schema.ResourceData)
-			patterns := buildSdkGenericList(contextSchema, "patterns", buildSdkContextPattern)
-			sdkContext = platformclientv2.Context{
-				Patterns: patterns,
-			}
-		}
-		return &sdkContext
-	}
-	return nil
-}
-
-func buildSdkContextPattern(element interface{}) platformclientv2.Contextpattern {
-	return platformclientv2.Contextpattern{
-		Criteria: buildSdkContextPatternCriteria(element.(map[string]interface{})["criteria"].(*schema.ResourceData)),
+func buildSdkContext(context *schema.ResourceData) *platformclientv2.Context {
+	return &platformclientv2.Context{
+		Patterns: buildSdkGenericList(context, "patterns", buildSdkContextPattern),
 	}
 }
 
-func buildSdkContextPatternCriteria(d *schema.ResourceData) *[]platformclientv2.Entitytypecriteria {
-	var sdkCriteria []platformclientv2.Entitytypecriteria
-	if criteria, ok := d.GetOk("criteria"); ok {
-		criteriaList := criteria.(*schema.Set).List()
-		for _, criterion := range criteriaList {
-			criterionMap := criterion.(map[string]interface{})
-			key := criterionMap["key"].(string)
-			values := buildSdkStringList(criterion.(*schema.ResourceData), "values")
-			shouldIgnoreCase := criterionMap["shouldIgnoreCase"].(bool)
-			operator := criterionMap["operator"].(string)
-			entityType := criterionMap["entityType"].(string)
-			entityTypeCriteria := platformclientv2.Entitytypecriteria{
-				Key:              &key,
-				Values:           values,
-				ShouldIgnoreCase: &shouldIgnoreCase,
-				Operator:         &operator,
-				EntityType:       &entityType,
-			}
-			sdkCriteria = append(sdkCriteria, entityTypeCriteria)
-		}
+func buildSdkContextPattern(contextPattern *schema.ResourceData) *platformclientv2.Contextpattern {
+	return &platformclientv2.Contextpattern{
+		Criteria: buildSdkGenericList(contextPattern, "criteria", buildSdkEntityTypeCriteria),
 	}
-	return &sdkCriteria
 }
 
-func buildSdkExternalSegment(d *schema.ResourceData) *platformclientv2.Externalsegment {
-	externalSegment := d.Get("externalSegment").([]interface{})
-	if externalSegment != nil {
-		sdkExternalSegment := platformclientv2.Externalsegment{}
-		if len(externalSegment) > 0 {
-			if _, ok := externalSegment[0].(map[string]interface{}); !ok {
-				return nil
-			}
-			externalSegmentMap := externalSegment[0].(map[string]interface{})
-
-			// Only set non-empty values.
-			id := externalSegmentMap["id"].(string)
-			name := externalSegmentMap["name"].(string)
-			source := externalSegmentMap["source"].(string)
-
-			sdkExternalSegment = platformclientv2.Externalsegment{
-				Id:     &id,
-				Name:   &name,
-				Source: &source,
-			}
-		}
-		return &sdkExternalSegment
+func buildSdkEntityTypeCriteria(entityTypeCriteria *schema.ResourceData) *platformclientv2.Entitytypecriteria {
+	key := entityTypeCriteria.Get("key").(string)
+	values := buildSdkStringList(entityTypeCriteria, "values")
+	shouldIgnoreCase := entityTypeCriteria.Get("shouldIgnoreCase").(bool)
+	operator := entityTypeCriteria.Get("operator").(string)
+	entityType := entityTypeCriteria.Get("entityType").(string)
+	return &platformclientv2.Entitytypecriteria{
+		Key:              &key,
+		Values:           values,
+		ShouldIgnoreCase: &shouldIgnoreCase,
+		Operator:         &operator,
+		EntityType:       &entityType,
 	}
-	return nil
+}
+
+func buildSdkExternalSegment(externalSegment *schema.ResourceData) *platformclientv2.Externalsegment {
+	id := externalSegment.Get("id").(string)
+	name := externalSegment.Get("name").(string)
+	source := externalSegment.Get("source").(string)
+
+	return &platformclientv2.Externalsegment{
+		Id:     &id,
+		Name:   &name,
+		Source: &source,
+	}
 }
