@@ -458,19 +458,25 @@ func buildSdkContext(d *schema.ResourceData) *platformclientv2.Context {
 }
 
 func buildSdkContextPattern(d *schema.ResourceData) *[]platformclientv2.Contextpattern {
-	var sdkContextPattern []platformclientv2.Contextpattern
-	if patterns, ok := d.GetOk("patterns"); ok {
-		patternList := patterns.(*schema.Set).List()
-		for _, pattern := range patternList {
-			patternMap := pattern.(map[string]interface{})
-			criteria := buildSdkContextPatternCriteria(patternMap["criteria"].(*schema.ResourceData))
-			contextPattern := platformclientv2.Contextpattern{
-				Criteria: criteria,
-			}
-			sdkContextPattern = append(sdkContextPattern, contextPattern)
+	return buildSdkList(d, "patterns", func(element interface{}) platformclientv2.Contextpattern {
+		return platformclientv2.Contextpattern{
+			Criteria: buildSdkContextPatternCriteria(element.(map[string]interface{})["criteria"].(*schema.ResourceData)),
+		}
+	},
+	)
+}
+
+func buildSdkList[T interface{}](parent interface{}, childKey string, elementProcessor func(interface{}) T) *[]T {
+	var sdkList []T
+	if child, ok := parent.(*schema.ResourceData).GetOk(childKey); ok {
+		list := child.(*schema.Set).List()
+		for _, element := range list {
+			sdkElement := elementProcessor(element)
+			sdkList = append(sdkList, sdkElement)
 		}
 	}
-	return &sdkContextPattern
+
+	return &sdkList
 }
 
 func buildSdkContextPatternCriteria(d *schema.ResourceData) *[]platformclientv2.Entitytypecriteria {
