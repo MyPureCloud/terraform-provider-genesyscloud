@@ -284,25 +284,133 @@ func resourceJourneySegment() *schema.Resource {
 }
 
 func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	isActive := d.Get("isActive").(bool)
-	displayName := d.Get("displayName").(string)
-	version := d.Get("version").(int)
-	description := d.Get("description").(string)
-	color := d.Get("color").(string)
-	scope := d.Get("scope").(string)
-	shouldDisplayToAgent := d.Get("shouldDisplayToAgent").(bool)
-	sdkContext := buildSdkGeneric1ElementList(d, "context", buildSdkContext)
-	journey := buildSdkGeneric1ElementList(d, "journey", buildSdkJourney)
-	externalSegment := buildSdkGeneric1ElementList(d, "externalSegment", buildSdkExternalSegment)
-
-	assignmentExpirationDays := d.Get("assignmentExpirationDays").(int)
-	selfUri := d.Get("selfUri").(string)
-
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	journeySegment := buildSdkJourneySegment(d)
 
-	log.Printf("Creating journey segment %s", displayName)
-	journeySegment, _, err := journeyApi.PostJourneySegments(platformclientv2.Journeysegment{
+	log.Printf("Creating journey segment %s", *journeySegment.DisplayName)
+
+	result, _, err := journeyApi.PostJourneySegments(*journeySegment)
+	if err != nil {
+		return diag.Errorf("Failed to create journey segment %s: %s", *journeySegment.DisplayName, err)
+	}
+
+	d.SetId(*result.Id)
+
+	log.Printf("Created journey segment %s %s", *result.DisplayName, *result.Id)
+	//return readJourneySegment(ctx, d, meta)
+	return nil
+}
+
+//func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+//	sdkConfig := meta.(*providerMeta).ClientConfig
+//	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+//
+//	log.Printf("Reading DID pool %s", d.Id())
+//	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+//		journeySegment, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
+//		if getErr != nil {
+//			if isStatus404(resp) {
+//				return resource.RetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
+//			}
+//			return resource.NonRetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
+//		}
+//
+//		if journeySegment.State != nil && *journeySegment.State == "deleted" {
+//			d.SetId("")
+//			return nil
+//		}
+//
+//		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceJourneySegment())
+//		d.Set("start_phone_number", *journeySegment.StartPhoneNumber)
+//		d.Set("end_phone_number", *journeySegment.EndPhoneNumber)
+//
+//		if journeySegment.Description != nil {
+//			d.Set("description", *journeySegment.Description)
+//		} else {
+//			d.Set("description", nil)
+//		}
+//
+//		if journeySegment.Comments != nil {
+//			d.Set("comments", *journeySegment.Comments)
+//		} else {
+//			d.Set("comments", nil)
+//		}
+//
+//		if journeySegment.Provider != nil {
+//			d.Set("pool_provider", *journeySegment.Provider)
+//		} else {
+//			d.Set("pool_provider", nil)
+//		}
+//
+//		log.Printf("Read DID pool %s %s", d.Id(), *journeySegment.StartPhoneNumber)
+//		return cc.CheckState()
+//	})
+//}
+
+//func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+//	sdkConfig := meta.(*providerMeta).ClientConfig
+//	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+//	journeySegment := buildSdkJourneySegment(d) // TODO: build patchSegment :(
+//
+//	log.Printf("Updating DID pool %s", d.Id())
+//	if _, _, err := journeyApi.PatchJourneySegment(d.Id(), journeySegment); err != nil {
+//		return diag.Errorf("Error updating DID pool %s: %s", journeySegment.DisplayName, err)
+//	}
+//
+//	log.Printf("Updated DID pool %s", d.Id())
+//	return nil
+//	//return readJourneySegment(ctx, d, meta)
+//}
+
+//func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+//	startPhoneNumber := d.Get("start_phone_number").(string)
+//
+//	sdkConfig := meta.(*providerMeta).ClientConfig
+//	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+//
+//	log.Printf("Deleting DID pool with starting number %s", startPhoneNumber)
+//	if _, err := telephonyApi.DeleteTelephonyProvidersEdgesDidpool(d.Id()); err != nil {
+//		return diag.Errorf("Failed to delete DID pool with starting number %s: %s", startPhoneNumber, err)
+//	}
+//
+//	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+//		journeySegment, resp, err := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
+//		if err != nil {
+//			if isStatus404(resp) {
+//				// DID pool deleted
+//				log.Printf("Deleted DID pool %s", d.Id())
+//				return nil
+//			}
+//			return resource.NonRetryableError(fmt.Errorf("Error deleting DID pool %s: %s", d.Id(), err))
+//		}
+//
+//		if journeySegment.State != nil && *journeySegment.State == "deleted" {
+//			// DID pool deleted
+//			log.Printf("Deleted DID pool %s", d.Id())
+//			return nil
+//		}
+//
+//		return resource.RetryableError(fmt.Errorf("DID pool %s still exists", d.Id()))
+//	})
+//}
+
+func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
+	isActive := journeySegment.Get("isActive").(bool)
+	displayName := journeySegment.Get("displayName").(string)
+	version := journeySegment.Get("version").(int)
+	description := journeySegment.Get("description").(string)
+	color := journeySegment.Get("color").(string)
+	scope := journeySegment.Get("scope").(string)
+	shouldDisplayToAgent := journeySegment.Get("shouldDisplayToAgent").(bool)
+	sdkContext := buildSdkGeneric1ElementList(journeySegment, "context", buildSdkContext)
+	journey := buildSdkGeneric1ElementList(journeySegment, "journey", buildSdkJourney)
+	externalSegment := buildSdkGeneric1ElementList(journeySegment, "externalSegment", buildSdkExternalSegment)
+
+	assignmentExpirationDays := journeySegment.Get("assignmentExpirationDays").(int)
+	selfUri := journeySegment.Get("selfUri").(string)
+
+	return &platformclientv2.Journeysegment{
 		IsActive:                 &isActive,
 		DisplayName:              &displayName,
 		Version:                  &version,
@@ -315,124 +423,8 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 		ExternalSegment:          externalSegment,
 		AssignmentExpirationDays: &assignmentExpirationDays,
 		SelfUri:                  &selfUri,
-	})
-	if err != nil {
-		return diag.Errorf("Failed to create journey segment %s: %s", displayName, err)
 	}
-
-	d.SetId(*journeySegment.Id)
-
-	log.Printf("Created journey segment %s %s", displayName, *journeySegment.Id)
-	//return readJourneySegment(ctx, d, meta)
-	return nil
 }
-
-/*
-func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
-	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
-	log.Printf("Reading DID pool %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
-		journeySegment, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
-		if getErr != nil {
-			if isStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
-			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
-		}
-
-		if journeySegment.State != nil && *journeySegment.State == "deleted" {
-			d.SetId("")
-			return nil
-		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceJourneySegment())
-		d.Set("start_phone_number", *journeySegment.StartPhoneNumber)
-		d.Set("end_phone_number", *journeySegment.EndPhoneNumber)
-
-		if journeySegment.Description != nil {
-			d.Set("description", *journeySegment.Description)
-		} else {
-			d.Set("description", nil)
-		}
-
-		if journeySegment.Comments != nil {
-			d.Set("comments", *journeySegment.Comments)
-		} else {
-			d.Set("comments", nil)
-		}
-
-		if journeySegment.Provider != nil {
-			d.Set("pool_provider", *journeySegment.Provider)
-		} else {
-			d.Set("pool_provider", nil)
-		}
-
-		log.Printf("Read DID pool %s %s", d.Id(), *journeySegment.StartPhoneNumber)
-		return cc.CheckState()
-	})
-}
-
-func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	startPhoneNumber := d.Get("start_phone_number").(string)
-	endPhoneNumber := d.Get("end_phone_number").(string)
-	description := d.Get("description").(string)
-	comments := d.Get("comments").(string)
-	poolProvider := d.Get("pool_provider").(string)
-
-	sdkConfig := meta.(*providerMeta).ClientConfig
-	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
-	journeySegmentBody := platformclientv2.JourneySegment{
-		StartPhoneNumber: &startPhoneNumber,
-		EndPhoneNumber:   &endPhoneNumber,
-		Description:      &description,
-		Comments:         &comments,
-		Provider:         &poolProvider,
-	}
-
-	log.Printf("Updating DID pool %s", d.Id())
-	if _, _, err := telephonyApi.PutTelephonyProvidersEdgesDidpool(d.Id(), journeySegmentBody); err != nil {
-		return diag.Errorf("Error updating DID pool %s: %s", startPhoneNumber, err)
-	}
-
-	log.Printf("Updated DID pool %s", d.Id())
-	return readJourneySegment(ctx, d, meta)
-}
-
-func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	startPhoneNumber := d.Get("start_phone_number").(string)
-
-	sdkConfig := meta.(*providerMeta).ClientConfig
-	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
-	log.Printf("Deleting DID pool with starting number %s", startPhoneNumber)
-	if _, err := telephonyApi.DeleteTelephonyProvidersEdgesDidpool(d.Id()); err != nil {
-		return diag.Errorf("Failed to delete DID pool with starting number %s: %s", startPhoneNumber, err)
-	}
-
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		journeySegment, resp, err := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
-		if err != nil {
-			if isStatus404(resp) {
-				// DID pool deleted
-				log.Printf("Deleted DID pool %s", d.Id())
-				return nil
-			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting DID pool %s: %s", d.Id(), err))
-		}
-
-		if journeySegment.State != nil && *journeySegment.State == "deleted" {
-			// DID pool deleted
-			log.Printf("Deleted DID pool %s", d.Id())
-			return nil
-		}
-
-		return resource.RetryableError(fmt.Errorf("DID pool %s still exists", d.Id()))
-	})
-}
-*/
 
 func buildSdkContext(context *schema.ResourceData) *platformclientv2.Context {
 	return &platformclientv2.Context{
