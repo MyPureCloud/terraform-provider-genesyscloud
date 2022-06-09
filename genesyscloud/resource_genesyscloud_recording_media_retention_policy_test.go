@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"math/rand"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -517,7 +518,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 	roleActions = append(roleActions, strconv.Quote(addAction))
 
 	basePolicy := Policycreate{
-		Name:        "terraform-media-retention-policy",
+		Name:        "terraform-media-retention-policy" + uuid.NewString(),
 		Order:       1,
 		Description: "a media retention policy",
 		Enabled:     true,
@@ -568,7 +569,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				},
 				AssignSurveys: []Surveyassignment{
 					{
-						SendingDomain: "surveys.mypurecloud.com",
+						SendingDomain: "genesyscloud_routing_email_domain.routing-domain1.domain_id",
 						SurveyForm:    Publishedsurveyformreference{},
 					},
 				},
@@ -663,7 +664,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				},
 				AssignSurveys: []Surveyassignment{
 					{
-						SendingDomain: "surveys.mypurecloud.com",
+						SendingDomain: "genesyscloud_routing_email_domain.routing-domain1.domain_id",
 						SurveyForm:    Publishedsurveyformreference{},
 					},
 				},
@@ -763,7 +764,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				},
 				AssignSurveys: []Surveyassignment{
 					{
-						SendingDomain: "surveys.mypurecloud.com",
+						SendingDomain: "genesyscloud_routing_email_domain.routing-domain1.domain_id",
 						SurveyForm:    Publishedsurveyformreference{},
 					},
 				},
@@ -858,7 +859,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				},
 				AssignSurveys: []Surveyassignment{
 					{
-						SendingDomain: "surveys.mypurecloud.com",
+						SendingDomain: "genesyscloud_routing_email_domain.routing-domain1.domain_id",
 						SurveyForm:    Publishedsurveyformreference{},
 					},
 				},
@@ -908,12 +909,28 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 		},
 	}
 
+	var (
+		domainRes = "routing-domain1"
+		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
+	)
+
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupRoutingEmailDomains()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				Config: generateRoutingEmailDomainResource(
+					domainRes,
+					domainId,
+					falseValue, // Subdomain
+					nullValue,
+				) + generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					generateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -1014,7 +1031,12 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 			},
 			{
 
-				Config: generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				Config: generateRoutingEmailDomainResource(
+					domainRes,
+					domainId,
+					falseValue, // Subdomain
+					nullValue,
+				) + generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					generateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -1115,7 +1137,12 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 			},
 			{
 
-				Config: generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				Config: generateRoutingEmailDomainResource(
+					domainRes,
+					domainId,
+					falseValue, // Subdomain
+					nullValue,
+				) + generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					generateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -1216,7 +1243,12 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 			},
 			{
 
-				Config: generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				Config: generateRoutingEmailDomainResource(
+					domainRes,
+					domainId,
+					falseValue, // Subdomain
+					nullValue,
+				) + generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					generateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -2291,7 +2323,7 @@ func generateAssignSurveys(assignSurveys *[]Surveyassignment) string {
 	for _, assignSurvey := range *assignSurveys {
 		assignSurveyString := fmt.Sprintf(`
         assign_surveys {
-            sending_domain = "%s"
+            sending_domain = %s
             survey_form_name = "%s"
             flow_id = genesyscloud_flow.%s.id
         }

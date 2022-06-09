@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"testing"
 
@@ -69,7 +70,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 				},
 				AssignSurveys: []Surveyassignment{
 					{
-						SendingDomain: "surveys.mypurecloud.com",
+						SendingDomain: "genesyscloud_routing_email_domain.routing-domain1.domain_id",
 						SurveyForm:    Publishedsurveyformreference{},
 					},
 				},
@@ -119,12 +120,28 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		},
 	}
 
+	var (
+		domainRes = "routing-domain1"
+		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
+	)
+
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupRoutingEmailDomains()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				Config: generateRoutingEmailDomainResource(
+					domainRes,
+					domainId,
+					falseValue, // Subdomain
+					nullValue,
+				) + generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					generateAuthRoleResource(
 						roleResource1,
 						roleName1,
