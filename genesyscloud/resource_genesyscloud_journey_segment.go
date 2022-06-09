@@ -292,7 +292,7 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	scope := d.Get("scope").(string)
 	shouldDisplayToAgent := d.Get("shouldDisplayToAgent").(bool)
 	sdkContext := buildSdkGeneric1ElementList(d, "context", buildSdkContext)
-	//journey := d.Get("journey").(journey)
+	journey := buildSdkGeneric1ElementList(d, "journey", buildSdkJourney)
 	externalSegment := buildSdkGeneric1ElementList(d, "externalSegment", buildSdkExternalSegment)
 
 	assignmentExpirationDays := d.Get("assignmentExpirationDays").(int)
@@ -303,15 +303,15 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Creating journey segment %s", displayName)
 	journeySegment, _, err := journeyApi.PostJourneySegments(platformclientv2.Journeysegment{
-		IsActive:             &isActive,
-		DisplayName:          &displayName,
-		Version:              &version,
-		Description:          &description,
-		Color:                &color,
-		Scope:                &scope,
-		ShouldDisplayToAgent: &shouldDisplayToAgent,
-		Context:              sdkContext,
-		//Journey:         &journey,
+		IsActive:                 &isActive,
+		DisplayName:              &displayName,
+		Version:                  &version,
+		Description:              &description,
+		Color:                    &color,
+		Scope:                    &scope,
+		ShouldDisplayToAgent:     &shouldDisplayToAgent,
+		Context:                  sdkContext,
+		Journey:                  journey,
 		ExternalSegment:          externalSegment,
 		AssignmentExpirationDays: &assignmentExpirationDays,
 		SelfUri:                  &selfUri,
@@ -452,12 +452,49 @@ func buildSdkEntityTypeCriteria(entityTypeCriteria *schema.ResourceData) *platfo
 	shouldIgnoreCase := entityTypeCriteria.Get("shouldIgnoreCase").(bool)
 	operator := entityTypeCriteria.Get("operator").(string)
 	entityType := entityTypeCriteria.Get("entityType").(string)
+
 	return &platformclientv2.Entitytypecriteria{
 		Key:              &key,
 		Values:           values,
 		ShouldIgnoreCase: &shouldIgnoreCase,
 		Operator:         &operator,
 		EntityType:       &entityType,
+	}
+}
+
+func buildSdkJourney(journey *schema.ResourceData) *platformclientv2.Journey {
+	return &platformclientv2.Journey{
+		Patterns: buildSdkGenericList(journey, "patterns", buildSdkJourneyPattern),
+	}
+}
+
+func buildSdkJourneyPattern(journeyPattern *schema.ResourceData) *platformclientv2.Journeypattern {
+	criteria := buildSdkGenericList(journeyPattern, "criteria", buildSdkCriteria)
+	count := journeyPattern.Get("count").(int)
+	streamType := journeyPattern.Get("streamType").(string)
+	sessionType := journeyPattern.Get("sessionType").(string)
+	eventName := journeyPattern.Get("eventName").(string)
+
+	return &platformclientv2.Journeypattern{
+		Criteria:    criteria,
+		Count:       &count,
+		StreamType:  &streamType,
+		SessionType: &sessionType,
+		EventName:   &eventName,
+	}
+}
+
+func buildSdkCriteria(criteria *schema.ResourceData) *platformclientv2.Criteria {
+	key := criteria.Get("key").(string)
+	values := buildSdkStringList(criteria, "values")
+	shouldIgnoreCase := criteria.Get("shouldIgnoreCase").(bool)
+	operator := criteria.Get("operator").(string)
+
+	return &platformclientv2.Criteria{
+		Key:              &key,
+		Values:           values,
+		ShouldIgnoreCase: &shouldIgnoreCase,
+		Operator:         &operator,
 	}
 }
 
