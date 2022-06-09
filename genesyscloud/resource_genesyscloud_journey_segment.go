@@ -403,9 +403,9 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	color := journeySegment.Get("color").(string)
 	scope := journeySegment.Get("scope").(string)
 	shouldDisplayToAgent := journeySegment.Get("shouldDisplayToAgent").(bool)
-	sdkContext := buildSdkGeneric1ElementList(journeySegment, "context", buildSdkContext)
-	journey := buildSdkGeneric1ElementList(journeySegment, "journey", buildSdkJourney)
-	externalSegment := buildSdkGeneric1ElementList(journeySegment, "externalSegment", buildSdkExternalSegment)
+	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
+	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
+	externalSegment := buildSdkGenericListFirstElement(journeySegment, "externalSegment", buildSdkExternalSegment)
 
 	assignmentExpirationDays := journeySegment.Get("assignmentExpirationDays").(int)
 	selfUri := journeySegment.Get("selfUri").(string)

@@ -86,7 +86,7 @@ func buildSdkGenericList[T interface{}](d *schema.ResourceData, attrName string,
 	return nil
 }
 
-func buildSdkGeneric1ElementList[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(*schema.ResourceData) *T) *T {
+func buildSdkGenericListFirstElement[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(*schema.ResourceData) *T) *T {
 	child := d.Get(attrName).([]interface{})
 	if child != nil {
 		if len(child) > 0 {
