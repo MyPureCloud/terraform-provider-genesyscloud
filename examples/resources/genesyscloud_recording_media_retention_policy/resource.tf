@@ -4,7 +4,7 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
   description = "a media retention policy"
   enabled     = true
   media_policies {
-    email_policy {
+    call_policy {
       actions {
         retain_recording = true
         delete_recording = false
@@ -14,7 +14,6 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
           user_id            = genesyscloud_user.test-user-1.id
         }
         assign_metered_evaluations {
-          evaluation_context_id  = ""
           evaluator_ids          = [genesyscloud_user.test-user-1.id]
           max_number_evaluations = 1
           evaluation_form_id     = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.id
@@ -27,7 +26,6 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
           }
         }
         assign_metered_assignment_by_agent {
-          evaluation_context_id  = ""
           evaluator_ids          = [genesyscloud_user.test-user-1.id]
           max_number_evaluations = 1
           evaluation_form_id     = genesyscloud_quality_forms_evaluation.test-evaluation-form-1.id
@@ -90,8 +88,8 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
           time_zone_id = "Europe/Paris"
           empty        = false
         }
+        directions = ["INBOUND"]
       }
     }
   }
 }
-

@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -930,7 +930,7 @@ func getAllMediaRetentionPolicies(_ context.Context, clientConfig *platformclien
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		retentionPolicies, _, getErr := recordingAPI.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", []string{}, "", "", "", true, false, false)
+		retentionPolicies, _, getErr := recordingAPI.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", []string{}, "", "", "", true, false, false, 365)
 
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of media retention policies %v", getErr)
@@ -2868,10 +2868,10 @@ func mediaRetentionPolicyExporter() *ResourceExporter {
 			"media_policies.message_policy.conditions.wrapup_code_ids":                                    {RefType: "genesyscloud_routing_wrapupcode", AltValues: []string{"*"}},
 			"media_policies.email_policy.conditions.wrapup_code_ids":                                      {RefType: "genesyscloud_routing_wrapupcode", AltValues: []string{"*"}},
 			"conditions.wrapup_code_ids":                                                                  {RefType: "genesyscloud_routing_wrapupcode", AltValues: []string{"*"}},
-			"media_policies.call_policy.actions.media_transcriptions.integration_id":                      {RefType: "genesyscloud_integration"},
-			"media_policies.chat_policy.actions.media_transcriptions.integration_id":                      {RefType: "genesyscloud_integration"},
-			"media_policies.message_policy.actions.media_transcriptions.integration_id":                   {RefType: "genesyscloud_integration"},
-			"media_policies.email_policy.actions.media_transcriptions.integration_id":                     {RefType: "genesyscloud_integration"},
+			"media_policies.call_policy.actions.integration_export.integration_id":                        {RefType: "genesyscloud_integration"},
+			"media_policies.chat_policy.actions.integration_export.integration_id":                        {RefType: "genesyscloud_integration"},
+			"media_policies.message_policy.actions.integration_export.integration_id":                     {RefType: "genesyscloud_integration"},
+			"media_policies.email_policy.actions.integration_export.integration_id":                       {RefType: "genesyscloud_integration"},
 			"actions.media_transcriptions.integration_id":                                                 {RefType: "genesyscloud_integration"},
 			"media_policies.call_policy.actions.assign_surveys.flow_id":                                   {RefType: "genesyscloud_flow"},
 			"media_policies.chat_policy.actions.assign_surveys.flow_id":                                   {RefType: "genesyscloud_flow"},

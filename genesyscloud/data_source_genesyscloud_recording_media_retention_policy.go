@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v67/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
 )
 
 func dataSourceRecordingMediaRetentionPolicy() *schema.Resource {
@@ -34,7 +34,7 @@ func dataSourceRecordingMediaRetentionPolicyRead(ctx context.Context, d *schema.
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			policy, _, getErr := recordingAPI.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", nil, "", "", name, true, false, false)
+			policy, _, getErr := recordingAPI.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", nil, "", "", name, true, false, false, 365)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting media retention policy %s: %s", name, getErr))
