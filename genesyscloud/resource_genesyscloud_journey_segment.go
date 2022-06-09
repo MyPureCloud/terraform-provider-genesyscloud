@@ -457,27 +457,6 @@ func buildSdkContext(d *schema.ResourceData) *platformclientv2.Context {
 	return nil
 }
 
-//func buildSdkContextPattern(d *schema.ResourceData) *[]platformclientv2.Contextpattern {
-//	contextPattern := d.Get("patterns").([]interface{})
-//	if contextPattern != nil {
-//		var sdkContextPattern []platformclientv2.Contextpattern
-//		if len(contextPattern) > 0 {
-//			if _, ok := contextPattern[0].(map[string]interface{}); !ok {
-//				return nil
-//			}
-//			contextPatternSchema := contextPattern[0].(*schema.ResourceData)
-//
-//			criteria := buildSdkContextPatternCriteria(contextPatternSchema)
-//
-//			sdkContextPattern = platformclientv2.Contextpattern{
-//				Criteria:     criteria,
-//			}
-//		}
-//		return &sdkContextPattern
-//	}
-//	return nil
-//}
-
 func buildSdkContextPattern(d *schema.ResourceData) *[]platformclientv2.Contextpattern {
 	var sdkContextPattern []platformclientv2.Contextpattern
 	if patterns, ok := d.GetOk("patterns"); ok {
@@ -517,23 +496,6 @@ func buildSdkContextPatternCriteria(d *schema.ResourceData) *[]platformclientv2.
 	}
 	return &sdkCriteria
 }
-
-//
-//func buildSdkContextPatternCriteriaArray(d *schema.ResourceData) *platformclientv2.Entitytypecriteria {
-//	contextPatternCriteriaList := d.Get("criteria").([]interface{})
-//	if contextPatternCriteria != nil {
-//		sdkContextPatternCriteria := []platformclientv2.Entitytypecriteria{}
-//		if len(contextPatternCriteriaList) > 0 {
-//			if _, ok := contextPatternCriteriaList[0].(map[string]interface{}); !ok {
-//				return nil
-//			}
-//
-//			sdkContextPatternCriteria = buildSdkContextPatternCriteria(contextPatternCriteriaList)
-//		}
-//		return &sdkContextPatternCriteria
-//	}
-//	return nil
-//}
 
 func buildSdkExternalSegment(d *schema.ResourceData) *platformclientv2.Externalsegment {
 	externalSegment := d.Get("externalSegment").([]interface{})
