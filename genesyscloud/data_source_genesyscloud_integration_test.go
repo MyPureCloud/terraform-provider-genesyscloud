@@ -2,10 +2,11 @@ package genesyscloud
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"strconv"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceIntegration(t *testing.T) {

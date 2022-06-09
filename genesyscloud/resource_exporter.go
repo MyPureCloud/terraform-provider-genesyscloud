@@ -3,12 +3,13 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"hash/fnv"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )

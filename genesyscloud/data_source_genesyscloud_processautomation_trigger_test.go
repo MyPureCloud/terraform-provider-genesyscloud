@@ -2,10 +2,11 @@ package genesyscloud
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"testing"
 )
 
 func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {

@@ -2,9 +2,10 @@ package genesyscloud
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"testing"
 )
 
 func TestAccDataSourceEdgeGroup(t *testing.T) {
