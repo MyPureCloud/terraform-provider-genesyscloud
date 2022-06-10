@@ -172,7 +172,7 @@ func resourceJourneySegment() *schema.Resource {
 
 		CreateContext: createWithPooledClient(createJourneySegment),
 		//ReadContext:   readWithPooledClient(readJourneySegment),
-		//UpdateContext: updateWithPooledClient(updateJourneySegment),
+		UpdateContext: updateWithPooledClient(updateJourneySegment),
 		//DeleteContext: deleteWithPooledClient(deleteJourneySegment),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -348,20 +348,20 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 //	})
 //}
 
-//func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-//	sdkConfig := meta.(*providerMeta).ClientConfig
-//	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
-//	journeySegment := buildSdkJourneySegment(d) // TODO: build patchSegment :(
-//
-//	log.Printf("Updating DID pool %s", d.Id())
-//	if _, _, err := journeyApi.PatchJourneySegment(d.Id(), journeySegment); err != nil {
-//		return diag.Errorf("Error updating DID pool %s: %s", journeySegment.DisplayName, err)
-//	}
-//
-//	log.Printf("Updated DID pool %s", d.Id())
-//	return nil
-//	//return readJourneySegment(ctx, d, meta)
-//}
+func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	journeySegment := buildSdkPatchSegment(d)
+
+	log.Printf("Updating journey segment %s", d.Id())
+	if _, _, err := journeyApi.PatchJourneySegment(d.Id(), *journeySegment); err != nil {
+		return diag.Errorf("Error updating journey segment %s: %s", journeySegment.DisplayName, err)
+	}
+
+	log.Printf("Updated journey segment %s", d.Id())
+	return nil
+	//return readJourneySegment(ctx, d, meta)
+}
 
 //func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 //	startPhoneNumber := d.Get("start_phone_number").(string)
@@ -417,6 +417,35 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 		Description:              &description,
 		Color:                    &color,
 		Scope:                    &scope,
+		ShouldDisplayToAgent:     &shouldDisplayToAgent,
+		Context:                  sdkContext,
+		Journey:                  journey,
+		ExternalSegment:          externalSegment,
+		AssignmentExpirationDays: &assignmentExpirationDays,
+		SelfUri:                  &selfUri,
+	}
+}
+
+func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2.Patchsegment {
+	isActive := journeySegment.Get("isActive").(bool)
+	displayName := journeySegment.Get("displayName").(string)
+	version := journeySegment.Get("version").(int)
+	description := journeySegment.Get("description").(string)
+	color := journeySegment.Get("color").(string)
+	shouldDisplayToAgent := journeySegment.Get("shouldDisplayToAgent").(bool)
+	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
+	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
+	externalSegment := buildSdkGenericListFirstElement(journeySegment, "externalSegment", buildSdkPatchExternalSegment)
+
+	assignmentExpirationDays := journeySegment.Get("assignmentExpirationDays").(int)
+	selfUri := journeySegment.Get("selfUri").(string)
+
+	return &platformclientv2.Patchsegment{
+		IsActive:                 &isActive,
+		DisplayName:              &displayName,
+		Version:                  &version,
+		Description:              &description,
+		Color:                    &color,
 		ShouldDisplayToAgent:     &shouldDisplayToAgent,
 		Context:                  sdkContext,
 		Journey:                  journey,
@@ -491,13 +520,19 @@ func buildSdkCriteria(criteria *schema.ResourceData) *platformclientv2.Criteria 
 }
 
 func buildSdkExternalSegment(externalSegment *schema.ResourceData) *platformclientv2.Externalsegment {
-	id := externalSegment.Get("id").(string)
 	name := externalSegment.Get("name").(string)
 	source := externalSegment.Get("source").(string)
 
 	return &platformclientv2.Externalsegment{
-		Id:     &id,
 		Name:   &name,
 		Source: &source,
+	}
+}
+
+func buildSdkPatchExternalSegment(externalSegment *schema.ResourceData) *platformclientv2.Patchexternalsegment {
+	name := externalSegment.Get("name").(string)
+
+	return &platformclientv2.Patchexternalsegment{
+		Name: &name,
 	}
 }
