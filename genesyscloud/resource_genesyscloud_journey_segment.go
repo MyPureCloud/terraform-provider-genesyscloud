@@ -14,6 +14,113 @@ import (
 )
 
 var (
+	journeySegmentSchema = map[string]*schema.Schema{
+		"id": {
+			Description: "The globally unique identifier for the object.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"is_active": {
+			Description: "Whether or not the segment is active.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+		},
+		"display_name": {
+			Description: "The display name of the segment.",
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+		},
+		"version": {
+			Description: "The version of the segment.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+		},
+		"description": {
+			Description: "A description of the segment",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"color": {
+			Description: "The hexadecimal color value of the segment.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"scope": {
+			Description: "The target entity that a segment applies to.Valid values: Session, Customer.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"should_display_to_agent": {
+			Description: "Whether or not the segment should be displayed to agent/supervisor users.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+		},
+		"context": {
+			Description: "The context of the segment.",
+			Type:        schema.TypeSet,
+			// 				MinItems:    1, // TODO: context and journey min 1
+			MaxItems: 1,
+			Elem:     contextResource,
+		},
+		"journey": {
+			Description: "The pattern of rules defining the segment.",
+			Type:        schema.TypeSet,
+			// 				MinItems:    1, // TODO: context and journey min 1
+			MaxItems: 1,
+			Elem:     journeyResource,
+		},
+		"external_segment": {
+			Description: "Details of an entity corresponding to this segment in an external system.",
+			Type:        schema.TypeSet,
+			Optional:    true,
+			MaxItems:    1,
+			Elem:        externalSegmentResource,
+		},
+		"assignment_expiration_days": {
+			Description: "Time, in days, from when the segment is assigned until it is automatically unassigned.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+		},
+		"self_uri": {
+			Description: "The URI for this object.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"created_date": {
+			Description: "Timestamp indicating when the segment was created. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"modified_date": {
+			Description: "Timestamp indicating when the the segment was last updated. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+	}
+
+	contextResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"patterns": {
+				Description: "A list of one or more patterns to match.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        contextPatternResource,
+			},
+		},
+	}
+
+	journeyResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"patterns": {
+				Description: "A list of one or more patterns to match.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        journeyPatternResource,
+			},
+		},
+	}
+
 	externalSegmentResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"id": {
@@ -31,6 +138,49 @@ var (
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"AdobeExperiencePlatform", "Custom"}, false),
+			},
+		},
+	}
+
+	contextPatternResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"criteria": {
+				Description: "A list of one or more criteria to satisfy.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        contextCriteriaResource,
+			},
+		},
+	}
+
+	journeyPatternResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"criteria": {
+				Description: "A list of one or more criteria to satisfy.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        journeyCriteriaResource,
+			},
+			"count": {
+				Description: "The number of times the pattern must match.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"stream_type": {
+				Description:  "The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Web", "Custom", "Conversation"}, false),
+			},
+			"session_type": {
+				Description: "The session type for which this pattern can be matched on.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"event_name": {
+				Description: "The name of the event for which this pattern can be matched on.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 		},
 	}
@@ -94,49 +244,6 @@ var (
 			},
 		},
 	}
-
-	contextPatternResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"criteria": {
-				Description: "A list of one or more criteria to satisfy.",
-				Type:        schema.TypeSet,
-				Required:    true,
-				Elem:        contextCriteriaResource,
-			},
-		},
-	}
-
-	journeyPatternResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"criteria": {
-				Description: "A list of one or more criteria to satisfy.",
-				Type:        schema.TypeSet,
-				Required:    true,
-				Elem:        journeyCriteriaResource,
-			},
-			"count": {
-				Description: "The number of times the pattern must match.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
-			"stream_type": {
-				Description:  "The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Web", "Custom", "Conversation"}, false),
-			},
-			"session_type": {
-				Description: "The session type for which this pattern can be matched on.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"event_name": {
-				Description: "The name of the event for which this pattern can be matched on.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
 )
 
 func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -181,108 +288,7 @@ func resourceJourneySegment() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "The globally unique identifier for the object.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"isActive": {
-				Description: "Whether or not the segment is active.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"version": {
-				Description: "The version of the segment.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
-			"displayName": {
-				Description: "The display name of the segment.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"description": {
-				Description: "A description of the segment",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"color": {
-				Description: "The hexadecimal color value of the segment.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"scope": {
-				Description: "The target entity that a segment applies to.Valid values: Session, Customer.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"shouldDisplayToAgent": {
-				Description: "Whether or not the segment should be displayed to agent/supervisor users.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"context": {
-				Description: "The context of the segment.",
-				Type:        schema.TypeSet,
-				// 				MinItems:    1, // TODO: context and journey min 1
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"patterns": {
-							Description: "A list of one or more patterns to match.",
-							Type:        schema.TypeSet,
-							Required:    true,
-							Elem:        contextPatternResource,
-						},
-					},
-				},
-			},
-			"journey": {
-				Description: "The pattern of rules defining the segment.",
-				Type:        schema.TypeSet,
-				// 				MinItems:    1, // TODO: context and journey min 1
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"patterns": {
-							Description: "A list of one or more patterns to match.",
-							Type:        schema.TypeSet,
-							Required:    true,
-							Elem:        journeyPatternResource,
-						},
-					},
-				},
-			},
-			"externalSegment": {
-				Description: "Details of an entity corresponding to this segment in an external system.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				MaxItems:    1,
-				Elem:        externalSegmentResource,
-			},
-			"assignmentExpirationDays": {
-				Description: "Time, in days, from when the segment is assigned until it is automatically unassigned.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
-			"selfUri": {
-				Description: "The URI for this object.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"createdDate": {
-				Description: "Timestamp indicating when the segment was created. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"modifiedDate": {
-				Description: "Timestamp indicating when the the segment was last updated. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
+		Schema:        journeySegmentSchema,
 	}
 }
 
@@ -367,7 +373,7 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	displayName := d.Get("displayName").(string)
+	displayName := d.Get("display_name").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
@@ -399,19 +405,19 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
-	isActive := journeySegment.Get("isActive").(bool)
-	displayName := journeySegment.Get("displayName").(string)
+	isActive := journeySegment.Get("is_active").(bool)
+	displayName := journeySegment.Get("display_name").(string)
 	version := journeySegment.Get("version").(int)
 	description := journeySegment.Get("description").(string)
 	color := journeySegment.Get("color").(string)
 	scope := journeySegment.Get("scope").(string)
-	shouldDisplayToAgent := journeySegment.Get("shouldDisplayToAgent").(bool)
+	shouldDisplayToAgent := journeySegment.Get("should_display_to_agent").(bool)
 	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
 	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
-	externalSegment := buildSdkGenericListFirstElement(journeySegment, "externalSegment", buildSdkExternalSegment)
+	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment)
 
-	assignmentExpirationDays := journeySegment.Get("assignmentExpirationDays").(int)
-	selfUri := journeySegment.Get("selfUri").(string)
+	assignmentExpirationDays := journeySegment.Get("assignment_expiration_days").(int)
+	selfUri := journeySegment.Get("self_uri").(string)
 
 	return &platformclientv2.Journeysegment{
 		IsActive:                 &isActive,
@@ -430,18 +436,18 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 }
 
 func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2.Patchsegment {
-	isActive := journeySegment.Get("isActive").(bool)
-	displayName := journeySegment.Get("displayName").(string)
+	isActive := journeySegment.Get("is_active").(bool)
+	displayName := journeySegment.Get("display_name").(string)
 	version := journeySegment.Get("version").(int)
 	description := journeySegment.Get("description").(string)
 	color := journeySegment.Get("color").(string)
-	shouldDisplayToAgent := journeySegment.Get("shouldDisplayToAgent").(bool)
+	shouldDisplayToAgent := journeySegment.Get("should_display_to_agent").(bool)
 	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
 	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
-	externalSegment := buildSdkGenericListFirstElement(journeySegment, "externalSegment", buildSdkPatchExternalSegment)
+	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment)
 
-	assignmentExpirationDays := journeySegment.Get("assignmentExpirationDays").(int)
-	selfUri := journeySegment.Get("selfUri").(string)
+	assignmentExpirationDays := journeySegment.Get("assignment_expiration_days").(int)
+	selfUri := journeySegment.Get("self_uri").(string)
 
 	return &platformclientv2.Patchsegment{
 		IsActive:                 &isActive,
