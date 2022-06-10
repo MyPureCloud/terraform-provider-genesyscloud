@@ -24,6 +24,14 @@ func buildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{}
 	return &returnValue
 }
 
+func setNullableValue[T any](d *schema.ResourceData, key string, value *T) {
+	if value != nil {
+		d.Set(key, *value)
+	} else {
+		d.Set(key, nil)
+	}
+}
+
 func flattenBaseSettingsProperties(properties interface{}) (string, diag.Diagnostics) {
 	if properties == nil {
 		return "", nil
