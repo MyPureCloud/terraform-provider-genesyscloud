@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 var (
@@ -281,7 +282,7 @@ func resourceJourneySegment() *schema.Resource {
 		Description: "Genesys Cloud Journey Segment",
 
 		CreateContext: createWithPooledClient(createJourneySegment),
-		//ReadContext:   readWithPooledClient(readJourneySegment),
+		ReadContext:   readWithPooledClient(readJourneySegment),
 		UpdateContext: updateWithPooledClient(updateJourneySegment),
 		DeleteContext: deleteWithPooledClient(deleteJourneySegment),
 		Importer: &schema.ResourceImporter{
@@ -307,55 +308,35 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	d.SetId(*result.Id)
 
 	log.Printf("Created journey segment %s %s", *result.DisplayName, *result.Id)
-	//return readJourneySegment(ctx, d, meta)
-	return nil
+	return readJourneySegment(ctx, d, meta)
 }
 
-//func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-//	sdkConfig := meta.(*providerMeta).ClientConfig
-//	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-//
-//	log.Printf("Reading DID pool %s", d.Id())
-//	return withRetriesForRead(ctx, d, func() *resource.RetryError {
-//		journeySegment, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
-//		if getErr != nil {
-//			if isStatus404(resp) {
-//				return resource.RetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
-//			}
-//			return resource.NonRetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
-//		}
-//
-//		if journeySegment.State != nil && *journeySegment.State == "deleted" {
-//			d.SetId("")
-//			return nil
-//		}
-//
-//		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceJourneySegment())
-//		d.Set("start_phone_number", *journeySegment.StartPhoneNumber)
-//		d.Set("end_phone_number", *journeySegment.EndPhoneNumber)
-//
-//		if journeySegment.Description != nil {
-//			d.Set("description", *journeySegment.Description)
-//		} else {
-//			d.Set("description", nil)
-//		}
-//
-//		if journeySegment.Comments != nil {
-//			d.Set("comments", *journeySegment.Comments)
-//		} else {
-//			d.Set("comments", nil)
-//		}
-//
-//		if journeySegment.Provider != nil {
-//			d.Set("pool_provider", *journeySegment.Provider)
-//		} else {
-//			d.Set("pool_provider", nil)
-//		}
-//
-//		log.Printf("Read DID pool %s %s", d.Id(), *journeySegment.StartPhoneNumber)
-//		return cc.CheckState()
-//	})
-//}
+func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+
+	log.Printf("Reading journey segment %s", d.Id())
+	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+		journeySegment, resp, getErr := journeyApi.GetJourneySegment(d.Id())
+		if getErr != nil {
+			if isStatus404(resp) {
+				return resource.RetryableError(fmt.Errorf("failed to read journey segment %s: %s", d.Id(), getErr))
+			}
+			return resource.NonRetryableError(fmt.Errorf("failed to read journey segment %s: %s", d.Id(), getErr))
+		}
+
+		if journeySegment.IsActive != nil && !*journeySegment.IsActive {
+			d.SetId("")
+			return nil
+		}
+
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceJourneySegment())
+		flattenJourneySegment(d, journeySegment)
+
+		log.Printf("Read journey segment %s %s", d.Id(), *journeySegment.DisplayName)
+		return cc.CheckState()
+	})
+}
 
 func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
@@ -368,8 +349,7 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	log.Printf("Updated journey segment %s", d.Id())
-	return nil
-	//return readJourneySegment(ctx, d, meta)
+	return readJourneySegment(ctx, d, meta)
 }
 
 func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -402,6 +382,22 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 
 		return resource.RetryableError(fmt.Errorf("journey segment %s still exists", d.Id()))
 	})
+}
+
+func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclientv2.Journeysegment) {
+	d.Set("display_name", *journeySegment.DisplayName)
+	d.Set("version", *journeySegment.Version)
+	setNullableValue(d, "description", journeySegment.Description)
+	setNullableValue(d, "color", journeySegment.Color)
+	setNullableValue(d, "scope", journeySegment.Scope)
+	setNullableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
+	d.Set("context", flattenGenericAsList(journeySegment.Context, flattenContext))
+	d.Set("journey", flattenGenericAsList(journeySegment.Journey, flattenJourney))
+	d.Set("external_segment", flattenGenericAsList(journeySegment.ExternalSegment, flattenExternalSegment))
+	setNullableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
+	setNullableValue(d, "self_uri", journeySegment.SelfUri)
+	setNullableValue(d, "created_date", journeySegment.CreatedDate)
+	setNullableValue(d, "modified_date", journeySegment.ModifiedDate)
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
@@ -464,16 +460,48 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	}
 }
 
+func flattenContext(context *platformclientv2.Context) map[string]interface{} {
+	contextMap := make(map[string]interface{})
+	contextMap["patterns"] = flattenGenericList(context.Patterns, flattenContextPattern)
+	return contextMap
+}
+
 func buildSdkContext(context *schema.ResourceData) *platformclientv2.Context {
 	return &platformclientv2.Context{
 		Patterns: buildSdkGenericList(context, "patterns", buildSdkContextPattern),
 	}
 }
 
+func flattenContextPattern(contextPattern *platformclientv2.Contextpattern) map[string]interface{} {
+	contextPatternMap := make(map[string]interface{})
+	contextPatternMap["criteria"] = flattenGenericList(contextPattern.Criteria, flattenEntityTypeCriteria)
+	return contextPatternMap
+}
+
 func buildSdkContextPattern(contextPattern *schema.ResourceData) *platformclientv2.Contextpattern {
 	return &platformclientv2.Contextpattern{
 		Criteria: buildSdkGenericList(contextPattern, "criteria", buildSdkEntityTypeCriteria),
 	}
+}
+
+func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecriteria) map[string]interface{} {
+	entityTypeCriteriaMap := make(map[string]interface{})
+	if entityTypeCriteria.Key != nil {
+		entityTypeCriteriaMap["key"] = *entityTypeCriteria.Key
+	}
+	if entityTypeCriteria.Values != nil {
+		entityTypeCriteriaMap["values"] = stringListToSet(*entityTypeCriteria.Values)
+	}
+	if entityTypeCriteria.ShouldIgnoreCase != nil {
+		entityTypeCriteriaMap["should_ignore_case"] = *entityTypeCriteria.ShouldIgnoreCase
+	}
+	if entityTypeCriteria.Operator != nil {
+		entityTypeCriteriaMap["operator"] = *entityTypeCriteria.Operator
+	}
+	if entityTypeCriteria.EntityType != nil {
+		entityTypeCriteriaMap["entity_type"] = *entityTypeCriteria.EntityType
+	}
+	return entityTypeCriteriaMap
 }
 
 func buildSdkEntityTypeCriteria(entityTypeCriteria *schema.ResourceData) *platformclientv2.Entitytypecriteria {
@@ -492,10 +520,34 @@ func buildSdkEntityTypeCriteria(entityTypeCriteria *schema.ResourceData) *platfo
 	}
 }
 
+func flattenJourney(journey *platformclientv2.Journey) map[string]interface{} {
+	journeyMap := make(map[string]interface{})
+	journeyMap["patterns"] = flattenGenericList(journey.Patterns, flattenJourneyPattern)
+	return journeyMap
+}
+
 func buildSdkJourney(journey *schema.ResourceData) *platformclientv2.Journey {
 	return &platformclientv2.Journey{
 		Patterns: buildSdkGenericList(journey, "patterns", buildSdkJourneyPattern),
 	}
+}
+
+func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[string]interface{} {
+	journeyPatternMap := make(map[string]interface{})
+	journeyPatternMap["criteria"] = flattenGenericList(journeyPattern.Criteria, flattenCriteria)
+	if journeyPattern.Count != nil {
+		journeyPatternMap["count"] = *journeyPattern.Count
+	}
+	if journeyPattern.StreamType != nil {
+		journeyPatternMap["stream_type"] = *journeyPattern.StreamType
+	}
+	if journeyPattern.SessionType != nil {
+		journeyPatternMap["session_type"] = *journeyPattern.SessionType
+	}
+	if journeyPattern.EventName != nil {
+		journeyPatternMap["event_name"] = *journeyPattern.EventName
+	}
+	return journeyPatternMap
 }
 
 func buildSdkJourneyPattern(journeyPattern *schema.ResourceData) *platformclientv2.Journeypattern {
@@ -514,6 +566,23 @@ func buildSdkJourneyPattern(journeyPattern *schema.ResourceData) *platformclient
 	}
 }
 
+func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{} {
+	criteriaMap := make(map[string]interface{})
+	if criteria.Key != nil {
+		criteriaMap["key"] = *criteria.Key
+	}
+	if criteria.Values != nil {
+		criteriaMap["values"] = stringListToSet(*criteria.Values)
+	}
+	if criteria.ShouldIgnoreCase != nil {
+		criteriaMap["should_ignore_case"] = *criteria.ShouldIgnoreCase
+	}
+	if criteria.Operator != nil {
+		criteriaMap["operator"] = *criteria.Operator
+	}
+	return criteriaMap
+}
+
 func buildSdkCriteria(criteria *schema.ResourceData) *platformclientv2.Criteria {
 	key := criteria.Get("key").(string)
 	values := buildSdkStringList(criteria, "values")
@@ -526,6 +595,20 @@ func buildSdkCriteria(criteria *schema.ResourceData) *platformclientv2.Criteria 
 		ShouldIgnoreCase: &shouldIgnoreCase,
 		Operator:         &operator,
 	}
+}
+
+func flattenExternalSegment(externalSegment *platformclientv2.Externalsegment) map[string]interface{} {
+	externalSegmentMap := make(map[string]interface{})
+	if externalSegment.Id != nil {
+		externalSegmentMap["id"] = *externalSegment.Id
+	}
+	if externalSegment.Name != nil {
+		externalSegmentMap["name"] = *externalSegment.Name
+	}
+	if externalSegment.Source != nil {
+		externalSegmentMap["source"] = *externalSegment.Source
+	}
+	return externalSegmentMap
 }
 
 func buildSdkExternalSegment(externalSegment *schema.ResourceData) *platformclientv2.Externalsegment {
