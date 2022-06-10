@@ -257,6 +257,14 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 						})
 					}
 				}
+			} else {
+				if c.d.HasChange(k) {
+					return resource.RetryableError(&consistencyError{
+						key:      k,
+						oldValue: c.originalState[k],
+						newValue: c.d.Get(k),
+					})
+				}
 			}
 		}
 	}
