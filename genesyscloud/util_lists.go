@@ -73,6 +73,19 @@ func buildSdkStringList(d *schema.ResourceData, attrName string) *[]string {
 	return nil
 }
 
+func flattenGenericList[T interface{}](resourceList *[]T, elementFlattener func(resource *T) map[string]interface{}) []map[string]interface{} {
+	if resourceList == nil {
+		return nil
+	}
+
+	var resultList []map[string]interface{}
+
+	for _, resource := range *resourceList {
+		resultList = append(resultList, elementFlattener(&resource))
+	}
+	return resultList
+}
+
 func buildSdkGenericList[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(d *schema.ResourceData) *T) *[]T {
 	if child, ok := d.GetOk(attrName); ok {
 		list := child.(*schema.Set).List()
@@ -84,6 +97,14 @@ func buildSdkGenericList[T interface{}](d *schema.ResourceData, attrName string,
 	}
 
 	return nil
+}
+
+func flattenGenericAsList[T interface{}](resource *T, elementFlattener func(resource *T) map[string]interface{}) []map[string]interface{} {
+	if resource == nil {
+		return nil
+	}
+
+	return []map[string]interface{}{elementFlattener(resource)}
 }
 
 func buildSdkGenericListFirstElement[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(*schema.ResourceData) *T) *T {
