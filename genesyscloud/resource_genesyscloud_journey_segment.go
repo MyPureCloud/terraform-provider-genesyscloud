@@ -48,7 +48,7 @@ var (
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"shouldIgnoreCase": {
+			"should_ignore_case": {
 				Description: "Should criteria be case insensitive.",
 				Type:        schema.TypeBool,
 				Required:    true,
@@ -59,7 +59,7 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
 			},
-			"entityType": {
+			"entity_type": {
 				Description:  "The entity to match the pattern against.Valid values: visit.",
 				Type:         schema.TypeString,
 				Optional:     true,
@@ -81,7 +81,7 @@ var (
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"shouldIgnoreCase": {
+			"should_ignore_case": {
 				Description: "Should criteria be case insensitive.",
 				Type:        schema.TypeBool,
 				Required:    true,
@@ -119,18 +119,18 @@ var (
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
-			"streamType": {
+			"stream_type": {
 				Description:  "The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Web", "Custom", "Conversation"}, false),
 			},
-			"sessionType": {
+			"session_type": {
 				Description: "The session type for which this pattern can be matched on.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"eventName": {
+			"event_name": {
 				Description: "The name of the event for which this pattern can be matched on.",
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -473,9 +473,9 @@ func buildSdkContextPattern(contextPattern *schema.ResourceData) *platformclient
 func buildSdkEntityTypeCriteria(entityTypeCriteria *schema.ResourceData) *platformclientv2.Entitytypecriteria {
 	key := entityTypeCriteria.Get("key").(string)
 	values := buildSdkStringList(entityTypeCriteria, "values")
-	shouldIgnoreCase := entityTypeCriteria.Get("shouldIgnoreCase").(bool)
+	shouldIgnoreCase := entityTypeCriteria.Get("should_ignore_case").(bool)
 	operator := entityTypeCriteria.Get("operator").(string)
-	entityType := entityTypeCriteria.Get("entityType").(string)
+	entityType := entityTypeCriteria.Get("entity_type").(string)
 
 	return &platformclientv2.Entitytypecriteria{
 		Key:              &key,
@@ -495,9 +495,9 @@ func buildSdkJourney(journey *schema.ResourceData) *platformclientv2.Journey {
 func buildSdkJourneyPattern(journeyPattern *schema.ResourceData) *platformclientv2.Journeypattern {
 	criteria := buildSdkGenericList(journeyPattern, "criteria", buildSdkCriteria)
 	count := journeyPattern.Get("count").(int)
-	streamType := journeyPattern.Get("streamType").(string)
-	sessionType := journeyPattern.Get("sessionType").(string)
-	eventName := journeyPattern.Get("eventName").(string)
+	streamType := journeyPattern.Get("stream_type").(string)
+	sessionType := journeyPattern.Get("session_type").(string)
+	eventName := journeyPattern.Get("event_name").(string)
 
 	return &platformclientv2.Journeypattern{
 		Criteria:    criteria,
@@ -511,7 +511,7 @@ func buildSdkJourneyPattern(journeyPattern *schema.ResourceData) *platformclient
 func buildSdkCriteria(criteria *schema.ResourceData) *platformclientv2.Criteria {
 	key := criteria.Get("key").(string)
 	values := buildSdkStringList(criteria, "values")
-	shouldIgnoreCase := criteria.Get("shouldIgnoreCase").(bool)
+	shouldIgnoreCase := criteria.Get("should_ignore_case").(bool)
 	operator := criteria.Get("operator").(string)
 
 	return &platformclientv2.Criteria{
