@@ -2,9 +2,12 @@ package genesyscloud
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
@@ -173,7 +176,7 @@ func resourceJourneySegment() *schema.Resource {
 		CreateContext: createWithPooledClient(createJourneySegment),
 		//ReadContext:   readWithPooledClient(readJourneySegment),
 		UpdateContext: updateWithPooledClient(updateJourneySegment),
-		//DeleteContext: deleteWithPooledClient(deleteJourneySegment),
+		DeleteContext: deleteWithPooledClient(deleteJourneySegment),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -363,37 +366,37 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	//return readJourneySegment(ctx, d, meta)
 }
 
-//func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-//	startPhoneNumber := d.Get("start_phone_number").(string)
-//
-//	sdkConfig := meta.(*providerMeta).ClientConfig
-//	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-//
-//	log.Printf("Deleting DID pool with starting number %s", startPhoneNumber)
-//	if _, err := telephonyApi.DeleteTelephonyProvidersEdgesDidpool(d.Id()); err != nil {
-//		return diag.Errorf("Failed to delete DID pool with starting number %s: %s", startPhoneNumber, err)
-//	}
-//
-//	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-//		journeySegment, resp, err := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
-//		if err != nil {
-//			if isStatus404(resp) {
-//				// DID pool deleted
-//				log.Printf("Deleted DID pool %s", d.Id())
-//				return nil
-//			}
-//			return resource.NonRetryableError(fmt.Errorf("Error deleting DID pool %s: %s", d.Id(), err))
-//		}
-//
-//		if journeySegment.State != nil && *journeySegment.State == "deleted" {
-//			// DID pool deleted
-//			log.Printf("Deleted DID pool %s", d.Id())
-//			return nil
-//		}
-//
-//		return resource.RetryableError(fmt.Errorf("DID pool %s still exists", d.Id()))
-//	})
-//}
+func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	displayName := d.Get("displayName").(string)
+
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+
+	log.Printf("Deleting jounrey segment with display name %s", displayName)
+	if _, err := journeyApi.DeleteJourneySegment(d.Id()); err != nil {
+		return diag.Errorf("Failed to delete journey segment with display name %s: %s", displayName, err)
+	}
+
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		journeySegment, resp, err := journeyApi.GetJourneySegment(d.Id())
+		if err != nil {
+			if isStatus404(resp) {
+				// journey segment deleted
+				log.Printf("Deleted journey segment %s", d.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("error deleting journey segment %s: %s", d.Id(), err))
+		}
+
+		if journeySegment.IsActive != nil && !*journeySegment.IsActive {
+			// journey segment inactive
+			log.Printf("Inactive journey segment %s", d.Id())
+			return nil
+		}
+
+		return resource.RetryableError(fmt.Errorf("journey segment %s still exists", d.Id()))
+	})
+}
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
 	isActive := journeySegment.Get("isActive").(bool)
