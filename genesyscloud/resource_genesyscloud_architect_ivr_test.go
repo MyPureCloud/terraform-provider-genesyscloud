@@ -19,6 +19,7 @@ type ivrConfigStruct struct {
 	description string
 	dnis        []string
 	depends_on  string
+	divisionId  string
 }
 
 func deleteIvrStartingWith(name string) {
@@ -67,11 +68,11 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 			{
 				// Create
 				Config: generateIvrConfigResource(&ivrConfigStruct{
-					ivrConfigResource1,
-					ivrConfigName,
-					ivrConfigDescription,
-					nil, // No dnis
-					"",  // No depends_on
+					resourceID:  ivrConfigResource1,
+					name:        ivrConfigName,
+					description: ivrConfigDescription,
+					dnis:        nil, // No dnis
+					depends_on:  "",  // No depends_on
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "name", ivrConfigName),
@@ -89,11 +90,11 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 					nullValue, // No comments
 					nullValue, // No provider
 				}) + generateIvrConfigResource(&ivrConfigStruct{
-					ivrConfigResource1,
-					ivrConfigName,
-					ivrConfigDescription,
-					ivrConfigDnis,
-					"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
+					resourceID:  ivrConfigResource1,
+					name:        ivrConfigName,
+					description: ivrConfigDescription,
+					dnis:        ivrConfigDnis,
+					depends_on:  "genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "name", ivrConfigName),
@@ -113,10 +114,119 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 	})
 }
 
+func TestAccResourceIvrConfigDivision(t *testing.T) {
+	ivrConfigResource1 := "test-ivrconfig1"
+	ivrConfigName := "terraform-ivrconfig-" + uuid.NewString()
+	ivrConfigDescription := "Terraform IVR config"
+	number1 := "+14175550011"
+	number2 := "+14175550012"
+	divResource1 := "auth-division1"
+	divResource2 := "auth-division2"
+	divName1 := "TerraformDiv-" + uuid.NewString()
+	divName2 := "TerraformDiv-" + uuid.NewString()
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	deleteIvrStartingWith("terraform-ivrconfig-")
+	deleteDidPoolWithNumber(number1)
+	deleteDidPoolWithNumber(number2)
+	ivrConfigDnis := []string{number1, number2}
+	didPoolResource1 := "test-didpool1"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateAuthDivisionResource(
+					divResource1,
+					divName1,
+					nullValue, // No description
+					nullValue, // Not home division
+				) + generateIvrConfigResource(&ivrConfigStruct{
+					resourceID:  ivrConfigResource1,
+					name:        ivrConfigName,
+					description: ivrConfigDescription,
+					dnis:        nil, // No dnis
+					depends_on:  "",  // No depends_on
+					divisionId:  "genesyscloud_auth_division." + divResource1 + ".id",
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "name", ivrConfigName),
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "description", ivrConfigDescription),
+					resource.TestCheckResourceAttrPair("genesyscloud_architect_ivr."+ivrConfigResource1, "division_id", "genesyscloud_auth_division."+divResource1, "id"),
+					hasEmptyDnis("genesyscloud_architect_ivr."+ivrConfigResource1),
+				),
+			},
+			{
+				// Update with new DNIS and division
+				Config: generateAuthDivisionResource(
+					divResource1,
+					divName1,
+					nullValue, // No description
+					nullValue, // Not home division
+				) + generateAuthDivisionResource(
+					divResource2,
+					divName2,
+					nullValue, // No description
+					nullValue, // Not home division
+				) + generateDidPoolResource(&didPoolStruct{
+					didPoolResource1,
+					ivrConfigDnis[0],
+					ivrConfigDnis[1],
+					nullValue, // No description
+					nullValue, // No comments
+					nullValue, // No provider
+				}) + generateIvrConfigResource(&ivrConfigStruct{
+					resourceID:  ivrConfigResource1,
+					name:        ivrConfigName,
+					description: ivrConfigDescription,
+					dnis:        ivrConfigDnis,
+					depends_on:  "genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "name", ivrConfigName),
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "description", ivrConfigDescription),
+					resource.TestCheckResourceAttrPair("genesyscloud_architect_ivr."+ivrConfigResource1, "division_id", "genesyscloud_auth_division."+divResource1, "id"),
+					validateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[0]),
+					validateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[1]),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_architect_ivr." + ivrConfigResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: generateAuthDivisionResource(
+					divResource1,
+					divName1,
+					nullValue, // No description
+					nullValue, // Not home division
+				) + generateAuthDivisionResource(
+					divResource2,
+					divName2,
+					nullValue, // No description
+					nullValue, // Not home division
+				),
+			},
+		},
+		CheckDestroy: testVerifyIvrConfigsDestroyed,
+	})
+}
+
 func generateIvrConfigResource(ivrConfig *ivrConfigStruct) string {
 	dnisStrs := make([]string, len(ivrConfig.dnis))
 	for i, val := range ivrConfig.dnis {
 		dnisStrs[i] = fmt.Sprintf("\"%s\"", val)
+	}
+
+	divisionId := ""
+	if ivrConfig.divisionId != "" {
+		divisionId = "division_id = " + ivrConfig.divisionId
 	}
 
 	return fmt.Sprintf(`resource "genesyscloud_architect_ivr" "%s" {
@@ -124,12 +234,14 @@ func generateIvrConfigResource(ivrConfig *ivrConfigStruct) string {
 		description = "%s"
 		dnis = [%s]
 		depends_on=[%s]
+		%s
 	}
 	`, ivrConfig.resourceID,
 		ivrConfig.name,
 		ivrConfig.description,
 		strings.Join(dnisStrs, ","),
 		ivrConfig.depends_on,
+		divisionId,
 	)
 }
 

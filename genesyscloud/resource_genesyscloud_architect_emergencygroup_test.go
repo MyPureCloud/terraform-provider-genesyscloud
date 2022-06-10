@@ -37,11 +37,11 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateIvrConfigResource(&ivrConfigStruct{
-					ivrResourceID,
-					ivrName,
-					"",
-					nil,
-					"",
+					resourceID:  ivrResourceID,
+					name:        ivrName,
+					description: "",
+					dnis:        nil,
+					depends_on:  "",
 				}) + generateFlowResource(
 					flowResource,
 					flowFilePath,
@@ -69,11 +69,11 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 			{
 				// Update
 				Config: generateIvrConfigResource(&ivrConfigStruct{
-					ivrResourceID,
-					ivrName,
-					"",
-					nil,
-					"",
+					resourceID:  ivrResourceID,
+					name:        ivrName,
+					description: "",
+					dnis:        nil,
+					depends_on:  "",
 				}) + generateFlowResource(
 					flowResource,
 					flowFilePath,
