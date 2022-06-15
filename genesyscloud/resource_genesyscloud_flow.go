@@ -45,6 +45,9 @@ func flowExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllFlows),
 		RefAttrs:         map[string]*RefAttrSettings{},
+		UnResolvableAttributes: map[string]*schema.Schema{
+			"filepath": resourceFlow().Schema["filepath"],
+		},
 	}
 }
 
