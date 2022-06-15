@@ -42,11 +42,11 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 					nullValue, // No comments
 					nullValue, // No provider
 				}) + generateIvrConfigResource(&ivrConfigStruct{
-					ivrConfigRes,
-					ivrConfigName,
-					"",
-					ivrConfigDnis,
-					"genesyscloud_telephony_providers_edges_did_pool." + didPoolRes,
+					resourceID:  ivrConfigRes,
+					name:        ivrConfigName,
+					description: "",
+					dnis:        ivrConfigDnis,
+					depends_on:  "genesyscloud_telephony_providers_edges_did_pool." + didPoolRes,
 				}) + generateDidDataSource(didDataRes,
 					didPhoneNumber,
 					"genesyscloud_architect_ivr."+ivrConfigRes),

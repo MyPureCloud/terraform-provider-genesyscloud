@@ -102,6 +102,12 @@ func resourceArchitectIvrConfig() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"division_id": {
+				Description: "Division ID.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -113,6 +119,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	closedHoursFlowId := buildSdkDomainEntityRef(d, "closed_hours_flow_id")
 	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
 	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
+	divisionId := d.Get("division_id").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
@@ -128,6 +135,10 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 	if description != "" {
 		ivrBody.Description = &description
+	}
+
+	if divisionId != "" {
+		ivrBody.Division = &platformclientv2.Division{Id: &divisionId}
 	}
 
 	// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which
@@ -200,6 +211,12 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 			d.Set("schedule_group_id", nil)
 		}
 
+		if ivrConfig.Division != nil && ivrConfig.Division.Id != nil {
+			d.Set("division_id", *ivrConfig.Division.Id)
+		} else {
+			d.Set("division_id", nil)
+		}
+
 		log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
 		return cc.CheckState()
 	})
@@ -212,6 +229,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	closedHoursFlowId := buildSdkDomainEntityRef(d, "closed_hours_flow_id")
 	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
 	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
+	divisionId := d.Get("division_id").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
@@ -235,6 +253,10 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 		if description != "" {
 			ivrBody.Description = &description
+		}
+
+		if divisionId != "" {
+			ivrBody.Division = &platformclientv2.Division{Id: &divisionId}
 		}
 
 		// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which

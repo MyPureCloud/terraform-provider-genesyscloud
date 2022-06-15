@@ -43,6 +43,7 @@ resource "genesyscloud_architect_ivr" "test_ivr" {
 
 - `closed_hours_flow_id` (String) ID of inbound call flow for closed hours.
 - `description` (String) IVR Config description.
+- `division_id` (String) Division ID.
 - `dnis` (Set of String) The phone number(s) to contact the IVR by.
 - `holiday_hours_flow_id` (String) ID of inbound call flow for holidays.
 - `open_hours_flow_id` (String) ID of inbound call flow for open hours.
