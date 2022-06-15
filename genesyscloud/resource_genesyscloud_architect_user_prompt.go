@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"io"
 	"io/ioutil"
 	"log"
@@ -11,8 +12,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"time"
-
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -680,10 +679,9 @@ var userPromptResource = &schema.Resource{
 			Optional:    true,
 		},
 		"filename": {
-			Description:  "Path or URL to the file to be uploaded as prompt.",
-			Type:         schema.TypeString,
-			ValidateFunc: validatePath,
-			Optional:     true,
+			Description: "Path or URL to the file to be uploaded as prompt.",
+			Type:        schema.TypeString,
+			Optional:    true,
 		},
 	},
 }
@@ -863,6 +861,34 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 			d.Set("description", nil)
 		}
 
+		if resources, ok := d.GetOk("resources"); ok && resources != nil {
+			promptResources := resources.(*schema.Set).List()
+			for _, promptResource := range promptResources {
+				resourceMap := promptResource.(map[string]interface{})
+				resourceFilename := resourceMap["filename"]
+				if resourceFilename.(string) == "" {
+					continue
+				}
+				APIResources := *userPrompt.Resources
+				isTranscoded := false
+				for _, APIResource := range APIResources {
+					if APIResource.Tags != nil {
+						tags := *APIResource.Tags
+						if len(tags["filename"]) > 0 {
+							if tags["filename"][0] == resourceFilename {
+								if *APIResource.UploadStatus == "transcoded" {
+									isTranscoded = true
+								}
+							}
+						}
+					}
+				}
+				if !isTranscoded {
+					return resource.RetryableError(fmt.Errorf("prompt file not transcoded"))
+				}
+			}
+		}
+
 		d.Set("resources", flattenPromptResources(userPrompt.Resources))
 
 		log.Printf("Read Audio Prompt %s %s", d.Id(), *userPrompt.Id)
@@ -928,28 +954,33 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclientv2.Configuration) error {
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	defer writer.Close()
-
 	reader, file, err := downloadOrOpenFile(*filename)
-	if err != nil {
-		return err
-	}
 	if file != nil {
 		defer file.Close()
 	}
+	if err != nil {
+		return err
+	}
 
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
 	part, err := writer.CreateFormFile("file", filepath.Base(*filename))
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(part, reader)
+
+	if file != nil {
+		io.Copy(part, file)
+	} else {
+		io.Copy(part, reader)
+	}
+	io.Copy(part, file)
+	writer.Close()
+	request, err := http.NewRequest(http.MethodPost, *uploadUri, body)
 	if err != nil {
 		return err
 	}
 
-	request, err := http.NewRequest(http.MethodPost, *uploadUri, body)
 	request.Header.Add("Content-Type", writer.FormDataContentType())
 	request.Header.Add("Authorization", sdkConfig.AccessToken)
 
