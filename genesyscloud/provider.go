@@ -55,7 +55,7 @@ func New(version string) func() *schema.Provider {
 				},
 				"aws_region": {
 					Type:         schema.TypeString,
-					Optional:     true,
+					Required:     true,
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_REGION", nil),
 					Description:  "AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable.",
 					ValidateFunc: validation.StringInSlice(getAllowedRegions(), true),
@@ -183,12 +183,17 @@ type providerMeta struct {
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		// Initialize a single client if we have an access token
-		if data.Get("access_token") != "" {
-			log.Print("Initializing default SDK client.")
-			err := initClientConfig(data, version, platformclientv2.GetDefaultConfiguration())
-			if err != nil {
-				return nil, err
-			}
+		accessToken := data.Get("access_token").(string)
+		if accessToken != "" {
+			once.Do(func() {
+				sdkConfig := platformclientv2.GetDefaultConfiguration()
+				_ = initClientConfig(data, version, sdkConfig)
+
+				sdkClientPool = &SDKClientPool{
+					pool: make(chan *platformclientv2.Configuration, 1),
+				}
+				sdkClientPool.pool <- sdkConfig
+			})
 		} else {
 			// Initialize the SDK Client pool
 			err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
@@ -273,7 +278,6 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		log.Print("Setting access token set on configuration instance.")
 		config.AccessToken = accessToken
 	} else {
-		log.Print("Authorizing client credentials.")
 		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
 		if err != nil {
 			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
