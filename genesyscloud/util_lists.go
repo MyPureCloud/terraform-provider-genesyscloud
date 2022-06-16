@@ -107,14 +107,14 @@ func flattenGenericAsList[T interface{}](resource *T, elementFlattener func(reso
 	return []map[string]interface{}{elementFlattener(resource)}
 }
 
-func buildSdkGenericListFirstElement[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(*schema.ResourceData) *T) *T {
+func buildSdkGenericListFirstElement[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(map[string]*schema.Schema) *T) *T {
 	child := d.Get(attrName).(*schema.Set).List()
 	if child != nil {
 		if len(child) > 0 {
 			if _, ok := child[0].(map[string]interface{}); !ok {
 				return nil
 			}
-			return elementBuilder(child[0].(*schema.ResourceData))
+			return elementBuilder(child[0].(map[string]*schema.Schema))
 		}
 		return new(T)
 	}
