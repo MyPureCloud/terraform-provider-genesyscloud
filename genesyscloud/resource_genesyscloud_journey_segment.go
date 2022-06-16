@@ -16,11 +16,6 @@ import (
 
 var (
 	journeySegmentSchema = map[string]*schema.Schema{
-		"id": {
-			Description: "The globally unique identifier for the object.",
-			Type:        schema.TypeString,
-			Optional:    true,
-		},
 		"is_active": {
 			Description: "Whether or not the segment is active.",
 			Type:        schema.TypeBool,
@@ -45,12 +40,13 @@ var (
 		"color": {
 			Description: "The hexadecimal color value of the segment.",
 			Type:        schema.TypeString,
-			Optional:    true,
+			Required:    true,
 		},
 		"scope": {
-			Description: "The target entity that a segment applies to.Valid values: Session, Customer.",
-			Type:        schema.TypeString,
-			Optional:    true,
+			Description:  "The target entity that a segment applies to.Valid values: Session, Customer.",
+			Type:         schema.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringInSlice([]string{"Session", "Customer"}, false),
 		},
 		"should_display_to_agent": {
 			Description: "Whether or not the segment should be displayed to agent/supervisor users.",
@@ -60,16 +56,18 @@ var (
 		"context": {
 			Description: "The context of the segment.",
 			Type:        schema.TypeSet,
-			// 				MinItems:    1, // TODO: context and journey min 1
-			MaxItems: 1,
-			Elem:     contextResource,
+			Required:    true,
+			MinItems:    1,
+			MaxItems:    1,
+			Elem:        contextResource,
 		},
 		"journey": {
 			Description: "The pattern of rules defining the segment.",
 			Type:        schema.TypeSet,
-			// 				MinItems:    1, // TODO: context and journey min 1
-			MaxItems: 1,
-			Elem:     journeyResource,
+			Required:    true,
+			MinItems:    1,
+			MaxItems:    1,
+			Elem:        journeyResource,
 		},
 		"external_segment": {
 			Description: "Details of an entity corresponding to this segment in an external system.",
@@ -114,7 +112,7 @@ var (
 	journeyResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"patterns": {
-				Description: "A list of one or more patterns to match.",
+				Description: "A list of zero or more patterns to match.",
 				Type:        schema.TypeSet,
 				Required:    true,
 				Elem:        journeyPatternResource,
@@ -165,7 +163,7 @@ var (
 			"count": {
 				Description: "The number of times the pattern must match.",
 				Type:        schema.TypeInt,
-				Optional:    true,
+				Required:    true,
 			},
 			"stream_type": {
 				Description:  "The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.",
@@ -249,11 +247,11 @@ var (
 
 func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
-	journeyAPI := platformclientv2.NewJourneyApiWithConfig(clientConfig)
+	journeyApi := platformclientv2.NewJourneyApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		journeySegments, _, getErr := journeyAPI.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
+		journeySegments, _, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of journey segments: %v", getErr)
 		}
@@ -302,7 +300,7 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 
 	result, _, err := journeyApi.PostJourneySegments(*journeySegment)
 	if err != nil {
-		return diag.Errorf("Failed to create journey segment %s: %s", *journeySegment.DisplayName, err)
+		return diag.Errorf("failed to create journey segment %s: %s", *journeySegment.DisplayName, err)
 	}
 
 	d.SetId(*result.Id)
@@ -325,11 +323,6 @@ func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interf
 			return resource.NonRetryableError(fmt.Errorf("failed to read journey segment %s: %s", d.Id(), getErr))
 		}
 
-		if journeySegment.IsActive != nil && !*journeySegment.IsActive {
-			d.SetId("")
-			return nil
-		}
-
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceJourneySegment())
 		flattenJourneySegment(d, journeySegment)
 
@@ -345,7 +338,7 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Updating journey segment %s", d.Id())
 	if _, _, err := journeyApi.PatchJourneySegment(d.Id(), *journeySegment); err != nil {
-		return diag.Errorf("Error updating journey segment %s: %s", journeySegment.DisplayName, err)
+		return diag.Errorf("Error updating journey segment %s: %s", *journeySegment.DisplayName, err)
 	}
 
 	log.Printf("Updated journey segment %s", d.Id())
@@ -364,7 +357,7 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		journeySegment, resp, err := journeyApi.GetJourneySegment(d.Id())
+		_, resp, err := journeyApi.GetJourneySegment(d.Id())
 		if err != nil {
 			if isStatus404(resp) {
 				// journey segment deleted
@@ -372,12 +365,6 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 				return nil
 			}
 			return resource.NonRetryableError(fmt.Errorf("error deleting journey segment %s: %s", d.Id(), err))
-		}
-
-		if journeySegment.IsActive != nil && !*journeySegment.IsActive {
-			// journey segment inactive
-			log.Printf("Inactive journey segment %s", d.Id())
-			return nil
 		}
 
 		return resource.RetryableError(fmt.Errorf("journey segment %s still exists", d.Id()))

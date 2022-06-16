@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -12,10 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
-)
-
-var (
-	sdkConfig *platformclientv2.Configuration
 )
 
 type phoneConfig struct {
@@ -305,20 +300,6 @@ func testVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 		}
 	}
 	//Success. Phone destroyed
-	return nil
-}
-
-func authorizeSdk() error {
-	// Create new config
-	sdkConfig = platformclientv2.GetDefaultConfiguration()
-
-	sdkConfig.BasePath = getRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
-
-	err := sdkConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
