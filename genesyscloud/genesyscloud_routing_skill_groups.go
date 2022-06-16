@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 type SkillGroupsRequest struct {
@@ -27,84 +27,77 @@ type SkillGroupsRequest struct {
 	SkillConditions struct{} `json:"skillConditions"` //Keep this here.  Even though we do not use this field in the struct The generated attributed is used as a placeholder
 }
 
+type AllSkillGroupsRequests struct {
+	Entities []struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+	NextURI     string `json:"nextUri"`
+	SelfURI     string `json:"selfUri"`
+	PreviousURI string `json:"previousUri"`
+}
+
 //TODO
-func getAllSkillGroupsActions(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
+	apiClient := &routingAPI.Configuration.APIClient
+	route := "/api/v2/routing/skillgroups"
 
-	//TODO - Finish the export code
+	headerParams := buildHeaderParams(routingAPI)
+
+	for {
+		path := routingAPI.Configuration.BasePath + route
+		skillGroupPayload := &AllSkillGroupsRequests{}
+
+		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
+
+		if err != nil {
+			return nil, diag.Errorf("Failed to get page of skill groups: %s", err)
+
+		}
+
+		err = json.Unmarshal(response.RawBody, &skillGroupPayload)
+		if err != nil {
+			return nil, diag.Errorf("Failed to unmarshal skill groups. %s", err)
+		}
+
+		if skillGroupPayload.Entities == nil || len(skillGroupPayload.Entities) == 0 {
+			break
+		}
+
+		for _, skillGroup := range skillGroupPayload.Entities {
+
+			resources[skillGroup.ID] = &ResourceMeta{Name: skillGroup.Name}
+		}
+
+		if route == skillGroupPayload.NextURI || skillGroupPayload.NextURI == "" {
+			break
+		} else {
+			route = skillGroupPayload.NextURI
+		}
+
+	}
+
 	return resources, nil
-	// sdkConfig := meta.(*providerMeta).ClientConfig
-	// routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-	// apiClient := &routingAPI.Configuration.APIClient
-	// path := routingAPI.Configuration.BasePath + "/api/v2/routing/skillgroups/"
-	// headerParams := buildHeaderParams(routingAPI)
-
-	// for ;; {
-	// 	//TODO - Need to put retry logic here.
-
-	// 		skillGroupPayload := make(map[string]interface{})
-	// 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
-
-	// 		if err != nil {
-	// 				return nil, diag.Errorf("Failed to get page of skill skill groups: %v", getErr)
-
-	// 		}
-
-	// 		err = json.Unmarshal(response.RawBody, &skillGroupPayload)
-	// 		if err != nil {
-	// 			return nil, diag.Errorf(fmt.Errorf("Failed to unmarshal skill groups. %s", err))
-	// 		}
-
-	// 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceSkillGroups())
-
-	// 		name := skillGroupPayload["name"]
-	// 		divisionId := skillGroupPayload["division"].(map[string]interface{})["id"]
-	// 		description := skillGroupPayload["description"]
-	// 		skillConditionsBytes, err := json.Marshal(skillGroupPayload["skillConditions"])
-
-	// 		if err != nil {
-	// 			return resource.NonRetryableError(fmt.Errorf("Failed to unmarshal skill groups conditions. %s", err))
-	// 		}
-
-	// 		skillConditions := string(skillConditionsBytes)
-
-	// }
-	// for pageNum := 1; ; pageNum++ {
-	// 	const pageSize = 100
-	// 	actions, _, getErr := integAPI.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", "", "", "", "")
-	// 	if getErr != nil {
-	// 		return nil, diag.Errorf("Failed to get page of integration actions: %v", getErr)
-	// 	}
-
-	// 	if actions.Entities == nil || len(*actions.Entities) == 0 {
-	// 		break
-	// 	}
-
-	// 	for _, action := range *actions.Entities {
-	// 		// Don't include "static" actions
-	// 		if strings.HasPrefix(*action.Id, "static") {
-	// 			continue
-	// 		}
-	// 		resources[*action.Id] = &ResourceMeta{Name: *action.Name}
-	// 	}
-	// }
-
-	// return resources, nil
 }
 
 //Done
-func getSkillGroupsExporter() *ResourceExporter {
+func resourceSkillGroupExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllSkillGroupsActions),
+		GetResourcesFunc: getAllWithPooledClient(getAllSkillGroups),
 		RefAttrs: map[string]*RefAttrSettings{
-			"division_id": {RefType: "genesyscloud_divisions"},
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
+		RemoveIfMissing: map[string][]string{
+			"division_id": {"division_id"},
 		},
 		JsonEncodeAttributes: []string{"skill_conditions"},
 	}
 }
 
 //Done
-func resourceRoutingSkillGroups() *schema.Resource {
+func resourceRoutingSkillGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/",
 
@@ -282,8 +275,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 			return resource.RetryableError(fmt.Errorf("Failed to read skill groups %s: %s", d.Id()))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSkillGroups())
-
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSkillGroup())
 		name := skillGroupPayload["name"]
 		divisionId := skillGroupPayload["division"].(map[string]interface{})["id"]
 		description := skillGroupPayload["description"]
@@ -310,7 +302,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		if description != "" {
 			d.Set("description", description)
 		} else {
-			d.Set("descriptionId", nil)
+			d.Set("description", nil)
 		}
 
 		if skillConditions != "" {
@@ -334,6 +326,7 @@ func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]strin
 	headerParams["Authorization"] = "Bearer " + routingAPI.Configuration.AccessToken
 	headerParams["Content-Type"] = "application/json"
 	headerParams["Accept"] = "application/json"
+
 	return headerParams
 }
 
