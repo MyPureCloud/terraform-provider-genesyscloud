@@ -86,12 +86,13 @@ func flattenGenericList[T interface{}](resourceList *[]T, elementFlattener func(
 	return resultList
 }
 
-func buildSdkGenericList[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(d *schema.ResourceData) *T) *[]T {
-	if child, ok := d.GetOk(attrName); ok {
+func buildSdkGenericList[T interface{}](d map[string]*schema.Schema, attrName string, elementBuilder func(map[string]*schema.Schema) *T) *[]T {
+	child := d[attrName].Elem
+	if child != nil {
 		list := child.(*schema.Set).List()
 		sdkList := make([]T, len(list))
 		for i, element := range list {
-			sdkList[i] = *elementBuilder(element.(*schema.ResourceData))
+			sdkList[i] = *elementBuilder(element.(map[string]*schema.Schema))
 		}
 		return &sdkList
 	}

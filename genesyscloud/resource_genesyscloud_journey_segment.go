@@ -453,7 +453,7 @@ func flattenContext(context *platformclientv2.Context) map[string]interface{} {
 	return contextMap
 }
 
-func buildSdkContext(context *schema.ResourceData) *platformclientv2.Context {
+func buildSdkContext(context map[string]*schema.Schema) *platformclientv2.Context {
 	return &platformclientv2.Context{
 		Patterns: buildSdkGenericList(context, "patterns", buildSdkContextPattern),
 	}
@@ -465,7 +465,7 @@ func flattenContextPattern(contextPattern *platformclientv2.Contextpattern) map[
 	return contextPatternMap
 }
 
-func buildSdkContextPattern(contextPattern *schema.ResourceData) *platformclientv2.Contextpattern {
+func buildSdkContextPattern(contextPattern map[string]*schema.Schema) *platformclientv2.Contextpattern {
 	return &platformclientv2.Contextpattern{
 		Criteria: buildSdkGenericList(contextPattern, "criteria", buildSdkEntityTypeCriteria),
 	}
@@ -491,16 +491,16 @@ func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecr
 	return entityTypeCriteriaMap
 }
 
-func buildSdkEntityTypeCriteria(entityTypeCriteria *schema.ResourceData) *platformclientv2.Entitytypecriteria {
-	key := entityTypeCriteria.Get("key").(string)
-	values := buildSdkStringList(entityTypeCriteria, "values")
-	shouldIgnoreCase := entityTypeCriteria.Get("should_ignore_case").(bool)
-	operator := entityTypeCriteria.Get("operator").(string)
-	entityType := entityTypeCriteria.Get("entity_type").(string)
+func buildSdkEntityTypeCriteria(entityTypeCriteria map[string]*schema.Schema) *platformclientv2.Entitytypecriteria {
+	key := entityTypeCriteria["key"].Elem.(string)
+	values := []string{"a", "b"} // TODO: FIXME buildSdkStringList(entityTypeCriteria, "values")
+	shouldIgnoreCase := entityTypeCriteria["should_ignore_case"].Elem.(bool)
+	operator := entityTypeCriteria["operator"].Elem.(string)
+	entityType := entityTypeCriteria["entity_type"].Elem.(string)
 
 	return &platformclientv2.Entitytypecriteria{
 		Key:              &key,
-		Values:           values,
+		Values:           &values,
 		ShouldIgnoreCase: &shouldIgnoreCase,
 		Operator:         &operator,
 		EntityType:       &entityType,
@@ -513,7 +513,7 @@ func flattenJourney(journey *platformclientv2.Journey) map[string]interface{} {
 	return journeyMap
 }
 
-func buildSdkJourney(journey *schema.ResourceData) *platformclientv2.Journey {
+func buildSdkJourney(journey map[string]*schema.Schema) *platformclientv2.Journey {
 	return &platformclientv2.Journey{
 		Patterns: buildSdkGenericList(journey, "patterns", buildSdkJourneyPattern),
 	}
@@ -537,12 +537,12 @@ func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[
 	return journeyPatternMap
 }
 
-func buildSdkJourneyPattern(journeyPattern *schema.ResourceData) *platformclientv2.Journeypattern {
+func buildSdkJourneyPattern(journeyPattern map[string]*schema.Schema) *platformclientv2.Journeypattern {
 	criteria := buildSdkGenericList(journeyPattern, "criteria", buildSdkCriteria)
-	count := journeyPattern.Get("count").(int)
-	streamType := journeyPattern.Get("stream_type").(string)
-	sessionType := journeyPattern.Get("session_type").(string)
-	eventName := journeyPattern.Get("event_name").(string)
+	count := journeyPattern["count"].Elem.(int)
+	streamType := journeyPattern["stream_type"].Elem.(string)
+	sessionType := journeyPattern["session_type"].Elem.(string)
+	eventName := journeyPattern["event_name"].Elem.(string)
 
 	return &platformclientv2.Journeypattern{
 		Criteria:    criteria,
@@ -570,15 +570,15 @@ func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{}
 	return criteriaMap
 }
 
-func buildSdkCriteria(criteria *schema.ResourceData) *platformclientv2.Criteria {
-	key := criteria.Get("key").(string)
-	values := buildSdkStringList(criteria, "values")
-	shouldIgnoreCase := criteria.Get("should_ignore_case").(bool)
-	operator := criteria.Get("operator").(string)
+func buildSdkCriteria(criteria map[string]*schema.Schema) *platformclientv2.Criteria {
+	key := criteria["key"].Elem.(string)
+	values := []string{"c", "d"} // TODO: FIXME buildSdkStringList(criteria, "values")
+	shouldIgnoreCase := criteria["should_ignore_case"].Elem.(bool)
+	operator := criteria["operator"].Elem.(string)
 
 	return &platformclientv2.Criteria{
 		Key:              &key,
-		Values:           values,
+		Values:           &values,
 		ShouldIgnoreCase: &shouldIgnoreCase,
 		Operator:         &operator,
 	}
@@ -598,9 +598,9 @@ func flattenExternalSegment(externalSegment *platformclientv2.Externalsegment) m
 	return externalSegmentMap
 }
 
-func buildSdkExternalSegment(externalSegment *schema.ResourceData) *platformclientv2.Externalsegment {
-	name := externalSegment.Get("name").(string)
-	source := externalSegment.Get("source").(string)
+func buildSdkExternalSegment(externalSegment map[string]*schema.Schema) *platformclientv2.Externalsegment {
+	name := externalSegment["name"].Elem.(string)
+	source := externalSegment["source"].Elem.(string)
 
 	return &platformclientv2.Externalsegment{
 		Name:   &name,
@@ -608,8 +608,8 @@ func buildSdkExternalSegment(externalSegment *schema.ResourceData) *platformclie
 	}
 }
 
-func buildSdkPatchExternalSegment(externalSegment *schema.ResourceData) *platformclientv2.Patchexternalsegment {
-	name := externalSegment.Get("name").(string)
+func buildSdkPatchExternalSegment(externalSegment map[string]*schema.Schema) *platformclientv2.Patchexternalsegment {
+	name := externalSegment["name"].Elem.(string)
 
 	return &platformclientv2.Patchexternalsegment{
 		Name: &name,
