@@ -38,15 +38,6 @@ func TestAccDataSourceRoutingSkillGroup(t *testing.T) {
 
 }
 
-func generateRoutingSkillGroupResource(
-	resourceID string,
-	name string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_skill_group" "%s" {
-		name = "%s"
-	}
-	`, resourceID, name)
-}
-
 func generateRoutingSkillGroupDataSource(
 	resourceID string,
 	name string,

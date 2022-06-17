@@ -116,20 +116,20 @@ func resourceRoutingSkillGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"description": {
+				Description: "Description of the skill group",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"division_id": {
 				Description: "The division to which this entity belongs",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
 			},
-			"description": {
-				Description: "Description of the skill groups",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
 			"skill_conditions": {
-				Description:      "JSON array of routing skill conditions",
+				Description:      "JSON encoded array of rules that will be used to determine group membership.",
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
