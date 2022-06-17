@@ -119,18 +119,19 @@ func generateJourneySegmentResource(journeySegment *journeySegmentStruct) string
 		context {
 			patterns {
 				criteria {
-					key = "valami"
+					key = "geolocation.postalCode"
 					values = ["alma"]
 					operator = "equal"
 					should_ignore_case = true
+					entity_type = "visit"
 				}
 			} 
 		}
 		journey {
 			patterns {
 				criteria {
-					key = "valami"
-					values = ["alma"]
+					key = "journeyCriteria"
+					values = ["korte"]
 					operator = "equal"
 					should_ignore_case = true
 				}

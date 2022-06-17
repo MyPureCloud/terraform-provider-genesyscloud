@@ -117,7 +117,6 @@ func buildSdkGenericListFirstElement[T interface{}](d *schema.ResourceData, attr
 			}
 			return elementBuilder(child[0].(map[string]interface{}))
 		}
-		return new(T)
 	}
 	return nil
 }

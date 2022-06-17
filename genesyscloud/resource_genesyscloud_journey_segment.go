@@ -211,7 +211,7 @@ var (
 			"entity_type": {
 				Description:  "The entity to match the pattern against.Valid values: visit.",
 				Type:         schema.TypeString,
-				Optional:     true,
+				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"visit"}, false),
 			},
 		},
@@ -298,9 +298,9 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Creating journey segment %s", *journeySegment.DisplayName)
 
-	result, _, err := journeyApi.PostJourneySegments(*journeySegment)
+	result, res, err := journeyApi.PostJourneySegments(*journeySegment)
 	if err != nil {
-		return diag.Errorf("failed to create journey segment %s: %s", *journeySegment.DisplayName, err)
+		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(body: %s)", *journeySegment.DisplayName, err, *journeySegment, res.RawBody)
 	}
 
 	d.SetId(*result.Id)
@@ -388,62 +388,62 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
-	isActive := journeySegment.Get("is_active").(bool)
-	displayName := journeySegment.Get("display_name").(string)
-	version := journeySegment.Get("version").(int)
-	description := journeySegment.Get("description").(string)
-	color := journeySegment.Get("color").(string)
-	scope := journeySegment.Get("scope").(string)
-	shouldDisplayToAgent := journeySegment.Get("should_display_to_agent").(bool)
+	isActive := getNullableValue[bool](journeySegment, "is_active")
+	displayName := getNullableValue[string](journeySegment, "display_name")
+	version := getNullableValue[int](journeySegment, "version")
+	description := getNullableValue[string](journeySegment, "description")
+	color := getNullableValue[string](journeySegment, "color")
+	scope := getNullableValue[string](journeySegment, "scope")
+	shouldDisplayToAgent := getNullableValue[bool](journeySegment, "should_display_to_agent")
 	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
 	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
 	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment)
 
-	assignmentExpirationDays := journeySegment.Get("assignment_expiration_days").(int)
-	selfUri := journeySegment.Get("self_uri").(string)
+	assignmentExpirationDays := getNullableValue[int](journeySegment, "assignment_expiration_days")
+	selfUri := getNullableValue[string](journeySegment, "self_uri")
 
 	return &platformclientv2.Journeysegment{
-		IsActive:                 &isActive,
-		DisplayName:              &displayName,
-		Version:                  &version,
-		Description:              &description,
-		Color:                    &color,
-		Scope:                    &scope,
-		ShouldDisplayToAgent:     &shouldDisplayToAgent,
+		IsActive:                 isActive,
+		DisplayName:              displayName,
+		Version:                  version,
+		Description:              description,
+		Color:                    color,
+		Scope:                    scope,
+		ShouldDisplayToAgent:     shouldDisplayToAgent,
 		Context:                  sdkContext,
 		Journey:                  journey,
 		ExternalSegment:          externalSegment,
-		AssignmentExpirationDays: &assignmentExpirationDays,
-		SelfUri:                  &selfUri,
+		AssignmentExpirationDays: assignmentExpirationDays,
+		SelfUri:                  selfUri,
 	}
 }
 
 func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2.Patchsegment {
-	isActive := journeySegment.Get("is_active").(bool)
-	displayName := journeySegment.Get("display_name").(string)
-	version := journeySegment.Get("version").(int)
-	description := journeySegment.Get("description").(string)
-	color := journeySegment.Get("color").(string)
-	shouldDisplayToAgent := journeySegment.Get("should_display_to_agent").(bool)
+	isActive := getNullableValue[bool](journeySegment, "is_active")
+	displayName := getNullableValue[string](journeySegment, "display_name")
+	version := getNullableValue[int](journeySegment, "version")
+	description := getNullableValue[string](journeySegment, "description")
+	color := getNullableValue[string](journeySegment, "color")
+	shouldDisplayToAgent := getNullableValue[bool](journeySegment, "should_display_to_agent")
 	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
 	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
 	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment)
 
-	assignmentExpirationDays := journeySegment.Get("assignment_expiration_days").(int)
-	selfUri := journeySegment.Get("self_uri").(string)
+	assignmentExpirationDays := getNullableValue[int](journeySegment, "assignment_expiration_days")
+	selfUri := getNullableValue[string](journeySegment, "self_uri")
 
 	return &platformclientv2.Patchsegment{
-		IsActive:                 &isActive,
-		DisplayName:              &displayName,
-		Version:                  &version,
-		Description:              &description,
-		Color:                    &color,
-		ShouldDisplayToAgent:     &shouldDisplayToAgent,
+		IsActive:                 isActive,
+		DisplayName:              displayName,
+		Version:                  version,
+		Description:              description,
+		Color:                    color,
+		ShouldDisplayToAgent:     shouldDisplayToAgent,
 		Context:                  sdkContext,
 		Journey:                  journey,
 		ExternalSegment:          externalSegment,
-		AssignmentExpirationDays: &assignmentExpirationDays,
-		SelfUri:                  &selfUri,
+		AssignmentExpirationDays: assignmentExpirationDays,
+		SelfUri:                  selfUri,
 	}
 }
 

@@ -32,6 +32,14 @@ func setNullableValue[T any](d *schema.ResourceData, key string, value *T) {
 	}
 }
 
+func getNullableValue[T any](d *schema.ResourceData, key string) *T {
+	value, ok := d.GetOk(key)
+	if ok {
+		return value.(*T)
+	}
+	return nil
+}
+
 func flattenBaseSettingsProperties(properties interface{}) (string, diag.Diagnostics) {
 	if properties == nil {
 		return "", nil
