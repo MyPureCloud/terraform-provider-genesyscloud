@@ -29,7 +29,7 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 	journeySegmentId := journeySegmentIdPrefix + strconv.Itoa(rand.Intn(1000))
 	displayName1 := journeySegmentId
 	displayName2 := journeySegmentId + "_updated"
-	color1 := "#123456"
+	color1 := "#008000"
 	scope1 := "Customer"
 
 	err := authorizeSdk()
@@ -136,7 +136,7 @@ func generateJourneySegmentResource(journeySegment *journeySegmentStruct) string
 				}
 				count = 1
 				stream_type = "Web"
-				session_type = "*"
+				session_type = "web"
 			} 
 		}
 	}`, journeySegment.resourceID,
