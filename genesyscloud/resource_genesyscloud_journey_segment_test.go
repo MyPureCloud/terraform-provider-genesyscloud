@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"log"
 	"math/rand"
 	"strconv"
@@ -10,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
@@ -87,7 +87,8 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 func cleanupJourneySegments(journeySegmentIdPrefix string) {
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
-	for pageNum := 1; ; pageNum++ {
+	pageCount := 1 // Needed because of broken journey common paging
+	for pageNum := 1; pageNum <= pageCount; pageNum++ {
 		const pageSize = 100
 		journeySegments, _, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
 		if getErr != nil {
@@ -102,12 +103,14 @@ func cleanupJourneySegments(journeySegmentIdPrefix string) {
 			if journeySegment.DisplayName != nil && strings.HasPrefix(*journeySegment.DisplayName, journeySegmentIdPrefix) {
 				_, delErr := journeyApi.DeleteJourneySegment(*journeySegment.Id)
 				if delErr != nil {
-					diag.Errorf("failed to delete journey segment %s(%s): %s", *journeySegment.Id, *journeySegment.DisplayName, delErr)
+					diag.Errorf("failed to delete journey segment %s (%s): %s", *journeySegment.Id, *journeySegment.DisplayName, delErr)
 					return
 				}
-				log.Printf("Deleted journey segment %s(%s)", *journeySegment.Id, *journeySegment.DisplayName)
+				log.Printf("Deleted journey segment %s (%s)", *journeySegment.Id, *journeySegment.DisplayName)
 			}
 		}
+
+		pageCount = *journeySegments.PageCount
 	}
 }
 

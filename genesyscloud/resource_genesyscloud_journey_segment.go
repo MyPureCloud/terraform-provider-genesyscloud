@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/leekchan/timeutil"
 	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
@@ -249,7 +250,8 @@ func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Con
 	resources := make(ResourceIDMetaMap)
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
+	pageCount := 1 // Needed because of broken journey common paging
+	for pageNum := 1; pageNum <= pageCount; pageNum++ {
 		const pageSize = 100
 		journeySegments, _, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
 		if getErr != nil {
@@ -263,6 +265,8 @@ func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Con
 		for _, journeySegment := range *journeySegments.Entities {
 			resources[*journeySegment.Id] = &ResourceMeta{Name: *journeySegment.DisplayName}
 		}
+
+		pageCount = *journeySegments.PageCount
 	}
 
 	return resources, nil
@@ -383,8 +387,10 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 	d.Set("external_segment", flattenGenericAsList(journeySegment.ExternalSegment, flattenExternalSegment))
 	setNullableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
 	setNullableValue(d, "self_uri", journeySegment.SelfUri)
-	setNullableValue(d, "created_date", journeySegment.CreatedDate)
-	setNullableValue(d, "modified_date", journeySegment.ModifiedDate)
+	created := timeutil.Strftime(journeySegment.CreatedDate, "%Y-%m-%dT%H:%M:%S.%f")
+	setNullableValue(d, "created_date", &created)
+	modified := timeutil.Strftime(journeySegment.ModifiedDate, "%Y-%m-%dT%H:%M:%S.%f")
+	setNullableValue(d, "modified_date", &modified)
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
