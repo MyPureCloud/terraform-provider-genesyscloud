@@ -188,9 +188,10 @@ var (
 	contextCriteriaResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"key": {
-				Description: "The criteria key.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "The criteria key.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"device.category", "device.type", "device.osFamily", "browser.family", "browser.lang", "browser.version", "mktCampaign.source", "mktCampaign.medium", "mktCampaign.name", "mktCampaign.term", "mktCampaign.content", "mktCampaign.clickId", "mktCampaign.network", "geolocation.countryName", "geolocation.locality", "geolocation.region", "geolocation.postalCode", "geolocation.country", "ipOrganization", "referrer.url", "referrer.medium", "referrer.hostname", "authenticated"}, false),
 			},
 			"values": {
 				Description: "The criteria values.",
@@ -221,9 +222,10 @@ var (
 	journeyCriteriaResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"key": {
-				Description: "The criteria key.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "The criteria key.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"eventName", "page.url", "page.title", "page.hostname", "page.domain", "page.fragment", "page.keywords", "page.pathname", "searchQuery", "page.queryString"}, false),
 			},
 			"values": {
 				Description: "The criteria values.",

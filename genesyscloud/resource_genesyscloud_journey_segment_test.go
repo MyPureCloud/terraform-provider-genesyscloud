@@ -133,7 +133,7 @@ func generateJourneySegmentResource(journeySegment *journeySegmentStruct) string
 		journey {
 			patterns {
 				criteria {
-					key = "journeyCriteria"
+					key = "page.hostname"
 					values = ["korte"]
 					operator = "equal"
 					should_ignore_case = true
