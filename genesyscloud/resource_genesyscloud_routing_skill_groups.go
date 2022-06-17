@@ -27,7 +27,7 @@ type SkillGroupsRequest struct {
 	SkillConditions struct{} `json:"skillConditions"` //Keep this here.  Even though we do not use this field in the struct The generated attributed is used as a placeholder
 }
 
-type AllSkillGroupsRequests struct {
+type AllSkillGroups struct {
 	Entities []struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
@@ -48,7 +48,7 @@ func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Confi
 
 	for {
 		path := routingAPI.Configuration.BasePath + route
-		skillGroupPayload := &AllSkillGroupsRequests{}
+		skillGroupPayload := &AllSkillGroups{}
 
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
@@ -99,7 +99,7 @@ func resourceSkillGroupExporter() *ResourceExporter {
 //Done
 func resourceRoutingSkillGroup() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/",
+		Description: "Genesys Cloud Skill Group",
 
 		CreateContext: createWithPooledClient(createSkillGroups),
 		ReadContext:   readWithPooledClient(readSkillGroups),
@@ -272,7 +272,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		if err != nil && isStatus404(response) {
-			return resource.RetryableError(fmt.Errorf("Failed to read skill groups %s: %s", d.Id()))
+			return resource.RetryableError(fmt.Errorf("Failed to read skill groups %s: %s", d.Id(), err))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSkillGroup())
