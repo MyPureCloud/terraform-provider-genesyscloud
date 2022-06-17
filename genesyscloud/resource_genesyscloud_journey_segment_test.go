@@ -20,10 +20,6 @@ type journeySegmentStruct struct {
 	displayName string
 	color       string
 	scope       string
-	//context     struct {
-	//	patterns struct {
-	//	}
-	//}
 }
 
 func TestAccResourceJourneySegmentBasic(t *testing.T) {
@@ -123,7 +119,7 @@ func generateJourneySegmentResource(journeySegment *journeySegmentStruct) string
 			patterns {
 				criteria {
 					key = "geolocation.postalCode"
-					values = ["alma"]
+					values = ["something"]
 					operator = "equal"
 					should_ignore_case = true
 					entity_type = "visit"
@@ -134,9 +130,9 @@ func generateJourneySegmentResource(journeySegment *journeySegmentStruct) string
 			patterns {
 				criteria {
 					key = "page.hostname"
-					values = ["korte"]
+					values = ["something_else", "more"]
 					operator = "equal"
-					should_ignore_case = true
+					should_ignore_case = false
 				}
 				count = 1
 				stream_type = "Web"

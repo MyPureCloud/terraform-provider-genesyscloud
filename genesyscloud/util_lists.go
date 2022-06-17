@@ -51,10 +51,7 @@ func stringListToSet(list []string) *schema.Set {
 
 func setToStringList(strSet *schema.Set) *[]string {
 	interfaceList := strSet.List()
-	strList := make([]string, len(interfaceList))
-	for i, s := range interfaceList {
-		strList[i] = s.(string)
-	}
+	strList := interfaceListToStrings(interfaceList)
 	return &strList
 }
 
@@ -73,17 +70,25 @@ func buildSdkStringList(d *schema.ResourceData, attrName string) *[]string {
 	return nil
 }
 
-func flattenGenericList[T interface{}](resourceList *[]T, elementFlattener func(resource *T) map[string]interface{}) []map[string]interface{} {
-	if resourceList == nil {
-		return nil
+func buildSdkStringListFromMapEntry(d map[string]interface{}, attrName string) *[]string {
+	child := d[attrName]
+	if child != nil {
+		return setToStringList(child.(*schema.Set))
 	}
+	return nil
+}
 
-	var resultList []map[string]interface{}
-
-	for _, resource := range *resourceList {
-		resultList = append(resultList, elementFlattener(&resource))
+func buildSdkGenericListFirstElement[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(map[string]interface{}) *T) *T {
+	child := d.Get(attrName).(*schema.Set).List()
+	if child != nil {
+		if len(child) > 0 {
+			if _, ok := child[0].(map[string]interface{}); !ok {
+				return nil
+			}
+			return elementBuilder(child[0].(map[string]interface{}))
+		}
 	}
-	return resultList
+	return nil
 }
 
 func buildSdkGenericList[T interface{}](d map[string]interface{}, attrName string, elementBuilder func(map[string]interface{}) *T) *[]T {
@@ -100,23 +105,23 @@ func buildSdkGenericList[T interface{}](d map[string]interface{}, attrName strin
 	return nil
 }
 
+func flattenGenericList[T interface{}](resourceList *[]T, elementFlattener func(resource *T) map[string]interface{}) []map[string]interface{} {
+	if resourceList == nil {
+		return nil
+	}
+
+	var resultList []map[string]interface{}
+
+	for _, resource := range *resourceList {
+		resultList = append(resultList, elementFlattener(&resource))
+	}
+	return resultList
+}
+
 func flattenGenericAsList[T interface{}](resource *T, elementFlattener func(resource *T) map[string]interface{}) []map[string]interface{} {
 	if resource == nil {
 		return nil
 	}
 
 	return []map[string]interface{}{elementFlattener(resource)}
-}
-
-func buildSdkGenericListFirstElement[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(map[string]interface{}) *T) *T {
-	child := d.Get(attrName).(*schema.Set).List()
-	if child != nil {
-		if len(child) > 0 {
-			if _, ok := child[0].(map[string]interface{}); !ok {
-				return nil
-			}
-			return elementBuilder(child[0].(map[string]interface{}))
-		}
-	}
-	return nil
 }

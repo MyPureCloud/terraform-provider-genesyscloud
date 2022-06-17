@@ -501,14 +501,14 @@ func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecr
 
 func buildSdkEntityTypeCriteria(entityTypeCriteria map[string]interface{}) *platformclientv2.Entitytypecriteria {
 	key := entityTypeCriteria["key"].(string)
-	values := []string{"a", "b"} // TODO: FIXME buildSdkStringList(entityTypeCriteria, "values")
+	values := buildSdkStringListFromMapEntry(entityTypeCriteria, "values")
 	shouldIgnoreCase := entityTypeCriteria["should_ignore_case"].(bool)
 	operator := entityTypeCriteria["operator"].(string)
 	entityType := entityTypeCriteria["entity_type"].(string)
 
 	return &platformclientv2.Entitytypecriteria{
 		Key:              &key,
-		Values:           &values,
+		Values:           values,
 		ShouldIgnoreCase: &shouldIgnoreCase,
 		Operator:         &operator,
 		EntityType:       &entityType,
@@ -580,13 +580,13 @@ func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{}
 
 func buildSdkCriteria(criteria map[string]interface{}) *platformclientv2.Criteria {
 	key := criteria["key"].(string)
-	values := []string{"c", "d"} // TODO: FIXME buildSdkStringList(criteria, "values")
+	values := buildSdkStringListFromMapEntry(criteria, "values")
 	shouldIgnoreCase := criteria["should_ignore_case"].(bool)
 	operator := criteria["operator"].(string)
 
 	return &platformclientv2.Criteria{
 		Key:              &key,
-		Values:           &values,
+		Values:           values,
 		ShouldIgnoreCase: &shouldIgnoreCase,
 		Operator:         &operator,
 	}
