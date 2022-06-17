@@ -304,9 +304,9 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Creating journey segment %s", *journeySegment.DisplayName)
 
-	result, res, err := journeyApi.PostJourneySegments(*journeySegment)
+	result, resp, err := journeyApi.PostJourneySegments(*journeySegment)
 	if err != nil {
-		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(body: %s)", *journeySegment.DisplayName, err, *journeySegment, res.RawBody)
+		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, *journeySegment, resp.RawBody)
 	}
 
 	d.SetId(*result.Id)
@@ -343,8 +343,8 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	journeySegment := buildSdkPatchSegment(d)
 
 	log.Printf("Updating journey segment %s", d.Id())
-	if _, _, err := journeyApi.PatchJourneySegment(d.Id(), *journeySegment); err != nil {
-		return diag.Errorf("Error updating journey segment %s: %s", *journeySegment.DisplayName, err)
+	if _, resp, err := journeyApi.PatchJourneySegment(d.Id(), *journeySegment); err != nil {
+		return diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, *journeySegment, resp.RawBody)
 	}
 
 	log.Printf("Updated journey segment %s", d.Id())
