@@ -28,7 +28,7 @@ var (
 			ForceNew:    true,
 		},
 		"description": {
-			Description: "A description of the segment",
+			Description: "A description of the segment.",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
