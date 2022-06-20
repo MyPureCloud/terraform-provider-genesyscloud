@@ -1,15 +1,18 @@
 package genesyscloud
 
 import (
+	"context"
 	"fmt"
-	"strconv"
-	"strings"
-	"testing"
-
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
 )
 
 type userPromptStruct struct {
@@ -187,6 +190,102 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 		},
 		CheckDestroy: testVerifyUserPromptsDestroyed,
 	})
+}
+
+func startHttpServer(wg *sync.WaitGroup, directory, port string) *http.Server {
+	srv := &http.Server{Addr: ":" + port}
+
+	http.DefaultServeMux = new(http.ServeMux)
+	http.Handle("/", http.FileServer(http.Dir(directory)))
+
+	go func() {
+		defer wg.Done()
+
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.Printf("ListenAndServe(): %v", err)
+		}
+		log.Println("Finished serving")
+	}()
+
+	return srv
+}
+
+func TestAccResourceUserPromptWavFileURL(t *testing.T) {
+	userPromptResource1 := "test-user_prompt_wav_file"
+	userPromptName1 := "TestUserPromptWav_1" + strings.Replace(uuid.NewString(), "-", "", -1)
+	userPromptDescription1 := "Test prompt with wav audio file"
+	userPromptResourceLang1 := "en-us"
+	userPromptResourceText1 := "This is a test greeting!"
+	userPromptResourceFileName1 := "http://localhost:8100/test-prompt-01.wav"
+	userPromptResourceFileName2 := "http://localhost:8100/test-prompt-02.wav"
+
+	userPromptAsset1 := userPromptResourceStruct{
+		userPromptResourceLang1,
+		nullValue,
+		strconv.Quote(userPromptResourceText1),
+		strconv.Quote(userPromptResourceFileName1),
+	}
+
+	userPromptAsset2 := userPromptResourceStruct{
+		userPromptResourceLang1,
+		nullValue,
+		strconv.Quote(userPromptResourceText1),
+		strconv.Quote(userPromptResourceFileName2),
+	}
+
+	userPromptResources1 := []*userPromptResourceStruct{&userPromptAsset1}
+	userPromptResources2 := []*userPromptResourceStruct{&userPromptAsset2}
+
+	httpServerExitDone := &sync.WaitGroup{}
+	httpServerExitDone.Add(1)
+	srv := startHttpServer(httpServerExitDone, ".", "8100")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create user prompt with an audio file
+				Config: generateUserPromptResource(&userPromptStruct{
+					userPromptResource1,
+					userPromptName1,
+					strconv.Quote(userPromptDescription1),
+					userPromptResources1,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "description", userPromptDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.filename", userPromptResourceFileName1),
+				),
+			},
+			{
+				// Replace audio file for the prompt
+				Config: generateUserPromptResource(&userPromptStruct{
+					userPromptResource1,
+					userPromptName1,
+					strconv.Quote(userPromptDescription1),
+					userPromptResources2,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "description", userPromptDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.filename", userPromptResourceFileName2),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_architect_user_prompt." + userPromptResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyUserPromptsDestroyed,
+	})
+	if err := srv.Shutdown(context.TODO()); err != nil {
+		log.Println("Error shutting down server:", err)
+	}
+
+	httpServerExitDone.Wait()
 }
 
 func generateUserPromptResource(userPrompt *userPromptStruct) string {

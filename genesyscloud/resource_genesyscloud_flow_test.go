@@ -1,17 +1,18 @@
 package genesyscloud
 
 import (
+	"context"
 	"fmt"
-	"log"
-	"os"
-	"strconv"
-	"strings"
-	"testing"
-
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
 )
 
 func TestAccResourceFlow(t *testing.T) {
@@ -137,6 +138,66 @@ func TestAccResourceFlow(t *testing.T) {
 	})
 }
 
+func TestAccResourceFlowURL(t *testing.T) {
+	var (
+		flowResource1 = "test_flow1"
+		filePath1     = "http://localhost:8101/inboundcall_flow_example.yaml"
+		filePath2     = "http://localhost:8101/inboundcall_flow_example2.yaml"
+	)
+
+	httpServerExitDone := &sync.WaitGroup{}
+	httpServerExitDone.Add(1)
+	srv := startHttpServer(httpServerExitDone, "../examples/resources/genesyscloud_flow", "8101")
+
+	var homeDivisionName string
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
+				Check: resource.ComposeTestCheckFunc(
+					getHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
+				),
+			},
+		},
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create flow
+				Config: generateFlowResourceURL(
+					flowResource1,
+					filePath1,
+				),
+			},
+			{
+				// Update flow with name
+				Config: generateFlowResourceURL(
+					flowResource1,
+					filePath2,
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            "genesyscloud_flow." + flowResource1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"filepath", "file_content_hash"},
+			},
+		},
+		CheckDestroy: testVerifyFlowDestroyed,
+	})
+	if err := srv.Shutdown(context.TODO()); err != nil {
+		log.Println("Error shutting down server:", err)
+	}
+
+	httpServerExitDone.Wait()
+}
+
 func TestAccResourceFlowSubstitutions(t *testing.T) {
 	var (
 		flowResource1 = "test_flow1"
@@ -207,6 +268,13 @@ func generateFlowResource(resourceID, filepath, filecontent string, substitution
 		%s
 	}
 	`, resourceID, strconv.Quote(filepath), strings.Join(substitutions, "\n"))
+}
+
+func generateFlowResourceURL(resourceID, filepath string) string {
+	return fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
+        filepath = %s
+	}
+	`, resourceID, strconv.Quote(filepath))
 }
 
 func updateFile(filepath, content string) {

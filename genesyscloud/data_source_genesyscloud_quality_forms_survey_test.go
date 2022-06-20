@@ -8,24 +8,25 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceQualityFormsEvaluations(t *testing.T) {
+func TestAccDataSourceQualityFormsSurvey(t *testing.T) {
 	var (
-		formRes     = "quality-form"
-		formDataRes = "quality-form-data"
+		formResource     = "quality-form"
+		formDataResource = "quality-form-data"
 
 		formName = "terraform-form-evaluations-" + uuid.NewString()
 	)
 
-	// Most basic evaluation form
-	evaluationForm1 := evaluationFormStruct{
-		name: formName,
-		questionGroups: []evaluationFormQuestionGroupStruct{
+	// Most basic survey form
+	surveyForm1 := surveyFormStruct{
+		name:     formName,
+		language: "en-US",
+		questionGroups: []surveyFormQuestionGroupStruct{
 			{
-				name:   "Test Question Group 1",
-				weight: 1,
-				questions: []evaluationFormQuestionStruct{
+				name: "Test Question Group 1",
+				questions: []surveyFormQuestionStruct{
 					{
-						text: "Did the agent perform the opening spiel?",
+						text:    "Was your problem solved?",
+						varType: "multipleChoiceQuestion",
 						answerOptions: []answerOptionStruct{
 							{
 								text:  "Yes",
@@ -38,7 +39,8 @@ func TestAccDataSourceQualityFormsEvaluations(t *testing.T) {
 						},
 					},
 					{
-						text: "Multiple Choice Question.",
+						text:    "Multiple Choice Question.",
+						varType: "multipleChoiceQuestion",
 						answerOptions: []answerOptionStruct{
 							{
 								text:  "Option 1",
@@ -64,28 +66,28 @@ func TestAccDataSourceQualityFormsEvaluations(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateEvaluationFormResource(
-					formRes, &evaluationForm1,
-				) + generateQualityFormsEvaluationsDataSource(
-					formDataRes,
+				Config: generateSurveyFormResource(
+					formResource, &surveyForm1,
+				) + generateQualityFormsSurveyDataSource(
+					formDataResource,
 					formName,
-					"genesyscloud_quality_forms_evaluation."+formRes,
+					"genesyscloud_quality_forms_survey."+formResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_quality_forms_evaluation."+formDataRes, "id", "genesyscloud_quality_forms_evaluation."+formRes, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_quality_forms_survey."+formDataResource, "id", "genesyscloud_quality_forms_survey."+formResource, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateQualityFormsEvaluationsDataSource(
+func generateQualityFormsSurveyDataSource(
 	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_quality_forms_evaluation" "%s" {
+	return fmt.Sprintf(`data "genesyscloud_quality_forms_survey" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}

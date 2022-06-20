@@ -30,7 +30,7 @@ func downloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 			return nil, nil, fmt.Errorf("Invalid file path or URL: %v", path)
 		}
 	} else {
-		file, err := os.Open(path)
+		file, err = os.Open(path)
 		if err != nil {
 			return nil, nil, err
 		}

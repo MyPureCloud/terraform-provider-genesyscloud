@@ -34,15 +34,21 @@ func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
 		return &schema.Provider{
 			Schema: map[string]*schema.Schema{
+				"access_token": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_ACCESS_TOKEN", nil),
+					Description: "A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.",
+				},
 				"oauthclient_id": {
 					Type:        schema.TypeString,
-					Required:    true,
+					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_ID", nil),
 					Description: "OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.",
 				},
 				"oauthclient_secret": {
 					Type:        schema.TypeString,
-					Required:    true,
+					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_SECRET", nil),
 					Description: "OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.",
 					Sensitive:   true,
@@ -93,9 +99,11 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_integration_credential":                      resourceCredential(),
 				"genesyscloud_journey_segment":                             resourceJourneySegment(),
 				"genesyscloud_location":                                    resourceLocation(),
+				"genesyscloud_recording_media_retention_policy":            resourceMediaRetentionPolicy(),
 				"genesyscloud_oauth_client":                                resourceOAuthClient(),
 				"genesyscloud_processautomation_trigger":                   resourceProcessAutomationTrigger(),
 				"genesyscloud_quality_forms_evaluation":                    resourceEvaluationForm(),
+				"genesyscloud_quality_forms_survey":                        resourceSurveyForm(),
 				"genesyscloud_routing_email_domain":                        resourceRoutingEmailDomain(),
 				"genesyscloud_routing_email_route":                         resourceRoutingEmailRoute(),
 				"genesyscloud_routing_language":                            resourceRoutingLanguage(),
@@ -138,6 +146,8 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_processautomation_trigger":                   dataSourceProcessAutomationTrigger(),
 				"genesyscloud_organizations_me":                            dataSourceOrganizationsMe(),
 				"genesyscloud_quality_forms_evaluation":                    dataSourceQualityFormsEvaluations(),
+				"genesyscloud_quality_forms_survey":                        dataSourceQualityFormsSurvey(),
+				"genesyscloud_recording_media_retention_policy":            dataSourceRecordingMediaRetentionPolicy(),
 				"genesyscloud_routing_language":                            dataSourceRoutingLanguage(),
 				"genesyscloud_routing_queue":                               dataSourceRoutingQueue(),
 				"genesyscloud_routing_skill":                               dataSourceRoutingSkill(),
@@ -173,10 +183,24 @@ type providerMeta struct {
 
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		// Initialize the SDK Client pool
-		err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
-		if err != nil {
-			return nil, err
+		// Initialize a single client if we have an access token
+		accessToken := data.Get("access_token").(string)
+		if accessToken != "" {
+			once.Do(func() {
+				sdkConfig := platformclientv2.GetDefaultConfiguration()
+				_ = initClientConfig(data, version, sdkConfig)
+
+				sdkClientPool = &SDKClientPool{
+					pool: make(chan *platformclientv2.Configuration, 1),
+				}
+				sdkClientPool.pool <- sdkConfig
+			})
+		} else {
+			// Initialize the SDK Client pool
+			err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
+			if err != nil {
+				return nil, err
+			}
 		}
 		return &providerMeta{
 			Version:      version,
@@ -201,6 +225,7 @@ func getRegionMap() map[string]string {
 		"ca-central-1":   "cac1.pure.cloud",
 		"ap-northeast-2": "apne2.pure.cloud",
 		"ap-south-1":     "aps1.pure.cloud",
+		"sa-east-1":      "sae1.pure.cloud",
 	}
 }
 
@@ -222,6 +247,7 @@ func getRegionBasePath(region string) string {
 }
 
 func initClientConfig(data *schema.ResourceData, version string, config *platformclientv2.Configuration) diag.Diagnostics {
+	accessToken := data.Get("access_token").(string)
 	oauthclientID := data.Get("oauthclient_id").(string)
 	oauthclientSecret := data.Get("oauthclient_secret").(string)
 	basePath := getRegionBasePath(data.Get("aws_region").(string))
@@ -249,10 +275,16 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		},
 	}
 
-	err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
-	if err != nil {
-		return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
+	if accessToken != "" {
+		log.Print("Setting access token set on configuration instance.")
+		config.AccessToken = accessToken
+	} else {
+		err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+		if err != nil {
+			return diag.Errorf("Failed to authorize Genesys Cloud client credentials: %v", err)
+		}
 	}
+
 	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
 	return nil
 }
