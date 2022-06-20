@@ -419,14 +419,21 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 }
 
 func flattenContext(context *platformclientv2.Context) map[string]interface{} {
+	if len(*context.Patterns) == 0 {
+		return nil
+	}
 	contextMap := make(map[string]interface{})
 	contextMap["patterns"] = flattenGenericList(context.Patterns, flattenContextPattern)
 	return contextMap
 }
 
 func buildSdkContext(context map[string]interface{}) *platformclientv2.Context {
+	patterns := &[]platformclientv2.Contextpattern{}
+	if context != nil {
+		patterns = buildSdkGenericList(context, "patterns", buildSdkContextPattern)
+	}
 	return &platformclientv2.Context{
-		Patterns: buildSdkGenericList(context, "patterns", buildSdkContextPattern),
+		Patterns: patterns,
 	}
 }
 
@@ -488,8 +495,12 @@ func flattenJourney(journey *platformclientv2.Journey) map[string]interface{} {
 }
 
 func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
+	patterns := &[]platformclientv2.Journeypattern{}
+	if journey != nil {
+		patterns = buildSdkGenericList(journey, "patterns", buildSdkJourneyPattern)
+	}
 	return &platformclientv2.Journey{
-		Patterns: buildSdkGenericList(journey, "patterns", buildSdkJourneyPattern),
+		Patterns: patterns,
 	}
 }
 
@@ -576,6 +587,7 @@ func buildSdkExternalSegment(externalSegment map[string]interface{}) *platformcl
 	if externalSegment == nil {
 		return nil
 	}
+
 	name := externalSegment["name"].(string)
 	source := externalSegment["source"].(string)
 
