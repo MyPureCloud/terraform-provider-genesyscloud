@@ -51,16 +51,14 @@ var (
 		"context": {
 			Description: "The context of the segment.",
 			Type:        schema.TypeSet,
-			Required:    true,
-			MinItems:    1,
+			Optional:    true,
 			MaxItems:    1,
 			Elem:        contextResource,
 		},
 		"journey": {
 			Description: "The pattern of rules defining the segment.",
 			Type:        schema.TypeSet,
-			Required:    true,
-			MinItems:    1,
+			Optional:    true,
 			MaxItems:    1,
 			Elem:        journeyResource,
 		},
@@ -362,9 +360,9 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 	setNullableValue(d, "color", journeySegment.Color)
 	setNullableValue(d, "scope", journeySegment.Scope)
 	setNullableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
-	d.Set("context", flattenGenericAsList(journeySegment.Context, flattenContext))
-	d.Set("journey", flattenGenericAsList(journeySegment.Journey, flattenJourney))
-	d.Set("external_segment", flattenGenericAsList(journeySegment.ExternalSegment, flattenExternalSegment))
+	setNullableValue(d, "context", flattenGenericAsList(journeySegment.Context, flattenContext))
+	setNullableValue(d, "journey", flattenGenericAsList(journeySegment.Journey, flattenJourney))
+	setNullableValue(d, "external_segment", flattenGenericAsList(journeySegment.ExternalSegment, flattenExternalSegment))
 	setNullableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
 }
 
@@ -481,6 +479,9 @@ func buildSdkEntityTypeCriteria(entityTypeCriteria map[string]interface{}) *plat
 }
 
 func flattenJourney(journey *platformclientv2.Journey) map[string]interface{} {
+	if len(*journey.Patterns) == 0 {
+		return nil
+	}
 	journeyMap := make(map[string]interface{})
 	journeyMap["patterns"] = flattenGenericList(journey.Patterns, flattenJourneyPattern)
 	return journeyMap
@@ -572,6 +573,9 @@ func flattenExternalSegment(externalSegment *platformclientv2.Externalsegment) m
 }
 
 func buildSdkExternalSegment(externalSegment map[string]interface{}) *platformclientv2.Externalsegment {
+	if externalSegment == nil {
+		return nil
+	}
 	name := externalSegment["name"].(string)
 	source := externalSegment["source"].(string)
 
