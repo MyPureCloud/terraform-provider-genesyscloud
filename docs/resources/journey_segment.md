@@ -2,7 +2,7 @@
 page_title: "genesyscloud_journey_segment Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-Genesys Cloud Journey Segment
+  Genesys Cloud Journey Segment
 ---
 # genesyscloud_journey_segment (Resource)
 
@@ -22,9 +22,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ```terraform
 resource "genesyscloud_journey_segment" "test_journey_segment" {
   display_name = "journey_segment_1"
-  description = "Description of Journey Segment"
-  color = "008000"
-  scope = "Customer"
+  description  = "Description of Journey Segment"
+  color        = "#008000"
+  scope        = "Customer"
 }
 ```
 
@@ -33,14 +33,98 @@ resource "genesyscloud_journey_segment" "test_journey_segment" {
 
 ### Required
 
-- `display_name` (String) The display name of the segment.
 - `color` (String) The hexadecimal color value of the segment.
+- `context` (Block Set, Min: 1, Max: 1) The context of the segment. (see [below for nested schema](#nestedblock--context))
+- `display_name` (String) The display name of the segment.
+- `journey` (Block Set, Min: 1, Max: 1) The pattern of rules defining the segment. (see [below for nested schema](#nestedblock--journey))
 - `scope` (String) The target entity that a segment applies to.Valid values: Session, Customer.
 
 ### Optional
 
+- `assignment_expiration_days` (Number) Time, in days, from when the segment is assigned until it is automatically unassigned.
 - `description` (String) A description of the segment.
+- `external_segment` (Block Set, Max: 1) Details of an entity corresponding to this segment in an external system. (see [below for nested schema](#nestedblock--external_segment))
+- `is_active` (Boolean) Whether or not the segment is active.
+- `should_display_to_agent` (Boolean) Whether or not the segment should be displayed to agent/supervisor users.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--context"></a>
+### Nested Schema for `context`
+
+Required:
+
+- `patterns` (Block Set, Min: 1) A list of one or more patterns to match. (see [below for nested schema](#nestedblock--context--patterns))
+
+<a id="nestedblock--context--patterns"></a>
+### Nested Schema for `context.patterns`
+
+Required:
+
+- `criteria` (Block Set, Min: 1) A list of one or more criteria to satisfy. (see [below for nested schema](#nestedblock--context--patterns--criteria))
+
+<a id="nestedblock--context--patterns--criteria"></a>
+### Nested Schema for `context.patterns.criteria`
+
+Required:
+
+- `entity_type` (String) The entity to match the pattern against.Valid values: visit.
+- `key` (String) The criteria key.
+- `should_ignore_case` (Boolean) Should criteria be case insensitive.
+- `values` (Set of String) The criteria values.
+
+Optional:
+
+- `operator` (String) The comparison operator.Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.
+
+
+
+
+<a id="nestedblock--journey"></a>
+### Nested Schema for `journey`
+
+Required:
+
+- `patterns` (Block Set, Min: 1) A list of zero or more patterns to match. (see [below for nested schema](#nestedblock--journey--patterns))
+
+<a id="nestedblock--journey--patterns"></a>
+### Nested Schema for `journey.patterns`
+
+Required:
+
+- `count` (Number) The number of times the pattern must match.
+- `criteria` (Block Set, Min: 1) A list of one or more criteria to satisfy. (see [below for nested schema](#nestedblock--journey--patterns--criteria))
+- `session_type` (String) The session type for which this pattern can be matched on.
+- `stream_type` (String) The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.
+
+Optional:
+
+- `event_name` (String) The name of the event for which this pattern can be matched on.
+
+<a id="nestedblock--journey--patterns--criteria"></a>
+### Nested Schema for `journey.patterns.criteria`
+
+Required:
+
+- `key` (String) The criteria key.
+- `should_ignore_case` (Boolean) Should criteria be case insensitive.
+- `values` (Set of String) The criteria values.
+
+Optional:
+
+- `operator` (String) The comparison operator.Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.
+
+
+
+
+<a id="nestedblock--external_segment"></a>
+### Nested Schema for `external_segment`
+
+Required:
+
+- `id` (String) Identifier for the external segment in the system where it originates from.
+- `name` (String) Name for the external segment in the system where it originates from.
+- `source` (String) The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom.
+
