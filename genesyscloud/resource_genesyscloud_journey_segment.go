@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/leekchan/timeutil"
 	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
@@ -27,11 +26,6 @@ var (
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
-		},
-		"version": {
-			Description: "The version of the segment.",
-			Type:        schema.TypeInt,
-			Optional:    true,
 		},
 		"description": {
 			Description: "A description of the segment",
@@ -80,21 +74,6 @@ var (
 		"assignment_expiration_days": {
 			Description: "Time, in days, from when the segment is assigned until it is automatically unassigned.",
 			Type:        schema.TypeInt,
-			Optional:    true,
-		},
-		"self_uri": {
-			Description: "The URI for this object.",
-			Type:        schema.TypeString,
-			Optional:    true,
-		},
-		"created_date": {
-			Description: "Timestamp indicating when the segment was created. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z.",
-			Type:        schema.TypeString,
-			Optional:    true,
-		},
-		"modified_date": {
-			Description: "Timestamp indicating when the the segment was last updated. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z.",
-			Type:        schema.TypeString,
 			Optional:    true,
 		},
 	}
@@ -379,7 +358,6 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 
 func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclientv2.Journeysegment) {
 	d.Set("display_name", *journeySegment.DisplayName)
-	d.Set("version", *journeySegment.Version)
 	setNullableValue(d, "description", journeySegment.Description)
 	setNullableValue(d, "color", journeySegment.Color)
 	setNullableValue(d, "scope", journeySegment.Scope)
@@ -388,17 +366,11 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 	d.Set("journey", flattenGenericAsList(journeySegment.Journey, flattenJourney))
 	d.Set("external_segment", flattenGenericAsList(journeySegment.ExternalSegment, flattenExternalSegment))
 	setNullableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
-	setNullableValue(d, "self_uri", journeySegment.SelfUri)
-	created := timeutil.Strftime(journeySegment.CreatedDate, "%Y-%m-%dT%H:%M:%S.%f")
-	setNullableValue(d, "created_date", &created)
-	modified := timeutil.Strftime(journeySegment.ModifiedDate, "%Y-%m-%dT%H:%M:%S.%f")
-	setNullableValue(d, "modified_date", &modified)
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
 	isActive := getNullableValue[bool](journeySegment, "is_active")
 	displayName := getNullableValue[string](journeySegment, "display_name")
-	version := getNullableValue[int](journeySegment, "version")
 	description := getNullableValue[string](journeySegment, "description")
 	color := getNullableValue[string](journeySegment, "color")
 	scope := getNullableValue[string](journeySegment, "scope")
@@ -408,12 +380,10 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment)
 
 	assignmentExpirationDays := getNullableValue[int](journeySegment, "assignment_expiration_days")
-	selfUri := getNullableValue[string](journeySegment, "self_uri")
 
 	return &platformclientv2.Journeysegment{
 		IsActive:                 isActive,
 		DisplayName:              displayName,
-		Version:                  version,
 		Description:              description,
 		Color:                    color,
 		Scope:                    scope,
@@ -422,14 +392,12 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 		Journey:                  journey,
 		ExternalSegment:          externalSegment,
 		AssignmentExpirationDays: assignmentExpirationDays,
-		SelfUri:                  selfUri,
 	}
 }
 
 func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2.Patchsegment {
 	isActive := getNullableValue[bool](journeySegment, "is_active")
 	displayName := getNullableValue[string](journeySegment, "display_name")
-	version := getNullableValue[int](journeySegment, "version")
 	description := getNullableValue[string](journeySegment, "description")
 	color := getNullableValue[string](journeySegment, "color")
 	shouldDisplayToAgent := getNullableValue[bool](journeySegment, "should_display_to_agent")
@@ -438,12 +406,10 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment)
 
 	assignmentExpirationDays := getNullableValue[int](journeySegment, "assignment_expiration_days")
-	selfUri := getNullableValue[string](journeySegment, "self_uri")
 
 	return &platformclientv2.Patchsegment{
 		IsActive:                 isActive,
 		DisplayName:              displayName,
-		Version:                  version,
 		Description:              description,
 		Color:                    color,
 		ShouldDisplayToAgent:     shouldDisplayToAgent,
@@ -451,7 +417,6 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 		Journey:                  journey,
 		ExternalSegment:          externalSegment,
 		AssignmentExpirationDays: assignmentExpirationDays,
-		SelfUri:                  selfUri,
 	}
 }
 
