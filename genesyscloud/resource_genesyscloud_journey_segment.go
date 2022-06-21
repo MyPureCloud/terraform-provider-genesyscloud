@@ -147,12 +147,13 @@ var (
 				Description:  "The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Web", "Custom", "Conversation"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"Web" /*, "Custom", "Conversation"*/}, false), // Custom and Conversation seem not to be supported by the API despite the documentation
 			},
 			"session_type": {
-				Description: "The session type for which this pattern can be matched on.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "The session type for which this pattern can be matched on.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"web"}, false), // custom value seems not to be supported by the API despite the documentation
 			},
 			"event_name": {
 				Description: "The name of the event for which this pattern can be matched on.",
@@ -202,7 +203,7 @@ var (
 				Description:  "The criteria key.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"eventName", "page.url", "page.title", "page.hostname", "page.domain", "page.fragment", "page.keywords", "page.pathname", "searchQuery", "page.queryString"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"eventName", "page.url", "page.title", "page.hostname", "page.domain", "page.fragment", "page.keywords", "page.pathname", "searchQuery", "page.queryString"}, false), // TODO: enable `attributes.*.value` pattern
 			},
 			"values": {
 				Description: "The criteria values.",

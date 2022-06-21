@@ -68,8 +68,8 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 	const contextPatternCriteriaEntityType2 = "visit"
 
 	const journeyCount1 = 1
-	const journeyStreamType1 = "Web"
-	const journeySessionType1 = "web"
+	const journeyStreamType = "Web"
+	const journeySessionType = "web"
 	const journeyEventName1 = "EventName"
 	const journeyPatternCriteriaKey1 = "page.hostname"
 	const journeyPatternCriteriaValues1 = "something_else"
@@ -77,8 +77,6 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 	const journeyPatternCriteriaShouldIgnoreCase1 = false
 
 	const journeyCount2 = 1
-	const journeyStreamType2 = "Conversation"
-	const journeySessionType2 = "YourChoice"
 	const journeyEventName2 = "OtherEventName"
 	const journeyPatternCriteriaKey2 = "page.fragment"
 	const journeyPatternCriteriaValues2 = "Blabla"
@@ -112,8 +110,8 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 					}),
 					generateJourney(&journeyStruct{
 						journeyCount1,
-						journeyStreamType1,
-						journeySessionType1,
+						journeyStreamType,
+						journeySessionType,
 						journeyEventName1,
 						journeyPatternCriteriaKey1,
 						journeyPatternCriteriaValues1,
@@ -143,8 +141,8 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 					}),
 					generateJourney(&journeyStruct{
 						journeyCount2,
-						journeyStreamType2,
-						journeySessionType2,
+						journeyStreamType,
+						journeySessionType,
 						journeyEventName2,
 						journeyPatternCriteriaKey2,
 						journeyPatternCriteriaValues2,
