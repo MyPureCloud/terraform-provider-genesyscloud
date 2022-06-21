@@ -16,12 +16,13 @@ import (
 )
 
 type journeySegmentStruct struct {
-	resourceID  string
-	displayName string
-	color       string
-	scope       string
-	context     string
-	journey     string
+	resourceID           string
+	displayName          string
+	color                string
+	scope                string
+	shouldDisplayToAgent bool
+	context              string
+	journey              string
 }
 
 type contextStruct struct {
@@ -52,8 +53,10 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 	displayName2 := journeySegmentId + "_updated"
 	const color1 = "#008000"
 	const color2 = "#308000"
-	const scope1 = "Customer"
-	//const scope2 = "Session"
+	const scope1 = "Session"
+	const scope2 = "Session"
+	const shouldDisplayToAgent1 = false
+	const shouldDisplayToAgent2 = true
 
 	const contextPatternCriteriaKey1 = "geolocation.postalCode"
 	const contextPatternCriteriaValues1 = "something"
@@ -78,7 +81,7 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 
 	const journeyCount2 = 1
 	const journeyEventName2 = "OtherEventName"
-	const journeyPatternCriteriaKey2 = "page.fragment"
+	const journeyPatternCriteriaKey2 = "attributes.bleki.value"
 	const journeyPatternCriteriaValues2 = "Blabla"
 	const journeyPatternCriteriaOperator2 = "notEqual"
 	const journeyPatternCriteriaShouldIgnoreCase2 = true
@@ -90,35 +93,62 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 
 	cleanupJourneySegments(journeySegmentIdPrefix)
 
+	journeySegmentResource1 := generateJourneySegmentResource(&journeySegmentStruct{
+		journeySegmentId,
+		displayName1,
+		color1,
+		scope1,
+		shouldDisplayToAgent1,
+		generateContext(&contextStruct{
+			contextPatternCriteriaKey1,
+			contextPatternCriteriaValues1,
+			contextPatternCriteriaOperator1,
+			contextPatternCriteriaShouldIgnoreCase1,
+			contextPatternCriteriaEntityType1,
+		}),
+		generateJourney(&journeyStruct{
+			journeyCount1,
+			journeyStreamType,
+			journeySessionType,
+			journeyEventName1,
+			journeyPatternCriteriaKey1,
+			journeyPatternCriteriaValues1,
+			journeyPatternCriteriaOperator1,
+			journeyPatternCriteriaShouldIgnoreCase1,
+		}),
+	})
+	journeySegmentResource2 := generateJourneySegmentResource(&journeySegmentStruct{
+		journeySegmentId,
+		displayName2,
+		color2,
+		scope2,
+		shouldDisplayToAgent2,
+		generateContext(&contextStruct{
+			contextPatternCriteriaKey2,
+			contextPatternCriteriaValues2,
+			contextPatternCriteriaOperator2,
+			contextPatternCriteriaShouldIgnoreCase2,
+			contextPatternCriteriaEntityType2,
+		}),
+		generateJourney(&journeyStruct{
+			journeyCount2,
+			journeyStreamType,
+			journeySessionType,
+			journeyEventName2,
+			journeyPatternCriteriaKey2,
+			journeyPatternCriteriaValues2,
+			journeyPatternCriteriaOperator2,
+			journeyPatternCriteriaShouldIgnoreCase2,
+		}),
+	})
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateJourneySegmentResource(&journeySegmentStruct{
-					journeySegmentId,
-					displayName1,
-					color1,
-					scope1,
-					generateContext(&contextStruct{
-						contextPatternCriteriaKey1,
-						contextPatternCriteriaValues1,
-						contextPatternCriteriaOperator1,
-						contextPatternCriteriaShouldIgnoreCase1,
-						contextPatternCriteriaEntityType1,
-					}),
-					generateJourney(&journeyStruct{
-						journeyCount1,
-						journeyStreamType,
-						journeySessionType,
-						journeyEventName1,
-						journeyPatternCriteriaKey1,
-						journeyPatternCriteriaValues1,
-						journeyPatternCriteriaOperator1,
-						journeyPatternCriteriaShouldIgnoreCase1,
-					}),
-				}),
+				Config: journeySegmentResource1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "display_name", displayName1),
 					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "color", color1),
@@ -127,29 +157,7 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateJourneySegmentResource(&journeySegmentStruct{
-					journeySegmentId,
-					displayName2,
-					color2,
-					scope1,
-					generateContext(&contextStruct{
-						contextPatternCriteriaKey2,
-						contextPatternCriteriaValues2,
-						contextPatternCriteriaOperator2,
-						contextPatternCriteriaShouldIgnoreCase2,
-						contextPatternCriteriaEntityType2,
-					}),
-					generateJourney(&journeyStruct{
-						journeyCount2,
-						journeyStreamType,
-						journeySessionType,
-						journeyEventName2,
-						journeyPatternCriteriaKey2,
-						journeyPatternCriteriaValues2,
-						journeyPatternCriteriaOperator2,
-						journeyPatternCriteriaShouldIgnoreCase2,
-					}),
-				}),
+				Config: journeySegmentResource2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "display_name", displayName2),
 					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "color", color2),
@@ -172,28 +180,30 @@ func generateJourneySegmentResource(journeySegment *journeySegmentStruct) string
 		display_name = "%s"
 		color = "%s"
 		scope = "%s"
+		should_display_to_agent = %t
 		%s
 		%s
 	}`, journeySegment.resourceID,
 		journeySegment.displayName,
 		journeySegment.color,
 		journeySegment.scope,
+		journeySegment.shouldDisplayToAgent,
 		journeySegment.context,
 		journeySegment.journey)
 }
 
 func generateContext(context *contextStruct) string {
 	return fmt.Sprintf(`context {
-		patterns {
-			criteria {
-				key = "%s"
-				values = ["%s"]
-				operator = "%s"
-				should_ignore_case = %t
-				entity_type = "%s"
+			patterns {
+				criteria {
+					key = "%s"
+					values = ["%s"]
+					operator = "%s"
+					should_ignore_case = %t
+					entity_type = "%s"
+				}
 			}
-		}
-	}`, context.key,
+		}`, context.key,
 		context.values,
 		context.operator,
 		context.shouldIgnoreCase,
@@ -203,19 +213,19 @@ func generateContext(context *contextStruct) string {
 
 func generateJourney(journey *journeyStruct) string {
 	return fmt.Sprintf(`journey {
-		patterns {
-			criteria {
-				key = "%s"
-				values = ["%s"]
-				operator = "%s"
-				should_ignore_case = %t
-			}
-			count = %d
-			stream_type = "%s"
-			session_type = "%s"
-			event_name = "%s"
-		} 
-	}`, journey.key,
+			patterns {
+				criteria {
+					key = "%s"
+					values = ["%s"]
+					operator = "%s"
+					should_ignore_case = %t
+				}
+				count = %d
+				stream_type = "%s"
+				session_type = "%s"
+				event_name = "%s"
+			} 
+		}`, journey.key,
 		journey.values,
 		journey.operator,
 		journey.shouldIgnoreCase,

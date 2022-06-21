@@ -41,6 +41,16 @@ func getNullableValue[T any](d *schema.ResourceData, key string) *T {
 	return nil
 }
 
+// More info about using deprecated GetOkExists: https://github.com/hashicorp/terraform-plugin-sdk/issues/817
+func getNullableBool(d *schema.ResourceData, key string) *bool {
+	value, ok := d.GetOkExists(key)
+	if ok {
+		v := value.(bool)
+		return &v
+	}
+	return nil
+}
+
 func flattenBaseSettingsProperties(properties interface{}) (string, diag.Diagnostics) {
 	if properties == nil {
 		return "", nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -40,13 +41,15 @@ var (
 			Description:  "The target entity that a segment applies to.Valid values: Session, Customer.",
 			Type:         schema.TypeString,
 			Required:     true,
-			ForceNew:     true, // scope can be only set during creation
+			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"Session", "Customer"}, false),
 		},
 		"should_display_to_agent": {
 			Description: "Whether or not the segment should be displayed to agent/supervisor users.",
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Default:     nil,
+			// Customer scope only supports false to this value
 		},
 		"context": {
 			Description: "The context of the segment.",
@@ -200,10 +203,16 @@ var (
 	journeyCriteriaResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"key": {
-				Description:  "The criteria key.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"eventName", "page.url", "page.title", "page.hostname", "page.domain", "page.fragment", "page.keywords", "page.pathname", "searchQuery", "page.queryString"}, false), // TODO: enable `attributes.*.value` pattern
+				Description: "The criteria key.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ValidateFunc: validation.Any(
+					validation.StringInSlice([]string{"eventName", "page.url", "page.title", "page.hostname", "page.domain", "page.fragment", "page.keywords", "page.pathname", "searchQuery", "page.queryString"}, false),
+					validation.StringMatch(func() *regexp.Regexp {
+						r, _ := regexp.Compile("attributes\\..*\\.value")
+						return r
+					}(), ""),
+				),
 			},
 			"values": {
 				Description: "The criteria values.",
@@ -368,16 +377,15 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
-	isActive := getNullableValue[bool](journeySegment, "is_active")
+	isActive := getNullableBool(journeySegment, "is_active")
 	displayName := getNullableValue[string](journeySegment, "display_name")
 	description := getNullableValue[string](journeySegment, "description")
 	color := getNullableValue[string](journeySegment, "color")
 	scope := getNullableValue[string](journeySegment, "scope")
-	shouldDisplayToAgent := getNullableValue[bool](journeySegment, "should_display_to_agent")
+	shouldDisplayToAgent := getNullableBool(journeySegment, "should_display_to_agent")
 	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
 	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
 	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment)
-
 	assignmentExpirationDays := getNullableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Journeysegment{
@@ -395,15 +403,14 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 }
 
 func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2.Patchsegment {
-	isActive := getNullableValue[bool](journeySegment, "is_active")
+	isActive := getNullableBool(journeySegment, "is_active")
 	displayName := getNullableValue[string](journeySegment, "display_name")
 	description := getNullableValue[string](journeySegment, "description")
 	color := getNullableValue[string](journeySegment, "color")
-	shouldDisplayToAgent := getNullableValue[bool](journeySegment, "should_display_to_agent")
+	shouldDisplayToAgent := getNullableBool(journeySegment, "should_display_to_agent")
 	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
 	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
 	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment)
-
 	assignmentExpirationDays := getNullableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Patchsegment{
