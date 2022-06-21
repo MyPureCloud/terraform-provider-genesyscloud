@@ -32,36 +32,58 @@ type contextStruct struct {
 	entityType       string
 }
 
+type journeyStruct struct {
+	count            int
+	streamType       string
+	sessionType      string
+	eventName        string
+	key              string
+	values           string
+	operator         string
+	shouldIgnoreCase bool
+}
+
 func TestAccResourceJourneySegmentBasic(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
-	resourcePrefix := "genesyscloud_journey_segment."
-	journeySegmentIdPrefix := "terraform_test_"
+	const resourcePrefix = "genesyscloud_journey_segment."
+	const journeySegmentIdPrefix = "terraform_test_"
 	journeySegmentId := journeySegmentIdPrefix + strconv.Itoa(rand.Intn(1000))
 	displayName1 := journeySegmentId
 	displayName2 := journeySegmentId + "_updated"
-	color1 := "#008000"
-	color2 := "#308000"
-	scope1 := "Customer"
-	//scope2 := "Session"
-	contextPatternCriteriaKey1 := "geolocation.postalCode"
-	contextPatternCriteriaValues1 := "something"
-	contextPatternCriteriaOperator1 := "equal"
-	contextPatternCriteriaShouldIgnoreCase1 := true
-	contextPatternCriteriaEntityType1 := "visit"
-	journey :=
-		`journey {
-			patterns {
-				criteria {
-					key = "page.hostname"
-					values = ["something_else", "more"]
-					operator = "equal"
-					should_ignore_case = false
-				}
-				count = 1
-				stream_type = "Web"
-				session_type = "web"
-			} 
-		}`
+	const color1 = "#008000"
+	const color2 = "#308000"
+	const scope1 = "Customer"
+	//const scope2 = "Session"
+
+	const contextPatternCriteriaKey1 = "geolocation.postalCode"
+	const contextPatternCriteriaValues1 = "something"
+	const contextPatternCriteriaOperator1 = "equal"
+	const contextPatternCriteriaShouldIgnoreCase1 = true
+	const contextPatternCriteriaEntityType1 = "visit"
+
+	const contextPatternCriteriaKey2 = "geolocation.region"
+	const contextPatternCriteriaValues2 = "something1"
+	const contextPatternCriteriaOperator2 = "containsAll"
+	const contextPatternCriteriaShouldIgnoreCase2 = false
+	const contextPatternCriteriaEntityType2 = "visit"
+
+	const journeyCount1 = 1
+	const journeyStreamType1 = "Web"
+	const journeySessionType1 = "web"
+	const journeyEventName1 = "EventName"
+	const journeyPatternCriteriaKey1 = "page.hostname"
+	const journeyPatternCriteriaValues1 = "something_else"
+	const journeyPatternCriteriaOperator1 = "equal"
+	const journeyPatternCriteriaShouldIgnoreCase1 = false
+
+	const journeyCount2 = 1
+	const journeyStreamType2 = "Conversation"
+	const journeySessionType2 = "YourChoice"
+	const journeyEventName2 = "OtherEventName"
+	const journeyPatternCriteriaKey2 = "page.fragment"
+	const journeyPatternCriteriaValues2 = "Blabla"
+	const journeyPatternCriteriaOperator2 = "notEqual"
+	const journeyPatternCriteriaShouldIgnoreCase2 = true
 
 	err := authorizeSdk()
 	if err != nil {
@@ -88,7 +110,16 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 						contextPatternCriteriaShouldIgnoreCase1,
 						contextPatternCriteriaEntityType1,
 					}),
-					journey,
+					generateJourney(&journeyStruct{
+						journeyCount1,
+						journeyStreamType1,
+						journeySessionType1,
+						journeyEventName1,
+						journeyPatternCriteriaKey1,
+						journeyPatternCriteriaValues1,
+						journeyPatternCriteriaOperator1,
+						journeyPatternCriteriaShouldIgnoreCase1,
+					}),
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "display_name", displayName1),
@@ -104,13 +135,22 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 					color2,
 					scope1,
 					generateContext(&contextStruct{
-						contextPatternCriteriaKey1,
-						contextPatternCriteriaValues1,
-						contextPatternCriteriaOperator1,
-						contextPatternCriteriaShouldIgnoreCase1,
-						contextPatternCriteriaEntityType1,
+						contextPatternCriteriaKey2,
+						contextPatternCriteriaValues2,
+						contextPatternCriteriaOperator2,
+						contextPatternCriteriaShouldIgnoreCase2,
+						contextPatternCriteriaEntityType2,
 					}),
-					journey,
+					generateJourney(&journeyStruct{
+						journeyCount2,
+						journeyStreamType2,
+						journeySessionType2,
+						journeyEventName2,
+						journeyPatternCriteriaKey2,
+						journeyPatternCriteriaValues2,
+						journeyPatternCriteriaOperator2,
+						journeyPatternCriteriaShouldIgnoreCase2,
+					}),
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "display_name", displayName2),
@@ -160,6 +200,31 @@ func generateContext(context *contextStruct) string {
 		context.operator,
 		context.shouldIgnoreCase,
 		context.entityType,
+	)
+}
+
+func generateJourney(journey *journeyStruct) string {
+	return fmt.Sprintf(`journey {
+		patterns {
+			criteria {
+				key = "%s"
+				values = ["%s"]
+				operator = "%s"
+				should_ignore_case = %t
+			}
+			count = %d
+			stream_type = "%s"
+			session_type = "%s"
+			event_name = "%s"
+		} 
+	}`, journey.key,
+		journey.values,
+		journey.operator,
+		journey.shouldIgnoreCase,
+		journey.count,
+		journey.streamType,
+		journey.sessionType,
+		journey.eventName,
 	)
 }
 
