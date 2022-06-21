@@ -36,20 +36,20 @@ var (
 			Description: "The hexadecimal color value of the segment.",
 			Type:        schema.TypeString,
 			Required:    true,
+			// TODO: color format validation
 		},
 		"scope": {
 			Description:  "The target entity that a segment applies to.Valid values: Session, Customer.",
 			Type:         schema.TypeString,
 			Required:     true,
-			ForceNew:     true,
+			ForceNew:     true, // scope can be only set during creation
 			ValidateFunc: validation.StringInSlice([]string{"Session", "Customer"}, false),
 		},
 		"should_display_to_agent": {
 			Description: "Whether or not the segment should be displayed to agent/supervisor users.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Default:     nil,
-			// Customer scope only supports false to this value
+			// Customer scope only supports false for this value
 		},
 		"context": {
 			Description: "The context of the segment.",

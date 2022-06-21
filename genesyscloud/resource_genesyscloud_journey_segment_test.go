@@ -53,8 +53,7 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 	displayName2 := journeySegmentId + "_updated"
 	const color1 = "#008000"
 	const color2 = "#308000"
-	const scope1 = "Session"
-	const scope2 = "Session"
+	const scope = "Session"
 	const shouldDisplayToAgent1 = false
 	const shouldDisplayToAgent2 = true
 
@@ -97,7 +96,7 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 		journeySegmentId,
 		displayName1,
 		color1,
-		scope1,
+		scope,
 		shouldDisplayToAgent1,
 		generateContext(&contextStruct{
 			contextPatternCriteriaKey1,
@@ -121,7 +120,7 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 		journeySegmentId,
 		displayName2,
 		color2,
-		scope2,
+		scope,
 		shouldDisplayToAgent2,
 		generateContext(&contextStruct{
 			contextPatternCriteriaKey2,
@@ -149,20 +148,10 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 			{
 				// Create
 				Config: journeySegmentResource1,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "display_name", displayName1),
-					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "color", color1),
-					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "scope", scope1),
-				),
 			},
 			{
 				// Update
 				Config: journeySegmentResource2,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "display_name", displayName2),
-					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "color", color2),
-					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "scope", scope1),
-				),
 			},
 			{
 				// Import/Read
