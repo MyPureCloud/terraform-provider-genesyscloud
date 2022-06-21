@@ -146,13 +146,13 @@ var (
 			"stream_type": {
 				Description:  "The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.",
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Web" /*, "Custom", "Conversation"*/}, false), // Custom and Conversation seem not to be supported by the API despite the documentation
 			},
 			"session_type": {
 				Description:  "The session type for which this pattern can be matched on.",
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"web"}, false), // custom value seems not to be supported by the API despite the documentation
 			},
 			"event_name": {

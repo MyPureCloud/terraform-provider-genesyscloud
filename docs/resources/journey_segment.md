@@ -106,12 +106,12 @@ Required:
 
 - `count` (Number) The number of times the pattern must match.
 - `criteria` (Block Set, Min: 1) A list of one or more criteria to satisfy. (see [below for nested schema](#nestedblock--journey--patterns--criteria))
-- `session_type` (String) The session type for which this pattern can be matched on.
-- `stream_type` (String) The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.
 
 Optional:
 
 - `event_name` (String) The name of the event for which this pattern can be matched on.
+- `session_type` (String) The session type for which this pattern can be matched on.
+- `stream_type` (String) The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.
 
 <a id="nestedblock--journey--patterns--criteria"></a>
 ### Nested Schema for `journey.patterns.criteria`
