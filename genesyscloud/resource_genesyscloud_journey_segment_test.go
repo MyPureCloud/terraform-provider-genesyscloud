@@ -20,6 +20,16 @@ type journeySegmentStruct struct {
 	displayName string
 	color       string
 	scope       string
+	context     string
+	journey     string
+}
+
+type contextStruct struct {
+	key              string
+	values           string
+	operator         string
+	shouldIgnoreCase bool
+	entityType       string
 }
 
 func TestAccResourceJourneySegmentBasic(t *testing.T) {
@@ -32,7 +42,26 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 	color1 := "#008000"
 	color2 := "#308000"
 	scope1 := "Customer"
-	scope2 := "Session"
+	//scope2 := "Session"
+	contextPatternCriteriaKey1 := "geolocation.postalCode"
+	contextPatternCriteriaValues1 := "something"
+	contextPatternCriteriaOperator1 := "equal"
+	contextPatternCriteriaShouldIgnoreCase1 := true
+	contextPatternCriteriaEntityType1 := "visit"
+	journey :=
+		`journey {
+			patterns {
+				criteria {
+					key = "page.hostname"
+					values = ["something_else", "more"]
+					operator = "equal"
+					should_ignore_case = false
+				}
+				count = 1
+				stream_type = "Web"
+				session_type = "web"
+			} 
+		}`
 
 	err := authorizeSdk()
 	if err != nil {
@@ -52,6 +81,14 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 					displayName1,
 					color1,
 					scope1,
+					generateContext(&contextStruct{
+						contextPatternCriteriaKey1,
+						contextPatternCriteriaValues1,
+						contextPatternCriteriaOperator1,
+						contextPatternCriteriaShouldIgnoreCase1,
+						contextPatternCriteriaEntityType1,
+					}),
+					journey,
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "display_name", displayName1),
@@ -65,12 +102,20 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 					journeySegmentId,
 					displayName2,
 					color2,
-					scope2,
+					scope1,
+					generateContext(&contextStruct{
+						contextPatternCriteriaKey1,
+						contextPatternCriteriaValues1,
+						contextPatternCriteriaOperator1,
+						contextPatternCriteriaShouldIgnoreCase1,
+						contextPatternCriteriaEntityType1,
+					}),
+					journey,
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "display_name", displayName2),
 					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "color", color2),
-					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "scope", scope2),
+					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "scope", scope1),
 				),
 			},
 			{
@@ -119,34 +164,33 @@ func generateJourneySegmentResource(journeySegment *journeySegmentStruct) string
 		display_name = "%s"
 		color = "%s"
 		scope = "%s"
-		context {
-			patterns {
-				criteria {
-					key = "geolocation.postalCode"
-					values = ["something"]
-					operator = "equal"
-					should_ignore_case = true
-					entity_type = "visit"
-				}
-			} 
-		}
-		journey {
-			patterns {
-				criteria {
-					key = "page.hostname"
-					values = ["something_else", "more"]
-					operator = "equal"
-					should_ignore_case = false
-				}
-				count = 1
-				stream_type = "Web"
-				session_type = "web"
-			} 
-		}
+		%s
+		%s
 	}`, journeySegment.resourceID,
 		journeySegment.displayName,
 		journeySegment.color,
+		journeySegment.scope,
+		journeySegment.context,
 		journeySegment.scope)
+}
+
+func generateContext(context *contextStruct) string {
+	return fmt.Sprintf(`context {
+		patterns {
+			criteria {
+				key = "%s"
+				values = ["%s"]
+				operator = "%s"
+				should_ignore_case = %t
+				entity_type = "%s"
+			}
+		}
+	}`, context.key,
+		context.values,
+		context.operator,
+		context.shouldIgnoreCase,
+		context.entityType,
+	)
 }
 
 func testVerifyJourneySegmentsDestroyed(state *terraform.State) error {

@@ -25,7 +25,6 @@ var (
 			Description: "The display name of the segment.",
 			Type:        schema.TypeString,
 			Required:    true,
-			ForceNew:    true,
 		},
 		"description": {
 			Description: "A description of the segment.",
@@ -41,6 +40,7 @@ var (
 			Description:  "The target entity that a segment applies to.Valid values: Session, Customer.",
 			Type:         schema.TypeString,
 			Required:     true,
+			ForceNew:     true, // scope can be only set during creation
 			ValidateFunc: validation.StringInSlice([]string{"Session", "Customer"}, false),
 		},
 		"should_display_to_agent": {
@@ -598,6 +598,10 @@ func buildSdkExternalSegment(externalSegment map[string]interface{}) *platformcl
 }
 
 func buildSdkPatchExternalSegment(externalSegment map[string]interface{}) *platformclientv2.Patchexternalsegment {
+	if externalSegment == nil {
+		return nil
+	}
+
 	name := externalSegment["name"].(string)
 
 	return &platformclientv2.Patchexternalsegment{
