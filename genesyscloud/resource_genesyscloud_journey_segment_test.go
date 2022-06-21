@@ -30,7 +30,9 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 	displayName1 := journeySegmentId
 	displayName2 := journeySegmentId + "_updated"
 	color1 := "#008000"
+	color2 := "#308000"
 	scope1 := "Customer"
+	scope2 := "Session"
 
 	err := authorizeSdk()
 	if err != nil {
@@ -53,7 +55,8 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "display_name", displayName1),
-					// TODO
+					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "color", color1),
+					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "scope", scope1),
 				),
 			},
 			{
@@ -61,12 +64,13 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 				Config: generateJourneySegmentResource(&journeySegmentStruct{
 					journeySegmentId,
 					displayName2,
-					color1,
-					scope1,
+					color2,
+					scope2,
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "display_name", displayName2),
-					// TODO
+					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "color", color2),
+					resource.TestCheckResourceAttr(resourcePrefix+journeySegmentId, "scope", scope2),
 				),
 			},
 			{
