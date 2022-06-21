@@ -129,36 +129,6 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 	})
 }
 
-func cleanupJourneySegments(journeySegmentIdPrefix string) {
-	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
-
-	pageCount := 1 // Needed because of broken journey common paging
-	for pageNum := 1; pageNum <= pageCount; pageNum++ {
-		const pageSize = 100
-		journeySegments, _, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
-		if getErr != nil {
-			return
-		}
-
-		if journeySegments.Entities == nil || len(*journeySegments.Entities) == 0 {
-			break
-		}
-
-		for _, journeySegment := range *journeySegments.Entities {
-			if journeySegment.DisplayName != nil && strings.HasPrefix(*journeySegment.DisplayName, journeySegmentIdPrefix) {
-				_, delErr := journeyApi.DeleteJourneySegment(*journeySegment.Id)
-				if delErr != nil {
-					diag.Errorf("failed to delete journey segment %s (%s): %s", *journeySegment.Id, *journeySegment.DisplayName, delErr)
-					return
-				}
-				log.Printf("Deleted journey segment %s (%s)", *journeySegment.Id, *journeySegment.DisplayName)
-			}
-		}
-
-		pageCount = *journeySegments.PageCount
-	}
-}
-
 func generateJourneySegmentResource(journeySegment *journeySegmentStruct) string {
 	return fmt.Sprintf(`resource "genesyscloud_journey_segment" "%s" {
 		display_name = "%s"
@@ -171,7 +141,7 @@ func generateJourneySegmentResource(journeySegment *journeySegmentStruct) string
 		journeySegment.color,
 		journeySegment.scope,
 		journeySegment.context,
-		journeySegment.scope)
+		journeySegment.journey)
 }
 
 func generateContext(context *contextStruct) string {
@@ -215,4 +185,34 @@ func testVerifyJourneySegmentsDestroyed(state *terraform.State) error {
 	}
 	// Success. All Journey segment destroyed
 	return nil
+}
+
+func cleanupJourneySegments(journeySegmentIdPrefix string) {
+	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+
+	pageCount := 1 // Needed because of broken journey common paging
+	for pageNum := 1; pageNum <= pageCount; pageNum++ {
+		const pageSize = 100
+		journeySegments, _, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
+		if getErr != nil {
+			return
+		}
+
+		if journeySegments.Entities == nil || len(*journeySegments.Entities) == 0 {
+			break
+		}
+
+		for _, journeySegment := range *journeySegments.Entities {
+			if journeySegment.DisplayName != nil && strings.HasPrefix(*journeySegment.DisplayName, journeySegmentIdPrefix) {
+				_, delErr := journeyApi.DeleteJourneySegment(*journeySegment.Id)
+				if delErr != nil {
+					diag.Errorf("failed to delete journey segment %s (%s): %s", *journeySegment.Id, *journeySegment.DisplayName, delErr)
+					return
+				}
+				log.Printf("Deleted journey segment %s (%s)", *journeySegment.Id, *journeySegment.DisplayName)
+			}
+		}
+
+		pageCount = *journeySegments.PageCount
+	}
 }
