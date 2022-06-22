@@ -3,11 +3,10 @@ package genesyscloud
 import (
 	"fmt"
 	"log"
-	"math/rand"
-	"strconv"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -15,75 +14,32 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
 )
 
-type journeySegmentStruct struct {
-	resourceID           string
-	displayName          string
-	color                string
-	scope                string
-	shouldDisplayToAgent bool
-	context              string
-	journey              string
+func TestAccResourceJourneySegmentSession(t *testing.T) {
+	runTestCase(t, "./test/test_data/journey_segment/basic_session_attributes")
 }
 
-type contextStruct struct {
-	key              string
-	values           string
-	operator         string
-	shouldIgnoreCase bool
-	entityType       string
+func TestAccResourceJourneySegmentCustomer(t *testing.T) {
+	runTestCase(t, "./test/test_data/journey_segment/basic_customer_attributes")
 }
 
-type journeyStruct struct {
-	count            int
-	streamType       string
-	sessionType      string
-	eventName        string
-	key              string
-	values           string
-	operator         string
-	shouldIgnoreCase bool
+func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
+	runTestCase(t, "./test/test_data/journey_segment/context_only_to_journey_only")
 }
 
-func TestAccResourceJourneySegmentBasic(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
+func runTestCase(t *testing.T, folder string) {
+	resourcePrefix := setup(t)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps:             generateTestSteps(folder, resourcePrefix),
+		CheckDestroy:      testVerifyJourneySegmentsDestroyed,
+	})
+}
+
+func setup(t *testing.T) string {
 	const resourcePrefix = "genesyscloud_journey_segment."
 	const journeySegmentIdPrefix = "terraform_test_"
-	journeySegmentId := journeySegmentIdPrefix + strconv.Itoa(rand.Intn(1000))
-	displayName1 := journeySegmentId
-	displayName2 := journeySegmentId + "_updated"
-	const color1 = "#008000"
-	const color2 = "#308000"
-	const scope = "Session"
-	const shouldDisplayToAgent1 = false
-	const shouldDisplayToAgent2 = true
-
-	const contextPatternCriteriaKey1 = "geolocation.postalCode"
-	const contextPatternCriteriaValues1 = "something"
-	const contextPatternCriteriaOperator1 = "equal"
-	const contextPatternCriteriaShouldIgnoreCase1 = true
-	const contextPatternCriteriaEntityType1 = "visit"
-
-	const contextPatternCriteriaKey2 = "geolocation.region"
-	const contextPatternCriteriaValues2 = "something1"
-	const contextPatternCriteriaOperator2 = "containsAll"
-	const contextPatternCriteriaShouldIgnoreCase2 = false
-	const contextPatternCriteriaEntityType2 = "visit"
-
-	const journeyCount1 = 1
-	const journeyStreamType = "Web"
-	const journeySessionType = "web"
-	const journeyEventName1 = "EventName"
-	const journeyPatternCriteriaKey1 = "page.hostname"
-	const journeyPatternCriteriaValues1 = "something_else"
-	const journeyPatternCriteriaOperator1 = "equal"
-	const journeyPatternCriteriaShouldIgnoreCase1 = false
-
-	const journeyCount2 = 1
-	const journeyEventName2 = "OtherEventName"
-	const journeyPatternCriteriaKey2 = "attributes.bleki.value"
-	const journeyPatternCriteriaValues2 = "Blabla"
-	const journeyPatternCriteriaOperator2 = "notEqual"
-	const journeyPatternCriteriaShouldIgnoreCase2 = true
 
 	err := authorizeSdk()
 	if err != nil {
@@ -91,138 +47,32 @@ func TestAccResourceJourneySegmentBasic(t *testing.T) {
 	}
 
 	cleanupJourneySegments(journeySegmentIdPrefix)
-
-	journeySegmentResource1 := generateJourneySegmentResource(&journeySegmentStruct{
-		journeySegmentId,
-		displayName1,
-		color1,
-		scope,
-		shouldDisplayToAgent1,
-		generateContext(&contextStruct{
-			contextPatternCriteriaKey1,
-			contextPatternCriteriaValues1,
-			contextPatternCriteriaOperator1,
-			contextPatternCriteriaShouldIgnoreCase1,
-			contextPatternCriteriaEntityType1,
-		}),
-		generateJourney(&journeyStruct{
-			journeyCount1,
-			journeyStreamType,
-			journeySessionType,
-			journeyEventName1,
-			journeyPatternCriteriaKey1,
-			journeyPatternCriteriaValues1,
-			journeyPatternCriteriaOperator1,
-			journeyPatternCriteriaShouldIgnoreCase1,
-		}),
-	})
-	journeySegmentResource2 := generateJourneySegmentResource(&journeySegmentStruct{
-		journeySegmentId,
-		displayName2,
-		color2,
-		scope,
-		shouldDisplayToAgent2,
-		generateContext(&contextStruct{
-			contextPatternCriteriaKey2,
-			contextPatternCriteriaValues2,
-			contextPatternCriteriaOperator2,
-			contextPatternCriteriaShouldIgnoreCase2,
-			contextPatternCriteriaEntityType2,
-		}),
-		generateJourney(&journeyStruct{
-			journeyCount2,
-			journeyStreamType,
-			journeySessionType,
-			journeyEventName2,
-			journeyPatternCriteriaKey2,
-			journeyPatternCriteriaValues2,
-			journeyPatternCriteriaOperator2,
-			journeyPatternCriteriaShouldIgnoreCase2,
-		}),
-	})
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		Steps: []resource.TestStep{
-			{
-				// Create
-				Config: journeySegmentResource1,
-			},
-			{
-				// Update
-				Config: journeySegmentResource2,
-			},
-			{
-				// Import/Read
-				ResourceName:      resourcePrefix + journeySegmentId,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-		CheckDestroy: testVerifyJourneySegmentsDestroyed,
-	})
+	return resourcePrefix
 }
 
-func generateJourneySegmentResource(journeySegment *journeySegmentStruct) string {
-	return fmt.Sprintf(`resource "genesyscloud_journey_segment" "%s" {
-		display_name = "%s"
-		color = "%s"
-		scope = "%s"
-		should_display_to_agent = %t
-		%s
-		%s
-	}`, journeySegment.resourceID,
-		journeySegment.displayName,
-		journeySegment.color,
-		journeySegment.scope,
-		journeySegment.shouldDisplayToAgent,
-		journeySegment.context,
-		journeySegment.journey)
-}
+func generateTestSteps(folder string, resourcePrefix string) []resource.TestStep {
+	var testSteps []resource.TestStep
 
-func generateContext(context *contextStruct) string {
-	return fmt.Sprintf(`context {
-			patterns {
-				criteria {
-					key = "%s"
-					values = ["%s"]
-					operator = "%s"
-					should_ignore_case = %t
-					entity_type = "%s"
-				}
-			}
-		}`, context.key,
-		context.values,
-		context.operator,
-		context.shouldIgnoreCase,
-		context.entityType,
-	)
-}
+	_, testCaseName := filepath.Split(folder)
+	dirEntries, _ := os.ReadDir(folder)
 
-func generateJourney(journey *journeyStruct) string {
-	return fmt.Sprintf(`journey {
-			patterns {
-				criteria {
-					key = "%s"
-					values = ["%s"]
-					operator = "%s"
-					should_ignore_case = %t
-				}
-				count = %d
-				stream_type = "%s"
-				session_type = "%s"
-				event_name = "%s"
-			} 
-		}`, journey.key,
-		journey.values,
-		journey.operator,
-		journey.shouldIgnoreCase,
-		journey.count,
-		journey.streamType,
-		journey.sessionType,
-		journey.eventName,
-	)
+	for _, dirEntry := range dirEntries {
+		if !dirEntry.IsDir() {
+			resourceTf, _ := os.ReadFile(filepath.Join(folder, dirEntry.Name()))
+			config := strings.Replace(string(resourceTf), "test_case", testCaseName, 1)
+			testSteps = append(testSteps, resource.TestStep{Config: config})
+		}
+	}
+	log.Printf("Generated %d test steps for %s testcase", len(dirEntries), testCaseName)
+
+	testSteps = append(testSteps, resource.TestStep{
+		// Import/Read
+		ResourceName:      resourcePrefix + "terraform_test_" + testCaseName,
+		ImportState:       true,
+		ImportStateVerify: true,
+	})
+
+	return testSteps
 }
 
 func testVerifyJourneySegmentsDestroyed(state *terraform.State) error {

@@ -73,7 +73,7 @@ var (
 			Type:        schema.TypeSet,
 			Optional:    true,
 			MaxItems:    1,
-			Elem:        externalSegmentResource,
+			Elem:        externalSegmentResource, // can only be used with Customer scope
 		},
 		"assignment_expiration_days": {
 			Description: "Time, in days, from when the segment is assigned until it is automatically unassigned.",
@@ -110,6 +110,7 @@ var (
 				Description: "Identifier for the external segment in the system where it originates from.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"name": {
 				Description: "Name for the external segment in the system where it originates from.",
@@ -120,6 +121,7 @@ var (
 				Description:  "The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom.",
 				Type:         schema.TypeString,
 				Required:     true,
+				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"AdobeExperiencePlatform", "Custom"}, false),
 			},
 		},
@@ -599,10 +601,12 @@ func buildSdkExternalSegment(externalSegment map[string]interface{}) *platformcl
 		return nil
 	}
 
+	id := externalSegment["id"].(string)
 	name := externalSegment["name"].(string)
 	source := externalSegment["source"].(string)
 
 	return &platformclientv2.Externalsegment{
+		Id:     &id,
 		Name:   &name,
 		Source: &source,
 	}
