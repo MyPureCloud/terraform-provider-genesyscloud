@@ -36,7 +36,10 @@ var (
 			Description: "The hexadecimal color value of the segment.",
 			Type:        schema.TypeString,
 			Required:    true,
-			// TODO: color format validation
+			ValidateFunc: validation.StringMatch(func() *regexp.Regexp {
+				r, _ := regexp.Compile("^#[a-fA-F\\d]{6}$")
+				return r
+			}(), ""),
 		},
 		"scope": {
 			Description:  "The target entity that a segment applies to.Valid values: Session, Customer.",
