@@ -26,7 +26,8 @@ func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
 
 func runTestCase(t *testing.T, testCaseName string) {
 	const testSuitName = "journey_segment"
-	resourceName, idPrefix := setup(t)
+	const resourceName = "genesyscloud_journey_segment"
+	idPrefix := setup(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -36,8 +37,7 @@ func runTestCase(t *testing.T, testCaseName string) {
 	})
 }
 
-func setup(t *testing.T) (string, string) {
-	const resourceName = "genesyscloud_journey_segment"
+func setup(t *testing.T) string {
 	const idPrefix = "terraform_test_"
 
 	err := authorizeSdk()
@@ -46,7 +46,7 @@ func setup(t *testing.T) (string, string) {
 	}
 
 	cleanupJourneySegments(idPrefix)
-	return resourceName, idPrefix
+	return idPrefix
 }
 
 func cleanupJourneySegments(idPrefix string) {
