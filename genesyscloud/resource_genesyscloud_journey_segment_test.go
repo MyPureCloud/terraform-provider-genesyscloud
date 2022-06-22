@@ -3,8 +3,6 @@ package genesyscloud
 import (
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -15,30 +13,30 @@ import (
 )
 
 func TestAccResourceJourneySegmentSession(t *testing.T) {
-	runTestCase(t, "./test/data/journey_segment/basic_session_attributes")
+	runTestCase(t, "journey_segment/basic_session_attributes")
 }
 
 func TestAccResourceJourneySegmentCustomer(t *testing.T) {
-	runTestCase(t, "./test/data/journey_segment/basic_customer_attributes")
+	runTestCase(t, "journey_segment/basic_customer_attributes")
 }
 
 func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
-	runTestCase(t, "./test/data/journey_segment/context_only_to_journey_only")
+	runTestCase(t, "journey_segment/context_only_to_journey_only")
 }
 
 func runTestCase(t *testing.T, folder string) {
-	resourcePrefix, journeySegmentIdPrefix := setup(t)
+	resourceName, journeySegmentIdPrefix := setup(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
-		Steps:             generateTestSteps(folder, resourcePrefix, journeySegmentIdPrefix),
+		Steps:             generateTestSteps(folder, resourceName, journeySegmentIdPrefix),
 		CheckDestroy:      testVerifyJourneySegmentsDestroyed,
 	})
 }
 
 func setup(t *testing.T) (string, string) {
-	const resourcePrefix = "genesyscloud_journey_segment."
+	const resourceName = "genesyscloud_journey_segment"
 	const journeySegmentIdPrefix = "terraform_test_"
 
 	err := authorizeSdk()
@@ -47,55 +45,7 @@ func setup(t *testing.T) (string, string) {
 	}
 
 	cleanupJourneySegments(journeySegmentIdPrefix)
-	return resourcePrefix, journeySegmentIdPrefix
-}
-
-func generateTestSteps(folder string, resourcePrefix string, journeySegmentIdPrefix string) []resource.TestStep {
-	var testSteps []resource.TestStep
-
-	_, testCaseName := filepath.Split(folder)
-	dirEntries, _ := os.ReadDir(folder)
-
-	for _, dirEntry := range dirEntries {
-		if !dirEntry.IsDir() {
-			resourceTf, _ := os.ReadFile(filepath.Join(folder, dirEntry.Name()))
-			config := strings.Replace(string(resourceTf), "test_case", testCaseName, 1)
-			testSteps = append(testSteps, resource.TestStep{Config: config})
-		}
-	}
-	log.Printf("Generated %d test steps for %s testcase", len(dirEntries), testCaseName)
-
-	testSteps = append(testSteps, resource.TestStep{
-		ResourceName:      resourcePrefix + journeySegmentIdPrefix + testCaseName,
-		ImportState:       true,
-		ImportStateVerify: true,
-	})
-
-	return testSteps
-}
-
-func testVerifyJourneySegmentsDestroyed(state *terraform.State) error {
-	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
-	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_journey_segment" {
-			continue
-		}
-
-		journeySegment, resp, err := journeyApi.GetJourneySegment(rs.Primary.ID)
-		if journeySegment != nil {
-			return fmt.Errorf("journey segment (%s) still exists", rs.Primary.ID)
-		}
-
-		if isStatus404(resp) {
-			// Journey segment not found as expected
-			continue
-		}
-
-		// Unexpected error
-		return fmt.Errorf("unexpected error: %s", err)
-	}
-	// Success. All Journey segment destroyed
-	return nil
+	return resourceName, journeySegmentIdPrefix
 }
 
 func cleanupJourneySegments(journeySegmentIdPrefix string) {
@@ -126,4 +76,28 @@ func cleanupJourneySegments(journeySegmentIdPrefix string) {
 
 		pageCount = *journeySegments.PageCount
 	}
+}
+
+func testVerifyJourneySegmentsDestroyed(state *terraform.State) error {
+	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != "genesyscloud_journey_segment" {
+			continue
+		}
+
+		journeySegment, resp, err := journeyApi.GetJourneySegment(rs.Primary.ID)
+		if journeySegment != nil {
+			return fmt.Errorf("journey segment (%s) still exists", rs.Primary.ID)
+		}
+
+		if isStatus404(resp) {
+			// Journey segment not found as expected
+			continue
+		}
+
+		// Unexpected error
+		return fmt.Errorf("unexpected error: %s", err)
+	}
+	// Success. All Journey segment destroyed
+	return nil
 }

@@ -3,7 +3,10 @@ package genesyscloud
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -258,4 +261,28 @@ func randString(length int) string {
 	}
 
 	return string(s)
+}
+
+func generateTestSteps(testStepsFolder string, resourceName string, IdPrefix string) []resource.TestStep {
+	var testSteps []resource.TestStep
+
+	testStepsFolderPath := filepath.Join("./../test/data", testStepsFolder)
+	_, testCaseName := filepath.Split(testStepsFolderPath)
+	dirEntries, _ := os.ReadDir(testStepsFolderPath)
+	for _, dirEntry := range dirEntries {
+		if !dirEntry.IsDir() && strings.HasSuffix(dirEntry.Name(), ".tf") {
+			resourceTf, _ := os.ReadFile(filepath.Join(testStepsFolderPath, dirEntry.Name()))
+			config := strings.ReplaceAll(string(resourceTf), "-TEST-CASE-", testCaseName)
+			testSteps = append(testSteps, resource.TestStep{Config: config})
+		}
+	}
+	log.Printf("Generated %d test steps for %s testcase (%s)", len(dirEntries), testCaseName, testStepsFolderPath)
+
+	testSteps = append(testSteps, resource.TestStep{
+		ResourceName:      resourceName + "." + IdPrefix + testCaseName,
+		ImportState:       true,
+		ImportStateVerify: true,
+	})
+
+	return testSteps
 }
