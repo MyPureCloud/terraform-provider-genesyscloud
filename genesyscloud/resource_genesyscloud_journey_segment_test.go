@@ -27,17 +27,17 @@ func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
 }
 
 func runTestCase(t *testing.T, folder string) {
-	resourcePrefix := setup(t)
+	resourcePrefix, journeySegmentIdPrefix := setup(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
-		Steps:             generateTestSteps(folder, resourcePrefix),
+		Steps:             generateTestSteps(folder, resourcePrefix, journeySegmentIdPrefix),
 		CheckDestroy:      testVerifyJourneySegmentsDestroyed,
 	})
 }
 
-func setup(t *testing.T) string {
+func setup(t *testing.T) (string, string) {
 	const resourcePrefix = "genesyscloud_journey_segment."
 	const journeySegmentIdPrefix = "terraform_test_"
 
@@ -47,10 +47,10 @@ func setup(t *testing.T) string {
 	}
 
 	cleanupJourneySegments(journeySegmentIdPrefix)
-	return resourcePrefix
+	return resourcePrefix, journeySegmentIdPrefix
 }
 
-func generateTestSteps(folder string, resourcePrefix string) []resource.TestStep {
+func generateTestSteps(folder string, resourcePrefix string, journeySegmentIdPrefix string) []resource.TestStep {
 	var testSteps []resource.TestStep
 
 	_, testCaseName := filepath.Split(folder)
@@ -66,8 +66,7 @@ func generateTestSteps(folder string, resourcePrefix string) []resource.TestStep
 	log.Printf("Generated %d test steps for %s testcase", len(dirEntries), testCaseName)
 
 	testSteps = append(testSteps, resource.TestStep{
-		// Import/Read
-		ResourceName:      resourcePrefix + "terraform_test_" + testCaseName,
+		ResourceName:      resourcePrefix + journeySegmentIdPrefix + testCaseName,
 		ImportState:       true,
 		ImportStateVerify: true,
 	})
