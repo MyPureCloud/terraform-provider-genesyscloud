@@ -13,42 +13,43 @@ import (
 )
 
 func TestAccResourceJourneySegmentSession(t *testing.T) {
-	runTestCase(t, "journey_segment/basic_session_attributes")
+	runTestCase(t, "basic_session_attributes")
 }
 
 func TestAccResourceJourneySegmentCustomer(t *testing.T) {
-	runTestCase(t, "journey_segment/basic_customer_attributes")
+	runTestCase(t, "basic_customer_attributes")
 }
 
 func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
-	runTestCase(t, "journey_segment/context_only_to_journey_only")
+	runTestCase(t, "context_only_to_journey_only")
 }
 
-func runTestCase(t *testing.T, folder string) {
-	resourceName, journeySegmentIdPrefix := setup(t)
+func runTestCase(t *testing.T, testCaseName string) {
+	const testSuitName = "journey_segment"
+	resourceName, idPrefix := setup(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
-		Steps:             generateTestSteps(folder, resourceName, journeySegmentIdPrefix),
+		Steps:             generateTestSteps(testSuitName, testCaseName, resourceName, idPrefix),
 		CheckDestroy:      testVerifyJourneySegmentsDestroyed,
 	})
 }
 
 func setup(t *testing.T) (string, string) {
 	const resourceName = "genesyscloud_journey_segment"
-	const journeySegmentIdPrefix = "terraform_test_"
+	const idPrefix = "terraform_test_"
 
 	err := authorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cleanupJourneySegments(journeySegmentIdPrefix)
-	return resourceName, journeySegmentIdPrefix
+	cleanupJourneySegments(idPrefix)
+	return resourceName, idPrefix
 }
 
-func cleanupJourneySegments(journeySegmentIdPrefix string) {
+func cleanupJourneySegments(idPrefix string) {
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	pageCount := 1 // Needed because of broken journey common paging
@@ -64,7 +65,7 @@ func cleanupJourneySegments(journeySegmentIdPrefix string) {
 		}
 
 		for _, journeySegment := range *journeySegments.Entities {
-			if journeySegment.DisplayName != nil && strings.HasPrefix(*journeySegment.DisplayName, journeySegmentIdPrefix) {
+			if journeySegment.DisplayName != nil && strings.HasPrefix(*journeySegment.DisplayName, idPrefix) {
 				_, delErr := journeyApi.DeleteJourneySegment(*journeySegment.Id)
 				if delErr != nil {
 					diag.Errorf("failed to delete journey segment %s (%s): %s", *journeySegment.Id, *journeySegment.DisplayName, delErr)

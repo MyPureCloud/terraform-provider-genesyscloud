@@ -263,23 +263,22 @@ func randString(length int) string {
 	return string(s)
 }
 
-func generateTestSteps(testStepsFolder string, resourceName string, IdPrefix string) []resource.TestStep {
+func generateTestSteps(testSuitName string, testCaseName string, resourceName string, idPrefix string) []resource.TestStep {
 	var testSteps []resource.TestStep
 
-	testStepsFolderPath := filepath.Join("./../test/data", testStepsFolder)
-	_, testCaseName := filepath.Split(testStepsFolderPath)
-	dirEntries, _ := os.ReadDir(testStepsFolderPath)
-	for _, dirEntry := range dirEntries {
-		if !dirEntry.IsDir() && strings.HasSuffix(dirEntry.Name(), ".tf") {
-			resourceTf, _ := os.ReadFile(filepath.Join(testStepsFolderPath, dirEntry.Name()))
-			config := strings.ReplaceAll(string(resourceTf), "-TEST-CASE-", testCaseName)
+	testCasePath := filepath.Join("..", "test", "data", testSuitName, testCaseName)
+	testCaseFiles, _ := os.ReadDir(testCasePath)
+	for _, testCaseFile := range testCaseFiles {
+		if !testCaseFile.IsDir() && strings.HasSuffix(testCaseFile.Name(), ".tf") {
+			testCaseResource, _ := os.ReadFile(filepath.Join(testCasePath, testCaseFile.Name()))
+			config := strings.ReplaceAll(string(testCaseResource), "-TEST-CASE-", testCaseName)
 			testSteps = append(testSteps, resource.TestStep{Config: config})
 		}
 	}
-	log.Printf("Generated %d test steps for %s testcase (%s)", len(dirEntries), testCaseName, testStepsFolderPath)
+	log.Printf("Generated %d test steps for %s/%s testcase (%s)", len(testSteps), testSuitName, testCaseName, testCasePath)
 
 	testSteps = append(testSteps, resource.TestStep{
-		ResourceName:      resourceName + "." + IdPrefix + testCaseName,
+		ResourceName:      resourceName + "." + idPrefix + testCaseName,
 		ImportState:       true,
 		ImportStateVerify: true,
 	})
