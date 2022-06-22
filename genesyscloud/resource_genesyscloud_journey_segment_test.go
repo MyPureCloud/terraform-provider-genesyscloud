@@ -15,15 +15,15 @@ import (
 )
 
 func TestAccResourceJourneySegmentSession(t *testing.T) {
-	runTestCase(t, "./test/test_data/journey_segment/basic_session_attributes")
+	runTestCase(t, "./test/data/journey_segment/basic_session_attributes")
 }
 
 func TestAccResourceJourneySegmentCustomer(t *testing.T) {
-	runTestCase(t, "./test/test_data/journey_segment/basic_customer_attributes")
+	runTestCase(t, "./test/data/journey_segment/basic_customer_attributes")
 }
 
 func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
-	runTestCase(t, "./test/test_data/journey_segment/context_only_to_journey_only")
+	runTestCase(t, "./test/data/journey_segment/context_only_to_journey_only")
 }
 
 func runTestCase(t *testing.T, folder string) {
