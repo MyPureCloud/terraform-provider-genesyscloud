@@ -26,6 +26,12 @@ var (
 			Type:        schema.TypeString,
 			Required:    true,
 		},
+		"trigger_with_segments": {
+			Description: "Trigger action map if any segment in the list is assigned to a given customer.",
+			Type:        schema.TypeSet,
+			Required:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 		// TODO
 	}
 )
@@ -160,17 +166,20 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Actionmap) {
 	d.Set("is_active", *actionMap.IsActive)
 	d.Set("display_name", *actionMap.DisplayName)
+	d.Set("trigger_with_segments", stringListToSet(*actionMap.TriggerWithSegments))
 	// TODO
 }
 
 func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionmap {
 	isActive := getNullableBool(actionMap, "is_active")
 	displayName := getNullableValue[string](actionMap, "display_name")
+	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
 	// TODO
 
 	return &platformclientv2.Actionmap{
-		IsActive:    isActive,
-		DisplayName: displayName,
+		IsActive:            isActive,
+		DisplayName:         displayName,
+		TriggerWithSegments: triggerWithSegments,
 		// TODO
 	}
 }

@@ -31,6 +31,7 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 ### Required
 
 - `display_name` (String) Display name of the action map.
+- `trigger_with_segments` (Set of String) Trigger action map if any segment in the list is assigned to a given customer.
 
 ### Optional
 
