@@ -37,7 +37,6 @@ type AllSkillGroups struct {
 	PreviousURI string `json:"previousUri"`
 }
 
-//TODO
 func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
@@ -174,7 +173,10 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 	   and then pass it into API client
 	*/
 	var skillGroupsPayload map[string]interface{}
-	json.Unmarshal([]byte(finalSkillGroupsJson), &skillGroupsPayload)
+	err = json.Unmarshal([]byte(finalSkillGroupsJson), &skillGroupsPayload)
+	if err != nil {
+		return diag.Errorf("Failed to unmarshal the JSON payload while creating/updating the skills group %s: %s", skillGroupsRequest.Name, err)
+	}
 
 	httpMethod := "POST"
 	if create == false {
@@ -239,7 +241,6 @@ func mergeSkillConditionsIntoSkillGroups(d *schema.ResourceData, skillGroupsRequ
 	return skillGroupsRequestAfter, nil
 }
 
-//DONE
 func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
@@ -330,13 +331,11 @@ func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]strin
 	return headerParams
 }
 
-//DONE
 func updateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	route := "/api/v2/routing/skillgroups/" + d.Id()
 	return createOrUpdateSkillGroups(ctx, d, meta, route, false)
 }
 
-//Done
 func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 

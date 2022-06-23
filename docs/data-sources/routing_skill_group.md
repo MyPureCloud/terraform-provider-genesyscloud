@@ -3,18 +3,18 @@
 page_title: "genesyscloud_routing_skill_group Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Routing Skill Group. Select a skill group by name.
+  Data source for Genesys Cloud Routing Skills Groups. Select a skill group by name.
 ---
 
 # genesyscloud_routing_skill_group (Data Source)
 
-Data source for Genesys Cloud Routing Skill Groups. Select a skill group by name.
+Data source for Genesys Cloud Routing Skills Groups. Select a skill group by name.
 
 ## Example Usage
 
 ```terraform
-data "genesyscloud_routing_skill_group" "marketing" {
-  name = "marketinggroup"
+data "genesyscloud_routing_skill_group" "skill_group" {
+  name = "MyDynamicGroup"
 }
 ```
 
@@ -25,13 +25,8 @@ data "genesyscloud_routing_skill_group" "marketing" {
 
 - `name` (String) Skill group name.
 
-### Optional
-
-- `description` (String) Description of the skill group.
-- `division_id` (String) The division id to which this skill group belongs to. If no division_id is specified the default division for your organization will be used.
-- `skill_conditions` (JSON Encoded String) Rules that will be used to determine group membership.
-
-
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+

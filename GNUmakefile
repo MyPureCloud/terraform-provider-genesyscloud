@@ -7,7 +7,7 @@ BIN_NAME=terraform-provider-genesyscloud
 BIN_PATH=${DIST_DIR}/${BIN_NAME}
 
 PLUGINS_DIR=~/.terraform.d/plugins
-PLUGIN_PATH=genesys.local.com/mypurecloud/genesyscloud
+PLUGIN_PATH=genesys.com/mypurecloud/genesyscloud
 DEV_VERSION=0.1.0
 
 # Run acceptance tests

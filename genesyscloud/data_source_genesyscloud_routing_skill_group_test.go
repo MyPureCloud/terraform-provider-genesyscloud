@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"fmt"
-	"log"
 	"testing"
 
 	"github.com/google/uuid"
@@ -11,17 +10,18 @@ import (
 
 func TestAccDataSourceRoutingSkillGroup(t *testing.T) {
 	var (
-		skillGroupResource   = "routing-skill-group"
-		skillGroupDataSource = "routing-skill-group-data"
-		skillGroupName       = "Skillgroup" + uuid.NewString()
+		skillGroupResource    = "routing-skill-group"
+		skillGroupDataSource  = "routing-skill-group-data"
+		skillGroupName        = "Skillgroup" + uuid.NewString()
+		skillGroupDescription = "description-" + uuid.NewString()
 	)
 
-	config := generateRoutingSkillGroupResource(
+	config := generateRoutingSkillGroupResourceBasic(
 		skillGroupResource,
 		skillGroupName,
+		skillGroupDescription,
 	) + generateRoutingSkillGroupDataSource(skillGroupDataSource, "genesyscloud_routing_skill_group."+skillGroupResource+".name", "genesyscloud_routing_skill_group."+skillGroupResource)
 
-	log.Printf(config)
 	resource.Test(t, resource.TestCase{
 
 		PreCheck:          func() { testAccPreCheck(t) },
