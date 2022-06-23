@@ -275,8 +275,7 @@ func journeySegmentExporter() *ResourceExporter {
 
 func resourceJourneySegment() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Journey Segment",
-
+		Description:   "Genesys Cloud Journey Segment",
 		CreateContext: createWithPooledClient(createJourneySegment),
 		ReadContext:   readWithPooledClient(readJourneySegment),
 		UpdateContext: updateWithPooledClient(updateJourneySegment),
@@ -295,7 +294,6 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	journeySegment := buildSdkJourneySegment(d)
 
 	log.Printf("Creating journey segment %s", *journeySegment.DisplayName)
-
 	result, resp, err := journeyApi.PostJourneySegments(*journeySegment)
 	if err != nil {
 		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, *journeySegment, resp.RawBody)
