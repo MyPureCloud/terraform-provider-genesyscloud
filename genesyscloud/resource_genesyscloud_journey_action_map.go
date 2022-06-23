@@ -36,20 +36,20 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 	pageCount := 1 // Needed because of broken journey common paging
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
 		const pageSize = 100
-		journeyActionMaps, _, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
+		actionMaps, _, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of journey segments: %v", getErr)
+			return nil, diag.Errorf("Failed to get page of journey action maps: %v", getErr)
 		}
 
-		if journeyActionMaps.Entities == nil || len(*journeyActionMaps.Entities) == 0 {
+		if actionMaps.Entities == nil || len(*actionMaps.Entities) == 0 {
 			break
 		}
 
-		for _, journeyActionMap := range *journeyActionMaps.Entities {
-			resources[*journeyActionMap.Id] = &ResourceMeta{Name: *journeyActionMap.DisplayName}
+		for _, actionMap := range *actionMaps.Entities {
+			resources[*actionMap.Id] = &ResourceMeta{Name: *actionMap.DisplayName}
 		}
 
-		pageCount = *journeyActionMaps.PageCount
+		pageCount = *actionMaps.PageCount
 	}
 
 	return resources, nil
@@ -142,7 +142,7 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		_, resp, err := journeyApi.GetJourneySegment(d.Id())
+		_, resp, err := journeyApi.GetJourneyActionmap(d.Id())
 		if err != nil {
 			if isStatus404(resp) {
 				// journey action map deleted
@@ -156,14 +156,14 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	})
 }
 
-func flattenActionMap(d *schema.ResourceData, journeySegment *platformclientv2.Actionmap) {
-	d.Set("display_name", *journeySegment.DisplayName)
+func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Actionmap) {
+	d.Set("display_name", *actionMap.DisplayName)
 	// TODO
 }
 
-func buildSdkActionMap(journeySegment *schema.ResourceData) *platformclientv2.Actionmap {
-	isActive := getNullableBool(journeySegment, "is_active")
-	displayName := getNullableValue[string](journeySegment, "display_name")
+func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionmap {
+	isActive := getNullableBool(actionMap, "is_active")
+	displayName := getNullableValue[string](actionMap, "display_name")
 	// TODO
 
 	return &platformclientv2.Actionmap{
@@ -173,9 +173,9 @@ func buildSdkActionMap(journeySegment *schema.ResourceData) *platformclientv2.Ac
 	}
 }
 
-func buildSdkPatchActionMap(journeySegment *schema.ResourceData) *platformclientv2.Patchactionmap {
-	isActive := getNullableBool(journeySegment, "is_active")
-	displayName := getNullableValue[string](journeySegment, "display_name")
+func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Patchactionmap {
+	isActive := getNullableBool(actionMap, "is_active")
+	displayName := getNullableValue[string](actionMap, "display_name")
 
 	return &platformclientv2.Patchactionmap{
 		IsActive:    isActive,

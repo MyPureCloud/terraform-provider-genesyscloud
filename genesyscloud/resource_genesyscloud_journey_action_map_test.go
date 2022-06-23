@@ -47,27 +47,27 @@ func cleanupJourneyActionMaps(idPrefix string) {
 	pageCount := 1 // Needed because of broken journey common paging
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
 		const pageSize = 100
-		journeyActionMaps, _, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
+		actionMaps, _, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
 		if getErr != nil {
 			return
 		}
 
-		if journeyActionMaps.Entities == nil || len(*journeyActionMaps.Entities) == 0 {
+		if actionMaps.Entities == nil || len(*actionMaps.Entities) == 0 {
 			break
 		}
 
-		for _, journeyActionMap := range *journeyActionMaps.Entities {
-			if journeyActionMap.DisplayName != nil && strings.HasPrefix(*journeyActionMap.DisplayName, idPrefix) {
-				_, delErr := journeyApi.DeleteJourneySegment(*journeyActionMap.Id)
+		for _, actionMap := range *actionMaps.Entities {
+			if actionMap.DisplayName != nil && strings.HasPrefix(*actionMap.DisplayName, idPrefix) {
+				_, delErr := journeyApi.DeleteJourneyActionmap(*actionMap.Id)
 				if delErr != nil {
-					diag.Errorf("failed to delete journey action map %s (%s): %s", *journeyActionMap.Id, *journeyActionMap.DisplayName, delErr)
+					diag.Errorf("failed to delete journey action map %s (%s): %s", *actionMap.Id, *actionMap.DisplayName, delErr)
 					return
 				}
-				log.Printf("Deleted journey action map %s (%s)", *journeyActionMap.Id, *journeyActionMap.DisplayName)
+				log.Printf("Deleted journey action map %s (%s)", *actionMap.Id, *actionMap.DisplayName)
 			}
 		}
 
-		pageCount = *journeyActionMaps.PageCount
+		pageCount = *actionMaps.PageCount
 	}
 }
 
@@ -78,8 +78,8 @@ func testVerifyJourneyActionMapsDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		journeySegment, resp, err := journeyApi.GetJourneyActionmap(rs.Primary.ID)
-		if journeySegment != nil {
+		actionMap, resp, err := journeyApi.GetJourneyActionmap(rs.Primary.ID)
+		if actionMap != nil {
 			return fmt.Errorf("journey action map (%s) still exists", rs.Primary.ID)
 		}
 
