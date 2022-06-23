@@ -16,12 +16,12 @@ import (
 var (
 	journeyActionMapSchema = map[string]*schema.Schema{
 		"is_active": {
-			Description: "Whether or not the segment is active.",
+			Description: "Whether the action map is active.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 		},
 		"display_name": {
-			Description: "The display name of the segment.",
+			Description: "Display name of the action map.",
 			Type:        schema.TypeString,
 			Required:    true,
 		},
