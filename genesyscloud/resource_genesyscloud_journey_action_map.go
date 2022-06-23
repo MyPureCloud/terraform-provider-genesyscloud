@@ -19,6 +19,7 @@ var (
 			Description: "Whether the action map is active.",
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Default:     true,
 		},
 		"display_name": {
 			Description: "Display name of the action map.",
@@ -157,6 +158,7 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Actionmap) {
+	d.Set("is_active", *actionMap.IsActive)
 	d.Set("display_name", *actionMap.DisplayName)
 	// TODO
 }

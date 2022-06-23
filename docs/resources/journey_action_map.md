@@ -34,7 +34,7 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 ### Optional
 
-- `is_active` (Boolean) Whether the action map is active.
+- `is_active` (Boolean) Whether the action map is active. Defaults to `true`.
 
 ### Read-Only
 

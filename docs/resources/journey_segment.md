@@ -68,7 +68,7 @@ resource "genesyscloud_journey_segment" "example_journey_segment" {
 - `context` (Block Set, Max: 1) The context of the segment. (see [below for nested schema](#nestedblock--context))
 - `description` (String) A description of the segment.
 - `external_segment` (Block Set, Max: 1) Details of an entity corresponding to this segment in an external system. (see [below for nested schema](#nestedblock--external_segment))
-- `is_active` (Boolean) Whether or not the segment is active.
+- `is_active` (Boolean) Whether or not the segment is active. Defaults to `true`.
 - `journey` (Block Set, Max: 1) The pattern of rules defining the segment. (see [below for nested schema](#nestedblock--journey))
 - `should_display_to_agent` (Boolean) Whether or not the segment should be displayed to agent/supervisor users.
 

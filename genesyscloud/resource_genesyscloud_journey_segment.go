@@ -21,6 +21,7 @@ var (
 			Description: "Whether or not the segment is active.",
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Default:     true,
 		},
 		"display_name": {
 			Description: "The display name of the segment.",
@@ -368,6 +369,7 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclientv2.Journeysegment) {
+	d.Set("is_active", *journeySegment.IsActive)
 	d.Set("display_name", *journeySegment.DisplayName)
 	setNullableValue(d, "description", journeySegment.Description)
 	setNullableValue(d, "color", journeySegment.Color)
