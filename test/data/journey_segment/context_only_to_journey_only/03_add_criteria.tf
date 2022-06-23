@@ -11,6 +11,12 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
         operator           = "notEqual"
         should_ignore_case = true
       }
+      criteria {
+        key                = "page.keywords"
+        values             = ["Blabla", "hubhub"]
+        operator           = "containsAny"
+        should_ignore_case = true
+      }
       count        = 1
       stream_type  = "Web"
       session_type = "web"
