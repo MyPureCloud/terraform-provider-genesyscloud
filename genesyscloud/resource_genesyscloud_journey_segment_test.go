@@ -13,21 +13,21 @@ import (
 )
 
 func TestAccResourceJourneySegmentSession(t *testing.T) {
-	runTestCase(t, "basic_session_attributes")
+	runJourneySegmentTestCase(t, "basic_session_attributes")
 }
 
 func TestAccResourceJourneySegmentCustomer(t *testing.T) {
-	runTestCase(t, "basic_customer_attributes")
+	runJourneySegmentTestCase(t, "basic_customer_attributes")
 }
 
 func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
-	runTestCase(t, "context_only_to_journey_only")
+	runJourneySegmentTestCase(t, "context_only_to_journey_only")
 }
 
-func runTestCase(t *testing.T, testCaseName string) {
+func runJourneySegmentTestCase(t *testing.T, testCaseName string) {
 	const testSuitName = "journey_segment"
 	const resourceName = "genesyscloud_journey_segment"
-	idPrefix := setup(t)
+	idPrefix := setupJourneySegment(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -37,7 +37,7 @@ func runTestCase(t *testing.T, testCaseName string) {
 	})
 }
 
-func setup(t *testing.T) string {
+func setupJourneySegment(t *testing.T) string {
 	const idPrefix = "terraform_test_"
 
 	err := authorizeSdk()
