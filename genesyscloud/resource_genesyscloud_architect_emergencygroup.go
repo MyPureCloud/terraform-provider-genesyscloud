@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -130,7 +130,7 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	if divisionId != "" {
-		emergencyGroup.Division = &platformclientv2.Division{Id: &divisionId}
+		emergencyGroup.Division = &platformclientv2.Writabledivision{Id: &divisionId}
 	}
 
 	log.Printf("Creating emergency group %s", name)
@@ -212,7 +212,7 @@ func updateEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 		log.Printf("Updating emergency group %s", name)
 		_, resp, putErr := architectAPI.PutArchitectEmergencygroup(d.Id(), platformclientv2.Emergencygroup{
 			Name:               &name,
-			Division:           &platformclientv2.Division{Id: &divisionId},
+			Division:           &platformclientv2.Writabledivision{Id: &divisionId},
 			Description:        &description,
 			Version:            emergencyGroup.Version,
 			State:              emergencyGroup.State,

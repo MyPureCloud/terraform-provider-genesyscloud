@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 )
 
 var (
@@ -598,8 +598,9 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("outbound_messaging_sms_address_id", nil)
 		}
 
-		if currentQueue.OutboundEmailAddress != nil {
-			d.Set("outbound_email_address", []interface{}{flattenQueueEmailAddress(*currentQueue.OutboundEmailAddress)})
+		if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
+			outboundEmailAddress := *currentQueue.OutboundEmailAddress
+			d.Set("outbound_email_address", []interface{}{flattenQueueEmailAddress(*outboundEmailAddress)})
 		} else {
 			d.Set("outbound_email_address", nil)
 		}
@@ -951,12 +952,12 @@ func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueem
 
 		domainID := settingsMap["domain_id"].(string)
 		routeID := settingsMap["route_id"].(string)
-
+		inboundRoute := &platformclientv2.Inboundroute{
+			Id: &routeID,
+		}
 		return &platformclientv2.Queueemailaddress{
 			Domain: &platformclientv2.Domainentityref{Id: &domainID},
-			Route: &platformclientv2.Inboundroute{
-				Id: &routeID,
-			},
+			Route:  &inboundRoute,
 		}
 	}
 	return nil
@@ -968,7 +969,8 @@ func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 		settingsMap["domain_id"] = *settings.Domain.Id
 	}
 	if settings.Route != nil {
-		settingsMap["route_id"] = *settings.Route.Id
+		route := *settings.Route
+		settingsMap["route_id"] = *route.Id
 	}
 	return settingsMap
 }
