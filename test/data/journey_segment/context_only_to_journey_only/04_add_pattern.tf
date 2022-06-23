@@ -22,5 +22,17 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
       session_type = "web"
       event_name   = "OtherEventName"
     }
+    patterns {
+      criteria {
+        key                = "searchQuery"
+        values             = ["Blabla"]
+        operator           = "notContainsAll"
+        should_ignore_case = true
+      }
+      count        = 1
+      stream_type  = "Web"
+      session_type = "web"
+      event_name   = "OtherEventName"
+    }
   }
 }
