@@ -30,11 +30,11 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 ### Required
 
-- `display_name` (String) The display name of the segment.
+- `display_name` (String) Display name of the action map.
 
 ### Optional
 
-- `is_active` (Boolean) Whether or not the segment is active.
+- `is_active` (Boolean) Whether the action map is active.
 
 ### Read-Only
 
