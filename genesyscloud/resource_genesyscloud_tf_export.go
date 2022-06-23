@@ -566,7 +566,7 @@ func determineVarType(s *schema.Schema) string {
 	return varType
 }
 
-func getDecodedData(jsonString string) (string, error) {
+func getDecodedData(jsonString string, currAttr string) (string, error) {
 	var jsonVar interface{}
 	err := json.Unmarshal([]byte(jsonString), &jsonVar)
 	if err != nil {
@@ -581,8 +581,14 @@ func getDecodedData(jsonString string) (string, error) {
 	// replace : with = as is expected syntax in a jsonencode object
 	decodedJson := strings.Replace(string(formattedJson), "\": ", "\" = ", -1)
 	// fix indentation
-	decodedJson = strings.Replace(decodedJson, "\t", "\t  ", -1)
-	decodedJson = fmt.Sprintf("%v  }", decodedJson[:len(decodedJson)-1])
+	numOfIndents := strings.Count(currAttr, ".") + 1
+	spaces := ""
+	for i := 0; i < numOfIndents; i++ {
+		spaces = spaces + "  "
+	}
+	decodedJson = strings.Replace(decodedJson, "\t", fmt.Sprintf("\t%v", spaces), -1)
+	// add extra space before the final character (either ']' or '}')
+	decodedJson = fmt.Sprintf("%v%v%v", decodedJson[:len(decodedJson)-1], spaces, decodedJson[len(decodedJson)-1:])
 	decodedJson = fmt.Sprintf("jsonencode(%v)", decodedJson)
 	return decodedJson, nil
 }
@@ -1123,7 +1129,7 @@ func sanitizeConfigMap(
 
 		if exportingAsHCL && exporter.isJsonEncodable(currAttr) {
 			if vStr, ok := configMap[key].(string); ok {
-				decodedData, err := getDecodedData(vStr)
+				decodedData, err := getDecodedData(vStr, currAttr)
 				if err != nil {
 					log.Printf("error decoding json string: %v\n", err)
 					configMap[key] = vStr
