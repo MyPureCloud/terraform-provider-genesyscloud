@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 )
 
 func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -124,7 +124,7 @@ func createArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 
 	// Optional attributes
 	if divisionID != "" {
-		schedGroup.Division = &platformclientv2.Division{Id: &divisionID}
+		schedGroup.Division = &platformclientv2.Writabledivision{Id: &divisionID}
 	}
 
 	if description != "" {
@@ -221,7 +221,7 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("Updating schedule group %s", name)
 		_, resp, putErr := archAPI.PutArchitectSchedulegroup(d.Id(), platformclientv2.Schedulegroup{
 			Name:             &name,
-			Division:         &platformclientv2.Division{Id: &divisionID},
+			Division:         &platformclientv2.Writabledivision{Id: &divisionID},
 			Version:          scheduleGroup.Version,
 			Description:      &description,
 			TimeZone:         &timeZone,

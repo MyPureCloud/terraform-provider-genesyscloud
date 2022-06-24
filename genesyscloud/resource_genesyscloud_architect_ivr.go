@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 )
 
 func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -138,7 +138,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	if divisionId != "" {
-		ivrBody.Division = &platformclientv2.Division{Id: &divisionId}
+		ivrBody.Division = &platformclientv2.Writabledivision{Id: &divisionId}
 	}
 
 	// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which
@@ -256,7 +256,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		if divisionId != "" {
-			ivrBody.Division = &platformclientv2.Division{Id: &divisionId}
+			ivrBody.Division = &platformclientv2.Writabledivision{Id: &divisionId}
 		}
 
 		// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which

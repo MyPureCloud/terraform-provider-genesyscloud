@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 )
 
 var (
@@ -330,8 +330,8 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 			d.Set("skill_ids", nil)
 		}
 
-		if route.ReplyEmailAddress != nil && *route.ReplyEmailAddress != nil {
-			d.Set("reply_email_address", []interface{}{flattenQueueEmailAddress(**route.ReplyEmailAddress)})
+		if route.ReplyEmailAddress != nil {
+			d.Set("reply_email_address", []interface{}{flattenQueueEmailAddress(*route.ReplyEmailAddress)})
 		} else {
 			d.Set("reply_email_address", nil)
 		}
@@ -408,7 +408,7 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func buildSdkReplyEmailAddress(d *schema.ResourceData) **platformclientv2.Queueemailaddress {
+func buildSdkReplyEmailAddress(d *schema.ResourceData) *platformclientv2.Queueemailaddress {
 	replyEmailAddress := d.Get("reply_email_address").([]interface{})
 	if replyEmailAddress != nil && len(replyEmailAddress) > 0 {
 		settingsMap := replyEmailAddress[0].(map[string]interface{})
@@ -417,11 +417,12 @@ func buildSdkReplyEmailAddress(d *schema.ResourceData) **platformclientv2.Queuee
 		routeID := settingsMap["route_id"].(string)
 
 		// For some reason the SDK expects a pointer to a pointer for this property
-		result := &platformclientv2.Queueemailaddress{
+		inboundRoute := &platformclientv2.Inboundroute{
+			Id: &routeID,
+		}
+		result := platformclientv2.Queueemailaddress{
 			Domain: &platformclientv2.Domainentityref{Id: &domainID},
-			Route: &platformclientv2.Inboundroute{
-				Id: &routeID,
-			},
+			Route:  &inboundRoute,
 		}
 		return &result
 	}
