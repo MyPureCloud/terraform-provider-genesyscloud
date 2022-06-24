@@ -348,7 +348,7 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
-	log.Printf("Deleting jounrey segment with display name %s", displayName)
+	log.Printf("Deleting journey segment with display name %s", displayName)
 	if _, err := journeyApi.DeleteJourneySegment(d.Id()); err != nil {
 		return diag.Errorf("Failed to delete journey segment with display name %s: %s", displayName, err)
 	}
