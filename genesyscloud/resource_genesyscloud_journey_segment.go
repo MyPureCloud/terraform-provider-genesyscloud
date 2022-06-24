@@ -331,11 +331,25 @@ func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interf
 func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
-	journeySegment := buildSdkPatchSegment(d)
+	patchSegment := buildSdkPatchSegment(d)
 
 	log.Printf("Updating journey segment %s", d.Id())
-	if _, resp, err := journeyApi.PatchJourneySegment(d.Id(), *journeySegment); err != nil {
-		return diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, *journeySegment, resp.RawBody)
+	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Get current journey segment version
+		journeySegment, resp, getErr := journeyApi.GetJourneySegment(d.Id())
+		if getErr != nil {
+			return resp, diag.Errorf("Failed to read current journey segment %s: %s", d.Id(), getErr)
+		}
+
+		patchSegment.Version = journeySegment.Version
+		_, resp, patchErr := journeyApi.PatchJourneySegment(d.Id(), *patchSegment)
+		if patchErr != nil {
+			return resp, diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *patchSegment.DisplayName, patchErr, *patchSegment, resp.RawBody)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	log.Printf("Updated journey segment %s", d.Id())
