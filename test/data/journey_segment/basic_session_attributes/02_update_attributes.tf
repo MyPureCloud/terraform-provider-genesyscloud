@@ -1,4 +1,5 @@
 resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
+  is_active               = false
   display_name            = "terraform_test_-TEST-CASE-_updated"
   color                   = "#308000"
   scope                   = "Session"
