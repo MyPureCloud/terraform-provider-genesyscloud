@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -348,7 +348,7 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
-	log.Printf("Deleting jounrey segment with display name %s", displayName)
+	log.Printf("Deleting journey segment with display name %s", displayName)
 	if _, err := journeyApi.DeleteJourneySegment(d.Id()); err != nil {
 		return diag.Errorf("Failed to delete journey segment with display name %s: %s", displayName, err)
 	}
