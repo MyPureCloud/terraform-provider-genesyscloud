@@ -143,7 +143,7 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
-	log.Printf("Deleting jounrey action map with display name %s", displayName)
+	log.Printf("Deleting journey action map with display name %s", displayName)
 	if _, err := journeyApi.DeleteJourneyActionmap(d.Id()); err != nil {
 		return diag.Errorf("Failed to delete journey action map with display name %s: %s", displayName, err)
 	}
