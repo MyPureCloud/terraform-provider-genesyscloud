@@ -14,7 +14,6 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
       count        = 1
       stream_type  = "Web"
       session_type = "web"
-      event_name   = "OtherEventName"
     }
   }
 }
