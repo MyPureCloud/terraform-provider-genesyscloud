@@ -19,7 +19,8 @@ func TestAccResourceJourneyActionMap(t *testing.T) {
 func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	const testSuitName = "journey_action_map"
 	const resourceName = "genesyscloud_journey_action_map"
-	idPrefix := setupJourneyActionMap(t)
+	const idPrefix = "terraform_test_"
+	setupJourneyActionMap(t, idPrefix, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -29,16 +30,13 @@ func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	})
 }
 
-func setupJourneyActionMap(t *testing.T) string {
-	const idPrefix = "terraform_test_"
-
+func setupJourneyActionMap(t *testing.T, idPrefix string, testCaseName string) {
 	err := authorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cleanupJourneyActionMaps(idPrefix)
-	return idPrefix
+	cleanupJourneyActionMaps(idPrefix + testCaseName)
 }
 
 func cleanupJourneyActionMaps(idPrefix string) {
