@@ -3,10 +3,16 @@ page_title: "genesyscloud_routing_skill_group Resource - terraform-provider-gene
 subcategory: ""
 description: |-
   Genesys Cloud Skill Group
+          Note: This resource is currently in a closed beta. If you would like to use this resource please contact
+          Chris Bohlin (chris.bohlin@genesys.com) and request access. If you attempt to use this resource without being part the beta, you will get
+          an error.
 ---
 # genesyscloud_routing_skill_group (Resource)
 
 Genesys Cloud Skill Group
+		**Note**: This resource is currently in a closed beta. If you would like to use this resource please contact
+		Chris Bohlin (chris.bohlin@genesys.com) and request access. If you attempt to use this resource without being part the beta, you will get
+		an error.
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
@@ -21,8 +27,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_routing_skill_group" "myskillgroup" {
-  name        = "Series 6 Skill Group"
-  description = "Series 6"
+  name        = "Series6"
+  description = "Agents with exposure to Series 6 license"
   skill_conditions = jsonencode(
     [
       {
