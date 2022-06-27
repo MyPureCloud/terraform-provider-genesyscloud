@@ -34,24 +34,24 @@ func dataSourceJourneyOutcomeRead(ctx context.Context, d *schema.ResourceData, m
 		pageCount := 1 // Needed because of broken journey common paging
 		for pageNum := 1; pageNum <= pageCount; pageNum++ {
 			const pageSize = 100
-			journeySegments, _, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
+			journeyOutcomes, _, getErr := journeyApi.GetJourneyOutcomes(pageNum, pageSize, "", nil, nil, "")
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("failed to get page of journey segments: %v", getErr))
+				return resource.NonRetryableError(fmt.Errorf("failed to get page of journey outcomes: %v", getErr))
 			}
 
-			if journeySegments.Entities == nil || len(*journeySegments.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no journey segment found with name %s", name))
+			if journeyOutcomes.Entities == nil || len(*journeyOutcomes.Entities) == 0 {
+				return resource.RetryableError(fmt.Errorf("no journey outcome found with name %s", name))
 			}
 
-			for _, journeySegment := range *journeySegments.Entities {
-				if journeySegment.DisplayName != nil && *journeySegment.DisplayName == name {
-					d.SetId(*journeySegment.Id)
+			for _, journeyOutcome := range *journeyOutcomes.Entities {
+				if journeyOutcome.DisplayName != nil && *journeyOutcome.DisplayName == name {
+					d.SetId(*journeyOutcome.Id)
 					return nil
 				}
 			}
 
-			pageCount = *journeySegments.PageCount
+			pageCount = *journeyOutcomes.PageCount
 		}
-		return resource.RetryableError(fmt.Errorf("no journey segment found with name %s", name))
+		return resource.RetryableError(fmt.Errorf("no journey outcome found with name %s", name))
 	})
 }
