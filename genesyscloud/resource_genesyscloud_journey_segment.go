@@ -168,6 +168,7 @@ var (
 				Description: "The name of the event for which this pattern can be matched on.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Default:     nil,
 			},
 		},
 	}
@@ -385,27 +386,27 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclientv2.Journeysegment) {
 	d.Set("is_active", *journeySegment.IsActive)
 	d.Set("display_name", *journeySegment.DisplayName)
-	setNullableValue(d, "description", journeySegment.Description)
-	setNullableValue(d, "color", journeySegment.Color)
-	setNullableValue(d, "scope", journeySegment.Scope)
-	setNullableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
-	setNullableValue(d, "context", flattenGenericAsList(journeySegment.Context, flattenContext))
-	setNullableValue(d, "journey", flattenGenericAsList(journeySegment.Journey, flattenJourney))
-	setNullableValue(d, "external_segment", flattenGenericAsList(journeySegment.ExternalSegment, flattenExternalSegment))
-	setNullableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
+	setNillableValue(d, "description", journeySegment.Description)
+	setNillableValue(d, "color", journeySegment.Color)
+	setNillableValue(d, "scope", journeySegment.Scope)
+	setNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
+	setNillableValue(d, "context", flattenGenericAsList(journeySegment.Context, flattenContext))
+	setNillableValue(d, "journey", flattenGenericAsList(journeySegment.Journey, flattenJourney))
+	setNillableValue(d, "external_segment", flattenGenericAsList(journeySegment.ExternalSegment, flattenExternalSegment))
+	setNillableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
-	isActive := getNullableBool(journeySegment, "is_active")
-	displayName := getNullableValue[string](journeySegment, "display_name")
-	description := getNullableValue[string](journeySegment, "description")
-	color := getNullableValue[string](journeySegment, "color")
-	scope := getNullableValue[string](journeySegment, "scope")
-	shouldDisplayToAgent := getNullableBool(journeySegment, "should_display_to_agent")
+	isActive := getNillableBool(journeySegment, "is_active")
+	displayName := getNillableValue[string](journeySegment, "display_name")
+	description := getNillableValue[string](journeySegment, "description")
+	color := getNillableValue[string](journeySegment, "color")
+	scope := getNillableValue[string](journeySegment, "scope")
+	shouldDisplayToAgent := getNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
 	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
 	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment)
-	assignmentExpirationDays := getNullableValue[int](journeySegment, "assignment_expiration_days")
+	assignmentExpirationDays := getNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Journeysegment{
 		IsActive:                 isActive,
@@ -422,15 +423,15 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 }
 
 func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2.Patchsegment {
-	isActive := getNullableBool(journeySegment, "is_active")
-	displayName := getNullableValue[string](journeySegment, "display_name")
-	description := getNullableValue[string](journeySegment, "description")
-	color := getNullableValue[string](journeySegment, "color")
-	shouldDisplayToAgent := getNullableBool(journeySegment, "should_display_to_agent")
+	isActive := getNillableBool(journeySegment, "is_active")
+	displayName := getNillableValue[string](journeySegment, "display_name")
+	description := getNillableValue[string](journeySegment, "description")
+	color := getNillableValue[string](journeySegment, "color")
+	shouldDisplayToAgent := getNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
 	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
 	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment)
-	assignmentExpirationDays := getNullableValue[int](journeySegment, "assignment_expiration_days")
+	assignmentExpirationDays := getNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Patchsegment{
 		IsActive:                 isActive,
@@ -538,7 +539,7 @@ func buildSdkJourneyPattern(journeyPattern map[string]interface{}) *platformclie
 	count := journeyPattern["count"].(int)
 	streamType := journeyPattern["stream_type"].(string)
 	sessionType := journeyPattern["session_type"].(string)
-	eventName := getNullableMapValue[string](journeyPattern, "event_name")
+	eventName := getNonDefaultMapValue[string](journeyPattern, "event_name")
 
 	return &platformclientv2.Journeypattern{
 		Criteria:    criteria,
