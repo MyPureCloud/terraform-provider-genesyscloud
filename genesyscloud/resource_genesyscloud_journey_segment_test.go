@@ -13,18 +13,18 @@ import (
 )
 
 func TestAccResourceJourneySegmentSession(t *testing.T) {
-	runJourneySegmentTestCase(t, "basic_session_attributes")
+	runResourceJourneySegmentTestCase(t, "basic_session_attributes")
 }
 
 func TestAccResourceJourneySegmentCustomer(t *testing.T) {
-	runJourneySegmentTestCase(t, "basic_customer_attributes")
+	runResourceJourneySegmentTestCase(t, "basic_customer_attributes")
 }
 
 func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
-	runJourneySegmentTestCase(t, "context_only_to_journey_only")
+	runResourceJourneySegmentTestCase(t, "context_only_to_journey_only")
 }
 
-func runJourneySegmentTestCase(t *testing.T, testCaseName string) {
+func runResourceJourneySegmentTestCase(t *testing.T, testCaseName string) {
 	const testType = "resource"
 	const testSuitName = "journey_segment"
 	const resourceName = "genesyscloud_journey_segment"

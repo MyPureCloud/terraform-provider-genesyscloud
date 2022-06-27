@@ -9,3 +9,8 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
     source = "AdobeExperiencePlatform"
   }
 }
+
+data "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
+  name       = "terraform_test_-TEST-CASE-"
+  depends_on = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-]
+}
