@@ -141,6 +141,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_integration":                                 dataSourceIntegration(),
 				"genesyscloud_integration_action":                          dataSourceIntegrationAction(),
 				"genesyscloud_integration_credential":                      dataSourceIntegrationCredential(),
+				"genesyscloud_journey_segment":                             dataSourceJourneySegment(),
 				"genesyscloud_location":                                    dataSourceLocation(),
 				"genesyscloud_oauth_client":                                dataSourceOAuthClient(),
 				"genesyscloud_processautomation_trigger":                   dataSourceProcessAutomationTrigger(),
