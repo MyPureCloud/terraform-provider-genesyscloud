@@ -16,6 +16,6 @@ resource "genesyscloud_journey_outcome" "terraform_test_-TEST-CASE-" {
   }
   associated_value_field {
     data_type = "Integer"
-    name      = "updated associated value field name"
+    name      = "attributes.cartValue.value"
   }
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
+	"regexp"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -73,6 +74,10 @@ var (
 				Description: "The field name for extracting value from event.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ValidateFunc: validation.StringMatch(func() *regexp.Regexp {
+					r, _ := regexp.Compile("^attributes\\..+\\.value$")
+					return r
+				}(), ""),
 			},
 		},
 	}
