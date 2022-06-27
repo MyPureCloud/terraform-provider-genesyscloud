@@ -263,16 +263,22 @@ func randString(length int) string {
 	return string(s)
 }
 
-func generateTestSteps(testSuitName string, testCaseName string, resourceName string, idPrefix string) []resource.TestStep {
+func generateTestSteps(testType string, testSuitName string, testCaseName string, resourceName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
 	var testSteps []resource.TestStep
 
-	testCasePath := filepath.Join("..", "test", "data", testSuitName, testCaseName)
+	testCasePath := filepath.Join("..", "test", "data", testType, testSuitName, testCaseName)
 	testCaseFiles, _ := os.ReadDir(testCasePath)
+	checkFuncIndex := 0
 	for _, testCaseFile := range testCaseFiles {
 		if !testCaseFile.IsDir() && strings.HasSuffix(testCaseFile.Name(), ".tf") {
 			testCaseResource, _ := os.ReadFile(filepath.Join(testCasePath, testCaseFile.Name()))
 			config := strings.ReplaceAll(string(testCaseResource), "-TEST-CASE-", testCaseName)
-			testSteps = append(testSteps, resource.TestStep{Config: config})
+			var checkFunc resource.TestCheckFunc = nil
+			if checkFuncs != nil && checkFuncIndex < len(checkFuncs) {
+				checkFunc = checkFuncs[checkFuncIndex]
+			}
+			testSteps = append(testSteps, resource.TestStep{Config: config, Check: checkFunc})
+			checkFuncIndex++
 		}
 	}
 	log.Printf("Generated %d test steps for %s/%s testcase (%s)", len(testSteps), testSuitName, testCaseName, testCasePath)

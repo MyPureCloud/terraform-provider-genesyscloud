@@ -478,21 +478,13 @@ func buildSdkContextPattern(contextPattern map[string]interface{}) *platformclie
 
 func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecriteria) map[string]interface{} {
 	entityTypeCriteriaMap := make(map[string]interface{})
-	if entityTypeCriteria.Key != nil {
-		entityTypeCriteriaMap["key"] = *entityTypeCriteria.Key
-	}
+	setMapValueIfNotNull(entityTypeCriteriaMap, "key", entityTypeCriteria.Key)
 	if entityTypeCriteria.Values != nil {
 		entityTypeCriteriaMap["values"] = stringListToSet(*entityTypeCriteria.Values)
 	}
-	if entityTypeCriteria.ShouldIgnoreCase != nil {
-		entityTypeCriteriaMap["should_ignore_case"] = *entityTypeCriteria.ShouldIgnoreCase
-	}
-	if entityTypeCriteria.Operator != nil {
-		entityTypeCriteriaMap["operator"] = *entityTypeCriteria.Operator
-	}
-	if entityTypeCriteria.EntityType != nil {
-		entityTypeCriteriaMap["entity_type"] = *entityTypeCriteria.EntityType
-	}
+	setMapValueIfNotNull(entityTypeCriteriaMap, "should_ignore_case", entityTypeCriteria.ShouldIgnoreCase)
+	setMapValueIfNotNull(entityTypeCriteriaMap, "operator", entityTypeCriteria.Operator)
+	setMapValueIfNotNull(entityTypeCriteriaMap, "entity_type", entityTypeCriteria.EntityType)
 	return entityTypeCriteriaMap
 }
 
@@ -534,18 +526,10 @@ func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
 func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[string]interface{} {
 	journeyPatternMap := make(map[string]interface{})
 	journeyPatternMap["criteria"] = flattenGenericList(journeyPattern.Criteria, flattenCriteria)
-	if journeyPattern.Count != nil {
-		journeyPatternMap["count"] = *journeyPattern.Count
-	}
-	if journeyPattern.StreamType != nil {
-		journeyPatternMap["stream_type"] = *journeyPattern.StreamType
-	}
-	if journeyPattern.SessionType != nil {
-		journeyPatternMap["session_type"] = *journeyPattern.SessionType
-	}
-	if journeyPattern.EventName != nil {
-		journeyPatternMap["event_name"] = *journeyPattern.EventName
-	}
+	setMapValueIfNotNull(journeyPatternMap, "count", journeyPattern.Count)
+	setMapValueIfNotNull(journeyPatternMap, "stream_type", journeyPattern.StreamType)
+	setMapValueIfNotNull(journeyPatternMap, "session_type", journeyPattern.SessionType)
+	setMapValueIfNotNull(journeyPatternMap, "event_name", journeyPattern.EventName)
 	return journeyPatternMap
 }
 
@@ -554,31 +538,25 @@ func buildSdkJourneyPattern(journeyPattern map[string]interface{}) *platformclie
 	count := journeyPattern["count"].(int)
 	streamType := journeyPattern["stream_type"].(string)
 	sessionType := journeyPattern["session_type"].(string)
-	eventName := journeyPattern["event_name"].(string)
+	eventName := getNullableMapValue[string](journeyPattern, "event_name")
 
 	return &platformclientv2.Journeypattern{
 		Criteria:    criteria,
 		Count:       &count,
 		StreamType:  &streamType,
 		SessionType: &sessionType,
-		EventName:   &eventName,
+		EventName:   eventName,
 	}
 }
 
 func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{} {
 	criteriaMap := make(map[string]interface{})
-	if criteria.Key != nil {
-		criteriaMap["key"] = *criteria.Key
-	}
+	setMapValueIfNotNull(criteriaMap, "key", criteria.Key)
 	if criteria.Values != nil {
 		criteriaMap["values"] = stringListToSet(*criteria.Values)
 	}
-	if criteria.ShouldIgnoreCase != nil {
-		criteriaMap["should_ignore_case"] = *criteria.ShouldIgnoreCase
-	}
-	if criteria.Operator != nil {
-		criteriaMap["operator"] = *criteria.Operator
-	}
+	setMapValueIfNotNull(criteriaMap, "should_ignore_case", criteria.ShouldIgnoreCase)
+	setMapValueIfNotNull(criteriaMap, "operator", criteria.Operator)
 	return criteriaMap
 }
 
@@ -598,15 +576,9 @@ func buildSdkCriteria(criteria map[string]interface{}) *platformclientv2.Criteri
 
 func flattenExternalSegment(externalSegment *platformclientv2.Externalsegment) map[string]interface{} {
 	externalSegmentMap := make(map[string]interface{})
-	if externalSegment.Id != nil {
-		externalSegmentMap["id"] = *externalSegment.Id
-	}
-	if externalSegment.Name != nil {
-		externalSegmentMap["name"] = *externalSegment.Name
-	}
-	if externalSegment.Source != nil {
-		externalSegmentMap["source"] = *externalSegment.Source
-	}
+	setMapValueIfNotNull(externalSegmentMap, "id", externalSegment.Id)
+	setMapValueIfNotNull(externalSegmentMap, "name", externalSegment.Name)
+	setMapValueIfNotNull(externalSegmentMap, "source", externalSegment.Source)
 	return externalSegmentMap
 }
 
