@@ -9,7 +9,7 @@ func getNullableMapValue[T any](m map[string]interface{}, key string) *T {
 	return nil
 }
 
-func setMapValueIfNotNull[T any](m map[string]interface{}, key string, value *T) {
+func setMapValueIfNotNil[T any](m map[string]interface{}, key string, value *T) {
 	if value != nil {
 		m[key] = *value
 	}

@@ -478,13 +478,13 @@ func buildSdkContextPattern(contextPattern map[string]interface{}) *platformclie
 
 func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecriteria) map[string]interface{} {
 	entityTypeCriteriaMap := make(map[string]interface{})
-	setMapValueIfNotNull(entityTypeCriteriaMap, "key", entityTypeCriteria.Key)
+	setMapValueIfNotNil(entityTypeCriteriaMap, "key", entityTypeCriteria.Key)
 	if entityTypeCriteria.Values != nil {
 		entityTypeCriteriaMap["values"] = stringListToSet(*entityTypeCriteria.Values)
 	}
-	setMapValueIfNotNull(entityTypeCriteriaMap, "should_ignore_case", entityTypeCriteria.ShouldIgnoreCase)
-	setMapValueIfNotNull(entityTypeCriteriaMap, "operator", entityTypeCriteria.Operator)
-	setMapValueIfNotNull(entityTypeCriteriaMap, "entity_type", entityTypeCriteria.EntityType)
+	setMapValueIfNotNil(entityTypeCriteriaMap, "should_ignore_case", entityTypeCriteria.ShouldIgnoreCase)
+	setMapValueIfNotNil(entityTypeCriteriaMap, "operator", entityTypeCriteria.Operator)
+	setMapValueIfNotNil(entityTypeCriteriaMap, "entity_type", entityTypeCriteria.EntityType)
 	return entityTypeCriteriaMap
 }
 
@@ -526,10 +526,10 @@ func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
 func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[string]interface{} {
 	journeyPatternMap := make(map[string]interface{})
 	journeyPatternMap["criteria"] = flattenGenericList(journeyPattern.Criteria, flattenCriteria)
-	setMapValueIfNotNull(journeyPatternMap, "count", journeyPattern.Count)
-	setMapValueIfNotNull(journeyPatternMap, "stream_type", journeyPattern.StreamType)
-	setMapValueIfNotNull(journeyPatternMap, "session_type", journeyPattern.SessionType)
-	setMapValueIfNotNull(journeyPatternMap, "event_name", journeyPattern.EventName)
+	setMapValueIfNotNil(journeyPatternMap, "count", journeyPattern.Count)
+	setMapValueIfNotNil(journeyPatternMap, "stream_type", journeyPattern.StreamType)
+	setMapValueIfNotNil(journeyPatternMap, "session_type", journeyPattern.SessionType)
+	setMapValueIfNotNil(journeyPatternMap, "event_name", journeyPattern.EventName)
 	return journeyPatternMap
 }
 
@@ -551,12 +551,12 @@ func buildSdkJourneyPattern(journeyPattern map[string]interface{}) *platformclie
 
 func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{} {
 	criteriaMap := make(map[string]interface{})
-	setMapValueIfNotNull(criteriaMap, "key", criteria.Key)
+	setMapValueIfNotNil(criteriaMap, "key", criteria.Key)
 	if criteria.Values != nil {
 		criteriaMap["values"] = stringListToSet(*criteria.Values)
 	}
-	setMapValueIfNotNull(criteriaMap, "should_ignore_case", criteria.ShouldIgnoreCase)
-	setMapValueIfNotNull(criteriaMap, "operator", criteria.Operator)
+	setMapValueIfNotNil(criteriaMap, "should_ignore_case", criteria.ShouldIgnoreCase)
+	setMapValueIfNotNil(criteriaMap, "operator", criteria.Operator)
 	return criteriaMap
 }
 
@@ -576,9 +576,9 @@ func buildSdkCriteria(criteria map[string]interface{}) *platformclientv2.Criteri
 
 func flattenExternalSegment(externalSegment *platformclientv2.Externalsegment) map[string]interface{} {
 	externalSegmentMap := make(map[string]interface{})
-	setMapValueIfNotNull(externalSegmentMap, "id", externalSegment.Id)
-	setMapValueIfNotNull(externalSegmentMap, "name", externalSegment.Name)
-	setMapValueIfNotNull(externalSegmentMap, "source", externalSegment.Source)
+	setMapValueIfNotNil(externalSegmentMap, "id", externalSegment.Id)
+	setMapValueIfNotNil(externalSegmentMap, "name", externalSegment.Name)
+	setMapValueIfNotNil(externalSegmentMap, "source", externalSegment.Source)
 	return externalSegmentMap
 }
 
