@@ -16,7 +16,7 @@ func runDataJourneySegmentTestCase(t *testing.T, testCaseName string) {
 	const resourceName = "genesyscloud_journey_segment"
 	const idPrefix = "terraform_test_"
 	testObjectName := resourceName + "." + idPrefix + testCaseName
-	setupJourneySegment(t, idPrefix, testCaseName)
+	setupJourneyOutcome(t, idPrefix, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
