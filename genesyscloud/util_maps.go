@@ -13,7 +13,7 @@ func getNonDefaultMapValue[T comparable](m map[string]interface{}, key string) *
 	value := getNillableMapValue[T](m, key)
 	if value != nil {
 		defaultValue := new(T)
-		if value == defaultValue {
+		if value != defaultValue {
 			return value
 		}
 	}
