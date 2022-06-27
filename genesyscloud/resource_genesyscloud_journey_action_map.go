@@ -126,11 +126,25 @@ func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta inte
 func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
-	actionMap := buildSdkPatchActionMap(d)
+	patchActionMap := buildSdkPatchActionMap(d)
 
 	log.Printf("Updating journey action map %s", d.Id())
-	if _, resp, err := journeyApi.PatchJourneyActionmap(d.Id(), *actionMap); err != nil {
-		return diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, *actionMap, resp.RawBody)
+	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Get current journey action map version
+		actionMap, resp, getErr := journeyApi.GetJourneyActionmap(d.Id())
+		if getErr != nil {
+			return resp, diag.Errorf("Failed to read current journey action map %s: %s", d.Id(), getErr)
+		}
+
+		patchActionMap.Version = actionMap.Version
+		_, resp, patchErr := journeyApi.PatchJourneyActionmap(d.Id(), *patchActionMap)
+		if patchErr != nil {
+			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, *patchActionMap, resp.RawBody)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	log.Printf("Updated journey action map %s", d.Id())

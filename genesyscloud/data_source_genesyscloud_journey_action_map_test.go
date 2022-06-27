@@ -6,13 +6,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataJourneySegment(t *testing.T) {
-	runDataJourneySegmentTestCase(t, "find_by_name")
+func TestAccDataJourneyActionMap(t *testing.T) {
+	runDataJourneyActionMapTestCase(t, "find_by_name")
 }
 
-func runDataJourneySegmentTestCase(t *testing.T, testCaseName string) {
+func runDataJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	const testType = "data_source"
-	const testSuitName = "journey_segment"
+	const testSuitName = "journey_action_map"
 	const resourceName = "genesyscloud_journey_segment"
 	const idPrefix = "terraform_test_"
 	testObjectName := resourceName + "." + idPrefix + testCaseName
