@@ -185,8 +185,8 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 }
 
 func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionmap {
-	isActive := getNullableBool(actionMap, "is_active")
-	displayName := getNullableValue[string](actionMap, "display_name")
+	isActive := getNillableBool(actionMap, "is_active")
+	displayName := getNillableValue[string](actionMap, "display_name")
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
 	// TODO
 
@@ -199,8 +199,8 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 }
 
 func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Patchactionmap {
-	isActive := getNullableBool(actionMap, "is_active")
-	displayName := getNullableValue[string](actionMap, "display_name")
+	isActive := getNillableBool(actionMap, "is_active")
+	displayName := getNillableValue[string](actionMap, "display_name")
 
 	return &platformclientv2.Patchactionmap{
 		IsActive:    isActive,
