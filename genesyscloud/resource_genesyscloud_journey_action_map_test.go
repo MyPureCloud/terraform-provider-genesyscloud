@@ -17,16 +17,13 @@ func TestAccResourceJourneyActionMap(t *testing.T) {
 }
 
 func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
-	const testType = "resource"
-	const testSuitName = "journey_action_map"
 	const resourceName = "genesyscloud_journey_action_map"
-	const idPrefix = "terraform_test_"
-	setupJourneyActionMap(t, idPrefix, testCaseName)
+	setupJourneyActionMap(t, testObjectIdPrefix, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
-		Steps:             generateTestSteps(testType, testSuitName, testCaseName, resourceName, idPrefix, nil),
+		Steps:             generateTestSteps(resourceTestType, resourceName, testCaseName, testObjectIdPrefix, nil),
 		CheckDestroy:      testVerifyJourneyActionMapsDestroyed,
 	})
 }

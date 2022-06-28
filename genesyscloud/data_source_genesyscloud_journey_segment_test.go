@@ -11,20 +11,17 @@ func TestAccDataJourneySegment(t *testing.T) {
 }
 
 func runDataJourneySegmentTestCase(t *testing.T, testCaseName string) {
-	const testType = "data_source"
-	const testSuitName = "journey_segment"
 	const resourceName = "genesyscloud_journey_segment"
-	const idPrefix = "terraform_test_"
-	testObjectName := resourceName + "." + idPrefix + testCaseName
-	setupJourneySegment(t, idPrefix, testCaseName)
+	testObjectName := resourceName + "." + testObjectIdPrefix + testCaseName
+	setupJourneySegment(t, testObjectIdPrefix, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
-		Steps: generateTestSteps(testType, testSuitName, testCaseName, resourceName, idPrefix, []resource.TestCheckFunc{
+		Steps: generateTestSteps(dataSourceTestType, resourceName, testCaseName, testObjectIdPrefix, []resource.TestCheckFunc{
 			resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttrPair("data."+testObjectName, "id", testObjectName, "id"),
-				resource.TestCheckResourceAttr(testObjectName, "display_name", idPrefix+testCaseName+"_to_find"),
+				resource.TestCheckResourceAttr(testObjectName, "display_name", testObjectIdPrefix+testCaseName+"_to_find"),
 			),
 		}),
 	})
