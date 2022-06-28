@@ -18,7 +18,7 @@ func runDataJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
-		Steps: generateTestSteps(dataSourceTestType, resourceName, testCaseName, testObjectIdPrefix, []resource.TestCheckFunc{
+		Steps: generateDataSourceTestSteps(resourceName, testCaseName, testObjectIdPrefix, []resource.TestCheckFunc{
 			resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttrPair("data."+testObjectName, "id", testObjectName, "id"),
 				resource.TestCheckResourceAttr(testObjectName, "display_name", testObjectIdPrefix+testCaseName+"_to_find"),

@@ -23,7 +23,7 @@ func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
-		Steps:             generateTestSteps(resourceTestType, resourceName, testCaseName, testObjectIdPrefix, nil),
+		Steps:             generateResourceTestSteps(resourceName, testCaseName, testObjectIdPrefix, nil),
 		CheckDestroy:      testVerifyJourneyActionMapsDestroyed,
 	})
 }

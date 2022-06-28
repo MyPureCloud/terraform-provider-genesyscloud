@@ -267,6 +267,14 @@ func randString(length int) string {
 	return string(s)
 }
 
+func generateDataSourceTestSteps(resourceName string, testCaseName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+	return generateTestSteps(dataSourceTestType, resourceName, testCaseName, idPrefix, checkFuncs)
+}
+
+func generateResourceTestSteps(resourceName string, testCaseName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+	return generateTestSteps(resourceTestType, resourceName, testCaseName, idPrefix, checkFuncs)
+}
+
 func generateTestSteps(testType string, resourceName string, testCaseName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
 	var testSteps []resource.TestStep
 
