@@ -6,14 +6,14 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
   journey {
     patterns {
       criteria {
-        key                = "attributes.bleki.value"
-        values             = ["Blabla"]
+        key                = "page.title"
+        values             = ["Title"]
         operator           = "notEqual"
         should_ignore_case = true
       }
       criteria {
         key                = "page.keywords"
-        values             = ["Blabla", "hubhub"]
+        values             = ["office", "hubhub"]
         operator           = "containsAny"
         should_ignore_case = true
       }
@@ -24,7 +24,7 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
     patterns {
       criteria {
         key                = "searchQuery"
-        values             = ["Blabla"]
+        values             = ["Query string"]
         operator           = "notContainsAll"
         should_ignore_case = true
       }

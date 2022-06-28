@@ -6,8 +6,8 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
   journey {
     patterns {
       criteria {
-        key                = "attributes.bleki.value"
-        values             = ["Blabla"]
+        key                = "page.title"
+        values             = ["Title"]
         operator           = "notEqual"
         should_ignore_case = true
       }
