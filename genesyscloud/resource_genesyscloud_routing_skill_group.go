@@ -81,7 +81,6 @@ func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Confi
 	return resources, nil
 }
 
-//Done
 func resourceSkillGroupExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllSkillGroups),
@@ -95,7 +94,6 @@ func resourceSkillGroupExporter() *ResourceExporter {
 	}
 }
 
-//Done
 func resourceRoutingSkillGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Skill Group
@@ -209,7 +207,6 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 	return readSkillGroups(ctx, d, meta)
 }
 
-//Done
 func createSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return createOrUpdateSkillGroups(ctx, d, meta, "/api/v2/routing/skillgroups", true)
 }
