@@ -1,13 +1,13 @@
 resource "genesyscloud_journey_outcome" "terraform_test_-TEST-CASE-" {
-  is_active     = true
+  is_active    = true
   display_name = "terraform_test_-TEST-CASE-"
   description  = "test description of journey outcome"
-  is_positive   = true
+  is_positive  = true
   journey {
     patterns {
       criteria {
-        key                = "attributes.bleki.value"
-        values             = ["Blabla"]
+        key                = "page.title"
+        values             = ["Title"]
         operator           = "notEqual"
         should_ignore_case = true
       }
@@ -16,8 +16,9 @@ resource "genesyscloud_journey_outcome" "terraform_test_-TEST-CASE-" {
       session_type = "web"
     }
   }
-  associated_value_field {
-    data_type = "Number"
-    name      = "attributes.cartValue.value"
-  }
+  #  Currently beta feature, can't tested
+  #  associated_value_field {
+  #    data_type = "Number"
+  #    name      = "ItemNumber"
+  #  }
 }
