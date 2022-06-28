@@ -35,27 +35,27 @@ var (
 		// TODO
 		//"trigger_with_event_conditions": {
 		//	Description: "List of event conditions that must be satisfied to trigger the action map.",
-		//	Optional: true,
 		//	Type: schema.TypeSet,
+		//	Optional: true,
 		//	Elem: journeyactionmapeventconditionResource,
 		//},
 		//"trigger_with_outcome_probability_conditions": {
 		//	Description: "Probability conditions for outcomes that must be satisfied to trigger the action map.",
-		//	Optional: true,
 		//	Type: schema.TypeSet,
+		//	Optional: true,
 		//	Elem: journeyactionmapoutcomeprobabilityconditionResource,
 		//},
 		//"page_url_conditions": {
 		//	Description: "URL conditions that a page must match for web actions to be displayable.",
-		//	Required: true,
 		//	Type: schema.TypeSet,
+		//	Required: true,
 		//	Elem: journeyactionmapurlconditionResource,
 		//},
 		//"activation": {
 		//	Description: "Type of activation.",
+		//	Type: schema.TypeSet,
 		//	Optional: true,
 		//	MaxItems: 1,
-		//	Type: schema.TypeSet,
 		//	Elem: journeyactionmapactivationResource,
 		//},
 		"weight": {
@@ -66,16 +66,16 @@ var (
 		// TODO
 		//"action": {
 		//	Description: "The action that will be executed if this action map is triggered.",
+		//	Type: schema.TypeSet,
 		//	Optional: true,
 		//	MaxItems: 1,
-		//	Type: schema.TypeSet,
 		//	Elem: journeyactionmapactionmapactionResource,
 		//},
 		//"action_map_schedule_groups": {
 		//	Description: "The action map's associated schedule groups.",
+		//	Type: schema.TypeSet,
 		//	Optional: true,
 		//	MaxItems: 1,
-		//	Type: schema.TypeSet,
 		//	Elem: journeyactionmapactionmapschedulegroupsResource,
 		//},
 		"ignore_frequency_cap": {
@@ -152,7 +152,7 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Creating journey action map %s", *actionMap.DisplayName)
 	result, resp, err := journeyApi.PostJourneyActionmaps(*actionMap)
 	if err != nil {
-		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, *actionMap, resp.RawBody)
+		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, *actionMap, getBody(resp))
 	}
 
 	d.SetId(*result.Id)
@@ -199,7 +199,7 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		patchActionMap.Version = actionMap.Version
 		_, resp, patchErr := journeyApi.PatchJourneyActionmap(d.Id(), *patchActionMap)
 		if patchErr != nil {
-			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, *patchActionMap, resp.RawBody)
+			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, *patchActionMap, getBody(resp))
 		}
 		return resp, nil
 	})
