@@ -35,7 +35,11 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 ### Optional
 
+- `end_date` (String) Timestamp at which the action map is scheduled to stop firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
+- `ignore_frequency_cap` (Boolean) Override organization-level frequency cap and always offer web engagements from this action map.
 - `is_active` (Boolean) Whether the action map is active. Defaults to `true`.
+- `start_date` (String) Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
+- `weight` (Number) Weight of the action map with higher number denoting higher weight.
 
 ### Read-Only
 

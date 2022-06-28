@@ -33,6 +33,66 @@ var (
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		// TODO
+		//"trigger_with_event_conditions": {
+		//	Description: "List of event conditions that must be satisfied to trigger the action map.",
+		//	Optional: true,
+		//	Type: schema.TypeSet,
+		//	Elem: journeyactionmapeventconditionResource,
+		//},
+		//"trigger_with_outcome_probability_conditions": {
+		//	Description: "Probability conditions for outcomes that must be satisfied to trigger the action map.",
+		//	Optional: true,
+		//	Type: schema.TypeSet,
+		//	Elem: journeyactionmapoutcomeprobabilityconditionResource,
+		//},
+		//"page_url_conditions": {
+		//	Description: "URL conditions that a page must match for web actions to be displayable.",
+		//	Required: true,
+		//	Type: schema.TypeSet,
+		//	Elem: journeyactionmapurlconditionResource,
+		//},
+		//"activation": {
+		//	Description: "Type of activation.",
+		//	Optional: true,
+		//	MaxItems: 1,
+		//	Type: schema.TypeSet,
+		//	Elem: journeyactionmapactivationResource,
+		//},
+		"weight": {
+			Description: "Weight of the action map with higher number denoting higher weight.",
+			Type:        schema.TypeInt,
+			Optional:    true,
+		},
+		// TODO
+		//"action": {
+		//	Description: "The action that will be executed if this action map is triggered.",
+		//	Optional: true,
+		//	MaxItems: 1,
+		//	Type: schema.TypeSet,
+		//	Elem: journeyactionmapactionmapactionResource,
+		//},
+		//"action_map_schedule_groups": {
+		//	Description: "The action map's associated schedule groups.",
+		//	Optional: true,
+		//	MaxItems: 1,
+		//	Type: schema.TypeSet,
+		//	Elem: journeyactionmapactionmapschedulegroupsResource,
+		//},
+		"ignore_frequency_cap": {
+			Description: "Override organization-level frequency cap and always offer web engagements from this action map.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+		},
+		"start_date": {
+			Description: "Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"end_date": {
+			Description: "Timestamp at which the action map is scheduled to stop firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
 	}
 )
 
@@ -182,6 +242,11 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 	d.Set("display_name", *actionMap.DisplayName)
 	d.Set("trigger_with_segments", stringListToSet(*actionMap.TriggerWithSegments))
 	// TODO
+	setNillableValue[int](d, "weight", actionMap.Weight)
+	// TODO
+	setNillableValue[bool](d, "ignore_frequency_cap", actionMap.IgnoreFrequencyCap)
+	setNillableTimeValue(d, "start_date", actionMap.StartDate)
+	setNillableTimeValue(d, "end_date", actionMap.EndDate)
 }
 
 func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionmap {
@@ -189,22 +254,45 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	displayName := getNillableValue[string](actionMap, "display_name")
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
 	// TODO
+	weight := getNillableValue[int](actionMap, "weight")
+	// TODO
+	ignoreFrequencyCap := getNillableBool(actionMap, "ignore_frequency_cap")
+	startDate := getNillableTime(actionMap, "start_date")
+	endDate := getNillableTime(actionMap, "end_date")
 
 	return &platformclientv2.Actionmap{
 		IsActive:            isActive,
 		DisplayName:         displayName,
 		TriggerWithSegments: triggerWithSegments,
 		// TODO
+		Weight: weight,
+		// TODO
+		IgnoreFrequencyCap: ignoreFrequencyCap,
+		StartDate:          startDate,
+		EndDate:            endDate,
 	}
 }
 
 func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Patchactionmap {
 	isActive := getNillableBool(actionMap, "is_active")
 	displayName := getNillableValue[string](actionMap, "display_name")
+	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
+	// TODO
+	weight := getNillableValue[int](actionMap, "weight")
+	// TODO
+	ignoreFrequencyCap := getNillableBool(actionMap, "ignore_frequency_cap")
+	startDate := getNillableTime(actionMap, "start_date")
+	endDate := getNillableTime(actionMap, "end_date")
 
 	return &platformclientv2.Patchactionmap{
-		IsActive:    isActive,
-		DisplayName: displayName,
+		IsActive:            isActive,
+		DisplayName:         displayName,
+		TriggerWithSegments: triggerWithSegments,
 		// TODO
+		Weight: weight,
+		// TODO
+		IgnoreFrequencyCap: ignoreFrequencyCap,
+		StartDate:          startDate,
+		EndDate:            endDate,
 	}
 }
