@@ -397,7 +397,7 @@ Optional:
 - `retention_duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration))
 
 <a id="nestedblock--media_policies--call_policy--actions--assign_calibrations"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration`
+### Nested Schema for `media_policies.call_policy.actions.assign_calibrations`
 
 Optional:
 
@@ -408,7 +408,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--call_policy--actions--assign_evaluations"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration`
+### Nested Schema for `media_policies.call_policy.actions.assign_evaluations`
 
 Optional:
 
@@ -417,18 +417,18 @@ Optional:
 
 
 <a id="nestedblock--media_policies--call_policy--actions--assign_metered_assignment_by_agent"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration`
+### Nested Schema for `media_policies.call_policy.actions.assign_metered_assignment_by_agent`
 
 Optional:
 
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
-- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration--time_interval))
+- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--assign_metered_assignment_by_agent--time_interval))
 - `time_zone` (String)
 
-<a id="nestedblock--media_policies--call_policy--actions--retention_duration--time_interval"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration.time_interval`
+<a id="nestedblock--media_policies--call_policy--actions--assign_metered_assignment_by_agent--time_interval"></a>
+### Nested Schema for `media_policies.call_policy.actions.assign_metered_assignment_by_agent.time_interval`
 
 Optional:
 
@@ -440,7 +440,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--call_policy--actions--assign_metered_evaluations"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration`
+### Nested Schema for `media_policies.call_policy.actions.assign_metered_evaluations`
 
 Optional:
 
@@ -448,10 +448,10 @@ Optional:
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
-- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration--time_interval))
+- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--assign_metered_evaluations--time_interval))
 
-<a id="nestedblock--media_policies--call_policy--actions--retention_duration--time_interval"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration.time_interval`
+<a id="nestedblock--media_policies--call_policy--actions--assign_metered_evaluations--time_interval"></a>
+### Nested Schema for `media_policies.call_policy.actions.assign_metered_evaluations.time_interval`
 
 Optional:
 
@@ -463,7 +463,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--call_policy--actions--assign_surveys"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration`
+### Nested Schema for `media_policies.call_policy.actions.assign_surveys`
 
 Required:
 
@@ -478,16 +478,16 @@ Optional:
 
 
 <a id="nestedblock--media_policies--call_policy--actions--initiate_screen_recording"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration`
+### Nested Schema for `media_policies.call_policy.actions.initiate_screen_recording`
 
 Optional:
 
-- `archive_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration--archive_retention))
-- `delete_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration--delete_retention))
+- `archive_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--initiate_screen_recording--archive_retention))
+- `delete_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--initiate_screen_recording--delete_retention))
 - `record_acw` (Boolean)
 
-<a id="nestedblock--media_policies--call_policy--actions--retention_duration--archive_retention"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration.archive_retention`
+<a id="nestedblock--media_policies--call_policy--actions--initiate_screen_recording--archive_retention"></a>
+### Nested Schema for `media_policies.call_policy.actions.initiate_screen_recording.archive_retention`
 
 Optional:
 
@@ -495,8 +495,8 @@ Optional:
 - `storage_medium` (String)
 
 
-<a id="nestedblock--media_policies--call_policy--actions--retention_duration--delete_retention"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration.delete_retention`
+<a id="nestedblock--media_policies--call_policy--actions--initiate_screen_recording--delete_retention"></a>
+### Nested Schema for `media_policies.call_policy.actions.initiate_screen_recording.delete_retention`
 
 Optional:
 
@@ -505,7 +505,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--call_policy--actions--integration_export"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration`
+### Nested Schema for `media_policies.call_policy.actions.integration_export`
 
 Optional:
 
@@ -514,7 +514,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--call_policy--actions--media_transcriptions"></a>
-### Nested Schema for `media_policies.call_policy.actions.retention_duration`
+### Nested Schema for `media_policies.call_policy.actions.media_transcriptions`
 
 Optional:
 
@@ -565,7 +565,7 @@ Optional:
 - `wrapup_code_ids` (List of String)
 
 <a id="nestedblock--media_policies--call_policy--conditions--duration"></a>
-### Nested Schema for `media_policies.call_policy.conditions.wrapup_code_ids`
+### Nested Schema for `media_policies.call_policy.conditions.duration`
 
 Optional:
 
@@ -576,16 +576,16 @@ Optional:
 
 
 <a id="nestedblock--media_policies--call_policy--conditions--time_allowed"></a>
-### Nested Schema for `media_policies.call_policy.conditions.wrapup_code_ids`
+### Nested Schema for `media_policies.call_policy.conditions.time_allowed`
 
 Optional:
 
 - `empty` (Boolean)
-- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--wrapup_code_ids--time_slots))
+- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--time_allowed--time_slots))
 - `time_zone_id` (String)
 
-<a id="nestedblock--media_policies--call_policy--conditions--wrapup_code_ids--time_slots"></a>
-### Nested Schema for `media_policies.call_policy.conditions.wrapup_code_ids.time_slots`
+<a id="nestedblock--media_policies--call_policy--conditions--time_allowed--time_slots"></a>
+### Nested Schema for `media_policies.call_policy.conditions.time_allowed.time_slots`
 
 Optional:
 
@@ -624,7 +624,7 @@ Optional:
 - `retention_duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration))
 
 <a id="nestedblock--media_policies--chat_policy--actions--assign_calibrations"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration`
+### Nested Schema for `media_policies.chat_policy.actions.assign_calibrations`
 
 Optional:
 
@@ -635,7 +635,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--chat_policy--actions--assign_evaluations"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration`
+### Nested Schema for `media_policies.chat_policy.actions.assign_evaluations`
 
 Optional:
 
@@ -644,18 +644,18 @@ Optional:
 
 
 <a id="nestedblock--media_policies--chat_policy--actions--assign_metered_assignment_by_agent"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration`
+### Nested Schema for `media_policies.chat_policy.actions.assign_metered_assignment_by_agent`
 
 Optional:
 
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
-- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration--time_interval))
+- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--assign_metered_assignment_by_agent--time_interval))
 - `time_zone` (String)
 
-<a id="nestedblock--media_policies--chat_policy--actions--retention_duration--time_interval"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration.time_interval`
+<a id="nestedblock--media_policies--chat_policy--actions--assign_metered_assignment_by_agent--time_interval"></a>
+### Nested Schema for `media_policies.chat_policy.actions.assign_metered_assignment_by_agent.time_interval`
 
 Optional:
 
@@ -667,7 +667,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--chat_policy--actions--assign_metered_evaluations"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration`
+### Nested Schema for `media_policies.chat_policy.actions.assign_metered_evaluations`
 
 Optional:
 
@@ -675,10 +675,10 @@ Optional:
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
-- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration--time_interval))
+- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--assign_metered_evaluations--time_interval))
 
-<a id="nestedblock--media_policies--chat_policy--actions--retention_duration--time_interval"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration.time_interval`
+<a id="nestedblock--media_policies--chat_policy--actions--assign_metered_evaluations--time_interval"></a>
+### Nested Schema for `media_policies.chat_policy.actions.assign_metered_evaluations.time_interval`
 
 Optional:
 
@@ -690,7 +690,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--chat_policy--actions--assign_surveys"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration`
+### Nested Schema for `media_policies.chat_policy.actions.assign_surveys`
 
 Required:
 
@@ -705,16 +705,16 @@ Optional:
 
 
 <a id="nestedblock--media_policies--chat_policy--actions--initiate_screen_recording"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration`
+### Nested Schema for `media_policies.chat_policy.actions.initiate_screen_recording`
 
 Optional:
 
-- `archive_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration--archive_retention))
-- `delete_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration--delete_retention))
+- `archive_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--initiate_screen_recording--archive_retention))
+- `delete_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--initiate_screen_recording--delete_retention))
 - `record_acw` (Boolean)
 
-<a id="nestedblock--media_policies--chat_policy--actions--retention_duration--archive_retention"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration.archive_retention`
+<a id="nestedblock--media_policies--chat_policy--actions--initiate_screen_recording--archive_retention"></a>
+### Nested Schema for `media_policies.chat_policy.actions.initiate_screen_recording.archive_retention`
 
 Optional:
 
@@ -722,8 +722,8 @@ Optional:
 - `storage_medium` (String)
 
 
-<a id="nestedblock--media_policies--chat_policy--actions--retention_duration--delete_retention"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration.delete_retention`
+<a id="nestedblock--media_policies--chat_policy--actions--initiate_screen_recording--delete_retention"></a>
+### Nested Schema for `media_policies.chat_policy.actions.initiate_screen_recording.delete_retention`
 
 Optional:
 
@@ -732,7 +732,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--chat_policy--actions--integration_export"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration`
+### Nested Schema for `media_policies.chat_policy.actions.integration_export`
 
 Optional:
 
@@ -741,7 +741,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--chat_policy--actions--media_transcriptions"></a>
-### Nested Schema for `media_policies.chat_policy.actions.retention_duration`
+### Nested Schema for `media_policies.chat_policy.actions.media_transcriptions`
 
 Optional:
 
@@ -791,7 +791,7 @@ Optional:
 - `wrapup_code_ids` (List of String)
 
 <a id="nestedblock--media_policies--chat_policy--conditions--duration"></a>
-### Nested Schema for `media_policies.chat_policy.conditions.wrapup_code_ids`
+### Nested Schema for `media_policies.chat_policy.conditions.duration`
 
 Optional:
 
@@ -802,16 +802,16 @@ Optional:
 
 
 <a id="nestedblock--media_policies--chat_policy--conditions--time_allowed"></a>
-### Nested Schema for `media_policies.chat_policy.conditions.wrapup_code_ids`
+### Nested Schema for `media_policies.chat_policy.conditions.time_allowed`
 
 Optional:
 
 - `empty` (Boolean)
-- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--wrapup_code_ids--time_slots))
+- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--time_allowed--time_slots))
 - `time_zone_id` (String)
 
-<a id="nestedblock--media_policies--chat_policy--conditions--wrapup_code_ids--time_slots"></a>
-### Nested Schema for `media_policies.chat_policy.conditions.wrapup_code_ids.time_slots`
+<a id="nestedblock--media_policies--chat_policy--conditions--time_allowed--time_slots"></a>
+### Nested Schema for `media_policies.chat_policy.conditions.time_allowed.time_slots`
 
 Optional:
 
@@ -850,7 +850,7 @@ Optional:
 - `retention_duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration))
 
 <a id="nestedblock--media_policies--email_policy--actions--assign_calibrations"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration`
+### Nested Schema for `media_policies.email_policy.actions.assign_calibrations`
 
 Optional:
 
@@ -861,7 +861,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--email_policy--actions--assign_evaluations"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration`
+### Nested Schema for `media_policies.email_policy.actions.assign_evaluations`
 
 Optional:
 
@@ -870,18 +870,18 @@ Optional:
 
 
 <a id="nestedblock--media_policies--email_policy--actions--assign_metered_assignment_by_agent"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration`
+### Nested Schema for `media_policies.email_policy.actions.assign_metered_assignment_by_agent`
 
 Optional:
 
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
-- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration--time_interval))
+- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--assign_metered_assignment_by_agent--time_interval))
 - `time_zone` (String)
 
-<a id="nestedblock--media_policies--email_policy--actions--retention_duration--time_interval"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration.time_interval`
+<a id="nestedblock--media_policies--email_policy--actions--assign_metered_assignment_by_agent--time_interval"></a>
+### Nested Schema for `media_policies.email_policy.actions.assign_metered_assignment_by_agent.time_interval`
 
 Optional:
 
@@ -893,7 +893,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--email_policy--actions--assign_metered_evaluations"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration`
+### Nested Schema for `media_policies.email_policy.actions.assign_metered_evaluations`
 
 Optional:
 
@@ -901,10 +901,10 @@ Optional:
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
-- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration--time_interval))
+- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--assign_metered_evaluations--time_interval))
 
-<a id="nestedblock--media_policies--email_policy--actions--retention_duration--time_interval"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration.time_interval`
+<a id="nestedblock--media_policies--email_policy--actions--assign_metered_evaluations--time_interval"></a>
+### Nested Schema for `media_policies.email_policy.actions.assign_metered_evaluations.time_interval`
 
 Optional:
 
@@ -916,7 +916,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--email_policy--actions--assign_surveys"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration`
+### Nested Schema for `media_policies.email_policy.actions.assign_surveys`
 
 Required:
 
@@ -931,16 +931,16 @@ Optional:
 
 
 <a id="nestedblock--media_policies--email_policy--actions--initiate_screen_recording"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration`
+### Nested Schema for `media_policies.email_policy.actions.initiate_screen_recording`
 
 Optional:
 
-- `archive_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration--archive_retention))
-- `delete_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration--delete_retention))
+- `archive_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--initiate_screen_recording--archive_retention))
+- `delete_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--initiate_screen_recording--delete_retention))
 - `record_acw` (Boolean)
 
-<a id="nestedblock--media_policies--email_policy--actions--retention_duration--archive_retention"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration.archive_retention`
+<a id="nestedblock--media_policies--email_policy--actions--initiate_screen_recording--archive_retention"></a>
+### Nested Schema for `media_policies.email_policy.actions.initiate_screen_recording.archive_retention`
 
 Optional:
 
@@ -948,8 +948,8 @@ Optional:
 - `storage_medium` (String)
 
 
-<a id="nestedblock--media_policies--email_policy--actions--retention_duration--delete_retention"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration.delete_retention`
+<a id="nestedblock--media_policies--email_policy--actions--initiate_screen_recording--delete_retention"></a>
+### Nested Schema for `media_policies.email_policy.actions.initiate_screen_recording.delete_retention`
 
 Optional:
 
@@ -958,7 +958,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--email_policy--actions--integration_export"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration`
+### Nested Schema for `media_policies.email_policy.actions.integration_export`
 
 Optional:
 
@@ -967,7 +967,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--email_policy--actions--media_transcriptions"></a>
-### Nested Schema for `media_policies.email_policy.actions.retention_duration`
+### Nested Schema for `media_policies.email_policy.actions.media_transcriptions`
 
 Optional:
 
@@ -1016,16 +1016,16 @@ Optional:
 - `wrapup_code_ids` (List of String)
 
 <a id="nestedblock--media_policies--email_policy--conditions--time_allowed"></a>
-### Nested Schema for `media_policies.email_policy.conditions.wrapup_code_ids`
+### Nested Schema for `media_policies.email_policy.conditions.time_allowed`
 
 Optional:
 
 - `empty` (Boolean)
-- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--conditions--wrapup_code_ids--time_slots))
+- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--conditions--time_allowed--time_slots))
 - `time_zone_id` (String)
 
-<a id="nestedblock--media_policies--email_policy--conditions--wrapup_code_ids--time_slots"></a>
-### Nested Schema for `media_policies.email_policy.conditions.wrapup_code_ids.time_slots`
+<a id="nestedblock--media_policies--email_policy--conditions--time_allowed--time_slots"></a>
+### Nested Schema for `media_policies.email_policy.conditions.time_allowed.time_slots`
 
 Optional:
 
@@ -1064,7 +1064,7 @@ Optional:
 - `retention_duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration))
 
 <a id="nestedblock--media_policies--message_policy--actions--assign_calibrations"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration`
+### Nested Schema for `media_policies.message_policy.actions.assign_calibrations`
 
 Optional:
 
@@ -1075,7 +1075,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--message_policy--actions--assign_evaluations"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration`
+### Nested Schema for `media_policies.message_policy.actions.assign_evaluations`
 
 Optional:
 
@@ -1084,18 +1084,18 @@ Optional:
 
 
 <a id="nestedblock--media_policies--message_policy--actions--assign_metered_assignment_by_agent"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration`
+### Nested Schema for `media_policies.message_policy.actions.assign_metered_assignment_by_agent`
 
 Optional:
 
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
-- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration--time_interval))
+- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--assign_metered_assignment_by_agent--time_interval))
 - `time_zone` (String)
 
-<a id="nestedblock--media_policies--message_policy--actions--retention_duration--time_interval"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration.time_interval`
+<a id="nestedblock--media_policies--message_policy--actions--assign_metered_assignment_by_agent--time_interval"></a>
+### Nested Schema for `media_policies.message_policy.actions.assign_metered_assignment_by_agent.time_interval`
 
 Optional:
 
@@ -1107,7 +1107,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--message_policy--actions--assign_metered_evaluations"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration`
+### Nested Schema for `media_policies.message_policy.actions.assign_metered_evaluations`
 
 Optional:
 
@@ -1115,10 +1115,10 @@ Optional:
 - `evaluation_form_id` (String)
 - `evaluator_ids` (List of String)
 - `max_number_evaluations` (Number)
-- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration--time_interval))
+- `time_interval` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--assign_metered_evaluations--time_interval))
 
-<a id="nestedblock--media_policies--message_policy--actions--retention_duration--time_interval"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration.time_interval`
+<a id="nestedblock--media_policies--message_policy--actions--assign_metered_evaluations--time_interval"></a>
+### Nested Schema for `media_policies.message_policy.actions.assign_metered_evaluations.time_interval`
 
 Optional:
 
@@ -1130,7 +1130,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--message_policy--actions--assign_surveys"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration`
+### Nested Schema for `media_policies.message_policy.actions.assign_surveys`
 
 Required:
 
@@ -1145,16 +1145,16 @@ Optional:
 
 
 <a id="nestedblock--media_policies--message_policy--actions--initiate_screen_recording"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration`
+### Nested Schema for `media_policies.message_policy.actions.initiate_screen_recording`
 
 Optional:
 
-- `archive_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration--archive_retention))
-- `delete_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration--delete_retention))
+- `archive_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--initiate_screen_recording--archive_retention))
+- `delete_retention` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--initiate_screen_recording--delete_retention))
 - `record_acw` (Boolean)
 
-<a id="nestedblock--media_policies--message_policy--actions--retention_duration--archive_retention"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration.archive_retention`
+<a id="nestedblock--media_policies--message_policy--actions--initiate_screen_recording--archive_retention"></a>
+### Nested Schema for `media_policies.message_policy.actions.initiate_screen_recording.archive_retention`
 
 Optional:
 
@@ -1162,8 +1162,8 @@ Optional:
 - `storage_medium` (String)
 
 
-<a id="nestedblock--media_policies--message_policy--actions--retention_duration--delete_retention"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration.delete_retention`
+<a id="nestedblock--media_policies--message_policy--actions--initiate_screen_recording--delete_retention"></a>
+### Nested Schema for `media_policies.message_policy.actions.initiate_screen_recording.delete_retention`
 
 Optional:
 
@@ -1172,7 +1172,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--message_policy--actions--integration_export"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration`
+### Nested Schema for `media_policies.message_policy.actions.integration_export`
 
 Optional:
 
@@ -1181,7 +1181,7 @@ Optional:
 
 
 <a id="nestedblock--media_policies--message_policy--actions--media_transcriptions"></a>
-### Nested Schema for `media_policies.message_policy.actions.retention_duration`
+### Nested Schema for `media_policies.message_policy.actions.media_transcriptions`
 
 Optional:
 
@@ -1230,16 +1230,16 @@ Optional:
 - `wrapup_code_ids` (List of String)
 
 <a id="nestedblock--media_policies--message_policy--conditions--time_allowed"></a>
-### Nested Schema for `media_policies.message_policy.conditions.wrapup_code_ids`
+### Nested Schema for `media_policies.message_policy.conditions.time_allowed`
 
 Optional:
 
 - `empty` (Boolean)
-- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--conditions--wrapup_code_ids--time_slots))
+- `time_slots` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--conditions--time_allowed--time_slots))
 - `time_zone_id` (String)
 
-<a id="nestedblock--media_policies--message_policy--conditions--wrapup_code_ids--time_slots"></a>
-### Nested Schema for `media_policies.message_policy.conditions.wrapup_code_ids.time_slots`
+<a id="nestedblock--media_policies--message_policy--conditions--time_allowed--time_slots"></a>
+### Nested Schema for `media_policies.message_policy.conditions.time_allowed.time_slots`
 
 Optional:
 
