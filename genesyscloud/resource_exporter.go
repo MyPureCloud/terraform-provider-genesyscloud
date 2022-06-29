@@ -185,7 +185,6 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		// Add new resources that can be exported here
 		"genesyscloud_architect_datatable":                         architectDatatableExporter(),
 		"genesyscloud_architect_datatable_row":                     architectDatatableRowExporter(),
-		"genesyscloud_flow":                                        flowExporter(),
 		"genesyscloud_architect_emergencygroup":                    architectEmergencyGroupExporter(),
 		"genesyscloud_architect_ivr":                               architectIvrExporter(),
 		"genesyscloud_architect_schedules":                         architectSchedulesExporter(),
@@ -193,6 +192,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_architect_user_prompt":                       architectUserPromptExporter(),
 		"genesyscloud_auth_division":                               authDivisionExporter(),
 		"genesyscloud_auth_role":                                   authRoleExporter(),
+		"genesyscloud_flow":                                        flowExporter(),
 		"genesyscloud_group":                                       groupExporter(),
 		"genesyscloud_group_roles":                                 groupRolesExporter(),
 		"genesyscloud_idp_adfs":                                    idpAdfsExporter(),
@@ -205,6 +205,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_integration":                                 integrationExporter(),
 		"genesyscloud_integration_action":                          integrationActionExporter(),
 		"genesyscloud_integration_credential":                      credentialExporter(),
+		"genesyscloud_journey_segment":                             journeySegmentExporter(),
 		"genesyscloud_location":                                    locationExporter(),
 		"genesyscloud_oauth_client":                                oauthClientExporter(),
 		"genesyscloud_processautomation_trigger":                   processAutomationTriggerExporter(),
