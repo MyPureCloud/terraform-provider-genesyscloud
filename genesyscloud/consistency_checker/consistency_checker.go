@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -241,15 +242,17 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 				if !c.d.HasChange(k) {
 					if v.New != "" {
 						if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
-							return resource.RetryableError(&consistencyError{
-								key:      k,
-								oldValue: c.originalState[k],
-								newValue: c.d.Get(k),
-							})
+							log.Println("err 1")
+							//return resource.RetryableError(&consistencyError{
+							//	key:      k,
+							//	oldValue: c.originalState[k],
+							//	newValue: c.d.Get(k),
+							//})
 						}
 					}
 				} else {
 					if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
+						log.Println("err 2")
 						return resource.RetryableError(&consistencyError{
 							key:      k,
 							oldValue: c.originalState[k],
@@ -259,6 +262,7 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 				}
 			} else {
 				if c.d.HasChange(k) {
+					log.Println("err 3")
 					return resource.RetryableError(&consistencyError{
 						key:      k,
 						oldValue: c.originalState[k],
