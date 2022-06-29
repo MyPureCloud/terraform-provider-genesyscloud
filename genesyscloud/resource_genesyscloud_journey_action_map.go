@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
@@ -32,13 +33,13 @@ var (
 			Required:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		"trigger_with_event_conditions": {
+			Description: "List of event conditions that must be satisfied to trigger the action map.",
+			Type:        schema.TypeSet,
+			Optional:    true,
+			Elem:        eventConditionResource,
+		},
 		// TODO
-		//"trigger_with_event_conditions": {
-		//	Description: "List of event conditions that must be satisfied to trigger the action map.",
-		//	Type: schema.TypeSet,
-		//	Optional: true,
-		//	Elem: journeyactionmapeventconditionResource,
-		//},
 		//"trigger_with_outcome_probability_conditions": {
 		//	Description: "Probability conditions for outcomes that must be satisfied to trigger the action map.",
 		//	Type: schema.TypeSet,
@@ -92,6 +93,44 @@ var (
 			Description: "Timestamp at which the action map is scheduled to stop firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z",
 			Type:        schema.TypeString,
 			Optional:    true,
+		},
+	}
+
+	eventConditionResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"key": {
+				Description: "The event key.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"values": {
+				Description: "The event values.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"operator": {
+				Description:  "The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
+			},
+			"stream_type": {
+				Description:  "The stream type for which this condition can be satisfied. Valid values: Web, Custom, Conversation.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Web", "Custom", "Conversation"}, false),
+			},
+			"session_type": {
+				Description: "The session type for which this condition can be satisfied.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"event_name": {
+				Description: "The name of the event for which this condition can be satisfied.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
 )
@@ -241,6 +280,7 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 	d.Set("is_active", *actionMap.IsActive)
 	d.Set("display_name", *actionMap.DisplayName)
 	d.Set("trigger_with_segments", stringListToSet(*actionMap.TriggerWithSegments))
+	setNillableValue(d, "trigger_with_event_conditions", flattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
 	// TODO
 	setNillableValue[int](d, "weight", actionMap.Weight)
 	// TODO
@@ -253,6 +293,7 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	isActive := getNillableBool(actionMap, "is_active")
 	displayName := getNillableValue[string](actionMap, "display_name")
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
+	triggerWithEventConditions := buildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
 	// TODO
 	weight := getNillableValue[int](actionMap, "weight")
 	// TODO
@@ -261,9 +302,10 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	endDate := getNillableTime(actionMap, "end_date")
 
 	return &platformclientv2.Actionmap{
-		IsActive:            isActive,
-		DisplayName:         displayName,
-		TriggerWithSegments: triggerWithSegments,
+		IsActive:                   isActive,
+		DisplayName:                displayName,
+		TriggerWithSegments:        triggerWithSegments,
+		TriggerWithEventConditions: triggerWithEventConditions,
 		// TODO
 		Weight: weight,
 		// TODO
@@ -294,5 +336,36 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 		IgnoreFrequencyCap: ignoreFrequencyCap,
 		StartDate:          startDate,
 		EndDate:            endDate,
+	}
+}
+
+func flattenEventCondition(eventCondition *platformclientv2.Eventcondition) map[string]interface{} {
+	eventConditionMap := make(map[string]interface{})
+	setMapValueIfNotNil(eventConditionMap, "key", eventCondition.Key)
+	if eventCondition.Values != nil {
+		eventConditionMap["values"] = stringListToSet(*eventCondition.Values)
+	}
+	setMapValueIfNotNil(eventConditionMap, "operator", eventCondition.Operator)
+	setMapValueIfNotNil(eventConditionMap, "stream_type", eventCondition.StreamType)
+	setMapValueIfNotNil(eventConditionMap, "session_type", eventCondition.SessionType)
+	setMapValueIfNotNil(eventConditionMap, "event_name", eventCondition.EventName)
+	return eventConditionMap
+}
+
+func buildSdkEventCondition(eventCondition map[string]interface{}) *platformclientv2.Eventcondition {
+	key := eventCondition["key"].(string)
+	values := buildSdkStringListFromMapEntry(eventCondition, "values")
+	operator := eventCondition["operator"].(string)
+	streamType := eventCondition["stream_type"].(string)
+	sessionType := eventCondition["session_type"].(string)
+	eventName := getNonDefaultMapValue[string](eventCondition, "event_name")
+
+	return &platformclientv2.Eventcondition{
+		Key:         &key,
+		Values:      values,
+		Operator:    &operator,
+		StreamType:  &streamType,
+		SessionType: &sessionType,
+		EventName:   eventName,
 	}
 }

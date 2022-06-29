@@ -390,9 +390,9 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 	setNillableValue(d, "color", journeySegment.Color)
 	setNillableValue(d, "scope", journeySegment.Scope)
 	setNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
-	setNillableValue(d, "context", flattenGenericAsList(journeySegment.Context, flattenContext))
-	setNillableValue(d, "journey", flattenGenericAsList(journeySegment.Journey, flattenJourney))
-	setNillableValue(d, "external_segment", flattenGenericAsList(journeySegment.ExternalSegment, flattenExternalSegment))
+	setNillableValue(d, "context", flattenAsList(journeySegment.Context, flattenContext))
+	setNillableValue(d, "journey", flattenAsList(journeySegment.Journey, flattenJourney))
+	setNillableValue(d, "external_segment", flattenAsList(journeySegment.ExternalSegment, flattenExternalSegment))
 	setNillableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
 }
 
@@ -403,9 +403,9 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	color := getNillableValue[string](journeySegment, "color")
 	scope := getNillableValue[string](journeySegment, "scope")
 	shouldDisplayToAgent := getNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
-	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
-	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment)
+	sdkContext := buildSdkListFirstElement(journeySegment, "context", buildSdkContext)
+	journey := buildSdkListFirstElement(journeySegment, "journey", buildSdkJourney)
+	externalSegment := buildSdkListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment)
 	assignmentExpirationDays := getNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Journeysegment{
@@ -428,9 +428,9 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	description := getNillableValue[string](journeySegment, "description")
 	color := getNillableValue[string](journeySegment, "color")
 	shouldDisplayToAgent := getNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
-	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
-	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment)
+	sdkContext := buildSdkListFirstElement(journeySegment, "context", buildSdkContext)
+	journey := buildSdkListFirstElement(journeySegment, "journey", buildSdkJourney)
+	externalSegment := buildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment)
 	assignmentExpirationDays := getNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Patchsegment{
@@ -451,14 +451,14 @@ func flattenContext(context *platformclientv2.Context) map[string]interface{} {
 		return nil
 	}
 	contextMap := make(map[string]interface{})
-	contextMap["patterns"] = flattenGenericList(context.Patterns, flattenContextPattern)
+	contextMap["patterns"] = *flattenList(context.Patterns, flattenContextPattern)
 	return contextMap
 }
 
 func buildSdkContext(context map[string]interface{}) *platformclientv2.Context {
 	patterns := &[]platformclientv2.Contextpattern{}
 	if context != nil {
-		patterns = buildSdkGenericList(context, "patterns", buildSdkContextPattern)
+		patterns = buildSdkListFromMapEntry(context, "patterns", buildSdkContextPattern)
 	}
 	return &platformclientv2.Context{
 		Patterns: patterns,
@@ -467,13 +467,13 @@ func buildSdkContext(context map[string]interface{}) *platformclientv2.Context {
 
 func flattenContextPattern(contextPattern *platformclientv2.Contextpattern) map[string]interface{} {
 	contextPatternMap := make(map[string]interface{})
-	contextPatternMap["criteria"] = flattenGenericList(contextPattern.Criteria, flattenEntityTypeCriteria)
+	contextPatternMap["criteria"] = *flattenList(contextPattern.Criteria, flattenEntityTypeCriteria)
 	return contextPatternMap
 }
 
 func buildSdkContextPattern(contextPattern map[string]interface{}) *platformclientv2.Contextpattern {
 	return &platformclientv2.Contextpattern{
-		Criteria: buildSdkGenericList(contextPattern, "criteria", buildSdkEntityTypeCriteria),
+		Criteria: buildSdkListFromMapEntry(contextPattern, "criteria", buildSdkEntityTypeCriteria),
 	}
 }
 
@@ -510,14 +510,14 @@ func flattenJourney(journey *platformclientv2.Journey) map[string]interface{} {
 		return nil
 	}
 	journeyMap := make(map[string]interface{})
-	journeyMap["patterns"] = flattenGenericList(journey.Patterns, flattenJourneyPattern)
+	journeyMap["patterns"] = *flattenList(journey.Patterns, flattenJourneyPattern)
 	return journeyMap
 }
 
 func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
 	patterns := &[]platformclientv2.Journeypattern{}
 	if journey != nil {
-		patterns = buildSdkGenericList(journey, "patterns", buildSdkJourneyPattern)
+		patterns = buildSdkListFromMapEntry(journey, "patterns", buildSdkJourneyPattern)
 	}
 	return &platformclientv2.Journey{
 		Patterns: patterns,
@@ -526,7 +526,7 @@ func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
 
 func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[string]interface{} {
 	journeyPatternMap := make(map[string]interface{})
-	journeyPatternMap["criteria"] = flattenGenericList(journeyPattern.Criteria, flattenCriteria)
+	journeyPatternMap["criteria"] = *flattenList(journeyPattern.Criteria, flattenCriteria)
 	setMapValueIfNotNil(journeyPatternMap, "count", journeyPattern.Count)
 	setMapValueIfNotNil(journeyPatternMap, "stream_type", journeyPattern.StreamType)
 	setMapValueIfNotNil(journeyPatternMap, "session_type", journeyPattern.SessionType)
@@ -535,7 +535,7 @@ func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[
 }
 
 func buildSdkJourneyPattern(journeyPattern map[string]interface{}) *platformclientv2.Journeypattern {
-	criteria := buildSdkGenericList(journeyPattern, "criteria", buildSdkCriteria)
+	criteria := buildSdkListFromMapEntry(journeyPattern, "criteria", buildSdkCriteria)
 	count := journeyPattern["count"].(int)
 	streamType := journeyPattern["stream_type"].(string)
 	sessionType := journeyPattern["session_type"].(string)

@@ -39,9 +39,25 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 - `ignore_frequency_cap` (Boolean) Override organization-level frequency cap and always offer web engagements from this action map.
 - `is_active` (Boolean) Whether the action map is active. Defaults to `true`.
 - `start_date` (String) Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
+- `trigger_with_event_conditions` (Block Set) List of event conditions that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_event_conditions))
 - `weight` (Number) Weight of the action map with higher number denoting higher weight.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--trigger_with_event_conditions"></a>
+### Nested Schema for `trigger_with_event_conditions`
+
+Required:
+
+- `key` (String) The event key.
+- `session_type` (String) The session type for which this condition can be satisfied.
+- `stream_type` (String) The stream type for which this condition can be satisfied. Valid values: Web, Custom, Conversation.
+- `values` (Set of String) The event values.
+
+Optional:
+
+- `event_name` (String) The name of the event for which this condition can be satisfied.
+- `operator` (String) The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.
 
