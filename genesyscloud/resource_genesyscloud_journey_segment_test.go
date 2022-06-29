@@ -12,12 +12,12 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 )
 
-func TestAccResourceJourneySegmentSession(t *testing.T) {
-	runResourceJourneySegmentTestCase(t, "basic_session_attributes")
-}
-
 func TestAccResourceJourneySegmentCustomer(t *testing.T) {
 	runResourceJourneySegmentTestCase(t, "basic_customer_attributes")
+}
+
+func TestAccResourceJourneySegmentSession(t *testing.T) {
+	runResourceJourneySegmentTestCase(t, "basic_session_attributes")
 }
 
 func TestAccResourceJourneySegmentContextOnly(t *testing.T) {

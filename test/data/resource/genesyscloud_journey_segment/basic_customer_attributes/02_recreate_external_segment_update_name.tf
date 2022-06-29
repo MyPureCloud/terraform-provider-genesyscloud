@@ -1,5 +1,5 @@
 resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
-  display_name            = "terraform_test_-TEST-CASE-_updated"
+  display_name            = "terraform_test_-TEST-CASE-_recreated"
   color                   = "#308000"
   scope                   = "Customer"
   should_display_to_agent = false

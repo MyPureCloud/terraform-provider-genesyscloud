@@ -279,23 +279,28 @@ func generateTestSteps(testType string, resourceName string, testCaseName string
 	var testSteps []resource.TestStep
 
 	testCasePath := filepath.Join("..", "test", "data", testType, resourceName, testCaseName)
-	testCaseFiles, _ := os.ReadDir(testCasePath)
+	testCaseDirEntries, _ := os.ReadDir(testCasePath)
 	checkFuncIndex := 0
-	for _, testCaseFile := range testCaseFiles {
-		if !testCaseFile.IsDir() && strings.HasSuffix(testCaseFile.Name(), ".tf") {
-			testCaseResource, _ := os.ReadFile(filepath.Join(testCasePath, testCaseFile.Name()))
+	for _, testCaseDirEntry := range testCaseDirEntries {
+		if !testCaseDirEntry.IsDir() && strings.HasSuffix(testCaseDirEntry.Name(), ".tf") {
+			testCaseStepFilePath := filepath.Join(testCasePath, testCaseDirEntry.Name())
+			testCaseResource, _ := os.ReadFile(testCaseStepFilePath)
 			config := strings.ReplaceAll(string(testCaseResource), "-TEST-CASE-", testCaseName)
 			var checkFunc resource.TestCheckFunc = nil
 			if checkFuncs != nil && checkFuncIndex < len(checkFuncs) {
 				checkFunc = checkFuncs[checkFuncIndex]
 			}
-			testSteps = append(testSteps, resource.TestStep{Config: config, Check: checkFunc})
+			testSteps = append(testSteps, resource.TestStep{
+				PreConfig: func() { log.Printf("Executing test step config => %s", testCaseStepFilePath) },
+				Config:    config,
+				Check:     checkFunc})
 			checkFuncIndex++
 		}
 	}
-	log.Printf("Generated %d test steps for testcase: %s", len(testSteps), testCasePath)
+	log.Printf("Generated %d test steps for testcase => %s", len(testSteps), testCasePath)
 
 	testSteps = append(testSteps, resource.TestStep{
+		PreConfig:         func() { log.Printf("Executing ImportState test step config => %s", testCaseName) },
 		ResourceName:      resourceName + "." + idPrefix + testCaseName,
 		ImportState:       true,
 		ImportStateVerify: true,
