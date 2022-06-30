@@ -96,86 +96,18 @@ var (
 		},
 	}
 
-	journeyResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"patterns": {
-				Description: "A list of zero or more patterns to match.",
-				Type:        schema.TypeSet,
-				Required:    true,
-				Elem:        journeyPatternResource,
-			},
-		},
-	}
-
-	externalSegmentResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "Identifier for the external segment in the system where it originates from.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"name": {
-				Description: "Name for the external segment in the system where it originates from.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"source": {
-				Description:  "The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"AdobeExperiencePlatform", "Custom"}, false),
-			},
-		},
-	}
-
 	contextPatternResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"criteria": {
 				Description: "A list of one or more criteria to satisfy.",
 				Type:        schema.TypeSet,
 				Required:    true,
-				Elem:        contextCriteriaResource,
+				Elem:        entityTypeCriteriaResource,
 			},
 		},
 	}
 
-	journeyPatternResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"criteria": {
-				Description: "A list of one or more criteria to satisfy.",
-				Type:        schema.TypeSet,
-				Required:    true,
-				Elem:        journeyCriteriaResource,
-			},
-			"count": {
-				Description: "The number of times the pattern must match.",
-				Type:        schema.TypeInt,
-				Required:    true,
-			},
-			"stream_type": {
-				Description:  "The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Web" /*, "Custom", "Conversation"*/}, false), // Custom and Conversation seem not to be supported by the API despite the documentation
-			},
-			"session_type": {
-				Description:  "The session type for which this pattern can be matched on.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"web"}, false), // custom value seems not to be supported by the API despite the documentation
-			},
-			"event_name": {
-				Description: "The name of the event for which this pattern can be matched on.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     nil,
-			},
-		},
-	}
-
-	contextCriteriaResource = &schema.Resource{
+	entityTypeCriteriaResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"key": {
 				Description:  "The criteria key.",
@@ -195,9 +127,10 @@ var (
 				Required:    true,
 			},
 			"operator": {
-				Description:  "The comparison operator.Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.",
+				Description:  "The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.",
 				Type:         schema.TypeString,
 				Optional:     true,
+				Default:      "equal",
 				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
 			},
 			"entity_type": {
@@ -209,7 +142,52 @@ var (
 		},
 	}
 
-	journeyCriteriaResource = &schema.Resource{
+	journeyResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"patterns": {
+				Description: "A list of zero or more patterns to match.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        journeyPatternResource,
+			},
+		},
+	}
+
+	journeyPatternResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"criteria": {
+				Description: "A list of one or more criteria to satisfy.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        criteriaResource,
+			},
+			"count": {
+				Description: "The number of times the pattern must match.",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+			"stream_type": {
+				Description:  "The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Web" /*, "Custom", "Conversation"*/}, false), // Custom and Conversation seem not to be supported by the API despite the documentation
+			},
+			"session_type": {
+				Description:  "The session type for which this pattern can be matched on.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"web"}, false), // custom value seems not to be supported by the API despite the documentation
+			},
+			"event_name": {
+				Description: "The name of the event for which this pattern can be matched on.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     nil,
+			},
+		},
+	}
+
+	criteriaResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"key": {
 				Description: "The criteria key.",
@@ -238,7 +216,31 @@ var (
 				Description:  "The comparison operator.Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.",
 				Type:         schema.TypeString,
 				Optional:     true,
+				Default:      "equal",
 				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
+			},
+		},
+	}
+
+	externalSegmentResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "Identifier for the external segment in the system where it originates from.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+			},
+			"name": {
+				Description: "Name for the external segment in the system where it originates from.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"source": {
+				Description:  "The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringInSlice([]string{"AdobeExperiencePlatform", "Custom"}, false),
 			},
 		},
 	}
@@ -389,8 +391,8 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 	d.Set("is_active", *journeySegment.IsActive)
 	d.Set("display_name", *journeySegment.DisplayName)
 	resourcedata.SetNillableValue(d, "description", journeySegment.Description)
-	resourcedata.SetNillableValue(d, "color", journeySegment.Color)
-	resourcedata.SetNillableValue(d, "scope", journeySegment.Scope)
+	d.Set("color", *journeySegment.Color)
+	d.Set("scope", *journeySegment.Scope)
 	resourcedata.SetNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
 	resourcedata.SetNillableValue(d, "context", flattenAsList(journeySegment.Context, flattenContext))
 	resourcedata.SetNillableValue(d, "journey", flattenAsList(journeySegment.Journey, flattenJourney))
@@ -399,11 +401,11 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
-	isActive := resourcedata.GetNillableBool(journeySegment, "is_active")
-	displayName := resourcedata.GetNillableValue[string](journeySegment, "display_name")
+	isActive := journeySegment.Get("is_active").(bool)
+	displayName := journeySegment.Get("display_name").(string)
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
-	color := resourcedata.GetNillableValue[string](journeySegment, "color")
-	scope := resourcedata.GetNillableValue[string](journeySegment, "scope")
+	color := journeySegment.Get("color").(string)
+	scope := journeySegment.Get("scope").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext)
 	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney)
@@ -411,11 +413,11 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Journeysegment{
-		IsActive:                 isActive,
-		DisplayName:              displayName,
+		IsActive:                 &isActive,
+		DisplayName:              &displayName,
 		Description:              description,
-		Color:                    color,
-		Scope:                    scope,
+		Color:                    &color,
+		Scope:                    &scope,
 		ShouldDisplayToAgent:     shouldDisplayToAgent,
 		Context:                  sdkContext,
 		Journey:                  journey,
@@ -425,10 +427,10 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 }
 
 func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2.Patchsegment {
-	isActive := resourcedata.GetNillableBool(journeySegment, "is_active")
-	displayName := resourcedata.GetNillableValue[string](journeySegment, "display_name")
+	isActive := journeySegment.Get("is_active").(bool)
+	displayName := journeySegment.Get("display_name").(string)
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
-	color := resourcedata.GetNillableValue[string](journeySegment, "color")
+	color := journeySegment.Get("color").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext)
 	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney)
@@ -436,10 +438,10 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Patchsegment{
-		IsActive:                 isActive,
-		DisplayName:              displayName,
+		IsActive:                 &isActive,
+		DisplayName:              &displayName,
 		Description:              description,
-		Color:                    color,
+		Color:                    &color,
 		ShouldDisplayToAgent:     shouldDisplayToAgent,
 		Context:                  sdkContext,
 		Journey:                  journey,
@@ -481,13 +483,11 @@ func buildSdkContextPattern(contextPattern map[string]interface{}) *platformclie
 
 func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecriteria) map[string]interface{} {
 	entityTypeCriteriaMap := make(map[string]interface{})
-	stringmap.SetValueIfNotNil(entityTypeCriteriaMap, "key", entityTypeCriteria.Key)
-	if entityTypeCriteria.Values != nil {
-		entityTypeCriteriaMap["values"] = stringListToSet(*entityTypeCriteria.Values)
-	}
-	stringmap.SetValueIfNotNil(entityTypeCriteriaMap, "should_ignore_case", entityTypeCriteria.ShouldIgnoreCase)
-	stringmap.SetValueIfNotNil(entityTypeCriteriaMap, "operator", entityTypeCriteria.Operator)
-	stringmap.SetValueIfNotNil(entityTypeCriteriaMap, "entity_type", entityTypeCriteria.EntityType)
+	entityTypeCriteriaMap["key"] = *entityTypeCriteria.Key
+	entityTypeCriteriaMap["values"] = stringListToSet(*entityTypeCriteria.Values)
+	entityTypeCriteriaMap["should_ignore_case"] = *entityTypeCriteria.ShouldIgnoreCase
+	entityTypeCriteriaMap["operator"] = *entityTypeCriteria.Operator
+	entityTypeCriteriaMap["entity_type"] = *entityTypeCriteria.EntityType
 	return entityTypeCriteriaMap
 }
 
@@ -529,9 +529,9 @@ func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
 func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[string]interface{} {
 	journeyPatternMap := make(map[string]interface{})
 	journeyPatternMap["criteria"] = *flattenList(journeyPattern.Criteria, flattenCriteria)
-	stringmap.SetValueIfNotNil(journeyPatternMap, "count", journeyPattern.Count)
-	stringmap.SetValueIfNotNil(journeyPatternMap, "stream_type", journeyPattern.StreamType)
-	stringmap.SetValueIfNotNil(journeyPatternMap, "session_type", journeyPattern.SessionType)
+	journeyPatternMap["count"] = *journeyPattern.Count
+	journeyPatternMap["stream_type"] = *journeyPattern.StreamType
+	journeyPatternMap["session_type"] = *journeyPattern.SessionType
 	stringmap.SetValueIfNotNil(journeyPatternMap, "event_name", journeyPattern.EventName)
 	return journeyPatternMap
 }
@@ -554,12 +554,10 @@ func buildSdkJourneyPattern(journeyPattern map[string]interface{}) *platformclie
 
 func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{} {
 	criteriaMap := make(map[string]interface{})
-	stringmap.SetValueIfNotNil(criteriaMap, "key", criteria.Key)
-	if criteria.Values != nil {
-		criteriaMap["values"] = stringListToSet(*criteria.Values)
-	}
-	stringmap.SetValueIfNotNil(criteriaMap, "should_ignore_case", criteria.ShouldIgnoreCase)
-	stringmap.SetValueIfNotNil(criteriaMap, "operator", criteria.Operator)
+	criteriaMap["key"] = *criteria.Key
+	criteriaMap["values"] = stringListToSet(*criteria.Values)
+	criteriaMap["should_ignore_case"] = *criteria.ShouldIgnoreCase
+	criteriaMap["operator"] = *criteria.Operator
 	return criteriaMap
 }
 
@@ -579,9 +577,9 @@ func buildSdkCriteria(criteria map[string]interface{}) *platformclientv2.Criteri
 
 func flattenExternalSegment(externalSegment *platformclientv2.Externalsegment) map[string]interface{} {
 	externalSegmentMap := make(map[string]interface{})
-	stringmap.SetValueIfNotNil(externalSegmentMap, "id", externalSegment.Id)
-	stringmap.SetValueIfNotNil(externalSegmentMap, "name", externalSegment.Name)
-	stringmap.SetValueIfNotNil(externalSegmentMap, "source", externalSegment.Source)
+	externalSegmentMap["id"] = *externalSegment.Id
+	externalSegmentMap["name"] = *externalSegment.Name
+	externalSegmentMap["source"] = *externalSegment.Source
 	return externalSegmentMap
 }
 

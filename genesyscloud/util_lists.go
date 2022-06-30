@@ -99,7 +99,8 @@ func flattenAsList[T interface{}](resource *T, elementFlattener func(resource *T
 
 func nilToEmptyList[T interface{}](list *[]T) *[]T {
 	if list == nil {
-		return new([]T)
+		emptyArray := []T{}
+		return &emptyArray
 	}
 	return list
 }

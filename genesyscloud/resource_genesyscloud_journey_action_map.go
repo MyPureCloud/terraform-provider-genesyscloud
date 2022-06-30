@@ -41,13 +41,13 @@ var (
 			Optional:    true,
 			Elem:        eventConditionResource,
 		},
+		"trigger_with_outcome_probability_conditions": {
+			Description: "Probability conditions for outcomes that must be satisfied to trigger the action map.",
+			Type:        schema.TypeSet,
+			Optional:    true,
+			Elem:        outcomeProbabilityConditionResource,
+		},
 		// TODO
-		//"trigger_with_outcome_probability_conditions": {
-		//	Description: "Probability conditions for outcomes that must be satisfied to trigger the action map.",
-		//	Type: schema.TypeSet,
-		//	Optional: true,
-		//	Elem: journeyactionmapoutcomeprobabilityconditionResource,
-		//},
 		//"page_url_conditions": {
 		//	Description: "URL conditions that a page must match for web actions to be displayable.",
 		//	Type: schema.TypeSet,
@@ -115,6 +115,7 @@ var (
 				Description:  "The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.",
 				Type:         schema.TypeString,
 				Optional:     true,
+				Default:      "equal",
 				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
 			},
 			"stream_type": {
@@ -131,6 +132,26 @@ var (
 			"event_name": {
 				Description: "The name of the event for which this condition can be satisfied.",
 				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+
+	outcomeProbabilityConditionResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"outcome_id": {
+				Description: "The outcome ID.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"maximum_probability": {
+				Description: "Probability value for the selected outcome at or above which the action map will trigger.",
+				Type:        schema.TypeFloat,
+				Required:    true,
+			},
+			"probability": {
+				Description: "Additional probability condition, where if set, the action map will trigger if the current outcome probability is lower or equal to the value.",
+				Type:        schema.TypeFloat,
 				Optional:    true,
 			},
 		},
@@ -283,6 +304,7 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 	d.Set("display_name", *actionMap.DisplayName)
 	d.Set("trigger_with_segments", stringListToSet(*actionMap.TriggerWithSegments))
 	resourcedata.SetNillableValue(d, "trigger_with_event_conditions", flattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
+	resourcedata.SetNillableValue(d, "trigger_with_outcome_probability_conditions", flattenList(actionMap.TriggerWithOutcomeProbabilityConditions, flattenOutcomeProbabilityCondition))
 	// TODO
 	resourcedata.SetNillableValue[int](d, "weight", actionMap.Weight)
 	// TODO
@@ -292,10 +314,11 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 }
 
 func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionmap {
-	isActive := resourcedata.GetNillableBool(actionMap, "is_active")
-	displayName := resourcedata.GetNillableValue[string](actionMap, "display_name")
+	isActive := actionMap.Get("is_active").(bool)
+	displayName := actionMap.Get("display_name").(string)
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
 	triggerWithEventConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
+	triggerWithOutcomeProbabilityConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
 	// TODO
 	weight := resourcedata.GetNillableValue[int](actionMap, "weight")
 	// TODO
@@ -304,10 +327,11 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	endDate := resourcedata.GetNillableTime(actionMap, "end_date")
 
 	return &platformclientv2.Actionmap{
-		IsActive:                   isActive,
-		DisplayName:                displayName,
-		TriggerWithSegments:        triggerWithSegments,
-		TriggerWithEventConditions: triggerWithEventConditions,
+		IsActive:                                &isActive,
+		DisplayName:                             &displayName,
+		TriggerWithSegments:                     triggerWithSegments,
+		TriggerWithEventConditions:              triggerWithEventConditions,
+		TriggerWithOutcomeProbabilityConditions: triggerWithOutcomeProbabilityConditions,
 		// TODO
 		Weight: weight,
 		// TODO
@@ -318,9 +342,11 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 }
 
 func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Patchactionmap {
-	isActive := resourcedata.GetNillableBool(actionMap, "is_active")
-	displayName := resourcedata.GetNillableValue[string](actionMap, "display_name")
+	isActive := actionMap.Get("is_active").(bool)
+	displayName := actionMap.Get("display_name").(string)
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
+	triggerWithEventConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
+	triggerWithOutcomeProbabilityConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition)
 	// TODO
 	weight := resourcedata.GetNillableValue[int](actionMap, "weight")
 	// TODO
@@ -329,9 +355,11 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 	endDate := resourcedata.GetNillableTime(actionMap, "end_date")
 
 	return &platformclientv2.Patchactionmap{
-		IsActive:            isActive,
-		DisplayName:         displayName,
-		TriggerWithSegments: triggerWithSegments,
+		IsActive:                                &isActive,
+		DisplayName:                             &displayName,
+		TriggerWithSegments:                     triggerWithSegments,
+		TriggerWithEventConditions:              triggerWithEventConditions,
+		TriggerWithOutcomeProbabilityConditions: triggerWithOutcomeProbabilityConditions,
 		// TODO
 		Weight: weight,
 		// TODO
@@ -343,13 +371,11 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 
 func flattenEventCondition(eventCondition *platformclientv2.Eventcondition) map[string]interface{} {
 	eventConditionMap := make(map[string]interface{})
-	stringmap.SetValueIfNotNil(eventConditionMap, "key", eventCondition.Key)
-	if eventCondition.Values != nil {
-		eventConditionMap["values"] = stringListToSet(*eventCondition.Values)
-	}
-	stringmap.SetValueIfNotNil(eventConditionMap, "operator", eventCondition.Operator)
-	stringmap.SetValueIfNotNil(eventConditionMap, "stream_type", eventCondition.StreamType)
-	stringmap.SetValueIfNotNil(eventConditionMap, "session_type", eventCondition.SessionType)
+	eventConditionMap["key"] = *eventCondition.Key
+	eventConditionMap["values"] = stringListToSet(*eventCondition.Values)
+	eventConditionMap["operator"] = *eventCondition.Operator
+	eventConditionMap["stream_type"] = *eventCondition.StreamType
+	eventConditionMap["session_type"] = *eventCondition.SessionType
 	stringmap.SetValueIfNotNil(eventConditionMap, "event_name", eventCondition.EventName)
 	return eventConditionMap
 }
@@ -369,5 +395,30 @@ func buildSdkEventCondition(eventCondition map[string]interface{}) *platformclie
 		StreamType:  &streamType,
 		SessionType: &sessionType,
 		EventName:   eventName,
+	}
+}
+
+func flattenOutcomeProbabilityCondition(outcomeProbabilityCondition *platformclientv2.Outcomeprobabilitycondition) map[string]interface{} {
+	outcomeProbabilityConditionMap := make(map[string]interface{})
+	outcomeProbabilityConditionMap["outcome_id"] = *outcomeProbabilityCondition.OutcomeId
+	outcomeProbabilityConditionMap["maximum_probability"] = *outcomeProbabilityCondition.MaximumProbability
+	stringmap.SetValueIfNotNil(outcomeProbabilityConditionMap, "probability", outcomeProbabilityCondition.Probability)
+	return outcomeProbabilityConditionMap
+}
+
+func buildSdkOutcomeProbabilityCondition(outcomeProbabilityCondition map[string]interface{}) *platformclientv2.Outcomeprobabilitycondition {
+	outcomeId := outcomeProbabilityCondition["outcome_id"].(string)
+	maximumProbability := float32(outcomeProbabilityCondition["maximum_probability"].(float64))
+	var probability *float32 = nil
+	probabilityFloat64 := stringmap.GetNillableValue[float64](outcomeProbabilityCondition, "probability")
+	if probabilityFloat64 != nil {
+		probabilityFloat32 := float32(*probabilityFloat64)
+		probability = &probabilityFloat32
+	}
+
+	return &platformclientv2.Outcomeprobabilitycondition{
+		OutcomeId:          &outcomeId,
+		MaximumProbability: &maximumProbability,
+		Probability:        probability,
 	}
 }

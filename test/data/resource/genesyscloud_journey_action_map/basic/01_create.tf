@@ -8,4 +8,9 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
     stream_type  = "Web"
     session_type = "web"
   }
+  trigger_with_outcome_probability_conditions {
+    outcome_id          = "987654321"
+    maximum_probability = 7.9
+    probability         = 2.1
+  }
 }
