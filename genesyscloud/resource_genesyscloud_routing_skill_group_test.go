@@ -68,8 +68,8 @@ func TestAccResourceRoutingSkillGroupBasic(t *testing.T) {
 		skillGroupDescription1 = "Description1" + uuid.NewString()
 		skillGroupName2        = "SkillGroup2" + uuid.NewString()
 		skillGroupDescription2 = "Description2" + uuid.NewString()
-		divHomeRes             = "auth-division-home"
-		divHomeName            = "Home"
+		divHomeRes             = "auth-division-home" + uuid.NewString()
+		divHomeName            = "Home" + uuid.NewString()
 		homeDesc               = "Home"
 		skillCondition1        = `[
 			{
