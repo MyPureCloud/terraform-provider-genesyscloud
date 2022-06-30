@@ -13,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/stringmap"
 )
 
 var (
@@ -386,27 +388,27 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclientv2.Journeysegment) {
 	d.Set("is_active", *journeySegment.IsActive)
 	d.Set("display_name", *journeySegment.DisplayName)
-	setNillableValue(d, "description", journeySegment.Description)
-	setNillableValue(d, "color", journeySegment.Color)
-	setNillableValue(d, "scope", journeySegment.Scope)
-	setNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
-	setNillableValue(d, "context", flattenAsList(journeySegment.Context, flattenContext))
-	setNillableValue(d, "journey", flattenAsList(journeySegment.Journey, flattenJourney))
-	setNillableValue(d, "external_segment", flattenAsList(journeySegment.ExternalSegment, flattenExternalSegment))
-	setNillableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
+	resourcedata.SetNillableValue(d, "description", journeySegment.Description)
+	resourcedata.SetNillableValue(d, "color", journeySegment.Color)
+	resourcedata.SetNillableValue(d, "scope", journeySegment.Scope)
+	resourcedata.SetNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
+	resourcedata.SetNillableValue(d, "context", flattenAsList(journeySegment.Context, flattenContext))
+	resourcedata.SetNillableValue(d, "journey", flattenAsList(journeySegment.Journey, flattenJourney))
+	resourcedata.SetNillableValue(d, "external_segment", flattenAsList(journeySegment.ExternalSegment, flattenExternalSegment))
+	resourcedata.SetNillableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
-	isActive := getNillableBool(journeySegment, "is_active")
-	displayName := getNillableValue[string](journeySegment, "display_name")
-	description := getNillableValue[string](journeySegment, "description")
-	color := getNillableValue[string](journeySegment, "color")
-	scope := getNillableValue[string](journeySegment, "scope")
-	shouldDisplayToAgent := getNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := buildSdkListFirstElement(journeySegment, "context", buildSdkContext)
-	journey := buildSdkListFirstElement(journeySegment, "journey", buildSdkJourney)
-	externalSegment := buildSdkListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment)
-	assignmentExpirationDays := getNillableValue[int](journeySegment, "assignment_expiration_days")
+	isActive := resourcedata.GetNillableBool(journeySegment, "is_active")
+	displayName := resourcedata.GetNillableValue[string](journeySegment, "display_name")
+	description := resourcedata.GetNillableValue[string](journeySegment, "description")
+	color := resourcedata.GetNillableValue[string](journeySegment, "color")
+	scope := resourcedata.GetNillableValue[string](journeySegment, "scope")
+	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney)
+	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment)
+	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Journeysegment{
 		IsActive:                 isActive,
@@ -423,15 +425,15 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 }
 
 func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2.Patchsegment {
-	isActive := getNillableBool(journeySegment, "is_active")
-	displayName := getNillableValue[string](journeySegment, "display_name")
-	description := getNillableValue[string](journeySegment, "description")
-	color := getNillableValue[string](journeySegment, "color")
-	shouldDisplayToAgent := getNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := buildSdkListFirstElement(journeySegment, "context", buildSdkContext)
-	journey := buildSdkListFirstElement(journeySegment, "journey", buildSdkJourney)
-	externalSegment := buildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment)
-	assignmentExpirationDays := getNillableValue[int](journeySegment, "assignment_expiration_days")
+	isActive := resourcedata.GetNillableBool(journeySegment, "is_active")
+	displayName := resourcedata.GetNillableValue[string](journeySegment, "display_name")
+	description := resourcedata.GetNillableValue[string](journeySegment, "description")
+	color := resourcedata.GetNillableValue[string](journeySegment, "color")
+	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney)
+	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment)
+	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Patchsegment{
 		IsActive:                 isActive,
@@ -458,7 +460,7 @@ func flattenContext(context *platformclientv2.Context) map[string]interface{} {
 func buildSdkContext(context map[string]interface{}) *platformclientv2.Context {
 	patterns := &[]platformclientv2.Contextpattern{}
 	if context != nil {
-		patterns = buildSdkListFromMapEntry(context, "patterns", buildSdkContextPattern)
+		patterns = stringmap.BuildSdkList(context, "patterns", buildSdkContextPattern)
 	}
 	return &platformclientv2.Context{
 		Patterns: patterns,
@@ -473,25 +475,25 @@ func flattenContextPattern(contextPattern *platformclientv2.Contextpattern) map[
 
 func buildSdkContextPattern(contextPattern map[string]interface{}) *platformclientv2.Contextpattern {
 	return &platformclientv2.Contextpattern{
-		Criteria: buildSdkListFromMapEntry(contextPattern, "criteria", buildSdkEntityTypeCriteria),
+		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkEntityTypeCriteria),
 	}
 }
 
 func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecriteria) map[string]interface{} {
 	entityTypeCriteriaMap := make(map[string]interface{})
-	setMapValueIfNotNil(entityTypeCriteriaMap, "key", entityTypeCriteria.Key)
+	stringmap.SetValueIfNotNil(entityTypeCriteriaMap, "key", entityTypeCriteria.Key)
 	if entityTypeCriteria.Values != nil {
 		entityTypeCriteriaMap["values"] = stringListToSet(*entityTypeCriteria.Values)
 	}
-	setMapValueIfNotNil(entityTypeCriteriaMap, "should_ignore_case", entityTypeCriteria.ShouldIgnoreCase)
-	setMapValueIfNotNil(entityTypeCriteriaMap, "operator", entityTypeCriteria.Operator)
-	setMapValueIfNotNil(entityTypeCriteriaMap, "entity_type", entityTypeCriteria.EntityType)
+	stringmap.SetValueIfNotNil(entityTypeCriteriaMap, "should_ignore_case", entityTypeCriteria.ShouldIgnoreCase)
+	stringmap.SetValueIfNotNil(entityTypeCriteriaMap, "operator", entityTypeCriteria.Operator)
+	stringmap.SetValueIfNotNil(entityTypeCriteriaMap, "entity_type", entityTypeCriteria.EntityType)
 	return entityTypeCriteriaMap
 }
 
 func buildSdkEntityTypeCriteria(entityTypeCriteria map[string]interface{}) *platformclientv2.Entitytypecriteria {
 	key := entityTypeCriteria["key"].(string)
-	values := buildSdkStringListFromMapEntry(entityTypeCriteria, "values")
+	values := stringmap.BuildSdkStringList(entityTypeCriteria, "values")
 	shouldIgnoreCase := entityTypeCriteria["should_ignore_case"].(bool)
 	operator := entityTypeCriteria["operator"].(string)
 	entityType := entityTypeCriteria["entity_type"].(string)
@@ -517,7 +519,7 @@ func flattenJourney(journey *platformclientv2.Journey) map[string]interface{} {
 func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
 	patterns := &[]platformclientv2.Journeypattern{}
 	if journey != nil {
-		patterns = buildSdkListFromMapEntry(journey, "patterns", buildSdkJourneyPattern)
+		patterns = stringmap.BuildSdkList(journey, "patterns", buildSdkJourneyPattern)
 	}
 	return &platformclientv2.Journey{
 		Patterns: patterns,
@@ -527,19 +529,19 @@ func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
 func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[string]interface{} {
 	journeyPatternMap := make(map[string]interface{})
 	journeyPatternMap["criteria"] = *flattenList(journeyPattern.Criteria, flattenCriteria)
-	setMapValueIfNotNil(journeyPatternMap, "count", journeyPattern.Count)
-	setMapValueIfNotNil(journeyPatternMap, "stream_type", journeyPattern.StreamType)
-	setMapValueIfNotNil(journeyPatternMap, "session_type", journeyPattern.SessionType)
-	setMapValueIfNotNil(journeyPatternMap, "event_name", journeyPattern.EventName)
+	stringmap.SetValueIfNotNil(journeyPatternMap, "count", journeyPattern.Count)
+	stringmap.SetValueIfNotNil(journeyPatternMap, "stream_type", journeyPattern.StreamType)
+	stringmap.SetValueIfNotNil(journeyPatternMap, "session_type", journeyPattern.SessionType)
+	stringmap.SetValueIfNotNil(journeyPatternMap, "event_name", journeyPattern.EventName)
 	return journeyPatternMap
 }
 
 func buildSdkJourneyPattern(journeyPattern map[string]interface{}) *platformclientv2.Journeypattern {
-	criteria := buildSdkListFromMapEntry(journeyPattern, "criteria", buildSdkCriteria)
+	criteria := stringmap.BuildSdkList(journeyPattern, "criteria", buildSdkCriteria)
 	count := journeyPattern["count"].(int)
 	streamType := journeyPattern["stream_type"].(string)
 	sessionType := journeyPattern["session_type"].(string)
-	eventName := getNonDefaultMapValue[string](journeyPattern, "event_name")
+	eventName := stringmap.GetNonDefaultValue[string](journeyPattern, "event_name")
 
 	return &platformclientv2.Journeypattern{
 		Criteria:    criteria,
@@ -552,18 +554,18 @@ func buildSdkJourneyPattern(journeyPattern map[string]interface{}) *platformclie
 
 func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{} {
 	criteriaMap := make(map[string]interface{})
-	setMapValueIfNotNil(criteriaMap, "key", criteria.Key)
+	stringmap.SetValueIfNotNil(criteriaMap, "key", criteria.Key)
 	if criteria.Values != nil {
 		criteriaMap["values"] = stringListToSet(*criteria.Values)
 	}
-	setMapValueIfNotNil(criteriaMap, "should_ignore_case", criteria.ShouldIgnoreCase)
-	setMapValueIfNotNil(criteriaMap, "operator", criteria.Operator)
+	stringmap.SetValueIfNotNil(criteriaMap, "should_ignore_case", criteria.ShouldIgnoreCase)
+	stringmap.SetValueIfNotNil(criteriaMap, "operator", criteria.Operator)
 	return criteriaMap
 }
 
 func buildSdkCriteria(criteria map[string]interface{}) *platformclientv2.Criteria {
 	key := criteria["key"].(string)
-	values := buildSdkStringListFromMapEntry(criteria, "values")
+	values := stringmap.BuildSdkStringList(criteria, "values")
 	shouldIgnoreCase := criteria["should_ignore_case"].(bool)
 	operator := criteria["operator"].(string)
 
@@ -577,9 +579,9 @@ func buildSdkCriteria(criteria map[string]interface{}) *platformclientv2.Criteri
 
 func flattenExternalSegment(externalSegment *platformclientv2.Externalsegment) map[string]interface{} {
 	externalSegmentMap := make(map[string]interface{})
-	setMapValueIfNotNil(externalSegmentMap, "id", externalSegment.Id)
-	setMapValueIfNotNil(externalSegmentMap, "name", externalSegment.Name)
-	setMapValueIfNotNil(externalSegmentMap, "source", externalSegment.Source)
+	stringmap.SetValueIfNotNil(externalSegmentMap, "id", externalSegment.Id)
+	stringmap.SetValueIfNotNil(externalSegmentMap, "name", externalSegment.Name)
+	stringmap.SetValueIfNotNil(externalSegmentMap, "source", externalSegment.Source)
 	return externalSegmentMap
 }
 

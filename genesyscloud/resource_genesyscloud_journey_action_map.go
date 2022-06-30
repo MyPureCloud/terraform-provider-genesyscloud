@@ -12,6 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/stringmap"
 )
 
 var (
@@ -280,26 +282,26 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 	d.Set("is_active", *actionMap.IsActive)
 	d.Set("display_name", *actionMap.DisplayName)
 	d.Set("trigger_with_segments", stringListToSet(*actionMap.TriggerWithSegments))
-	setNillableValue(d, "trigger_with_event_conditions", flattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
+	resourcedata.SetNillableValue(d, "trigger_with_event_conditions", flattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
 	// TODO
-	setNillableValue[int](d, "weight", actionMap.Weight)
+	resourcedata.SetNillableValue[int](d, "weight", actionMap.Weight)
 	// TODO
-	setNillableValue[bool](d, "ignore_frequency_cap", actionMap.IgnoreFrequencyCap)
-	setNillableTimeValue(d, "start_date", actionMap.StartDate)
-	setNillableTimeValue(d, "end_date", actionMap.EndDate)
+	resourcedata.SetNillableValue[bool](d, "ignore_frequency_cap", actionMap.IgnoreFrequencyCap)
+	resourcedata.SetNillableTime(d, "start_date", actionMap.StartDate)
+	resourcedata.SetNillableTime(d, "end_date", actionMap.EndDate)
 }
 
 func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionmap {
-	isActive := getNillableBool(actionMap, "is_active")
-	displayName := getNillableValue[string](actionMap, "display_name")
+	isActive := resourcedata.GetNillableBool(actionMap, "is_active")
+	displayName := resourcedata.GetNillableValue[string](actionMap, "display_name")
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
-	triggerWithEventConditions := buildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
+	triggerWithEventConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
 	// TODO
-	weight := getNillableValue[int](actionMap, "weight")
+	weight := resourcedata.GetNillableValue[int](actionMap, "weight")
 	// TODO
-	ignoreFrequencyCap := getNillableBool(actionMap, "ignore_frequency_cap")
-	startDate := getNillableTime(actionMap, "start_date")
-	endDate := getNillableTime(actionMap, "end_date")
+	ignoreFrequencyCap := resourcedata.GetNillableBool(actionMap, "ignore_frequency_cap")
+	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
+	endDate := resourcedata.GetNillableTime(actionMap, "end_date")
 
 	return &platformclientv2.Actionmap{
 		IsActive:                   isActive,
@@ -316,15 +318,15 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 }
 
 func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Patchactionmap {
-	isActive := getNillableBool(actionMap, "is_active")
-	displayName := getNillableValue[string](actionMap, "display_name")
+	isActive := resourcedata.GetNillableBool(actionMap, "is_active")
+	displayName := resourcedata.GetNillableValue[string](actionMap, "display_name")
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
 	// TODO
-	weight := getNillableValue[int](actionMap, "weight")
+	weight := resourcedata.GetNillableValue[int](actionMap, "weight")
 	// TODO
-	ignoreFrequencyCap := getNillableBool(actionMap, "ignore_frequency_cap")
-	startDate := getNillableTime(actionMap, "start_date")
-	endDate := getNillableTime(actionMap, "end_date")
+	ignoreFrequencyCap := resourcedata.GetNillableBool(actionMap, "ignore_frequency_cap")
+	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
+	endDate := resourcedata.GetNillableTime(actionMap, "end_date")
 
 	return &platformclientv2.Patchactionmap{
 		IsActive:            isActive,
@@ -341,24 +343,24 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 
 func flattenEventCondition(eventCondition *platformclientv2.Eventcondition) map[string]interface{} {
 	eventConditionMap := make(map[string]interface{})
-	setMapValueIfNotNil(eventConditionMap, "key", eventCondition.Key)
+	stringmap.SetValueIfNotNil(eventConditionMap, "key", eventCondition.Key)
 	if eventCondition.Values != nil {
 		eventConditionMap["values"] = stringListToSet(*eventCondition.Values)
 	}
-	setMapValueIfNotNil(eventConditionMap, "operator", eventCondition.Operator)
-	setMapValueIfNotNil(eventConditionMap, "stream_type", eventCondition.StreamType)
-	setMapValueIfNotNil(eventConditionMap, "session_type", eventCondition.SessionType)
-	setMapValueIfNotNil(eventConditionMap, "event_name", eventCondition.EventName)
+	stringmap.SetValueIfNotNil(eventConditionMap, "operator", eventCondition.Operator)
+	stringmap.SetValueIfNotNil(eventConditionMap, "stream_type", eventCondition.StreamType)
+	stringmap.SetValueIfNotNil(eventConditionMap, "session_type", eventCondition.SessionType)
+	stringmap.SetValueIfNotNil(eventConditionMap, "event_name", eventCondition.EventName)
 	return eventConditionMap
 }
 
 func buildSdkEventCondition(eventCondition map[string]interface{}) *platformclientv2.Eventcondition {
 	key := eventCondition["key"].(string)
-	values := buildSdkStringListFromMapEntry(eventCondition, "values")
+	values := stringmap.BuildSdkStringList(eventCondition, "values")
 	operator := eventCondition["operator"].(string)
 	streamType := eventCondition["stream_type"].(string)
 	sessionType := eventCondition["session_type"].(string)
-	eventName := getNonDefaultMapValue[string](eventCondition, "event_name")
+	eventName := stringmap.GetNonDefaultValue[string](eventCondition, "event_name")
 
 	return &platformclientv2.Eventcondition{
 		Key:         &key,
