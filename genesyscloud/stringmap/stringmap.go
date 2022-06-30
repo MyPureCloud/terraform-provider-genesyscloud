@@ -30,12 +30,12 @@ func SetValueIfNotNil[T any](m map[string]interface{}, key string, value *T) {
 	}
 }
 
-func BuildSdkStringList(d map[string]interface{}, attrName string) *[]string {
-	return BuildSdkList[string](d, attrName, nil)
+func BuildSdkStringList(m map[string]interface{}, key string) *[]string {
+	return BuildSdkList[string](m, key, nil)
 }
 
-func BuildSdkList[T interface{}](d map[string]interface{}, attrName string, elementBuilder func(map[string]interface{}) *T) *[]T {
-	child := d[attrName]
+func BuildSdkList[T interface{}](m map[string]interface{}, key string, elementBuilder func(map[string]interface{}) *T) *[]T {
+	child := m[key]
 	if child != nil {
 		list := child.(*schema.Set).List()
 		sdkList := make([]T, len(list))

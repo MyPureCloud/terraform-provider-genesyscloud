@@ -55,16 +55,16 @@ func GetNillableTime(d *schema.ResourceData, key string) *time.Time {
 	return nil
 }
 
-func BuildSdkListFirstElement[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(map[string]interface{}) *T) *T {
-	list := d.Get(attrName).(*schema.Set).List()
+func BuildSdkListFirstElement[T interface{}](d *schema.ResourceData, key string, elementBuilder func(map[string]interface{}) *T) *T {
+	list := d.Get(key).(*schema.Set).List()
 	if len(list) > 0 {
 		return elementBuilder(list[0].(map[string]interface{}))
 	}
 	return elementBuilder(nil)
 }
 
-func BuildSdkList[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(map[string]interface{}) *T) *[]T {
-	list := d.Get(attrName).(*schema.Set).List()
+func BuildSdkList[T interface{}](d *schema.ResourceData, key string, elementBuilder func(map[string]interface{}) *T) *[]T {
+	list := d.Get(key).(*schema.Set).List()
 	if len(list) > 0 {
 		sdkList := make([]T, len(list))
 		for i, element := range list {
