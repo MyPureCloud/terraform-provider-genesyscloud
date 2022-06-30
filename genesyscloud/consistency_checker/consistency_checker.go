@@ -238,17 +238,7 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 				}
 
 				vv := v.New
-				if !c.d.HasChange(k) {
-					if v.New != "" {
-						if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
-							return resource.RetryableError(&consistencyError{
-								key:      k,
-								oldValue: c.originalState[k],
-								newValue: c.d.Get(k),
-							})
-						}
-					}
-				} else {
+				if c.d.HasChange(k) {
 					if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
 						return resource.RetryableError(&consistencyError{
 							key:      k,
