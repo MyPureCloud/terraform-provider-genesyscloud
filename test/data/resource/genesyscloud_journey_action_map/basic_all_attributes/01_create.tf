@@ -17,4 +17,7 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
     values   = ["url_part_1", "url_part_2"]
     operator = "containsAll"
   }
+  activation {
+    type = "immediate"
+  }
 }

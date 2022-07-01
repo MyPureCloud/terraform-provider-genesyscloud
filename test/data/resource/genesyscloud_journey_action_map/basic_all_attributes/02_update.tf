@@ -17,4 +17,8 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
     values   = ["url_part"]
     operator = "equals"
   }
+  activation {
+    type             = "delay"
+    delay_in_seconds = 60
+  }
 }

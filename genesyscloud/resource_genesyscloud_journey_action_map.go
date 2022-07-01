@@ -53,18 +53,19 @@ var (
 			Required:    true,
 			Elem:        urlConditionResource,
 		},
-		// TODO
-		//"activation": {
-		//	Description: "Type of activation.",
-		//	Type: schema.TypeSet,
-		//	Optional: true,
-		//	MaxItems: 1,
-		//	Elem: journeyactionmapactivationResource,
-		//},
+		"activation": {
+			Description: "Type of activation.",
+			Type:        schema.TypeSet,
+			Required:    true,
+			MaxItems:    1,
+			Elem:        activationResource,
+		},
 		"weight": {
-			Description: "Weight of the action map with higher number denoting higher weight.",
-			Type:        schema.TypeInt,
-			Optional:    true,
+			Description:  "Weight of the action map with higher number denoting higher weight. Low=1, Medium=2, High=3.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Default:      2,
+			ValidateFunc: validation.IntBetween(1, 3),
 		},
 		// TODO
 		//"action": {
@@ -173,6 +174,22 @@ var (
 			},
 		},
 	}
+
+	activationResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`type`: {
+				Description:  `Type of activation. Valid values: immediate, on-next-visit, on-next-session, delay.`,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"immediate", "on-next-visit", "on-next-session", "delay"}, false),
+			},
+			`delay_in_seconds`: {
+				Description: `Activation delay time amount.`,
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+		},
+	}
 )
 
 func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -231,7 +248,7 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Creating journey action map %s", *actionMap.DisplayName)
 	result, resp, err := journeyApi.PostJourneyActionmaps(*actionMap)
 	if err != nil {
-		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, *actionMap, getBody(resp))
+		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, interfaceToJson(*actionMap), getBody(resp))
 	}
 
 	d.SetId(*result.Id)
@@ -278,7 +295,7 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		patchActionMap.Version = actionMap.Version
 		_, resp, patchErr := journeyApi.PatchJourneyActionmap(d.Id(), *patchActionMap)
 		if patchErr != nil {
-			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, *patchActionMap, getBody(resp))
+			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, interfaceToJson(*patchActionMap), getBody(resp))
 		}
 		return resp, nil
 	})
@@ -323,8 +340,8 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 	resourcedata.SetNillableValue(d, "trigger_with_event_conditions", flattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
 	resourcedata.SetNillableValue(d, "trigger_with_outcome_probability_conditions", flattenList(actionMap.TriggerWithOutcomeProbabilityConditions, flattenOutcomeProbabilityCondition))
 	resourcedata.SetNillableValue(d, "page_url_conditions", flattenList(actionMap.PageUrlConditions, flattenUrlCondition))
-	// TODO
-	resourcedata.SetNillableValue[int](d, "weight", actionMap.Weight)
+	d.Set("activation", flattenActivation(actionMap.Activation))
+	d.Set("weight", *actionMap.Weight)
 	// TODO
 	resourcedata.SetNillableValue[bool](d, "ignore_frequency_cap", actionMap.IgnoreFrequencyCap)
 	resourcedata.SetNillableTime(d, "start_date", actionMap.StartDate)
@@ -336,10 +353,10 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	displayName := actionMap.Get("display_name").(string)
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
 	triggerWithEventConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
-	triggerWithOutcomeProbabilityConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
-	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition))
-	// TODO
-	weight := resourcedata.GetNillableValue[int](actionMap, "weight")
+	triggerWithOutcomeProbabilityConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition)
+	pageUrlConditions := resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition)
+	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation)
+	weight := actionMap.Get("weight").(int)
 	// TODO
 	ignoreFrequencyCap := resourcedata.GetNillableBool(actionMap, "ignore_frequency_cap")
 	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
@@ -352,8 +369,8 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 		TriggerWithEventConditions:              triggerWithEventConditions,
 		TriggerWithOutcomeProbabilityConditions: triggerWithOutcomeProbabilityConditions,
 		PageUrlConditions:                       pageUrlConditions,
-		// TODO
-		Weight: weight,
+		Activation:                              activation,
+		Weight:                                  &weight,
 		// TODO
 		IgnoreFrequencyCap: ignoreFrequencyCap,
 		StartDate:          startDate,
@@ -367,8 +384,9 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
 	triggerWithEventConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
 	triggerWithOutcomeProbabilityConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition)
-	// TODO
-	weight := resourcedata.GetNillableValue[int](actionMap, "weight")
+	pageUrlConditions := resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition)
+	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation)
+	weight := actionMap.Get("weight").(int)
 	// TODO
 	ignoreFrequencyCap := resourcedata.GetNillableBool(actionMap, "ignore_frequency_cap")
 	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
@@ -380,8 +398,9 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 		TriggerWithSegments:                     triggerWithSegments,
 		TriggerWithEventConditions:              triggerWithEventConditions,
 		TriggerWithOutcomeProbabilityConditions: triggerWithOutcomeProbabilityConditions,
-		// TODO
-		Weight: weight,
+		PageUrlConditions:                       pageUrlConditions,
+		Activation:                              activation,
+		Weight:                                  &weight,
 		// TODO
 		IgnoreFrequencyCap: ignoreFrequencyCap,
 		StartDate:          startDate,
@@ -457,5 +476,22 @@ func buildSdkUrlCondition(eventCondition map[string]interface{}) *platformclient
 	return &platformclientv2.Urlcondition{
 		Values:   values,
 		Operator: &operator,
+	}
+}
+
+func flattenActivation(activation *platformclientv2.Activation) []map[string]interface{} {
+	activationMap := make(map[string]interface{})
+	activationMap["type"] = *activation.VarType
+	stringmap.SetValueIfNotNil(activationMap, "delay_in_seconds", activation.DelayInSeconds)
+	return []map[string]interface{}{activationMap}
+}
+
+func buildSdkActivation(activation map[string]interface{}) *platformclientv2.Activation {
+	varType := activation["type"].(string)
+	delayInSeconds := stringmap.GetNonDefaultValue[int](activation, "delay_in_seconds")
+
+	return &platformclientv2.Activation{
+		VarType:        &varType,
+		DelayInSeconds: delayInSeconds,
 	}
 }
