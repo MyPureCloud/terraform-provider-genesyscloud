@@ -2,7 +2,7 @@
 page_title: "genesyscloud_journey_segment Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-Genesys Cloud Journey Segment
+  Genesys Cloud Journey Segment
 ---
 # genesyscloud_journey_segment (Resource)
 
@@ -150,3 +150,4 @@ Required:
 Optional:
 
 - `operator` (String) The comparison operator.Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.
+
