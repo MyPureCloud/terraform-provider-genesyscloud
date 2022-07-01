@@ -31,6 +31,7 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 ### Required
 
 - `display_name` (String) Display name of the action map.
+- `page_url_conditions` (Block Set, Min: 1) URL conditions that a page must match for web actions to be displayable. (see [below for nested schema](#nestedblock--page_url_conditions))
 - `trigger_with_segments` (Set of String) Trigger action map if any segment in the list is assigned to a given customer.
 
 ### Optional
@@ -46,6 +47,15 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--page_url_conditions"></a>
+### Nested Schema for `page_url_conditions`
+
+Required:
+
+- `operator` (String) The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.
+- `values` (Set of String) The URL condition value.
+
 
 <a id="nestedblock--trigger_with_event_conditions"></a>
 ### Nested Schema for `trigger_with_event_conditions`

@@ -13,7 +13,7 @@ import (
 )
 
 func TestAccResourceJourneyActionMap(t *testing.T) {
-	runJourneyActionMapTestCase(t, "basic")
+	runJourneyActionMapTestCase(t, "basic_all_attributes")
 }
 
 func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {

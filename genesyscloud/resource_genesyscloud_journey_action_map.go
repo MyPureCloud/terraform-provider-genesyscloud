@@ -47,13 +47,13 @@ var (
 			Optional:    true,
 			Elem:        outcomeProbabilityConditionResource,
 		},
+		"page_url_conditions": {
+			Description: "URL conditions that a page must match for web actions to be displayable.",
+			Type:        schema.TypeSet,
+			Required:    true,
+			Elem:        urlConditionResource,
+		},
 		// TODO
-		//"page_url_conditions": {
-		//	Description: "URL conditions that a page must match for web actions to be displayable.",
-		//	Type: schema.TypeSet,
-		//	Required: true,
-		//	Elem: journeyactionmapurlconditionResource,
-		//},
 		//"activation": {
 		//	Description: "Type of activation.",
 		//	Type: schema.TypeSet,
@@ -153,6 +153,23 @@ var (
 				Description: "Additional probability condition, where if set, the action map will trigger if the current outcome probability is lower or equal to the value.",
 				Type:        schema.TypeFloat,
 				Optional:    true,
+			},
+		},
+	}
+
+	urlConditionResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"values": {
+				Description: "The URL condition value.",
+				Required:    true,
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"operator": {
+				Description:  "The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.",
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
 			},
 		},
 	}
@@ -305,6 +322,7 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 	d.Set("trigger_with_segments", stringListToSet(*actionMap.TriggerWithSegments))
 	resourcedata.SetNillableValue(d, "trigger_with_event_conditions", flattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
 	resourcedata.SetNillableValue(d, "trigger_with_outcome_probability_conditions", flattenList(actionMap.TriggerWithOutcomeProbabilityConditions, flattenOutcomeProbabilityCondition))
+	resourcedata.SetNillableValue(d, "page_url_conditions", flattenList(actionMap.PageUrlConditions, flattenUrlCondition))
 	// TODO
 	resourcedata.SetNillableValue[int](d, "weight", actionMap.Weight)
 	// TODO
@@ -319,6 +337,7 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
 	triggerWithEventConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
 	triggerWithOutcomeProbabilityConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
+	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition))
 	// TODO
 	weight := resourcedata.GetNillableValue[int](actionMap, "weight")
 	// TODO
@@ -332,6 +351,7 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 		TriggerWithSegments:                     triggerWithSegments,
 		TriggerWithEventConditions:              triggerWithEventConditions,
 		TriggerWithOutcomeProbabilityConditions: triggerWithOutcomeProbabilityConditions,
+		PageUrlConditions:                       pageUrlConditions,
 		// TODO
 		Weight: weight,
 		// TODO
@@ -420,5 +440,22 @@ func buildSdkOutcomeProbabilityCondition(outcomeProbabilityCondition map[string]
 		OutcomeId:          &outcomeId,
 		MaximumProbability: &maximumProbability,
 		Probability:        probability,
+	}
+}
+
+func flattenUrlCondition(urlCondition *platformclientv2.Urlcondition) map[string]interface{} {
+	urlConditionMap := make(map[string]interface{})
+	urlConditionMap["values"] = stringListToSet(*urlCondition.Values)
+	urlConditionMap["operator"] = *urlCondition.Operator
+	return urlConditionMap
+}
+
+func buildSdkUrlCondition(eventCondition map[string]interface{}) *platformclientv2.Urlcondition {
+	values := stringmap.BuildSdkStringList(eventCondition, "values")
+	operator := eventCondition["operator"].(string)
+
+	return &platformclientv2.Urlcondition{
+		Values:   values,
+		Operator: &operator,
 	}
 }

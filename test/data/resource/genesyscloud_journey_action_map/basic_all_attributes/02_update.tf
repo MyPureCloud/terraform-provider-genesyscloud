@@ -13,4 +13,8 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
     maximum_probability = 7.2
     probability         = 2.5
   }
+  page_url_conditions {
+    values   = ["url_part"]
+    operator = "equals"
+  }
 }
