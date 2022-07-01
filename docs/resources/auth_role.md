@@ -93,7 +93,7 @@ Required:
 - `variable_name` (String) Variable name being compared. This varies depending on the permission.
 
 <a id="nestedblock--permission_policies--conditions--terms--operands"></a>
-### Nested Schema for `permission_policies.conditions.terms.variable_name`
+### Nested Schema for `permission_policies.conditions.terms.operands`
 
 Required:
 
