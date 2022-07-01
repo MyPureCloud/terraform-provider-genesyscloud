@@ -37,8 +37,9 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 ### Optional
 
+- `action_map_schedule_groups` (Block Set, Max: 1) The action map's associated schedule groups. (see [below for nested schema](#nestedblock--action_map_schedule_groups))
 - `end_date` (String) Timestamp at which the action map is scheduled to stop firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
-- `ignore_frequency_cap` (Boolean) Override organization-level frequency cap and always offer web engagements from this action map.
+- `ignore_frequency_cap` (Boolean) Override organization-level frequency cap and always offer web engagements from this action map. Defaults to `false`.
 - `is_active` (Boolean) Whether the action map is active. Defaults to `true`.
 - `start_date` (String) Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
 - `trigger_with_event_conditions` (Block Set) List of event conditions that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_event_conditions))
@@ -68,6 +69,18 @@ Required:
 
 - `operator` (String) The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.
 - `values` (Set of String) The URL condition value.
+
+
+<a id="nestedblock--action_map_schedule_groups"></a>
+### Nested Schema for `action_map_schedule_groups`
+
+Required:
+
+- `action_map_schedule_group_id` (String) The actions map's associated schedule group.
+
+Optional:
+
+- `emergency_action_map_schedule_group_id` (String) The action map's associated emergency schedule group.
 
 
 <a id="nestedblock--trigger_with_event_conditions"></a>

@@ -75,17 +75,18 @@ var (
 		//	MaxItems: 1,
 		//	Elem: journeyactionmapactionmapactionResource,
 		//},
-		//"action_map_schedule_groups": {
-		//	Description: "The action map's associated schedule groups.",
-		//	Type: schema.TypeSet,
-		//	Optional: true,
-		//	MaxItems: 1,
-		//	Elem: journeyactionmapactionmapschedulegroupsResource,
-		//},
+		"action_map_schedule_groups": {
+			Description: "The action map's associated schedule groups.",
+			Type:        schema.TypeSet,
+			Optional:    true,
+			MaxItems:    1,
+			Elem:        actionMapScheduleGroupsResource,
+		},
 		"ignore_frequency_cap": {
 			Description: "Override organization-level frequency cap and always offer web engagements from this action map.",
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Default:     false,
 		},
 		"start_date": {
 			Description: "Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z",
@@ -177,15 +178,30 @@ var (
 
 	activationResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			`type`: {
-				Description:  `Type of activation. Valid values: immediate, on-next-visit, on-next-session, delay.`,
+			"type": {
+				Description:  "Type of activation. Valid values: immediate, on-next-visit, on-next-session, delay.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"immediate", "on-next-visit", "on-next-session", "delay"}, false),
 			},
-			`delay_in_seconds`: {
-				Description: `Activation delay time amount.`,
+			"delay_in_seconds": {
+				Description: "Activation delay time amount.",
 				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+		},
+	}
+
+	actionMapScheduleGroupsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"action_map_schedule_group_id": {
+				Description: "The actions map's associated schedule group.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"emergency_action_map_schedule_group_id": {
+				Description: "The action map's associated emergency schedule group.",
+				Type:        schema.TypeString,
 				Optional:    true,
 			},
 		},
@@ -340,10 +356,11 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 	resourcedata.SetNillableValue(d, "trigger_with_event_conditions", flattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
 	resourcedata.SetNillableValue(d, "trigger_with_outcome_probability_conditions", flattenList(actionMap.TriggerWithOutcomeProbabilityConditions, flattenOutcomeProbabilityCondition))
 	resourcedata.SetNillableValue(d, "page_url_conditions", flattenList(actionMap.PageUrlConditions, flattenUrlCondition))
-	d.Set("activation", flattenActivation(actionMap.Activation))
+	d.Set("activation", flattenAsList(actionMap.Activation, flattenActivation))
 	d.Set("weight", *actionMap.Weight)
 	// TODO
-	resourcedata.SetNillableValue[bool](d, "ignore_frequency_cap", actionMap.IgnoreFrequencyCap)
+	resourcedata.SetNillableValue(d, "action_map_schedule_groups", flattenAsList(actionMap.ActionMapScheduleGroups, flattenActionMapScheduleGroups))
+	d.Set("ignore_frequency_cap", *actionMap.IgnoreFrequencyCap)
 	resourcedata.SetNillableTime(d, "start_date", actionMap.StartDate)
 	resourcedata.SetNillableTime(d, "end_date", actionMap.EndDate)
 }
@@ -352,13 +369,14 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	isActive := actionMap.Get("is_active").(bool)
 	displayName := actionMap.Get("display_name").(string)
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
-	triggerWithEventConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
-	triggerWithOutcomeProbabilityConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition)
-	pageUrlConditions := resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition)
+	triggerWithEventConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition))
+	triggerWithOutcomeProbabilityConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
+	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition))
 	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation)
 	weight := actionMap.Get("weight").(int)
 	// TODO
-	ignoreFrequencyCap := resourcedata.GetNillableBool(actionMap, "ignore_frequency_cap")
+	actionMapScheduleGroups := resourcedata.BuildSdkListFirstElement(actionMap, "action_map_schedule_groups", buildSdkActionMapScheduleGroups)
+	ignoreFrequencyCap := actionMap.Get("ignore_frequency_cap").(bool)
 	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
 	endDate := resourcedata.GetNillableTime(actionMap, "end_date")
 
@@ -372,9 +390,10 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 		Activation:                              activation,
 		Weight:                                  &weight,
 		// TODO
-		IgnoreFrequencyCap: ignoreFrequencyCap,
-		StartDate:          startDate,
-		EndDate:            endDate,
+		ActionMapScheduleGroups: actionMapScheduleGroups,
+		IgnoreFrequencyCap:      &ignoreFrequencyCap,
+		StartDate:               startDate,
+		EndDate:                 endDate,
 	}
 }
 
@@ -382,13 +401,14 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 	isActive := actionMap.Get("is_active").(bool)
 	displayName := actionMap.Get("display_name").(string)
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
-	triggerWithEventConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
-	triggerWithOutcomeProbabilityConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition)
-	pageUrlConditions := resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition)
+	triggerWithEventConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition))
+	triggerWithOutcomeProbabilityConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
+	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition))
 	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation)
 	weight := actionMap.Get("weight").(int)
 	// TODO
-	ignoreFrequencyCap := resourcedata.GetNillableBool(actionMap, "ignore_frequency_cap")
+	actionMapScheduleGroups := resourcedata.BuildSdkListFirstElement(actionMap, "action_map_schedule_groups", buildSdkPatchActionMapScheduleGroups)
+	ignoreFrequencyCap := actionMap.Get("ignore_frequency_cap").(bool)
 	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
 	endDate := resourcedata.GetNillableTime(actionMap, "end_date")
 
@@ -402,9 +422,10 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 		Activation:                              activation,
 		Weight:                                  &weight,
 		// TODO
-		IgnoreFrequencyCap: ignoreFrequencyCap,
-		StartDate:          startDate,
-		EndDate:            endDate,
+		ActionMapScheduleGroups: actionMapScheduleGroups,
+		IgnoreFrequencyCap:      &ignoreFrequencyCap,
+		StartDate:               startDate,
+		EndDate:                 endDate,
 	}
 }
 
@@ -479,11 +500,11 @@ func buildSdkUrlCondition(eventCondition map[string]interface{}) *platformclient
 	}
 }
 
-func flattenActivation(activation *platformclientv2.Activation) []map[string]interface{} {
+func flattenActivation(activation *platformclientv2.Activation) map[string]interface{} {
 	activationMap := make(map[string]interface{})
 	activationMap["type"] = *activation.VarType
 	stringmap.SetValueIfNotNil(activationMap, "delay_in_seconds", activation.DelayInSeconds)
-	return []map[string]interface{}{activationMap}
+	return activationMap
 }
 
 func buildSdkActivation(activation map[string]interface{}) *platformclientv2.Activation {
@@ -494,4 +515,54 @@ func buildSdkActivation(activation map[string]interface{}) *platformclientv2.Act
 		VarType:        &varType,
 		DelayInSeconds: delayInSeconds,
 	}
+}
+
+func flattenActionMapScheduleGroups(actionMapScheduleGroups *platformclientv2.Actionmapschedulegroups) map[string]interface{} {
+	actionMapScheduleGroupsMap := make(map[string]interface{})
+	actionMapScheduleGroupsMap["action_map_schedule_group_id"] = *actionMapScheduleGroups.ActionMapScheduleGroup.Id
+	if actionMapScheduleGroups.EmergencyActionMapScheduleGroup != nil {
+		stringmap.SetValueIfNotNil(actionMapScheduleGroupsMap, "emergency_action_map_schedule_group_id", actionMapScheduleGroups.EmergencyActionMapScheduleGroup.Id)
+	}
+	return actionMapScheduleGroupsMap
+}
+
+func buildSdkActionMapScheduleGroups(actionMapScheduleGroups map[string]interface{}) *platformclientv2.Actionmapschedulegroups {
+	if actionMapScheduleGroups == nil {
+		return nil
+	}
+
+	actionMapScheduleGroup, emergencyActionMapScheduleGroup := getActionMapScheduleGroupPair(actionMapScheduleGroups)
+
+	return &platformclientv2.Actionmapschedulegroups{
+		ActionMapScheduleGroup:          actionMapScheduleGroup,
+		EmergencyActionMapScheduleGroup: emergencyActionMapScheduleGroup,
+	}
+}
+
+func buildSdkPatchActionMapScheduleGroups(actionMapScheduleGroups map[string]interface{}) *platformclientv2.Patchactionmapschedulegroups {
+	if actionMapScheduleGroups == nil {
+		return nil
+	}
+
+	actionMapScheduleGroup, emergencyActionMapScheduleGroup := getActionMapScheduleGroupPair(actionMapScheduleGroups)
+
+	return &platformclientv2.Patchactionmapschedulegroups{
+		ActionMapScheduleGroup:          actionMapScheduleGroup,
+		EmergencyActionMapScheduleGroup: emergencyActionMapScheduleGroup,
+	}
+}
+
+func getActionMapScheduleGroupPair(actionMapScheduleGroups map[string]interface{}) (*platformclientv2.Actionmapschedulegroup, *platformclientv2.Actionmapschedulegroup) {
+	actionMapScheduleGroupId := actionMapScheduleGroups["action_map_schedule_group_id"].(string)
+	actionMapScheduleGroup := &platformclientv2.Actionmapschedulegroup{
+		Id: &actionMapScheduleGroupId,
+	}
+	emergencyActionMapScheduleGroupId := stringmap.GetNillableValue[string](actionMapScheduleGroups, "emergency_action_map_schedule_group_id")
+	var emergencyActionMapScheduleGroup *platformclientv2.Actionmapschedulegroup = nil
+	if emergencyActionMapScheduleGroupId != nil {
+		emergencyActionMapScheduleGroup = &platformclientv2.Actionmapschedulegroup{
+			Id: emergencyActionMapScheduleGroupId,
+		}
+	}
+	return actionMapScheduleGroup, emergencyActionMapScheduleGroup
 }
