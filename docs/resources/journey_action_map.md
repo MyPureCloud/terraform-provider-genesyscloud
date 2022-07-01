@@ -32,7 +32,6 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 - `activation` (Block Set, Min: 1, Max: 1) Type of activation. (see [below for nested schema](#nestedblock--activation))
 - `display_name` (String) Display name of the action map.
-- `page_url_conditions` (Block Set, Min: 1) URL conditions that a page must match for web actions to be displayable. (see [below for nested schema](#nestedblock--page_url_conditions))
 - `trigger_with_segments` (Set of String) Trigger action map if any segment in the list is assigned to a given customer.
 
 ### Optional
@@ -41,6 +40,7 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 - `end_date` (String) Timestamp at which the action map is scheduled to stop firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
 - `ignore_frequency_cap` (Boolean) Override organization-level frequency cap and always offer web engagements from this action map. Defaults to `false`.
 - `is_active` (Boolean) Whether the action map is active. Defaults to `true`.
+- `page_url_conditions` (Block Set) URL conditions that a page must match for web actions to be displayable. (see [below for nested schema](#nestedblock--page_url_conditions))
 - `start_date` (String) Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
 - `trigger_with_event_conditions` (Block Set) List of event conditions that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_event_conditions))
 - `trigger_with_outcome_probability_conditions` (Block Set) Probability conditions for outcomes that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_outcome_probability_conditions))
@@ -62,15 +62,6 @@ Optional:
 - `delay_in_seconds` (Number) Activation delay time amount.
 
 
-<a id="nestedblock--page_url_conditions"></a>
-### Nested Schema for `page_url_conditions`
-
-Required:
-
-- `operator` (String) The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.
-- `values` (Set of String) The URL condition value.
-
-
 <a id="nestedblock--action_map_schedule_groups"></a>
 ### Nested Schema for `action_map_schedule_groups`
 
@@ -81,6 +72,15 @@ Required:
 Optional:
 
 - `emergency_action_map_schedule_group_id` (String) The action map's associated emergency schedule group.
+
+
+<a id="nestedblock--page_url_conditions"></a>
+### Nested Schema for `page_url_conditions`
+
+Required:
+
+- `operator` (String) The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.
+- `values` (Set of String) The URL condition value.
 
 
 <a id="nestedblock--trigger_with_event_conditions"></a>

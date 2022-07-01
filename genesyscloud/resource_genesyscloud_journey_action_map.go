@@ -50,7 +50,7 @@ var (
 		"page_url_conditions": {
 			Description: "URL conditions that a page must match for web actions to be displayable.",
 			Type:        schema.TypeSet,
-			Required:    true,
+			Optional:    true,
 			Elem:        urlConditionResource,
 		},
 		"activation": {
@@ -358,7 +358,7 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 	resourcedata.SetNillableValue(d, "page_url_conditions", flattenList(actionMap.PageUrlConditions, flattenUrlCondition))
 	d.Set("activation", flattenAsList(actionMap.Activation, flattenActivation))
 	d.Set("weight", *actionMap.Weight)
-	// TODO
+	//d.Set("action", nil) // TODO
 	resourcedata.SetNillableValue(d, "action_map_schedule_groups", flattenAsList(actionMap.ActionMapScheduleGroups, flattenActionMapScheduleGroups))
 	d.Set("ignore_frequency_cap", *actionMap.IgnoreFrequencyCap)
 	resourcedata.SetNillableTime(d, "start_date", actionMap.StartDate)
@@ -374,7 +374,8 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition))
 	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation)
 	weight := actionMap.Get("weight").(int)
-	// TODO
+	mediaType := "webMessagingOffer"
+	action := &platformclientv2.Actionmapaction{MediaType: &mediaType} // TODO
 	actionMapScheduleGroups := resourcedata.BuildSdkListFirstElement(actionMap, "action_map_schedule_groups", buildSdkActionMapScheduleGroups)
 	ignoreFrequencyCap := actionMap.Get("ignore_frequency_cap").(bool)
 	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
@@ -389,11 +390,11 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 		PageUrlConditions:                       pageUrlConditions,
 		Activation:                              activation,
 		Weight:                                  &weight,
-		// TODO
-		ActionMapScheduleGroups: actionMapScheduleGroups,
-		IgnoreFrequencyCap:      &ignoreFrequencyCap,
-		StartDate:               startDate,
-		EndDate:                 endDate,
+		Action:                                  action,
+		ActionMapScheduleGroups:                 actionMapScheduleGroups,
+		IgnoreFrequencyCap:                      &ignoreFrequencyCap,
+		StartDate:                               startDate,
+		EndDate:                                 endDate,
 	}
 }
 
@@ -406,7 +407,7 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition))
 	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation)
 	weight := actionMap.Get("weight").(int)
-	// TODO
+	action := &platformclientv2.Patchaction{} // TODO
 	actionMapScheduleGroups := resourcedata.BuildSdkListFirstElement(actionMap, "action_map_schedule_groups", buildSdkPatchActionMapScheduleGroups)
 	ignoreFrequencyCap := actionMap.Get("ignore_frequency_cap").(bool)
 	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
@@ -421,11 +422,11 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 		PageUrlConditions:                       pageUrlConditions,
 		Activation:                              activation,
 		Weight:                                  &weight,
-		// TODO
-		ActionMapScheduleGroups: actionMapScheduleGroups,
-		IgnoreFrequencyCap:      &ignoreFrequencyCap,
-		StartDate:               startDate,
-		EndDate:                 endDate,
+		Action:                                  action,
+		ActionMapScheduleGroups:                 actionMapScheduleGroups,
+		IgnoreFrequencyCap:                      &ignoreFrequencyCap,
+		StartDate:                               startDate,
+		EndDate:                                 endDate,
 	}
 }
 
