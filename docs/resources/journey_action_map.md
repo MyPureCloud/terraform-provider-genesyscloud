@@ -30,6 +30,7 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 ### Required
 
+- `activation` (Block Set, Min: 1, Max: 1) Type of activation. (see [below for nested schema](#nestedblock--activation))
 - `display_name` (String) Display name of the action map.
 - `page_url_conditions` (Block Set, Min: 1) URL conditions that a page must match for web actions to be displayable. (see [below for nested schema](#nestedblock--page_url_conditions))
 - `trigger_with_segments` (Set of String) Trigger action map if any segment in the list is assigned to a given customer.
@@ -42,11 +43,23 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 - `start_date` (String) Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
 - `trigger_with_event_conditions` (Block Set) List of event conditions that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_event_conditions))
 - `trigger_with_outcome_probability_conditions` (Block Set) Probability conditions for outcomes that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_outcome_probability_conditions))
-- `weight` (Number) Weight of the action map with higher number denoting higher weight.
+- `weight` (Number) Weight of the action map with higher number denoting higher weight. Low=1, Medium=2, High=3. Defaults to `2`.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--activation"></a>
+### Nested Schema for `activation`
+
+Required:
+
+- `type` (String) Type of activation. Valid values: immediate, on-next-visit, on-next-session, delay.
+
+Optional:
+
+- `delay_in_seconds` (Number) Activation delay time amount.
+
 
 <a id="nestedblock--page_url_conditions"></a>
 ### Nested Schema for `page_url_conditions`
