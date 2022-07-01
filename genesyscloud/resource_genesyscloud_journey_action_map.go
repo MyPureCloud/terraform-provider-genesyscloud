@@ -12,8 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resourcedata"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/stringmap"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 )
 
 var (
