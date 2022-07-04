@@ -37,6 +37,7 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 ### Optional
 
+- `action` (Block Set, Max: 1) The action that will be executed if this action map is triggered. (see [below for nested schema](#nestedblock--action))
 - `action_map_schedule_groups` (Block Set, Max: 1) The action map's associated schedule groups. (see [below for nested schema](#nestedblock--action_map_schedule_groups))
 - `end_date` (String) Timestamp at which the action map is scheduled to stop firing. Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
 - `ignore_frequency_cap` (Boolean) Override organization-level frequency cap and always offer web engagements from this action map. Defaults to `false`.
@@ -60,6 +61,62 @@ Required:
 Optional:
 
 - `delay_in_seconds` (Number) Activation delay time amount.
+
+
+<a id="nestedblock--action"></a>
+### Nested Schema for `action`
+
+Required:
+
+- `media_type` (String) Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, integrationAction, architectFlow, openAction.
+
+Optional:
+
+- `action_template_id` (String) Action template associated with the action map.
+- `architect_flow_fields` (Block Set, Max: 1) Architect Flow Id and input contract. (see [below for nested schema](#nestedblock--action--architect_flow_fields))
+- `open_action_fields` (Block Set, Max: 1) Admin-configurable fields of an open action. (see [below for nested schema](#nestedblock--action--open_action_fields))
+- `web_messaging_offer_fields` (Block Set, Max: 1) Admin-configurable fields of a web messaging offer action. (see [below for nested schema](#nestedblock--action--web_messaging_offer_fields))
+
+<a id="nestedblock--action--architect_flow_fields"></a>
+### Nested Schema for `action.architect_flow_fields`
+
+Optional:
+
+- `architect_flow_id` (String) The architect flow.
+- `flow_request_mappings` (Block Set) Collection of Architect Flow Request Mappings to use. (see [below for nested schema](#nestedblock--action--architect_flow_fields--flow_request_mappings))
+
+<a id="nestedblock--action--architect_flow_fields--flow_request_mappings"></a>
+### Nested Schema for `action.architect_flow_fields.flow_request_mappings`
+
+Optional:
+
+- `attribute_type` (String) Type of the value supplied. Valid values: String, Number, Integer, Boolean.
+- `mapping_type` (String) Method of finding value to use with Attribute. Valid values: Lookup, HardCoded.
+- `name` (String) Name of the Integration Action Attribute to supply the value for
+- `value` (String) Value to supply for the specified Attribute
+
+
+
+<a id="nestedblock--action--open_action_fields"></a>
+### Nested Schema for `action.open_action_fields`
+
+Required:
+
+- `open_action_id` (String) The specific type of the open action.
+
+Optional:
+
+- `configuration_fields` (String) Custom fields defined in the schema referenced by the open action type selected.
+
+
+<a id="nestedblock--action--web_messaging_offer_fields"></a>
+### Nested Schema for `action.web_messaging_offer_fields`
+
+Optional:
+
+- `architect_flow_id` (String) Flow to be invoked, overrides default flow when specified.
+- `offer_text` (String) Text value to be used when inviting a visitor to engage with a web messaging offer.
+
 
 
 <a id="nestedblock--action_map_schedule_groups"></a>
