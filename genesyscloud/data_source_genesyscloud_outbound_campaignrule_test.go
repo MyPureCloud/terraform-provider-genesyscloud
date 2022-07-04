@@ -76,7 +76,7 @@ func TestAccDataSourceCampaignRule(t *testing.T) {
 func generateCampaignRuleDataSource(dataSourceId string, campaignRuleName string, dependsOn string) string {
 	return fmt.Sprintf(`
 data "genesyscloud_outbound_campaignrule" "%s" {
-		name = "%s"
-		depends_on = [%s]
+	name = "%s"
+	depends_on = [%s]
 }`, dataSourceId, campaignRuleName, dependsOn)
 }

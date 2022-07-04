@@ -198,13 +198,15 @@ func resourceOutboundCampaignRule() *schema.Resource {
 				Elem:        outboundCampaignRuleAction,
 			},
 			`match_any_conditions`: {
-				Description: `TODO: Add appropriate description`,
+				Description: `Whether actions are executed if any condition is met, or only when all conditions are met.`,
 				Optional:    true,
+				Default:     false,
 				Type:        schema.TypeBool,
 			},
 			`enabled`: {
 				Description: `Whether or not this campaign rule is currently enabled. Required on updates.`,
 				Optional:    true,
+				Default:     false,
 				Type:        schema.TypeBool,
 			},
 		},
