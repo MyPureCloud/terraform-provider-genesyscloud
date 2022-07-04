@@ -34,7 +34,9 @@ func setupJourneyActionMap(t *testing.T, idPrefix string, testCaseName string) {
 		t.Fatal(err)
 	}
 
-	cleanupJourneyActionMaps(idPrefix + testCaseName)
+	testCasePrefix := idPrefix + testCaseName
+	cleanupJourneySegments(testCasePrefix)
+	cleanupJourneyActionMaps(testCasePrefix)
 }
 
 func cleanupJourneyActionMaps(idPrefix string) {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -23,7 +24,7 @@ func validatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 // Validates a date string is in the format yyyy-MM-dd
 func validateDate(date interface{}, _ cty.Path) diag.Diagnostics {
 	if dateStr, ok := date.(string); ok {
-		_, err := time.Parse("2006-01-02", dateStr)
+		_, err := time.Parse(resourcedata.DateParseFormat, dateStr)
 		if err != nil {
 			return diag.Errorf("Failed to parse date %s: %s", dateStr, err)
 		}
@@ -35,7 +36,7 @@ func validateDate(date interface{}, _ cty.Path) diag.Diagnostics {
 // Validates a date string is in the format 2006-01-02T15:04:05.000000
 func validateLocalDateTimes(date interface{}, _ cty.Path) diag.Diagnostics {
 	if dateStr, ok := date.(string); ok {
-		_, err := time.Parse("2006-01-02T15:04:05.000000", dateStr)
+		_, err := time.Parse(resourcedata.TimeParseFormat, dateStr)
 		if err != nil {
 			return diag.Errorf("Failed to parse date %s: %s", dateStr, err)
 		}

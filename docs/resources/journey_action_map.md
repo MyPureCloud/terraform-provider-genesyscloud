@@ -32,16 +32,16 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 - `activation` (Block Set, Min: 1, Max: 1) Type of activation. (see [below for nested schema](#nestedblock--activation))
 - `display_name` (String) Display name of the action map.
+- `start_date` (String) Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
 - `trigger_with_segments` (Set of String) Trigger action map if any segment in the list is assigned to a given customer.
 
 ### Optional
 
 - `action_map_schedule_groups` (Block Set, Max: 1) The action map's associated schedule groups. (see [below for nested schema](#nestedblock--action_map_schedule_groups))
-- `end_date` (String) Timestamp at which the action map is scheduled to stop firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
+- `end_date` (String) Timestamp at which the action map is scheduled to stop firing. Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
 - `ignore_frequency_cap` (Boolean) Override organization-level frequency cap and always offer web engagements from this action map. Defaults to `false`.
 - `is_active` (Boolean) Whether the action map is active. Defaults to `true`.
 - `page_url_conditions` (Block Set) URL conditions that a page must match for web actions to be displayable. (see [below for nested schema](#nestedblock--page_url_conditions))
-- `start_date` (String) Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
 - `trigger_with_event_conditions` (Block Set) List of event conditions that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_event_conditions))
 - `trigger_with_outcome_probability_conditions` (Block Set) Probability conditions for outcomes that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_outcome_probability_conditions))
 - `weight` (Number) Weight of the action map with higher number denoting higher weight. Low=1, Medium=2, High=3. Defaults to `2`.

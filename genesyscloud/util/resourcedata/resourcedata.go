@@ -1,10 +1,17 @@
 package resourcedata
 
 import (
+	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
+)
+
+const (
+	TimeWriteFormat = "%Y-%m-%dT%H:%M:%S.%f"
+	TimeParseFormat = "2006-01-02T15:04:05.000000"
+	DateParseFormat = "2006-01-02"
 )
 
 func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
@@ -18,7 +25,7 @@ func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
 func SetNillableTime(d *schema.ResourceData, key string, value *time.Time) {
 	var timeValue *string = nil
 	if value != nil {
-		timeAsString := timeutil.Strftime(value, "%Y-%m-%dT%H:%M:%S.%f")
+		timeAsString := timeutil.Strftime(value, TimeWriteFormat)
 		timeValue = &timeAsString
 	}
 	SetNillableValue(d, key, timeValue)
@@ -46,8 +53,9 @@ func GetNillableBool(d *schema.ResourceData, key string) *bool {
 func GetNillableTime(d *schema.ResourceData, key string) *time.Time {
 	stringValue := GetNillableValue[string](d, key)
 	if stringValue != nil {
-		timeValue, err := time.Parse("2006-01-02T15:04:05.000000", *stringValue)
+		timeValue, err := time.Parse(TimeParseFormat, *stringValue)
 		if err != nil {
+			log.Printf("GetNillableTime failed for %s. Required format: %s", *stringValue, TimeParseFormat)
 			return nil
 		}
 		return &timeValue

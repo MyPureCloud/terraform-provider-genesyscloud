@@ -11,6 +11,7 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
 }
 
 data "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
-  name       = "terraform_test_-TEST-CASE-_to_find"
+  name = "terraform_test_-TEST-CASE-_to_find"
+
   depends_on = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-]
 }
