@@ -17,10 +17,12 @@ func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
 		resourceId = "campaign_rule"
 		ruleName   = "Terraform test rule " + uuid.NewString()
 
+		// TODO: Replace campaign ID with reference to campaign resource.
 		campaignRuleEntityCampaignIds = []string{strconv.Quote("e6b0a237-2620-4644-b1bb-f0e58e923a93")}
 		campaignRuleEntitySequenceIds []string
 
-		campaignRuleActionType                = "turnOnCampaign"
+		campaignRuleActionType = "turnOnCampaign"
+		// TODO: Replace campaign ID with reference to campaign resource.
 		campaignRuleActionCampaignIds         = []string{strconv.Quote("7fc6b00a-f2f5-44d2-9fc5-169f339f6c4b")}
 		campaignRuleActionSequenceIds         []string
 		campaignRuleActionUseTriggeringEntity = falseValue
@@ -68,7 +70,7 @@ func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
 			),
 		),
 	)
-	
+
 	fmt.Println(theResource)
 
 	resource.Test(t, resource.TestCase{

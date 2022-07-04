@@ -143,6 +143,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_integration_credential":                      dataSourceIntegrationCredential(),
 				"genesyscloud_location":                                    dataSourceLocation(),
 				"genesyscloud_oauth_client":                                dataSourceOAuthClient(),
+				"genesyscloud_outbound_campaignrule":                       dataSourceOutboundCampaignRule(),
 				"genesyscloud_processautomation_trigger":                   dataSourceProcessAutomationTrigger(),
 				"genesyscloud_organizations_me":                            dataSourceOrganizationsMe(),
 				"genesyscloud_quality_forms_evaluation":                    dataSourceQualityFormsEvaluations(),
