@@ -67,14 +67,13 @@ var (
 			Default:      2,
 			ValidateFunc: validation.IntBetween(1, 3),
 		},
-		// TODO
-		//"action": {
-		//	Description: "The action that will be executed if this action map is triggered.",
-		//	Type: schema.TypeSet,
-		//	Optional: true,
-		//	MaxItems: 1,
-		//	Elem: journeyactionmapactionmapactionResource,
-		//},
+		"action": {
+			Description: "The action that will be executed if this action map is triggered.",
+			Type:        schema.TypeSet,
+			Optional:    true,
+			MaxItems:    1,
+			Elem:        actionResource,
+		},
 		"action_map_schedule_groups": {
 			Description: "The action map's associated schedule groups.",
 			Type:        schema.TypeSet,
@@ -190,6 +189,117 @@ var (
 				Description: "Activation delay time amount.",
 				Type:        schema.TypeInt,
 				Optional:    true,
+			},
+		},
+	}
+
+	actionResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`action_template_id`: {
+				Description: `Action template associated with the action map.`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			`media_type`: {
+				Description:  `Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, integrationAction, architectFlow, openAction.`,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{`webchat`, `webMessagingOffer`, `contentOffer`, `integrationAction`, `architectFlow`, `openAction`}, false),
+			},
+			`architect_flow_fields`: {
+				Description: `Architect Flow Id and input contract.`,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        architectFlowFieldsResource,
+			},
+			`web_messaging_offer_fields`: {
+				Description: `Admin-configurable fields of a web messaging offer action.`,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        webMessagingOfferFieldsResource,
+			},
+			`open_action_fields`: {
+				Description: `Admin-configurable fields of an open action.`,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        openActionFieldsResource,
+			},
+		},
+	}
+
+	architectFlowFieldsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`architect_flow_id`: {
+				Description: `The architect flow.`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			`flow_request_mappings`: {
+				Description: `Collection of Architect Flow Request Mappings to use.`,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        requestMappingResource,
+			},
+		},
+	}
+
+	requestMappingResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`name`: {
+				Description: `Name of the Integration Action Attribute to supply the value for`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			`attribute_type`: {
+				Description:  `Type of the value supplied. Valid values: String, Number, Integer, Boolean.`,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{`String`, `Number`, `Integer`, `Boolean`}, false),
+			},
+			`mapping_type`: {
+				Description:  `Method of finding value to use with Attribute. Valid values: Lookup, HardCoded.`,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{`Lookup`, `HardCoded`}, false),
+			},
+			`value`: {
+				Description: `Value to supply for the specified Attribute`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+
+	webMessagingOfferFieldsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`offer_text`: {
+				Description: `Text value to be used when inviting a visitor to engage with a web messaging offer.`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			`architect_flow_id`: {
+				Description: `Flow to be invoked, overrides default flow when specified.`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+
+	openActionFieldsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`open_action_id`: {
+				Description: `The specific type of the open action.`,
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			`configuration_fields`: {
+				Description:      `Custom fields defined in the schema referenced by the open action type selected.`,
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: suppressEquivalentJsonDiffs,
 			},
 		},
 	}
@@ -377,7 +487,7 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation)
 	weight := actionMap.Get("weight").(int)
 	mediaType := "webMessagingOffer"
-	action := &platformclientv2.Actionmapaction{MediaType: &mediaType} // TODO
+	action := &platformclientv2.Actionmapaction{MediaType: &mediaType, WebMessagingOfferFields: &platformclientv2.Webmessagingofferfields{}} // TODO
 	actionMapScheduleGroups := resourcedata.BuildSdkListFirstElement(actionMap, "action_map_schedule_groups", buildSdkActionMapScheduleGroups)
 	ignoreFrequencyCap := actionMap.Get("ignore_frequency_cap").(bool)
 	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
