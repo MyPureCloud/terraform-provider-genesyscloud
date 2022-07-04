@@ -30,6 +30,7 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 ### Required
 
+- `action` (Block Set, Min: 1, Max: 1) The action that will be executed if this action map is triggered. (see [below for nested schema](#nestedblock--action))
 - `activation` (Block Set, Min: 1, Max: 1) Type of activation. (see [below for nested schema](#nestedblock--activation))
 - `display_name` (String) Display name of the action map.
 - `start_date` (String) Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
@@ -37,7 +38,6 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 ### Optional
 
-- `action` (Block Set, Max: 1) The action that will be executed if this action map is triggered. (see [below for nested schema](#nestedblock--action))
 - `action_map_schedule_groups` (Block Set, Max: 1) The action map's associated schedule groups. (see [below for nested schema](#nestedblock--action_map_schedule_groups))
 - `end_date` (String) Timestamp at which the action map is scheduled to stop firing. Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
 - `ignore_frequency_cap` (Boolean) Override organization-level frequency cap and always offer web engagements from this action map. Defaults to `false`.
@@ -51,18 +51,6 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 - `id` (String) The ID of this resource.
 
-<a id="nestedblock--activation"></a>
-### Nested Schema for `activation`
-
-Required:
-
-- `type` (String) Type of activation. Valid values: immediate, on-next-visit, on-next-session, delay.
-
-Optional:
-
-- `delay_in_seconds` (Number) Activation delay time amount.
-
-
 <a id="nestedblock--action"></a>
 ### Nested Schema for `action`
 
@@ -72,10 +60,10 @@ Required:
 
 Optional:
 
-- `action_template_id` (String) Action template associated with the action map.
-- `architect_flow_fields` (Block Set, Max: 1) Architect Flow Id and input contract. (see [below for nested schema](#nestedblock--action--architect_flow_fields))
-- `open_action_fields` (Block Set, Max: 1) Admin-configurable fields of an open action. (see [below for nested schema](#nestedblock--action--open_action_fields))
-- `web_messaging_offer_fields` (Block Set, Max: 1) Admin-configurable fields of a web messaging offer action. (see [below for nested schema](#nestedblock--action--web_messaging_offer_fields))
+- `action_template_id` (String) Action template associated with the action map. For media type contentOffer.
+- `architect_flow_fields` (Block Set, Max: 1) Architect Flow Id and input contract. For media type architectFlow. (see [below for nested schema](#nestedblock--action--architect_flow_fields))
+- `open_action_fields` (Block Set, Max: 1) Admin-configurable fields of an open action. For media type openAction. (see [below for nested schema](#nestedblock--action--open_action_fields))
+- `web_messaging_offer_fields` (Block Set, Max: 1) Admin-configurable fields of a web messaging offer action. For media type webMessagingOffer. (see [below for nested schema](#nestedblock--action--web_messaging_offer_fields))
 
 <a id="nestedblock--action--architect_flow_fields"></a>
 ### Nested Schema for `action.architect_flow_fields`
@@ -117,6 +105,18 @@ Optional:
 - `architect_flow_id` (String) Flow to be invoked, overrides default flow when specified.
 - `offer_text` (String) Text value to be used when inviting a visitor to engage with a web messaging offer.
 
+
+
+<a id="nestedblock--activation"></a>
+### Nested Schema for `activation`
+
+Required:
+
+- `type` (String) Type of activation. Valid values: immediate, on-next-visit, on-next-session, delay.
+
+Optional:
+
+- `delay_in_seconds` (Number) Activation delay time amount.
 
 
 <a id="nestedblock--action_map_schedule_groups"></a>
