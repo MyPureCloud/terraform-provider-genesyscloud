@@ -37,11 +37,11 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 			const pageSize = 100
 			skills, _, getErr := routingAPI.GetRoutingSkills(pageSize, pageNum, name, nil)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting skill %s: %s", name, getErr))
+				return resource.NonRetryableError(fmt.Errorf("error requesting skill %s: %s", name, getErr))
 			}
 
 			if skills.Entities == nil || len(*skills.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No routing skills found with name %s", name))
+				return resource.RetryableError(fmt.Errorf("no routing skills found with name %s", name))
 			}
 
 			for _, skill := range *skills.Entities {
