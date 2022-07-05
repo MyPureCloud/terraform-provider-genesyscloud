@@ -378,11 +378,11 @@ func buildOutboundCampaignRuleEntities(entities *schema.Set) *platformclientv2.C
 	}
 
 	campaignRuleEntitiesMap := campaignRuleEntitiesList[0].(map[string]interface{})
-	if campaigns := campaignRuleEntitiesMap["campaign_ids"].(interface{}); campaigns != nil {
-		campaignRuleEntities.Campaigns = createSdkDomainEntityRefIdListFromSchema(campaigns)
+	if campaigns := campaignRuleEntitiesMap["campaign_ids"].([]interface{}); campaigns != nil {
+		campaignRuleEntities.Campaigns = buildSdkDomainEntityRefArrFromArr(campaigns)
 	}
-	if sequences := campaignRuleEntitiesMap["sequence_ids"].(interface{}); sequences != nil {
-		campaignRuleEntities.Sequences = createSdkDomainEntityRefIdListFromSchema(sequences)
+	if sequences := campaignRuleEntitiesMap["sequence_ids"].([]interface{}); sequences != nil {
+		campaignRuleEntities.Sequences = buildSdkDomainEntityRefArrFromArr(sequences)
 	}
 
 	return &campaignRuleEntities
@@ -486,12 +486,12 @@ func buildOutboundCampaignRuleActionEntities(set *schema.Set) *platformclientv2.
 
 	sdkCampaignRuleActionEntities.UseTriggeringEntity = &useTriggeringEntity
 
-	if campaignIds := entitiesMap["campaign_ids"].(interface{}); campaignIds != nil {
-		sdkCampaignRuleActionEntities.Campaigns = createSdkDomainEntityRefIdListFromSchema(campaignIds)
+	if campaignIds := entitiesMap["campaign_ids"].([]interface{}); campaignIds != nil {
+		sdkCampaignRuleActionEntities.Campaigns = buildSdkDomainEntityRefArrFromArr(campaignIds)
 	}
 
-	if sequenceIds := entitiesMap["sequence_ids"].(interface{}); sequenceIds != nil {
-		sdkCampaignRuleActionEntities.Sequences = createSdkDomainEntityRefIdListFromSchema(sequenceIds)
+	if sequenceIds := entitiesMap["sequence_ids"].([]interface{}); sequenceIds != nil {
+		sdkCampaignRuleActionEntities.Sequences = buildSdkDomainEntityRefArrFromArr(sequenceIds)
 	}
 
 	return &sdkCampaignRuleActionEntities
@@ -637,16 +637,4 @@ func flattenRuleParameters(sdkParams platformclientv2.Campaignruleparameters) []
 	}
 
 	return []interface{}{paramsMap}
-}
-
-func createSdkDomainEntityRefIdListFromSchema(schemaIds interface{}) *[]platformclientv2.Domainentityref {
-	var sdkIds []platformclientv2.Domainentityref
-	if idList, ok := schemaIds.([]interface{}); ok {
-		for _, item := range idList {
-			if id, ok := item.(string); ok {
-				sdkIds = append(sdkIds, platformclientv2.Domainentityref{Id: &id})
-			}
-		}
-	}
-	return &sdkIds
 }

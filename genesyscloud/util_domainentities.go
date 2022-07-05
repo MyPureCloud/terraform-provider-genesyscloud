@@ -28,6 +28,16 @@ func buildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platfo
 	return nil
 }
 
+func buildSdkDomainEntityRefArrFromArr(ids []interface{}) *[]platformclientv2.Domainentityref {
+	var domainEntityRefs []platformclientv2.Domainentityref
+	for _, id := range ids {
+		if idStr, ok := id.(string); ok {
+			domainEntityRefs = append(domainEntityRefs, platformclientv2.Domainentityref{Id: &idStr})
+		}
+	}
+	return &domainEntityRefs
+}
+
 func sdkDomainEntityRefArrToSet(entityRefs []platformclientv2.Domainentityref) *schema.Set {
 	interfaceList := make([]interface{}, len(entityRefs))
 	for i, v := range entityRefs {

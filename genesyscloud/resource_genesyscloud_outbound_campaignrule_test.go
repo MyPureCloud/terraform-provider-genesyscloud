@@ -32,46 +32,13 @@ func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
 		paramRulesDialingMode = "preview"
 		paramRulesPriority    = "2"
 
-		paramRulesOperatorUpdated    = "lessThan"
-		paramRulesValueUpdated       = "0.4"
-		paramRulesDialingModeUpdated = "preview"
-		paramRulesPriorityUpdated    = "2"
+		paramRulesOperatorUpdated    = "greaterThan"
+		paramRulesValueUpdated       = "0.6"
+		paramRulesDialingModeUpdated = "external"
+		paramRulesPriorityUpdated    = "3"
 
 		campaignRuleCondition1Type = "campaignProgress"
 	)
-
-	theResource := generateOutboundCampaignRule(
-		resourceId,
-		ruleName,
-		falseValue,
-		falseValue,
-		generateCampaignRuleEntity(campaignRuleEntityCampaignIds, campaignRuleEntitySequenceIds),
-		generateCampaignRuleConditions(
-			"",
-			campaignRuleCondition1Type,
-			generateCampaignRuleParameters(
-				paramRulesOperator,
-				paramRulesValue,
-				paramRulesDialingMode,
-				paramRulesPriority,
-			),
-		),
-		generateCampaignRuleActions(
-			"",
-			campaignRuleActionType,
-			campaignRuleActionCampaignIds,
-			campaignRuleActionSequenceIds,
-			campaignRuleActionUseTriggeringEntity,
-			generateCampaignRuleParameters(
-				paramRulesOperator,
-				paramRulesValue,
-				paramRulesDialingMode,
-				paramRulesPriority,
-			),
-		),
-	)
-
-	fmt.Println(theResource)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
