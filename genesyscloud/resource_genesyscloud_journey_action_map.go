@@ -632,26 +632,44 @@ func buildSdkActivation(activation map[string]interface{}) *platformclientv2.Act
 func flattenActionMapAction(actionMapAction *platformclientv2.Actionmapaction) map[string]interface{} {
 	actionMapActionMap := make(map[string]interface{})
 	actionMapActionMap["media_type"] = *actionMapAction.MediaType
+	if actionMapAction.ActionTemplate != nil {
+		stringmap.SetValueIfNotNil(actionMapActionMap, "action_template_id", actionMapAction.ActionTemplate.Id)
+	}
 	// TODO
 	return actionMapActionMap
 }
 
 func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformclientv2.Actionmapaction {
 	mediaType := actionMapAction["media_type"].(string)
+	actionMapActionTemplate := getActionMapActionTemplate(actionMapAction)
 	// TODO
 
 	return &platformclientv2.Actionmapaction{
-		MediaType: &mediaType,
+		MediaType:      &mediaType,
+		ActionTemplate: actionMapActionTemplate,
 	}
 }
 
 func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.Patchaction {
 	mediaType := patchAction["media_type"].(string)
+	actionMapActionTemplate := getActionMapActionTemplate(patchAction)
 	// TODO
 
 	return &platformclientv2.Patchaction{
-		MediaType: &mediaType,
+		MediaType:      &mediaType,
+		ActionTemplate: actionMapActionTemplate,
 	}
+}
+
+func getActionMapActionTemplate(actionMapAction map[string]interface{}) *platformclientv2.Actionmapactiontemplate {
+	actionMapActionTemplateId := stringmap.GetNonDefaultValue[string](actionMapAction, "action_template_id")
+	var actionMapActionTemplate *platformclientv2.Actionmapactiontemplate = nil
+	if actionMapActionTemplateId != nil {
+		actionMapActionTemplate = &platformclientv2.Actionmapactiontemplate{
+			Id: actionMapActionTemplateId,
+		}
+	}
+	return actionMapActionTemplate
 }
 
 func flattenActionMapScheduleGroups(actionMapScheduleGroups *platformclientv2.Actionmapschedulegroups) map[string]interface{} {
@@ -694,7 +712,7 @@ func getActionMapScheduleGroupPair(actionMapScheduleGroups map[string]interface{
 	actionMapScheduleGroup := &platformclientv2.Actionmapschedulegroup{
 		Id: &actionMapScheduleGroupId,
 	}
-	emergencyActionMapScheduleGroupId := stringmap.GetNillableValue[string](actionMapScheduleGroups, "emergency_action_map_schedule_group_id")
+	emergencyActionMapScheduleGroupId := stringmap.GetNonDefaultValue[string](actionMapScheduleGroups, "emergency_action_map_schedule_group_id")
 	var emergencyActionMapScheduleGroup *platformclientv2.Actionmapschedulegroup = nil
 	if emergencyActionMapScheduleGroupId != nil {
 		emergencyActionMapScheduleGroup = &platformclientv2.Actionmapschedulegroup{

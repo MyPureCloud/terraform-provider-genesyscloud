@@ -6,9 +6,10 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
     delay_in_seconds = 60
   }
   action {
-    media_type = "webMessagingOffer"
+    media_type         = "contentOffer"
+    action_template_id = "84cdf5ce-9b76-4e67-a76a-4adb116f7bf9" # This is a random hardcoded value!
   }
-  start_date = "2022-07-04T12:00:00.000000"
+  start_date = "2022-07-05T15:30:00.000000"
 
   depends_on = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-_action_map_dependency]
 }

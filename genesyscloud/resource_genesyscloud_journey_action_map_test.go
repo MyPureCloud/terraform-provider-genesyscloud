@@ -12,8 +12,12 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 )
 
-func TestAccResourceJourneyActionMap(t *testing.T) {
+func TestAccResourceJourneyActionMapRequiredAttributes(t *testing.T) {
 	runJourneyActionMapTestCase(t, "basic_required_attributes")
+}
+
+func TestAccResourceJourneyActionMapScheduleGroups(t *testing.T) {
+	runJourneyActionMapTestCase(t, "schedule_groups")
 }
 
 func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
