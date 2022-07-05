@@ -34,6 +34,7 @@ var (
 			Description: "A description of the segment.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Default:     "",
 		},
 		"color": {
 			Description: "The hexadecimal color value of the segment.",
@@ -79,9 +80,11 @@ var (
 			Elem:        externalSegmentResource, // can only be used with Customer scope
 		},
 		"assignment_expiration_days": {
-			Description: "Time, in days, from when the segment is assigned until it is automatically unassigned.",
-			Type:        schema.TypeInt,
-			Optional:    true,
+			Description:  "Time, in days, from when the segment is assigned until it is automatically unassigned.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			ForceNew:     true, // Delete requires force recreate
+			ValidateFunc: validation.IntBetween(2, 60),
 		},
 	}
 
