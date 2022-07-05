@@ -34,7 +34,7 @@ var (
 			Description: "A description of the segment.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Default:     "",
+			ForceNew:    true, // Delete requires force recreate
 		},
 		"color": {
 			Description: "The hexadecimal color value of the segment.",

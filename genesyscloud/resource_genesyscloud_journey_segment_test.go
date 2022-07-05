@@ -24,6 +24,10 @@ func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
 	runResourceJourneySegmentTestCase(t, "context_only_to_journey_only")
 }
 
+func TestAccResourceJourneySegmentOptionalAttributes(t *testing.T) {
+	runResourceJourneySegmentTestCase(t, "optional_attributes")
+}
+
 func runResourceJourneySegmentTestCase(t *testing.T, testCaseName string) {
 	const resourceName = "genesyscloud_journey_segment"
 	setupJourneySegment(t, testObjectIdPrefix, testCaseName)

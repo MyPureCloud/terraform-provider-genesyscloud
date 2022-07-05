@@ -9,11 +9,7 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   }
   start_date = "2022-07-04T12:00:00.000000"
 
-  depends_on = [
-    genesyscloud_journey_segment.terraform_test_-TEST-CASE-_action_map_dependency,
-    genesyscloud_architect_schedulegroups.terraform_test_-TEST-CASE-_action_map_dependency_open,
-    genesyscloud_architect_schedulegroups.terraform_test_-TEST-CASE-_action_map_dependency_closed
-  ]
+  depends_on = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-_action_map_dependency]
 }
 
 resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-_action_map_dependency" {
