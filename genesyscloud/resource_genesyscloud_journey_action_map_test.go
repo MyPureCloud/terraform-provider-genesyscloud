@@ -40,6 +40,8 @@ func setupJourneyActionMap(t *testing.T, idPrefix string, testCaseName string) {
 
 	testCasePrefix := idPrefix + testCaseName
 	cleanupJourneySegments(testCasePrefix)
+	cleanupArchitectScheduleGroups(testCasePrefix)
+	cleanupArchitectSchedules(testCasePrefix)
 	cleanupJourneyActionMaps(testCasePrefix)
 }
 

@@ -78,6 +78,7 @@ var (
 			Description: "The action map's associated schedule groups.",
 			Type:        schema.TypeSet,
 			Optional:    true,
+			ForceNew:    true, // Delete requires force recreate
 			MaxItems:    1,
 			Elem:        actionMapScheduleGroupsResource,
 		},
@@ -402,7 +403,7 @@ func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta inte
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceJourneyActionMap())
 		flattenActionMap(d, actionMap)
 
-		log.Printf("Read journey action map  %s %s", d.Id(), *actionMap.DisplayName)
+		log.Printf("Read journey action map %s %s", d.Id(), *actionMap.DisplayName)
 		return cc.CheckState()
 	})
 }
