@@ -35,7 +35,7 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, name, "", nil, nil, nil, false)
+			queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, name, "", nil, nil)
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting queue %s: %s", name, getErr))
 			}

@@ -81,7 +81,7 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
+		queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of queues: %v", getErr)
 		}

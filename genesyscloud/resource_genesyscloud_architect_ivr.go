@@ -20,7 +20,7 @@ func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configur
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		ivrConfigs, _, getErr := architectAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "", "")
+		ivrConfigs, _, getErr := architectAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of IVR configs: %v", getErr)
 		}

@@ -138,7 +138,7 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	name := d.Get("name").(string)
 	contactMethod := d.Get("contact_method").(string)
 	loginId := d.Get("login_id").(string)
-	campaignId := d.Get("campaign_id").(string)
+	//campaignId := d.Get("campaign_id").(string)
 	licenseId := d.Get("license_id").(string)
 	dncSourceType := d.Get("dnc_source_type").(string)
 	dncCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
@@ -160,9 +160,6 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	}
 	if loginId != "" {
 		sdkDncListCreate.LoginId = &loginId
-	}
-	if campaignId != "" {
-		sdkDncListCreate.CampaignId = &campaignId
 	}
 	if licenseId != "" {
 		sdkDncListCreate.LicenseId = &licenseId
@@ -200,7 +197,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	name := d.Get("name").(string)
 	contactMethod := d.Get("contact_method").(string)
 	loginId := d.Get("login_id").(string)
-	campaignId := d.Get("campaign_id").(string)
+	//campaignId := d.Get("campaign_id").(string)
 	dncCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 	licenseId := d.Get("license_id").(string)
 	dncSourceType := d.Get("dnc_source_type").(string)
@@ -222,9 +219,6 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	}
 	if loginId != "" {
 		sdkDncList.LoginId = &loginId
-	}
-	if campaignId != "" {
-		sdkDncList.CampaignId = &campaignId
 	}
 	if licenseId != "" {
 		sdkDncList.LicenseId = &licenseId
@@ -291,9 +285,6 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 		if sdkDncList.LoginId != nil {
 			_ = d.Set("login_id", *sdkDncList.LoginId)
-		}
-		if sdkDncList.CampaignId != nil {
-			_ = d.Set("campaign_id", *sdkDncList.CampaignId)
 		}
 		if sdkDncList.DncCodes != nil {
 			var dncCodes []string

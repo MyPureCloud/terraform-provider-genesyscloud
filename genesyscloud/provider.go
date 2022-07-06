@@ -295,11 +295,6 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 				log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
 			}
 		},
-		ResponseLogHook: func(response *http.Response) {
-			if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-				log.Printf("Response %s", response.Status)
-			}
-		},
 	}
 
 	if accessToken != "" {
