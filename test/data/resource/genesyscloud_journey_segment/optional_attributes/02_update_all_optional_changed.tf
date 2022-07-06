@@ -1,6 +1,6 @@
 resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
   # required
-  display_name            = "terraform_test_-TEST-CASE-_recreated"
+  display_name            = "terraform_test_-TEST-CASE-_updated"
   color                   = "#008000"
   scope                   = "Customer"
   should_display_to_agent = false
@@ -10,4 +10,6 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
     source = "AdobeExperiencePlatform"
   }
   # optional
+  description                = "Test description updated"
+  assignment_expiration_days = 30
 }

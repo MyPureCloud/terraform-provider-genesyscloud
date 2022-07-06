@@ -34,7 +34,6 @@ var (
 			Description: "A description of the segment.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			ForceNew:    true, // Delete requires force recreate
 		},
 		"color": {
 			Description: "The hexadecimal color value of the segment.",
@@ -83,7 +82,6 @@ var (
 			Description:  "Time, in days, from when the segment is assigned until it is automatically unassigned.",
 			Type:         schema.TypeInt,
 			Optional:     true,
-			ForceNew:     true, // Delete requires force recreate
 			ValidateFunc: validation.IntBetween(2, 60),
 		},
 	}
