@@ -56,7 +56,7 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 Required:
 
-- `media_type` (String) Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, integrationAction, architectFlow, openAction.
+- `media_type` (String) Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, architectFlow, openAction.
 
 Optional:
 

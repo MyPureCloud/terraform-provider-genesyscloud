@@ -12,6 +12,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 )
 
+func TestAccResourceJourneyActionMapActionMediaTypes(t *testing.T) {
+	runJourneyActionMapTestCase(t, "action_media_types")
+}
+
 func TestAccResourceJourneyActionMapOptionalAttributes(t *testing.T) {
 	runJourneyActionMapTestCase(t, "basic_optional_attributes")
 }

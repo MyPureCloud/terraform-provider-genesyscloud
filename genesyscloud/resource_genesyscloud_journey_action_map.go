@@ -78,7 +78,6 @@ var (
 			Description: "The action map's associated schedule groups.",
 			Type:        schema.TypeSet,
 			Optional:    true,
-			ForceNew:    true, // Delete requires force recreate
 			MaxItems:    1,
 			Elem:        actionMapScheduleGroupsResource,
 		},
@@ -202,10 +201,10 @@ var (
 				Optional:    true,
 			},
 			"media_type": {
-				Description:  "Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, integrationAction, architectFlow, openAction.",
+				Description:  "Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, architectFlow, openAction.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"webchat", "webMessagingOffer", "contentOffer", "integrationAction", "architectFlow", "openAction"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"webchat", "webMessagingOffer", "contentOffer", "architectFlow", "openAction"}, false),
 			},
 			"architect_flow_fields": {
 				Description: "Architect Flow Id and input contract. For media type architectFlow.",
