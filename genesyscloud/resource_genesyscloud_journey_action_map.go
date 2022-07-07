@@ -204,6 +204,7 @@ var (
 				Description:  "Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, architectFlow, openAction.",
 				Type:         schema.TypeString,
 				Required:     true,
+				ForceNew:     true, // Currently it is mandatory because of broken null handling for optional fields in API (GPE-11801)
 				ValidateFunc: validation.StringInSlice([]string{"webchat", "webMessagingOffer", "contentOffer", "architectFlow", "openAction"}, false),
 			},
 			"architect_flow_fields": {
@@ -484,10 +485,10 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	triggerWithEventConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition))
 	triggerWithOutcomeProbabilityConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
 	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition))
-	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation)
+	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation, true)
 	weight := actionMap.Get("weight").(int)
-	action := resourcedata.BuildSdkListFirstElement(actionMap, "action", buildSdkActionMapAction)
-	actionMapScheduleGroups := resourcedata.BuildSdkListFirstElement(actionMap, "action_map_schedule_groups", buildSdkActionMapScheduleGroups)
+	action := resourcedata.BuildSdkListFirstElement(actionMap, "action", buildSdkActionMapAction, true)
+	actionMapScheduleGroups := resourcedata.BuildSdkListFirstElement(actionMap, "action_map_schedule_groups", buildSdkActionMapScheduleGroups, true)
 	ignoreFrequencyCap := actionMap.Get("ignore_frequency_cap").(bool)
 	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
 	endDate := resourcedata.GetNillableTime(actionMap, "end_date")
@@ -516,10 +517,10 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 	triggerWithEventConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition))
 	triggerWithOutcomeProbabilityConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
 	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition))
-	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation)
+	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation, true)
 	weight := actionMap.Get("weight").(int)
-	action := resourcedata.BuildSdkListFirstElement(actionMap, "action", buildSdkPatchAction)
-	actionMapScheduleGroups := resourcedata.BuildSdkListFirstElement(actionMap, "action_map_schedule_groups", buildSdkPatchActionMapScheduleGroups)
+	action := resourcedata.BuildSdkListFirstElement(actionMap, "action", buildSdkPatchAction, true)
+	actionMapScheduleGroups := resourcedata.BuildSdkListFirstElement(actionMap, "action_map_schedule_groups", buildSdkPatchActionMapScheduleGroups, true)
 	ignoreFrequencyCap := actionMap.Get("ignore_frequency_cap").(bool)
 	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
 	endDate := resourcedata.GetNillableTime(actionMap, "end_date")
@@ -645,7 +646,7 @@ func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformcl
 	mediaType := actionMapAction["media_type"].(string)
 	actionMapActionTemplate := getActionMapActionTemplate(actionMapAction)
 	// TODO
-	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(actionMapAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields)
+	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(actionMapAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields, true)
 	// TODO
 
 	return &platformclientv2.Actionmapaction{
@@ -661,7 +662,7 @@ func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.P
 	mediaType := patchAction["media_type"].(string)
 	actionMapActionTemplate := getActionMapActionTemplate(patchAction)
 	// TODO
-	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(patchAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields)
+	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(patchAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields, true)
 	// TODO
 
 	return &platformclientv2.Patchaction{
@@ -697,10 +698,6 @@ func flattenWebMessagingOfferFields(webMessagingOfferFields *platformclientv2.We
 }
 
 func buildSdkWebMessagingOfferFields(webMessagingOfferFields map[string]interface{}) *platformclientv2.Webmessagingofferfields {
-	if webMessagingOfferFields == nil {
-		return nil
-	}
-
 	offerText := stringmap.GetNonDefaultValue[string](webMessagingOfferFields, "offer_text")
 	architectFlow := getActionMapArchitectFlow(webMessagingOfferFields)
 
@@ -731,10 +728,6 @@ func flattenActionMapScheduleGroups(actionMapScheduleGroups *platformclientv2.Ac
 }
 
 func buildSdkActionMapScheduleGroups(actionMapScheduleGroups map[string]interface{}) *platformclientv2.Actionmapschedulegroups {
-	if actionMapScheduleGroups == nil {
-		return nil
-	}
-
 	actionMapScheduleGroup, emergencyActionMapScheduleGroup := getActionMapScheduleGroupPair(actionMapScheduleGroups)
 
 	return &platformclientv2.Actionmapschedulegroups{

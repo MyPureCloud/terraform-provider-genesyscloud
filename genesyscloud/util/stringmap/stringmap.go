@@ -34,10 +34,13 @@ func BuildSdkStringList(m map[string]interface{}, key string) *[]string {
 	return BuildSdkList[string](m, key, nil)
 }
 
-func BuildSdkListFirstElement[T interface{}](m map[string]interface{}, key string, elementBuilder func(map[string]interface{}) *T) *T {
+func BuildSdkListFirstElement[T interface{}](m map[string]interface{}, key string, elementBuilder func(map[string]interface{}) *T, nilForEmpty bool) *T {
 	list := m[key].(*schema.Set).List()
 	if len(list) > 0 {
 		return elementBuilder(list[0].(map[string]interface{}))
+	}
+	if nilForEmpty {
+		return nil
 	}
 	return elementBuilder(nil)
 }

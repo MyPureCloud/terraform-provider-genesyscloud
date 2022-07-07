@@ -408,9 +408,9 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	color := journeySegment.Get("color").(string)
 	scope := journeySegment.Get("scope").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext)
-	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney)
-	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment)
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney, false)
+	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment, true)
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Journeysegment{
@@ -433,9 +433,9 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
 	color := journeySegment.Get("color").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext)
-	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney)
-	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment)
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney, false)
+	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment, true)
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Patchsegment{
@@ -585,10 +585,6 @@ func flattenExternalSegment(externalSegment *platformclientv2.Externalsegment) m
 }
 
 func buildSdkExternalSegment(externalSegment map[string]interface{}) *platformclientv2.Externalsegment {
-	if externalSegment == nil {
-		return nil
-	}
-
 	id := externalSegment["id"].(string)
 	name := externalSegment["name"].(string)
 	source := externalSegment["source"].(string)
@@ -601,10 +597,6 @@ func buildSdkExternalSegment(externalSegment map[string]interface{}) *platformcl
 }
 
 func buildSdkPatchExternalSegment(externalSegment map[string]interface{}) *platformclientv2.Patchexternalsegment {
-	if externalSegment == nil {
-		return nil
-	}
-
 	name := externalSegment["name"].(string)
 
 	return &platformclientv2.Patchexternalsegment{
