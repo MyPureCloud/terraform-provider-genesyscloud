@@ -54,7 +54,7 @@ var (
 			Elem:        journeyResource,
 		},
 		"associated_value_field": {
-			Description: " The field from the event indicating the associated value.",
+			Description: " The field from the event indicating the associated value. Associated_value_field needs `eventtypes` to be created, which is a feature coming soon. More details available here:  https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/eventtypes  https://all.docs.genesys.com/ATC/Current/AdminGuide/Custom_sessions",
 			Type:        schema.TypeSet,
 			Optional:    true,
 			MaxItems:    1,

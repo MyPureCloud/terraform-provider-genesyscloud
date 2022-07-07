@@ -16,9 +16,9 @@ resource "genesyscloud_journey_outcome" "terraform_test_-TEST-CASE-" {
       session_type = "web"
     }
   }
-  #  Associated_value_field needs `eventtypes` to be created, which is a beta feature for now. More details available here:
+  #  Associated_value_field needs `eventtypes` to be created, which is a feature coming soon. More details available here:
   #  https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/eventtypes
-  #  https://all.docs.genesys.com/ATC/Current/AdminGuide/Session_library
+  #  https://all.docs.genesys.com/ATC/Current/AdminGuide/Custom_sessions
 
   #  associated_value_field {
   #    data_type = "Number"
