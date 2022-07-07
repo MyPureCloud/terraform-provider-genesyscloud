@@ -85,67 +85,8 @@ func resourceFlow() *schema.Resource {
 }
 
 func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
-	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
-
-	data, response, err := architectAPI.PostFlowsJobs()
-
-	if err != nil {
-		return diag.Errorf("Failed to initiate job %s", err)
-	} else if err == nil && response.Error != nil {
-		return diag.Errorf("Failed to register job. %s", err)
-	}
-
-	presignedUrl := *data.PresignedUrl
-	jobId := *data.Id
-	headers := *data.Headers
-
-	filePath := d.Get("filepath").(string)
-	substitutions := d.Get("substitutions").(map[string]interface{})
-
-	// Upload flow configuration file
-	_, err = prepareAndUploadFile(filePath, substitutions, headers, presignedUrl)
-	if err != nil {
-		return diag.Errorf(err.Error())
-	}
-
-	// Pre-define here before entering retry function, otherwise it will be overwritten
-	flowID := ""
-
-	// Retry every 15 seconds to fetch job status for 16 minutes until job succeeds or fails
-	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
-		data, response, err := architectAPI.GetFlowsJob(jobId, []string{"messages"})
-		if err != nil {
-			// Nothing special to do here, but do avoid processing the response
-		} else if err == nil && response.Error != nil {
-			resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
-		}
-
-		if *data.Status == "Failure" {
-			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v ", jobId, data.Messages))
-		}
-
-		if *data.Status == "Success" {
-			flowID = *data.Flow.Id
-			return nil
-		}
-
-		time.Sleep(15 * time.Second) // Wait 15 seconds for next retry
-		return resource.RetryableError(fmt.Errorf("Job (%s) could not finish in 16 minutes and timed out ", jobId))
-	})
-
-	if retryErr != nil {
-		return retryErr
-	}
-
-	if flowID == "" {
-		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
-	}
-
-	d.Set("file_content_hash", hashFileContent(d.Get("filepath").(string)))
-	d.SetId(flowID)
-	log.Printf("Created flow %s.", d.Id())
-	return readFlow(ctx, d, meta)
+	log.Printf("Creating flow")
+	return updateFlow(ctx, d, meta)
 }
 
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -180,7 +121,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	data, response, err := architectAPI.PostFlowsJobs()
+	flowJob, response, err := architectAPI.PostFlowsJobs()
 
 	if err != nil {
 		return diag.Errorf("Failed to update job %s", err)
@@ -188,9 +129,9 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.Errorf("Failed to register job. %s", err)
 	}
 
-	presignedUrl := *data.PresignedUrl
-	jobId := *data.Id
-	headers := *data.Headers
+	presignedUrl := *flowJob.PresignedUrl
+	jobId := *flowJob.Id
+	headers := *flowJob.Headers
 
 	filePath := d.Get("filepath").(string)
 	substitutions := d.Get("substitutions").(map[string]interface{})
@@ -205,19 +146,19 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
 		// If possible, after changing to SDK method invocation, include correlationId we get earlier in this function when making the GET request
-		data, response, err := architectAPI.GetFlowsJob(jobId, []string{"messages"})
+		flowJob, response, err := architectAPI.GetFlowsJob(jobId, []string{"messages"})
 		if err != nil {
 			// Nothing special to do here, but do avoid processing the response
 		} else if err == nil && response.Error != nil {
 			resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 		}
 
-		if *data.Status == "Failure" {
-			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v ", jobId, data.Messages))
+		if *flowJob.Status == "Failure" {
+			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v ", jobId, flowJob.Messages))
 		}
 
-		if *data.Status == "Success" {
-			flowID = *data.Flow.Id
+		if *flowJob.Status == "Success" {
+			flowID = *flowJob.Flow.Id
 			return nil
 		}
 
