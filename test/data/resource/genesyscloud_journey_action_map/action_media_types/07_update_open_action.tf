@@ -5,7 +5,7 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
     type = "immediate"
   }
   action {
-    media_type = "contentOffer"
+    media_type = "openAction"
   }
   start_date = "2022-07-04T12:00:00.000000"
 

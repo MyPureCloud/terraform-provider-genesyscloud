@@ -68,15 +68,18 @@ Optional:
 <a id="nestedblock--action--architect_flow_fields"></a>
 ### Nested Schema for `action.architect_flow_fields`
 
-Optional:
+Required:
 
 - `architect_flow_id` (String) The architect flow.
+
+Optional:
+
 - `flow_request_mappings` (Block Set) Collection of Architect Flow Request Mappings to use. (see [below for nested schema](#nestedblock--action--architect_flow_fields--flow_request_mappings))
 
 <a id="nestedblock--action--architect_flow_fields--flow_request_mappings"></a>
 ### Nested Schema for `action.architect_flow_fields.flow_request_mappings`
 
-Optional:
+Required:
 
 - `attribute_type` (String) Type of the value supplied. Valid values: String, Number, Integer, Boolean.
 - `mapping_type` (String) Method of finding value to use with Attribute. Valid values: Lookup, HardCoded.

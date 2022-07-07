@@ -236,7 +236,7 @@ var (
 			"architect_flow_id": {
 				Description: "The architect flow.",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			"flow_request_mappings": {
 				Description: "Collection of Architect Flow Request Mappings to use.",
@@ -252,24 +252,24 @@ var (
 			"name": {
 				Description: "Name of the Integration Action Attribute to supply the value for",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			"attribute_type": {
 				Description:  "Type of the value supplied. Valid values: String, Number, Integer, Boolean.",
 				Type:         schema.TypeString,
-				Optional:     true,
+				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"String", "Number", "Integer", "Boolean"}, false),
 			},
 			"mapping_type": {
 				Description:  "Method of finding value to use with Attribute. Valid values: Lookup, HardCoded.",
 				Type:         schema.TypeString,
-				Optional:     true,
+				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Lookup", "HardCoded"}, false),
 			},
 			"value": {
 				Description: "Value to supply for the specified Attribute",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 		},
 	}
@@ -636,7 +636,7 @@ func flattenActionMapAction(actionMapAction *platformclientv2.Actionmapaction) m
 	if actionMapAction.ActionTemplate != nil {
 		stringmap.SetValueIfNotNil(actionMapActionMap, "action_template_id", actionMapAction.ActionTemplate.Id)
 	}
-	// TODO
+	stringmap.SetValueIfNotNil(actionMapActionMap, "architect_flow_fields", flattenAsList(actionMapAction.ArchitectFlowFields, flattenArchitectFlowFields))
 	stringmap.SetValueIfNotNil(actionMapActionMap, "web_messaging_offer_fields", flattenAsList(actionMapAction.WebMessagingOfferFields, flattenWebMessagingOfferFields))
 	// TODO
 	return actionMapActionMap
@@ -645,14 +645,14 @@ func flattenActionMapAction(actionMapAction *platformclientv2.Actionmapaction) m
 func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformclientv2.Actionmapaction {
 	mediaType := actionMapAction["media_type"].(string)
 	actionMapActionTemplate := getActionMapActionTemplate(actionMapAction)
-	// TODO
+	architectFlowFields := stringmap.BuildSdkListFirstElement(actionMapAction, "architect_flow_fields", buildSdkArchitectFlowFields, true)
 	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(actionMapAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields, true)
 	// TODO
 
 	return &platformclientv2.Actionmapaction{
-		MediaType:      &mediaType,
-		ActionTemplate: actionMapActionTemplate,
-		// TODO
+		MediaType:               &mediaType,
+		ActionTemplate:          actionMapActionTemplate,
+		ArchitectFlowFields:     architectFlowFields,
 		WebMessagingOfferFields: webMessagingOfferFields,
 		// TODO
 	}
@@ -661,14 +661,14 @@ func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformcl
 func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.Patchaction {
 	mediaType := patchAction["media_type"].(string)
 	actionMapActionTemplate := getActionMapActionTemplate(patchAction)
-	// TODO
+	architectFlowFields := stringmap.BuildSdkListFirstElement(patchAction, "architect_flow_fields", buildSdkArchitectFlowFields, true)
 	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(patchAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields, true)
 	// TODO
 
 	return &platformclientv2.Patchaction{
-		MediaType:      &mediaType,
-		ActionTemplate: actionMapActionTemplate,
-		// TODO
+		MediaType:               &mediaType,
+		ActionTemplate:          actionMapActionTemplate,
+		ArchitectFlowFields:     architectFlowFields,
 		WebMessagingOfferFields: webMessagingOfferFields,
 		// TODO
 	}
@@ -683,6 +683,46 @@ func getActionMapActionTemplate(actionMapAction map[string]interface{}) *platfor
 		}
 	}
 	return actionMapActionTemplate
+}
+
+func flattenArchitectFlowFields(architectFlowFields *platformclientv2.Architectflowfields) map[string]interface{} {
+	architectFlowFieldsMap := make(map[string]interface{})
+	architectFlowFieldsMap["architect_flow_id"] = *architectFlowFields.ArchitectFlow.Id
+	stringmap.SetValueIfNotNil(architectFlowFieldsMap, "flow_request_mappings", flattenList(architectFlowFields.FlowRequestMappings, flattenRequestMapping))
+	return architectFlowFieldsMap
+}
+
+func buildSdkArchitectFlowFields(architectFlowFields map[string]interface{}) *platformclientv2.Architectflowfields {
+	architectFlow := getActionMapArchitectFlow(architectFlowFields)
+	flowRequestMappings := stringmap.BuildSdkList(architectFlowFields, "flow_request_mappings", buildSdkRequestMapping)
+
+	return &platformclientv2.Architectflowfields{
+		ArchitectFlow:       architectFlow,
+		FlowRequestMappings: flowRequestMappings,
+	}
+}
+
+func flattenRequestMapping(requestMapping *platformclientv2.Requestmapping) map[string]interface{} {
+	requestMappingMap := make(map[string]interface{})
+	requestMappingMap["name"] = *requestMapping.Name
+	requestMappingMap["attribute_type"] = *requestMapping.AttributeType
+	requestMappingMap["mapping_type"] = *requestMapping.MappingType
+	requestMappingMap["value"] = *requestMapping.Value
+	return requestMappingMap
+}
+
+func buildSdkRequestMapping(RequestMapping map[string]interface{}) *platformclientv2.Requestmapping {
+	name := RequestMapping["name"].(string)
+	attributeType := RequestMapping["attribute_type"].(string)
+	mappingType := RequestMapping["mapping_type"].(string)
+	value := RequestMapping["value"].(string)
+
+	return &platformclientv2.Requestmapping{
+		Name:          &name,
+		AttributeType: &attributeType,
+		MappingType:   &mappingType,
+		Value:         &value,
+	}
 }
 
 func flattenWebMessagingOfferFields(webMessagingOfferFields *platformclientv2.Webmessagingofferfields) map[string]interface{} {
