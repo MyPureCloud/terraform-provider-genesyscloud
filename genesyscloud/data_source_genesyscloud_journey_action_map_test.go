@@ -13,7 +13,7 @@ func TestAccDataJourneyActionMap(t *testing.T) {
 func runDataJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	const resourceName = "genesyscloud_journey_action_map"
 	testObjectName := resourceName + "." + testObjectIdPrefix + testCaseName
-	setupJourneySegment(t, testObjectIdPrefix, testCaseName)
+	setupJourneyActionMap(t, testObjectIdPrefix, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

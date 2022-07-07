@@ -1,3 +1,9 @@
+data "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
+  name = "terraform_test_-TEST-CASE-_to_find"
+
+  depends_on = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-]
+}
+
 resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
   display_name            = "terraform_test_-TEST-CASE-_to_find"
   color                   = "#008000"
@@ -8,10 +14,4 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
     name   = "external segment name"
     source = "AdobeExperiencePlatform"
   }
-}
-
-data "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
-  name = "terraform_test_-TEST-CASE-_to_find"
-
-  depends_on = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-]
 }
