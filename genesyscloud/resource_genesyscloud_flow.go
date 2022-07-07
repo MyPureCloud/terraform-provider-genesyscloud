@@ -145,11 +145,8 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	flowID := ""
 
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
-		// If possible, after changing to SDK method invocation, include correlationId we get earlier in this function when making the GET request
 		flowJob, response, err := architectAPI.GetFlowsJob(jobId, []string{"messages"})
 		if err != nil {
-			// Nothing special to do here, but do avoid processing the response
-		} else if err == nil && response.Error != nil {
 			resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 		}
 
