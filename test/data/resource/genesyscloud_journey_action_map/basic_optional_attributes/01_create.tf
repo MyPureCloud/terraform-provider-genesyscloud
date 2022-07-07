@@ -8,8 +8,12 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   action {
     media_type = "webMessagingOffer"
   }
-  start_date           = "2022-07-04T12:00:00.000000"
+  start_date = "2022-07-04T12:00:00.000000"
   # optional
+  page_url_conditions {
+    values   = ["some_value"]
+    operator = "containsAll"
+  }
   ignore_frequency_cap = false
   end_date             = "2022-07-20T19:00:00.000000"
 
