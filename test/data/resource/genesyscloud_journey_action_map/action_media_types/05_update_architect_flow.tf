@@ -5,11 +5,7 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
     type = "immediate"
   }
   action {
-    media_type = "webMessagingOffer"
-    web_messaging_offer_fields {
-      offer_text        = "Offer text"
-      architect_flow_id = "669c20cd-e7f9-4e31-9556-2d4432b3e02b" # This is a random hardcoded value!
-    }
+    media_type = "contentOffer"
   }
   start_date = "2022-07-04T12:00:00.000000"
 

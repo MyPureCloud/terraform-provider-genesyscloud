@@ -636,6 +636,8 @@ func flattenActionMapAction(actionMapAction *platformclientv2.Actionmapaction) m
 		stringmap.SetValueIfNotNil(actionMapActionMap, "action_template_id", actionMapAction.ActionTemplate.Id)
 	}
 	// TODO
+	stringmap.SetValueIfNotNil(actionMapActionMap, "web_messaging_offer_fields", flattenAsList(actionMapAction.WebMessagingOfferFields, flattenWebMessagingOfferFields))
+	// TODO
 	return actionMapActionMap
 }
 
@@ -643,10 +645,15 @@ func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformcl
 	mediaType := actionMapAction["media_type"].(string)
 	actionMapActionTemplate := getActionMapActionTemplate(actionMapAction)
 	// TODO
+	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(actionMapAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields)
+	// TODO
 
 	return &platformclientv2.Actionmapaction{
 		MediaType:      &mediaType,
 		ActionTemplate: actionMapActionTemplate,
+		// TODO
+		WebMessagingOfferFields: webMessagingOfferFields,
+		// TODO
 	}
 }
 
@@ -654,10 +661,15 @@ func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.P
 	mediaType := patchAction["media_type"].(string)
 	actionMapActionTemplate := getActionMapActionTemplate(patchAction)
 	// TODO
+	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(patchAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields)
+	// TODO
 
 	return &platformclientv2.Patchaction{
 		MediaType:      &mediaType,
 		ActionTemplate: actionMapActionTemplate,
+		// TODO
+		WebMessagingOfferFields: webMessagingOfferFields,
+		// TODO
 	}
 }
 
@@ -670,6 +682,43 @@ func getActionMapActionTemplate(actionMapAction map[string]interface{}) *platfor
 		}
 	}
 	return actionMapActionTemplate
+}
+
+func flattenWebMessagingOfferFields(webMessagingOfferFields *platformclientv2.Webmessagingofferfields) map[string]interface{} {
+	webMessagingOfferFieldsMap := make(map[string]interface{})
+	if webMessagingOfferFields.OfferText == nil && (webMessagingOfferFields.ArchitectFlow == nil || webMessagingOfferFields.ArchitectFlow.Id == nil) {
+		return nil
+	}
+	stringmap.SetValueIfNotNil(webMessagingOfferFieldsMap, "offer_text", webMessagingOfferFields.OfferText)
+	if webMessagingOfferFields.ArchitectFlow != nil {
+		stringmap.SetValueIfNotNil(webMessagingOfferFieldsMap, "architect_flow_id", webMessagingOfferFields.ArchitectFlow.Id)
+	}
+	return webMessagingOfferFieldsMap
+}
+
+func buildSdkWebMessagingOfferFields(webMessagingOfferFields map[string]interface{}) *platformclientv2.Webmessagingofferfields {
+	if webMessagingOfferFields == nil {
+		return nil
+	}
+
+	offerText := stringmap.GetNonDefaultValue[string](webMessagingOfferFields, "offer_text")
+	architectFlow := getActionMapArchitectFlow(webMessagingOfferFields)
+
+	return &platformclientv2.Webmessagingofferfields{
+		OfferText:     offerText,
+		ArchitectFlow: architectFlow,
+	}
+}
+
+func getActionMapArchitectFlow(actionMapAction map[string]interface{}) *platformclientv2.Addressableentityref {
+	architectFlowId := stringmap.GetNonDefaultValue[string](actionMapAction, "architect_flow_id")
+	var architectFlow *platformclientv2.Addressableentityref = nil
+	if architectFlowId != nil {
+		architectFlow = &platformclientv2.Addressableentityref{
+			Id: architectFlowId,
+		}
+	}
+	return architectFlow
 }
 
 func flattenActionMapScheduleGroups(actionMapScheduleGroups *platformclientv2.Actionmapschedulegroups) map[string]interface{} {
