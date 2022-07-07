@@ -291,16 +291,33 @@ var (
 
 	openActionFieldsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"open_action_id": {
+			"open_action": {
 				Description: "The specific type of the open action.",
-				Type:        schema.TypeString,
+				Type:        schema.TypeSet,
 				Required:    true,
+				MaxItems:    1,
+				Elem:        domainEntityRefResource,
 			},
 			"configuration_fields": {
 				Description:      "Custom fields defined in the schema referenced by the open action type selected.",
 				Type:             schema.TypeString,
 				Optional:         true,
 				DiffSuppressFunc: suppressEquivalentJsonDiffs,
+			},
+		},
+	}
+
+	domainEntityRefResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "Id.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"name": {
+				Description: "Name.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
@@ -377,7 +394,8 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Creating journey action map %s", *actionMap.DisplayName)
 	result, resp, err := journeyApi.PostJourneyActionmaps(*actionMap)
 	if err != nil {
-		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, interfaceToJson(*actionMap), getBody(resp))
+		input, _ := interfaceToJson(*actionMap)
+		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, input, getBody(resp))
 	}
 
 	d.SetId(*result.Id)
@@ -424,7 +442,8 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		patchActionMap.Version = actionMap.Version
 		_, resp, patchErr := journeyApi.PatchJourneyActionmap(d.Id(), *patchActionMap)
 		if patchErr != nil {
-			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, interfaceToJson(*patchActionMap), getBody(resp))
+			input, _ := interfaceToJson(*patchActionMap)
+			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, input, getBody(resp))
 		}
 		return resp, nil
 	})
@@ -638,7 +657,7 @@ func flattenActionMapAction(actionMapAction *platformclientv2.Actionmapaction) m
 	}
 	stringmap.SetValueIfNotNil(actionMapActionMap, "architect_flow_fields", flattenAsList(actionMapAction.ArchitectFlowFields, flattenArchitectFlowFields))
 	stringmap.SetValueIfNotNil(actionMapActionMap, "web_messaging_offer_fields", flattenAsList(actionMapAction.WebMessagingOfferFields, flattenWebMessagingOfferFields))
-	// TODO
+	stringmap.SetValueIfNotNil(actionMapActionMap, "open_action_fields", flattenAsList(actionMapAction.OpenActionFields, flattenOpenActionFields))
 	return actionMapActionMap
 }
 
@@ -647,14 +666,14 @@ func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformcl
 	actionMapActionTemplate := getActionMapActionTemplate(actionMapAction)
 	architectFlowFields := stringmap.BuildSdkListFirstElement(actionMapAction, "architect_flow_fields", buildSdkArchitectFlowFields, true)
 	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(actionMapAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields, true)
-	// TODO
+	openActionFields := stringmap.BuildSdkListFirstElement(actionMapAction, "open_action_fields", buildSdkOpenActionFields, true)
 
 	return &platformclientv2.Actionmapaction{
 		MediaType:               &mediaType,
 		ActionTemplate:          actionMapActionTemplate,
 		ArchitectFlowFields:     architectFlowFields,
 		WebMessagingOfferFields: webMessagingOfferFields,
-		// TODO
+		OpenActionFields:        openActionFields,
 	}
 }
 
@@ -663,14 +682,14 @@ func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.P
 	actionMapActionTemplate := getActionMapActionTemplate(patchAction)
 	architectFlowFields := stringmap.BuildSdkListFirstElement(patchAction, "architect_flow_fields", buildSdkArchitectFlowFields, true)
 	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(patchAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields, true)
-	// TODO
+	openActionFields := stringmap.BuildSdkListFirstElement(patchAction, "open_action_fields", buildSdkOpenActionFields, true)
 
 	return &platformclientv2.Patchaction{
 		MediaType:               &mediaType,
 		ActionTemplate:          actionMapActionTemplate,
 		ArchitectFlowFields:     architectFlowFields,
 		WebMessagingOfferFields: webMessagingOfferFields,
-		// TODO
+		OpenActionFields:        openActionFields,
 	}
 }
 
@@ -693,7 +712,7 @@ func flattenArchitectFlowFields(architectFlowFields *platformclientv2.Architectf
 }
 
 func buildSdkArchitectFlowFields(architectFlowFields map[string]interface{}) *platformclientv2.Architectflowfields {
-	architectFlow := getActionMapArchitectFlow(architectFlowFields)
+	architectFlow := getArchitectFlow(architectFlowFields)
 	flowRequestMappings := stringmap.BuildSdkList(architectFlowFields, "flow_request_mappings", buildSdkRequestMapping)
 
 	return &platformclientv2.Architectflowfields{
@@ -739,7 +758,7 @@ func flattenWebMessagingOfferFields(webMessagingOfferFields *platformclientv2.We
 
 func buildSdkWebMessagingOfferFields(webMessagingOfferFields map[string]interface{}) *platformclientv2.Webmessagingofferfields {
 	offerText := stringmap.GetNonDefaultValue[string](webMessagingOfferFields, "offer_text")
-	architectFlow := getActionMapArchitectFlow(webMessagingOfferFields)
+	architectFlow := getArchitectFlow(webMessagingOfferFields)
 
 	return &platformclientv2.Webmessagingofferfields{
 		OfferText:     offerText,
@@ -747,7 +766,7 @@ func buildSdkWebMessagingOfferFields(webMessagingOfferFields map[string]interfac
 	}
 }
 
-func getActionMapArchitectFlow(actionMapAction map[string]interface{}) *platformclientv2.Addressableentityref {
+func getArchitectFlow(actionMapAction map[string]interface{}) *platformclientv2.Addressableentityref {
 	architectFlowId := stringmap.GetNonDefaultValue[string](actionMapAction, "architect_flow_id")
 	var architectFlow *platformclientv2.Addressableentityref = nil
 	if architectFlowId != nil {
@@ -756,6 +775,55 @@ func getActionMapArchitectFlow(actionMapAction map[string]interface{}) *platform
 		}
 	}
 	return architectFlow
+}
+
+func flattenOpenActionFields(openActionFields *platformclientv2.Openactionfields) map[string]interface{} {
+	architectFlowFieldsMap := make(map[string]interface{})
+	architectFlowFieldsMap["open_action"] = flattenAsList(openActionFields.OpenAction, flattenOpenActionDomainEntityRef)
+	if openActionFields.ConfigurationFields != nil {
+		jsonString, err := interfaceToJson(openActionFields.ConfigurationFields)
+		if err != nil {
+			log.Printf("Error marshalling '%s': %v", "configuration_fields", err)
+		}
+		architectFlowFieldsMap["configuration_fields"] = jsonString
+	}
+	return architectFlowFieldsMap
+}
+
+func buildSdkOpenActionFields(openActionFieldsMap map[string]interface{}) *platformclientv2.Openactionfields {
+	openAction := stringmap.BuildSdkListFirstElement(openActionFieldsMap, "open_action", buildSdkOpenActionDomainEntityRef, true)
+	openActionFields := platformclientv2.Openactionfields{
+		OpenAction: openAction,
+	}
+
+	configurationFieldsString := stringmap.GetNonDefaultValue[string](openActionFieldsMap, "configuration_fields")
+	if configurationFieldsString != nil {
+		configurationFieldsInterface, err := jsonStringToInterface(*configurationFieldsString)
+		if err != nil {
+			log.Printf("Error unmarshalling '%s': %v", "configuration_fields", err)
+		}
+		configurationFieldsMap := configurationFieldsInterface.(map[string]interface{})
+		openActionFields.ConfigurationFields = &configurationFieldsMap
+	}
+
+	return &openActionFields
+}
+
+func flattenOpenActionDomainEntityRef(domainEntityRef *platformclientv2.Domainentityref) map[string]interface{} {
+	domainEntityRefMap := make(map[string]interface{})
+	domainEntityRefMap["id"] = *domainEntityRef.Id
+	domainEntityRefMap["name"] = *domainEntityRef.Name
+	return domainEntityRefMap
+}
+
+func buildSdkOpenActionDomainEntityRef(domainEntityRef map[string]interface{}) *platformclientv2.Domainentityref {
+	id := domainEntityRef["id"].(string)
+	name := domainEntityRef["name"].(string)
+
+	return &platformclientv2.Domainentityref{
+		Id:   &id,
+		Name: &name,
+	}
 }
 
 func flattenActionMapScheduleGroups(actionMapScheduleGroups *platformclientv2.Actionmapschedulegroups) map[string]interface{} {

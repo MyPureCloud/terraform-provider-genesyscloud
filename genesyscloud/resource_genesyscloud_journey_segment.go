@@ -303,7 +303,8 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Creating journey segment %s", *journeySegment.DisplayName)
 	result, resp, err := journeyApi.PostJourneySegments(*journeySegment)
 	if err != nil {
-		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, interfaceToJson(*journeySegment), getBody(resp))
+		input, _ := interfaceToJson(*journeySegment)
+		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, input, getBody(resp))
 	}
 
 	d.SetId(*result.Id)
@@ -350,7 +351,8 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 		patchSegment.Version = journeySegment.Version
 		_, resp, patchErr := journeyApi.PatchJourneySegment(d.Id(), *patchSegment)
 		if patchErr != nil {
-			return resp, diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *patchSegment.DisplayName, patchErr, interfaceToJson(*patchSegment), getBody(resp))
+			input, _ := interfaceToJson(*patchSegment)
+			return resp, diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *patchSegment.DisplayName, patchErr, input, getBody(resp))
 		}
 		return resp, nil
 	})

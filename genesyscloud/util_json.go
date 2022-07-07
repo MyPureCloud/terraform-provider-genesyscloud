@@ -45,16 +45,19 @@ func interfaceToString(val interface{}) string {
 	return fmt.Sprintf("%v", val)
 }
 
-func interfaceToJson(val interface{}) string {
-	j, _ := json.Marshal(val)
-	return string(j)
+func interfaceToJson(val interface{}) (string, error) {
+	j, err := json.Marshal(val)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal %v: %v", val, err)
+	}
+	return string(j), nil
 }
 
 func jsonStringToInterface(jsonStr string) (interface{}, error) {
 	var obj interface{}
 	err := json.Unmarshal([]byte(jsonStr), &obj)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to marshal %s: %v", jsonStr, err)
+		return nil, fmt.Errorf("failed to unmarshal %s: %v", jsonStr, err)
 	}
 	return obj, nil
 }

@@ -6,6 +6,15 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   }
   action {
     media_type = "openAction"
+    open_action_fields {
+      open_action {
+        # OpenAction[id=e8275a96-fde5-11ec-b939-0242ac120002] does not exist
+        # OpenAction currently is not preparable by provider therefore we cannot execute test for it
+        id   = "e8275a96-fde5-11ec-b939-0242ac120002" # This is a random hardcoded value!
+        name = "terraform_test_-TEST-CASE-"
+      }
+      configuration_fields = "{\"value1\":\"string_value\",\"value2\":100}"
+    }
   }
   start_date = "2022-07-04T12:00:00.000000"
 

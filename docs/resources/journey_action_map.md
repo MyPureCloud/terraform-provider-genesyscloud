@@ -93,11 +93,20 @@ Required:
 
 Required:
 
-- `open_action_id` (String) The specific type of the open action.
+- `open_action` (Block Set, Min: 1, Max: 1) The specific type of the open action. (see [below for nested schema](#nestedblock--action--open_action_fields--open_action))
 
 Optional:
 
 - `configuration_fields` (String) Custom fields defined in the schema referenced by the open action type selected.
+
+<a id="nestedblock--action--open_action_fields--open_action"></a>
+### Nested Schema for `action.open_action_fields.open_action`
+
+Required:
+
+- `id` (String) Id.
+- `name` (String) Name.
+
 
 
 <a id="nestedblock--action--web_messaging_offer_fields"></a>
