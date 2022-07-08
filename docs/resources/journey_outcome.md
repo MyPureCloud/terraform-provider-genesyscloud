@@ -61,7 +61,7 @@ resource "genesyscloud_journey_outcome" "example_journey_outcome_resource" {
 
 ### Optional
 
-- `associated_value_field` (Block Set, Max: 1) The field from the event indicating the associated value. (see [below for nested schema](#nestedblock--associated_value_field))
+- `associated_value_field` (Block Set, Max: 1) The field from the event indicating the associated value. Associated_value_field needs `eventtypes` to be created, which is a feature coming soon. More details available here:  https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/eventtypes  https://all.docs.genesys.com/ATC/Current/AdminGuide/Custom_sessions (see [below for nested schema](#nestedblock--associated_value_field))
 - `context` (Block Set, Max: 1) The context of the outcome. (see [below for nested schema](#nestedblock--context))
 - `description` (String) A description of the outcome.
 - `is_active` (Boolean) Whether or not the outcome is active. Defaults to `true`.
