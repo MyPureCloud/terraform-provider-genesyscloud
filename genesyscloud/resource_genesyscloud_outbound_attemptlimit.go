@@ -61,9 +61,38 @@ var (
 	}
 )
 
+func getAllAttemptLimits(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		attemptLimitConfigs, _, getErr := outboundAPI.GetOutboundAttemptlimits(pageSize, pageNum, true, "", "", "", "")
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of attempt limit configs: %v", getErr)
+		}
+
+		if attemptLimitConfigs.Entities == nil || len(*attemptLimitConfigs.Entities) == 0 {
+			break
+		}
+
+		for _, attemptLimitConfig := range *attemptLimitConfigs.Entities {
+			resources[*attemptLimitConfig.Id] = &ResourceMeta{Name: *attemptLimitConfig.Name}
+		}
+	}
+
+	return resources, nil
+}
+
+func outboundAttemptLimitExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllAttemptLimits),
+	}
+}
+
 func resourceOutboundAttemptLimit() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud outbound attempt limit`,
+		Description: `Genesys Cloud Outbound Attempt Limit`,
 
 		CreateContext: createWithPooledClient(createOutboundAttemptLimit),
 		ReadContext:   readWithPooledClient(readOutboundAttemptLimit),
@@ -95,7 +124,7 @@ func resourceOutboundAttemptLimit() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`reset_period`: {
-				Description:  `After how long the number of attempts will be set back to 0. Defaults to NEVER.`,
+				Description:  `After how long the number of attempts will be set back to 0.`,
 				Optional:     true,
 				Type:         schema.TypeString,
 				Default:      `NEVER`,

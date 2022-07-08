@@ -128,7 +128,7 @@ func generateAttemptLimitResource(
 	}
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_attempt_limit" "%s" {
-	name                     = "%s"
+	name = "%s"
 	%s
 	%s
 	%s
