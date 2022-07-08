@@ -21,15 +21,15 @@ func GetTestDataPath(elem ...string) string {
 	return filepath.Join(basePath, subPath)
 }
 
-func GenerateDataSourceTestSteps(resourceName string, testCaseName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return GenerateTestSteps(dataSourceTestType, resourceName, testCaseName, idPrefix, checkFuncs)
+func GenerateDataSourceTestSteps(resourceName string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+	return GenerateTestSteps(dataSourceTestType, resourceName, testCaseName, checkFuncs)
 }
 
-func GenerateResourceTestSteps(resourceName string, testCaseName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return GenerateTestSteps(resourceTestType, resourceName, testCaseName, idPrefix, checkFuncs)
+func GenerateResourceTestSteps(resourceName string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+	return GenerateTestSteps(resourceTestType, resourceName, testCaseName, checkFuncs)
 }
 
-func GenerateTestSteps(testType string, resourceName string, testCaseName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+func GenerateTestSteps(testType string, resourceName string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
 	var testSteps []resource.TestStep
 
 	testCasePath := GetTestDataPath(testType, resourceName, testCaseName)
@@ -55,7 +55,7 @@ func GenerateTestSteps(testType string, resourceName string, testCaseName string
 
 	testSteps = append(testSteps, resource.TestStep{
 		PreConfig:         func() { log.Printf("Executing ImportState test step config => %s", testCaseName) },
-		ResourceName:      resourceName + "." + idPrefix + testCaseName,
+		ResourceName:      resourceName + "." + TestObjectIdPrefix + testCaseName,
 		ImportState:       true,
 		ImportStateVerify: true,
 	})

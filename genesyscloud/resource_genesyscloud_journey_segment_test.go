@@ -31,23 +31,23 @@ func TestAccResourceJourneySegmentOptionalAttributes(t *testing.T) {
 
 func runResourceJourneySegmentTestCase(t *testing.T, testCaseName string) {
 	const resourceName = "genesyscloud_journey_segment"
-	setupJourneySegment(t, testrunner.TestObjectIdPrefix, testCaseName)
+	setupJourneySegment(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
-		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, testrunner.TestObjectIdPrefix, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneySegmentsDestroyed,
 	})
 }
 
-func setupJourneySegment(t *testing.T, idPrefix string, testCaseName string) {
+func setupJourneySegment(t *testing.T, testCaseName string) {
 	err := authorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cleanupJourneySegments(idPrefix + testCaseName)
+	cleanupJourneySegments(testrunner.TestObjectIdPrefix + testCaseName)
 }
 
 func cleanupJourneySegments(idPrefix string) {

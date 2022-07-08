@@ -31,23 +31,23 @@ func TestAccResourceJourneyActionMapScheduleGroups(t *testing.T) {
 
 func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	const resourceName = "genesyscloud_journey_action_map"
-	setupJourneyActionMap(t, testrunner.TestObjectIdPrefix, testCaseName)
+	setupJourneyActionMap(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
-		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, testrunner.TestObjectIdPrefix, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyActionMapsDestroyed,
 	})
 }
 
-func setupJourneyActionMap(t *testing.T, idPrefix string, testCaseName string) {
+func setupJourneyActionMap(t *testing.T, testCaseName string) {
 	err := authorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	testCasePrefix := idPrefix + testCaseName
+	testCasePrefix := testrunner.TestObjectIdPrefix + testCaseName
 	cleanupJourneySegments(testCasePrefix)
 	cleanupArchitectScheduleGroups(testCasePrefix)
 	cleanupArchitectSchedules(testCasePrefix)

@@ -13,16 +13,17 @@ func TestAccDataJourneySegment(t *testing.T) {
 
 func runDataJourneySegmentTestCase(t *testing.T, testCaseName string) {
 	const resourceName = "genesyscloud_journey_segment"
-	testObjectName := resourceName + "." + testrunner.TestObjectIdPrefix + testCaseName
-	setupJourneySegment(t, testrunner.TestObjectIdPrefix, testCaseName)
+	testObjectName := testrunner.TestObjectIdPrefix + testCaseName
+	testObjectFullName := resourceName + "." + testObjectName
+	setupJourneySegment(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
-		Steps: testrunner.GenerateDataSourceTestSteps(resourceName, testCaseName, testrunner.TestObjectIdPrefix, []resource.TestCheckFunc{
+		Steps: testrunner.GenerateDataSourceTestSteps(resourceName, testCaseName, []resource.TestCheckFunc{
 			resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttrPair("data."+testObjectName, "id", testObjectName, "id"),
-				resource.TestCheckResourceAttr(testObjectName, "display_name", testrunner.TestObjectIdPrefix+testCaseName+"_to_find"),
+				resource.TestCheckResourceAttrPair("data."+testObjectFullName, "id", testObjectFullName, "id"),
+				resource.TestCheckResourceAttr(testObjectFullName, "display_name", testObjectName+"_to_find"),
 			),
 		}),
 	})
