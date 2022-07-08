@@ -14,7 +14,7 @@ Data source for Genesys Cloud Location. Select a location by name.
 
 ```terraform
 data "genesyscloud_location" "location" {
-  name = "test-location"
+  name = "example-location"
 }
 ```
 

@@ -13,8 +13,8 @@ Data source for Genesys Cloud Flows. Select a flow by name.
 ## Example Usage
 
 ```terraform
-data "genesyscloud_flow" "test-flow" {
-  name = "test"
+data "genesyscloud_flow" "example-flow" {
+  name = "example-flow"
 }
 ```
 

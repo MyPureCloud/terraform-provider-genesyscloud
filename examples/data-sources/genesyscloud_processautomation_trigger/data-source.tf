@@ -1,3 +1,3 @@
-data "genesyscloud_processautomation_trigger" "test-trigger" {
-  name = "Test Trigger"
+data "genesyscloud_processautomation_trigger" "example-trigger" {
+  name = "example trigger"
 }

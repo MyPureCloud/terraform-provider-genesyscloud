@@ -14,7 +14,7 @@ Data source for Genesys Cloud integration credential. Select an integration cred
 
 ```terraform
 data "genesyscloud_integration_credential" "integrationCredential" {
-  name = "test integration credential name"
+  name = "example integration credential name"
 }
 ```
 

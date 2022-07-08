@@ -13,8 +13,8 @@ Data source for Genesys Cloud Scripts. Select a script by name.
 ## Example Usage
 
 ```terraform
-data "genesyscloud_script" "test-script" {
-  name = "test"
+data "genesyscloud_script" "example-script" {
+  name = "example"
 }
 ```
 

@@ -14,7 +14,7 @@ Data source for Genesys Cloud Trunk. Select a trunk by name
 
 ```terraform
 data "genesyscloud_telephony_providers_edges_trunk" "trunk" {
-  name = "test trunk name"
+  name = "example trunk name"
 }
 ```
 

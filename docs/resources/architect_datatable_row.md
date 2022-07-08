@@ -20,7 +20,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_architect_datatable_row" "john-smith-2749" {
+resource "genesyscloud_architect_datatable_row" "john-smith" {
   datatable_id = genesyscloud_architect_datatable.customer-table.id
   key_value    = "johnsmith@example.com"
   properties_json = jsonencode({

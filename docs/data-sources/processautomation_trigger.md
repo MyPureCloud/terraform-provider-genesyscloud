@@ -13,8 +13,8 @@ Data source for Genesys Cloud process automation trigger. Select a trigger by na
 ## Example Usage
 
 ```terraform
-data "genesyscloud_processautomation_trigger" "test-trigger" {
-  name = "Test Trigger"
+data "genesyscloud_processautomation_trigger" "example-trigger" {
+  name = "example trigger"
 }
 ```
 
