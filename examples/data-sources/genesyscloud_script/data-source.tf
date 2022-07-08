@@ -1,3 +1,3 @@
-data "genesyscloud_script" "test-script" {
-  name = "test"
+data "genesyscloud_script" "example-script" {
+  name = "example"
 }

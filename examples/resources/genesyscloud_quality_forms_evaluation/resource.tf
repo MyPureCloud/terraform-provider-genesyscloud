@@ -1,5 +1,5 @@
-resource "genesyscloud_quality_forms_evaluation" "test-evaluation-form" {
-  name      = "Test Evaluation Form"
+resource "genesyscloud_quality_forms_evaluation" "example-evaluation-form" {
+  name      = "Example Evaluation Form"
   published = true
   question_groups {
     name                       = "Question Group 1"

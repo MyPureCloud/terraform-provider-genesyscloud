@@ -1,3 +1,3 @@
 data "genesyscloud_group" "group" {
-  name = "test group name"
+  name = "example group name"
 }

@@ -1,4 +1,4 @@
-resource "genesyscloud_location" "hq1" {
+resource "genesyscloud_location" "hq" {
   name  = "Indy"
   notes = "Main Indy Office"
   address {

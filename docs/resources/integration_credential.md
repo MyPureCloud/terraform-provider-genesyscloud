@@ -20,8 +20,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_integration_credential" "credential1" {
-  name                 = "test-credential"
+resource "genesyscloud_integration_credential" "credential" {
+  name                 = "example-credential"
   credential_type_name = "basicAuth" //Example type
   fields = {
     // Each credential type has different required fields, check out the credential type schema to find out details

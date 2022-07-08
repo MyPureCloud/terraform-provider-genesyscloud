@@ -21,24 +21,24 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_integration_action" "test-action" {
-  name           = "Test Action"
+resource "genesyscloud_integration_action" "example-action" {
+  name           = "Example Action"
   category       = "Genesys Cloud Data Action"
-  integration_id = genesyscloud_integration.test_integ.id
+  integration_id = genesyscloud_integration.example_integ.id
   secure         = true
   contract_input = jsonencode({
     "type" = "object",
     "required" = [
-      "teststr"
+      "examplestr"
     ],
     "properties" = {
-      "teststr" = {
+      "examplestr" = {
         "type" = "string"
       },
-      "testint" = {
+      "exampleint" = {
         "type" = "integer"
       },
-      "testbool" = {
+      "examplebool" = {
         "type" = "boolean"
       }
     }

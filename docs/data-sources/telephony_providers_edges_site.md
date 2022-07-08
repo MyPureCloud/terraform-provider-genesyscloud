@@ -14,7 +14,7 @@ Data source for Genesys Cloud Sites. Select a site by name
 
 ```terraform
 data "genesyscloud_telephony_providers_edges_site" "site" {
-  name = "test site name"
+  name = "example site name"
 }
 ```
 
