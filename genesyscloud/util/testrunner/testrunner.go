@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	dataSourceTestType = "data_source"
-	resourceTestType   = "resource"
-	TestObjectIdPrefix = "terraform_test_"
+	dataSourceTestType            = "data_source"
+	resourceTestType              = "resource"
+	TestObjectIdPrefix            = "terraform_test_"
+	testObjectTestCasePlaceHolder = "-TEST-CASE-"
 )
 
 func GetTestDataPath(elem ...string) string {
@@ -39,7 +40,7 @@ func GenerateTestSteps(testType string, resourceName string, testCaseName string
 		if !testCaseDirEntry.IsDir() && strings.HasSuffix(testCaseDirEntry.Name(), ".tf") {
 			testCaseStepFilePath := filepath.Join(testCasePath, testCaseDirEntry.Name())
 			testCaseResource, _ := os.ReadFile(testCaseStepFilePath)
-			config := strings.ReplaceAll(string(testCaseResource), "-TEST-CASE-", testCaseName)
+			config := strings.ReplaceAll(string(testCaseResource), testObjectTestCasePlaceHolder, testCaseName)
 			var checkFunc resource.TestCheckFunc = nil
 			if checkFuncs != nil && checkFuncIndex < len(checkFuncs) {
 				checkFunc = checkFuncs[checkFuncIndex]
