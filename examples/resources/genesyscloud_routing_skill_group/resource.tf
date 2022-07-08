@@ -1,4 +1,4 @@
-resource "genesyscloud_routing_skill_group" "myskillgroup" {
+resource "genesyscloud_routing_skill_group" "skillgroup" {
   name        = "Series6"
   description = "Agents with exposure to Series 6 license"
   skill_conditions = jsonencode(

@@ -14,7 +14,7 @@ Data source for Genesys Cloud Edge Group. Select an edge group by name
 
 ```terraform
 data "genesyscloud_telephony_providers_edges_edge_group" "edgeGroup" {
-  name = "test edge group name"
+  name = "example edge group name"
 }
 ```
 

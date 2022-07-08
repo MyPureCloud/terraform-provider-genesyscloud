@@ -1,5 +1,5 @@
-resource "genesyscloud_group" "test_group" {
-  name          = "Testing Group"
+resource "genesyscloud_group" "sample_group" {
+  name          = "Sample Group"
   description   = "Group for Testers"
   type          = "official"
   visibility    = "public"

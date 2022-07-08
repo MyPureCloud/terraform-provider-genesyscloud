@@ -24,8 +24,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_recording_media_retention_policy" "test-media-retention-policy" {
-  name        = "terraform-media-retention-policy"
+resource "genesyscloud_recording_media_retention_policy" "example-media-retention-policy" {
+  name        = "example-media-retention-policy"
   order       = 1
   description = "a media retention policy"
   enabled     = true
@@ -36,13 +36,13 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
         delete_recording = false
         always_delete    = false
         assign_evaluations {
-          evaluation_form_id = genesyscloud_quality_forms_evaluation.test-evaluation-form.id
-          user_id            = genesyscloud_user.test-user.id
+          evaluation_form_id = genesyscloud_quality_forms_evaluation.example-evaluation-form.id
+          user_id            = genesyscloud_user.example-user.id
         }
         assign_metered_evaluations {
-          evaluator_ids          = [genesyscloud_user.test-user.id]
+          evaluator_ids          = [genesyscloud_user.example-user.id]
           max_number_evaluations = 1
-          evaluation_form_id     = genesyscloud_quality_forms_evaluation.test-evaluation-form.id
+          evaluation_form_id     = genesyscloud_quality_forms_evaluation.example-evaluation-form.id
           assign_to_active_user  = true
           time_interval {
             months = 1
@@ -52,9 +52,9 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
           }
         }
         assign_metered_assignment_by_agent {
-          evaluator_ids          = [genesyscloud_user.test-user.id]
+          evaluator_ids          = [genesyscloud_user.example-user.id]
           max_number_evaluations = 1
-          evaluation_form_id     = genesyscloud_quality_forms_evaluation.test-evaluation-form.id
+          evaluation_form_id     = genesyscloud_quality_forms_evaluation.example-evaluation-form.id
           time_interval {
             months = 1
             weeks  = 1
@@ -64,15 +64,15 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
           time_zone = "EST"
         }
         assign_calibrations {
-          calibrator_id       = genesyscloud_user.test-user.id
-          evaluator_ids       = [genesyscloud_user.test-user.id]
-          evaluation_form_id  = genesyscloud_quality_forms_evaluation.test-evaluation-form.id
-          expert_evaluator_id = genesyscloud_user.test-user.id
+          calibrator_id       = genesyscloud_user.example-user.id
+          evaluator_ids       = [genesyscloud_user.example-user.id]
+          evaluation_form_id  = genesyscloud_quality_forms_evaluation.example-evaluation-form.id
+          expert_evaluator_id = genesyscloud_user.example-user.id
         }
         assign_surveys {
           sending_domain   = genesyscloud_routing_email_domain.routing-domain.domain_id
           survey_form_name = "survey-form-name"
-          flow_id          = genesyscloud_flow.test-flow-resource.id
+          flow_id          = genesyscloud_flow.example-flow-resource.id
         }
         retention_duration {
           archive_retention {
@@ -95,16 +95,16 @@ resource "genesyscloud_recording_media_retention_policy" "test-media-retention-p
 
         }
         integration_export {
-          integration_id                  = genesyscloud_integration.test-integration-resource.id
+          integration_id                  = genesyscloud_integration.example-integration-resource.id
           should_export_screen_recordings = true
         }
       }
       conditions {
-        for_user_ids    = [genesyscloud_user.test-user.id]
+        for_user_ids    = [genesyscloud_user.example-user.id]
         date_ranges     = ["2022-05-12T04:00:00.000Z/2022-05-13T04:00:00.000Z"]
-        for_queue_ids   = [genesyscloud_routing_queue.test-queue.id]
-        wrapup_code_ids = [genesyscloud_routing_wrapupcode.test-wrapup-code.id]
-        language_ids    = [genesyscloud_routing_language.test-language.id]
+        for_queue_ids   = [genesyscloud_routing_queue.example-queue.id]
+        wrapup_code_ids = [genesyscloud_routing_wrapupcode.example-wrapup-code.id]
+        language_ids    = [genesyscloud_routing_language.example-language.id]
         time_allowed {
           time_slots {
             start_time = "10:10:10.010"

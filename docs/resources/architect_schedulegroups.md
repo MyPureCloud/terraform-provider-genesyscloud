@@ -21,7 +21,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_architect_schedulegroups" "test_schedule_groups" {
+resource "genesyscloud_architect_schedulegroups" "sample_schedule_groups" {
   name                 = "CX as Code Schedule Group"
   description          = "Sample Schedule Group by CX as Code"
   time_zone            = "Asia/Singapore"

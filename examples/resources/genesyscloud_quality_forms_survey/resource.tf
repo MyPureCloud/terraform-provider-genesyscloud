@@ -1,12 +1,12 @@
-resource "genesyscloud_quality_forms_survey" "test-survey-form-1" {
-  name      = "terraform-form-surveys-9dc27a6b-0e06-4814-a46e-ba7b56e95d16"
+resource "genesyscloud_quality_forms_survey" "example-survey-form" {
+  name      = "Example survey form"
   published = false
   disabled  = false
   language  = "en-US"
   header    = ""
   footer    = ""
   question_groups {
-    name       = "Test Question Group 1"
+    name       = "Example Question Group 1"
     na_enabled = false
     questions {
       text                    = "Would you recommend our services?"
@@ -41,7 +41,7 @@ resource "genesyscloud_quality_forms_survey" "test-survey-form-1" {
     }
   }
   question_groups {
-    name       = "Test Question Group 2"
+    name       = "Example Question Group 2"
     na_enabled = false
     questions {
       text       = "Did the agent offer to sell product?"
