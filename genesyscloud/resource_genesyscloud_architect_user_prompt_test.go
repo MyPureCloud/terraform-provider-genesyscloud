@@ -3,16 +3,18 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
 type userPromptStruct struct {
@@ -129,8 +131,8 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 	userPromptDescription1 := "Test prompt with wav audio file"
 	userPromptResourceLang1 := "en-us"
 	userPromptResourceText1 := "This is a test greeting!"
-	userPromptResourceFileName1 := getTestDataPath("test-prompt-01.wav")
-	userPromptResourceFileName2 := getTestDataPath("test-prompt-02.wav")
+	userPromptResourceFileName1 := testrunner.GetTestDataPath("test-prompt-01.wav")
+	userPromptResourceFileName2 := testrunner.GetTestDataPath("test-prompt-02.wav")
 
 	userPromptAsset1 := userPromptResourceStruct{
 		userPromptResourceLang1,
@@ -238,7 +240,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	srv := startHttpServer(httpServerExitDone, getTestDataPath(), "8100")
+	srv := startHttpServer(httpServerExitDone, testrunner.GetTestDataPath(), "8100")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

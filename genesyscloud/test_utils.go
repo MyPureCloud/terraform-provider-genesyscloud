@@ -3,10 +3,7 @@ package genesyscloud
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"math/rand"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -21,10 +18,6 @@ const (
 	falseValue = "false"
 	testCert1  = "MIIDazCCAlKgAwIBAgIBADANBgkqhkiG9w0BAQsFADBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMCAXDTIyMDUxNzEzNDUzM1oYDzIxMjIwNDIzMTM0NTMzWjBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMIIBIzANBgkqhkiG9w0BAQEFAAOCARAAMIIBCwKCAQIAuicPlCgrmmzIuu/Hh0HBqmGOvO7lLeKq4ZryZxd11XmcVE4T4mhdI+u1rgv8GBnn9JmFkXGU793l1PuUmrZuUInkuvVhvOjcl/95WzGE5++bkvQ/AhROn4onAWQIrQvpUq+xKv3vZ4z7JncqbkBRsJ1BKsCxtL3nKLlUBD2z8/KrrbKjENEDCIlhdua5KPfl/d+IwW8iOmTsLQYNsSv8ZvovwK/WwvcFsjtQIdBSdJfPguAzKiQIaihzya6dzXLFlxYsBsbA39MEcNTeOpy+b1xNEo0WCvVW0qctVV+z3qHMHqcjkikT4PUzBkeceZe5dnqfm+P1TFTk1OO8b0xmkgECAwEAAaNQME4wHQYDVR0OBBYEFCuD7HIc4V8HNEAftG5w+nFFl5JVMB8GA1UdIwQYMBaAFCuD7HIc4V8HNEAftG5w+nFFl5JVMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADggECAEUmWVt01Kh1Be4U+CrI8Vdz6Hls3RJmto/x0WQUARjUO3+0SiFUxFAgRGGkFJTdtH+J93OntLsK8Av+G3U+ZNCODbRBubXqcnljbXnaeXDp4saUWuRs4G6zYFPM0rCvSz46XK6G5dyANeEJFgdO7wKkHO/eyy4PkIgjBE59DAx97sbXW877DTdvSfbmsEKiuEB0an+kdPYZHbTLdM910Y8YyeEQBkzp1Kjz3u5fwpAKFULOhsBmXYtXTReMqtWHjG4czsRZr04wHIng45WD8weMdw1UsCpr8fJ4CYMJsKgwJkKOc8fw6Fmj7mqrXIlUMMpeyDNpqEMaNIryiG/UsZma"
 	testCert2  = "MIIDazCCAlKgAwIBAgIBADANBgkqhkiG9w0BAQsFADBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMCAXDTIyMDUxNzEzNDY0N1oYDzIxMjIwNDIzMTM0NjQ3WjBOMQswCQYDVQQGEwJ1czEXMBUGA1UECAwOTm9ydGggQ2Fyb2xpbmExEDAOBgNVBAoMB0dlbmVzeXMxFDASBgNVBAMMC215cHVyZWNsb3VkMIIBIzANBgkqhkiG9w0BAQEFAAOCARAAMIIBCwKCAQIAzWc4XQthXrGexwsH2urKc1dFPhZMoWhUVjXrb1bc1IdCH63KklnhYiBAB2YakRJVSzoat5iY0X2kNjSIyCtHCxPycpplP4P6BfIEM9jm0s8NmYW3S/8JZW1MiNs/2XTibfyoXmQiHh76BzKCDgniulj2qOxpNHi5M1Az0QxV+GSgVE+mcPA6041idt7n1HpG3gQ7/MrZEd5OdBhyVUa6JPDyTAF7UE9P9v7mIbGoe6R7Y9qQEIbJ8ihoSM+w65fhyDafl9dWjfLmqkI65cYCJ82cGqyseeiHYOXgyfkcC1njrLr5g92DHnOVqVoHZCTzwV+kciyAntuQqyJtHGCGnskCAwEAAaNQME4wHQYDVR0OBBYEFDNbxsJcQMKJVSIHT/3BM1Osb+JOMB8GA1UdIwQYMBaAFDNbxsJcQMKJVSIHT/3BM1Osb+JOMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADggECAGuzz8i3w3YrFGeGgxRzwEWUKiH53Sf4w7KIxGeK6oW2BOnhXMYJfuqIAiGaAVQ3uHbTcKwByHLK9/2oWmQAsYsbA3wZpcZXyXk84iCc3aqYkWjeUl0A5wECjNIKkFvS56DCtENLMlc2VI8NGzPoFMaC7Z3nMOlogqsf6KNNydUMgqyosLQqYoRdDbBMXShbn7fvibK4jzhYxuoXCyTwKDg/lr69i5zsVNBMjTu8W3DnmBPbTVBQ9Kd9/nAJoXCbHfx1QW4UEx3mLFDVNhRRdGqran7DIEjCo8BcGilXvHCVCAKwXF1MyqiyLEm8/W7FYzdBBkkVnxOBhMIVjlPGpwLS"
-
-	dataSourceTestType = "data_source"
-	resourceTestType   = "resource"
-	testObjectIdPrefix = "terraform_test_"
 )
 
 // Verify default division is home division
@@ -265,52 +258,4 @@ func randString(length int) string {
 	}
 
 	return string(s)
-}
-
-func getTestDataPath(elem ...string) string {
-	basePath := filepath.Join("..", "test", "data")
-	subPath := filepath.Join(elem...)
-	return filepath.Join(basePath, subPath)
-}
-
-func generateDataSourceTestSteps(resourceName string, testCaseName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return generateTestSteps(dataSourceTestType, resourceName, testCaseName, idPrefix, checkFuncs)
-}
-
-func generateResourceTestSteps(resourceName string, testCaseName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return generateTestSteps(resourceTestType, resourceName, testCaseName, idPrefix, checkFuncs)
-}
-
-func generateTestSteps(testType string, resourceName string, testCaseName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	var testSteps []resource.TestStep
-
-	testCasePath := getTestDataPath(testType, resourceName, testCaseName)
-	testCaseDirEntries, _ := os.ReadDir(testCasePath)
-	checkFuncIndex := 0
-	for _, testCaseDirEntry := range testCaseDirEntries {
-		if !testCaseDirEntry.IsDir() && strings.HasSuffix(testCaseDirEntry.Name(), ".tf") {
-			testCaseStepFilePath := filepath.Join(testCasePath, testCaseDirEntry.Name())
-			testCaseResource, _ := os.ReadFile(testCaseStepFilePath)
-			config := strings.ReplaceAll(string(testCaseResource), "-TEST-CASE-", testCaseName)
-			var checkFunc resource.TestCheckFunc = nil
-			if checkFuncs != nil && checkFuncIndex < len(checkFuncs) {
-				checkFunc = checkFuncs[checkFuncIndex]
-			}
-			testSteps = append(testSteps, resource.TestStep{
-				PreConfig: func() { log.Printf("Executing test step config => %s", testCaseStepFilePath) },
-				Config:    config,
-				Check:     checkFunc})
-			checkFuncIndex++
-		}
-	}
-	log.Printf("Generated %d test steps for testcase => %s", len(testSteps), testCasePath)
-
-	testSteps = append(testSteps, resource.TestStep{
-		PreConfig:         func() { log.Printf("Executing ImportState test step config => %s", testCaseName) },
-		ResourceName:      resourceName + "." + idPrefix + testCaseName,
-		ImportState:       true,
-		ImportStateVerify: true,
-	})
-
-	return testSteps
 }

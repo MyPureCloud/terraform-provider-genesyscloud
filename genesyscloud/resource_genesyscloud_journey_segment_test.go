@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
 func TestAccResourceJourneySegmentCustomer(t *testing.T) {
@@ -30,12 +31,12 @@ func TestAccResourceJourneySegmentOptionalAttributes(t *testing.T) {
 
 func runResourceJourneySegmentTestCase(t *testing.T, testCaseName string) {
 	const resourceName = "genesyscloud_journey_segment"
-	setupJourneySegment(t, testObjectIdPrefix, testCaseName)
+	setupJourneySegment(t, testrunner.TestObjectIdPrefix, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
-		Steps:             generateResourceTestSteps(resourceName, testCaseName, testObjectIdPrefix, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, testrunner.TestObjectIdPrefix, nil),
 		CheckDestroy:      testVerifyJourneySegmentsDestroyed,
 	})
 }

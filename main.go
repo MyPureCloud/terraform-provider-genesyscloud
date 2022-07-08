@@ -1,10 +1,7 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"log"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	provider "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 )
@@ -39,11 +36,8 @@ func main() {
 	opts := &plugin.ServeOpts{ProviderFunc: provider.New(version)}
 
 	if debugMode {
-		err := plugin.Debug(context.Background(), "registry.terraform.io/mypurecloud/genesyscloud", opts)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		return
+		opts.Debug = true
+		opts.ProviderAddr = "registry.terraform.io/mypurecloud/genesyscloud"
 	}
 
 	plugin.Serve(opts)
