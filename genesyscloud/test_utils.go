@@ -267,6 +267,12 @@ func randString(length int) string {
 	return string(s)
 }
 
+func getTestDataPath(elem ...string) string {
+	basePath := filepath.Join("..", "test", "data")
+	subPath := filepath.Join(elem...)
+	return filepath.Join(basePath, subPath)
+}
+
 func generateDataSourceTestSteps(resourceName string, testCaseName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
 	return generateTestSteps(dataSourceTestType, resourceName, testCaseName, idPrefix, checkFuncs)
 }
@@ -278,7 +284,7 @@ func generateResourceTestSteps(resourceName string, testCaseName string, idPrefi
 func generateTestSteps(testType string, resourceName string, testCaseName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
 	var testSteps []resource.TestStep
 
-	testCasePath := filepath.Join("..", "test", "data", testType, resourceName, testCaseName)
+	testCasePath := getTestDataPath(testType, resourceName, testCaseName)
 	testCaseDirEntries, _ := os.ReadDir(testCasePath)
 	checkFuncIndex := 0
 	for _, testCaseDirEntry := range testCaseDirEntries {

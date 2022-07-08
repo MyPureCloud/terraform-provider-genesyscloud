@@ -129,8 +129,8 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 	userPromptDescription1 := "Test prompt with wav audio file"
 	userPromptResourceLang1 := "en-us"
 	userPromptResourceText1 := "This is a test greeting!"
-	userPromptResourceFileName1 := "test-prompt-01.wav"
-	userPromptResourceFileName2 := "test-prompt-02.wav"
+	userPromptResourceFileName1 := getTestDataPath("test-prompt-01.wav")
+	userPromptResourceFileName2 := getTestDataPath("test-prompt-02.wav")
 
 	userPromptAsset1 := userPromptResourceStruct{
 		userPromptResourceLang1,
@@ -238,7 +238,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	srv := startHttpServer(httpServerExitDone, ".", "8100")
+	srv := startHttpServer(httpServerExitDone, getTestDataPath(), "8100")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
