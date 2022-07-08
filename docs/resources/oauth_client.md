@@ -20,9 +20,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_oauth_client" "example-client" {
-  name                          = "Example OAuth Client"
-  description                   = "For example purposes only"
+resource "genesyscloud_oauth_client" "test-client" {
+  name                          = "Test OAuth Client"
+  description                   = "For test purposes only"
   access_token_validity_seconds = 600
   registered_redirect_uris      = ["https://example.com/auth"]
   authorized_grant_type         = "CODE"

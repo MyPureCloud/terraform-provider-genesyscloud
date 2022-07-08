@@ -25,7 +25,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_routing_skill_group" "skillgroup" {
+resource "genesyscloud_routing_skill_group" "myskillgroup" {
   name        = "Series6"
   description = "Agents with exposure to Series 6 license"
   skill_conditions = jsonencode(

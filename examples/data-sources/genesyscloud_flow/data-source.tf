@@ -1,3 +1,3 @@
-data "genesyscloud_flow" "example-flow" {
-  name = "example-flow"
+data "genesyscloud_flow" "test-flow" {
+  name = "test"
 }

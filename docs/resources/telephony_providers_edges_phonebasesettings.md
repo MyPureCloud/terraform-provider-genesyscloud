@@ -22,7 +22,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ```terraform
 resource "genesyscloud_telephony_providers_edges_phonebasesettings" "examplePhoneBaseSettings" {
   name               = "example phone base settings"
-  description        = "Sample description"
+  description        = "test description"
   phone_meta_base_id = "generic_sip.json"
   properties = jsonencode({
     "phone_label" = {

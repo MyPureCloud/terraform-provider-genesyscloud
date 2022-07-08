@@ -14,7 +14,7 @@ Data source for Genesys Cloud Line Base Settings. Select a line base settings by
 
 ```terraform
 data "genesyscloud_telephony_providers_edges_linebasesettings" "lineBaseSetting" {
-  name = "example line base settings name"
+  name = "test line base settings name"
 }
 ```
 

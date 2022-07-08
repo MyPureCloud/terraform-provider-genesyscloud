@@ -1,4 +1,4 @@
-resource "genesyscloud_architect_datatable_row" "john-smith" {
+resource "genesyscloud_architect_datatable_row" "john-smith-2749" {
   datatable_id = genesyscloud_architect_datatable.customer-table.id
   key_value    = "johnsmith@example.com"
   properties_json = jsonencode({

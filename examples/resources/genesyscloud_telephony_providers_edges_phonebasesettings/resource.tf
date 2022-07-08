@@ -1,6 +1,6 @@
 resource "genesyscloud_telephony_providers_edges_phonebasesettings" "examplePhoneBaseSettings" {
   name               = "example phone base settings"
-  description        = "Sample description"
+  description        = "test description"
   phone_meta_base_id = "generic_sip.json"
   properties = jsonencode({
     "phone_label" = {

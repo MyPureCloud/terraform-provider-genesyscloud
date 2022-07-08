@@ -14,7 +14,7 @@ Data source for Genesys Cloud Phone. Select a phone by name
 
 ```terraform
 data "genesyscloud_telephony_providers_edges_phone" "phoneData" {
-  name = "example phone name"
+  name = "test phone name"
 }
 ```
 

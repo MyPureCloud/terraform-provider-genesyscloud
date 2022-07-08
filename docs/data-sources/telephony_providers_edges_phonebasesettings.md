@@ -14,7 +14,7 @@ Data source for Genesys Cloud Phone Base Settings. Select a phone base settings 
 
 ```terraform
 data "genesyscloud_telephony_providers_edges_phonebasesettings" "phoneBaseSetting" {
-  name = "example phone base settings name"
+  name = "test phone base settings name"
 }
 ```
 

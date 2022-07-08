@@ -13,8 +13,8 @@ Data source for Genesys Cloud Stations. Select a station by name.
 ## Example Usage
 
 ```terraform
-data "genesyscloud_station" "example-station" {
-  name = "example station"
+data "genesyscloud_station" "test-station" {
+  name = "my_station"
 }
 ```
 

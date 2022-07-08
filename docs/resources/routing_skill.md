@@ -19,8 +19,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_routing_skill" "example_skill" {
-  name = "Example Skill"
+resource "genesyscloud_routing_skill" "test_skill" {
+  name = "Test Skill"
 }
 ```
 

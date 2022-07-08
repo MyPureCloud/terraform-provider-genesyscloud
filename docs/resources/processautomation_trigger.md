@@ -23,8 +23,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_processautomation_trigger" "example-trigger" {
-  name       = "Example Trigger"
+resource "genesyscloud_processautomation_trigger" "test-trigger" {
+  name       = "Test Trigger"
   topic_name = "v2.detail.events.conversation.{id}.customer.end"
   enabled    = true
   target {

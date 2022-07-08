@@ -21,7 +21,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_telephony_providers_edges_did_pool" "example_did_pool" {
+resource "genesyscloud_telephony_providers_edges_did_pool" "test_did_pool" {
   start_phone_number = "+13175550000"
   end_phone_number   = "+13175550000"
   description        = "Description of the DID range"

@@ -13,8 +13,8 @@ Data source for Genesys Cloud Wrap-up Code. Select a wrap-up code by name
 ## Example Usage
 
 ```terraform
-data "genesyscloud_routing_wrapupcode" "example-routing-wrapupcode" {
-  name = "example code name"
+data "genesyscloud_routing_wrapupcode" "test-routing-wrapupcode" {
+  name = "test code name"
 }
 ```
 

@@ -20,7 +20,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_location" "hq" {
+resource "genesyscloud_location" "hq1" {
   name  = "Indy"
   notes = "Main Indy Office"
   address {

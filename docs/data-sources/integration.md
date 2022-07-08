@@ -14,7 +14,7 @@ Data source for Genesys Cloud integration. Select an integration by name
 
 ```terraform
 data "genesyscloud_integration" "integration" {
-  name = "example integration name"
+  name = "test integration name"
 }
 ```
 

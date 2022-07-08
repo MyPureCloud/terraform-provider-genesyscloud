@@ -1,21 +1,21 @@
-resource "genesyscloud_integration_action" "example-action" {
-  name           = "Example Action"
+resource "genesyscloud_integration_action" "test-action" {
+  name           = "Test Action"
   category       = "Genesys Cloud Data Action"
-  integration_id = genesyscloud_integration.example_integ.id
+  integration_id = genesyscloud_integration.test_integ.id
   secure         = true
   contract_input = jsonencode({
     "type" = "object",
     "required" = [
-      "examplestr"
+      "teststr"
     ],
     "properties" = {
-      "examplestr" = {
+      "teststr" = {
         "type" = "string"
       },
-      "exampleint" = {
+      "testint" = {
         "type" = "integer"
       },
-      "examplebool" = {
+      "testbool" = {
         "type" = "boolean"
       }
     }

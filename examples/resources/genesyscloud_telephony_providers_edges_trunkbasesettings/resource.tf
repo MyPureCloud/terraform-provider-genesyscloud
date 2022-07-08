@@ -1,4 +1,4 @@
-resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSettings" {
+resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSettings1234" {
   name               = "example trunk base settings"
   description        = "my example trunk base settings"
   trunk_meta_base_id = "phone_connections_webrtc.json"
