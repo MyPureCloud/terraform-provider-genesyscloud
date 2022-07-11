@@ -14,7 +14,7 @@ Data source for Genesys Cloud Users. Select a user by email or name.
 
 ```terraform
 data "genesyscloud_user" "user" {
-  email = "sample@example.com"
+  email = "user@example.com"
 }
 ```
 

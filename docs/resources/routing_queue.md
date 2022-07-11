@@ -27,7 +27,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 resource "genesyscloud_routing_queue" "example_queue" {
   name                              = "Example Queue"
   division_id                       = genesyscloud_auth_division.home.id
-  description                       = "This is a example queue"
+  description                       = "This is an example description"
   acw_wrapup_prompt                 = "MANDATORY_TIMEOUT"
   acw_timeout_ms                    = 300000
   skill_evaluation_method           = "BEST"
