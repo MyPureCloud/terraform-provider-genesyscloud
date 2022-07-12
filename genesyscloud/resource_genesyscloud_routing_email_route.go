@@ -362,6 +362,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		if route.ReplyEmailAddress != nil {
+			log.Printf("I am in the route.ReplyEmailAddress != nil ")
 			flattenedEmails := flattenQueueEmailAddress(*route.ReplyEmailAddress)
 			_, _, selfReferenceRoute := extractReplyEmailAddressValue(d)
 
@@ -375,11 +376,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 
 			d.Set("reply_email_address", []interface{}{flattenedEmails})
 		} else {
-			//If the reply email address is nil we need to set the self_reference_route to false inside the terraform state
-			flattenedEmails := make(map[string]interface{})
-			flattenedEmails["self_reference_route"] = false
-
-			d.Set("reply_email_address", []interface{}{flattenedEmails})
+			d.Set("reply_email_address", nil)
 		}
 
 		if route.AutoBcc != nil {
