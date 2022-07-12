@@ -10,6 +10,11 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   }
   start_date = "2022-07-04T12:00:00.000000"
   # optional
+  trigger_with_outcome_probability_conditions {
+    outcome_id          = "f2c74231-04a3-4720-88d3-1e974ce4c96e" # This is a random hardcoded value!
+    maximum_probability = 0.7
+    probability         = 0.3
+  }
   page_url_conditions {
     values   = ["some_other_value", "some_other_value_2"]
     operator = "containsAny"

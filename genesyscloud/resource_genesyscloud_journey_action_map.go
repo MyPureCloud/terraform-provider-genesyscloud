@@ -14,6 +14,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/typeconv"
 )
 
 var (
@@ -502,7 +503,7 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	displayName := actionMap.Get("display_name").(string)
 	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
 	triggerWithEventConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition))
-	triggerWithOutcomeProbabilityConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
+	triggerWithOutcomeProbabilityConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition)
 	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition))
 	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation, true)
 	weight := actionMap.Get("weight").(int)
@@ -593,24 +594,20 @@ func buildSdkEventCondition(eventCondition map[string]interface{}) *platformclie
 func flattenOutcomeProbabilityCondition(outcomeProbabilityCondition *platformclientv2.Outcomeprobabilitycondition) map[string]interface{} {
 	outcomeProbabilityConditionMap := make(map[string]interface{})
 	outcomeProbabilityConditionMap["outcome_id"] = *outcomeProbabilityCondition.OutcomeId
-	outcomeProbabilityConditionMap["maximum_probability"] = *outcomeProbabilityCondition.MaximumProbability
-	stringmap.SetValueIfNotNil(outcomeProbabilityConditionMap, "probability", outcomeProbabilityCondition.Probability)
+	outcomeProbabilityConditionMap["maximum_probability"] = *typeconv.Float32to64(outcomeProbabilityCondition.MaximumProbability)
+	stringmap.SetValueIfNotNil(outcomeProbabilityConditionMap, "probability", typeconv.Float32to64(outcomeProbabilityCondition.Probability))
 	return outcomeProbabilityConditionMap
 }
 
 func buildSdkOutcomeProbabilityCondition(outcomeProbabilityCondition map[string]interface{}) *platformclientv2.Outcomeprobabilitycondition {
 	outcomeId := outcomeProbabilityCondition["outcome_id"].(string)
-	maximumProbability := float32(outcomeProbabilityCondition["maximum_probability"].(float64))
-	var probability *float32 = nil
-	probabilityFloat64 := stringmap.GetNillableValue[float64](outcomeProbabilityCondition, "probability")
-	if probabilityFloat64 != nil {
-		probabilityFloat32 := float32(*probabilityFloat64)
-		probability = &probabilityFloat32
-	}
+	maximumProbability64 := outcomeProbabilityCondition["maximum_probability"].(float64)
+	maximumProbability := typeconv.Float64to32(&maximumProbability64)
+	probability := typeconv.Float64to32(stringmap.GetNonDefaultValue[float64](outcomeProbabilityCondition, "probability"))
 
 	return &platformclientv2.Outcomeprobabilitycondition{
 		OutcomeId:          &outcomeId,
-		MaximumProbability: &maximumProbability,
+		MaximumProbability: maximumProbability,
 		Probability:        probability,
 	}
 }

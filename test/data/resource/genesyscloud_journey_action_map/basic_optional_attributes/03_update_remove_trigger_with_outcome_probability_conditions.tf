@@ -1,6 +1,6 @@
 resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   # required
-  display_name          = "terraform_test_-TEST-CASE-"
+  display_name          = "terraform_test_-TEST-CASE-_updated"
   trigger_with_segments = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-_action_map_dependency.id]
   activation {
     type = "immediate"
@@ -10,16 +10,12 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   }
   start_date = "2022-07-04T12:00:00.000000"
   # optional
-  trigger_with_outcome_probability_conditions {
-    outcome_id = "f2c74231-04a3-4720-88d3-1e974ce4c96e" # This is a random hardcoded value!
-    maximum_probability = 0.6
-  }
   page_url_conditions {
-    values   = ["some_value"]
-    operator = "containsAll"
+    values   = ["some_other_value", "some_other_value_2"]
+    operator = "containsAny"
   }
-  ignore_frequency_cap = false
-  end_date             = "2022-07-20T19:00:00.000000"
+  ignore_frequency_cap = true
+  end_date             = "2022-08-01T10:30:00.999000"
 
   depends_on = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-_action_map_dependency]
 }
