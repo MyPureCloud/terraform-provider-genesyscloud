@@ -972,6 +972,7 @@ func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 		route := *settings.Route
 		settingsMap["route_id"] = *route.Id
 	}
+
 	return settingsMap
 }
 
