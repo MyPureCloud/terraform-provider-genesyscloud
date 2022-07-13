@@ -7,18 +7,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
 
-func resourceFlowsMilestone() *schema.Resource {
+func resourceFlowMilestone() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud flows milestone`,
 
-		CreateContext: createWithPooledClient(createFlowsMilestone),
-		ReadContext:   readWithPooledClient(readFlowsMilestone),
-		UpdateContext: updateWithPooledClient(updateFlowsMilestone),
-		DeleteContext: deleteWithPooledClient(deleteFlowsMilestone),
+		CreateContext: createWithPooledClient(createFlowMilestone),
+		ReadContext:   readWithPooledClient(readFlowMilestone),
+		UpdateContext: updateWithPooledClient(updateFlowMilestone),
+		DeleteContext: deleteWithPooledClient(deleteFlowMilestone),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -44,7 +45,7 @@ func resourceFlowsMilestone() *schema.Resource {
 	}
 }
 
-func createFlowsMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	division := d.Get("division_id").(string)
 	description := d.Get("description").(string)
@@ -64,19 +65,19 @@ func createFlowsMilestone(ctx context.Context, d *schema.ResourceData, meta inte
 		sdkflowmilestone.Description = &description
 	}
 
-	log.Printf("Creating Flows Milestone %s", name)
-	flowsMilestone, _, err := architectApi.PostFlowsMilestones(sdkflowmilestone)
+	log.Printf("Creating Flow Milestone %s", name)
+	flowMilestone, _, err := architectApi.PostFlowsMilestones(sdkflowmilestone)
 	if err != nil {
-		return diag.Errorf("Failed to create Flows Milestone %s: %s", name, err)
+		return diag.Errorf("Failed to create Flow Milestone %s: %s", name, err)
 	}
 
-	d.SetId(*flowsMilestone.Id)
+	d.SetId(*flowMilestone.Id)
 
-	log.Printf("Created Flows Milestone %s %s", name, *flowsMilestone.Id)
-	return readFlowsMilestone(ctx, d, meta)
+	log.Printf("Created Flow Milestone %s %s", name, *flowMilestone.Id)
+	return readFlowMilestone(ctx, d, meta)
 }
 
-func updateFlowsMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	division := d.Get("division_id").(string)
 	description := d.Get("description").(string)
@@ -99,29 +100,29 @@ func updateFlowsMilestone(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Updating Flows Milestone %s", name)
 	_, _, err := architectApi.PutFlowsMilestone(d.Id(), sdkflowmilestone)
 	if err != nil {
-		return diag.Errorf("Failed to update Flows Milestone %s: %s", name, err)
+		return diag.Errorf("Failed to update Flow Milestone %s: %s", name, err)
 	}
 
-	log.Printf("Updated Flows Milestone %s", name)
-	return readFlowsMilestone(ctx, d, meta)
+	log.Printf("Updated Flow Milestone %s", name)
+	return readFlowMilestone(ctx, d, meta)
 }
 
-func readFlowsMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	log.Printf("Reading Flows Milestone %s", d.Id())
+	log.Printf("Reading Flow Milestone %s", d.Id())
 
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkflowmilestone, resp, getErr := architectApi.GetFlowsMilestone(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Flows Milestone %s: %s", d.Id(), getErr))
+				return resource.RetryableError(fmt.Errorf("Failed to read Flow Milestone %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Flows Milestone %s: %s", d.Id(), getErr))
+			return resource.NonRetryableError(fmt.Errorf("Failed to read Flow Milestone %s: %s", d.Id(), getErr))
 		}
 
-		// cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceFlowsMilestone())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceFlowMilestone())
 
 		if sdkflowmilestone.Name != nil {
 			d.Set("name", *sdkflowmilestone.Name)
@@ -133,21 +134,21 @@ func readFlowsMilestone(ctx context.Context, d *schema.ResourceData, meta interf
 			d.Set("description", *sdkflowmilestone.Description)
 		}
 
-		log.Printf("Read Flows Milestone %s %s", d.Id(), *sdkflowmilestone.Name)
-		return nil // TODO calling cc.CheckState() can cause some difficult to understand errors in development. When ready for a PR, remove this line and uncomment the consistency_checker initialization and the the below one
-		// return cc.CheckState()
+		log.Printf("Read Flow Milestone %s %s", d.Id(), *sdkflowmilestone.Name)
+
+		return cc.CheckState()
 	})
 }
 
-func deleteFlowsMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		log.Printf("Deleting Flows Milestone")
+		log.Printf("Deleting Flow Milestone")
 		_, resp, err := architectApi.DeleteFlowsMilestone(d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete Flows Milestone: %s", err)
+			return resp, diag.Errorf("Failed to delete Flow Milestone: %s", err)
 		}
 		return resp, nil
 	})
@@ -159,13 +160,13 @@ func deleteFlowsMilestone(ctx context.Context, d *schema.ResourceData, meta inte
 		_, resp, err := architectApi.GetFlowsMilestone(d.Id())
 		if err != nil {
 			if isStatus404(resp) {
-				// Flows Milestone deleted
-				log.Printf("Deleted Flows Milestone %s", d.Id())
+				// Flow Milestone deleted
+				log.Printf("Deleted Flow Milestone %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Flows Milestone %s: %s", d.Id(), err))
+			return resource.NonRetryableError(fmt.Errorf("Error deleting Flow Milestone %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Flows Milestone %s still exists", d.Id()))
+		return resource.RetryableError(fmt.Errorf("Flow Milestone %s still exists", d.Id()))
 	})
 }
