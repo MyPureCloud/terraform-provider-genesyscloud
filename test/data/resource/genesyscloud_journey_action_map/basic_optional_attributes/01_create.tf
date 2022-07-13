@@ -12,7 +12,7 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   # optional
   trigger_with_outcome_probability_conditions {
     outcome_id = "f2c74231-04a3-4720-88d3-1e974ce4c96e" # This is a random hardcoded value!
-    maximum_probability = 0.6
+    maximum_probability = 0.333
   }
   page_url_conditions {
     values   = ["some_value"]
