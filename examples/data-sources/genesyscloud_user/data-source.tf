@@ -1,3 +1,3 @@
 data "genesyscloud_user" "user" {
-  email = "sample@example.com"
+  email = "user@example.com"
 }
