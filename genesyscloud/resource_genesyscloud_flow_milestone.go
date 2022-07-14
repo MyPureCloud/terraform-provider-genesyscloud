@@ -12,6 +12,35 @@ import (
 	"time"
 )
 
+func getAllFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+
+	const pageSize = 100
+	for pageNum := 1; ; pageNum++ {
+		milestones, _, err := archAPI.GetFlowsMilestones(pageNum, pageSize, "", "", nil, "", "", "", nil)
+
+		if err != nil {
+			return nil, diag.Errorf("Failed to get page of flows: %v", err)
+		}
+
+		if milestones.Entities == nil || len(*milestones.Entities) == 0 {
+			break
+		}
+	}
+
+	return resources, nil
+}
+
+func flowMilestoneExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllFlowMilestones),
+		RefAttrs: map[string]*RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
+	}
+}
+
 func resourceFlowMilestone() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud flows milestone`,
