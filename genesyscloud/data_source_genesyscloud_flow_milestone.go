@@ -12,7 +12,7 @@ import (
 
 func dataSourceFlowMilestone() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Flows Milestone. Select a milestone by name.",
+		Description: "Data source for Genesys Cloud Flow Milestone. Select a milestone by name.",
 		ReadContext: readWithPooledClient(dataSourceFlowMilestoneRead),
 		Schema: map[string]*schema.Schema{
 			"name": {

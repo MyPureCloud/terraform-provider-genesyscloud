@@ -47,7 +47,7 @@ func flowMilestoneExporter() *ResourceExporter {
 
 func resourceFlowMilestone() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud flows milestone`,
+		Description: `Genesys Cloud flow milestone`,
 
 		CreateContext: createWithPooledClient(createFlowMilestone),
 		ReadContext:   readWithPooledClient(readFlowMilestone),
@@ -130,7 +130,7 @@ func updateFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 		sdkflowmilestone.Description = &description
 	}
 
-	log.Printf("Updating Flows Milestone %s", name)
+	log.Printf("Updating Flow Milestone %s", name)
 	_, _, err := architectApi.PutFlowsMilestone(d.Id(), sdkflowmilestone)
 	if err != nil {
 		return diag.Errorf("Failed to update Flow Milestone %s: %s", name, err)
