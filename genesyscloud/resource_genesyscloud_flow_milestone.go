@@ -21,11 +21,15 @@ func getAllFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Co
 		milestones, _, err := archAPI.GetFlowsMilestones(pageNum, pageSize, "", "", nil, "", "", "", nil)
 
 		if err != nil {
-			return nil, diag.Errorf("Failed to get page of flows: %v", err)
+			return nil, diag.Errorf("Failed to get page of milestones: %v", err)
 		}
 
 		if milestones.Entities == nil || len(*milestones.Entities) == 0 {
 			break
+		}
+
+		for _, milestone := range *milestones.Entities {
+			resources[*milestone.Id] = &ResourceMeta{Name: *milestone.Name}
 		}
 	}
 
