@@ -2,11 +2,11 @@
 page_title: "genesyscloud_flow_milestone Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud flows milestone
+  Genesys Cloud flow milestone
 ---
 # genesyscloud_flow_milestone (Resource)
 
-Genesys Cloud flows milestone
+Genesys Cloud flow milestone
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:

@@ -3,12 +3,12 @@
 page_title: "genesyscloud_flow_milestone Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Flows Milestone. Select a milestone by name.
+  Data source for Genesys Cloud Flow Milestone. Select a milestone by name.
 ---
 
 # genesyscloud_flow_milestone (Data Source)
 
-Data source for Genesys Cloud Flows Milestone. Select a milestone by name.
+Data source for Genesys Cloud Flow Milestone. Select a milestone by name.
 
 ## Example Usage
 
