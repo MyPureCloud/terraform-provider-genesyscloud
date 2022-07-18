@@ -11,6 +11,39 @@ import (
 	"log"
 )
 
+func getAllFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+
+	const pageSize = 100
+	for pageNum := 1; ; pageNum++ {
+		outcomes, _, err := archAPI.GetFlowsOutcomes(pageNum, pageSize, "", "", nil, "", "", "", nil)
+
+		if err != nil {
+			return nil, diag.Errorf("Failed to get page of outcomes: %v", err)
+		}
+
+		if outcomes.Entities == nil || len(*outcomes.Entities) == 0 {
+			break
+		}
+
+		for _, outcome := range *outcomes.Entities {
+			resources[*outcome.Id] = &ResourceMeta{Name: *outcome.Name}
+		}
+	}
+
+	return resources, nil
+}
+
+func flowOutcomeExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllFlowOutcomes),
+		RefAttrs: map[string]*RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
+	}
+}
+
 func resourceFlowOutcome() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud flow outcome`,
