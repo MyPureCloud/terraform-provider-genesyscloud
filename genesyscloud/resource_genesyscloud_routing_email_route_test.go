@@ -180,7 +180,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "skill_ids.0", "genesyscloud_routing_skill."+skillResource, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "priority", priority1),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "reply_email_address.0.domain_id", domainId),
-					resource.TestCheckNoResourceAttr("genesyscloud_routing_email_route."+routeRes2, "reply_email_address.0.route_id"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "reply_email_address.0.route_id", ""),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "reply_email_address.0.self_reference_route", "true"),
 				),
 			},
