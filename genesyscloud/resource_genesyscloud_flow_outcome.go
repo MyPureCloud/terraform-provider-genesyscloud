@@ -150,17 +150,5 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func deleteFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	// This resource can not be deleted. TF will no longer manage this resource
-	sdkConfig := meta.(*providerMeta).ClientConfig
-	apiInstance := platformclientv2.NewObjectsApiWithConfig(sdkConfig)
-
-	divisionId := d.Get("division_id").(string)
-	fmt.Printf("Division Id: %s\n", divisionId)
-	response, err := apiInstance.DeleteAuthorizationDivision(divisionId, true)
-	
-	fmt.Printf("Response:\n  Success: %v\n  Status code: %v\n  Correlation ID: %v\n", response.IsSuccess, response.StatusCode, response.CorrelationID)
-	if err != nil {
-		fmt.Printf("Error calling DeleteAuthorizationDivision: %v\n", err)
-	}
 	return nil
 }

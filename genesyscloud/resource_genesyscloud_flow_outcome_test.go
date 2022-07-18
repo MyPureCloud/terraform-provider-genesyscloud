@@ -12,8 +12,6 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 		outcomeResource1 = "flow-outcome1"
 		name1            = "Terraform Code-" + uuid.NewString()
 		description1     = "Sample flow outcome for CX as Code"
-		divResource      = "test-division"
-		divName          = "terraform-" + uuid.NewString()
 
 		name2        = "Terraform Code-" + uuid.NewString()
 		description2 = "Edited description for flow outcome"
@@ -49,20 +47,6 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "description", description2),
 					testDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
-				),
-			},
-			{
-				// Update with a new division
-				Config: generateAuthDivisionBasic(divResource, divName) + generateFlowOutcomeResource(
-					outcomeResource1,
-					name2,
-					"genesyscloud_auth_division."+divResource+".id",
-					description2,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name2),
-					resource.TestCheckResourceAttrPair("genesyscloud_flow_outcome."+outcomeResource1, "division_id", "genesyscloud_auth_division."+divResource, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "description", description2),
 				),
 			},
 			{
