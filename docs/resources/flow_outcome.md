@@ -34,7 +34,6 @@ resource "genesyscloud_flow_outcome" "sample_outcome" {
 
 ### Optional
 
-- `current_operation_id` (String) TODO: Add appropriate description
 - `description` (String) TODO: Add appropriate description
 - `division_id` (String) The division to which this entity belongs.
 
