@@ -171,11 +171,12 @@ func resourceRoutingEmailRoute() *schema.Resource {
 							Optional:    true,
 						},
 						"self_reference_route": {
-							Description: "Use this route as the reply email address",
-							Type:        schema.TypeBool,
-							Required:    false,
-							Optional:    true,
-							Default:     false,
+							Description: `Use this route as the reply email address. If true you will use the route id for this resource as the reply and you 
+							              can not set a route. If you set this value to false (or leave the attribute off)you must set a route id.`,
+							Type:     schema.TypeBool,
+							Required: false,
+							Optional: true,
+							Default:  false,
 						},
 					},
 				},
@@ -362,7 +363,6 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		if route.ReplyEmailAddress != nil {
-			log.Printf("I am in the route.ReplyEmailAddress != nil ")
 			flattenedEmails := flattenQueueEmailAddress(*route.ReplyEmailAddress)
 			_, _, selfReferenceRoute := extractReplyEmailAddressValue(d)
 
