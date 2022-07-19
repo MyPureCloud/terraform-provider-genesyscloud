@@ -73,12 +73,6 @@ func resourceFlowOutcome() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`current_operation_id`: {
-				Description: `TODO: Add appropriate description`,
-				Optional:    true,
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
 		},
 	}
 }
@@ -172,9 +166,6 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 		if sdkflowoutcome.Description != nil {
 			d.Set("description", *sdkflowoutcome.Description)
-		}
-		if sdkflowoutcome.CurrentOperation != nil && sdkflowoutcome.CurrentOperation.Id != nil {
-			d.Set("current_operation_id", *sdkflowoutcome.CurrentOperation.Id)
 		}
 
 		log.Printf("Read Flow Outcome %s %s", d.Id(), *sdkflowoutcome.Name)
