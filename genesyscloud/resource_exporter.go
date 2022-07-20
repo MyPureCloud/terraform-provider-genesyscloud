@@ -2,10 +2,10 @@ package genesyscloud
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
-	"hash/fnv"
 	"regexp"
-	"strconv"
 	"strings"
 	"unicode"
 
@@ -283,18 +283,30 @@ func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
 	}
 }
 
+func hashString(inputName string) string {
+	h := sha1.New()
+	h.Write([]byte(inputName))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 func sanitizeResourceName(inputName string) string {
 	name := unsafeNameChars.ReplaceAllStringFunc(inputName, escapeRune)
 	if name != inputName {
-		// Append a hash of the original name to ensure uniqueness for similar names
-		// and that equivalent names are consistent across orgs
-		algorithm := fnv.New32()
-		algorithm.Write([]byte(inputName))
-		name = name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+		/*
+		  We appended a hash of the original name to ensure uniqueness for similar names
+		  and that equivalent names are consistent across orgs.  Originally we generated
+		  a 10 digit random number to append to the string.  However, this meant every time
+		  we did an export, the name of the resource would change.  However, in some use cases
+		  we want to keep the names of resources stable across exports.
+
+		  Therefore, we now use a Sha1 hash that will remain stable across exports
+		*/
+		name = name + "_" + hashString(name)
 	}
+
 	if unicode.IsDigit(rune(name[0])) {
 		// Terraform does not allow names to begin with a number. Prefix with an underscore instead
-		name = "_" + name
+		name = "_" + name + "_" + hashString(name)
 	}
 
 	return name
