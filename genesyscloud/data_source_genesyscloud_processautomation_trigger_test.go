@@ -22,6 +22,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 		match_criteria_operator  = "Equal"
 		match_criteria_value     = "CHAT"
 		eventTtlSeconds1         = "60"
+		description1             = "description 1"
 
 		flowResource1 = "test_flow1"
 		filePath1     = "../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
@@ -101,6 +102,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
                     }
                     `, match_criteria_json_path, match_criteria_operator, match_criteria_value),
 					eventTtlSeconds1,
+					description1,
 				) + generateProcessAutomationTriggerDataSource(
 					triggerResource2,
 					triggerName1,
