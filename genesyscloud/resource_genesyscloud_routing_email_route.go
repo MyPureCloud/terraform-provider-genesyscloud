@@ -124,7 +124,7 @@ func resourceRoutingEmailRoute() *schema.Resource {
 			"from_email": {
 				Description: "The sender email to use for outgoing replies.",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			"queue_id": {
 				Description: "The queue to route the emails to. This should not be set if a flow_id is specified.",
