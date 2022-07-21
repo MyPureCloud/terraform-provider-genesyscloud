@@ -2,12 +2,13 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strings"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
-	"strings"
-	"testing"
+	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
 )
 
 func TestAccResourceOutboundAttemptLimit(t *testing.T) {
