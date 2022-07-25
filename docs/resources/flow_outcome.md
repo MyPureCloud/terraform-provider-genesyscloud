@@ -34,7 +34,7 @@ resource "genesyscloud_flow_outcome" "sample_outcome" {
 
 ### Optional
 
-- `description` (String) TODO: Add appropriate description
+- `description` (String) This is a description for the flow outcome.
 - `division_id` (String) The division to which this entity belongs.
 
 ### Read-Only

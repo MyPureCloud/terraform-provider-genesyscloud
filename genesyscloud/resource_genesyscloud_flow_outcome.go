@@ -69,7 +69,7 @@ func resourceFlowOutcome() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`description`: {
-				Description: `TODO: Add appropriate description`,
+				Description: `This is a description for the flow outcome.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
