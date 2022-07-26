@@ -30,8 +30,7 @@ var (
 			`reaction_type`: {
 				Description:  `The reaction to take for a given call analysis result.`,
 				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
+				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{`hangup`, `transfer`, `transfer_flow`, `play_file`}, false),
 			},
 		},
@@ -113,6 +112,37 @@ var (
 	}
 )
 
+func getAllCallAnalysisResponseSets(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		responseSetConfigs, _, getErr := outboundAPI.GetOutboundCallanalysisresponsesets(pageSize, pageNum, true, "", "", "", "")
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of call analysis response set configs: %v", getErr)
+		}
+		if responseSetConfigs.Entities == nil || len(*responseSetConfigs.Entities) == 0 {
+			break
+		}
+		for _, responseSetConfig := range *responseSetConfigs.Entities {
+			resources[*responseSetConfig.Id] = &ResourceMeta{Name: *responseSetConfig.Name}
+		}
+	}
+
+	return resources, nil
+}
+
+func outboundCallAnalysisResponseSetExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllCallAnalysisResponseSets),
+		RefAttrs: map[string]*RefAttrSettings{
+			"responses.callable_person.data":  {RefType: "genesyscloud_flow"},
+			"responses.callable_machine.data": {RefType: "genesyscloud_flow"},
+		},
+	}
+}
+
 func resourceOutboundCallAnalysisResponseSet() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound Call Analysis Response Set`,
@@ -133,7 +163,7 @@ func resourceOutboundCallAnalysisResponseSet() *schema.Resource {
 			},
 			`responses`: {
 				Description: `Map of disposition identifiers to reactions. Required if beep_detection_enabled = true.`,
-				Required:    true,
+				Optional:    true,
 				MaxItems:    1,
 				Type:        schema.TypeList,
 				Elem:        outboundCallAnalysisResponseSetResponses,
@@ -322,9 +352,6 @@ func buildSdkReaction(reactionMap map[string]interface{}) *platformclientv2.Reac
 	}
 	if reactionType, ok := reactionMap["reaction_type"].(string); ok {
 		sdkReaction.ReactionType = &reactionType
-	} else {
-		hangup := "hangup"
-		sdkReaction.ReactionType = &hangup
 	}
 	return &sdkReaction
 }
