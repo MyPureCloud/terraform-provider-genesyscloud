@@ -221,14 +221,14 @@ func generateOutboundContactList(
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_contact_list" "%s" {
 	name = "%s"
-    %s
+	%s
 	%s
 	preview_mode_accepted_values = [%s]
 	column_names = [%s] 
 	%s
 	%s
 	%s
-    %s
+	%s
 }
 `, resourceId, name, divisionId, previewModeColumnName, strings.Join(previewModeAcceptedValues, ", "),
 		strings.Join(columnNames, ", "), automaticTimeZoneMapping, zipCodeColumnName, attemptLimitId, strings.Join(nestedBlocks, "\n"))
@@ -242,7 +242,7 @@ func generatePhoneColumnsBlock(columnName string, columnType string, callableTim
 	phone_columns {
 		column_name = "%s"
 		type        = "%s"
-        %s
+		%s
 	}
 `, columnName, columnType, callableTimeColumn)
 }
@@ -253,7 +253,6 @@ func testVerifyContactListDestroyed(state *terraform.State) error {
 		if rs.Type != "genesyscloud_outbound_contact_list" {
 			continue
 		}
-
 		contactList, resp, err := outboundAPI.GetOutboundContactlist(rs.Primary.ID, false, false)
 		if contactList != nil {
 			return fmt.Errorf("contact list (%s) still exists", rs.Primary.ID)

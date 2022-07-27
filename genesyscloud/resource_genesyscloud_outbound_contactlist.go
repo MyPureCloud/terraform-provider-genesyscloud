@@ -69,7 +69,7 @@ func outboundContactListExporter() *ResourceExporter {
 
 func resourceOutboundContactList() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud outbound contact list`,
+		Description: `Genesys Cloud Outbound Contact List`,
 
 		CreateContext: createWithPooledClient(createOutboundContactList),
 		ReadContext:   readWithPooledClient(readOutboundContactList),
