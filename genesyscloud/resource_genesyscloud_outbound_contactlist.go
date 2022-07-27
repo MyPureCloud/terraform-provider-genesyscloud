@@ -34,6 +34,39 @@ var (
 	}
 )
 
+func getAllOutboundContactLists(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		contactListConfigs, _, getErr := outboundAPI.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", "", []string{}, []string{}, "", "")
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of contact list configs: %v", getErr)
+		}
+
+		if contactListConfigs.Entities == nil || len(*contactListConfigs.Entities) == 0 {
+			break
+		}
+
+		for _, contactListConfig := range *contactListConfigs.Entities {
+			resources[*contactListConfig.Id] = &ResourceMeta{Name: *contactListConfig.Name}
+		}
+	}
+
+	return resources, nil
+}
+
+func outboundContactListExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllOutboundContactLists),
+		RefAttrs: map[string]*RefAttrSettings{
+			"attempt_limit_id": {RefType: "genesyscloud_outbound_attempt_limit"},
+			"division_id":      {RefType: "genesyscloud_auth_division"},
+		},
+	}
+}
+
 func resourceOutboundContactList() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound contact list`,
