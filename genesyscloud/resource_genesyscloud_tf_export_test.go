@@ -805,6 +805,8 @@ func generateTfExportResource(
 			"genesyscloud_architect_datatable",
 			"genesyscloud_architect_datatable_row",
 			"genesyscloud_flow",
+			"genesyscloud_flow_milestone",	
+			"genesyscloud_flow_outcome",	
 			"genesyscloud_architect_ivr",
 			"genesyscloud_architect_schedules",
 			"genesyscloud_architect_schedulegroups",
