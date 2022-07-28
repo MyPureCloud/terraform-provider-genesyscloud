@@ -94,12 +94,14 @@ func resourceOutboundContactList() *schema.Resource {
 			`column_names`: {
 				Description: `The names of the contact data columns.`,
 				Required:    true,
+				ForceNew:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`phone_columns`: {
 				Description: `Indicates which columns are phone numbers.`,
 				Optional:    true,
+				ForceNew:    true,
 				Type:        schema.TypeSet,
 				Elem:        outboundContactListContactPhoneNumberColumnResource,
 			},
@@ -122,11 +124,13 @@ func resourceOutboundContactList() *schema.Resource {
 			`automatic_time_zone_mapping`: {
 				Description: `Indicates if automatic time zone mapping is to be used for this ContactList.`,
 				Optional:    true,
+				ForceNew:    true,
 				Type:        schema.TypeBool,
 			},
 			`zip_code_column_name`: {
 				Description: `The name of contact list column containing the zip code for use with automatic time zone mapping. Only allowed if 'automaticTimeZoneMapping' is set to true.`,
 				Optional:    true,
+				ForceNew:    true,
 				Type:        schema.TypeString,
 			},
 		},
