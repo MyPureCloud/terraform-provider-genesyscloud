@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -124,7 +124,7 @@ func resourceRoutingEmailRoute() *schema.Resource {
 			"from_email": {
 				Description: "The sender email to use for outgoing replies.",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			"queue_id": {
 				Description: "The queue to route the emails to. This should not be set if a flow_id is specified.",
