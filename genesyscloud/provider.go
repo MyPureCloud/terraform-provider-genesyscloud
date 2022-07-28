@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
 )
 
 func init() {
@@ -282,6 +282,11 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		RequestLogHook: func(request *http.Request, count int) {
 			if count > 0 && request != nil {
 				log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
+			}
+		},
+		ResponseLogHook: func(response *http.Response) {
+			if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+				log.Printf("Response %s", response.Status)
 			}
 		},
 	}
