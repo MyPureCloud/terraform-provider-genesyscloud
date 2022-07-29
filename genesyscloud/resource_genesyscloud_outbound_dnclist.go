@@ -85,13 +85,13 @@ func resourceOutboundDncList() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`division_id`: {
-				Description: `The division this DncList belongs to.`,
+				Description: `The division this DNC List belongs to.`,
 				Optional:    true,
 				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`dnc_source_type`: {
-				Description:  `The type of the DncList.`,
+				Description:  `The type of the DNC List.`,
 				Required:     true,
 				ForceNew:     true,
 				Type:         schema.TypeString,

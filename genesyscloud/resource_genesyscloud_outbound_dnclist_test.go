@@ -58,7 +58,7 @@ func TestAccResourceOutboundDncList(t *testing.T) {
 				),
 			},
 			{
-				// Update
+				// Update to dnc type dnc.com
 				Config: generateOutboundDncList(
 					resourceID,
 					nameUpdated,
@@ -124,7 +124,7 @@ func TestAccResourceOutboundDncList(t *testing.T) {
 				ResourceName:            "genesyscloud_outbound_dnclist." + resourceID,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"dnc_source_type", "contact_method", "dnc_codes"},
+				ImportStateVerifyIgnore: []string{"dnc_source_type"},
 			},
 		},
 		CheckDestroy: testVerifyDncListDestroyed,
