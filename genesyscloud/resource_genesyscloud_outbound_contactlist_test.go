@@ -22,7 +22,6 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 		automaticTimeZoneMapping  = falseValue
 		attemptLimitResourceID    = "attempt-limit"
 		attemptLimitDataSourceID  = "attempt-limit-data"
-		homeDivisionDataSourceID  = "home"
 		attemptLimitName          = "Test Attempt Limit " + uuid.NewString()
 
 		nameUpdated                      = "Test Contact List " + uuid.NewString()
@@ -72,10 +71,11 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_column_name", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMapping),
+					testDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
 				),
 			},
 			{
-				Config: fmt.Sprintf(`data "genesyscloud_auth_division_home" "%s" {}`, homeDivisionDataSourceID) + generateAttemptLimitResource(
+				Config: generateAttemptLimitResource(
 					attemptLimitResourceID,
 					attemptLimitName,
 					"5",
@@ -86,10 +86,10 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 					attemptLimitDataSourceID,
 					attemptLimitName,
 					"genesyscloud_outbound_attempt_limit."+attemptLimitResourceID,
-				) + generateOutboundContactList(
+				) + `data "genesyscloud_auth_division_home" "home" {}` + generateOutboundContactList(
 					resourceId,
 					nameUpdated,
-					strconv.Quote("4a7e4f4b-e734-40b6-838e-557c5eedd49a"),
+					"data.genesyscloud_auth_division_home.home.id",
 					previewModeColumnNameUpdated,
 					previewModeAcceptedValuesUpdated,
 					columnNamesUpdated,
@@ -109,7 +109,6 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", nameUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "division_id", "4a7e4f4b-e734-40b6-838e-557c5eedd49a"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.0", "Cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.1", "Home"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.2", zipCodeColumnName),
@@ -124,8 +123,7 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMappingUpdated),
 					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_attempt_limit."+attemptLimitDataSourceID, "id",
 						"genesyscloud_outbound_contact_list."+resourceId, "attempt_limit_id"),
-					resource.TestCheckResourceAttrPair("data.genesyscloud_auth_division_home."+homeDivisionDataSourceID, "id",
-						"genesyscloud_outbound_contact_list."+resourceId, "division_id"),
+					testDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
 				),
 			},
 			{
