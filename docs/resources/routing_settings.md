@@ -2,11 +2,11 @@
 page_title: "genesyscloud_routing_settings Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  This is a random description
+  An organizations routing settings
 ---
 # genesyscloud_routing_settings (Resource)
 
-This is a random description
+An organizations routing settings
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
@@ -20,9 +20,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ### Optional
 
-- `contactcenter` (Block List) Strip skills from transfer (see [below for nested schema](#nestedblock--contactcenter))
+- `contactcenter` (Block List) Contact center settings (see [below for nested schema](#nestedblock--contactcenter))
 - `reset_agent_on_presence_change` (Boolean) Reset agent score when agent presence changes from off-queue to on-queue
-- `transcription` (Block List) Description (see [below for nested schema](#nestedblock--transcription))
+- `transcription` (Block List) Transcription settings (see [below for nested schema](#nestedblock--transcription))
 
 ### Read-Only
 
@@ -33,7 +33,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 Optional:
 
-- `remove_skills_from_blind_transfer` (Boolean) Description
+- `remove_skills_from_blind_transfer` (Boolean) Strip skills from transfer
 
 
 <a id="nestedblock--transcription"></a>

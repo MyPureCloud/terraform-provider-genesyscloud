@@ -13,7 +13,7 @@ import (
 
 func resourceRoutingSettings() *schema.Resource {
 	return &schema.Resource{
-		Description: "This is a random description",
+		Description: "An organizations routing settings",
 
 		CreateContext: createWithPooledClient(createRoutingSettings),
 		ReadContext:   readWithPooledClient(readRoutingSettings),
@@ -30,14 +30,14 @@ func resourceRoutingSettings() *schema.Resource {
 				Optional:    true,
 			},
 			"contactcenter": {
-				Description: "Strip skills from transfer",
+				Description: "Contact center settings",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"remove_skills_from_blind_transfer": {
-							Description: "Description",
+							Description: "Strip skills from transfer",
 							Type:        schema.TypeBool,
 							Optional:    true,
 						},
@@ -45,7 +45,7 @@ func resourceRoutingSettings() *schema.Resource {
 				},
 			},
 			"transcription": {
-				Description: "Description",
+				Description: "Transcription settings",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
