@@ -114,6 +114,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_routing_queue":                               resourceRoutingQueue(),
 				"genesyscloud_routing_skill":                               resourceRoutingSkill(),
 				"genesyscloud_routing_skill_group":                         resourceRoutingSkillGroup(),
+				"genesyscloud_routing_settings":                            resourceRoutingSettings(),
 				"genesyscloud_routing_utilization":                         resourceRoutingUtilization(),
 				"genesyscloud_routing_wrapupcode":                          resourceRoutingWrapupCode(),
 				"genesyscloud_telephony_providers_edges_did_pool":          resourceTelephonyDidPool(),
