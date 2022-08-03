@@ -25,12 +25,12 @@ func resourceRoutingSettings() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"reset_agent_on_presence_change": {
-				Description: "True if.",
+				Description: "Reset agent score when agent presence changes from off-queue to on-queue",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 			"contactcenter": {
-				Description: "Description",
+				Description: "Strip skills from transfer",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
@@ -52,22 +52,22 @@ func resourceRoutingSettings() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"transcription": {
-							Description: "Description",
+							Description: "Setting to enable/disable transcription capability.Valid values: Disabled, EnabledGlobally, EnabledQueueFlow",
 							Type:        schema.TypeString,
 							Optional:    true,
 						},
 						"transcription_confidence_threshold": {
-							Description: "Description",
+							Description: "Configure confidence threshold. The possible values are from 1 to 100",
 							Type:        schema.TypeInt,
 							Optional:    true,
 						},
 						"low_latency_transcription_enabled": {
-							Description: "Description",
+							Description: "Boolean flag indicating whether low latency transcription via Notification API is enabled",
 							Type:        schema.TypeBool,
 							Optional:    true,
 						},
 						"content_search_enabled": {
-							Description: "Description",
+							Description: "Setting to enable/disable content search",
 							Type:        schema.TypeBool,
 							Optional:    true,
 						},
@@ -75,6 +75,19 @@ func resourceRoutingSettings() *schema.Resource {
 				},
 			},
 		},
+	}
+}
+
+func getAllRoutingSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	resources["0"] = &ResourceMeta{Name: "routing_settings"}
+	return resources, nil
+}
+
+func routingSettingsExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllRoutingSettings),
+		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }
 

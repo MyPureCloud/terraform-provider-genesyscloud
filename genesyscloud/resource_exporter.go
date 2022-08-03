@@ -220,6 +220,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_routing_email_route":                         routingEmailRouteExporter(),
 		"genesyscloud_routing_language":                            routingLanguageExporter(),
 		"genesyscloud_routing_queue":                               routingQueueExporter(),
+		"genesyscloud_routing_settings":                            routingSettingsExporter(),
 		"genesyscloud_routing_skill":                               routingSkillExporter(),
 		"genesyscloud_routing_skill_group":                         resourceSkillGroupExporter(),
 		"genesyscloud_routing_utilization":                         routingUtilizationExporter(),
