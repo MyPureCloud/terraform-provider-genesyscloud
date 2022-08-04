@@ -161,6 +161,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_recording_media_retention_policy":            dataSourceRecordingMediaRetentionPolicy(),
 				"genesyscloud_routing_language":                            dataSourceRoutingLanguage(),
 				"genesyscloud_routing_queue":                               dataSourceRoutingQueue(),
+				"genesyscloud_routing_settings":                            dataSourceRoutingSettings(),
 				"genesyscloud_routing_skill":                               dataSourceRoutingSkill(),
 				"genesyscloud_routing_skill_group":                         dataSourceRoutingSkillGroup(),
 				"genesyscloud_routing_email_domain":                        dataSourceRoutingEmailDomain(),

@@ -13,7 +13,7 @@ import (
 
 func resourceRoutingSettings() *schema.Resource {
 	return &schema.Resource{
-		Description: "An organizations routing settings",
+		Description: "An organization's routing settings",
 
 		CreateContext: createWithPooledClient(createRoutingSettings),
 		ReadContext:   readWithPooledClient(readRoutingSettings),
@@ -28,12 +28,14 @@ func resourceRoutingSettings() *schema.Resource {
 				Description: "Reset agent score when agent presence changes from off-queue to on-queue",
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 			},
 			"contactcenter": {
 				Description: "Contact center settings",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"remove_skills_from_blind_transfer": {
@@ -49,6 +51,7 @@ func resourceRoutingSettings() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"transcription": {
@@ -235,11 +238,15 @@ func readRoutingSettingsTranscription(d *schema.ResourceData, routingAPI *platfo
 }
 
 func updateContactCenter(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
+	var removeSkillsFromBlindTransfer bool
+
 	if contactCenterConfig := d.Get("contactcenter"); contactCenterConfig != nil {
 		if contactCenterList := contactCenterConfig.([]interface{}); len(contactCenterList) > 0 {
 			contactCenterMap := contactCenterList[0].(map[string]interface{})
 
-			removeSkillsFromBlindTransfer := contactCenterMap["remove_skills_from_blind_transfer"].(bool)
+			if contactCenterMap["remove_skills_from_blind_transfer"] != nil {
+				removeSkillsFromBlindTransfer = contactCenterMap["remove_skills_from_blind_transfer"].(bool)
+			}
 			_, err := routingAPI.PatchRoutingSettingsContactcenter(platformclientv2.Contactcentersettings{
 				RemoveSkillsFromBlindTransfer: &removeSkillsFromBlindTransfer,
 			})
@@ -253,14 +260,28 @@ func updateContactCenter(d *schema.ResourceData, routingAPI *platformclientv2.Ro
 }
 
 func updateTranscription(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
+	var transcription string
+	var transcriptionConfidenceThreshold int
+	var lowLatencyTranscriptionEnabled bool
+	var contentSearchEnabled bool
+
 	if transcriptionConfig := d.Get("transcription"); transcriptionConfig != nil {
 		if transcriptionList := transcriptionConfig.([]interface{}); len(transcriptionList) > 0 {
 			transcriptionMap := transcriptionList[0].(map[string]interface{})
 
-			transcription := transcriptionMap["transcription"].(string)
-			transcriptionConfidenceThreshold := transcriptionMap["transcription_confidence_threshold"].(int)
-			lowLatencyTranscriptionEnabled := transcriptionMap["low_latency_transcription_enabled"].(bool)
-			contentSearchEnabled := transcriptionMap["content_search_enabled"].(bool)
+			if transcriptionMap["transcription"] != nil {
+				transcription = transcriptionMap["transcription"].(string)
+			}
+			if transcriptionMap["transcription_confidence_threshold"] != nil {
+				transcriptionConfidenceThreshold = transcriptionMap["transcription_confidence_threshold"].(int)
+			}
+			if transcriptionMap["low_latency_transcription_enabled"] != nil {
+				lowLatencyTranscriptionEnabled = transcriptionMap["low_latency_transcription_enabled"].(bool)
+			}
+			if transcriptionMap["content_search_enabled"] != nil {
+				contentSearchEnabled = transcriptionMap["content_search_enabled"].(bool)
+			}
+
 			_, _, err := routingAPI.PutRoutingSettingsTranscription(platformclientv2.Transcriptionsettings{
 				Transcription:                    &transcription,
 				TranscriptionConfidenceThreshold: &transcriptionConfidenceThreshold,
