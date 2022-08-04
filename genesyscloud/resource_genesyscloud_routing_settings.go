@@ -28,6 +28,7 @@ func resourceRoutingSettings() *schema.Resource {
 				Description: "Reset agent score when agent presence changes from off-queue to on-queue",
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 			},
 			"contactcenter": {
 				Description: "Contact center settings",
@@ -134,12 +135,18 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func updateRoutingSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	resetAgentOnPresenceChange := d.Get("reset_agent_on_presence_change").(bool)
-
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Updating Routing Settings")
+	settings, _, getErr := routingAPI.GetRoutingSettings()
+	if getErr != nil {
+		return nil
+	}
+	resetAgentOnPresenceChange := *settings.ResetAgentScoreOnPresenceChange
+	if val, ok := d.GetOk("reset_agent_on_presence_change"); ok {
+		resetAgentOnPresenceChange = val.(bool)
+	}
 	update := platformclientv2.Routingsettings{
 		ResetAgentScoreOnPresenceChange: &resetAgentOnPresenceChange,
 	}
