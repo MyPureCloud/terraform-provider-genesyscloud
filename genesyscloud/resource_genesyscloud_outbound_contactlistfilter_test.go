@@ -14,20 +14,21 @@ import (
 func TestAccResourceOutboundContactListFilter(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId     = "contact_list_filter"
-		name           = "Test CLF " + uuid.NewString()
-		contactListId  = "d6884124-bad1-4d43-8427-772a36f47fba"
-		filterType     = "AND"
-		column         = "Phone"
-		columnType     = "numeric"
-		operator       = "EQUALS"
-		predicateValue = "+35387234567"
-		inverted       = falseValue
-		rangeMin       = "1"
-		rangeMax       = "10"
-		minInclusive   = trueValue
-		maxInclusive   = falseValue
-		rangeInSet     = []string{"a"}
+		resourceId            = "contact_list_filter"
+		name                  = "Test CLF " + uuid.NewString()
+		contactListResourceId = "contact_list"
+		contactListName       = "Test Contact List " + uuid.NewString()
+		filterType            = "AND"
+		column                = "Phone"
+		columnType            = "numeric"
+		operator              = "EQUALS"
+		predicateValue        = "+12345123456"
+		inverted              = falseValue
+		rangeMin              = "1"
+		rangeMax              = "10"
+		minInclusive          = trueValue
+		maxInclusive          = falseValue
+		rangeInSet            = []string{"a"}
 
 		nameUpdated           = "Test CLF " + uuid.NewString()
 		filterTypeUpdated     = "OR"
@@ -43,15 +44,33 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		rangeInSetUpdated     = []string{"a", "b"}
 	)
 
+	contactListResource := generateOutboundContactList(
+		contactListResourceId,
+		contactListName,
+		"",
+		"",
+		[]string{},
+		[]string{strconv.Quote(column), strconv.Quote(columnUpdated)},
+		"",
+		"",
+		"",
+		"",
+		generatePhoneColumnsBlock(
+			column,
+			"cell",
+			"",
+		),
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundContactListFilter(
+				Config: contactListResource + generateOutboundContactListFilter(
 					resourceId,
 					name,
-					contactListId,
+					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 					"",
 					generateOutboundContactListFilterClause(
 						"",
@@ -67,16 +86,17 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id", contactListId),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column", column),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column_type", columnType),
 				),
 			},
 			{
-				Config: generateOutboundContactListFilter(
+				Config: contactListResource + generateOutboundContactListFilter(
 					resourceId,
 					name,
-					contactListId,
+					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 					filterType,
 					generateOutboundContactListFilterClause(
 						filterType,
@@ -98,7 +118,8 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id", contactListId),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "filter_type", filterType),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.filter_type", filterType),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column", column),
@@ -114,10 +135,10 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 				),
 			},
 			{
-				Config: generateOutboundContactListFilter(
+				Config: contactListResource + generateOutboundContactListFilter(
 					resourceId,
 					nameUpdated,
-					contactListId,
+					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 					filterTypeUpdated,
 					generateOutboundContactListFilterClause(
 						filterType,
@@ -164,7 +185,8 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "name", nameUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id", contactListId),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "filter_type", filterTypeUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.filter_type", filterType),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column", column),
@@ -197,10 +219,10 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 				),
 			},
 			{
-				Config: generateOutboundContactListFilter(
+				Config: contactListResource + generateOutboundContactListFilter(
 					resourceId,
 					name,
-					contactListId,
+					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 					"",
 					generateOutboundContactListFilterClause(
 						"",
@@ -216,7 +238,8 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id", contactListId),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_contactlistfilter."+resourceId, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column", column),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contactlistfilter."+resourceId, "clauses.0.predicates.0.column_type", columnType),
 				),
@@ -244,7 +267,7 @@ func generateOutboundContactListFilter(
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_contactlistfilter" "%s" {
 	name            = "%s"
-	contact_list_id = "%s"
+	contact_list_id = %s
 	%s
 	%s
 }
