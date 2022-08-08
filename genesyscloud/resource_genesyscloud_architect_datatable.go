@@ -27,6 +27,7 @@ var (
 				Description: "Name of the property.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"type": {
 				Description:  "Type of the property (boolean | string | integer | number).",

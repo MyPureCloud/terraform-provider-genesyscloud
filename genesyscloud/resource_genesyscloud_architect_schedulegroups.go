@@ -87,7 +87,7 @@ func resourceArchitectScheduleGroups() *schema.Resource {
 			"open_schedules_id": {
 				Description: "The schedules defining the hours an organization is open.",
 				Type:        schema.TypeSet,
-				Optional:    true,
+				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"closed_schedules_id": {
