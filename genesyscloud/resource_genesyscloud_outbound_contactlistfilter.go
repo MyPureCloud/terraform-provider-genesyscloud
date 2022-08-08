@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -260,7 +261,7 @@ func readOutboundContactListFilter(ctx context.Context, d *schema.ResourceData, 
 			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Contact List Filter %s: %s", d.Id(), getErr))
 		}
 
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundContactListFilter())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundContactListFilter())
 		if sdkContactListFilter.Name != nil {
 			_ = d.Set("name", *sdkContactListFilter.Name)
 		}
@@ -275,8 +276,8 @@ func readOutboundContactListFilter(ctx context.Context, d *schema.ResourceData, 
 		}
 
 		log.Printf("Read Outbound Contact List Filter %s %s", d.Id(), *sdkContactListFilter.Name)
-		//return cc.CheckState()
-		return nil
+		return cc.CheckState()
+		//return nil
 	})
 }
 

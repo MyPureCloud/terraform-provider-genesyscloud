@@ -315,7 +315,7 @@ func generateOutboundContactListFilterPredicates(
 			%s
 			%s
 			%s
-            %s	
+			%s	
 			%s
 		}
 `, column, columnType, operator, value, inverted, varRangeBlock)
