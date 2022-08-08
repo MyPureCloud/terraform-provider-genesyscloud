@@ -183,7 +183,6 @@ func readRoutingSettingsContactCenter(d *schema.ResourceData, routingAPI *platfo
 	contactcenter, resp, getErr := routingAPI.GetRoutingSettingsContactcenter()
 	if getErr != nil {
 		if isStatus404(resp) {
-			d.SetId("") // Contact center doesn't exist
 			return nil
 		}
 		return diag.Errorf("Failed to read Contact center for routing setting %s: %s\n", d.Id(), getErr)
@@ -208,7 +207,6 @@ func readRoutingSettingsTranscription(d *schema.ResourceData, routingAPI *platfo
 	transcription, resp, getErr := routingAPI.GetRoutingSettingsTranscription()
 	if getErr != nil {
 		if isStatus404(resp) {
-			d.SetId("") // Transcription doesn't exist
 			return nil
 		}
 		return diag.Errorf("Failed to read Contact center for routing setting %s: %s\n", d.Id(), getErr)
@@ -216,6 +214,7 @@ func readRoutingSettingsTranscription(d *schema.ResourceData, routingAPI *platfo
 
 	if transcription == nil {
 		d.Set("transcription", nil)
+		return nil
 	}
 
 	transcriptionSettings := make(map[string]interface{})
