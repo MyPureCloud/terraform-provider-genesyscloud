@@ -33,7 +33,7 @@ var (
 	outboundContactListFilterPredicateResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`column`: {
-				Description: `Contact list column from the ContactListFilter's contactList.`,
+				Description: `Contact list column from the contact list filter's contact list.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
@@ -44,7 +44,7 @@ var (
 				ValidateFunc: validation.StringInSlice([]string{`numeric`, `alphabetic`}, false),
 			},
 			`operator`: {
-				Description:  `The operator for this ContactListFilterPredicate.`,
+				Description:  `The operator for this contact list filter predicate.`,
 				Required:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{`EQUALS`, `LESS_THAN`, `LESS_THAN_EQUALS`, `GREATER_THAN`, `GREATER_THAN_EQUALS`, `CONTAINS`, `BEGINS_WITH`, `ENDS_WITH`, `BEFORE`, `AFTER`, `BETWEEN`, `IN`}, false),
