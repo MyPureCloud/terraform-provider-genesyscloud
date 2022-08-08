@@ -101,6 +101,38 @@ var (
 	}
 )
 
+func getAllOutboundContactListFilters(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		contactListFilterConfigs, _, getErr := outboundAPI.GetOutboundContactlistfilters(pageSize, pageNum, true, "", "", "", "", "")
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of contact list filter configs: %v", getErr)
+		}
+
+		if contactListFilterConfigs.Entities == nil || len(*contactListFilterConfigs.Entities) == 0 {
+			break
+		}
+
+		for _, contactListFilterConfig := range *contactListFilterConfigs.Entities {
+			resources[*contactListFilterConfig.Id] = &ResourceMeta{Name: *contactListFilterConfig.Name}
+		}
+	}
+
+	return resources, nil
+}
+
+func outboundContactListFilterExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllOutboundContactListFilters),
+		RefAttrs: map[string]*RefAttrSettings{
+			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
+		},
+	}
+}
+
 func resourceOutboundContactListFilter() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Contact List Filter`,
