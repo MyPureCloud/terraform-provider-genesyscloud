@@ -13,11 +13,13 @@ import (
 func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId   = "cars"
-		name         = "Terraform test CAR " + uuid.NewString()
-		identifier1  = "callable_person"
-		identifier2  = "callable_fax"
-		reactionType = "transfer"
+		resourceId          = "cars"
+		name                = "Terraform test CAR " + uuid.NewString()
+		identifier1         = "callable_person"
+		identifier2         = "callable_fax"
+		identifier3         = "callable_machine"
+		reactionType        = "transfer"
+		reactionTypeUpdated = "hangup"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -32,18 +34,18 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 					generateCarsResponsesBlock(
 						generateCarsResponse(
 							identifier1,
-							"transfer",
+							reactionType,
 							"",
 							"",
 						),
 						generateCarsResponse(
 							identifier2,
-							"transfer",
+							reactionType,
 							"",
 							"",
 						),
 						generateCarsResponse(
-							"callable_machine",
+							identifier3,
 							reactionType,
 							"",
 							"",
@@ -55,7 +57,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier1+".0.reaction_type", "transfer"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier2+".0.reaction_type", "transfer"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0.callable_machine.0.reaction_type", "transfer"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier3+".0.reaction_type", "transfer"),
 				),
 			},
 			// Update
@@ -67,19 +69,19 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 					generateCarsResponsesBlock(
 						generateCarsResponse(
 							identifier1,
-							"hangup",
+							reactionTypeUpdated,
 							"",
 							"",
 						),
 						generateCarsResponse(
 							identifier2,
-							"hangup",
+							reactionTypeUpdated,
 							"",
 							"",
 						),
 						generateCarsResponse(
-							"callable_machine",
-							"hangup",
+							identifier3,
+							reactionTypeUpdated,
 							"",
 							"",
 						),
@@ -88,13 +90,17 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier1+".0.reaction_type", "hangup"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier2+".0.reaction_type", "hangup"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier1+".0.reaction_type", reactionTypeUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier2+".0.reaction_type", reactionTypeUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier3+".0.reaction_type", reactionType),
 					// Check computed values are set
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0.callable_busy.0.reaction_type", "hangup"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0.callable_disconnect.0.reaction_type", "hangup"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0.callable_machine.0.reaction_type", "hangup"),
 				),
+			},
+			{
+				// Generate contact list, wrap up code, outbound flow, and then CARS
 			},
 		},
 		CheckDestroy: testVerifyCallAnalysisResponseSetDestroyed,
