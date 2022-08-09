@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
 )
 
 func init() {
@@ -79,6 +79,8 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_architect_datatable_row":                     resourceArchitectDatatableRow(),
 				"genesyscloud_architect_emergencygroup":                    resourceArchitectEmergencyGroup(),
 				"genesyscloud_flow":                                        resourceFlow(),
+				"genesyscloud_flow_milestone":                              resourceFlowMilestone(),
+				"genesyscloud_flow_outcome":                                resourceFlowOutcome(),
 				"genesyscloud_architect_ivr":                               resourceArchitectIvrConfig(),
 				"genesyscloud_architect_schedules":                         resourceArchitectSchedules(),
 				"genesyscloud_architect_schedulegroups":                    resourceArchitectScheduleGroups(),
@@ -104,6 +106,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_oauth_client":                                resourceOAuthClient(),
 				"genesyscloud_outbound_attempt_limit":                      resourceOutboundAttemptLimit(),
 				"genesyscloud_outbound_callanalysisresponseset":            resourceOutboundCallAnalysisResponseSet(),
+				"genesyscloud_outbound_contact_list":                       resourceOutboundContactList(),
 				"genesyscloud_processautomation_trigger":                   resourceProcessAutomationTrigger(),
 				"genesyscloud_quality_forms_evaluation":                    resourceEvaluationForm(),
 				"genesyscloud_quality_forms_survey":                        resourceSurveyForm(),
@@ -141,6 +144,8 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_auth_division":                               dataSourceAuthDivision(),
 				"genesyscloud_auth_division_home":                          dataSourceAuthDivisionHome(),
 				"genesyscloud_flow":                                        dataSourceFlow(),
+				"genesyscloud_flow_milestone":                              dataSourceFlowMilestone(),
+				"genesyscloud_flow_outcome":                                dataSourceFlowOutcome(),
 				"genesyscloud_group":                                       dataSourceGroup(),
 				"genesyscloud_integration":                                 dataSourceIntegration(),
 				"genesyscloud_integration_action":                          dataSourceIntegrationAction(),
@@ -153,6 +158,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_processautomation_trigger":                   dataSourceProcessAutomationTrigger(),
 				"genesyscloud_organizations_me":                            dataSourceOrganizationsMe(),
 				"genesyscloud_outbound_attempt_limit":                      dataSourceOutboundAttemptLimit(),
+				"genesyscloud_outbound_contact_list":                       dataSourceOutboundContactList(),
 				"genesyscloud_quality_forms_evaluation":                    dataSourceQualityFormsEvaluations(),
 				"genesyscloud_quality_forms_survey":                        dataSourceQualityFormsSurvey(),
 				"genesyscloud_recording_media_retention_policy":            dataSourceRecordingMediaRetentionPolicy(),
@@ -280,6 +286,11 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		RequestLogHook: func(request *http.Request, count int) {
 			if count > 0 && request != nil {
 				log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
+			}
+		},
+		ResponseLogHook: func(response *http.Response) {
+			if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+				log.Printf("Response %s", response.Status)
 			}
 		},
 	}

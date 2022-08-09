@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v74/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -27,15 +27,18 @@ type ProcessAutomationTrigger struct {
 	Enabled         *bool            `json:"enabled,omitempty"`
 	EventTTLSeconds *int             `json:"eventTTLSeconds,omitempty"`
 	Version         *int             `json:"version,omitempty"`
+	Description     *string          `json:"description,omitempty"`
 }
 
 type UpdateTriggerInput struct {
+	TopicName       *string          `json:"topicName,omitempty"`
 	Name            *string          `json:"name,omitempty"`
 	Target          *Target          `json:"target,omitempty"`
 	MatchCriteria   *[]MatchCriteria `json:"matchCriteria,omitempty"`
 	Enabled         *bool            `json:"enabled,omitempty"`
 	EventTTLSeconds *int             `json:"eventTTLSeconds,omitempty"`
 	Version         *int             `json:"version,omitempty"`
+	Description     *string          `json:"description,omitempty"`
 }
 
 type MatchCriteria struct {
@@ -163,6 +166,12 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(10),
 			},
+			"description": {
+				Description:  "A description of the trigger",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringLenBetween(0, 512),
+			},
 		},
 	}
 }
@@ -181,6 +190,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	topic_name := d.Get("topic_name").(string)
 	enabled := d.Get("enabled").(bool)
 	eventTTLSeconds := d.Get("event_ttl_seconds").(int)
+	description := d.Get("description").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
@@ -193,6 +203,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		Target:        buildTarget(d),
 		MatchCriteria: buildMatchCriteria(d),
 		Enabled:       &enabled,
+		Description:   &description,
 	}
 
 	if eventTTLSeconds > 0 {
@@ -261,6 +272,12 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 			d.Set("event_ttl_seconds", nil)
 		}
 
+		if trigger.Description != nil {
+			d.Set("description", *trigger.Description)
+		} else {
+			d.Set("description", nil)
+		}
+
 		log.Printf("Read process automation trigger %s %s", d.Id(), *trigger.Name)
 		return cc.CheckState()
 	})
@@ -270,6 +287,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	name := d.Get("name").(string)
 	enabled := d.Get("enabled").(bool)
 	eventTTLSeconds := d.Get("event_ttl_seconds").(int)
+	description := d.Get("description").(string)
 
 	topic_name := d.Get("topic_name").(string)
 
@@ -285,17 +303,14 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 			return resp, diag.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr)
 		}
 
-		//make sure that topic name is not updated
-		if topic_name != *trigger.TopicName {
-			return resp, diag.Errorf("Cannot update topic_name of an existing trigger")
-		}
-
 		triggerInput := &UpdateTriggerInput{
+			TopicName:     &topic_name,
 			Name:          &name,
 			Enabled:       &enabled,
 			Target:        buildTarget(d),
 			MatchCriteria: buildMatchCriteria(d),
 			Version:       trigger.Version,
+			Description:   &description,
 		}
 
 		if eventTTLSeconds > 0 {

@@ -1,0 +1,5 @@
+* [GET /api/v2/flows/milestones](https://developer.genesys.cloud/routing/architect/#get-api-v2-flows-milestones)
+* [POST /api/v2/flows/milestones](https://developer.genesys.cloud/routing/architect/#post-api-v2-flows-milestones)
+* [DELETE /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/routing/architect/#delete-api-v2-flows-milestones--milestoneId-)
+* [GET /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/routing/architect/#get-api-v2-flows-milestones--milestoneId-)
+* [PUT /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/routing/architect/#put-api-v2-flows-milestones--milestoneId-)
