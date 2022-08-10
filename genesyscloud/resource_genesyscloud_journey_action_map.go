@@ -205,7 +205,6 @@ var (
 				Description:  "Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, architectFlow, openAction.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true, // Currently it is mandatory because of broken null handling for optional fields in API (GPE-11801)
 				ValidateFunc: validation.StringInSlice([]string{"webchat", "webMessagingOffer", "contentOffer", "architectFlow", "openAction"}, false),
 			},
 			"architect_flow_fields": {
