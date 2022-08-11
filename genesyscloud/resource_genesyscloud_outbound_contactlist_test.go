@@ -75,6 +75,46 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 				),
 			},
 			{
+				// Update
+				Config: generateOutboundContactList(
+					resourceId,
+					nameUpdated,
+					"",
+					previewModeColumnNameUpdated,
+					previewModeAcceptedValuesUpdated,
+					columnNames,
+					automaticTimeZoneMapping,
+					"",
+					"",
+					generatePhoneColumnsBlock(
+						"Cell",
+						"cell",
+						"Cell",
+					),
+					generatePhoneColumnsBlock(
+						"Home",
+						"home",
+						"Home",
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", nameUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.0", "Cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.1", "Home"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.type", "cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.callable_time_column", "Cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.column_name", "Home"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.type", "home"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.callable_time_column", "Home"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_column_name", previewModeColumnNameUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.1", previewModeColumnNameUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMapping),
+					testDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
+				),
+			},
+			{
 				Config: generateAttemptLimitResource(
 					attemptLimitResourceID,
 					attemptLimitName,
