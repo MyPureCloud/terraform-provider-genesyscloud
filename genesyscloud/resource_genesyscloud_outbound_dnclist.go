@@ -77,7 +77,10 @@ func resourceOutboundDncList() *schema.Resource {
 				Description: `The list of dnc.com codes to be treated as DNC. Required if the dncSourceType is dnc.com.`,
 				Optional:    true,
 				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validation.StringInSlice([]string{`B`, `C`, `D`, `E`, `F`, `G`, `H`, `I`, `L`, `M`, `O`, `P`, `R`, `S`, `T`, `V`, `W`, `X`, `Y`}, false),
+				},
 			},
 			`license_id`: {
 				Description: `A gryphon license number. Required if the dncSourceType is gryphon.`,
@@ -105,9 +108,9 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	name := d.Get("name").(string)
 	contactMethod := d.Get("contact_method").(string)
 	loginId := d.Get("login_id").(string)
-	dncCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 	licenseId := d.Get("license_id").(string)
 	dncSourceType := d.Get("dnc_source_type").(string)
+	dncCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
@@ -151,6 +154,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	loginId := d.Get("login_id").(string)
 	dncCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 	licenseId := d.Get("license_id").(string)
+	dncSourceType := d.Get("dnc_source_type").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
@@ -172,7 +176,9 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	if licenseId != "" {
 		sdkDncList.LicenseId = &licenseId
 	}
-
+	if dncSourceType != "" {
+		sdkDncList.DncSourceType = &dncSourceType
+	}
 	log.Printf("Updating Outbound DNC list %s", name)
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound DNC list version
@@ -223,8 +229,24 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 		if sdkDncList.DncCodes != nil {
 			var dncCodes []string
-			for _, code := range *sdkDncList.DncCodes {
-				dncCodes = append(dncCodes, code)
+			schemaCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
+			if len(*sdkDncList.DncCodes) == len(schemaCodes) {
+				// Rearrange to the original ordering
+				for _, schemaCode := range schemaCodes {
+					for _, sdkCode := range *sdkDncList.DncCodes {
+						if schemaCode == sdkCode {
+							dncCodes = append(dncCodes, sdkCode)
+						}
+					}
+				}
+				if len(dncCodes) != len(*sdkDncList.DncCodes) {
+					dncCodes = nil
+				}
+			}
+			if len(dncCodes) == 0 {
+				for _, v := range *sdkDncList.DncCodes {
+					dncCodes = append(dncCodes, v)
+				}
 			}
 			_ = d.Set("dnc_codes", dncCodes)
 		}
@@ -234,7 +256,6 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		if sdkDncList.Division != nil && sdkDncList.Division.Id != nil {
 			_ = d.Set("division_id", *sdkDncList.Division.Id)
 		}
-
 		log.Printf("Read Outbound DNC list %s %s", d.Id(), *sdkDncList.Name)
 		return cc.CheckState()
 	})
