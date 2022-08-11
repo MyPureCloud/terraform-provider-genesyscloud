@@ -2,13 +2,14 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestAccResourceOutboundContactList(t *testing.T) {
