@@ -26,7 +26,7 @@ var (
 			`predicates`: {
 				Description: `Conditions to filter the contacts by.`,
 				Optional:    true,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Elem:        outboundContactListFilterPredicateResource,
 			},
 		},
@@ -160,7 +160,7 @@ func resourceOutboundContactListFilter() *schema.Resource {
 			`clauses`: {
 				Description: `Groups of conditions to filter the contacts by.`,
 				Optional:    true,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Elem:        outboundContactListFilterClauseResource,
 			},
 			`filter_type`: {
@@ -183,7 +183,7 @@ func createOutboundContactListFilter(ctx context.Context, d *schema.ResourceData
 
 	sdkContactListFilter := platformclientv2.Contactlistfilter{
 		ContactList: buildSdkDomainEntityRef(d, "contact_list_id"),
-		Clauses:     buildSdkOutboundContactListFilterClauseSlice(d.Get("clauses").(*schema.Set)),
+		Clauses:     buildSdkOutboundContactListFilterClauseSlice(d.Get("clauses").([]interface{})),
 	}
 
 	if name != "" {
@@ -214,7 +214,7 @@ func updateOutboundContactListFilter(ctx context.Context, d *schema.ResourceData
 
 	sdkContactListFilter := platformclientv2.Contactlistfilter{
 		ContactList: buildSdkDomainEntityRef(d, "contact_list_id"),
-		Clauses:     buildSdkOutboundContactListFilterClauseSlice(d.Get("clauses").(*schema.Set)),
+		Clauses:     buildSdkOutboundContactListFilterClauseSlice(d.Get("clauses").([]interface{})),
 	}
 
 	if name != "" {
@@ -277,7 +277,6 @@ func readOutboundContactListFilter(ctx context.Context, d *schema.ResourceData, 
 
 		log.Printf("Read Outbound Contact List Filter %s %s", d.Id(), *sdkContactListFilter.Name)
 		return cc.CheckState()
-		//return nil
 	})
 }
 
@@ -332,51 +331,49 @@ func buildSdkOutboundContactListFilterRange(contactListFilterRange *schema.Set) 
 	return &sdkContactListFilterRange
 }
 
-func buildSdkOutboundContactListFilterPredicateSlice(contactListFilterPredicate *schema.Set) *[]platformclientv2.Contactlistfilterpredicate {
-	if contactListFilterPredicate == nil {
+func buildSdkOutboundContactListFilterPredicateSlice(contactListFilterPredicate []interface{}) *[]platformclientv2.Contactlistfilterpredicate {
+	if contactListFilterPredicate == nil || len(contactListFilterPredicate) == 0 {
 		return nil
 	}
 	sdkContactListFilterPredicateSlice := make([]platformclientv2.Contactlistfilterpredicate, 0)
-	contactListFilterPredicateList := contactListFilterPredicate.List()
-	for _, configContactListFilterPredicate := range contactListFilterPredicateList {
-		var sdkContactListFilterPredicate platformclientv2.Contactlistfilterpredicate
-		contactListFilterPredicateMap := configContactListFilterPredicate.(map[string]interface{})
-		if column := contactListFilterPredicateMap["column"].(string); column != "" {
-			sdkContactListFilterPredicate.Column = &column
+	for _, configContactListFilterPredicate := range contactListFilterPredicate {
+		if contactListFilterPredicateMap, ok := configContactListFilterPredicate.(map[string]interface{}); ok {
+			var sdkContactListFilterPredicate platformclientv2.Contactlistfilterpredicate
+			if column := contactListFilterPredicateMap["column"].(string); column != "" {
+				sdkContactListFilterPredicate.Column = &column
+			}
+			if columnType := contactListFilterPredicateMap["column_type"].(string); columnType != "" {
+				sdkContactListFilterPredicate.ColumnType = &columnType
+			}
+			if operator := contactListFilterPredicateMap["operator"].(string); operator != "" {
+				sdkContactListFilterPredicate.Operator = &operator
+			}
+			if value := contactListFilterPredicateMap["value"].(string); value != "" {
+				sdkContactListFilterPredicate.Value = &value
+			}
+			if varRangeSet := contactListFilterPredicateMap["var_range"].(*schema.Set); varRangeSet != nil && len(varRangeSet.List()) > 0 {
+				sdkContactListFilterPredicate.VarRange = buildSdkOutboundContactListFilterRange(varRangeSet)
+			}
+			sdkContactListFilterPredicate.Inverted = platformclientv2.Bool(contactListFilterPredicateMap["inverted"].(bool))
+			sdkContactListFilterPredicateSlice = append(sdkContactListFilterPredicateSlice, sdkContactListFilterPredicate)
 		}
-		if columnType := contactListFilterPredicateMap["column_type"].(string); columnType != "" {
-			sdkContactListFilterPredicate.ColumnType = &columnType
-		}
-		if operator := contactListFilterPredicateMap["operator"].(string); operator != "" {
-			sdkContactListFilterPredicate.Operator = &operator
-		}
-		if value := contactListFilterPredicateMap["value"].(string); value != "" {
-			sdkContactListFilterPredicate.Value = &value
-		}
-		if varRangeSet := contactListFilterPredicateMap["var_range"].(*schema.Set); varRangeSet != nil && len(varRangeSet.List()) > 0 {
-			sdkContactListFilterPredicate.VarRange = buildSdkOutboundContactListFilterRange(varRangeSet)
-		}
-		sdkContactListFilterPredicate.Inverted = platformclientv2.Bool(contactListFilterPredicateMap["inverted"].(bool))
-
-		sdkContactListFilterPredicateSlice = append(sdkContactListFilterPredicateSlice, sdkContactListFilterPredicate)
 	}
 	return &sdkContactListFilterPredicateSlice
 }
 
-func buildSdkOutboundContactListFilterClauseSlice(contactListFilterClause *schema.Set) *[]platformclientv2.Contactlistfilterclause {
-	if contactListFilterClause == nil {
+func buildSdkOutboundContactListFilterClauseSlice(contactListFilterClause []interface{}) *[]platformclientv2.Contactlistfilterclause {
+	if contactListFilterClause == nil || len(contactListFilterClause) == 0 {
 		return nil
 	}
 	sdkContactListFilterClauseSlice := make([]platformclientv2.Contactlistfilterclause, 0)
-	contactListFilterClauseList := contactListFilterClause.List()
-	for _, configContactListFilterClause := range contactListFilterClauseList {
+	for _, configContactListFilterClause := range contactListFilterClause {
 		var sdkContactListFilterClause platformclientv2.Contactlistfilterclause
 		contactListFilterClauseMap := configContactListFilterClause.(map[string]interface{})
 		if filterType := contactListFilterClauseMap["filter_type"].(string); filterType != "" {
 			sdkContactListFilterClause.FilterType = &filterType
 		}
 		if predicates := contactListFilterClauseMap["predicates"]; predicates != nil {
-			sdkContactListFilterClause.Predicates = buildSdkOutboundContactListFilterPredicateSlice(predicates.(*schema.Set))
+			sdkContactListFilterClause.Predicates = buildSdkOutboundContactListFilterPredicateSlice(predicates.([]interface{}))
 		}
 
 		sdkContactListFilterClauseSlice = append(sdkContactListFilterClauseSlice, sdkContactListFilterClause)
@@ -420,12 +417,12 @@ func flattenSdkOutboundContactListFilterRange(contactListFilterRange *platformcl
 	return contactListFilterRangeSet
 }
 
-func flattenSdkOutboundContactListFilterPredicateSlice(contactListFilterPredicates []platformclientv2.Contactlistfilterpredicate) *schema.Set {
+func flattenSdkOutboundContactListFilterPredicateSlice(contactListFilterPredicates []platformclientv2.Contactlistfilterpredicate) []interface{} {
 	if len(contactListFilterPredicates) == 0 {
 		return nil
 	}
 
-	contactListFilterPredicateSet := schema.NewSet(schema.HashResource(outboundContactListFilterPredicateResource), []interface{}{})
+	contactListFilterPredicateList := make([]interface{}, 0)
 	for _, contactListFilterPredicate := range contactListFilterPredicates {
 		contactListFilterPredicateMap := make(map[string]interface{})
 
@@ -447,19 +444,17 @@ func flattenSdkOutboundContactListFilterPredicateSlice(contactListFilterPredicat
 		if contactListFilterPredicate.Inverted != nil {
 			contactListFilterPredicateMap["inverted"] = *contactListFilterPredicate.Inverted
 		}
-
-		contactListFilterPredicateSet.Add(contactListFilterPredicateMap)
+		contactListFilterPredicateList = append(contactListFilterPredicateList, contactListFilterPredicateMap)
 	}
-
-	return contactListFilterPredicateSet
+	return contactListFilterPredicateList
 }
 
-func flattenSdkOutboundContactListFilterClauseSlice(contactListFilterClauses []platformclientv2.Contactlistfilterclause) *schema.Set {
+func flattenSdkOutboundContactListFilterClauseSlice(contactListFilterClauses []platformclientv2.Contactlistfilterclause) []interface{} {
 	if len(contactListFilterClauses) == 0 {
 		return nil
 	}
 
-	contactListFilterClauseSet := schema.NewSet(schema.HashResource(outboundContactListFilterClauseResource), []interface{}{})
+	contactListFilterClauseList := make([]interface{}, 0)
 	for _, contactListFilterClause := range contactListFilterClauses {
 		contactListFilterClauseMap := make(map[string]interface{})
 
@@ -469,7 +464,7 @@ func flattenSdkOutboundContactListFilterClauseSlice(contactListFilterClauses []p
 		if contactListFilterClause.Predicates != nil {
 			contactListFilterClauseMap["predicates"] = flattenSdkOutboundContactListFilterPredicateSlice(*contactListFilterClause.Predicates)
 		}
-		contactListFilterClauseSet.Add(contactListFilterClauseMap)
+		contactListFilterClauseList = append(contactListFilterClauseList, contactListFilterClauseMap)
 	}
-	return contactListFilterClauseSet
+	return contactListFilterClauseList
 }

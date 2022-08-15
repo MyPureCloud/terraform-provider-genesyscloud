@@ -47,7 +47,7 @@ resource "genesyscloud_outbound_contactlistfilter" "contact_list_filter" {
 
 ### Optional
 
-- `clauses` (Block Set) Groups of conditions to filter the contacts by. (see [below for nested schema](#nestedblock--clauses))
+- `clauses` (Block List) Groups of conditions to filter the contacts by. (see [below for nested schema](#nestedblock--clauses))
 - `filter_type` (String) How to join clauses together.
 
 ### Read-Only
@@ -60,7 +60,7 @@ resource "genesyscloud_outbound_contactlistfilter" "contact_list_filter" {
 Optional:
 
 - `filter_type` (String) How to join predicates together.
-- `predicates` (Block Set) Conditions to filter the contacts by. (see [below for nested schema](#nestedblock--clauses--predicates))
+- `predicates` (Block List) Conditions to filter the contacts by. (see [below for nested schema](#nestedblock--clauses--predicates))
 
 <a id="nestedblock--clauses--predicates"></a>
 ### Nested Schema for `clauses.predicates`
