@@ -100,6 +100,26 @@ func resourceOutboundDncList() *schema.Resource {
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{`rds`, `dnc.com`, `gryphon`}, false),
 			},
+			`entries`: {
+				Description: `Columns to add to the DNC list.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						`expiration_date`: {
+							Description: `Expiration date for DNC phone numbers in yyyy-MM-ddTHH:mmZ format.`,
+							Optional:    true,
+							Type:        schema.TypeString,
+						},
+						`phone_numbers`: {
+							Description: `Phone numbers to add to a DNC list. Only possible if the dncSourceType is rds.`,
+							Optional:    true,
+							Type:        schema.TypeList,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -111,6 +131,7 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	licenseId := d.Get("license_id").(string)
 	dncSourceType := d.Get("dnc_source_type").(string)
 	dncCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
+	entries := d.Get("entries").([]interface{})
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
@@ -144,6 +165,19 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 
 	d.SetId(*outboundDncList.Id)
 
+	if len(entries) > 0 {
+		if *sdkDncListCreate.DncSourceType == "rds" {
+			for _, entry := range entries {
+				_, err := uploadPhoneEntriesToDncList(outboundApi, outboundDncList, entry)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			return diag.Errorf("Phone numbers can only be uploaded to internal DNC lists.")
+		}
+	}
+
 	log.Printf("Created Outbound DNC list %s %s", name, *outboundDncList.Id)
 	return readOutboundDncList(ctx, d, meta)
 }
@@ -155,6 +189,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	dncCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 	licenseId := d.Get("license_id").(string)
 	dncSourceType := d.Get("dnc_source_type").(string)
+	entries := d.Get("entries").([]interface{})
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
@@ -190,6 +225,18 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		outboundDncList, _, updateErr := outboundApi.PutOutboundDnclist(d.Id(), sdkDncList)
 		if updateErr != nil {
 			return resp, diag.Errorf("Failed to update Outbound DNC list %s: %s", name, updateErr)
+		}
+		if len(entries) > 0 {
+			if *sdkDncList.DncSourceType == "rds" {
+				for _, entry := range entries {
+					response, err := uploadPhoneEntriesToDncList(outboundApi, outboundDncList, entry)
+					if err != nil {
+						return response, err
+					}
+				}
+			} else {
+				return nil, diag.Errorf("Phone numbers can only be uploaded to internal DNC lists.")
+			}
 		}
 		return nil, nil
 	})
@@ -290,4 +337,23 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 
 		return resource.RetryableError(fmt.Errorf("Outbound DNC list %s still exists", d.Id()))
 	})
+}
+
+func uploadPhoneEntriesToDncList(api *platformclientv2.OutboundApi, dncList *platformclientv2.Dnclist, entry interface{}) (*platformclientv2.APIResponse, diag.Diagnostics) {
+	var phoneNumbers []string
+	if entryMap, ok := entry.(map[string]interface{}); ok && len(entryMap) > 0 {
+		if phoneNumbersList := entryMap["phone_numbers"].([]interface{}); phoneNumbersList != nil {
+			for _, number := range phoneNumbersList {
+				phoneNumbers = append(phoneNumbers, number.(string))
+			}
+		}
+		log.Printf("Uploading phone numbers to DNC list %s", *dncList.Name)
+		// POST /api/v2/outbound/dnclists/{dncListId}/phonenumbers
+		response, err := api.PostOutboundDnclistPhonenumbers(*dncList.Id, phoneNumbers, entryMap["expiration_date"].(string))
+		if err != nil {
+			return response, diag.Errorf("Failed to upload phone numbers to Outbound DNC list %s: %s", *dncList.Name, err)
+		}
+		log.Printf("Uploaded phone numbers to DNC list %s", *dncList.Name)
+	}
+	return nil, nil
 }
