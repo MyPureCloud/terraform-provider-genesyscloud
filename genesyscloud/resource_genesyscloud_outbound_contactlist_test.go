@@ -2,13 +2,14 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestAccResourceOutboundContactList(t *testing.T) {
@@ -70,6 +71,46 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.callable_time_column", "Home"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_column_name", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMapping),
+					testDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
+				),
+			},
+			{
+				// Update
+				Config: generateOutboundContactList(
+					resourceId,
+					nameUpdated,
+					"",
+					previewModeColumnNameUpdated,
+					previewModeAcceptedValuesUpdated,
+					columnNames,
+					automaticTimeZoneMapping,
+					"",
+					"",
+					generatePhoneColumnsBlock(
+						"Cell",
+						"cell",
+						"Cell",
+					),
+					generatePhoneColumnsBlock(
+						"Home",
+						"home",
+						"Home",
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", nameUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.0", "Cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.1", "Home"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.type", "cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.callable_time_column", "Cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.column_name", "Home"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.type", "home"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.callable_time_column", "Home"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_column_name", previewModeColumnNameUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.1", previewModeColumnNameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMapping),
 					testDefaultHomeDivision("genesyscloud_outbound_contact_list."+resourceId),
 				),
