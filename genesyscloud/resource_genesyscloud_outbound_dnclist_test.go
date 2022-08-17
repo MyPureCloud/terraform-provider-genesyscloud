@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 	"os"
 	"strconv"
 	"strings"
@@ -31,6 +31,7 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					name,
 					dncSourceType,
 					contactMethod,
+					"",
 					"",
 					"",
 					[]string{},
@@ -74,6 +75,7 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 
 		nameUpdated         = "Test DNC List " + uuid.NewString()
 		dncSourceTypeUpdate = "dnc.com"
+		campaignId          = "12132"
 		dncCodesUpdated     = append(dncCodes, strconv.Quote(dncCodeP), strconv.Quote(dncCodeT))
 	)
 
@@ -87,6 +89,7 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					name,
 					dncSourceType,
 					contactMethod,
+					"",
 					"",
 					"",
 					[]string{},
@@ -107,6 +110,7 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					dncSourceTypeUpdate,
 					"",
 					dncLoginId,
+					campaignId,
 					"",
 					dncCodes,
 					"",
@@ -115,6 +119,7 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", nameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceTypeUpdate),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "login_id", dncLoginId),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "campaign_id", campaignId),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.0", dncCodeB),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.1", dncCodeC),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.#", fmt.Sprintf("%v", len(dncCodes))),
@@ -129,6 +134,7 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					dncSourceTypeUpdate,
 					"",
 					dncLoginId,
+					campaignId,
 					"",
 					dncCodesUpdated,
 					"",
@@ -137,6 +143,7 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", nameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceTypeUpdate),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "login_id", dncLoginId),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "campaign_id", campaignId),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.0", dncCodeB),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.1", dncCodeC),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_codes.2", dncCodeP),
@@ -180,6 +187,7 @@ func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 					dncSourceType,
 					"",
 					"",
+					"",
 					gryphonLicense,
 					[]string{},
 					"",
@@ -209,6 +217,7 @@ func generateOutboundDncList(
 	dncSourceType string,
 	contactMethod string,
 	loginId string,
+	campaignId string,
 	licenseId string,
 	dncCodes []string,
 	nestedBlocks ...string) string {
@@ -217,6 +226,9 @@ func generateOutboundDncList(
 	}
 	if loginId != "" {
 		loginId = fmt.Sprintf(`login_id = "%s"`, loginId)
+	}
+	if campaignId != "" {
+		campaignId = fmt.Sprintf(`campaign_id = "%s"`, campaignId)
 	}
 	if licenseId != "" {
 		licenseId = fmt.Sprintf(`license_id = "%s"`, licenseId)
@@ -228,10 +240,11 @@ resource "genesyscloud_outbound_dnclist" "%s" {
 	%s
 	%s
 	%s
+    %s
 	dnc_codes = [%s]
     %s
 }
-`, resourceId, name, dncSourceType, contactMethod, loginId, licenseId, strings.Join(dncCodes, ", "), strings.Join(nestedBlocks, "\n"))
+`, resourceId, name, dncSourceType, contactMethod, loginId, licenseId, campaignId, strings.Join(dncCodes, ", "), strings.Join(nestedBlocks, "\n"))
 }
 
 func generateOutboundDncListBasic(resourceId string, name string) string {

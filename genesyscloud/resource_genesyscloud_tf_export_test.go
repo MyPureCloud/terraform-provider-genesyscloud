@@ -612,65 +612,6 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 	mockError = nil
 }
 
-func TestAccResourceTfExportDNCPhoneNumbers(t *testing.T) {
-	var (
-		exportTestDir   = "../.terraform" + uuid.NewString()
-		exportResource1 = "test-export1"
-
-		dncListResourceId = "dnc_list"
-		dncListName       = "DNC List " + uuid.NewString()
-	)
-
-	defer os.RemoveAll(exportTestDir)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: generateOutboundDncList(
-					dncListResourceId,
-					dncListName,
-					"rds",
-					"Phone",
-					"",
-					"",
-					[]string{},
-					generateDncListEntry(
-						"2022-01-20T10:10Z",
-						[]string{strconv.Quote("+353879999999")},
-					),
-				),
-			},
-			{
-				// Run export without state file
-				Config: generateOutboundDncList(
-					dncListResourceId,
-					dncListName,
-					"rds",
-					"Phone",
-					"",
-					"",
-					[]string{},
-					generateDncListEntry(
-						"2022-01-20T10:10Z",
-						[]string{strconv.Quote("+353879999999")},
-					),
-				) + generateTfExportByName(
-					exportResource1,
-					exportTestDir,
-					falseValue,
-					[]string{strconv.Quote("genesyscloud_outbound_dnclist")},
-					"",
-					falseValue,
-					falseValue,
-				),
-			},
-		},
-		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
-	})
-}
-
 func removeTfConfigBlock(export string) string {
 	return strings.Replace(export, terraformHCLBlock, "", -1)
 }

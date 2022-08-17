@@ -38,13 +38,23 @@ resource "genesyscloud_outbound_dnclist" "dnc_list" {
 
 ### Optional
 
+- `campaign_id` (String) A dnc.com campaignId. Optional if the dncSourceType is dnc.com.
 - `contact_method` (String) The contact method. Required if dncSourceType is rds.
 - `division_id` (String) The division this DNC List belongs to.
 - `dnc_codes` (List of String) The list of dnc.com codes to be treated as DNC. Required if the dncSourceType is dnc.com.
+- `entries` (Block List) Rows to add to the DNC list. To emulate removing phone numbers, you can set expiration_date to a date in the past. (see [below for nested schema](#nestedblock--entries))
 - `license_id` (String) A gryphon license number. Required if the dncSourceType is gryphon.
 - `login_id` (String) A dnc.com loginId. Required if the dncSourceType is dnc.com.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--entries"></a>
+### Nested Schema for `entries`
+
+Optional:
+
+- `expiration_date` (String) Expiration date for DNC phone numbers in yyyy-MM-ddTHH:mmZ format.
+- `phone_numbers` (List of String) Phone numbers to add to a DNC list. Only possible if the dncSourceType is rds.
 

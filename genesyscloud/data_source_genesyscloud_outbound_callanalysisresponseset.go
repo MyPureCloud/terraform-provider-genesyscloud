@@ -3,17 +3,18 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
-	"time"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func dataSourceOutboundCallAnalysisResponseSet() *schema.Resource {
 	return &schema.Resource{
 		Description: "",
-		ReadContext: readWithPooledClient(dataSourceOutboundCallAnalysisReponseSetRead),
+		ReadContext: readWithPooledClient(dataSourceOutboundCallAnalysisResponseSetRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Data source for Genesys Cloud Outbound Call Analysis Response Sets. Select a response set by name.",
@@ -24,7 +25,7 @@ func dataSourceOutboundCallAnalysisResponseSet() *schema.Resource {
 	}
 }
 
-func dataSourceOutboundCallAnalysisReponseSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceOutboundCallAnalysisResponseSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*providerMeta).ClientConfig
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 	name := d.Get("name").(string)

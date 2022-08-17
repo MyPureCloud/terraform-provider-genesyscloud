@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func getAllOutboundDncLists(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -73,6 +73,11 @@ func resourceOutboundDncList() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
+			`campaign_id`: {
+				Description: `A dnc.com campaignId. Optional if the dncSourceType is dnc.com.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 			`dnc_codes`: {
 				Description: `The list of dnc.com codes to be treated as DNC. Required if the dncSourceType is dnc.com.`,
 				Optional:    true,
@@ -101,7 +106,7 @@ func resourceOutboundDncList() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{`rds`, `dnc.com`, `gryphon`}, false),
 			},
 			`entries`: {
-				Description: `Columns to add to the DNC list.`,
+				Description: `Rows to add to the DNC list. To emulate removing phone numbers, you can set expiration_date to a date in the past.`,
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem: &schema.Resource{
@@ -128,6 +133,7 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	name := d.Get("name").(string)
 	contactMethod := d.Get("contact_method").(string)
 	loginId := d.Get("login_id").(string)
+	campaignId := d.Get("campaign_id").(string)
 	licenseId := d.Get("license_id").(string)
 	dncSourceType := d.Get("dnc_source_type").(string)
 	dncCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
@@ -149,6 +155,9 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	}
 	if loginId != "" {
 		sdkDncListCreate.LoginId = &loginId
+	}
+	if campaignId != "" {
+		sdkDncListCreate.CampaignId = &campaignId
 	}
 	if licenseId != "" {
 		sdkDncListCreate.LicenseId = &licenseId
@@ -186,6 +195,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	name := d.Get("name").(string)
 	contactMethod := d.Get("contact_method").(string)
 	loginId := d.Get("login_id").(string)
+	campaignId := d.Get("campaign_id").(string)
 	dncCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 	licenseId := d.Get("license_id").(string)
 	dncSourceType := d.Get("dnc_source_type").(string)
@@ -207,6 +217,9 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	}
 	if loginId != "" {
 		sdkDncList.LoginId = &loginId
+	}
+	if campaignId != "" {
+		sdkDncList.CampaignId = &campaignId
 	}
 	if licenseId != "" {
 		sdkDncList.LicenseId = &licenseId
@@ -273,6 +286,9 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 		if sdkDncList.LoginId != nil {
 			_ = d.Set("login_id", *sdkDncList.LoginId)
+		}
+		if sdkDncList.CampaignId != nil {
+			_ = d.Set("campaign_id", *sdkDncList.CampaignId)
 		}
 		if sdkDncList.DncCodes != nil {
 			var dncCodes []string
