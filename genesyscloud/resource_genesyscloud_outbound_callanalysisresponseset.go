@@ -162,7 +162,7 @@ func resourceOutboundCallAnalysisResponseSet() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`responses`: {
-				Description: `Map of disposition identifiers to reactions. Required if beep_detection_enabled = true.`,
+				Description: `List of maps of disposition identifiers to reactions. Required if beep_detection_enabled = true.`,
 				Optional:    true,
 				MaxItems:    1,
 				Type:        schema.TypeList,

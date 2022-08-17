@@ -46,7 +46,7 @@ resource "genesyscloud_outbound_callanalysisresponseset" "example-cars" {
 ### Optional
 
 - `beep_detection_enabled` (Boolean) Whether to enable answering machine beep detection Defaults to `false`.
-- `responses` (Block List, Max: 1) Map of disposition identifiers to reactions. Required if beep_detection_enabled = true. (see [below for nested schema](#nestedblock--responses))
+- `responses` (Block List, Max: 1) List of maps of disposition identifiers to reactions. Required if beep_detection_enabled = true. (see [below for nested schema](#nestedblock--responses))
 
 ### Read-Only
 
