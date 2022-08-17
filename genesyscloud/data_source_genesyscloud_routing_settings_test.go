@@ -24,14 +24,18 @@ func TestAccDataSourceRoutingSettings(t *testing.T) {
 				Config: generateRoutingSettingsWithCustomAttrs(
 					settingsResource,
 					trueValue,
+					generateSettingsContactCenter(falseValue),
 					generateSettingsTranscription(transcription, confidence, trueValue, falseValue),
 				) + generateRoutingSettingsDataSource(
 					settingsDataSource,
 					trueValue,
 					"genesyscloud_routing_settings."+settingsResource,
+					generateSettingsContactCenter(falseValue),
 					generateSettingsTranscription(transcription, confidence, trueValue, falseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_settings."+settingsDataSource, "reset_agent_on_presence", "genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_settings."+settingsDataSource, "contactcenter.remove_skills_from_blind_transfer", "genesyscloud_routing_settings."+settingsResource, "contactcenter.remove_skills_from_blind_transfer"),
 					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_settings."+settingsDataSource, "transcription.0.transcription", "genesyscloud_routing_settings."+settingsResource, "transcription.0.transcription"),
 					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_settings."+settingsDataSource, "transcription.0.transcription_confidence_threshold", "genesyscloud_routing_settings."+settingsResource, "transcription.0.transcription_confidence_threshold"),
 					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_settings."+settingsDataSource, "transcription.0.low_latency_transcription_enabled", "genesyscloud_routing_settings."+settingsResource, "transcription.0.low_latency_transcription_enabled"),
@@ -45,8 +49,8 @@ func TestAccDataSourceRoutingSettings(t *testing.T) {
 func generateRoutingSettingsDataSource(
 	resourceID string,
 	resetAgentScoreOnPresenceChange string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string,
 	attrs ...string) string {
 	return fmt.Sprintf(`data "genesyscloud_routing_settings" "%s" {
