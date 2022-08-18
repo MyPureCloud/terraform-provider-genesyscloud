@@ -259,14 +259,14 @@ func updateContactCenter(d *schema.ResourceData, routingAPI *platformclientv2.Ro
 }
 
 func updateTranscription(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
-	var transcription string
-	var transcriptionConfidenceThreshold int
-	var lowLatencyTranscriptionEnabled bool
-	var contentSearchEnabled bool
-
 	if transcriptionConfig := d.Get("transcription"); transcriptionConfig != nil {
 		if transcriptionList := transcriptionConfig.([]interface{}); len(transcriptionList) > 0 {
 			transcriptionMap := transcriptionList[0].(map[string]interface{})
+
+			var transcription string
+			var transcriptionConfidenceThreshold int
+			var lowLatencyTranscriptionEnabled bool
+			var contentSearchEnabled bool
 
 			if transcriptionMap["transcription"] != nil {
 				transcription = transcriptionMap["transcription"].(string)
