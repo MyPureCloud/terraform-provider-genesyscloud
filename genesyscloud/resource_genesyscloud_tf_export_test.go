@@ -831,6 +831,7 @@ func generateTfExportResource(
 			"genesyscloud_routing_email_route",
 			"genesyscloud_routing_language",
 			"genesyscloud_routing_queue",
+			"genesyscloud_routing_settings",
 			"genesyscloud_routing_skill",
 			"genesyscloud_routing_utilization",
 			"genesyscloud_routing_wrapupcode",
