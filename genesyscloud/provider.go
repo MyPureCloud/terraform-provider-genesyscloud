@@ -3,15 +3,14 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/mypurecloud/platform-client-sdk-go/v77/platformclientv2"
 	"log"
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
 )
 
 func init() {
@@ -108,6 +107,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_outbound_callanalysisresponseset":            resourceOutboundCallAnalysisResponseSet(),
 				"genesyscloud_outbound_contactlistfilter":                  resourceOutboundContactListFilter(),
 				"genesyscloud_outbound_contact_list":                       resourceOutboundContactList(),
+				"genesyscloud_outbound_ruleset":                            resourceOutboundRuleset(),
 				"genesyscloud_processautomation_trigger":                   resourceProcessAutomationTrigger(),
 				"genesyscloud_quality_forms_evaluation":                    resourceEvaluationForm(),
 				"genesyscloud_quality_forms_survey":                        resourceSurveyForm(),
@@ -162,6 +162,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_outbound_attempt_limit":                      dataSourceOutboundAttemptLimit(),
 				"genesyscloud_outbound_contact_list":                       dataSourceOutboundContactList(),
 				"genesyscloud_outbound_contactlistfilter":                  dataSourceOutboundContactListFilter(),
+				"genesyscloud_outbound_ruleset":                            dataSourceOutboundRuleset(),
 				"genesyscloud_quality_forms_evaluation":                    dataSourceQualityFormsEvaluations(),
 				"genesyscloud_quality_forms_survey":                        dataSourceQualityFormsSurvey(),
 				"genesyscloud_recording_media_retention_policy":            dataSourceRecordingMediaRetentionPolicy(),
