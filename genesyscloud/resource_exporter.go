@@ -213,6 +213,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_location":                                    locationExporter(),
 		"genesyscloud_oauth_client":                                oauthClientExporter(),
 		"genesyscloud_outbound_attempt_limit":                      outboundAttemptLimitExporter(),
+		"genesyscloud_outbound_callanalysisresponseset":            outboundCallAnalysisResponseSetExporter(),
 		"genesyscloud_outbound_contact_list":                       outboundContactListExporter(),
 		"genesyscloud_outbound_contactlistfilter":                  outboundContactListFilterExporter(),
 		"genesyscloud_processautomation_trigger":                   processAutomationTriggerExporter(),
