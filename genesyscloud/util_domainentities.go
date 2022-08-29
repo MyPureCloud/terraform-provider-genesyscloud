@@ -15,14 +15,26 @@ func buildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformcli
 
 func buildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platformclientv2.Domainentityref {
 	if ids, ok := d.GetOk(idAttr); ok && ids != nil {
-		strList := setToStringList(ids.(*schema.Set))
-		if strList != nil {
-			domainEntityRefs := make([]platformclientv2.Domainentityref, len(*strList))
-			for i, id := range *strList {
-				tempId := id
-				domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
+		if setIds, ok := ids.(*schema.Set); ok {
+			strList := setToStringList(setIds)
+			if setIds != nil {
+				domainEntityRefs := make([]platformclientv2.Domainentityref, len(*strList))
+				for i, id := range *strList {
+					tempId := id
+					domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
+				}
+				return &domainEntityRefs
 			}
-			return &domainEntityRefs
+		} else {
+			strList := interfaceListToStrings(ids.([]interface{}))
+			if len(strList) > 0 {
+				domainEntityRefs := make([]platformclientv2.Domainentityref, len(strList))
+				for i, id := range strList {
+					tempId := id
+					domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
+				}
+				return &domainEntityRefs
+			}
 		}
 	}
 	return nil
