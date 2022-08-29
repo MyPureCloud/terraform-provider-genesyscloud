@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -18,7 +19,6 @@ var (
 				Description: `The time intervals for which it is acceptable to place outbound calls.`,
 				Required:    true,
 				Type:        schema.TypeSet,
-				MinItems:    1,
 				Elem:        outboundcallabletimesetcampaigntimeslotResource,
 			},
 			`time_zone_id`: {
@@ -31,10 +31,9 @@ var (
 	outboundcallabletimesetcampaigntimeslotResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`start_time`: {
-				Description:      `The start time of the interval as an ISO-8601 string, i.e. HH:mm:ss`,
-				Required:         true,
-				Type:             schema.TypeString,
-				DiffSuppressFunc: suppressTime,
+				Description: `The start time of the interval as an ISO-8601 string, i.e. HH:mm:ss`,
+				Required:    true,
+				Type:        schema.TypeString,
 			},
 			`stop_time`: {
 				Description: `The end time of the interval as an ISO-8601 string, i.e. HH:mm:ss`,
@@ -76,6 +75,35 @@ func resourceOutboundCallabletimeset() *schema.Resource {
 			},
 		},
 	}
+}
+
+func outboundCallableTimesetExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllOutboundCallableTimesets),
+	}
+}
+
+func getAllOutboundCallableTimesets(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resource := make(ResourceIDMetaMap)
+	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		callableTimesetConfigs, _, getErr := outboundAPI.GetOutboundCallabletimesets(pageSize, pageNum, false, "", "", "", "")
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of callable timeset configs: %v", getErr)
+		}
+
+		if callableTimesetConfigs.Entities == nil || len(*callableTimesetConfigs.Entities) == 0 {
+			break
+		}
+
+		for _, callableTimesetConfig := range *callableTimesetConfigs.Entities {
+			resource[*callableTimesetConfig.Id] = &ResourceMeta{Name: *callableTimesetConfig.Name}
+		}
+
+	}
+	return resource, nil
 }
 
 func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -155,7 +183,7 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
 		}
 
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCallabletimeset())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCallabletimeset())
 
 		if sdkcallabletimeset.Name != nil {
 			d.Set("name", *sdkcallabletimeset.Name)
@@ -164,10 +192,8 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 			d.Set("callable_times", flattenSdkoutboundcallabletimesetCallabletimeSlice(*sdkcallabletimeset.CallableTimes))
 		}
 
-		//fmt.Printf("Printing state: %s\n", d.State().String())
 		log.Printf("Read Outbound Callabletimeset %s %s", d.Id(), *sdkcallabletimeset.Name)
-		return nil // TODO calling cc.CheckState() can cause some difficult to understand errors in development. When ready for a PR, remove this line and uncomment the consistency_checker initialization and the the below one
-		//return cc.CheckState()
+		return cc.CheckState()
 	})
 }
 
@@ -210,12 +236,15 @@ func buildSdkoutboundcallabletimesetCampaigntimeslotSlice(campaigntimeslot *sche
 	campaigntimeslotList := campaigntimeslot.List()
 	for _, configcampaigntimeslot := range campaigntimeslotList {
 		var sdkCampaigntimeslot platformclientv2.Campaigntimeslot
+
 		campaigntimeslotMap := configcampaigntimeslot.(map[string]interface{})
 		if startTime := campaigntimeslotMap["start_time"].(string); startTime != "" {
 			sdkCampaigntimeslot.StartTime = &startTime
+			//*sdkCampaigntimeslot.StartTime += ".000"
 		}
 		if stopTime := campaigntimeslotMap["stop_time"].(string); stopTime != "" {
 			sdkCampaigntimeslot.StopTime = &stopTime
+			//*sdkCampaigntimeslot.StopTime += ".000"
 		}
 		sdkCampaigntimeslot.Day = platformclientv2.Int(campaigntimeslotMap["day"].(int))
 
@@ -290,11 +319,4 @@ func flattenSdkoutboundcallabletimesetCallabletimeSlice(callabletimes []platform
 	}
 
 	return callabletimeSet
-}
-
-func suppressTime(k, t1, t2 string, d *schema.ResourceData) bool {
-	if t1 == t2 {
-		return true
-	}
-	return true
 }
