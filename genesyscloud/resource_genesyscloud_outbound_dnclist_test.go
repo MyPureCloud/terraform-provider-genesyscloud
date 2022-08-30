@@ -258,18 +258,6 @@ resource "genesyscloud_outbound_dnclist" "%s" {
 `, resourceId, name)
 }
 
-func generateDncListEntry(expiryDate string, phoneNumbers []string) string {
-	if expiryDate != "" {
-		expiryDate = fmt.Sprintf(`expiration_date = "%s"`, expiryDate)
-	}
-	return fmt.Sprintf(`
-	entries {
-		%s
-		phone_numbers = [%s]
-	}
-`, expiryDate, strings.Join(phoneNumbers, ", "))
-}
-
 func testVerifyDncListDestroyed(state *terraform.State) error {
 	outboundAPI := platformclientv2.NewOutboundApi()
 	for _, rs := range state.RootModule().Resources {
