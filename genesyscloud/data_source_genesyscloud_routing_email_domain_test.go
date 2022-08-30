@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func cleanupRoutingEmailDomains() {
