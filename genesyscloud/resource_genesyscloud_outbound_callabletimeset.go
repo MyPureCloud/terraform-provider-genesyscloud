@@ -240,11 +240,9 @@ func buildSdkoutboundcallabletimesetCampaigntimeslotSlice(campaigntimeslot *sche
 		campaigntimeslotMap := configcampaigntimeslot.(map[string]interface{})
 		if startTime := campaigntimeslotMap["start_time"].(string); startTime != "" {
 			sdkCampaigntimeslot.StartTime = &startTime
-			//*sdkCampaigntimeslot.StartTime += ".000"
 		}
 		if stopTime := campaigntimeslotMap["stop_time"].(string); stopTime != "" {
 			sdkCampaigntimeslot.StopTime = &stopTime
-			//*sdkCampaigntimeslot.StopTime += ".000"
 		}
 		sdkCampaigntimeslot.Day = platformclientv2.Int(campaigntimeslotMap["day"].(int))
 

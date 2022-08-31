@@ -112,15 +112,13 @@ func generateOutboundCallabletimeset(
 	resourceId string,
 	name string,
 	nestedBlocks ...string) string {
-	str := fmt.Sprintf(`
+	return fmt.Sprintf(`
 		resource "genesyscloud_outbound_callabletimeset" "%s"{
 			name = "%s"
 			%s
 		}
 		`, resourceId, name, strings.Join(nestedBlocks, "\n"),
 	)
-	//fmt.Printf(str)
-	return str
 }
 
 func generateCallableTimesBlock(
