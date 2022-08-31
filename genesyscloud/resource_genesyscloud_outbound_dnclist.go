@@ -113,15 +113,19 @@ func resourceOutboundDncList() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						`expiration_date`: {
-							Description: `Expiration date for DNC phone numbers in yyyy-MM-ddTHH:mmZ format.`,
-							Optional:    true,
-							Type:        schema.TypeString,
+							Description:      `Expiration date for DNC phone numbers in yyyy-MM-ddTHH:mmZ format.`,
+							Optional:         true,
+							Type:             schema.TypeString,
+							ValidateDiagFunc: validateDateTime,
 						},
 						`phone_numbers`: {
 							Description: `Phone numbers to add to a DNC list. Only possible if the dncSourceType is rds.`,
 							Optional:    true,
 							Type:        schema.TypeList,
-							Elem:        &schema.Schema{Type: schema.TypeString},
+							Elem: &schema.Schema{
+								Type:             schema.TypeString,
+								ValidateDiagFunc: validatePhoneNumber,
+							},
 						},
 					},
 				},

@@ -36,13 +36,72 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					"",
 					"",
 					[]string{},
-					"",
+					generateOutboundDncListEntriesBlock(
+						[]string{strconv.Quote("+353747474747")},
+						"",
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceType),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "contact_method", contactMethod),
 					testDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceID),
+					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceID, 1),
+				),
+			},
+			{
+				Config: generateOutboundDncList(
+					resourceID,
+					name,
+					dncSourceType,
+					contactMethod,
+					"",
+					"",
+					"",
+					[]string{},
+					generateOutboundDncListEntriesBlock(
+						[]string{strconv.Quote("+353112222222"), strconv.Quote("+353221111111")},
+						"",
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "contact_method", contactMethod),
+					testDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceID),
+					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceID, 3),
+				),
+			},
+			{
+				Config: generateOutboundDncList(
+					resourceID,
+					name,
+					dncSourceType,
+					contactMethod,
+					"",
+					"",
+					"",
+					[]string{},
+					generateOutboundDncListEntriesBlock(
+						[]string{strconv.Quote("+353112222222"), strconv.Quote("+353221111111")},
+						"",
+					),
+					generateOutboundDncListEntriesBlock(
+						[]string{strconv.Quote("+353112222222"), strconv.Quote("+353808080808")},
+						"",
+					),
+					generateOutboundDncListEntriesBlock(
+						[]string{strconv.Quote("+353232323232")},
+						"",
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "dnc_source_type", dncSourceType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceID, "contact_method", contactMethod),
+					testDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceID),
+					// Expect two more to be added due to duplicate numbers
+					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceID, 5),
 				),
 			},
 			{
@@ -50,7 +109,7 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 				ResourceName:            "genesyscloud_outbound_dnclist." + resourceID,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"dnc_source_type", "contact_method"},
+				ImportStateVerifyIgnore: []string{"dnc_source_type", "contact_method", "entries"},
 			},
 		},
 		CheckDestroy: testVerifyDncListDestroyed,
@@ -248,6 +307,18 @@ resource "genesyscloud_outbound_dnclist" "%s" {
 `, resourceId, name, dncSourceType, contactMethod, loginId, licenseId, campaignId, strings.Join(dncCodes, ", "), strings.Join(nestedBlocks, "\n"))
 }
 
+func generateOutboundDncListEntriesBlock(phoneNumbers []string, expirationDate string) string {
+	if expirationDate != "" {
+		expirationDate = fmt.Sprintf(`expiration_date = "%s"`, expirationDate)
+	}
+	return fmt.Sprintf(`
+	entries {
+		%s
+		phone_numbers = [%s]
+	}
+`, expirationDate, strings.Join(phoneNumbers, ", "))
+}
+
 func generateOutboundDncListBasic(resourceId string, name string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_dnclist" "%s" {
@@ -256,6 +327,24 @@ resource "genesyscloud_outbound_dnclist" "%s" {
 	contact_method  = "Phone"
 }
 `, resourceId, name)
+}
+
+func checkPhoneNumbersAddedToDncList(resource string, numberOfPhoneNumbersAdded int) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		r := state.RootModule().Resources[resource]
+		if r == nil {
+			return fmt.Errorf("%s not found in state", resource)
+		}
+		outboundAPI := platformclientv2.NewOutboundApi()
+		dncListDivisionViews, _, err := outboundAPI.GetOutboundDnclistsDivisionview(r.Primary.ID, true, true)
+		if err != nil {
+			return fmt.Errorf("error received when quering DNC list division view from API: %v", err)
+		}
+		if numberOfPhoneNumbersAdded != *dncListDivisionViews.Size {
+			return fmt.Errorf("expected dnc list size to be: %v, got: %v", numberOfPhoneNumbersAdded, *dncListDivisionViews.Size)
+		}
+		return nil
+	}
 }
 
 func testVerifyDncListDestroyed(state *terraform.State) error {
