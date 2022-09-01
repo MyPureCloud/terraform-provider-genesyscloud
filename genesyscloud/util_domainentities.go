@@ -35,3 +35,11 @@ func sdkDomainEntityRefArrToSet(entityRefs []platformclientv2.Domainentityref) *
 	}
 	return schema.NewSet(schema.HashString, interfaceList)
 }
+
+func sdkDomainEntityRefArrToList(entityRefs []platformclientv2.Domainentityref) []interface{} {
+	interfaceList := make([]interface{}, len(entityRefs))
+	for i, v := range entityRefs {
+		interfaceList[i] = *v.Id
+	}
+	return interfaceList
+}

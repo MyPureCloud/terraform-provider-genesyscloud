@@ -35,7 +35,7 @@ func dataSourceIvrRead(ctx context.Context, d *schema.ResourceData, m interface{
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
-		ivrs, _, getErr := archAPI.GetArchitectIvrs(pageNum, pageSize, "", "", name)
+		ivrs, _, getErr := archAPI.GetArchitectIvrs(pageNum, pageSize, "", "", name, "")
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting IVR %s: %s", name, getErr))
 		}

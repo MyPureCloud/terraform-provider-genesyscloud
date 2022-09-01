@@ -27,7 +27,7 @@ func deleteIvrStartingWith(name string) {
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		ivrs, _, getErr := archAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "")
+		ivrs, _, getErr := archAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "", "")
 		if getErr != nil {
 			return
 		}
