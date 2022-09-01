@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
@@ -31,19 +32,22 @@ var (
 	outboundcallabletimesetcampaigntimeslotResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`start_time`: {
-				Description: `The start time of the interval as an ISO-8601 string, i.e. HH:mm:ss`,
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:      `The start time of the interval as an ISO-8601 string, i.e. HH:mm:ss`,
+				Required:         true,
+				ValidateDiagFunc: validateTime,
+				Type:             schema.TypeString,
 			},
 			`stop_time`: {
-				Description: `The end time of the interval as an ISO-8601 string, i.e. HH:mm:ss`,
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:      `The end time of the interval as an ISO-8601 string, i.e. HH:mm:ss`,
+				Required:         true,
+				ValidateDiagFunc: validateTime,
+				Type:             schema.TypeString,
 			},
 			`day`: {
-				Description: `The day of the interval. Valid values: [1-7], representing Monday through Sunday`,
-				Required:    true,
-				Type:        schema.TypeInt,
+				Description:  `The day of the interval. Valid values: [1-7], representing Monday through Sunday`,
+				Required:     true,
+				ValidateFunc: validation.IntInSlice([]int{1, 2, 3, 4, 5, 6, 7}),
+				Type:         schema.TypeInt,
 			},
 		},
 	}
@@ -127,6 +131,10 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	d.SetId(*outboundCallabletimeset.Id)
+	// Remove the milliseconds added to start_time and stop_time by the API
+	trimTime(outboundCallabletimeset.CallableTimes)
+	d.Set("callable_times", *outboundCallabletimeset.CallableTimes)
+	//fmt.Print(d.State())
 
 	log.Printf("Created Outbound Callabletimeset %s %s", name, *outboundCallabletimeset.Id)
 	return readOutboundCallabletimeset(ctx, d, meta)
@@ -249,6 +257,22 @@ func buildSdkoutboundcallabletimesetCampaigntimeslotSlice(campaigntimeslot *sche
 		sdkCampaigntimeslotSlice = append(sdkCampaigntimeslotSlice, sdkCampaigntimeslot)
 	}
 	return &sdkCampaigntimeslotSlice
+}
+
+func trimTime(values *[]platformclientv2.Callabletime) {
+	for _, value := range *values {
+		for _, timeSlot := range *value.TimeSlots {
+			startTime := *timeSlot.StartTime
+			fmt.Printf("%s %T\n", startTime[:8], startTime[:8])
+			//*timeSlot.StartTime = "12:15:15"
+			timeSlot.StartTime = platformclientv2.String(startTime[:8])
+
+			stopTime := *timeSlot.StopTime
+			fmt.Printf("%s %T\n\n", stopTime[:8], stopTime[:8])
+			//*timeSlot.Stop = "12:15:15"
+			timeSlot.StopTime = platformclientv2.String(stopTime[:8])
+		}
+	}
 }
 
 func buildSdkoutboundcallabletimesetCallabletimeSlice(callabletime *schema.Set) *[]platformclientv2.Callabletime {

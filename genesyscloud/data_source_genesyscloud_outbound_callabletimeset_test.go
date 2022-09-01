@@ -33,8 +33,8 @@ func TestAccDataSourceOutboundCallableTimeset(t *testing.T) {
 					"genesyscloud_outbound_callabletimeset."+resourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_callabletimeset."+dataSourceId, "id",
-						"genesyscloud_callabletimeset."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_callabletimeset."+dataSourceId, "id",
+						"genesyscloud_outbound_callabletimeset."+resourceId, "id"),
 				),
 			},
 		},

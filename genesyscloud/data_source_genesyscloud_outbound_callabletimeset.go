@@ -27,21 +27,27 @@ func dataSourceOutboundCallabletimeset() *schema.Resource {
 func dataSourceOutboundCallabletimesetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*providerMeta).ClientConfig
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
-	name := d.Get("name").(string)
+
+	timesetName := d.Get("name").(string)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		const pageNum = 1
-		const pageSize = 100
+		for pageNum := 1; ; pageNum++ {
+			const pageSize = 100
 
-		callableTimesets, _, getErr := outboundAPI.GetOutboundCallabletimesets(pageSize, pageNum, false, "", "", "", "")
-		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("error requesting callable timeset %s: %s", name, getErr))
+			timesets, _, getErr := outboundAPI.GetOutboundCallabletimesets(pageSize, pageNum, false, "", "", "", "")
+			if getErr != nil {
+				return resource.NonRetryableError(fmt.Errorf("error requesting callable timeset %s: %s", timesetName, getErr))
+			}
+			if timesets.Entities == nil || len(*timesets.Entities) == 0 {
+				return resource.RetryableError(fmt.Errorf("no callable timeset found with timesetName %s", timesetName))
+			}
+
+			for _, timeset := range *timesets.Entities {
+				if timeset.Name != nil && *timeset.Name == timesetName {
+					d.SetId(*timeset.Id)
+					return nil
+				}
+			}
 		}
-		if callableTimesets.Entities == nil || len(*callableTimesets.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("no callable timeset found with name %s", name))
-		}
-		callableTimeset := (*callableTimesets.Entities)[0]
-		d.SetId(*callableTimeset.Id)
-		return nil
 	})
 }
