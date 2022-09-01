@@ -78,6 +78,7 @@ func resourceKnowledgeKnowledgebase() *schema.Resource {
 				Description: "Flag that indicates the knowledge base is published",
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Default:     false,
 			},
 		},
 	}
@@ -87,7 +88,6 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	coreLanguage := d.Get("core_language").(string)
-	published := d.Get("published").(bool)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
@@ -97,8 +97,8 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 		Name:         &name,
 		Description:  &description,
 		CoreLanguage: &coreLanguage,
-		Published:    &published,
 	})
+
 	if err != nil {
 		fmt.Errorf("Failed to create knowledge base %s: %s", name, err)
 		return diag.Errorf("Failed to create knowledge base %s: %s", name, err)
@@ -106,7 +106,7 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 
 	d.SetId(*knowledgeBase.Id)
 
-	fmt.Printf("Created knowledge base %s %s", name, *knowledgeBase.Id)
+	log.Printf("Created knowledge base %s %s", name, *knowledgeBase.Id)
 	return readKnowledgeKnowledgebase(ctx, d, meta)
 }
 
@@ -130,7 +130,7 @@ func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, met
 		d.Set("description", *knowledgeBase.Description)
 		d.Set("core_language", *knowledgeBase.CoreLanguage)
 		d.Set("published", *knowledgeBase.Published)
-		fmt.Printf("Read knowledge base %s %s", d.Id(), *knowledgeBase.Name)
+		log.Printf("Read knowledge base %s %s", d.Id(), *knowledgeBase.Name)
 		return cc.CheckState()
 	})
 }
@@ -138,7 +138,7 @@ func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, met
 func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	coreLanguage := d.Get("code_language").(string)
+	coreLanguage := d.Get("core_language").(string)
 	published := d.Get("published").(bool)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
@@ -162,7 +162,7 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 		log.Printf("Updating knowledge base %s", name)
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebase(d.Id(), update)
 		if putErr != nil {
-			return resp, diag.Errorf("Failed to update location %s: %s", d.Id(), putErr)
+			return resp, diag.Errorf("Failed to update knowledge base %s: %s", d.Id(), putErr)
 		}
 		return resp, nil
 	})
@@ -171,7 +171,7 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	log.Printf("Updated knowledge base %s %s", name, d.Id())
-	return readLocation(ctx, d, meta)
+	return readKnowledgeKnowledgebase(ctx, d, meta)
 }
 
 func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

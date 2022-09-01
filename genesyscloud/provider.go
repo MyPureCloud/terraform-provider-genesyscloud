@@ -102,6 +102,8 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_journey_outcome":                             resourceJourneyOutcome(),
 				"genesyscloud_journey_segment":                             resourceJourneySegment(),
 				"genesyscloud_knowledge_knowledgebase":                     resourceKnowledgeKnowledgebase(),
+				"genesyscloud_knowledge_document":                          resourceKnowledgeDocument(),
+				"genesyscloud_knowledge_category":                          resourceKnowledgeCategory(),
 				"genesyscloud_location":                                    resourceLocation(),
 				"genesyscloud_recording_media_retention_policy":            resourceMediaRetentionPolicy(),
 				"genesyscloud_oauth_client":                                resourceOAuthClient(),
