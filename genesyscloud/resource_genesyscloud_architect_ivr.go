@@ -47,6 +47,7 @@ func architectIvrExporter() *ResourceExporter {
 			"closed_hours_flow_id":  {RefType: "genesyscloud_flow"},
 			"holiday_hours_flow_id": {RefType: "genesyscloud_flow"},
 			"schedule_group_id":     {RefType: "genesyscloud_architect_schedulegroups"},
+			"division_id":           {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }
