@@ -2,7 +2,7 @@ package genesyscloud
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func buildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Domainentityref {
@@ -46,4 +46,12 @@ func sdkDomainEntityRefArrToSet(entityRefs []platformclientv2.Domainentityref) *
 		interfaceList[i] = *v.Id
 	}
 	return schema.NewSet(schema.HashString, interfaceList)
+}
+
+func sdkDomainEntityRefArrToList(entityRefs []platformclientv2.Domainentityref) []interface{} {
+	interfaceList := make([]interface{}, len(entityRefs))
+	for i, v := range entityRefs {
+		interfaceList[i] = *v.Id
+	}
+	return interfaceList
 }

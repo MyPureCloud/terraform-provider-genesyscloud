@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func init() {
@@ -109,6 +109,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_outbound_contactlistfilter":                  resourceOutboundContactListFilter(),
 				"genesyscloud_outbound_contact_list":                       resourceOutboundContactList(),
 				"genesyscloud_outbound_messagingcampaign":                  resourceOutboundMessagingCampaign(),
+				"genesyscloud_outbound_dnclist":                            resourceOutboundDncList(),
 				"genesyscloud_processautomation_trigger":                   resourceProcessAutomationTrigger(),
 				"genesyscloud_quality_forms_evaluation":                    resourceEvaluationForm(),
 				"genesyscloud_quality_forms_survey":                        resourceSurveyForm(),
@@ -164,6 +165,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_outbound_contact_list":                       dataSourceOutboundContactList(),
 				"genesyscloud_outbound_messagingcampaign":                  dataSourceOutboundMessagingcampaign(),
 				"genesyscloud_outbound_contactlistfilter":                  dataSourceOutboundContactListFilter(),
+				"genesyscloud_outbound_dnclist":                            dataSourceOutboundDncList(),
 				"genesyscloud_quality_forms_evaluation":                    dataSourceQualityFormsEvaluations(),
 				"genesyscloud_quality_forms_survey":                        dataSourceQualityFormsSurvey(),
 				"genesyscloud_recording_media_retention_policy":            dataSourceRecordingMediaRetentionPolicy(),

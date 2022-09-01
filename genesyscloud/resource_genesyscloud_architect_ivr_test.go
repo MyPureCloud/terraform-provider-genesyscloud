@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 type ivrConfigStruct struct {
@@ -27,7 +27,7 @@ func deleteIvrStartingWith(name string) {
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		ivrs, _, getErr := archAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "")
+		ivrs, _, getErr := archAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "", "")
 		if getErr != nil {
 			return
 		}

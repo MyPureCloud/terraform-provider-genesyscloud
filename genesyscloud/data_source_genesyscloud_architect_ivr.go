@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func dataSourceArchitectIvr() *schema.Resource {
@@ -35,7 +35,7 @@ func dataSourceIvrRead(ctx context.Context, d *schema.ResourceData, m interface{
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
-		ivrs, _, getErr := archAPI.GetArchitectIvrs(pageNum, pageSize, "", "", name)
+		ivrs, _, getErr := archAPI.GetArchitectIvrs(pageNum, pageSize, "", "", name, "")
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting IVR %s: %s", name, getErr))
 		}
