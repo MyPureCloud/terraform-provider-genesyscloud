@@ -162,6 +162,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_organizations_me":                            dataSourceOrganizationsMe(),
 				"genesyscloud_outbound_attempt_limit":                      dataSourceOutboundAttemptLimit(),
 				"genesyscloud_outbound_contact_list":                       dataSourceOutboundContactList(),
+				"genesyscloud_outbound_messagingcampaign":                  dataSourceOutboundMessagingcampaign(),
 				"genesyscloud_outbound_contactlistfilter":                  dataSourceOutboundContactListFilter(),
 				"genesyscloud_quality_forms_evaluation":                    dataSourceQualityFormsEvaluations(),
 				"genesyscloud_quality_forms_survey":                        dataSourceQualityFormsSurvey(),
