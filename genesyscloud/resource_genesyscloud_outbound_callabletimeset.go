@@ -133,7 +133,9 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	d.SetId(*outboundCallabletimeset.Id)
 	// Remove the milliseconds added to start_time and stop_time by the API
 	trimTime(outboundCallabletimeset.CallableTimes)
-	d.Set("callable_times", *outboundCallabletimeset.CallableTimes)
+	if sdkcallabletimeset.CallableTimes != nil {
+		d.Set("callable_times", flattenSdkoutboundcallabletimesetCallabletimeSlice(*sdkcallabletimeset.CallableTimes))
+	}
 	//fmt.Print(d.State())
 
 	log.Printf("Created Outbound Callabletimeset %s %s", name, *outboundCallabletimeset.Id)
