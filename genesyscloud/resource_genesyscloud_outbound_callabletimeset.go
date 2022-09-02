@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 	"log"
 	"time"
 )
@@ -130,13 +130,15 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	d.SetId(*outboundCallabletimeset.Id)
-	fmt.Printf("Before trim: %s\n", outboundCallabletimeset)
+
 	// Remove the milliseconds added to start_time and stop_time by the API
+	fmt.Printf("Before trim: %s\n", outboundCallabletimeset)
 	trimTime(outboundCallabletimeset.CallableTimes)
+	fmt.Printf("After trim: %s\n", outboundCallabletimeset)
 	if sdkcallabletimeset.CallableTimes != nil {
 		d.Set("callable_times", flattenSdkoutboundcallabletimesetCallabletimeSlice(*outboundCallabletimeset.CallableTimes))
 	}
-	fmt.Printf("After trim: %s\n", outboundCallabletimeset)
+
 	log.Printf("Created Outbound Callabletimeset %s %s", name, *outboundCallabletimeset.Id)
 	return readOutboundCallabletimeset(ctx, d, meta)
 }
@@ -248,7 +250,7 @@ func trimTime(values *[]platformclientv2.Callabletime) {
 		for _, timeSlot := range *value.TimeSlots {
 			startTime := *timeSlot.StartTime
 			timeSlot.StartTime = platformclientv2.String(startTime[:8])
-			//fmt.Printf("Time before trim: %s\nTime sfter trim: %s\n\n", startTime, *timeSlot.StartTime)
+			fmt.Printf("Time before trim: %s\nTime after trim: %s\n\n", startTime, *timeSlot.StartTime)
 
 			stopTime := *timeSlot.StopTime
 			timeSlot.StopTime = platformclientv2.String(stopTime[:8])
