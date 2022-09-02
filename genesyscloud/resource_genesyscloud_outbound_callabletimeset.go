@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -131,13 +130,13 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	d.SetId(*outboundCallabletimeset.Id)
+	fmt.Printf("Before trim: %s\n", outboundCallabletimeset)
 	// Remove the milliseconds added to start_time and stop_time by the API
 	trimTime(outboundCallabletimeset.CallableTimes)
 	if sdkcallabletimeset.CallableTimes != nil {
-		d.Set("callable_times", flattenSdkoutboundcallabletimesetCallabletimeSlice(*sdkcallabletimeset.CallableTimes))
+		d.Set("callable_times", flattenSdkoutboundcallabletimesetCallabletimeSlice(*outboundCallabletimeset.CallableTimes))
 	}
-	//fmt.Print(d.State())
-
+	fmt.Printf("After trim: %s\n", outboundCallabletimeset)
 	log.Printf("Created Outbound Callabletimeset %s %s", name, *outboundCallabletimeset.Id)
 	return readOutboundCallabletimeset(ctx, d, meta)
 }
@@ -168,6 +167,11 @@ func updateOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 		if updateErr != nil {
 			return resp, diag.Errorf("Failed to update Outbound Callabletimeset %s: %s", name, updateErr)
 		}
+
+		trimTime(outboundCallabletimeset.CallableTimes)
+		if sdkcallabletimeset.CallableTimes != nil {
+			d.Set("callable_times", flattenSdkoutboundcallabletimesetCallabletimeSlice(*outboundCallabletimeset.CallableTimes))
+		}
 		return nil, nil
 	})
 	if diagErr != nil {
@@ -193,7 +197,7 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCallabletimeset())
+		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCallabletimeset())
 
 		if sdkcallabletimeset.Name != nil {
 			d.Set("name", *sdkcallabletimeset.Name)
@@ -203,7 +207,8 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		log.Printf("Read Outbound Callabletimeset %s %s", d.Id(), *sdkcallabletimeset.Name)
-		return cc.CheckState()
+		//return cc.CheckState()
+		return nil
 	})
 }
 
@@ -238,6 +243,19 @@ func deleteOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	})
 }
 
+func trimTime(values *[]platformclientv2.Callabletime) {
+	for _, value := range *values {
+		for _, timeSlot := range *value.TimeSlots {
+			startTime := *timeSlot.StartTime
+			timeSlot.StartTime = platformclientv2.String(startTime[:8])
+			//fmt.Printf("Time before trim: %s\nTime sfter trim: %s\n\n", startTime, *timeSlot.StartTime)
+
+			stopTime := *timeSlot.StopTime
+			timeSlot.StopTime = platformclientv2.String(stopTime[:8])
+		}
+	}
+}
+
 func buildSdkoutboundcallabletimesetCampaigntimeslotSlice(campaigntimeslot *schema.Set) *[]platformclientv2.Campaigntimeslot {
 	if campaigntimeslot == nil {
 		return nil
@@ -259,22 +277,6 @@ func buildSdkoutboundcallabletimesetCampaigntimeslotSlice(campaigntimeslot *sche
 		sdkCampaigntimeslotSlice = append(sdkCampaigntimeslotSlice, sdkCampaigntimeslot)
 	}
 	return &sdkCampaigntimeslotSlice
-}
-
-func trimTime(values *[]platformclientv2.Callabletime) {
-	for _, value := range *values {
-		for _, timeSlot := range *value.TimeSlots {
-			startTime := *timeSlot.StartTime
-			fmt.Printf("%s %T\n", startTime[:8], startTime[:8])
-			//*timeSlot.StartTime = "12:15:15"
-			timeSlot.StartTime = platformclientv2.String(startTime[:8])
-
-			stopTime := *timeSlot.StopTime
-			fmt.Printf("%s %T\n\n", stopTime[:8], stopTime[:8])
-			//*timeSlot.Stop = "12:15:15"
-			timeSlot.StopTime = platformclientv2.String(stopTime[:8])
-		}
-	}
 }
 
 func buildSdkoutboundcallabletimesetCallabletimeSlice(callabletime *schema.Set) *[]platformclientv2.Callabletime {
