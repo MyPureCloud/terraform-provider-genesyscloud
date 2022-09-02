@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -87,7 +88,7 @@ func outboundCallableTimesetExporter() *ResourceExporter {
 }
 
 func getAllOutboundCallableTimesets(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resource := make(ResourceIDMetaMap)
+	resources := make(ResourceIDMetaMap)
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -102,11 +103,11 @@ func getAllOutboundCallableTimesets(_ context.Context, clientConfig *platformcli
 		}
 
 		for _, callableTimesetConfig := range *callableTimesetConfigs.Entities {
-			resource[*callableTimesetConfig.Id] = &ResourceMeta{Name: *callableTimesetConfig.Name}
+			resources[*callableTimesetConfig.Id] = &ResourceMeta{Name: *callableTimesetConfig.Name}
 		}
 
 	}
-	return resource, nil
+	return resources, nil
 }
 
 func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -130,14 +131,6 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	d.SetId(*outboundCallabletimeset.Id)
-
-	// Remove the milliseconds added to start_time and stop_time by the API
-	fmt.Printf("Before trim: %s\n", outboundCallabletimeset)
-	trimTime(outboundCallabletimeset.CallableTimes)
-	fmt.Printf("After trim: %s\n", outboundCallabletimeset)
-	if sdkcallabletimeset.CallableTimes != nil {
-		d.Set("callable_times", flattenSdkoutboundcallabletimesetCallabletimeSlice(*outboundCallabletimeset.CallableTimes))
-	}
 
 	log.Printf("Created Outbound Callabletimeset %s %s", name, *outboundCallabletimeset.Id)
 	return readOutboundCallabletimeset(ctx, d, meta)
@@ -169,11 +162,6 @@ func updateOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 		if updateErr != nil {
 			return resp, diag.Errorf("Failed to update Outbound Callabletimeset %s: %s", name, updateErr)
 		}
-
-		trimTime(outboundCallabletimeset.CallableTimes)
-		if sdkcallabletimeset.CallableTimes != nil {
-			d.Set("callable_times", flattenSdkoutboundcallabletimesetCallabletimeSlice(*outboundCallabletimeset.CallableTimes))
-		}
 		return nil, nil
 	})
 	if diagErr != nil {
@@ -199,18 +187,19 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
 		}
 
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCallabletimeset())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCallabletimeset())
 
 		if sdkcallabletimeset.Name != nil {
 			d.Set("name", *sdkcallabletimeset.Name)
 		}
 		if sdkcallabletimeset.CallableTimes != nil {
+			// Remove the milliseconds added to start_time and stop_time by the API
+			trimTime(sdkcallabletimeset.CallableTimes)
 			d.Set("callable_times", flattenSdkoutboundcallabletimesetCallabletimeSlice(*sdkcallabletimeset.CallableTimes))
 		}
 
 		log.Printf("Read Outbound Callabletimeset %s %s", d.Id(), *sdkcallabletimeset.Name)
-		//return cc.CheckState()
-		return nil
+		return cc.CheckState()
 	})
 }
 
@@ -247,13 +236,12 @@ func deleteOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 
 func trimTime(values *[]platformclientv2.Callabletime) {
 	for _, value := range *values {
-		for _, timeSlot := range *value.TimeSlots {
-			startTime := *timeSlot.StartTime
-			timeSlot.StartTime = platformclientv2.String(startTime[:8])
-			fmt.Printf("Time before trim: %s\nTime after trim: %s\n\n", startTime, *timeSlot.StartTime)
+		for _, slot := range *value.TimeSlots {
+			startTime := *slot.StartTime
+			*slot.StartTime = startTime[:8]
 
-			stopTime := *timeSlot.StopTime
-			timeSlot.StopTime = platformclientv2.String(stopTime[:8])
+			stopTime := *slot.StopTime
+			*slot.StopTime = stopTime[:8]
 		}
 	}
 }
