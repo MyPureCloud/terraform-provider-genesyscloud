@@ -21,7 +21,6 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		column1               = "phone"
 		column2               = "zipcode"
 
-		dncListId         = "2ecf851c-0b94-4a41-a824-57264b791686"
 		callableTimeSetId = "5654dc1a-874d-439f-83af-f3c1271dcf7c"
 
 		contactListResource = generateOutboundContactList(
@@ -69,10 +68,11 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 					resourceId,
 					digitalCampaignName,
 					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+					"",
 					"10",
 					falseValue,
 					callableTimeSetId,
-					[]string{strconv.Quote(dncListId)},
+					[]string{},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 					generateOutboundMessagingCampaignSmsConfig(
 						column1,
