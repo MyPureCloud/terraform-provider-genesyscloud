@@ -24,8 +24,8 @@ func TestAccDataSourceOutboundCallableTimeset(t *testing.T) {
 					callabeTimesetName,
 					generateCallableTimesBlock(
 						timeZone,
-						generateTimeSlotsBlock("07:00:00.000", "18:00:00.000", "3"),
-						generateTimeSlotsBlock("09:30:00.000", "22:30:00.000", "5"),
+						generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+						generateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
 					),
 				) + generateOutboundCallabletimesetDataSource(
 					dataSourceId,
