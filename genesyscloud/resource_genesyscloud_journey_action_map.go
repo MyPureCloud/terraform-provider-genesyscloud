@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
@@ -677,7 +677,7 @@ func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.P
 	mediaType := patchAction["media_type"].(string)
 	actionMapActionTemplate := getActionMapActionTemplate(patchAction)
 	architectFlowFields := stringmap.BuildSdkListFirstElement(patchAction, "architect_flow_fields", buildSdkArchitectFlowFields, true)
-	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(patchAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields, true)
+	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(patchAction, "web_messaging_offer_fields", buildSdkPatchWebMessagingOfferFields, true)
 	openActionFields := stringmap.BuildSdkListFirstElement(patchAction, "open_action_fields", buildSdkOpenActionFields, true)
 
 	return &platformclientv2.Patchaction{
@@ -757,6 +757,16 @@ func buildSdkWebMessagingOfferFields(webMessagingOfferFields map[string]interfac
 	architectFlow := getArchitectFlow(webMessagingOfferFields)
 
 	return &platformclientv2.Webmessagingofferfields{
+		OfferText:     offerText,
+		ArchitectFlow: architectFlow,
+	}
+}
+
+func buildSdkPatchWebMessagingOfferFields(webMessagingOfferFields map[string]interface{}) *platformclientv2.Patchwebmessagingofferfields {
+	offerText := stringmap.GetNonDefaultValue[string](webMessagingOfferFields, "offer_text")
+	architectFlow := getArchitectFlow(webMessagingOfferFields)
+
+	return &platformclientv2.Patchwebmessagingofferfields{
 		OfferText:     offerText,
 		ArchitectFlow: architectFlow,
 	}

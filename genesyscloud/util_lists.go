@@ -50,6 +50,14 @@ func stringListToSet(list []string) *schema.Set {
 	return schema.NewSet(schema.HashString, interfaceList)
 }
 
+func stringListToInterfaceList(list []string) []interface{} {
+	interfaceList := make([]interface{}, len(list))
+	for i, v := range list {
+		interfaceList[i] = v
+	}
+	return interfaceList
+}
+
 func setToStringList(strSet *schema.Set) *[]string {
 	interfaceList := strSet.List()
 	strList := interfaceListToStrings(interfaceList)

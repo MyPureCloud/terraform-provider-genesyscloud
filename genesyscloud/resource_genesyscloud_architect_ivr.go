@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -20,7 +20,7 @@ func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configur
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		ivrConfigs, _, getErr := architectAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "")
+		ivrConfigs, _, getErr := architectAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of IVR configs: %v", getErr)
 		}
@@ -47,6 +47,7 @@ func architectIvrExporter() *ResourceExporter {
 			"closed_hours_flow_id":  {RefType: "genesyscloud_flow"},
 			"holiday_hours_flow_id": {RefType: "genesyscloud_flow"},
 			"schedule_group_id":     {RefType: "genesyscloud_architect_schedulegroups"},
+			"division_id":           {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }
