@@ -37,6 +37,7 @@ resource "genesyscloud_architect_schedulegroups" "sample_schedule_groups" {
 ### Required
 
 - `name` (String) Name of the schedule group.
+- `open_schedules_id` (Set of String) The schedules defining the hours an organization is open.
 
 ### Optional
 
@@ -44,7 +45,6 @@ resource "genesyscloud_architect_schedulegroups" "sample_schedule_groups" {
 - `description` (String) Description of the schedule group.
 - `division_id` (String) The division to which this schedule group will belong. If not set, the home division will be used. If set, you must have all divisions and future divisions selected in your OAuth client role
 - `holiday_schedules_id` (Set of String) The schedules defining the hours an organization is closed for the holidays.
-- `open_schedules_id` (Set of String) The schedules defining the hours an organization is open.
 - `time_zone` (String) The timezone the schedules are a part of.
 
 ### Read-Only

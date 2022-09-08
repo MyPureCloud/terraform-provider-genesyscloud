@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func TestAccResourceOutboundAttemptLimit(t *testing.T) {
@@ -166,8 +166,8 @@ func testVerifyAttemptLimitDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		eGroup, resp, err := outboundAPI.GetOutboundAttemptlimit(rs.Primary.ID)
-		if eGroup != nil {
+		attemptLimit, resp, err := outboundAPI.GetOutboundAttemptlimit(rs.Primary.ID)
+		if attemptLimit != nil {
 			return fmt.Errorf("attempt limit (%s) still exists", rs.Primary.ID)
 		} else if isStatus404(resp) {
 			// Attempt limit not found as expected

@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -96,10 +96,7 @@ func resourceSkillGroupExporter() *ResourceExporter {
 
 func resourceRoutingSkillGroup() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud Skill Group
-**Note**: This resource is currently in a closed beta. If you would like to use this resource please contact
-Chris Bohlin (chris.bohlin@genesys.com) and request access. If you attempt to use this resource without being part the beta, you will get
-an error.`,
+		Description: `Genesys Cloud Skill Group`,
 
 		CreateContext: createWithPooledClient(createSkillGroups),
 		ReadContext:   readWithPooledClient(readSkillGroups),

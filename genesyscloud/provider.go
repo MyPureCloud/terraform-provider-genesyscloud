@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v75/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func init() {
@@ -108,6 +108,10 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_recording_media_retention_policy":            resourceMediaRetentionPolicy(),
 				"genesyscloud_oauth_client":                                resourceOAuthClient(),
 				"genesyscloud_outbound_attempt_limit":                      resourceOutboundAttemptLimit(),
+				"genesyscloud_outbound_callanalysisresponseset":            resourceOutboundCallAnalysisResponseSet(),
+				"genesyscloud_outbound_contactlistfilter":                  resourceOutboundContactListFilter(),
+				"genesyscloud_outbound_contact_list":                       resourceOutboundContactList(),
+				"genesyscloud_outbound_dnclist":                            resourceOutboundDncList(),
 				"genesyscloud_processautomation_trigger":                   resourceProcessAutomationTrigger(),
 				"genesyscloud_quality_forms_evaluation":                    resourceEvaluationForm(),
 				"genesyscloud_quality_forms_survey":                        resourceSurveyForm(),
@@ -117,6 +121,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_routing_queue":                               resourceRoutingQueue(),
 				"genesyscloud_routing_skill":                               resourceRoutingSkill(),
 				"genesyscloud_routing_skill_group":                         resourceRoutingSkillGroup(),
+				"genesyscloud_routing_settings":                            resourceRoutingSettings(),
 				"genesyscloud_routing_utilization":                         resourceRoutingUtilization(),
 				"genesyscloud_routing_wrapupcode":                          resourceRoutingWrapupCode(),
 				"genesyscloud_telephony_providers_edges_did_pool":          resourceTelephonyDidPool(),
@@ -156,14 +161,19 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_knowledge_knowledgebase":                     dataSourceKnowledgeKnowledgebase(),
 				"genesyscloud_location":                                    dataSourceLocation(),
 				"genesyscloud_oauth_client":                                dataSourceOAuthClient(),
+				"genesyscloud_outbound_callanalysisresponseset":            dataSourceOutboundCallAnalysisResponseSet(),
 				"genesyscloud_processautomation_trigger":                   dataSourceProcessAutomationTrigger(),
 				"genesyscloud_organizations_me":                            dataSourceOrganizationsMe(),
 				"genesyscloud_outbound_attempt_limit":                      dataSourceOutboundAttemptLimit(),
+				"genesyscloud_outbound_contact_list":                       dataSourceOutboundContactList(),
+				"genesyscloud_outbound_contactlistfilter":                  dataSourceOutboundContactListFilter(),
+				"genesyscloud_outbound_dnclist":                            dataSourceOutboundDncList(),
 				"genesyscloud_quality_forms_evaluation":                    dataSourceQualityFormsEvaluations(),
 				"genesyscloud_quality_forms_survey":                        dataSourceQualityFormsSurvey(),
 				"genesyscloud_recording_media_retention_policy":            dataSourceRecordingMediaRetentionPolicy(),
 				"genesyscloud_routing_language":                            dataSourceRoutingLanguage(),
 				"genesyscloud_routing_queue":                               dataSourceRoutingQueue(),
+				"genesyscloud_routing_settings":                            dataSourceRoutingSettings(),
 				"genesyscloud_routing_skill":                               dataSourceRoutingSkill(),
 				"genesyscloud_routing_skill_group":                         dataSourceRoutingSkillGroup(),
 				"genesyscloud_routing_email_domain":                        dataSourceRoutingEmailDomain(),
