@@ -6,11 +6,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
+/*
+ This test can only pass in a test org because it requires an active provisioned sms phone number
+ Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone number in test orgs only.
+*/
 func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 	t.Parallel()
 	var (
@@ -41,11 +48,11 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		resourceId                    = "messaging_campaign"
 		name                          = "Test Messaging Campaign " + uuid.NewString()
 		messagesPerMin                = "10"
-		callableTimeSetId             = "5654dc1a-874d-439f-83af-f3c1271dcf7c"
+		callableTimeSetId             = "e7dccee2-44de-45ff-be00-d3c0c5276857"
 		alwaysRunning                 = falseValue
 		smsConfigMessageColumn        = column1
 		smsConfigPhoneColumn          = column1
-		smsConfigSenderSMSPhoneNumber = "+19197050640"
+		smsConfigSenderSMSPhoneNumber = "+19198793429"
 
 		// Messaging Campaign Updated fields
 		nameUpdate           = "Test Messaging Campaign " + uuid.NewString()
@@ -81,6 +88,23 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 			),
 		)
 	)
+
+	config := platformclientv2.GetDefaultConfiguration()
+	err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+	if err != nil {
+		t.Errorf("error validating client credentials: %v", err)
+	}
+	api := platformclientv2.NewRoutingApiWithConfig(config)
+	err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
+	if err != nil {
+		t.Errorf("error creating sms phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
+	}
+	defer func() {
+		_, err := api.DeleteRoutingSmsPhonenumber(smsConfigSenderSMSPhoneNumber)
+		if err != nil {
+			t.Logf("error deleting phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
+		}
+	}()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -247,6 +271,54 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		},
 		CheckDestroy: testVerifyOutboundMessagingCampaignDestroyed,
 	})
+}
+
+func createRoutingSmsPhoneNumber(inputSmsPhoneNumber string, api *platformclientv2.RoutingApi) error {
+	var (
+		phoneNumberType = "local"
+		countryCode     = "US"
+		status          string
+		maxRetries      = 10
+	)
+	_, resp, err := api.GetRoutingSmsPhonenumber(inputSmsPhoneNumber)
+	if resp.StatusCode == 200 {
+		// Number already exists
+		return nil
+	} else if resp.StatusCode == http.StatusNotFound {
+		body := platformclientv2.Smsphonenumberprovision{
+			PhoneNumber:     &inputSmsPhoneNumber,
+			PhoneNumberType: &phoneNumberType,
+			CountryCode:     &countryCode,
+		}
+		// POST /api/v2/routing/sms/phonenumbers
+		address, _, err := api.PostRoutingSmsPhonenumbers(body)
+		if err != nil {
+			return err
+		}
+		// Ensure status transitions to complete before proceeding
+		for i := 0; i <= maxRetries; i++ {
+			time.Sleep(3 * time.Second)
+			// GET /api/v2/routing/sms/phonenumbers/{addressId}
+			sdkSmsPhoneNumber, _, err := api.GetRoutingSmsPhonenumber(*address.PhoneNumber)
+			if err != nil {
+				return err
+			}
+			status = *sdkSmsPhoneNumber.ProvisioningStatus.State
+			if status == "Running" {
+				if i == maxRetries {
+					return fmt.Errorf(`sms phone number status did not transition to "Completed" within max retries %v`, maxRetries)
+				}
+				continue
+			}
+			break
+		}
+		if status == "Failed" {
+			return fmt.Errorf(`sms phone number provisioning failed`)
+		}
+	} else if err != nil {
+		return fmt.Errorf("error checking for sms phone number %v: %v", inputSmsPhoneNumber, err)
+	}
+	return nil
 }
 
 func generateOutboundMessagingCampaignResource(
