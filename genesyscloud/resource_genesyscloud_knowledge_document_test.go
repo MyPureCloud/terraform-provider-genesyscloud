@@ -26,8 +26,10 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 		externalUrl                  = "http://example.com"
 		question                     = "What should I ask?"
 		answer                       = "I don't know"
-		faqAlternatives              = []string{"faq-alt-1", "faq-alt-2?"}
+		faqAlternatives              = []string{"faq-alt-1", "faq-alt-2"}
+		faqAlternatives2             = []string{"faq-alt-3", "faq-alt-4"}
 		title                        = "test-document-title1"
+		title2                       = "test-document-title2"
 		contentLocationUrl           = "http://example.com"
 		articleAlternatives          = []string{"alt1, alt2"}
 	)
@@ -75,6 +77,44 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 				),
 			},
 			{
+				// Update
+				Config: generateKnowledgeKnowledgebaseResource(
+					knowledgeBaseResource1,
+					knowledgeBaseName1,
+					knowledgeBaseDescription1,
+					knowledgeBaseCoreLanguage1,
+				) +
+					generateKnowledgeCategory(
+						knowledgeCategoryResource1,
+						knowledgeBaseResource1,
+						knowledgeBaseCoreLanguage1,
+						knowledgeCategoryName,
+						knowledgeCategoryDescription,
+					) +
+					generateKnowledgeDocument(
+						knowledgeDocumentResource1,
+						knowledgeCategoryResource1,
+						knowledgeBaseResource1,
+						knowledgeBaseCoreLanguage1,
+						varType1,
+						externalUrl,
+						question,
+						answer,
+						faqAlternatives2,
+						title2,
+						contentLocationUrl,
+						articleAlternatives,
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.type", varType1),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.external_url", externalUrl),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.faq.0.question", question),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.faq.0.answer", answer),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.faq.0.alternatives.0", faqAlternatives2[0]),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.categories.0", knowledgeCategoryName),
+				),
+			},
+			{
 				// Import/Read
 				ResourceName:      "genesyscloud_knowledge_document." + knowledgeDocumentResource1,
 				ImportState:       true,
@@ -91,13 +131,11 @@ func generateKnowledgeDocument(resourceName string, knowledgeCategoryResourceNam
             knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
             language_code = "%s"
             %s
-            %s
         }
         `, resourceName,
 		knowledgeBaseResourceName,
 		languageCode,
 		generateKnowledgeDocumentRequestBodyFaq(varType, externalUrl, question, answer, faqAlternatives, knowledgeCategoryResourceName),
-		generateKnowledgeDocumentLifeCycle(),
 	)
 	return document
 }
@@ -199,14 +237,4 @@ func testVerifyKnowledgeDocumentDestroyed(state *terraform.State) error {
 	}
 	// Success. All knowledge bases destroyed
 	return nil
-}
-
-func generateKnowledgeDocumentLifeCycle() string {
-	return `
-	lifecycle {
-		ignore_changes = [
-			"knowledge_document[0].categories",           
-		]
-	}
-	`
 }

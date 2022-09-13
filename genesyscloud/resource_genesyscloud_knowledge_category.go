@@ -83,7 +83,9 @@ func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2
 func knowledgeCategoryExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeCategories),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs: map[string]*RefAttrSettings{
+			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
+		},
 	}
 }
 
@@ -135,14 +137,13 @@ func createKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Creating knowledge category %s", knowledgeCategory["name"].(string))
 	knowledgeCategoryResponse, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseLanguageCategories(knowledgeBaseId, languageCode, knowledgeCategoryRequest)
 	if err != nil {
-		fmt.Errorf("Failed to create knowledge category %s: %s", *knowledgeCategoryResponse.Name, err)
-		return diag.Errorf("Failed to create knowledge category %s: %s", *knowledgeCategoryResponse.Name, err)
+		return diag.Errorf("Failed to create knowledge category %s: %s", knowledgeBaseId, err)
 	}
 
 	id := fmt.Sprintf("%s %s %s", *knowledgeCategoryResponse.Id, *knowledgeCategoryResponse.KnowledgeBase.Id, *knowledgeCategoryResponse.LanguageCode)
 	d.SetId(id)
 
-	log.Printf("Created knowledge category %s %s", *knowledgeCategoryResponse.Name, *knowledgeCategoryResponse.Id)
+	log.Printf("Created knowledge category %s", *knowledgeCategoryResponse.Id)
 	return readKnowledgeCategory(ctx, d, meta)
 }
 
@@ -160,7 +161,6 @@ func readKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta int
 		knowledgeCategory, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 		if getErr != nil {
 			if isStatus404(resp) {
-				log.Println("404")
 				return resource.RetryableError(fmt.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr))
 			}
 			log.Printf("%s", getErr)
@@ -174,7 +174,7 @@ func readKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta int
 		d.Set("knowledge_base_id", *knowledgeCategory.KnowledgeBase.Id)
 		d.Set("language_code", *knowledgeCategory.LanguageCode)
 		d.Set("knowledge_category", flattenKnowledgeCategory(knowledgeCategory))
-		log.Printf("Read knowledge category %s %s", knowledgeCategoryId, *knowledgeCategory.Name)
+		log.Printf("Read knowledge category %s", knowledgeCategoryId)
 		return cc.CheckState()
 	})
 }
@@ -219,16 +219,14 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeCategoryId := id[0]
 	knowledgeBaseId := id[1]
 	languageCode := id[2]
-	knowledgeCategoryRequest := d.Get("knowledge_category").([]interface{})[0].(map[string]interface{})
-	name := knowledgeCategoryRequest["name"].(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
-	log.Printf("Deleting knowledge category %s", name)
+	log.Printf("Deleting knowledge category %s", id)
 	_, _, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 	if err != nil {
-		return diag.Errorf("Failed to delete knowledge category %s: %s", name, err)
+		return diag.Errorf("Failed to delete knowledge category %s: %s", id, err)
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {

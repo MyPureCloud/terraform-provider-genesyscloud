@@ -39,7 +39,7 @@ func dataSourceKnowledgeKnowledgebaseRead(ctx context.Context, d *schema.Resourc
 	name := d.Get("name").(string)
 	coreLanguage := d.Get("core_language").(string)
 
-	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
+	// Find first non-deleted knowledge base by name. Retry in case new knowledge base is not yet indexed by search
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100

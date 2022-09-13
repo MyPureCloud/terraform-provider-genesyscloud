@@ -137,7 +137,9 @@ func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.
 func knowledgeDocumentExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeDocuments),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs: map[string]*RefAttrSettings{
+			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
+		},
 	}
 }
 
@@ -407,8 +409,6 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeDocumentId := id[0]
 	knowledgeBaseId := id[1]
 	languageCode := id[2]
-	varType := d.Get("type").(string)
-	externalUrl := d.Get("external_url").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
@@ -422,13 +422,20 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		}
 
 		body := d.Get("knowledge_document").([]interface{})[0].(map[string]interface{})
-		categories, _ := buildCategories(body, knowledgeAPI, knowledgeBaseId, languageCode)
 		update := platformclientv2.Knowledgedocumentrequest{
-			VarType:     &varType,
-			ExternalUrl: &externalUrl,
-			Faq:         buildFaq(body),
-			Categories:  categories,
-			Article:     buildArticle(body),
+			Faq:     buildFaq(body),
+			Article: buildArticle(body),
+		}
+
+		categories, _ := buildCategories(body, knowledgeAPI, knowledgeBaseId, languageCode)
+		if categories != nil {
+			update.Categories = categories
+		}
+		if varType, ok := body["type"].(string); ok {
+			update.VarType = &varType
+		}
+		if externalUrl, ok := body["external_url"].(string); ok {
+			update.ExternalUrl = &externalUrl
 		}
 
 		log.Printf("Updating knowledge document %s", knowledgeDocumentId)

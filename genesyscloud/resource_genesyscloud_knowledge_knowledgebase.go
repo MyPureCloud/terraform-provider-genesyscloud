@@ -78,7 +78,7 @@ func resourceKnowledgeKnowledgebase() *schema.Resource {
 				Description: "Flag that indicates the knowledge base is published",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
+				Computed:    true,
 			},
 		},
 	}
@@ -92,7 +92,7 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
-	fmt.Printf("Creating knowledge base %s", name)
+	log.Printf("Creating knowledge base %s", name)
 	knowledgeBase, _, err := knowledgeAPI.PostKnowledgeKnowledgebases(platformclientv2.Knowledgebase{
 		Name:         &name,
 		Description:  &description,
@@ -100,7 +100,6 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	})
 
 	if err != nil {
-		fmt.Errorf("Failed to create knowledge base %s: %s", name, err)
 		return diag.Errorf("Failed to create knowledge base %s: %s", name, err)
 	}
 

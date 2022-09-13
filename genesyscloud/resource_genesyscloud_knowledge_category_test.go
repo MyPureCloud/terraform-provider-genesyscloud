@@ -20,6 +20,7 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 		knowledgeCategoryResource1 = "test-knowledge-category1"
 		categoryName               = "Terraform Knowledge Category" + uuid.NewString()
 		categoryDescription        = "test-description1"
+		categoryDescription2       = "test-description2"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -42,8 +43,30 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 						categoryDescription,
 					),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "language_code", knowledgeBaseCoreLanguage1),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.name", categoryName),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.description", categoryDescription),
+				),
+			},
+			{
+				// Update
+				Config: generateKnowledgeKnowledgebaseResource(
+					knowledgeBaseResource1,
+					knowledgeBaseName1,
+					knowledgeBaseDescription1,
+					knowledgeBaseCoreLanguage1,
+				) +
+					generateKnowledgeCategory(
+						knowledgeCategoryResource1,
+						knowledgeBaseResource1,
+						knowledgeBaseCoreLanguage1,
+						categoryName,
+						categoryDescription2,
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "language_code", knowledgeBaseCoreLanguage1),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.name", categoryName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.description", categoryDescription2),
 				),
 			},
 			{
