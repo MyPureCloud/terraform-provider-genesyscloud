@@ -18,14 +18,14 @@ import (
 func TestAccResourceFlow(t *testing.T) {
 	var (
 		flowResource1 = "test_flow1"
-		flowResource2 = "test_flow2"
-		flowName1     = "Terraform Flow Test-" + uuid.NewString()
-		flowName2     = "Terraform Flow Test-" + uuid.NewString()
-		flowType1     = "INBOUNDCALL"
-		flowType2     = "INBOUNDEMAIL"
-		filePath1     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
-		filePath2     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
-		filePath3     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
+		//flowResource2 = "test_flow2"
+		flowName1 = "Terraform Flow Test-" + uuid.NewString()
+		flowName2 = "Terraform Flow Test-" + uuid.NewString()
+		flowType1 = "INBOUNDCALL"
+		//flowType2     = "INBOUNDEMAIL"
+		filePath1 = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		filePath2 = "../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
+		//filePath3     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName1)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName2)
@@ -45,40 +45,15 @@ func TestAccResourceFlow(t *testing.T) {
 		},
 	})
 
-	inboundemailConfig1 := fmt.Sprintf(`inboundEmail:
-    name: %s
-    division: %s
-    startUpRef: "/inboundEmail/states/state[Initial State_10]"
-    defaultLanguage: en-us
-    supportedLanguages:
-        en-us:
-            defaultLanguageSkill:
-                noValue: true
-    settingsInboundEmailHandling:
-        emailHandling:
-            disconnect:
-                none: true
-    settingsErrorHandling:
-        errorHandling:
-            disconnect:
-                none: true
-    states:
-        - state:
-            name: Initial State
-            refId: Initial State_10
-            actions:
-                - disconnect:
-                    name: Disconnect
-`, flowName1, homeDivisionName)
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create flow
-				Config: generateFlowResource(
+				Config: generateFlowResourceForceUnlock(
 					flowResource1,
+					true,
 					filePath1,
 					inboundcallConfig1,
 				),
@@ -88,50 +63,15 @@ func TestAccResourceFlow(t *testing.T) {
 			},
 			{
 				// Update flow with name
-				Config: generateFlowResource(
+				Config: generateFlowResourceForceUnlock(
 					flowResource1,
+					false,
 					filePath2,
 					inboundcallConfig2,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateFlow("genesyscloud_flow."+flowResource1, flowName2, flowType1),
 				),
-			},
-			{
-				// Import/Read
-				ResourceName:            "genesyscloud_flow." + flowResource1,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "file_content_hash"},
-			},
-			{
-				// Create inboundemail flow
-				Config: generateFlowResource(
-					flowResource2,
-					filePath3,
-					inboundemailConfig1,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResource2, flowName1, flowType2),
-				),
-			},
-			{
-				// Update inboundemail flow to inboundcall
-				Config: generateFlowResource(
-					flowResource2,
-					filePath2,
-					inboundcallConfig2,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResource2, flowName2, flowType1),
-				),
-			},
-			{
-				// Import/Read
-				ResourceName:            "genesyscloud_flow." + flowResource2,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "file_content_hash"},
 			},
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
@@ -256,6 +196,19 @@ func generateFlowSubstitutions(substitutions map[string]string) string {
 	}
 	return fmt.Sprintf(`substitutions = {
 %s}`, substitutionsStr)
+}
+
+func generateFlowResourceForceUnlock(resourceID string, forceUnlock bool, filepath, filecontent string, substitutions ...string) string {
+	if filecontent != "" {
+		updateFile(filepath, filecontent)
+	}
+
+	return fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
+		force_unlock = %v
+        filepath = %s
+		%s
+	}
+	`, resourceID, forceUnlock, strconv.Quote(filepath), strings.Join(substitutions, "\n"))
 }
 
 func generateFlowResource(resourceID, filepath, filecontent string, substitutions ...string) string {

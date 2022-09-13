@@ -63,6 +63,10 @@ func resourceFlow() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
+			"force_unlock": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 			"filepath": {
 				Description:  "YAML file path or URL for flow configuration.",
 				Type:         schema.TypeString,
@@ -135,6 +139,9 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	filePath := d.Get("filepath").(string)
 	substitutions := d.Get("substitutions").(map[string]interface{})
+
+	forceUnlock := d.Get("force_unlock")
+	fmt.Println("forceUnlock", forceUnlock)
 
 	_, err = prepareAndUploadFile(filePath, substitutions, headers, presignedUrl)
 	if err != nil {
