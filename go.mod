@@ -2,7 +2,7 @@ module github.com/mypurecloud/terraform-provider-genesyscloud
 
 go 1.18
 
-replace github.com/mypurecloud/platform-client-sdk-go/v80 v80.0.0 => github.com/ronanwatkins/platform-client-sdk-go/v75 v75.0.0
+replace github.com/mypurecloud/platform-client-sdk-go/v80 v80.0.0 => github.com/ronanwatkins/platform-client-sdk-go/v81 v81.0.0
 
 require (
 	github.com/google/go-cmp v0.5.8
