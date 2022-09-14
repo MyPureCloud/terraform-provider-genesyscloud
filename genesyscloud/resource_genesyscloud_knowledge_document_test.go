@@ -228,13 +228,13 @@ func testVerifyKnowledgeDocumentDestroyed(state *terraform.State) error {
 		if knowledgeDocument != nil {
 			return fmt.Errorf("Knowledge document (%s) still exists", knowledgeDocumentId)
 		} else if isStatus404(resp) || isStatus400(resp) {
-			// Knowledge base not found as expected
+			// Knowledge base document not found as expected
 			continue
 		} else {
 			// Unexpected error
 			return fmt.Errorf("Unexpected error: %s", err)
 		}
 	}
-	// Success. All knowledge bases destroyed
+	// Success. All knowledge base documents destroyed
 	return nil
 }

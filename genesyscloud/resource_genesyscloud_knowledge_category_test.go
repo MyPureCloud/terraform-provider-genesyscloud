@@ -43,6 +43,7 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 						categoryDescription,
 					),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "language_code", knowledgeBaseCoreLanguage1),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.name", categoryName),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.description", categoryDescription),
@@ -64,6 +65,7 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 						categoryDescription2,
 					),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "language_code", knowledgeBaseCoreLanguage1),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.name", categoryName),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.description", categoryDescription2),
@@ -127,7 +129,7 @@ func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
 		if knowledgeCategory != nil {
 			return fmt.Errorf("Knowledge category (%s) still exists", knowledgeCategoryId)
 		} else if isStatus404(resp) || isStatus400(resp) {
-			// Knowledge base not found as expected
+			// Knowledge base category not found as expected
 			continue
 		} else {
 			// Unexpected error
