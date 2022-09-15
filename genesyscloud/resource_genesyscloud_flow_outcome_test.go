@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccResourceFlowOutcome(t *testing.T) {
+	t.Skip("Skipping until a DELETE method is publicly available for flow outcomes.")
 	var (
 		outcomeResource1 = "flow-outcome1"
 		name1            = "Terraform Code-" + uuid.NewString()

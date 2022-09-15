@@ -109,6 +109,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_outbound_contactlistfilter":                  resourceOutboundContactListFilter(),
 				"genesyscloud_outbound_contact_list":                       resourceOutboundContactList(),
 				"genesyscloud_outbound_dnclist":                            resourceOutboundDncList(),
+				"genesyscloud_orgauthorization_pairing":                    resourceOrgauthorizationPairing(),
 				"genesyscloud_processautomation_trigger":                   resourceProcessAutomationTrigger(),
 				"genesyscloud_quality_forms_evaluation":                    resourceEvaluationForm(),
 				"genesyscloud_quality_forms_survey":                        resourceSurveyForm(),

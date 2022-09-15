@@ -188,14 +188,11 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 
 		if *flowJob.Status == "Failure" {
-			messages := *flowJob.Messages
-
-			errorMessage := ""
-			for _, message := range messages {
-				errorMessage = errorMessage + " " + *message.Text
-
+			messages := make([]string, 0)
+			for _, m := range *flowJob.Messages {
+				messages = append(messages, *m.Text)
 			}
-			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %+v ", jobId, errorMessage))
+			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v ", jobId, strings.Join(messages, "\n\n")))
 		}
 
 		if *flowJob.Status == "Success" {
