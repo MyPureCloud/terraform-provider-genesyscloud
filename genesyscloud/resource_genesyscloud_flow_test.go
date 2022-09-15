@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -17,6 +18,8 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
+//lockFlow will search for a specific flow and then lock it.  This is to specifically test the force_unlock flag where I want to create a flow,  simulate some one locking it and then attempt to
+//do another CX as Code deploy.
 func lockFlow(flowName string, flowType string) {
 	archAPI := platformclientv2.NewArchitectApi()
 	ctx := context.Background()
@@ -40,7 +43,8 @@ func lockFlow(flowName string, flowType string) {
 						return resource.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s", flowName, getErr))
 					}
 
-					log.Printf("FlowName: %s has been locked Flow resource after checkout: %v", flowName, *flow.LockedClient.Name)
+					log.Printf("Flow (%s) with FlowName: %s has been locked Flow resource after checkout: %v\n", *flow.Id, flowName, *flow.LockedClient.Name)
+
 					return nil
 				}
 			}
@@ -48,6 +52,7 @@ func lockFlow(flowName string, flowType string) {
 	})
 }
 
+//Tests the force_unlock functionality.
 func TestAccResourceFlowForceUnlock(t *testing.T) {
 	var (
 		flowResource = "test_force_unlock_flow1"
@@ -74,7 +79,7 @@ func TestAccResourceFlowForceUnlock(t *testing.T) {
 					flowResource,
 					filePath,
 					inboundcallConfig1,
-					true,
+					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateFlow("genesyscloud_flow."+flowResource, flowName, flowType),
@@ -82,14 +87,14 @@ func TestAccResourceFlowForceUnlock(t *testing.T) {
 			},
 			{
 				//Lock the flow, do a deploy and check to make sure the flow is locked b
-				PreConfig: flowLocFunc, //This is supposed to be locked
+				PreConfig: flowLocFunc, //This will lock the flow.
 				Config: generateFlowResource(
 					flowResource,
 					filePath,
 					inboundcallConfig2,
 					true,
 				),
-				Check: resource.ComposeTestCheckFunc( //Seems to be running the check after the flow
+				Check: resource.ComposeTestCheckFunc(
 					validateFlowUnlocked("genesyscloud_flow."+flowResource),
 					validateFlow("genesyscloud_flow."+flowResource, flowName, flowType),
 				),
@@ -360,12 +365,14 @@ func generateFlowResource(resourceID, filepath, filecontent string, force_unlock
 		updateFile(filepath, filecontent)
 	}
 
-	return fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
+	flowResourceStr := fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
         filepath = %s
 		force_unlock = %v
 		%s
 	}
 	`, resourceID, strconv.Quote(filepath), force_unlock, strings.Join(substitutions, "\n"))
+
+	return flowResourceStr
 }
 
 func generateFlowResourceURL(resourceID, filepath string) string {
@@ -419,56 +426,32 @@ func validateFlow(flowResourceName, name, flowType string) resource.TestCheckFun
 	}
 }
 
-// Check if flow is unlocked
+// Will attempt to determine if a flow is unlocked. I check to see if a flow is locked, by attempting to check the flow again.  If the flow is locked the second checkout
+// will fail with a 409 status code.  If the flow is unlocked, the status code will be a 200
 func validateFlowUnlocked(flowResourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		flowResource, ok := state.RootModule().Resources[flowResourceName]
 		if !ok {
 			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
 		}
-		//time.sleep(20 * time.Second)
+
 		flowID := flowResource.Primary.ID
 		architectAPI := platformclientv2.NewArchitectApi()
 
-		flow, _, err := architectAPI.GetFlow(flowID, false)
+		flow, response, err := architectAPI.PostFlowsActionsCheckout(flowID)
 
-		if err != nil {
+		if err != nil && response == nil {
 			return fmt.Errorf("Unexpected error: %s", err)
+		}
+
+		if err != nil && response.StatusCode == http.StatusConflict {
+			return fmt.Errorf("Flow (%s) is supposed to be in an unlocked state and it is in a locked state. Tried to lock the flow to see if I could lock it and it failed.", flowID)
 		}
 
 		if flow == nil {
 			return fmt.Errorf("Flow (%s) not found. ", flowID)
 		}
 
-		if flow.LockedClient != nil {
-			return fmt.Errorf("Flow (%s) is supposed to be in an unlocked state and it is in a locked state.  OAuth Client locked flow: %s", flowID, *flow.LockedClient.Name)
-		}
-		return nil
-	}
-}
-
-func validateFlowLocked(flowResourceName string) resource.TestCheckFunc {
-	return func(state *terraform.State) error {
-		flowResource, ok := state.RootModule().Resources[flowResourceName]
-		if !ok {
-			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
-		}
-		flowID := flowResource.Primary.ID
-		architectAPI := platformclientv2.NewArchitectApi()
-
-		flow, _, err := architectAPI.GetFlow(flowID, false)
-
-		if err != nil {
-			return fmt.Errorf("Unexpected error: %s", err)
-		}
-
-		if flow == nil {
-			return fmt.Errorf("Flow (%s) not found. ", flowID)
-		}
-
-		if flow.LockedClient == nil {
-			return fmt.Errorf("Flow (%s) is supposed to be in a locked state and it is in an unlocked state.", flowID)
-		}
 		return nil
 	}
 }
