@@ -106,6 +106,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_oauth_client":                                resourceOAuthClient(),
 				"genesyscloud_outbound_attempt_limit":                      resourceOutboundAttemptLimit(),
 				"genesyscloud_outbound_callanalysisresponseset":            resourceOutboundCallAnalysisResponseSet(),
+				"genesyscloud_outbound_campaign":                           resourceOutboundCampaign(),
 				"genesyscloud_outbound_contactlistfilter":                  resourceOutboundContactListFilter(),
 				"genesyscloud_outbound_callabletimeset":                    resourceOutboundCallabletimeset(),
 				"genesyscloud_outbound_contact_list":                       resourceOutboundContactList(),
