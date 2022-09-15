@@ -12,7 +12,7 @@ DEV_VERSION=0.1.0
 
 # Run acceptance tests
 testacc:
-	TF_ACC=1 go clean -testcache && go test ./... -v $(TESTARGS) -timeout 120m -parallel 20
+	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m -parallel 20
 
 clean:
 	rm -f -r ${DIST_DIR}
