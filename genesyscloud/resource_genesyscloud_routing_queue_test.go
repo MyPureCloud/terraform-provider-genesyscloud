@@ -216,14 +216,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					queueFlowResource1,
 					queueFlowFilePath1,
 					queueFlowInboundcallConfig1,
+					false,
 				) + generateFlowResource(
 					emailInQueueFlowResource1,
 					queueFlowFilePath2,
 					emailInQueueFlowInboundcallConfig2,
+					false,
 				) + generateFlowResource(
 					messageInQueueFlowResource1,
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,
+					false,
 				) + generateRoutingQueueResourceBasic(
 					queueResource1,
 					queueName1,
@@ -243,14 +246,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					queueFlowResource2,
 					queueFlowFilePath1,
 					queueFlowInboundcallConfig1,
+					false,
 				) + generateFlowResource(
 					emailInQueueFlowResource2,
 					queueFlowFilePath2,
 					emailInQueueFlowInboundcallConfig2,
+					false,
 				) + generateFlowResource(
 					messageInQueueFlowResource2,
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,
+					false,
 				) + generateRoutingQueueResourceBasic(
 					queueResource1,
 					queueName1,

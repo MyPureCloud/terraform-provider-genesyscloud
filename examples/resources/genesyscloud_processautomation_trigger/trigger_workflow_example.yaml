@@ -1,6 +1,6 @@
 workflow:
- name: terraform-provider-test-32fefb46-cfab-4ce3-b13c-00f928196ba7
- division: Home
+ name: terraform-provider-test-52c47d1a-9d1c-47c1-a448-8413e4e8438c
+ division: Home0349a372-0480-4879-b98e-8aace58b1bb7
  startUpRef: "/workflow/states/state[Initial State_10]"
  defaultLanguage: en-us
  variables:

@@ -136,7 +136,8 @@ func forceUnlockFlow(flowId string, sdkConfig *platformclientv2.Configuration) e
 
 func isForceUnlockEnabled(d *schema.ResourceData) bool {
 	forceUnlock := d.Get("force_unlock").(bool)
-	log.Printf("Checking flow unlock status: %v for flow id %v", forceUnlock, d.Id())
+	log.Printf("ForceUnlock: %v, id %v", forceUnlock, d.Id())
+
 	if forceUnlock && d.Id() != "" {
 		return true
 	}

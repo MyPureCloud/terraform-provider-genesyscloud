@@ -954,6 +954,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						flowResource1,
 						filePath1,
 						"",
+						false,
 						generateFlowSubstitutions(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
@@ -1060,6 +1061,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						flowResource1,
 						filePath1,
 						"",
+						false,
 						generateFlowSubstitutions(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
@@ -1166,6 +1168,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						flowResource1,
 						filePath1,
 						"",
+						false,
 						generateFlowSubstitutions(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
@@ -1272,6 +1275,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						flowResource1,
 						filePath1,
 						"",
+						false,
 						generateFlowSubstitutions(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
