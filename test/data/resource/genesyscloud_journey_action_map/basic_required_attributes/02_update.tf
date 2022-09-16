@@ -6,8 +6,10 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
     delay_in_seconds = 60
   }
   action {
-    media_type         = "contentOffer"
-    action_template_id = "84cdf5ce-9b76-4e67-a76a-4adb116f7bf9" # This is a random hardcoded value!
+    media_type = "architectFlow"
+    architect_flow_fields {
+      architect_flow_id = "1e5fe2dc-9973-42b7-a328-c015617b3a98" # This is a random hardcoded value!
+    }
   }
   start_date = "2022-07-05T15:30:00.000000"
 
