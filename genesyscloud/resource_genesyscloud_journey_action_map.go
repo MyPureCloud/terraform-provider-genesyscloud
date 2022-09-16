@@ -391,6 +391,8 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	actionMap := buildSdkActionMap(d)
 
+	fmt.Println("create", actionMap.String())
+
 	log.Printf("Creating journey action map %s", *actionMap.DisplayName)
 	result, resp, err := journeyApi.PostJourneyActionmaps(*actionMap)
 	if err != nil {
@@ -421,6 +423,8 @@ func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta inte
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceJourneyActionMap())
 		flattenActionMap(d, actionMap)
 
+		//fmt.Println("end date", *actionMap.EndDate)
+
 		log.Printf("Read journey action map %s %s", d.Id(), *actionMap.DisplayName)
 		return cc.CheckState()
 	})
@@ -440,6 +444,9 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		patchActionMap.Version = actionMap.Version
+		//patchActionMap.EndDate = platformclientv2.NullTime()
+		fmt.Println("update EndDate", patchActionMap.EndDate)
+		fmt.Println("update", patchActionMap.String())
 		_, resp, patchErr := journeyApi.PatchJourneyActionmap(d.Id(), *patchActionMap)
 		if patchErr != nil {
 			input, _ := interfaceToJson(*patchActionMap)

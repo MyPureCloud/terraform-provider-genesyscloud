@@ -30,12 +30,13 @@ func dataSourceJourneyActionMapRead(ctx context.Context, d *schema.ResourceData,
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
+	fmt.Println("data source read")
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		pageCount := 1 // Needed because of broken journey common paging
 		for pageNum := 1; pageNum <= pageCount; pageNum++ {
 			const pageSize = 100
-			journeyActionMaps, _, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
+			journeyActionMaps, _, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "displayName", "", "", nil, nil, "")
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("failed to get page of journey action maps: %v", getErr))
 			}

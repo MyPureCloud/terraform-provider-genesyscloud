@@ -340,6 +340,10 @@ github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6So
 github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.6.1 h1:/FiVV8dS/e+YqF2JvO3yXRFbBLTIuSDkuC7aBOAvL+k=
+github.com/ronanwatkins/platform-client-sdk-go/v89 v89.0.0 h1:G0t3n7+vdblLEjH7hzScjcZqq+zz+SJ5tvwZaBLhbo0=
+github.com/ronanwatkins/platform-client-sdk-go/v89 v89.0.0/go.mod h1:v+STLrMICtp5geOGFspduqLls8klJiXRrqRIVJ+/2Hc=
+github.com/ronanwatkins/platform-client-sdk-go/v90 v90.0.0 h1:wlovPrW0MxqfcOCu5t8yAnx3YK9z/s8t7UUHuN3f0ZQ=
+github.com/ronanwatkins/platform-client-sdk-go/v90 v90.0.0/go.mod h1:k4loHhlwtRDOyJhXM8A2JhBOLPxdLPZBTZzVVUtjXLU=
 github.com/russross/blackfriday v1.6.0 h1:KqfZb0pUVN2lYqZUYRddxF4OR8ZMURnJIG5Y3VRLtww=
 github.com/russross/blackfriday v1.6.0/go.mod h1:ti0ldHuxg49ri4ksnFxlkCfN+hvslNlmVHqNRXXJNAY=
 github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
