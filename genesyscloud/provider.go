@@ -294,7 +294,7 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		RetryMax:     20,
 		RequestLogHook: func(request *http.Request, count int) {
 			if count > 0 && request != nil {
-				log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
+				log.Printf("Retry #%d for %s %s", count, request.Method, request.URL)
 			}
 		},
 		ResponseLogHook: func(response *http.Response) {
