@@ -6,6 +6,8 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   }
   action {
     media_type         = "contentOffer"
+    # Action Template referenced by Content Offer Action Map does not exist. Action Template ID: 84cdf5ce-9b76-4e67-a76a-4adb116f7bf9"
+    # ContentOffer currently is not preparable by provider therefore we cannot execute test for it
     action_template_id = "84cdf5ce-9b76-4e67-a76a-4adb116f7bf9" # This is a random hardcoded value!
   }
   start_date = "2022-07-04T12:00:00.000000"
