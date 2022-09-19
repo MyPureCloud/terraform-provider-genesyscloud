@@ -34,7 +34,7 @@ func dataSourceOutboundCallabletimesetRead(ctx context.Context, d *schema.Resour
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 
-			timesets, _, getErr := outboundAPI.GetOutboundCallabletimesets(pageSize, pageNum, false, "", "", "", "")
+			timesets, _, getErr := outboundAPI.GetOutboundCallabletimesets(pageSize, pageNum, true, "", "", "", "")
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("error requesting callable timeset %s: %s", timesetName, getErr))
 			}
