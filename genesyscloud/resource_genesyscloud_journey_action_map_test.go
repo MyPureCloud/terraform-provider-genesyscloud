@@ -13,9 +13,9 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
-func TestAccResourceJourneyActionMapActionMediaTypes(t *testing.T) {
-	runJourneyActionMapTestCase(t, "action_media_types")
-}
+//func TestAccResourceJourneyActionMapActionMediaTypes(t *testing.T) {
+//	runJourneyActionMapTestCase(t, "action_media_types")
+//}
 
 func TestAccResourceJourneyActionMapOptionalAttributes(t *testing.T) {
 	runJourneyActionMapTestCase(t, "basic_optional_attributes")
