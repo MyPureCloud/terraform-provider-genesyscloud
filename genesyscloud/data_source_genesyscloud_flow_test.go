@@ -28,6 +28,7 @@ func TestAccDataSourceFlow(t *testing.T) {
 					flowResource,
 					filePath,
 					inboundcallConfig,
+					false,
 				) + generateFlowDataSource(
 					flowDataSource,
 					"genesyscloud_flow."+flowResource,

@@ -95,6 +95,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 					flowResource1,
 					filePath1,
 					workflowConfig1,
+					false,
 				) + generateProcessAutomationTriggerResource(
 					triggerResource1,
 					triggerName1,
@@ -131,6 +132,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 					flowResource1,
 					filePath1,
 					workflowConfig1,
+					false,
 				) + generateProcessAutomationTriggerResource(
 					triggerResource1,
 					triggerName2,
