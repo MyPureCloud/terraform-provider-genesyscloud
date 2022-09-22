@@ -2,7 +2,7 @@ resource "genesyscloud_outbound_messagingcampaign" "example_outbound_messagingca
   name                 = "Example Messaging Campaign"
   division_id          = genesyscloud_auth_division.division.id
   campaign_status      = "off" // Possible values: on, off
-  callable_time_set_id = genesyscloud_TODO_FILL_IN_RESOURCE_TYPE.callable_time_set.id
+  callable_time_set_id = genesyscloud_outbound_callabletimeset.callable_time_set.id
   contact_list_id      = genesyscloud_outbound_contact_list.contact_list.id
   dnc_list_ids         = [genesyscloud_outbound_dnclist.dnc_list_1.id, genesyscloud_outbound_dnclist.dnc_list_2.id]
   always_running       = true

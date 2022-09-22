@@ -48,7 +48,6 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		resourceId                    = "messaging_campaign"
 		name                          = "Test Messaging Campaign " + uuid.NewString()
 		messagesPerMin                = "10"
-		callableTimeSetId             = "e7dccee2-44de-45ff-be00-d3c0c5276857"
 		alwaysRunning                 = falseValue
 		smsConfigMessageColumn        = column1
 		smsConfigPhoneColumn          = column1
@@ -87,6 +86,18 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 				),
 			),
 		)
+
+		callableTimeSetResourceId = "callable_time_set"
+		callableTimeSetName       = "Test CTS " + uuid.NewString()
+		callableTimeSetResource   = generateOutboundCallabletimeset(
+			callableTimeSetResourceId,
+			callableTimeSetName,
+			generateCallableTimesBlock(
+				"Europe/Dublin",
+				generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+				generateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
+			),
+		)
 	)
 
 	config := platformclientv2.GetDefaultConfiguration()
@@ -111,38 +122,41 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: dncListResource + contactListResource + contactListFilterResource + generateOutboundMessagingCampaignResource(
-					resourceId,
-					name,
-					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
-					"off",
-					messagesPerMin,
-					alwaysRunning,
-					callableTimeSetId,
-					[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
-					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
-					generateOutboundMessagingCampaignSmsConfig(
-						smsConfigMessageColumn,
-						smsConfigPhoneColumn,
-						smsConfigSenderSMSPhoneNumber,
+				Config: dncListResource +
+					contactListResource +
+					contactListFilterResource +
+					callableTimeSetResource +
+					generateOutboundMessagingCampaignResource(
+						resourceId,
+						name,
+						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+						"off",
+						messagesPerMin,
+						alwaysRunning,
+						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
+						[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
+						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
+						generateOutboundMessagingCampaignSmsConfig(
+							smsConfigMessageColumn,
+							smsConfigPhoneColumn,
+							smsConfigSenderSMSPhoneNumber,
+						),
+						generateOutboundMessagingCampaignContactSort(
+							column1,
+							"",
+							"",
+						),
+						generateOutboundMessagingCampaignContactSort(
+							column2,
+							"DESC",
+							trueValue,
+						),
 					),
-					generateOutboundMessagingCampaignContactSort(
-						column1,
-						"",
-						"",
-					),
-					generateOutboundMessagingCampaignContactSort(
-						column2,
-						"DESC",
-						trueValue,
-					),
-				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "messages_per_minute", messagesPerMin),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "always_running", alwaysRunning),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "campaign_status", "off"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id", callableTimeSetId),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.message_column", smsConfigMessageColumn),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.phone_column", smsConfigPhoneColumn),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.sender_sms_phone_number", smsConfigSenderSMSPhoneNumber),
@@ -152,6 +166,8 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.field_name", column2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.direction", "DESC"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", trueValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id",
+						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "dnc_list_ids.0",
 						"genesyscloud_outbound_dnclist."+dncListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_filter_ids.0",
@@ -162,39 +178,42 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 				),
 			},
 			{
-				Config: dncListResource + contactListResource + contactListFilterResource + generateOutboundMessagingCampaignResource(
-					resourceId,
-					name,
-					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
-					"on",
-					messagesPerMin,
-					alwaysRunning,
-					callableTimeSetId,
-					[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
-					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
-					generateOutboundMessagingCampaignSmsConfig(
-						smsConfigMessageColumn,
-						smsConfigPhoneColumn,
-						smsConfigSenderSMSPhoneNumber,
+				Config: dncListResource +
+					contactListResource +
+					contactListFilterResource +
+					callableTimeSetResource +
+					generateOutboundMessagingCampaignResource(
+						resourceId,
+						name,
+						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+						"on",
+						messagesPerMin,
+						alwaysRunning,
+						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
+						[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
+						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
+						generateOutboundMessagingCampaignSmsConfig(
+							smsConfigMessageColumn,
+							smsConfigPhoneColumn,
+							smsConfigSenderSMSPhoneNumber,
+						),
+						generateOutboundMessagingCampaignContactSort(
+							column1,
+							"",
+							"",
+						),
+						generateOutboundMessagingCampaignContactSort(
+							column2,
+							"DESC",
+							trueValue,
+						),
 					),
-					generateOutboundMessagingCampaignContactSort(
-						column1,
-						"",
-						"",
-					),
-					generateOutboundMessagingCampaignContactSort(
-						column2,
-						"DESC",
-						trueValue,
-					),
-				),
 				Check: resource.ComposeTestCheckFunc(
 					// Check that the DiffSuppressFunc is working
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "campaign_status", "complete"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "messages_per_minute", messagesPerMin),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "always_running", alwaysRunning),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id", callableTimeSetId),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.message_column", smsConfigMessageColumn),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.phone_column", smsConfigPhoneColumn),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.sender_sms_phone_number", smsConfigSenderSMSPhoneNumber),
@@ -204,6 +223,8 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.field_name", column2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.direction", "DESC"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", trueValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id",
+						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "dnc_list_ids.0",
 						"genesyscloud_outbound_dnclist."+dncListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_filter_ids.0",
@@ -215,38 +236,41 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 			},
 			{
 				// Update
-				Config: dncListResource + contactListResource + contactListFilterResource + generateOutboundMessagingCampaignResource(
-					resourceId,
-					nameUpdate,
-					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
-					"on",
-					messagesPerMinUpdate,
-					alwaysRunningUpdate,
-					callableTimeSetId,
-					[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
-					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
-					generateOutboundMessagingCampaignSmsConfig(
-						smsConfigMessageColumn,
-						smsConfigPhoneColumn,
-						smsConfigSenderSMSPhoneNumber,
+				Config: dncListResource +
+					contactListResource +
+					contactListFilterResource +
+					callableTimeSetResource +
+					generateOutboundMessagingCampaignResource(
+						resourceId,
+						nameUpdate,
+						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+						"on",
+						messagesPerMinUpdate,
+						alwaysRunningUpdate,
+						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
+						[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
+						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
+						generateOutboundMessagingCampaignSmsConfig(
+							smsConfigMessageColumn,
+							smsConfigPhoneColumn,
+							smsConfigSenderSMSPhoneNumber,
+						),
+						generateOutboundMessagingCampaignContactSort(
+							column1,
+							"DESC",
+							trueValue,
+						),
+						generateOutboundMessagingCampaignContactSort(
+							column2,
+							"",
+							"",
+						),
 					),
-					generateOutboundMessagingCampaignContactSort(
-						column1,
-						"DESC",
-						trueValue,
-					),
-					generateOutboundMessagingCampaignContactSort(
-						column2,
-						"",
-						"",
-					),
-				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "name", nameUpdate),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "messages_per_minute", messagesPerMinUpdate),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "always_running", alwaysRunningUpdate),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "campaign_status", "complete"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id", callableTimeSetId),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.message_column", smsConfigMessageColumn),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.phone_column", smsConfigPhoneColumn),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.sender_sms_phone_number", smsConfigSenderSMSPhoneNumber),
@@ -256,6 +280,8 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.field_name", column2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.direction", "ASC"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", falseValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id",
+						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_id",
@@ -334,7 +360,7 @@ func generateOutboundMessagingCampaignResource(
 	nestedBlocks ...string,
 ) string {
 	if callableTimeSetId != "" {
-		callableTimeSetId = fmt.Sprintf(`callable_time_set_id = "%s"`, callableTimeSetId)
+		callableTimeSetId = fmt.Sprintf(`callable_time_set_id = %s`, callableTimeSetId)
 	}
 	if alwaysRunning != "" {
 		alwaysRunning = fmt.Sprintf(`always_running = %s`, alwaysRunning)

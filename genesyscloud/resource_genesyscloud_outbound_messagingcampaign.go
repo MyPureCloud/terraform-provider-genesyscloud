@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -185,9 +186,7 @@ func outboundMessagingcampaignExporter() *ResourceExporter {
 			`contact_list_id`:         {RefType: "genesyscloud_outbound_contact_list"},
 			`contact_list_filter_ids`: {RefType: "genesyscloud_outbound_contactlistfilter"},
 			`dnc_list_ids`:            {RefType: "genesyscloud_outbound_dnclist"},
-			`callable_time_set_id`: {
-				RefType: "// TODO add reference type",
-			},
+			`callable_time_set_id`:    {RefType: "genesyscloud_outbound_callabletimeset"},
 			// /api/v2/responsemanagement/responses/{responseId}
 			`sms_config.content_template_id`: {},
 		},
@@ -301,7 +300,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Messagingcampaign %s: %s", d.Id(), getErr))
 		}
 
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundMessagingCampaign())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundMessagingCampaign())
 
 		if sdkmessagingcampaign.Name != nil {
 			d.Set("name", *sdkmessagingcampaign.Name)
@@ -346,8 +345,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		}
 
 		log.Printf("Read Outbound Messagingcampaign %s %s", d.Id(), *sdkmessagingcampaign.Name)
-		return nil // TODO calling cc.CheckState() can cause some difficult to understand errors in development. When ready for a PR, remove this line and uncomment the consistency_checker initialization and the the below one
-		//return cc.CheckState()
+		return cc.CheckState()
 	})
 }
 
