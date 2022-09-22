@@ -1,0 +1,5 @@
+* [GET /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-callabletimesets)
+* [POST /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/routing/outbound/#post-api-v2-outbound-callabletimesets)
+* [DELETE /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#delete-api-v2-outbound-callabletimesets--callableTimeSetId-)
+* [GET /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-callabletimesets--callableTimeSetId-)
+* [PUT /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#put-api-v2-outbound-callabletimesets--callableTimeSetId-)
