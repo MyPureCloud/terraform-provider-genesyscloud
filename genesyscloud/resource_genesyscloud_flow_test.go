@@ -111,7 +111,7 @@ func TestAccResourceFlowForceUnlock(t *testing.T) {
 	})
 }
 
-func TestAccResourceFlow(t *testing.T) {
+func TestAccResourceStandardFlow(t *testing.T) {
 	var (
 		flowResource1 = "test_flow1"
 		flowResource2 = "test_flow2"
@@ -200,7 +200,7 @@ func TestAccResourceFlow(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResource1,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "file_content_hash"},
+				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
 			},
 			{
 				// Create inboundemail flow
@@ -231,7 +231,7 @@ func TestAccResourceFlow(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResource2,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "file_content_hash"},
+				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
 			},
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
@@ -286,7 +286,7 @@ func TestAccResourceFlowURL(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResource1,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "file_content_hash"},
+				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
 			},
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
