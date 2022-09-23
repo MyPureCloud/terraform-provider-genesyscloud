@@ -1,7 +1,6 @@
 package genesyscloud
 
 import (
-	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -192,11 +191,8 @@ func TestAccResourceFlowURL(t *testing.T) {
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
 	})
-	if err := srv.Shutdown(context.TODO()); err != nil {
-		log.Println("Error shutting down server:", err)
-	}
 
-	httpServerExitDone.Wait()
+	fileserver.ShutDown(srv, httpServerExitDone)
 }
 
 func TestAccResourceFlowSubstitutions(t *testing.T) {

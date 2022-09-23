@@ -1,9 +1,7 @@
 package genesyscloud
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -265,11 +263,8 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 		},
 		CheckDestroy: testVerifyUserPromptsDestroyed,
 	})
-	if err := srv.Shutdown(context.TODO()); err != nil {
-		log.Println("Error shutting down server:", err)
-	}
 
-	httpServerExitDone.Wait()
+	fileserver.ShutDown(srv, httpServerExitDone)
 }
 
 func generateUserPromptResource(userPrompt *userPromptStruct) string {
