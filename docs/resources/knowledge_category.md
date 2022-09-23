@@ -21,7 +21,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_knowledge_category" "example_category" {
-  knowledge_base_id = genesyscloud_knowledge.example_knowledgebase.id
+  knowledge_base_id = genesyscloud_knowledge_knowledgebase.example_knowledgebase.id
   language_code     = "en-US"
   knowledge_category {
     name        = "ExampleCategory"

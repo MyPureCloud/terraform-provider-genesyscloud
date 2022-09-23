@@ -38,7 +38,7 @@ resource "genesyscloud_knowledge_knowledgebase" "example_knowledgebase" {
 
 - `description` (String) Knowledge base description
 - `name` (String) Knowledge base name
-- `published` (Boolean) Flag that indicates the knowledge base is published Defaults to `false`.
+- `published` (Boolean) Flag that indicates the knowledge base is published
 
 ### Read-Only
 
