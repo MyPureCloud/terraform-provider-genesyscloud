@@ -2,13 +2,14 @@ package fileserver
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
 )
 
-func Start(waitGroup *sync.WaitGroup, directory string, port string) *http.Server {
-	srv := &http.Server{Addr: ":" + port}
+func Start(waitGroup *sync.WaitGroup, directory string, port int) *http.Server {
+	srv := &http.Server{Addr: fmt.Sprintf(":%d", port)}
 
 	http.DefaultServeMux = new(http.ServeMux)
 	http.Handle("/", http.FileServer(http.Dir(directory)))

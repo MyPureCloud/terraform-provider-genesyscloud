@@ -249,7 +249,7 @@ func TestAccResourceFlowURL(t *testing.T) {
 
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	srv := fileserver.Start(httpServerExitDone, "../examples/resources/genesyscloud_flow", "8101")
+	srv := fileserver.Start(httpServerExitDone, "../examples/resources/genesyscloud_flow", 8101)
 
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{

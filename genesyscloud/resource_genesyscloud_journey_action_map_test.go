@@ -18,7 +18,7 @@ import (
 const resourceName = "genesyscloud_journey_action_map"
 
 func TestAccResourceJourneyActionMapActionMediaTypes(t *testing.T) {
-	runJourneyActionMapTestCaseWithFileServer(t, "action_media_types", "8111")
+	runJourneyActionMapTestCaseWithFileServer(t, "action_media_types", 8111)
 }
 
 func TestAccResourceJourneyActionMapOptionalAttributes(t *testing.T) {
@@ -26,14 +26,14 @@ func TestAccResourceJourneyActionMapOptionalAttributes(t *testing.T) {
 }
 
 func TestAccResourceJourneyActionMapRequiredAttributes(t *testing.T) {
-	runJourneyActionMapTestCaseWithFileServer(t, "basic_required_attributes", "8112")
+	runJourneyActionMapTestCaseWithFileServer(t, "basic_required_attributes", 8112)
 }
 
 func TestAccResourceJourneyActionMapScheduleGroups(t *testing.T) {
 	runJourneyActionMapTestCase(t, "schedule_groups")
 }
 
-func runJourneyActionMapTestCaseWithFileServer(t *testing.T, testCaseName string, port string) {
+func runJourneyActionMapTestCaseWithFileServer(t *testing.T, testCaseName string, port int) {
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
 	server := fileserver.Start(httpServerExitDone, testrunner.GetTestDataPath(testrunner.ResourceTestType, resourceName), port)
