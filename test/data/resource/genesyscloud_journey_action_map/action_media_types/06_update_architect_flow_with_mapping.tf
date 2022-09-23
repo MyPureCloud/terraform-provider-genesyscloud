@@ -7,7 +7,7 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   action {
     media_type = "architectFlow"
     architect_flow_fields {
-      architect_flow_id = "1e5fe2dc-9973-42b7-a328-c015617b3a98" # This is a random hardcoded value!
+      architect_flow_id = genesyscloud_flow.terraform_test_-TEST-CASE-_action_map_dependency.id
       flow_request_mappings {
         name           = "Name_1"
         attribute_type = "String"
@@ -24,7 +24,10 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   }
   start_date = "2022-07-04T12:00:00.000000"
 
-  depends_on = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-_action_map_dependency]
+  depends_on = [
+    genesyscloud_journey_segment.terraform_test_-TEST-CASE-_action_map_dependency,
+    genesyscloud_flow.terraform_test_-TEST-CASE-_action_map_dependency
+  ]
 }
 
 resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-_action_map_dependency" {
@@ -36,5 +39,15 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-_action_map_d
     id     = "4654654654"
     name   = "external segment name"
     source = "AdobeExperiencePlatform"
+  }
+}
+
+resource "genesyscloud_flow" "terraform_test_-TEST-CASE-_action_map_dependency" {
+  filepath      = "http://localhost:8111/-TEST-CASE-_journey_action_map_dependency_flow.yaml"
+  substitutions = {
+    flow_name            = "terraform_test_-TEST-CASE-_flow_name"
+    default_language     = "en-us"
+    greeting             = "Hello World"
+    menu_disconnect_name = "Disconnect"
   }
 }

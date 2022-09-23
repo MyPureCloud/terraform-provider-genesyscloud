@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	dataSourceTestType              = "data_source"
-	resourceTestType                = "resource"
+	DataSourceTestType              = "data_source"
+	ResourceTestType                = "resource"
 	TestObjectIdPrefix              = "terraform_test_"
 	testObjectIdTestCasePlaceHolder = "-TEST-CASE-"
 )
@@ -23,11 +23,11 @@ func GetTestDataPath(elem ...string) string {
 }
 
 func GenerateDataSourceTestSteps(resourceName string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return GenerateTestSteps(dataSourceTestType, resourceName, testCaseName, checkFuncs)
+	return GenerateTestSteps(DataSourceTestType, resourceName, testCaseName, checkFuncs)
 }
 
 func GenerateResourceTestSteps(resourceName string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return GenerateTestSteps(resourceTestType, resourceName, testCaseName, checkFuncs)
+	return GenerateTestSteps(ResourceTestType, resourceName, testCaseName, checkFuncs)
 }
 
 func GenerateTestSteps(testType string, resourceName string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {

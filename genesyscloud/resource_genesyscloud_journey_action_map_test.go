@@ -4,17 +4,21 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/fileserver"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
+const resourceName = "genesyscloud_journey_action_map"
+
 func TestAccResourceJourneyActionMapActionMediaTypes(t *testing.T) {
-	runJourneyActionMapTestCase(t, "action_media_types")
+	runJourneyActionMapTestCaseWithFileServer(t, "action_media_types", "8111")
 }
 
 func TestAccResourceJourneyActionMapOptionalAttributes(t *testing.T) {
@@ -22,15 +26,24 @@ func TestAccResourceJourneyActionMapOptionalAttributes(t *testing.T) {
 }
 
 func TestAccResourceJourneyActionMapRequiredAttributes(t *testing.T) {
-	runJourneyActionMapTestCase(t, "basic_required_attributes")
+	runJourneyActionMapTestCaseWithFileServer(t, "basic_required_attributes", "8112")
 }
 
 func TestAccResourceJourneyActionMapScheduleGroups(t *testing.T) {
 	runJourneyActionMapTestCase(t, "schedule_groups")
 }
 
+func runJourneyActionMapTestCaseWithFileServer(t *testing.T, testCaseName string, port string) {
+	httpServerExitDone := &sync.WaitGroup{}
+	httpServerExitDone.Add(1)
+	server := fileserver.Start(httpServerExitDone, testrunner.GetTestDataPath(testrunner.ResourceTestType, resourceName), port)
+
+	runJourneyActionMapTestCase(t, testCaseName)
+
+	fileserver.ShutDown(server, httpServerExitDone)
+}
+
 func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
-	const resourceName = "genesyscloud_journey_action_map"
 	setupJourneyActionMap(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
@@ -51,6 +64,7 @@ func setupJourneyActionMap(t *testing.T, testCaseName string) {
 	cleanupJourneySegments(testCasePrefix)
 	cleanupArchitectScheduleGroups(testCasePrefix)
 	cleanupArchitectSchedules(testCasePrefix)
+	cleanupFlows(testCasePrefix)
 	cleanupJourneyActionMaps(testCasePrefix)
 }
 
