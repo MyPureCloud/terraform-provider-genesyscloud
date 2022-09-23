@@ -7,19 +7,21 @@ import (
 	"sync"
 )
 
-func StartHttpServer(waitGroup *sync.WaitGroup, directory, port string) *http.Server {
+func Start(waitGroup *sync.WaitGroup, directory string, port string) *http.Server {
 	srv := &http.Server{Addr: ":" + port}
 
 	http.DefaultServeMux = new(http.ServeMux)
 	http.Handle("/", http.FileServer(http.Dir(directory)))
 
+	log.Printf("FileServer started at localhost%s with path %s", srv.Addr, directory)
+
 	go func() {
 		defer waitGroup.Done()
 
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Printf("ListenAndServe(): %v", err)
+			log.Printf("FileServer ListenAndServe(): %v", err)
 		}
-		log.Println("Finished serving")
+		log.Println("FileServer finished serving")
 	}()
 
 	return srv

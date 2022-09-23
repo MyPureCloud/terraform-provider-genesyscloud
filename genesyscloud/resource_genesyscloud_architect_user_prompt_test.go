@@ -220,7 +220,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	srv := fileserver.StartHttpServer(httpServerExitDone, testrunner.GetTestDataPath(), "8100")
+	srv := fileserver.Start(httpServerExitDone, testrunner.GetTestDataPath(), "8100")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
