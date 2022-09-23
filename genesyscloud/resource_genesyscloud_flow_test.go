@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/fileserver"
 	"log"
 	"os"
 	"strconv"
@@ -147,7 +148,7 @@ func TestAccResourceFlowURL(t *testing.T) {
 
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	srv := startHttpServer(httpServerExitDone, "../examples/resources/genesyscloud_flow", "8101")
+	srv := fileserver.StartHttpServer(httpServerExitDone, "../examples/resources/genesyscloud_flow", "8101")
 
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{

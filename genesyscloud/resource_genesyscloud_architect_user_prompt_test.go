@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -14,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/fileserver"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
@@ -194,24 +194,6 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 	})
 }
 
-func startHttpServer(wg *sync.WaitGroup, directory, port string) *http.Server {
-	srv := &http.Server{Addr: ":" + port}
-
-	http.DefaultServeMux = new(http.ServeMux)
-	http.Handle("/", http.FileServer(http.Dir(directory)))
-
-	go func() {
-		defer wg.Done()
-
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Printf("ListenAndServe(): %v", err)
-		}
-		log.Println("Finished serving")
-	}()
-
-	return srv
-}
-
 func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 	userPromptResource1 := "test-user_prompt_wav_file"
 	userPromptName1 := "TestUserPromptWav_1" + strings.Replace(uuid.NewString(), "-", "", -1)
@@ -240,7 +222,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	srv := startHttpServer(httpServerExitDone, testrunner.GetTestDataPath(), "8100")
+	srv := fileserver.StartHttpServer(httpServerExitDone, testrunner.GetTestDataPath(), "8100")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
