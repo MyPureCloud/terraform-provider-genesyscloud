@@ -2,13 +2,14 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
@@ -132,6 +133,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 					flowResourceId,
 					outboundFlowFilePath,
 					"",
+					false,
 					generateFlowSubstitutions(map[string]string{
 						"flow_name":          outboundFlowName,
 						"home_division_name": "${data.genesyscloud_auth_division_home.home.name}",
