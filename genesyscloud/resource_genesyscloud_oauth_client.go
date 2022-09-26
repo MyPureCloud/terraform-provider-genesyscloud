@@ -181,7 +181,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diag.Errorf("Failed to create oauth client %s: %s", name, err)
 	}
 
-    credentialName := getNillableValue[string](d, "integration_credential_name")
+	credentialName := getNillableValue[string](d, "integration_credential_name")
 	if credentialName != nil {
 	    integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 	    cred_type := "pureCloudOAuthClient";
@@ -201,10 +201,10 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
         if err != nil {
             return diag.Errorf("Failed to create credential %s : %s", name, err)
-        }
-
-        d.Set("integration_credential_id", *credential.Id)
-        d.Set("integration_credential_name", *credential.Name)
+		}
+		
+		d.Set("integration_credential_id", *credential.Id)
+		d.Set("integration_credential_name", *credential.Name)
 	}
 
 
