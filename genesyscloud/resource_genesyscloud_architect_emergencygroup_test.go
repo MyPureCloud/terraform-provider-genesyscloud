@@ -46,6 +46,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					flowResource,
 					flowFilePath,
 					inboundCallConfig,
+					false,
 				) + generateArchitectEmergencyGroupResource(
 					resourceName,
 					name,
@@ -78,6 +79,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					flowResource,
 					flowFilePath,
 					inboundCallConfig,
+					false,
 				) + generateArchitectEmergencyGroupResource(
 					resourceName,
 					name,

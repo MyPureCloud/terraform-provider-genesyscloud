@@ -80,6 +80,12 @@ func resourceFlow() *schema.Resource {
 				Type:        schema.TypeMap,
 				Optional:    true,
 			},
+			"force_unlock": {
+				Description: `Will perform a force unlock on an architect flow before beginning the publication process.  NOTE: The force unlock publishes the 'draft'
+				              architect flow and then publishes the flow named in this resource. This mirrors the behavior found in the archy CLI tool.`,
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -117,15 +123,46 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	})
 }
 
+func forceUnlockFlow(flowId string, sdkConfig *platformclientv2.Configuration) error {
+	log.Printf("Attempting to perform an unlock on flow: %s", flowId)
+	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	_, _, err := architectAPI.PostFlowsActionsUnlock(flowId)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func isForceUnlockEnabled(d *schema.ResourceData) bool {
+	forceUnlock := d.Get("force_unlock").(bool)
+	log.Printf("ForceUnlock: %v, id %v", forceUnlock, d.Id())
+
+	if forceUnlock && d.Id() != "" {
+		return true
+	}
+	return false
+}
+
 func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	//Check to see if we need to force and unlock on an architect flow
+	if isForceUnlockEnabled(d) {
+		err := forceUnlockFlow(d.Id(), sdkConfig)
+		if err != nil {
+			return diag.Errorf("Failed to unlock targeted flow %s with error %s", d.Id(), err)
+		}
+	}
 
 	flowJob, response, err := architectAPI.PostFlowsJobs()
 
 	if err != nil {
 		return diag.Errorf("Failed to update job %s", err)
-	} else if err == nil && response.Error != nil {
+	}
+
+	if err == nil && response.Error != nil {
 		return diag.Errorf("Failed to register job. %s", err)
 	}
 
@@ -185,6 +222,14 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	//Check to see if we need to force
+	if isForceUnlockEnabled(d) {
+		err := forceUnlockFlow(d.Id(), sdkConfig)
+		if err != nil {
+			return diag.Errorf("Failed to unlock targeted flow %s with error %s", d.Id(), err)
+		}
+	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		resp, err := architectAPI.DeleteFlow(d.Id())
