@@ -134,19 +134,19 @@ func resourceOAuthClient() *schema.Resource {
 				Default:      "active",
 			},
 			"integration_credential_id": {
-                Description:  "The Id of the created Integration Credential using this new OAuth Client.",
-                Type:         schema.TypeString,
-                Optional:     false,
-                Required:     false,
-                Computed:     true, //If Required and Optional are both false, the attribute will be considered
-                                    // "read only" for the practitioner, with only the provider able to set its value.
-            },
-            "integration_credential_name": {
-                Description:  "Optionally, a Name of a Integration Credential (with credential type pureCloudOAuthClient) to be created using this new OAuth Client.",
-                Type:         schema.TypeString,
-                Optional:     true,
-                Computed:     true,
-            },
+				Description:  "The Id of the created Integration Credential using this new OAuth Client.",
+				Type:         schema.TypeString,
+				Optional:     false,
+				Required:     false,
+				Computed:     true, //If Required and Optional are both false, the attribute will be considered
+									// "read only" for the practitioner, with only the provider able to set its value.
+			},
+			"integration_credential_name": {
+				Description:  "Optionally, a Name of a Integration Credential (with credential type pureCloudOAuthClient) to be created using this new OAuth Client.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+			},
 		},
 	}
 }
