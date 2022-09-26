@@ -183,30 +183,30 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	credentialName := getNillableValue[string](d, "integration_credential_name")
 	if credentialName != nil {
-	    integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
-	    cred_type := "pureCloudOAuthClient";
-	    results := make(map[string]string)
-	    results["clientId"] = *client.Id
-	    results["clientSecret"] = *client.Secret
+		integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+		cred_type := "pureCloudOAuthClient";
+		results := make(map[string]string)
+		results["clientId"] = *client.Id
+		results["clientSecret"] = *client.Secret
 
-        createCredential := platformclientv2.Credential{
-            Name: credentialName,
-            VarType: &platformclientv2.Credentialtype{
-                Name: &cred_type,
-            },
-            CredentialFields: &results,
-        }
-
-        credential, _, err := integrationAPI.PostIntegrationsCredentials(createCredential)
-
-        if err != nil {
-            return diag.Errorf("Failed to create credential %s : %s", name, err)
+		createCredential := platformclientv2.Credential{
+			Name: credentialName,
+			VarType: &platformclientv2.Credentialtype{
+				Name: &cred_type,
+			},
+			CredentialFields: &results,
+		}
+		
+		credential, _, err := integrationAPI.PostIntegrationsCredentials(createCredential)
+		
+		if err != nil {
+			return diag.Errorf("Failed to create credential %s : %s", name, err)
 		}
 		
 		d.Set("integration_credential_id", *credential.Id)
 		d.Set("integration_credential_name", *credential.Name)
 	}
-
+	
 
 	d.SetId(*client.Id)
 	log.Printf("Created oauth client %s %s", name, *client.Id)
