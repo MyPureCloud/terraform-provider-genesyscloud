@@ -66,6 +66,8 @@ func oauthClientExporter() *ResourceExporter {
 		},
 		RemoveIfMissing: map[string][]string{
 			"roles": {"role_id"},
+			"integration_credential_id": {"integration_credential_id"},
+			"integration_credential_name": {"integration_credential_name"},
 		},
 	}
 }
@@ -131,6 +133,20 @@ func resourceOAuthClient() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"active", "inactive"}, false),
 				Default:      "active",
 			},
+			"integration_credential_id": {
+                Description:  "The Id of the created Integration Credential using this new OAuth Client.",
+                Type:         schema.TypeString,
+                Optional:     false,
+                Required:     false,
+                Computed:     true, //If Required and Optional are both false, the attribute will be considered
+                                    // "read only" for the practitioner, with only the provider able to set its value.
+            },
+            "integration_credential_name": {
+                Description:  "Optionally, a Name of a Integration Credential (with credential type pureCloudOAuthClient) to be created using this new OAuth Client.",
+                Type:         schema.TypeString,
+                Optional:     true,
+                Computed:     true,
+            },
 		},
 	}
 }
@@ -164,6 +180,33 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	if err != nil {
 		return diag.Errorf("Failed to create oauth client %s: %s", name, err)
 	}
+
+    credentialName := getNillableValue[string](d, "integration_credential_name")
+	if credentialName != nil {
+	    integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+	    cred_type := "pureCloudOAuthClient";
+	    results := make(map[string]string)
+	    results["clientId"] = *client.Id
+	    results["clientSecret"] = *client.Secret
+
+        createCredential := platformclientv2.Credential{
+            Name: credentialName,
+            VarType: &platformclientv2.Credentialtype{
+                Name: &cred_type,
+            },
+            CredentialFields: &results,
+        }
+
+        credential, _, err := integrationAPI.PostIntegrationsCredentials(createCredential)
+
+        if err != nil {
+            return diag.Errorf("Failed to create credential %s : %s", name, err)
+        }
+
+        d.Set("integration_credential_id", *credential.Id)
+        d.Set("integration_credential_name", *credential.Name)
+	}
+
 
 	d.SetId(*client.Id)
 	log.Printf("Created oauth client %s %s", name, *client.Id)
