@@ -50,6 +50,25 @@ func generateStringArray(vals ...string) string {
 	return fmt.Sprintf("[%s]", strings.Join(vals, ","))
 }
 
+// For fields such as genesyscloud_outbound_campaign.campaign_status, which use a diff suppress func,
+// and may return as "on", or "complete" depending on how long the operation takes
+func verifyAttributeInArrayOfPotentialValues(resource string, key string, potentialValues []string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		r := state.RootModule().Resources[resource]
+		if r == nil {
+			return fmt.Errorf("%s not found in state", resource)
+		}
+		a := r.Primary.Attributes
+		status := a[key]
+		for _, v := range potentialValues {
+			if status == v {
+				return nil
+			}
+		}
+		return fmt.Errorf(`expected status to be one of [%s], got "%s"`, strings.Join(potentialValues, ", "), status)
+	}
+}
+
 func validateStringInArray(resourceName string, attrName string, value string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		resourceState, ok := state.RootModule().Resources[resourceName]

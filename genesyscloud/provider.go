@@ -163,6 +163,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_location":                                    dataSourceLocation(),
 				"genesyscloud_oauth_client":                                dataSourceOAuthClient(),
 				"genesyscloud_outbound_callanalysisresponseset":            dataSourceOutboundCallAnalysisResponseSet(),
+				"genesyscloud_outbound_campaign":                           dataSourceOutboundCampaign(),
 				"genesyscloud_processautomation_trigger":                   dataSourceProcessAutomationTrigger(),
 				"genesyscloud_organizations_me":                            dataSourceOrganizationsMe(),
 				"genesyscloud_outbound_attempt_limit":                      dataSourceOutboundAttemptLimit(),

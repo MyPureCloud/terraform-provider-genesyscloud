@@ -28,26 +28,6 @@ var (
 			},
 		},
 	}
-	outboundcampaigncontactsortResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`field_name`: {
-				Description: `TODO: Add appropriate description`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`direction`: {
-				Description:  `The direction in which to sort contacts.`,
-				Optional:     true,
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`ASC`, `DESC`}, false),
-			},
-			`numeric`: {
-				Description: `Whether or not the column contains numeric data.`,
-				Optional:    true,
-				Type:        schema.TypeBool,
-			},
-		},
-	}
 )
 
 func resourceOutboundCampaign() *schema.Resource {
@@ -104,7 +84,10 @@ func resourceOutboundCampaign() *schema.Resource {
 				Optional:     true,
 				Type:         schema.TypeString,
 				Computed:     true,
-				ValidateFunc: validation.StringInSlice([]string{`on`, `stopping`, `off`, `complete`, `invalid`, `forced_off`, `forced_stopping`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`on`, `off`}, false),
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return (old == `complete` && new == `on`) || (old == `invalid` && new == `on`) || (old == `stopping` && new == `off`)
+				},
 			},
 			`phone_columns`: {
 				Description: `The ContactPhoneNumberColumns on the ContactList that this Campaign should dial.`,
@@ -173,7 +156,7 @@ func resourceOutboundCampaign() *schema.Resource {
 				Description: `The order in which to sort contacts for dialing, based on up to four columns.`,
 				Optional:    true,
 				Type:        schema.TypeList,
-				Elem:        outboundcampaigncontactsortResource,
+				Elem:        outboundmessagingcampaigncontactsortResource,
 			},
 			`no_answer_timeout`: {
 				Description: `How long to wait before dispositioning a call as 'no-answer'. Default 30 seconds. Only applicable to non-preview campaigns.`,
