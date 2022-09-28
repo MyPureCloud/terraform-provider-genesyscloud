@@ -59,13 +59,13 @@ func verifyAttributeInArrayOfPotentialValues(resource string, key string, potent
 			return fmt.Errorf("%s not found in state", resource)
 		}
 		a := r.Primary.Attributes
-		status := a[key]
+		attributeValue := a[key]
 		for _, v := range potentialValues {
-			if status == v {
+			if attributeValue == v {
 				return nil
 			}
 		}
-		return fmt.Errorf(`expected status to be one of [%s], got "%s"`, strings.Join(potentialValues, ", "), status)
+		return fmt.Errorf(`expected %s to be one of [%s], got "%s"`, key, strings.Join(potentialValues, ", "), attributeValue)
 	}
 }
 

@@ -248,9 +248,8 @@ func outboundCampaignExporter() *ResourceExporter {
 				RefType: "genesyscloud_outbound_ruleset",
 			},
 			`callable_time_set_id`: {
-				RefType: "genesyscloud_outbound_callable_timeset",
+				RefType: "genesyscloud_outbound_callabletimeset",
 			},
-			// TODO: Add data source reference for script_id when that functionality is available
 		},
 	}
 }
