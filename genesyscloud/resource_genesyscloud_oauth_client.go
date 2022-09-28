@@ -315,19 +315,21 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	
 	// check if there is a integration credential to delete
 	credentialId:= getNillableValue[string](d, "integration_credential_id")
 	if credentialId != nil {
 		integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
-		ccurrentCredential, resp, getErr := integrationAPI.GetIntegrationsCredential(d.Id())
+		currentCredential, _, getErr := integrationAPI.GetIntegrationsCredential(d.Id())
 		if getErr == nil {
 			_, err := integrationAPI.DeleteIntegrationsCredential(d.Id())
+			diag.Errorf("failed to delete integration credential %s (%s): %s", *currentCredential.Id, *currentCredential.Name, err)
 		}
 	}
 
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
 	oauthAPI := platformclientv2.NewOAuthApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting oauth client %s", name)
