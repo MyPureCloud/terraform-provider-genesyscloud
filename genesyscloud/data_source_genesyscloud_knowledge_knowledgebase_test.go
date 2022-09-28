@@ -10,9 +10,9 @@ import (
 
 func TestAccDataSourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 	var (
-		knowledgeBaseResource1     = "test-knowledgebase2"
-		knowledgeBaseName1         = "Terraform Test Knowledge Base 2-" + uuid.NewString()
-		knowledgeBaseDescription1  = "test-knowledgebase-description2"
+		knowledgeBaseResource1     = "test-knowledgebase1"
+		knowledgeBaseName1         = "Terraform Test Knowledge Base 1-" + uuid.NewString()
+		knowledgeBaseDescription1  = "test-knowledgebase-description1"
 		knowledgeBaseCoreLanguage1 = "en-US"
 
 		knowledgeBaseDataSource = "test-knowledgebase-ds"
