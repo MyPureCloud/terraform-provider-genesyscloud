@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 
@@ -217,6 +218,7 @@ func getAllOutboundCampaign(_ context.Context, clientConfig *platformclientv2.Co
 func outboundCampaignExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllOutboundCampaign),
+		AllowZeroValues:  []string{`preview_time_out_seconds`},
 		RefAttrs: map[string]*RefAttrSettings{
 			`contact_list_id`: {
 				RefType: "genesyscloud_outbound_contact_list",
@@ -242,11 +244,14 @@ func outboundCampaignExporter() *ResourceExporter {
 			`division_id`: {
 				RefType: "genesyscloud_auth_division",
 			},
-			`script_id`:            {}, // Data source is available
-			`callable_time_set_id`: {},
-			`rule_set_ids`:         {},
+			`rule_set_ids`: {
+				RefType: "genesyscloud_outbound_ruleset",
+			},
+			`callable_time_set_id`: {
+				RefType: "genesyscloud_outbound_callable_timeset",
+			},
+			// TODO: Add data source reference for script_id when that functionality is available
 		},
-		// TODO RemoveIfMissing, AllowZeroValues and UnResolvableAttributes may need to be added
 	}
 }
 
@@ -439,7 +444,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
 		}
 
-		// cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCampaign())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCampaign())
 
 		if sdkcampaign.Name != nil {
 			d.Set("name", *sdkcampaign.Name)
@@ -521,8 +526,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 
 		log.Printf("Read Outbound Campaign %s %s", d.Id(), *sdkcampaign.Name)
-		return nil // TODO calling cc.CheckState() can cause some difficult to understand errors in development. When ready for a PR, remove this line and uncomment the consistency_checker initialization and the the below one
-		// return cc.CheckState()
+		return cc.CheckState()
 	})
 }
 
