@@ -63,6 +63,7 @@ func oauthClientExporter() *ResourceExporter {
 		RefAttrs: map[string]*RefAttrSettings{
 			"roles.role_id":     {RefType: "genesyscloud_auth_role"},
 			"roles.division_id": {RefType: "genesyscloud_auth_division", AltValues: []string{"*"}},
+			"integration_credential_id": {RefType: "genesyscloud_integration_credential" },
 		},
 		RemoveIfMissing: map[string][]string{
 			"roles": {"role_id"},
@@ -314,6 +315,16 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// check if there is a integration credential to delete
+	credentialId:= getNillableValue[string](d, "integration_credential_id")
+	if credentialId != nil {
+		integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+		ccurrentCredential, resp, getErr := integrationAPI.GetIntegrationsCredential(d.Id())
+		if getErr == nil {
+			_, err := integrationAPI.DeleteIntegrationsCredential(d.Id())
+		}
+	}
+
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
