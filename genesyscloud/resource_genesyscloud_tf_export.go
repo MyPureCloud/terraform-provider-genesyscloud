@@ -709,7 +709,8 @@ func buildSanitizedResourceMaps(exporters map[string]*ResourceExporter, filter [
 func containsPermissionsErrorOnly(err diag.Diagnostics) bool {
 	foundPermissionsError := false
 	for _, v := range err {
-		if strings.Contains(v.Summary, "403") {
+		if strings.Contains(v.Summary, "403") ||
+			strings.Contains(v.Summary, "501") {
 			foundPermissionsError = true
 		} else {
 			return false
@@ -722,7 +723,8 @@ var logAttrInfo = "\nTo continue exporting other resources in spite of this erro
 
 func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
 	for i, v := range err {
-		if strings.Contains(v.Summary, "403") {
+		if strings.Contains(v.Summary, "403") ||
+			strings.Contains(v.Summary, "501") {
 			err[i].Summary += logAttrInfo
 		}
 	}
