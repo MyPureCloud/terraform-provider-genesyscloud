@@ -13,7 +13,7 @@ require (
 	github.com/mypurecloud/platform-client-sdk-go/v80 v80.0.0
 	github.com/nyaruka/phonenumbers v1.1.1
 	github.com/zclconf/go-cty v1.11.0
-	gonum.org/v1/gonum v0.11.0
+	gonum.org/v1/gonum v0.12.0
 )
 
 require (
