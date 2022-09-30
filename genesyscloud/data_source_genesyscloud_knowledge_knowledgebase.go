@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -33,6 +35,10 @@ func dataSourceKnowledgeKnowledgebase() *schema.Resource {
 }
 
 func dataSourceKnowledgeKnowledgebaseRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	// if running in test env, sleep to allow resource records to persist
+	if strings.EqualFold(os.Getenv("TF_ACC"), "1") {
+		time.Sleep(8 * time.Second)
+	}
 	sdkConfig := m.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
