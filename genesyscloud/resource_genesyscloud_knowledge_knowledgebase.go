@@ -138,7 +138,6 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	coreLanguage := d.Get("core_language").(string)
-	published := d.Get("published").(bool)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
@@ -155,7 +154,6 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 			Name:         &name,
 			Description:  &description,
 			CoreLanguage: &coreLanguage,
-			Published:    &published,
 		}
 
 		log.Printf("Updating knowledge base %s", name)
