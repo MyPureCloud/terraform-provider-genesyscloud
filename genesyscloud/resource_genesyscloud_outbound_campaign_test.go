@@ -539,8 +539,8 @@ resource "genesyscloud_outbound_campaign" "%s" {
 func generateOutboundCampaign(
 	resourceId string,
 	name string,
-	dialingMode string, // required
-	callerName string, // required
+	dialingMode string,   // required
+	callerName string,    // required
 	callerAddress string, // required
 	contactListId string, // required
 	campaignStatus string,
