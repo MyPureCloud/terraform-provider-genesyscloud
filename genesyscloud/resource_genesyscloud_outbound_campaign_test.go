@@ -294,9 +294,10 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_outbound_campaign." + resourceId,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_outbound_campaign." + resourceId,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"campaign_status"},
 			},
 		},
 		CheckDestroy: testVerifyOutboundCampaignDestroyed,
@@ -614,6 +615,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 		site                    string
 		ruleSet                 string
 		callableTimeSet         string
+		divisionName            = "Test Division " + uuid.NewString()
 	)
 	if contactListResourceId != "" {
 		contactList = generateOutboundContactList(
@@ -646,8 +648,10 @@ func generateReferencedResourcesForOutboundCampaignTests(
 	if carResourceId != "" {
 		if outboundFlowFilePath != "" {
 			callAnalysisResponseSet = fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) + generateRoutingWrapupcodeResource(
+resource "genesyscloud_auth_division" "division" {
+	name = "%s"
+}
+`, divisionName) + generateRoutingWrapupcodeResource(
 				"wrap-up-code",
 				"wrapupcode "+uuid.NewString(),
 			) + generateFlowResource(
@@ -657,7 +661,7 @@ data "genesyscloud_auth_division_home" "home" {}
 				false,
 				generateFlowSubstitutions(map[string]string{
 					"flow_name":          flowName,
-					"home_division_name": "${data.genesyscloud_auth_division_home.home.name}",
+					"home_division_name": "${genesyscloud_auth_division.division.name}",
 					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode.wrap-up-code.name}",
 				}),
