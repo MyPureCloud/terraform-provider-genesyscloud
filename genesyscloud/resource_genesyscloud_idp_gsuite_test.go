@@ -11,7 +11,6 @@ import (
 )
 
 func TestAccResourceIdpGsuite(t *testing.T) {
-	t.Parallel()
 	var (
 		uri1            = "https://test.com/1"
 		uri2            = "https://test.com/2"

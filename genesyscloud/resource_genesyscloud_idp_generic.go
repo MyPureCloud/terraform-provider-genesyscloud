@@ -63,7 +63,7 @@ func resourceIdpGeneric() *schema.Resource {
 			},
 			"certificates": {
 				Description: "PEM or DER encoded public X.509 certificates for SAML signature validation.",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
@@ -149,9 +149,9 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		if generic.Certificate != nil {
-			d.Set("certificates", stringListToSet([]string{*generic.Certificate}))
+			d.Set("certificates", stringListToInterfaceList([]string{*generic.Certificate}))
 		} else if generic.Certificates != nil {
-			d.Set("certificates", stringListToSet(*generic.Certificates))
+			d.Set("certificates", stringListToInterfaceList(*generic.Certificates))
 		} else {
 			d.Set("certificates", nil)
 		}
@@ -228,7 +228,7 @@ func updateIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 		NameIdentifierFormat:   &nameIdentifierFormat,
 	}
 
-	certificates := buildSdkStringList(d, "certificates")
+	certificates := buildSdkStringListFromInterfaceArray(d, "certificates")
 	if certificates != nil {
 		if len(*certificates) == 1 {
 			update.Certificate = &(*certificates)[0]
