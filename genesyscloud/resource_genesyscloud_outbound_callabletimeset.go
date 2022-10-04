@@ -93,7 +93,7 @@ func getAllOutboundCallableTimesets(_ context.Context, clientConfig *platformcli
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		callableTimesetConfigs, _, getErr := outboundAPI.GetOutboundCallabletimesets(pageSize, pageNum, false, "", "", "", "")
+		callableTimesetConfigs, _, getErr := outboundAPI.GetOutboundCallabletimesets(pageSize, pageNum, true, "", "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of callable timeset configs: %v", getErr)
 		}

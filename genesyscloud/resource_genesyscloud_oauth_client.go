@@ -63,9 +63,12 @@ func oauthClientExporter() *ResourceExporter {
 		RefAttrs: map[string]*RefAttrSettings{
 			"roles.role_id":     {RefType: "genesyscloud_auth_role"},
 			"roles.division_id": {RefType: "genesyscloud_auth_division", AltValues: []string{"*"}},
+			"integration_credential_id": {RefType: "genesyscloud_integration_credential" },
 		},
 		RemoveIfMissing: map[string][]string{
 			"roles": {"role_id"},
+			"integration_credential_id": {"integration_credential_id"},
+			"integration_credential_name": {"integration_credential_name"},
 		},
 	}
 }
@@ -131,6 +134,20 @@ func resourceOAuthClient() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"active", "inactive"}, false),
 				Default:      "active",
 			},
+			"integration_credential_id": {
+				Description:  "The Id of the created Integration Credential using this new OAuth Client.",
+				Type:         schema.TypeString,
+				Optional:     false,
+				Required:     false,
+				Computed:     true, //If Required and Optional are both false, the attribute will be considered
+									// "read only" for the practitioner, with only the provider able to set its value.
+			},
+			"integration_credential_name": {
+				Description:  "Optionally, a Name of a Integration Credential (with credential type pureCloudOAuthClient) to be created using this new OAuth Client.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+			},
 		},
 	}
 }
@@ -164,6 +181,33 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	if err != nil {
 		return diag.Errorf("Failed to create oauth client %s: %s", name, err)
 	}
+
+	credentialName := getNillableValue[string](d, "integration_credential_name")
+	if credentialName != nil {
+		integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+		cred_type := "pureCloudOAuthClient";
+		results := make(map[string]string)
+		results["clientId"] = *client.Id
+		results["clientSecret"] = *client.Secret
+
+		createCredential := platformclientv2.Credential{
+			Name: credentialName,
+			VarType: &platformclientv2.Credentialtype{
+				Name: &cred_type,
+			},
+			CredentialFields: &results,
+		}
+		
+		credential, _, err := integrationAPI.PostIntegrationsCredentials(createCredential)
+		
+		if err != nil {
+			return diag.Errorf("Failed to create credential %s : %s", name, err)
+		}
+		
+		d.Set("integration_credential_id", *credential.Id)
+		d.Set("integration_credential_name", *credential.Name)
+	}
+	
 
 	d.SetId(*client.Id)
 	log.Printf("Created oauth client %s %s", name, *client.Id)
@@ -271,9 +315,21 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	
+	// check if there is a integration credential to delete
+	credentialId:= getNillableValue[string](d, "integration_credential_id")
+	if credentialId != nil {
+		integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+		currentCredential, _, getErr := integrationAPI.GetIntegrationsCredential(d.Id())
+		if getErr == nil {
+			_, err := integrationAPI.DeleteIntegrationsCredential(d.Id())
+			diag.Errorf("failed to delete integration credential %s (%s): %s", *currentCredential.Id, *currentCredential.Name, err)
+		}
+	}
+
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
 	oauthAPI := platformclientv2.NewOAuthApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting oauth client %s", name)
