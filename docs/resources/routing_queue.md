@@ -94,8 +94,6 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `media_settings_chat` (Block List, Max: 1) Chat media settings. (see [below for nested schema](#nestedblock--media_settings_chat))
 - `media_settings_email` (Block List, Max: 1) Email media settings. (see [below for nested schema](#nestedblock--media_settings_email))
 - `media_settings_message` (Block List, Max: 1) Message media settings. (see [below for nested schema](#nestedblock--media_settings_message))
-- `media_settings_social` (Block List, Max: 1) Social media settings. (see [below for nested schema](#nestedblock--media_settings_social))
-- `media_settings_video` (Block List, Max: 1) Video media settings. (see [below for nested schema](#nestedblock--media_settings_video))
 - `members` (Set of Object) Users in the queue. If not set, this resource will not manage members. (see [below for nested schema](#nestedatt--members))
 - `message_in_queue_flow_id` (String) The in-queue flow ID to use for message conversations waiting in queue.
 - `outbound_email_address` (Block List, Max: 1) The outbound email address settings for this queue. (see [below for nested schema](#nestedblock--outbound_email_address))
@@ -164,26 +162,6 @@ Required:
 
 <a id="nestedblock--media_settings_message"></a>
 ### Nested Schema for `media_settings_message`
-
-Required:
-
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-
-
-<a id="nestedblock--media_settings_social"></a>
-### Nested Schema for `media_settings_social`
-
-Required:
-
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-
-
-<a id="nestedblock--media_settings_video"></a>
-### Nested Schema for `media_settings_video`
 
 Required:
 
