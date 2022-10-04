@@ -112,6 +112,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_outbound_contact_list":                       resourceOutboundContactList(),
 				"genesyscloud_outbound_ruleset":                            resourceOutboundRuleset(),
 				"genesyscloud_outbound_messagingcampaign":                  resourceOutboundMessagingCampaign(),
+				"genesyscloud_outbound_sequence":                           resourceOutboundSequence(),
 				"genesyscloud_outbound_dnclist":                            resourceOutboundDncList(),
 				"genesyscloud_orgauthorization_pairing":                    resourceOrgauthorizationPairing(),
 				"genesyscloud_processautomation_trigger":                   resourceProcessAutomationTrigger(),
