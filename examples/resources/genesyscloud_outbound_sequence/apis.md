@@ -1,0 +1,5 @@
+- [POST /api/v2/outbound/sequences](https://developer.genesys.cloud/routing/outbound/#post-api-v2-outbound-sequences)
+- [GET /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-sequences--sequenceId-)
+- [GET /api/v2/outbound/sequences](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-sequences)
+- [DELETE /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/routing/outbound/#delete-api-v2-outbound-sequences--sequenceId-)
+- [PUT /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/routing/outbound/#put-api-v2-outbound-sequences--sequenceId-)
