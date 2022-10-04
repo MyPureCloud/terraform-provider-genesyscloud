@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -178,7 +179,7 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
 		}
 
-		// cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundSequence())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundSequence())
 
 		if sdkcampaignsequence.Name != nil {
 			d.Set("name", *sdkcampaignsequence.Name)
@@ -194,8 +195,8 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 
 		log.Printf("Read Outbound Sequence %s %s", d.Id(), *sdkcampaignsequence.Name)
-		return nil // TODO calling cc.CheckState() can cause some difficult to understand errors in development. When ready for a PR, remove this line and uncomment the consistency_checker initialization and the the below one
-		// return cc.CheckState()
+
+		return cc.CheckState()
 	})
 }
 

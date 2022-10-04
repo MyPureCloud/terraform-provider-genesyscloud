@@ -12,7 +12,7 @@ import (
 )
 
 func TestAccResourceOutboundSequence(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	var (
 		// Sequence
@@ -20,7 +20,7 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 		sequenceName1    = "Sequence " + uuid.NewString()
 		sequenceName2    = "Sequence " + uuid.NewString()
 
-		// Campaign
+		// Campaign resources
 		campaignResourceId    = "campaign_resource"
 		campaignName          = "Campaign " + uuid.NewString()
 		contactListResourceId = "contact_list"
@@ -37,7 +37,7 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 			siteId,
 			emergencyNumber,
 			carResourceId,
-			strconv.Quote("off"),
+			nullValue,
 			outboundFlowFilePath,
 			flowName,
 		)
@@ -65,7 +65,7 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 						sequenceResource,
 						sequenceName1,
 						[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
-						"off",
+						strconv.Quote("off"),
 						trueValue,
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -77,17 +77,18 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 				),
 			},
 			{
-				// Update with a new name and repeat value
+				// Update with a new name, status and repeat value
 				Config: campaignResource +
 					generateOutboundSequence(
 						sequenceResource,
 						sequenceName2,
 						[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
-						"off",
+						strconv.Quote("on"),
 						falseValue,
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName2),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "status", "on"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", falseValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResource, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceId, "id"),
@@ -114,7 +115,7 @@ func generateOutboundSequence(
 		resource "genesyscloud_outbound_sequence" "%s" {
 			name = "%s"
 			campaign_ids = [%s]
-			status = "%s"
+			status = %s
 			repeat = %s
 		}
 	`, resourceId, name, strings.Join(campaignIds, ", "), status, repeat)
