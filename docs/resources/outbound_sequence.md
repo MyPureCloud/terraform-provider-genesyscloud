@@ -35,10 +35,10 @@ resource "genesyscloud_outbound_sequence" "example_outbound_sequence" {
 ### Required
 
 - `campaign_ids` (List of String) The ordered list of Campaigns that this CampaignSequence will run.
+- `name` (String) Name of outbound sequence
 
 ### Optional
 
-- `name` (String) Name of outbound sequence
 - `repeat` (Boolean) Indicates if a sequence should repeat from the beginning after the last campaign completes. Default is false.
 - `status` (String) The current status of the CampaignSequence. A CampaignSequence can be turned 'on' or 'off'.
 
