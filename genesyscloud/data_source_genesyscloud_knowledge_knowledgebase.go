@@ -43,16 +43,32 @@ func dataSourceKnowledgeKnowledgebaseRead(ctx context.Context, d *schema.Resourc
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			knowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), name, coreLanguage, false, "", "")
-			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getErr))
+			publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), name, coreLanguage, true, "", "")
+			unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), name, coreLanguage, false, "", "")
+
+			if getPublishedErr != nil {
+				return resource.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getPublishedErr))
+			}
+			if getUnpublishedErr != nil {
+				return resource.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getPublishedErr))
 			}
 
-			if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
+			noPublishedEntities := publishedKnowledgeBases.Entities == nil || len(*publishedKnowledgeBases.Entities) == 0
+			noUnpublishedEntities := unpublishedKnowledgeBases.Entities == nil || len(*unpublishedKnowledgeBases.Entities) == 0
+			if noPublishedEntities && noUnpublishedEntities {
 				return resource.RetryableError(fmt.Errorf("no knowledge bases found with name %s", name))
 			}
 
-			for _, knowledgeBase := range *knowledgeBases.Entities {
+			// prefer published knowledge base
+			for _, knowledgeBase := range *publishedKnowledgeBases.Entities {
+				if knowledgeBase.Name != nil && *knowledgeBase.Name == name &&
+					*knowledgeBase.CoreLanguage == coreLanguage {
+					d.SetId(*knowledgeBase.Id)
+					return nil
+				}
+			}
+			// use unpublished knowledge base if unpublished doesn't exist
+			for _, knowledgeBase := range *unpublishedKnowledgeBases.Entities {
 				if knowledgeBase.Name != nil && *knowledgeBase.Name == name &&
 					*knowledgeBase.CoreLanguage == coreLanguage {
 					d.SetId(*knowledgeBase.Id)
