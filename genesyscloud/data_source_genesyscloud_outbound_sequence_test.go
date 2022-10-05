@@ -21,7 +21,7 @@ func TestAccDataSourceOutboundSequence(t *testing.T) {
 		siteId                = "site"
 		outboundFlowFilePath  = "../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 		flowName              = "test flow " + uuid.NewString()
-		emergencyNumber       = "+13178793429"
+		emergencyNumber       = "+13128451429"
 
 		campaignResource = generateOutboundCampaignBasic(
 			campaignResourceId,

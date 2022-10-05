@@ -12,8 +12,6 @@ import (
 )
 
 func TestAccResourceOutboundSequence(t *testing.T) {
-	//t.Parallel()
-
 	var (
 		// Sequence
 		sequenceResource = "outbound_sequence"
@@ -28,7 +26,7 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 		siteId                = "site"
 		outboundFlowFilePath  = "../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 		flowName              = "test flow " + uuid.NewString()
-		emergencyNumber       = "+13178793429"
+		emergencyNumber       = "+13172947329"
 
 		campaignResource = generateOutboundCampaignBasic(
 			campaignResourceId,

@@ -28,7 +28,7 @@ func resourceOutboundSequence() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `Name of outbound sequence`,
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			`campaign_ids`: {
@@ -62,7 +62,7 @@ func getAllOutboundSequence(_ context.Context, clientConfig *platformclientv2.Co
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		sdkcampaignsequenceentitylisting, _, getErr := outboundApi.GetOutboundSequences(pageSize, pageNum, false, "", "", "", "")
+		sdkcampaignsequenceentitylisting, _, getErr := outboundApi.GetOutboundSequences(pageSize, pageNum, true, "", "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Error requesting page of Outbound Sequence: %s", getErr)
 		}

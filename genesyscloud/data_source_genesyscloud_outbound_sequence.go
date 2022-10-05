@@ -23,7 +23,7 @@ func dataSourceOutboundSequence() *schema.Resource {
 			"name": {
 				Description: `Outbound Sequence name.`,
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 		},
 	}
@@ -38,7 +38,7 @@ func dataSourceOutboundSequenceRead(ctx context.Context, d *schema.ResourceData,
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			sdkcampaignsequenceentitylisting, _, getErr := outboundApi.GetOutboundSequences(pageSize, pageNum, false, "", "", "", "")
+			sdkcampaignsequenceentitylisting, _, getErr := outboundApi.GetOutboundSequences(pageSize, pageNum, true, "", "", "", "")
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting Outbound Sequence %s: %s", name, getErr))
 			}
