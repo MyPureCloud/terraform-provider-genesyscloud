@@ -12,10 +12,9 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 	var (
 		outcomeResource1 = "flow-outcome1"
 		name1            = "Terraform Code-" + uuid.NewString()
-		description1     = "Sample flow outcome for CX as Code"
 
-		name2        = "Terraform Code-" + uuid.NewString()
-		description2 = "Edited description for flow outcome"
+		name2       = "Terraform Code-" + uuid.NewString()
+		description = "Edited description for flow outcome"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -23,16 +22,15 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				// Create
+				// Create using only required fields i.e. name
 				Config: generateFlowOutcomeResource(
 					outcomeResource1,
 					name1,
 					nullValue,
-					description1,
+					nullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "description", description1),
 					testDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
 				),
 			},
@@ -42,11 +40,11 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 					outcomeResource1,
 					name2,
 					nullValue,
-					description2,
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "description", description2),
+					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "description", description),
 					testDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
 				),
 			},
