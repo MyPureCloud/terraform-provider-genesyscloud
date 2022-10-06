@@ -1,0 +1,5 @@
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.genesys.cloud/api/rest/v2/knowledge#get-api-v2-knowledge-knowledgebases--knowledgeBaseId-)
+* [POST /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/api/rest/v2/knowledge/#post-api-v2-knowledge-knowledgebases)
+* [GET /api/v2/knowledge/knowledgebases](https://developer.mypurecloud.com/api/rest/v2/knowledge/#get-api-v2-knowledge-knowledgebases)
+* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.mypurecloud.com/api/rest/v2/knowledge/#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId-)
+* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.mypurecloud.com/api/rest/v2/knowledge/#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId-)
