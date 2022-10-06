@@ -19,13 +19,16 @@ When using the Terraform CLI, you can run [`terraform init`](https://www.terrafo
 
 ```hcl
 terraform {
-  required_version = ">= 1.0.0"
+  required_version = ">= 1.6.0"
   required_providers {
     genesyscloud = {
       source  = "mypurecloud/genesyscloud"
-      version = ">= 1.0.0"
     }
   }
+}
+
+provider "genesyscloud" {
+  # Configuration options
 }
 
 provider "genesyscloud" {
