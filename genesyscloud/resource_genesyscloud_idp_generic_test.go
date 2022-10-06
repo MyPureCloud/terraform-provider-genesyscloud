@@ -101,6 +101,53 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 				),
 			},
 			{
+				// Update to one cert in array
+				Config: generateIdpGenericResource(
+					name2,
+					generateStringArray(strconv.Quote(testCert1)),
+					uri2,
+					uri1,
+					strconv.Quote(relyingPartyID2),
+					falseValue, // disabled
+					strconv.Quote(base64Img),
+					trueValue, // Endpoint compression
+					strconv.Quote(nameIDFormatEmail),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "name", name2),
+					validateStringInArray("genesyscloud_idp_generic.generic", "certificates", testCert1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "certificates.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "relying_party_identifier", relyingPartyID2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "disabled", falseValue),
+				),
+			},
+			{
+				// Update back to two certs in array
+				Config: generateIdpGenericResource(
+					name2,
+					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					uri2,
+					uri1,
+					strconv.Quote(relyingPartyID2),
+					falseValue, // disabled
+					strconv.Quote(base64Img),
+					trueValue, // Endpoint compression
+					strconv.Quote(nameIDFormatEmail),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "name", name2),
+					validateStringInArray("genesyscloud_idp_generic.generic", "certificates", testCert1),
+					validateStringInArray("genesyscloud_idp_generic.generic", "certificates", testCert2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "certificates.#", "2"),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "relying_party_identifier", relyingPartyID2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "disabled", falseValue),
+				),
+			},
+			{
 				// Import/Read
 				ResourceName:      "genesyscloud_idp_generic.generic",
 				ImportState:       true,

@@ -75,6 +75,43 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 				),
 			},
 			{
+				// Update to one cert in array
+				Config: generateIdpGsuiteResource(
+					generateStringArray(strconv.Quote(testCert1)),
+					uri2,
+					uri1,
+					strconv.Quote(relyingPartyID2),
+					falseValue, // disabled
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", testCert1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "certificates.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", relyingPartyID2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", falseValue),
+				),
+			},
+			{
+				// Update back to two certs in array
+				Config: generateIdpGsuiteResource(
+					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					uri2,
+					uri1,
+					strconv.Quote(relyingPartyID2),
+					falseValue, // disabled
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", testCert1),
+					validateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", testCert2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "certificates.#", "2"),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", relyingPartyID2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", falseValue),
+				),
+			},
+			{
 				// Import/Read
 				ResourceName:      "genesyscloud_idp_gsuite.gsuite",
 				ImportState:       true,

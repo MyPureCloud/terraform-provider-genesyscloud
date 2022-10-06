@@ -154,9 +154,8 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	if certificates != nil {
 		if len(*certificates) == 1 {
 			update.Certificate = &(*certificates)[0]
-		} else {
-			update.Certificates = certificates
 		}
+		update.Certificates = certificates
 	}
 
 	_, _, err := idpAPI.PutIdentityprovidersOkta(update)

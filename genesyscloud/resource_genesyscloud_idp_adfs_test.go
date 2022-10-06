@@ -75,6 +75,43 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 				),
 			},
 			{
+				// Update to one cert in array
+				Config: generateIdpAdfsResource(
+					generateStringArray(strconv.Quote(testCert1)),
+					uri2,
+					uri1,
+					strconv.Quote(relyingPartyID2),
+					falseValue, // disabled
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStringInArray("genesyscloud_idp_adfs.adfs", "certificates", testCert1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "certificates.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "relying_party_identifier", relyingPartyID2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", falseValue),
+				),
+			},
+			{
+				// Update back to two certs in array
+				Config: generateIdpAdfsResource(
+					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					uri2,
+					uri1,
+					strconv.Quote(relyingPartyID2),
+					falseValue, // disabled
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStringInArray("genesyscloud_idp_adfs.adfs", "certificates", testCert1),
+					validateStringInArray("genesyscloud_idp_adfs.adfs", "certificates", testCert2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "certificates.#", "2"),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "relying_party_identifier", relyingPartyID2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", falseValue),
+				),
+			},
+			{
 				// Import/Read
 				ResourceName:      "genesyscloud_idp_adfs.adfs",
 				ImportState:       true,

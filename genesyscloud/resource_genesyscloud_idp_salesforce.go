@@ -154,9 +154,8 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 	if certificates != nil {
 		if len(*certificates) == 1 {
 			update.Certificate = &(*certificates)[0]
-		} else {
-			update.Certificates = certificates
 		}
+		update.Certificates = certificates
 	}
 
 	_, _, err := idpAPI.PutIdentityprovidersSalesforce(update)

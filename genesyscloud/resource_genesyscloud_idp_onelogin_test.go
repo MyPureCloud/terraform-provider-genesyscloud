@@ -67,6 +67,39 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 				),
 			},
 			{
+				// Update to one cert in array
+				Config: generateIdpOneloginResource(
+					generateStringArray(strconv.Quote(testCert1)),
+					uri2,
+					uri1,
+					falseValue, // disabled
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStringInArray("genesyscloud_idp_onelogin.onelogin", "certificates", testCert1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "certificates.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", falseValue),
+				),
+			},
+			{
+				// Update back to two certs in array
+				Config: generateIdpOneloginResource(
+					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					uri2,
+					uri1,
+					falseValue, // disabled
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStringInArray("genesyscloud_idp_onelogin.onelogin", "certificates", testCert1),
+					validateStringInArray("genesyscloud_idp_onelogin.onelogin", "certificates", testCert2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "certificates.#", "2"),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", falseValue),
+				),
+			},
+			{
 				// Import/Read
 				ResourceName:      "genesyscloud_idp_onelogin.onelogin",
 				ImportState:       true,

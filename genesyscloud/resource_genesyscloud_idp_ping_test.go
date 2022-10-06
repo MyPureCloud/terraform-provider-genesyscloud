@@ -75,6 +75,43 @@ func TestAccResourceIdpPing(t *testing.T) {
 				),
 			},
 			{
+				// Update to one cert in array
+				Config: generateIdpPingResource(
+					generateStringArray(strconv.Quote(testCert1)),
+					uri2,
+					uri1,
+					strconv.Quote(relyingPartyID2),
+					falseValue, // disabled
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "certificates.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "relying_party_identifier", relyingPartyID2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "disabled", falseValue),
+				),
+			},
+			{
+				// Update back to two certs
+				Config: generateIdpPingResource(
+					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					uri2,
+					uri1,
+					strconv.Quote(relyingPartyID2),
+					falseValue, // disabled
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert1),
+					validateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "certificates.#", "2"),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "relying_party_identifier", relyingPartyID2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "disabled", falseValue),
+				),
+			},
+			{
 				// Import/Read
 				ResourceName:      "genesyscloud_idp_ping.ping",
 				ImportState:       true,
