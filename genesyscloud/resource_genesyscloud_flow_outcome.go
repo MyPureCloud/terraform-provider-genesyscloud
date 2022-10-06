@@ -93,9 +93,7 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	if division != "" {
 		sdkflowoutcome.Division = &platformclientv2.Writabledivision{Id: &division}
 	}
-	if description != "" {
-		sdkflowoutcome.Description = &description
-	}
+	sdkflowoutcome.Description = &description
 
 	log.Printf("Creating Flow Outcome %s", name)
 	flowOutcome, _, err := architectApi.PostFlowsOutcomes(sdkflowoutcome)
@@ -125,9 +123,7 @@ func updateFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	if division != "" {
 		sdkflowoutcome.Division = &platformclientv2.Writabledivision{Id: &division}
 	}
-	if description != "" {
-		sdkflowoutcome.Description = &description
-	}
+	sdkflowoutcome.Description = &description
 
 	log.Printf("Updating Flow Outcome %s", name)
 
