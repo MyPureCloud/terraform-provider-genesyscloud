@@ -28,10 +28,6 @@ terraform {
 }
 
 provider "genesyscloud" {
-  # Configuration options
-}
-
-provider "genesyscloud" {
   oauthclient_id = "<client-id>"
   oauthclient_secret = "<client-secret>"
   aws_region = "<aws-region>"
