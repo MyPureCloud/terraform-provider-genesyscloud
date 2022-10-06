@@ -12,6 +12,7 @@ import (
 )
 
 func TestAccResourceOutboundSequence(t *testing.T) {
+	t.Parallel()
 	var (
 		// Sequence
 		sequenceResource = "outbound_sequence"

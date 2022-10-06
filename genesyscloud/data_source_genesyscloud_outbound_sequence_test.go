@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccDataSourceOutboundSequence(t *testing.T) {
+	t.Parallel()
 	var (
 		resourceId   = "sequence"
 		dataSourceId = "sequence_data"
