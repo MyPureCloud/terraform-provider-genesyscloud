@@ -26,8 +26,6 @@ var (
 	mediaSettingsKeyChat     = "chat"
 	mediaSettingsKeyEmail    = "email"
 	mediaSettingsKeyMessage  = "message"
-	mediaSettingsKeySocial   = "socialExpression"
-	mediaSettingsKeyVideo    = "videoComm"
 
 	bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
@@ -186,22 +184,6 @@ func resourceRoutingQueue() *schema.Resource {
 			},
 			"media_settings_message": {
 				Description: "Message media settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        queueMediaSettingsResource,
-			},
-			"media_settings_social": {
-				Description: "Social media settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        queueMediaSettingsResource,
-			},
-			"media_settings_video": {
-				Description: "Video media settings.",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -494,8 +476,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("media_settings_chat", nil)
 		d.Set("media_settings_email", nil)
 		d.Set("media_settings_message", nil)
-		d.Set("media_settings_social", nil)
-		d.Set("media_settings_video", nil)
 		if currentQueue.MediaSettings != nil {
 			if callSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyCall]; ok {
 				d.Set("media_settings_call", flattenMediaSetting(callSettings))
@@ -511,12 +491,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			}
 			if messageSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyMessage]; ok {
 				d.Set("media_settings_message", flattenMediaSetting(messageSettings))
-			}
-			if socialSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeySocial]; ok {
-				d.Set("media_settings_social", flattenMediaSetting(socialSettings))
-			}
-			if videoSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyVideo]; ok {
-				d.Set("media_settings_video", flattenMediaSetting(videoSettings))
 			}
 		}
 
@@ -738,16 +712,6 @@ func buildSdkMediaSettings(d *schema.ResourceData) *map[string]platformclientv2.
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
 	if mediaSettingsMessage != nil && len(mediaSettingsMessage) > 0 {
 		settings[mediaSettingsKeyMessage] = buildSdkMediaSetting(mediaSettingsMessage)
-	}
-
-	mediaSettingsSocial := d.Get("media_settings_social").([]interface{})
-	if mediaSettingsSocial != nil && len(mediaSettingsSocial) > 0 {
-		settings[mediaSettingsKeySocial] = buildSdkMediaSetting(mediaSettingsSocial)
-	}
-
-	mediaSettingsVideo := d.Get("media_settings_video").([]interface{})
-	if mediaSettingsVideo != nil && len(mediaSettingsVideo) > 0 {
-		settings[mediaSettingsKeyVideo] = buildSdkMediaSetting(mediaSettingsVideo)
 	}
 
 	return &settings
