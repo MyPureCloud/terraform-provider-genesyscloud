@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func init() {
@@ -79,6 +79,8 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_architect_datatable_row":                     resourceArchitectDatatableRow(),
 				"genesyscloud_architect_emergencygroup":                    resourceArchitectEmergencyGroup(),
 				"genesyscloud_flow":                                        resourceFlow(),
+				"genesyscloud_flow_milestone":                              resourceFlowMilestone(),
+				"genesyscloud_flow_outcome":                                resourceFlowOutcome(),
 				"genesyscloud_architect_ivr":                               resourceArchitectIvrConfig(),
 				"genesyscloud_architect_schedules":                         resourceArchitectSchedules(),
 				"genesyscloud_architect_schedulegroups":                    resourceArchitectScheduleGroups(),
@@ -97,10 +99,26 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_integration":                                 resourceIntegration(),
 				"genesyscloud_integration_action":                          resourceIntegrationAction(),
 				"genesyscloud_integration_credential":                      resourceCredential(),
+				"genesyscloud_journey_outcome":                             resourceJourneyOutcome(),
+				"genesyscloud_journey_segment":                             resourceJourneySegment(),
+				"genesyscloud_knowledge_knowledgebase":                     resourceKnowledgeKnowledgebase(),
+				"genesyscloud_knowledge_document":                          resourceKnowledgeDocument(),
+				"genesyscloud_knowledge_category":                          resourceKnowledgeCategory(),
 				"genesyscloud_location":                                    resourceLocation(),
 				"genesyscloud_recording_media_retention_policy":            resourceMediaRetentionPolicy(),
 				"genesyscloud_oauth_client":                                resourceOAuthClient(),
 				"genesyscloud_outbound_campaignrule":                       resourceOutboundCampaignRule(),
+				"genesyscloud_outbound_attempt_limit":                      resourceOutboundAttemptLimit(),
+				"genesyscloud_outbound_callanalysisresponseset":            resourceOutboundCallAnalysisResponseSet(),
+				"genesyscloud_outbound_campaign":                           resourceOutboundCampaign(),
+				"genesyscloud_outbound_contactlistfilter":                  resourceOutboundContactListFilter(),
+				"genesyscloud_outbound_callabletimeset":                    resourceOutboundCallabletimeset(),
+				"genesyscloud_outbound_contact_list":                       resourceOutboundContactList(),
+				"genesyscloud_outbound_ruleset":                            resourceOutboundRuleset(),
+				"genesyscloud_outbound_messagingcampaign":                  resourceOutboundMessagingCampaign(),
+				"genesyscloud_outbound_sequence":                           resourceOutboundSequence(),
+				"genesyscloud_outbound_dnclist":                            resourceOutboundDncList(),
+				"genesyscloud_orgauthorization_pairing":                    resourceOrgauthorizationPairing(),
 				"genesyscloud_processautomation_trigger":                   resourceProcessAutomationTrigger(),
 				"genesyscloud_quality_forms_evaluation":                    resourceEvaluationForm(),
 				"genesyscloud_quality_forms_survey":                        resourceSurveyForm(),
@@ -109,6 +127,8 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_routing_language":                            resourceRoutingLanguage(),
 				"genesyscloud_routing_queue":                               resourceRoutingQueue(),
 				"genesyscloud_routing_skill":                               resourceRoutingSkill(),
+				"genesyscloud_routing_skill_group":                         resourceRoutingSkillGroup(),
+				"genesyscloud_routing_settings":                            resourceRoutingSettings(),
 				"genesyscloud_routing_utilization":                         resourceRoutingUtilization(),
 				"genesyscloud_routing_wrapupcode":                          resourceRoutingWrapupCode(),
 				"genesyscloud_telephony_providers_edges_did_pool":          resourceTelephonyDidPool(),
@@ -137,21 +157,35 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_auth_division":                               dataSourceAuthDivision(),
 				"genesyscloud_auth_division_home":                          dataSourceAuthDivisionHome(),
 				"genesyscloud_flow":                                        dataSourceFlow(),
+				"genesyscloud_flow_milestone":                              dataSourceFlowMilestone(),
+				"genesyscloud_flow_outcome":                                dataSourceFlowOutcome(),
 				"genesyscloud_group":                                       dataSourceGroup(),
 				"genesyscloud_integration":                                 dataSourceIntegration(),
 				"genesyscloud_integration_action":                          dataSourceIntegrationAction(),
 				"genesyscloud_integration_credential":                      dataSourceIntegrationCredential(),
+				"genesyscloud_journey_outcome":                             dataSourceJourneyOutcome(),
+				"genesyscloud_journey_segment":                             dataSourceJourneySegment(),
+				"genesyscloud_knowledge_knowledgebase":                     dataSourceKnowledgeKnowledgebase(),
 				"genesyscloud_location":                                    dataSourceLocation(),
 				"genesyscloud_oauth_client":                                dataSourceOAuthClient(),
-				"genesyscloud_outbound_campaignrule":                       dataSourceOutboundCampaignRule(),
 				"genesyscloud_processautomation_trigger":                   dataSourceProcessAutomationTrigger(),
 				"genesyscloud_organizations_me":                            dataSourceOrganizationsMe(),
+				"genesyscloud_outbound_attempt_limit":                      dataSourceOutboundAttemptLimit(),
+				"genesyscloud_outbound_callabletimeset":                    dataSourceOutboundCallabletimeset(),
+				"genesyscloud_outbound_contact_list":                       dataSourceOutboundContactList(),
+				"genesyscloud_outbound_messagingcampaign":                  dataSourceOutboundMessagingcampaign(),
+				"genesyscloud_outbound_contactlistfilter":                  dataSourceOutboundContactListFilter(),
+				"genesyscloud_outbound_ruleset":                            dataSourceOutboundRuleset(),
+				"genesyscloud_outbound_sequence":                           dataSourceOutboundSequence(),
+				"genesyscloud_outbound_dnclist":                            dataSourceOutboundDncList(),
 				"genesyscloud_quality_forms_evaluation":                    dataSourceQualityFormsEvaluations(),
 				"genesyscloud_quality_forms_survey":                        dataSourceQualityFormsSurvey(),
 				"genesyscloud_recording_media_retention_policy":            dataSourceRecordingMediaRetentionPolicy(),
 				"genesyscloud_routing_language":                            dataSourceRoutingLanguage(),
 				"genesyscloud_routing_queue":                               dataSourceRoutingQueue(),
+				"genesyscloud_routing_settings":                            dataSourceRoutingSettings(),
 				"genesyscloud_routing_skill":                               dataSourceRoutingSkill(),
+				"genesyscloud_routing_skill_group":                         dataSourceRoutingSkillGroup(),
 				"genesyscloud_routing_email_domain":                        dataSourceRoutingEmailDomain(),
 				"genesyscloud_routing_wrapupcode":                          dataSourceRoutingWrapupcode(),
 				"genesyscloud_script":                                      dataSourceScript(),
@@ -272,6 +306,11 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		RequestLogHook: func(request *http.Request, count int) {
 			if count > 0 && request != nil {
 				log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
+			}
+		},
+		ResponseLogHook: func(response *http.Response) {
+			if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+				log.Printf("Response %s", response.Status)
 			}
 		},
 	}

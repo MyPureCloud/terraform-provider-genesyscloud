@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -87,7 +87,7 @@ func resourceArchitectScheduleGroups() *schema.Resource {
 			"open_schedules_id": {
 				Description: "The schedules defining the hours an organization is open.",
 				Type:        schema.TypeSet,
-				Optional:    true,
+				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"closed_schedules_id": {
@@ -124,7 +124,7 @@ func createArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 
 	// Optional attributes
 	if divisionID != "" {
-		schedGroup.Division = &platformclientv2.Division{Id: &divisionID}
+		schedGroup.Division = &platformclientv2.Writabledivision{Id: &divisionID}
 	}
 
 	if description != "" {
@@ -221,7 +221,7 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("Updating schedule group %s", name)
 		_, resp, putErr := archAPI.PutArchitectSchedulegroup(d.Id(), platformclientv2.Schedulegroup{
 			Name:             &name,
-			Division:         &platformclientv2.Division{Id: &divisionID},
+			Division:         &platformclientv2.Writabledivision{Id: &divisionID},
 			Version:          scheduleGroup.Version,
 			Description:      &description,
 			TimeZone:         &timeZone,

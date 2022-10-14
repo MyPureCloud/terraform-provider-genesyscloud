@@ -1,5 +1,5 @@
-resource "genesyscloud_processautomation_trigger" "test-trigger" {
-  name       = "Test Trigger"
+resource "genesyscloud_processautomation_trigger" "example-trigger" {
+  name       = "Example Trigger"
   topic_name = "v2.detail.events.conversation.{id}.customer.end"
   enabled    = true
   target {
@@ -12,4 +12,5 @@ resource "genesyscloud_processautomation_trigger" "test-trigger" {
     value     = "CHAT"
   }
   event_ttl_seconds = 60
+  description       = "description of trigger"
 }

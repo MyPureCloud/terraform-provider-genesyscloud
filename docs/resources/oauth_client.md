@@ -20,9 +20,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_oauth_client" "test-client" {
-  name                          = "Test OAuth Client"
-  description                   = "For test purposes only"
+resource "genesyscloud_oauth_client" "example-client" {
+  name                          = "Example OAuth Client"
+  description                   = "For example purposes only"
   access_token_validity_seconds = 600
   registered_redirect_uris      = ["https://example.com/auth"]
   authorized_grant_type         = "CODE"
@@ -48,6 +48,7 @@ resource "genesyscloud_oauth_client" "test-client" {
 
 - `access_token_validity_seconds` (Number) The number of seconds, between 5mins and 48hrs, until tokens created with this client expire. Only clients using Genesys Cloud SCIM (Identity Management) can have a maximum duration of 38880000secs/450 days. Defaults to `86400`.
 - `description` (String) The description of the OAuth client.
+- `integration_credential_name` (String) Optionally, a Name of a Integration Credential (with credential type pureCloudOAuthClient) to be created using this new OAuth Client.
 - `registered_redirect_uris` (Set of String) List of allowed callbacks for this client. For example: https://myapp.example.com/auth/callback.
 - `roles` (Block Set) Set of roles and their corresponding divisions associated with this client. Roles must be set for clients using the CLIENT-CREDENTIALS grant. The roles must also already be assigned to the OAuth Client used by Terraform. (see [below for nested schema](#nestedblock--roles))
 - `scopes` (Set of String) The scopes requested by this client. Scopes must be set for clients not using the CLIENT-CREDENTIALS grant.
@@ -56,6 +57,7 @@ resource "genesyscloud_oauth_client" "test-client" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `integration_credential_id` (String) The Id of the created Integration Credential using this new OAuth Client.
 
 <a id="nestedblock--roles"></a>
 ### Nested Schema for `roles`

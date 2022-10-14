@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -30,6 +31,30 @@ func validateDate(date interface{}, _ cty.Path) diag.Diagnostics {
 		return nil
 	}
 	return diag.Errorf("Date %v is not a string", date)
+}
+
+// Validates a date string is in the format 2006-01-02T15:04Z
+func validateDateTime(date interface{}, _ cty.Path) diag.Diagnostics {
+	if dateStr, ok := date.(string); ok {
+		_, err := time.Parse("2006-01-02T15:04Z", dateStr)
+		if err != nil {
+			return diag.Errorf("Failed to parse date %s: %s", dateStr, err)
+		}
+		return nil
+	}
+	return diag.Errorf("Date %v is not a string", date)
+}
+
+func validateTime(time interface{}, _ cty.Path) diag.Diagnostics {
+	timeStr := time.(string)
+	if len(timeStr) > 9 {
+		timeStr = timeStr[:8]
+	}
+	if valid, _ := regexp.MatchString("^(0?[0-9]|1?[0-9]|2[0-4]):([0-5][0-9]):([0-5][0-9])", timeStr); valid {
+		return nil
+	}
+
+	return diag.Errorf("Time %v is not a valid time", time)
 }
 
 // Validates a date string is in the format 2006-01-02T15:04:05.000000

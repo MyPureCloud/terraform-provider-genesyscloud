@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 var (
@@ -26,8 +26,6 @@ var (
 	mediaSettingsKeyChat     = "chat"
 	mediaSettingsKeyEmail    = "email"
 	mediaSettingsKeyMessage  = "message"
-	mediaSettingsKeySocial   = "socialExpression"
-	mediaSettingsKeyVideo    = "videoComm"
 
 	bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
@@ -81,7 +79,7 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil)
+		queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of queues: %v", getErr)
 		}
@@ -186,22 +184,6 @@ func resourceRoutingQueue() *schema.Resource {
 			},
 			"media_settings_message": {
 				Description: "Message media settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        queueMediaSettingsResource,
-			},
-			"media_settings_social": {
-				Description: "Social media settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        queueMediaSettingsResource,
-			},
-			"media_settings_video": {
-				Description: "Video media settings.",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -494,8 +476,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("media_settings_chat", nil)
 		d.Set("media_settings_email", nil)
 		d.Set("media_settings_message", nil)
-		d.Set("media_settings_social", nil)
-		d.Set("media_settings_video", nil)
 		if currentQueue.MediaSettings != nil {
 			if callSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyCall]; ok {
 				d.Set("media_settings_call", flattenMediaSetting(callSettings))
@@ -511,12 +491,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			}
 			if messageSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyMessage]; ok {
 				d.Set("media_settings_message", flattenMediaSetting(messageSettings))
-			}
-			if socialSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeySocial]; ok {
-				d.Set("media_settings_social", flattenMediaSetting(socialSettings))
-			}
-			if videoSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyVideo]; ok {
-				d.Set("media_settings_video", flattenMediaSetting(videoSettings))
 			}
 		}
 
@@ -598,8 +572,9 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("outbound_messaging_sms_address_id", nil)
 		}
 
-		if currentQueue.OutboundEmailAddress != nil {
-			d.Set("outbound_email_address", []interface{}{flattenQueueEmailAddress(*currentQueue.OutboundEmailAddress)})
+		if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
+			outboundEmailAddress := *currentQueue.OutboundEmailAddress
+			d.Set("outbound_email_address", []interface{}{flattenQueueEmailAddress(*outboundEmailAddress)})
 		} else {
 			d.Set("outbound_email_address", nil)
 		}
@@ -737,16 +712,6 @@ func buildSdkMediaSettings(d *schema.ResourceData) *map[string]platformclientv2.
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
 	if mediaSettingsMessage != nil && len(mediaSettingsMessage) > 0 {
 		settings[mediaSettingsKeyMessage] = buildSdkMediaSetting(mediaSettingsMessage)
-	}
-
-	mediaSettingsSocial := d.Get("media_settings_social").([]interface{})
-	if mediaSettingsSocial != nil && len(mediaSettingsSocial) > 0 {
-		settings[mediaSettingsKeySocial] = buildSdkMediaSetting(mediaSettingsSocial)
-	}
-
-	mediaSettingsVideo := d.Get("media_settings_video").([]interface{})
-	if mediaSettingsVideo != nil && len(mediaSettingsVideo) > 0 {
-		settings[mediaSettingsKeyVideo] = buildSdkMediaSetting(mediaSettingsVideo)
 	}
 
 	return &settings
@@ -951,12 +916,12 @@ func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueem
 
 		domainID := settingsMap["domain_id"].(string)
 		routeID := settingsMap["route_id"].(string)
-
+		inboundRoute := &platformclientv2.Inboundroute{
+			Id: &routeID,
+		}
 		return &platformclientv2.Queueemailaddress{
 			Domain: &platformclientv2.Domainentityref{Id: &domainID},
-			Route: &platformclientv2.Inboundroute{
-				Id: &routeID,
-			},
+			Route:  &inboundRoute,
 		}
 	}
 	return nil
@@ -968,8 +933,10 @@ func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 		settingsMap["domain_id"] = *settings.Domain.Id
 	}
 	if settings.Route != nil {
-		settingsMap["route_id"] = *settings.Route.Id
+		route := *settings.Route
+		settingsMap["route_id"] = *route.Id
 	}
+
 	return settingsMap
 }
 

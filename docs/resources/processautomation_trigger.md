@@ -23,8 +23,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_processautomation_trigger" "test-trigger" {
-  name       = "Test Trigger"
+resource "genesyscloud_processautomation_trigger" "example-trigger" {
+  name       = "Example Trigger"
   topic_name = "v2.detail.events.conversation.{id}.customer.end"
   enabled    = true
   target {
@@ -37,6 +37,7 @@ resource "genesyscloud_processautomation_trigger" "test-trigger" {
     value     = "CHAT"
   }
   event_ttl_seconds = 60
+  description       = "description of trigger"
 }
 ```
 
@@ -52,6 +53,7 @@ resource "genesyscloud_processautomation_trigger" "test-trigger" {
 
 ### Optional
 
+- `description` (String) A description of the trigger
 - `event_ttl_seconds` (Number) How old an event can be to fire the trigger. Must be an number greater than or equal to 10
 - `match_criteria` (Block Set) Match criteria that controls when the trigger will fire. (see [below for nested schema](#nestedblock--match_criteria))
 

@@ -1,7 +1,7 @@
-resource "genesyscloud_routing_queue" "test_queue" {
-  name                              = "Test Queue"
+resource "genesyscloud_routing_queue" "example_queue" {
+  name                              = "Example Queue"
   division_id                       = genesyscloud_auth_division.home.id
-  description                       = "This is a test queue"
+  description                       = "This is an example description"
   acw_wrapup_prompt                 = "MANDATORY_TIMEOUT"
   acw_timeout_ms                    = 300000
   skill_evaluation_method           = "BEST"
@@ -28,15 +28,15 @@ resource "genesyscloud_routing_queue" "test_queue" {
   }
   bullseye_rings {
     expansion_timeout_seconds = 15.1
-    skills_to_remove          = [genesyscloud_routing_skill.test-skill.id]
+    skills_to_remove          = [genesyscloud_routing_skill.example-skill.id]
   }
   default_script_ids = {
     EMAIL = data.genesyscloud_script.email.id
     CHAT  = data.genesyscloud_script.chat.id
   }
   members {
-    user_id  = genesyscloud_user.test-user.id
+    user_id  = genesyscloud_user.example-user.id
     ring_num = 2
   }
-  wrapup_codes = [genesyscloud_routing_wrapupcode.test-code.id]
+  wrapup_codes = [genesyscloud_routing_wrapupcode.example-code.id]
 }

@@ -21,8 +21,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_telephony_providers_edges_phone" "test_phone" {
-  name                   = "test phone"
+resource "genesyscloud_telephony_providers_edges_phone" "example_phone" {
+  name                   = "example phone"
   state                  = "active"
   site_id                = genesyscloud_telephony_providers_edges_site.site.id
   phone_base_settings_id = genesyscloud_telephony_providers_edges_phonebasesettings.phone-base-settings.id

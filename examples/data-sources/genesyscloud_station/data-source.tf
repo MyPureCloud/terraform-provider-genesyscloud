@@ -1,3 +1,3 @@
-data "genesyscloud_station" "test-station" {
-  name = "my_station"
+data "genesyscloud_station" "example-station" {
+  name = "example station"
 }

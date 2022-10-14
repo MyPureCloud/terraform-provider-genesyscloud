@@ -1,4 +1,4 @@
-resource "genesyscloud_user" "test_user" {
+resource "genesyscloud_user" "example_user" {
   email           = "john@example.com"
   name            = "John Doe"
   password        = "initial-password"
@@ -6,7 +6,7 @@ resource "genesyscloud_user" "test_user" {
   state           = "active"
   department      = "Development"
   title           = "Senior Director"
-  manager         = genesyscloud_user.test-user-manager.id
+  manager         = genesyscloud_user.example-user-manager.id
   acd_auto_answer = true
   profile_skills  = ["Java", "Go"]
   certifications  = ["Certified Developer"]

@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -102,8 +102,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					generateMediaSettings("media_settings_chat", alertTimeout2, slPercent2, slDuration2),
 					generateMediaSettings("media_settings_email", alertTimeout2, slPercent2, slDuration2),
 					generateMediaSettings("media_settings_message", alertTimeout2, slPercent2, slDuration2),
-					generateMediaSettings("media_settings_social", alertTimeout2, slPercent2, slDuration2),
-					generateMediaSettings("media_settings_video", alertTimeout2, slPercent2, slDuration2),
 					generateBullseyeSettings(alertTimeout2),
 					generateBullseyeSettings(alertTimeout2),
 					generateBullseyeSettings(alertTimeout2),
@@ -126,8 +124,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout2, slPercent2, slDuration2),
 					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout2, slPercent2, slDuration2),
 					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout2, slPercent2, slDuration2),
-					validateMediaSettings(queueResource1, "media_settings_social", alertTimeout2, slPercent2, slDuration2),
-					validateMediaSettings(queueResource1, "media_settings_video", alertTimeout2, slPercent2, slDuration2),
 					validateBullseyeSettings(queueResource1, 3, alertTimeout2, ""),
 					validateRoutingRules(queueResource1, 0, routingRuleOpMeetsThresh, "90", "30"),
 					validateRoutingRules(queueResource1, 1, routingRuleOpAny, "45", "15"),
@@ -216,14 +212,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					queueFlowResource1,
 					queueFlowFilePath1,
 					queueFlowInboundcallConfig1,
+					false,
 				) + generateFlowResource(
 					emailInQueueFlowResource1,
 					queueFlowFilePath2,
 					emailInQueueFlowInboundcallConfig2,
+					false,
 				) + generateFlowResource(
 					messageInQueueFlowResource1,
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,
+					false,
 				) + generateRoutingQueueResourceBasic(
 					queueResource1,
 					queueName1,
@@ -243,14 +242,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					queueFlowResource2,
 					queueFlowFilePath1,
 					queueFlowInboundcallConfig1,
+					false,
 				) + generateFlowResource(
 					emailInQueueFlowResource2,
 					queueFlowFilePath2,
 					emailInQueueFlowInboundcallConfig2,
+					false,
 				) + generateFlowResource(
 					messageInQueueFlowResource2,
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,
+					false,
 				) + generateRoutingQueueResourceBasic(
 					queueResource1,
 					queueName1,

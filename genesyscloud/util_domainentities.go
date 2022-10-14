@@ -2,7 +2,7 @@ package genesyscloud
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func buildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Domainentityref {
@@ -15,14 +15,26 @@ func buildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformcli
 
 func buildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platformclientv2.Domainentityref {
 	if ids, ok := d.GetOk(idAttr); ok && ids != nil {
-		strList := setToStringList(ids.(*schema.Set))
-		if strList != nil {
-			domainEntityRefs := make([]platformclientv2.Domainentityref, len(*strList))
-			for i, id := range *strList {
-				tempId := id
-				domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
+		if setIds, ok := ids.(*schema.Set); ok {
+			strList := setToStringList(setIds)
+			if setIds != nil {
+				domainEntityRefs := make([]platformclientv2.Domainentityref, len(*strList))
+				for i, id := range *strList {
+					tempId := id
+					domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
+				}
+				return &domainEntityRefs
 			}
-			return &domainEntityRefs
+		} else {
+			strList := interfaceListToStrings(ids.([]interface{}))
+			if len(strList) > 0 {
+				domainEntityRefs := make([]platformclientv2.Domainentityref, len(strList))
+				for i, id := range strList {
+					tempId := id
+					domainEntityRefs[i] = platformclientv2.Domainentityref{Id: &tempId}
+				}
+				return &domainEntityRefs
+			}
 		}
 	}
 	return nil
@@ -44,4 +56,12 @@ func sdkDomainEntityRefArrToSet(entityRefs []platformclientv2.Domainentityref) *
 		interfaceList[i] = *v.Id
 	}
 	return schema.NewSet(schema.HashString, interfaceList)
+}
+
+func sdkDomainEntityRefArrToList(entityRefs []platformclientv2.Domainentityref) []interface{} {
+	interfaceList := make([]interface{}, len(entityRefs))
+	for i, v := range entityRefs {
+		interfaceList[i] = *v.Id
+	}
+	return interfaceList
 }

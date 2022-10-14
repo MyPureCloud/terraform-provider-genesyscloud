@@ -1,3 +1,3 @@
 data "genesyscloud_integration_action" "integrationAction" {
-  name = "test integration action name"
+  name = "example integration action name"
 }

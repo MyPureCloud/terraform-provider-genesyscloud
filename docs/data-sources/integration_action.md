@@ -14,7 +14,7 @@ Data source for Genesys Cloud integration action. Select an integration action b
 
 ```terraform
 data "genesyscloud_integration_action" "integrationAction" {
-  name = "test integration action name"
+  name = "example integration action name"
 }
 ```
 

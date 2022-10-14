@@ -20,7 +20,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSettings1234" {
+resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSettings" {
   name               = "example trunk base settings"
   description        = "my example trunk base settings"
   trunk_meta_base_id = "phone_connections_webrtc.json"

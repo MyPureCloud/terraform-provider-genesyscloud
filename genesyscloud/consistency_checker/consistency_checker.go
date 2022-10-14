@@ -3,15 +3,16 @@ package consistency_checker
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-cmp/cmp"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"reflect"
 	"strconv"
 	"strings"
 	"sync"
 	"unsafe"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
@@ -238,17 +239,7 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 				}
 
 				vv := v.New
-				if !c.d.HasChange(k) {
-					if v.New != "" {
-						if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
-							return resource.RetryableError(&consistencyError{
-								key:      k,
-								oldValue: c.originalState[k],
-								newValue: c.d.Get(k),
-							})
-						}
-					}
-				} else {
+				if c.d.HasChange(k) {
 					if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
 						return resource.RetryableError(&consistencyError{
 							key:      k,

@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 func dataSourceRoutingSkill() *schema.Resource {
@@ -37,11 +37,11 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 			const pageSize = 100
 			skills, _, getErr := routingAPI.GetRoutingSkills(pageSize, pageNum, name, nil)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting skill %s: %s", name, getErr))
+				return resource.NonRetryableError(fmt.Errorf("error requesting skill %s: %s", name, getErr))
 			}
 
 			if skills.Entities == nil || len(*skills.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No routing skills found with name %s", name))
+				return resource.RetryableError(fmt.Errorf("no routing skills found with name %s", name))
 			}
 
 			for _, skill := range *skills.Entities {

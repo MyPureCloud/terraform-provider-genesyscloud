@@ -62,6 +62,8 @@ resource "genesyscloud_flow" "flow" {
 ### Optional
 
 - `file_content_hash` (String) Hash value of the YAML file content. Used to detect changes.
+- `force_unlock` (Boolean) Will perform a force unlock on an architect flow before beginning the publication process.  NOTE: The force unlock publishes the 'draft'
+				              architect flow and then publishes the flow named in this resource. This mirrors the behavior found in the archy CLI tool.
 - `substitutions` (Map of String) A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.
 
 ### Read-Only

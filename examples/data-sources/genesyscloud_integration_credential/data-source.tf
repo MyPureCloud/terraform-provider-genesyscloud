@@ -1,3 +1,3 @@
 data "genesyscloud_integration_credential" "integrationCredential" {
-  name = "test integration credential name"
+  name = "example integration credential name"
 }

@@ -3,7 +3,10 @@ package genesyscloud
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -45,6 +48,25 @@ func testDefaultHomeDivision(resource string) resource.TestCheckFunc {
 
 func generateStringArray(vals ...string) string {
 	return fmt.Sprintf("[%s]", strings.Join(vals, ","))
+}
+
+// For fields such as genesyscloud_outbound_campaign.campaign_status, which use a diff suppress func,
+// and may return as "on", or "complete" depending on how long the operation takes
+func verifyAttributeInArrayOfPotentialValues(resource string, key string, potentialValues []string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		r := state.RootModule().Resources[resource]
+		if r == nil {
+			return fmt.Errorf("%s not found in state", resource)
+		}
+		a := r.Primary.Attributes
+		attributeValue := a[key]
+		for _, v := range potentialValues {
+			if attributeValue == v {
+				return nil
+			}
+		}
+		return fmt.Errorf(`expected %s to be one of [%s], got "%s"`, key, strings.Join(potentialValues, ", "), attributeValue)
+	}
 }
 
 func validateStringInArray(resourceName string, attrName string, value string) resource.TestCheckFunc {
@@ -258,4 +280,33 @@ func randString(length int) string {
 	}
 
 	return string(s)
+}
+
+func generateTestSteps(testType string, testSuitName string, testCaseName string, resourceName string, idPrefix string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+	var testSteps []resource.TestStep
+
+	testCasePath := filepath.Join("..", "test", "data", testType, testSuitName, testCaseName)
+	testCaseFiles, _ := os.ReadDir(testCasePath)
+	checkFuncIndex := 0
+	for _, testCaseFile := range testCaseFiles {
+		if !testCaseFile.IsDir() && strings.HasSuffix(testCaseFile.Name(), ".tf") {
+			testCaseResource, _ := os.ReadFile(filepath.Join(testCasePath, testCaseFile.Name()))
+			config := strings.ReplaceAll(string(testCaseResource), "-TEST-CASE-", testCaseName)
+			var checkFunc resource.TestCheckFunc = nil
+			if checkFuncs != nil && checkFuncIndex < len(checkFuncs) {
+				checkFunc = checkFuncs[checkFuncIndex]
+			}
+			testSteps = append(testSteps, resource.TestStep{Config: config, Check: checkFunc})
+			checkFuncIndex++
+		}
+	}
+	log.Printf("Generated %d test steps for %s/%s testcase (%s)", len(testSteps), testSuitName, testCaseName, testCasePath)
+
+	testSteps = append(testSteps, resource.TestStep{
+		ResourceName:      resourceName + "." + idPrefix + testCaseName,
+		ImportState:       true,
+		ImportStateVerify: true,
+	})
+
+	return testSteps
 }

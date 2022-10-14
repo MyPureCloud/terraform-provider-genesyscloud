@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v72/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
 type Mediapolicies struct {
@@ -954,6 +954,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						flowResource1,
 						filePath1,
 						"",
+						false,
 						generateFlowSubstitutions(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
@@ -1060,6 +1061,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						flowResource1,
 						filePath1,
 						"",
+						false,
 						generateFlowSubstitutions(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
@@ -1166,6 +1168,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						flowResource1,
 						filePath1,
 						"",
+						false,
 						generateFlowSubstitutions(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
@@ -1272,6 +1275,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						flowResource1,
 						filePath1,
 						"",
+						false,
 						generateFlowSubstitutions(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
