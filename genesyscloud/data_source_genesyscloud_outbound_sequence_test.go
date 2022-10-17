@@ -23,18 +23,6 @@ func TestAccDataSourceOutboundSequence(t *testing.T) {
 		outboundFlowFilePath  = "../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 		flowName              = "test flow " + uuid.NewString()
 		emergencyNumber       = "+13128451429"
-
-		campaignResource = generateOutboundCampaignBasic(
-			campaignResourceId,
-			campaignName,
-			contactListResourceId,
-			siteId,
-			emergencyNumber,
-			carResourceId,
-			nullValue,
-			outboundFlowFilePath,
-			flowName,
-		)
 	)
 
 	// necessary to avoid errors during site creation
@@ -53,14 +41,29 @@ func TestAccDataSourceOutboundSequence(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: campaignResource +
-					generateOutboundSequence(
-						resourceId,
-						sequenceName,
-						[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
-						nullValue,
-						nullValue,
-					) + generateOutboundSequenceDataSource(
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateOutboundCampaignBasic(
+					campaignResourceId,
+					campaignName,
+					contactListResourceId,
+					siteId,
+					emergencyNumber,
+					carResourceId,
+					nullValue,
+					outboundFlowFilePath,
+					"data-sequence-test-flow",
+					flowName,
+					"${data.genesyscloud_auth_division_home.home.name}",
+					"data-sequence-test-location",
+					"data-sequence-test-wrapupcode",
+				) + generateOutboundSequence(
+					resourceId,
+					sequenceName,
+					[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
+					nullValue,
+					nullValue,
+				) + generateOutboundSequenceDataSource(
 					dataSourceId,
 					sequenceName,
 					"genesyscloud_outbound_sequence."+resourceId,

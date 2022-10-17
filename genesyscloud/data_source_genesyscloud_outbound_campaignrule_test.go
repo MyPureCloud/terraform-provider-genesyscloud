@@ -13,11 +13,44 @@ func TestAccDataSourceCampaignRule(t *testing.T) {
 		campaignRuleResourceId = "campaign_rule"
 		campaignRuleName       = "test-campaign-rule-" + uuid.NewString()
 
-		// TODO: Replace campaign ID with reference to campaign resource.
-		campaignRuleEntityCampaignIds = []string{strconv.Quote("e6b0a237-2620-4644-b1bb-f0e58e923a93")}
+		campaign1ResourceId  = "campaign1"
+		campaign1Name        = "TF Test Campaign " + uuid.NewString()
+		outboundFlowFilePath = "../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		campaign1FlowName    = "test flow " + uuid.NewString()
+		campaign1Resource    = generateOutboundCampaignBasic(
+			campaign1ResourceId,
+			campaign1Name,
+			"contact-list",
+			"site",
+			"+13178783419",
+			"car",
+			strconv.Quote("off"),
+			outboundFlowFilePath,
+			"campaignrule-test-flow",
+			campaign1FlowName,
+			"${data.genesyscloud_auth_division_home.home.name}",
+			"campaignrule-test-location",
+			"campaignrule-test-wrapupcode",
+		)
 
-		// TODO: Replace campaign ID with reference to campaign resource.
-		campaignRuleActionCampaignIds = []string{strconv.Quote("7fc6b00a-f2f5-44d2-9fc5-169f339f6c4b")}
+		campaign2ResourceId = "campaign2"
+		campaign2Name       = "TF Test Campaign " + uuid.NewString()
+		campaign2FlowName   = "test flow " + uuid.NewString()
+		campaign2Resource   = generateOutboundCampaignBasic(
+			campaign2ResourceId,
+			campaign2Name,
+			"contact-list-2",
+			"site-2",
+			"+13178781119",
+			"car-1",
+			strconv.Quote("off"),
+			outboundFlowFilePath,
+			"campaignrule-test-flow-2",
+			campaign2FlowName,
+			"${data.genesyscloud_auth_division_home.home.name}",
+			"campaignrule-test-location-2",
+			"campaignrule-test-wrapupcode-2",
+		)
 
 		dataSourceId = "campaign_rule_data"
 	)
@@ -27,39 +60,44 @@ func TestAccDataSourceCampaignRule(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundCampaignRule(
-					campaignRuleResourceId,
-					campaignRuleName,
-					falseValue,
-					falseValue,
-					generateCampaignRuleEntity(
-						campaignRuleEntityCampaignIds,
-						[]string{},
-					),
-					generateCampaignRuleConditions(
-						"",
-						"campaignProgress",
-						generateCampaignRuleParameters(
-							"lessThan",
-							"0.5",
-							"preview",
-							"2",
-						),
-					),
-					generateCampaignRuleActions(
-						"",
-						"turnOnCampaign",
-						campaignRuleActionCampaignIds,
-						[]string{},
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) +
+					campaign1Resource +
+					campaign2Resource +
+					generateOutboundCampaignRule(
+						campaignRuleResourceId,
+						campaignRuleName,
 						falseValue,
-						generateCampaignRuleParameters(
-							"lessThan",
-							"0.5",
-							"preview",
-							"2",
+						falseValue,
+						generateCampaignRuleEntity(
+							[]string{"genesyscloud_outbound_campaign." + campaign1ResourceId + ".id"},
+							[]string{},
 						),
-					),
-				) + generateCampaignRuleDataSource(
+						generateCampaignRuleConditions(
+							"",
+							"campaignProgress",
+							generateCampaignRuleParameters(
+								"lessThan",
+								"0.5",
+								"preview",
+								"2",
+							),
+						),
+						generateCampaignRuleActions(
+							"",
+							"turnOnCampaign",
+							[]string{"genesyscloud_outbound_campaign." + campaign2ResourceId + ".id"},
+							[]string{},
+							falseValue,
+							generateCampaignRuleParameters(
+								"lessThan",
+								"0.5",
+								"preview",
+								"2",
+							),
+						),
+					) + generateCampaignRuleDataSource(
 					dataSourceId,
 					campaignRuleName,
 					"genesyscloud_outbound_campaignrule."+campaignRuleResourceId,

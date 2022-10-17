@@ -29,7 +29,9 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundCampaignBasic(
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateOutboundCampaignBasic(
 					resourceId,
 					campaignName,
 					"contact_list",
@@ -38,7 +40,11 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 					"car",
 					nullValue,
 					outboundFlowFilePath,
+					"data-campaign-test-flow",
 					"test flow "+uuid.NewString(),
+					"${data.genesyscloud_auth_division_home.home.name}",
+					"data-campaign-test-location",
+					"data-campaign-test-wrapupcode",
 				) + generateOutboundCampaignDataSource(
 					dataSourceId,
 					campaignName,
