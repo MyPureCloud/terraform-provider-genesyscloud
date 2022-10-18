@@ -89,11 +89,13 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `email_in_queue_flow_id` (String) The in-queue flow ID to use for email conversations waiting in queue.
 - `enable_manual_assignment` (Boolean) Indicates whether manual assignment is enabled for this queue. Defaults to `false`.
 - `enable_transcription` (Boolean) Indicates whether voice transcription is enabled for this queue. Defaults to `false`.
+- `groups` (Set of String) List of group ids assigned to the queue
 - `media_settings_call` (Block List, Max: 1) Call media settings. (see [below for nested schema](#nestedblock--media_settings_call))
 - `media_settings_callback` (Block List, Max: 1) Callback media settings. (see [below for nested schema](#nestedblock--media_settings_callback))
 - `media_settings_chat` (Block List, Max: 1) Chat media settings. (see [below for nested schema](#nestedblock--media_settings_chat))
 - `media_settings_email` (Block List, Max: 1) Email media settings. (see [below for nested schema](#nestedblock--media_settings_email))
 - `media_settings_message` (Block List, Max: 1) Message media settings. (see [below for nested schema](#nestedblock--media_settings_message))
+- `member_groups` (Block List) Member group ids that are assigned to the queue (see [below for nested schema](#nestedblock--member_groups))
 - `members` (Set of Object) Users in the queue. If not set, this resource will not manage members. (see [below for nested schema](#nestedatt--members))
 - `message_in_queue_flow_id` (String) The in-queue flow ID to use for message conversations waiting in queue.
 - `outbound_email_address` (Block List, Max: 1) The outbound email address settings for this queue. (see [below for nested schema](#nestedblock--outbound_email_address))
@@ -101,6 +103,8 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `queue_flow_id` (String) The in-queue flow ID to use for call conversations waiting in queue.
 - `routing_rules` (Block List, Max: 6) The routing rules for the queue, used for routing to known or preferred agents. (see [below for nested schema](#nestedblock--routing_rules))
 - `skill_evaluation_method` (String) The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to `ALL`.
+- `skill_groups` (Set of String) List of skill group ids assigned to the queue
+- `teams` (Set of String) List of ids assigned to the queue
 - `whisper_prompt_id` (String) The prompt ID used for whisper on the queue, if configured.
 - `wrapup_codes` (Set of String) IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.
 
@@ -168,6 +172,15 @@ Required:
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+
+
+<a id="nestedblock--member_groups"></a>
+### Nested Schema for `member_groups`
+
+Required:
+
+- `id` (String) Group id of the group, team, or skill group being created
+- `type` (String) Type of member group. Must be TEAM, GROUP or SKILLGROUP
 
 
 <a id="nestedatt--members"></a>
