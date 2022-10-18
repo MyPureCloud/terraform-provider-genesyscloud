@@ -68,22 +68,6 @@ var (
 			},
 		},
 	}
-
-	memberGroupResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "Group id of the group, team, or skill group being created",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"type": {
-				Description:  "Type of member group. Must be TEAM, GROUP or SKILLGROUP",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"TEAM", "GROUP", "SKILLGROUP"}, false),
-			},
-		},
-	}
 )
 
 func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
