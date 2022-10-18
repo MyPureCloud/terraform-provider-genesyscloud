@@ -156,6 +156,20 @@ func getAllCampaignRules(_ context.Context, clientConfig *platformclientv2.Confi
 func outboundCampaignRuleExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllCampaignRules),
+		RefAttrs: map[string]*RefAttrSettings{
+			`campaign_rule_actions.campaign_rule_action_entities.campaign_ids`: {
+				RefType: "genesyscloud_outbound_campaign",
+			},
+			`campaign_rule_actions.campaign_rule_action_entities.sequence_ids`: {
+				RefType: "genesyscloud_outbound_sequence",
+			},
+			`campaign_rule_entities.campaign_ids`: {
+				RefType: "genesyscloud_outbound_campaign",
+			},
+			`campaign_rule_entities.sequence_ids`: {
+				RefType: "genesyscloud_outbound_sequence",
+			},
+		},
 	}
 }
 

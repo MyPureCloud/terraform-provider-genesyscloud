@@ -12,7 +12,6 @@ import (
 )
 
 func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
-	t.Parallel()
 	var (
 		resourceId      = "campaign_rule"
 		ruleName        = "Terraform test rule " + uuid.NewString()

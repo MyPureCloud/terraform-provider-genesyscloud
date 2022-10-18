@@ -9,6 +9,7 @@ import (
 )
 
 func TestAccDataSourceCampaignRule(t *testing.T) {
+	t.Parallel()
 	var (
 		campaignRuleResourceId = "campaign_rule"
 		campaignRuleName       = "test-campaign-rule-" + uuid.NewString()
