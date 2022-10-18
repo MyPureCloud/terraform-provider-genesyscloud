@@ -137,7 +137,7 @@ func resourceIntegrationAction() *schema.Resource {
 			"integration_id": {
 				Description: "The ID of the integration this action is associated with. Changes will create a new action.",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 				ForceNew:    true,
 			},
 			"secure": {
