@@ -376,12 +376,6 @@ func resourceRoutingQueue() *schema.Resource {
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"member_groups": {
-				Description: "Member group ids that are assigned to the queue",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        memberGroupResource,
-			},
 			"skill_groups": {
 				Description: "List of skill group ids assigned to the queue",
 				Type:        schema.TypeSet,
