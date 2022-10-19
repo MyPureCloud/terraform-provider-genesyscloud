@@ -57,7 +57,7 @@ func resourceIdpGsuite() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"certificates": {
 				Description: "PEM or DER encoded public X.509 certificates for SAML signature validation.",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
@@ -110,9 +110,9 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpGsuite())
 		if gsuite.Certificate != nil {
-			d.Set("certificates", stringListToSet([]string{*gsuite.Certificate}))
+			d.Set("certificates", stringListToInterfaceList([]string{*gsuite.Certificate}))
 		} else if gsuite.Certificates != nil {
-			d.Set("certificates", stringListToSet(*gsuite.Certificates))
+			d.Set("certificates", stringListToInterfaceList(*gsuite.Certificates))
 		} else {
 			d.Set("certificates", nil)
 		}
@@ -163,13 +163,12 @@ func updateIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 		Disabled:               &disabled,
 	}
 
-	certificates := buildSdkStringList(d, "certificates")
+	certificates := buildSdkStringListFromInterfaceArray(d, "certificates")
 	if certificates != nil {
 		if len(*certificates) == 1 {
 			update.Certificate = &(*certificates)[0]
-		} else {
-			update.Certificates = certificates
 		}
+		update.Certificates = certificates
 	}
 
 	_, _, err := idpAPI.PutIdentityprovidersGsuite(update)
