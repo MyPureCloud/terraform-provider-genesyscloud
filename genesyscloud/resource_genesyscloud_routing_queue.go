@@ -112,6 +112,9 @@ func routingQueueExporter() *ResourceExporter {
 			"bullseye_rings.skills_to_remove":   {RefType: "genesyscloud_routing_skill"},
 			"members.user_id":                   {RefType: "genesyscloud_user"},
 			"wrapup_codes":                      {RefType: "genesyscloud_routing_wrapupcode"},
+			"skill_groups":                      {RefType: "genesyscloud_routing_skill_group"},
+			"teams":                             {}, //Need to add this when we get teams resources implemented
+			"groups":                            {RefType: "genesyscloud_group"},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},
@@ -357,6 +360,24 @@ func resourceRoutingQueue() *schema.Resource {
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"skill_groups": {
+				Description: "List of skill group ids assigned to the queue",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"groups": {
+				Description: "List of group ids assigned to the queue",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"teams": {
+				Description: "List of ids assigned to the queue",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -371,9 +392,14 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	enableManualAssignment := d.Get("enable_manual_assignment").(bool)
 	callingPartyName := d.Get("calling_party_name").(string)
 	callingPartyNumber := d.Get("calling_party_number").(string)
-
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
+	groups := buildMemberGroupList(d, "groups", "GROUP")
+	teams := buildMemberGroupList(d, "teams", "TEAM")
+	memberGroups := append(*skillGroups, *groups...)
+	memberGroups = append(memberGroups, *teams...)
 
 	createQueue := platformclientv2.Createqueuerequest{
 		Name:                       &name,
@@ -395,6 +421,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		OutboundEmailAddress:       buildSdkQueueEmailAddress(d),
 		EnableTranscription:        &enableTranscription,
 		EnableManualAssignment:     &enableManualAssignment,
+		MemberGroups:               &memberGroups,
 	}
 
 	if divisionID != "" {
@@ -591,6 +618,14 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 		d.Set("wrapup_codes", wrapupCodes)
 
+		skillgroup := "SKILLGROUP"
+		team := "TEAM"
+		group := "GROUP"
+
+		d.Set("skill_groups", flattenQueueMemberGroupsList(currentQueue, &skillgroup))
+		d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
+		d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
+
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
 		return cc.CheckState()
 	})
@@ -608,6 +643,12 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
+	groups := buildMemberGroupList(d, "groups", "GROUP")
+	teams := buildMemberGroupList(d, "teams", "TEAM")
+	memberGroups := append(*skillGroups, *groups...)
+	memberGroups = append(memberGroups, *teams...)
 
 	log.Printf("Updating queue %s", name)
 
@@ -631,7 +672,9 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		OutboundEmailAddress:       buildSdkQueueEmailAddress(d),
 		EnableTranscription:        &enableTranscription,
 		EnableManualAssignment:     &enableManualAssignment,
+		MemberGroups:               &memberGroups,
 	})
+
 	if err != nil {
 		return diag.Errorf("Error updating queue %s: %s", name, err)
 	}
@@ -739,6 +782,21 @@ func flattenMediaSetting(settings platformclientv2.Mediasetting) []interface{} {
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
 	return []interface{}{settingsMap}
+}
+
+func buildMemberGroupList(d *schema.ResourceData, groupKey string, groupType string) *[]platformclientv2.Membergroup {
+	var memberGroups []platformclientv2.Membergroup
+	if mg, ok := d.GetOk(groupKey); ok {
+
+		for _, mgId := range mg.(*schema.Set).List() {
+			id := mgId.(string)
+
+			memberGroup := &platformclientv2.Membergroup{Id: &id, VarType: &groupType}
+			memberGroups = append(memberGroups, *memberGroup)
+		}
+	}
+
+	return &memberGroups
 }
 
 func buildSdkRoutingRules(d *schema.ResourceData) *[]platformclientv2.Routingrule {
@@ -1220,4 +1278,24 @@ func flattenQueueWrapupCodes(queueID string, api *platformclientv2.RoutingApi) (
 		return stringListToSet(codeIds), nil
 	}
 	return nil, nil
+}
+
+func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *string) *schema.Set {
+	var groupIds []string
+
+	if queue == nil || queue.MemberGroups == nil {
+		return nil
+	}
+
+	for _, memberGroup := range *queue.MemberGroups {
+		if strings.Compare(*memberGroup.VarType, *groupType) == 0 {
+			groupIds = append(groupIds, *memberGroup.Id)
+		}
+	}
+
+	if groupIds != nil {
+		return stringListToSet(groupIds)
+	}
+
+	return nil
 }
