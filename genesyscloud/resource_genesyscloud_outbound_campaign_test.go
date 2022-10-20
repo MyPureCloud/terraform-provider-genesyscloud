@@ -704,10 +704,8 @@ func generateReferencedResourcesForOutboundCampaignTests(
 	}
 	if carResourceId != "" {
 		if outboundFlowFilePath != "" {
-			callAnalysisResponseSet = fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "division" {}
-`) + generateRoutingWrapupcodeResource(
-				"wrap-up-code",
+			callAnalysisResponseSet = generateRoutingWrapupcodeResource(
+				wrapUpCodeResourceId,
 				"wrapupcode "+uuid.NewString(),
 			) + generateFlowResource(
 				flowResourceId,
@@ -716,7 +714,7 @@ data "genesyscloud_auth_division_home" "division" {}
 				false,
 				generateFlowSubstitutions(map[string]string{
 					"flow_name":          flowName,
-					"home_division_name": "${data.genesyscloud_auth_division_home.division.name}",
+					"home_division_name": divisionName,
 					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapUpCodeResourceId + ".name}",
 				}),
