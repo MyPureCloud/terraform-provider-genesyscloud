@@ -515,6 +515,16 @@ func generateRoutingQueueResourceBasic(resourceID string, name string, nestedBlo
 	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
 }
 
+// Used when testing skills group dependencies.
+func generateRoutingQueueResourceBasicWithDepends(resourceID string, dependsOn string, name string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
+		depends_on = [%s]
+		name = "%s"
+		%s
+	}
+	`, resourceID, dependsOn, name, strings.Join(nestedBlocks, "\n"))
+}
+
 func generateRoutingQueueResource(
 	resourceID string,
 	name string,
@@ -663,6 +673,58 @@ func validateMember(queueResourceName string, userResourceName string, ringNum s
 	}
 }
 
+// Validate groups and skill group fields.
+func validateGroups(queueResourceName string, skillGroupResourceName string, groupResourceName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		skillGroupResource, ok := state.RootModule().Resources[skillGroupResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find skillGroup %s in state", skillGroupResourceName)
+		}
+
+		groupResource, ok := state.RootModule().Resources[groupResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find group %s in state", groupResourceName)
+		}
+
+		queueResource, ok := state.RootModule().Resources[queueResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find queue %s in state", queueResourceName)
+		}
+
+		queueID := queueResource.Primary.ID
+		skillGroupID := skillGroupResource.Primary.ID
+		groupID := groupResource.Primary.ID
+
+		numSkillGroupAttr, ok := queueResource.Primary.Attributes["skill_groups.#"]
+		if !ok {
+			return fmt.Errorf("No skill_groups found for queue %s in state", queueID)
+		}
+
+		numGroupAttr, ok := queueResource.Primary.Attributes["groups.#"]
+		if !ok {
+			return fmt.Errorf("No groups found for queue %s in state", queueID)
+		}
+
+		numSkillGroups, _ := strconv.Atoi(numSkillGroupAttr)
+		for i := 0; i < numSkillGroups; i++ {
+			if queueResource.Primary.Attributes["skill_groups."+strconv.Itoa(i)] == skillGroupID {
+				// Found skill group
+				return nil
+			}
+		}
+		return fmt.Errorf("Skill group id %s not found for queue %s in state", skillGroupID, queueID)
+
+		numGroups, _ := strconv.Atoi(numGroupAttr)
+		for i := 0; i < numGroups; i++ {
+			if queueResource.Primary.Attributes["groups."+strconv.Itoa(i)] == groupID {
+				// Found  group
+				return nil
+			}
+		}
+		return fmt.Errorf("Group id %s not found for queue %s in state", groupID, queueID)
+	}
+}
+
 func validateQueueWrapupCode(queueResourceName string, codeResourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		queueResource, ok := state.RootModule().Resources[queueResourceName]
@@ -691,4 +753,48 @@ func validateQueueWrapupCode(queueResourceName string, codeResourceName string) 
 		}
 		return fmt.Errorf("Wrapup code %s not found for queue %s in state", codeID, queueID)
 	}
+}
+
+func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
+	var (
+		queueResource         = "test-queue-members-seg"
+		queueName             = "Terraform-Test-QueueSkillGroup-" + uuid.NewString()
+		groupResource         = "routing-group"
+		groupName             = "group" + uuid.NewString()
+		skillGroupResource    = "routing-skill-group"
+		skillGroupName        = "Skillgroup" + uuid.NewString()
+		skillGroupDescription = "description-" + uuid.NewString()
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
+					generateBasicGroupResource(groupResource, groupName) +
+					generateRoutingQueueResourceBasicWithDepends(
+						queueResource,
+						"genesyscloud_routing_skill_group."+skillGroupResource,
+						queueName,
+						"members = []",
+						"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResource+".id]",
+						"groups = [genesyscloud_group."+groupResource+".id]",
+						generateBullseyeSettings("10"),
+						generateBullseyeSettings("10"),
+						generateBullseyeSettings("10")),
+				Check: resource.ComposeTestCheckFunc(
+					validateGroups("genesyscloud_routing_queue."+queueResource, "genesyscloud_routing_skill_group."+skillGroupResource, "genesyscloud_group."+groupResource),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResource,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
 }

@@ -79,6 +79,16 @@ func buildSdkStringList(d *schema.ResourceData, attrName string) *[]string {
 	return nil
 }
 
+func buildSdkStringListFromInterfaceArray(d *schema.ResourceData, attrName string) *[]string {
+	var stringArray []string
+	if val, ok := d.GetOk(attrName); ok {
+		if valArray, ok := val.([]interface{}); ok {
+			stringArray = interfaceListToStrings(valArray)
+		}
+	}
+	return &stringArray
+}
+
 func flattenList[T interface{}](resourceList *[]T, elementFlattener func(resource *T) map[string]interface{}) *[]map[string]interface{} {
 	if resourceList == nil {
 		return nil

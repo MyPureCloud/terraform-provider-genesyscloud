@@ -11,7 +11,6 @@ import (
 )
 
 func TestAccResourceIdpOkta(t *testing.T) {
-	t.Parallel()
 	var (
 		uri1 = "https://test.com/1"
 		uri2 = "https://test.com/2"
@@ -62,6 +61,39 @@ func TestAccResourceIdpOkta(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					validateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert1),
 					validateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", falseValue),
+				),
+			},
+			{
+				// Update to one cert in array
+				Config: generateIdpOktaResource(
+					generateStringArray(strconv.Quote(testCert1)),
+					uri2,
+					uri1,
+					falseValue, // disabled
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "certificates.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "issuer_uri", uri2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "target_uri", uri1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", falseValue),
+				),
+			},
+			{
+				// Update back to two certs in array
+				Config: generateIdpOktaResource(
+					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					uri2,
+					uri1,
+					falseValue, // disabled
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert1),
+					validateStringInArray("genesyscloud_idp_okta.okta", "certificates", testCert2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "certificates.#", "2"),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "disabled", falseValue),

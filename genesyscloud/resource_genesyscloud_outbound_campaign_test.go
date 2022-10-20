@@ -14,7 +14,7 @@ import (
 func TestAccResourceOutboundCampaign(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId            = "campaign"
+		resourceId            = "campaign1"
 		name                  = "Test Campaign " + uuid.NewString()
 		dialingMode           = "agentless"
 		callerName            = "Test Name"
@@ -221,7 +221,7 @@ func TestAccResourceOutboundCampaign(t *testing.T) {
 func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId            = "campaign"
+		resourceId            = "campaign2"
 		name                  = "Test Campaign " + uuid.NewString()
 		contactListResourceId = "contact_list"
 		carResourceId         = "car"
@@ -307,7 +307,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId                = "campaign"
+		resourceId                = "campaign3"
 		name                      = "Test Campaign " + uuid.NewString()
 		dialingMode               = "preview"
 		callerName                = "Test Name 123"
@@ -539,8 +539,8 @@ resource "genesyscloud_outbound_campaign" "%s" {
 func generateOutboundCampaign(
 	resourceId string,
 	name string,
-	dialingMode string,   // required
-	callerName string,    // required
+	dialingMode string, // required
+	callerName string, // required
 	callerAddress string, // required
 	contactListId string, // required
 	campaignStatus string,
@@ -615,7 +615,6 @@ func generateReferencedResourcesForOutboundCampaignTests(
 		site                    string
 		ruleSet                 string
 		callableTimeSet         string
-		divisionName            = "Test Division " + uuid.NewString()
 	)
 	if contactListResourceId != "" {
 		contactList = generateOutboundContactList(
@@ -648,10 +647,8 @@ func generateReferencedResourcesForOutboundCampaignTests(
 	if carResourceId != "" {
 		if outboundFlowFilePath != "" {
 			callAnalysisResponseSet = fmt.Sprintf(`
-resource "genesyscloud_auth_division" "division" {
-	name = "%s"
-}
-`, divisionName) + generateRoutingWrapupcodeResource(
+data "genesyscloud_auth_division_home" "division" {}
+`) + generateRoutingWrapupcodeResource(
 				"wrap-up-code",
 				"wrapupcode "+uuid.NewString(),
 			) + generateFlowResource(
@@ -661,7 +658,7 @@ resource "genesyscloud_auth_division" "division" {
 				false,
 				generateFlowSubstitutions(map[string]string{
 					"flow_name":          flowName,
-					"home_division_name": "${genesyscloud_auth_division.division.name}",
+					"home_division_name": "${data.genesyscloud_auth_division_home.division.name}",
 					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode.wrap-up-code.name}",
 				}),
