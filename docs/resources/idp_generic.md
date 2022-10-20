@@ -35,7 +35,7 @@ resource "genesyscloud_idp_generic" "generic" {
 
 ### Required
 
-- `certificates` (Set of String) PEM or DER encoded public X.509 certificates for SAML signature validation.
+- `certificates` (List of String) PEM or DER encoded public X.509 certificates for SAML signature validation.
 - `issuer_uri` (String) Issuer URI provided by the provider.
 - `name` (String) Name of the provider.
 

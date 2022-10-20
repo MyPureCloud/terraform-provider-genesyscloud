@@ -2,19 +2,20 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestAccResourceOutboundCampaign(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId            = "campaign"
+		resourceId            = "campaign1"
 		name                  = "Test Campaign " + uuid.NewString()
 		dialingMode           = "agentless"
 		callerName            = "Test Name"
@@ -242,7 +243,7 @@ data "genesyscloud_auth_division_home" "home" {}
 func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId            = "campaign"
+		resourceId            = "campaign2"
 		name                  = "Test Campaign " + uuid.NewString()
 		contactListResourceId = "contact_list"
 		carResourceId         = "car"
@@ -343,7 +344,7 @@ data "genesyscloud_auth_division_home" "home" {}
 func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId                = "campaign"
+		resourceId                = "campaign3"
 		name                      = "Test Campaign " + uuid.NewString()
 		dialingMode               = "preview"
 		callerName                = "Test Name 123"
@@ -703,8 +704,10 @@ func generateReferencedResourcesForOutboundCampaignTests(
 	}
 	if carResourceId != "" {
 		if outboundFlowFilePath != "" {
-			callAnalysisResponseSet = generateRoutingWrapupcodeResource(
-				wrapUpCodeResourceId,
+			callAnalysisResponseSet = fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "division" {}
+`) + generateRoutingWrapupcodeResource(
+				"wrap-up-code",
 				"wrapupcode "+uuid.NewString(),
 			) + generateFlowResource(
 				flowResourceId,
@@ -713,7 +716,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 				false,
 				generateFlowSubstitutions(map[string]string{
 					"flow_name":          flowName,
-					"home_division_name": divisionName,
+					"home_division_name": "${data.genesyscloud_auth_division_home.division.name}",
 					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapUpCodeResourceId + ".name}",
 				}),
