@@ -359,7 +359,6 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Creating knowledge document")
 	knowledgeDocument, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseLanguageDocuments(knowledgeBaseId, languageCode, body)
 	if err != nil {
-		fmt.Errorf("Failed to create knowledge document: %s", err)
 		return diag.Errorf("Failed to create knowledge document: %s", err)
 	}
 
