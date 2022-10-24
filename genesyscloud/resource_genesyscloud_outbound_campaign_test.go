@@ -2,13 +2,14 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestAccResourceOutboundCampaign(t *testing.T) {
@@ -50,26 +51,30 @@ func TestAccResourceOutboundCampaign(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	referencedResources := generateReferencedResourcesForOutboundCampaignTests(
-		contactListResourceId,
-		dncListResourceId,
-		queueResourceId,
-		carResourceId,
-		outboundFlowFilePath,
-		flowName,
-		clfResourceId,
-		siteId,
-		emergencyNumber,
-		ruleSetResourceId,
-		callableTimeSetId,
-	)
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: referencedResources +
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateReferencedResourcesForOutboundCampaignTests(
+					contactListResourceId,
+					dncListResourceId,
+					queueResourceId,
+					carResourceId,
+					outboundFlowFilePath,
+					"flow",
+					flowName,
+					clfResourceId,
+					siteId,
+					emergencyNumber,
+					ruleSetResourceId,
+					callableTimeSetId,
+					"${data.genesyscloud_auth_division_home.home.name}",
+					"location",
+					"wrapupcode",
+				) +
 					generateOutboundCampaign(
 						resourceId,
 						name,
@@ -139,38 +144,55 @@ func TestAccResourceOutboundCampaign(t *testing.T) {
 			},
 			{
 				// Update
-				Config: referencedResources +
-					generateOutboundCampaign(
-						resourceId,
-						nameUpdated,
-						dialingMode,
-						callerNameUpdated,
-						callerAddressUpdated,
-						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
-						nullValue, // campaign_status
-						nullValue, // division id
-						nullValue, // script id
-						"genesyscloud_routing_queue."+queueResourceId+".id",
-						"genesyscloud_telephony_providers_edges_site."+siteId+".id",
-						"2",
-						"genesyscloud_outbound_callabletimeset."+callableTimeSetId+".id",
-						"genesyscloud_outbound_callanalysisresponseset."+carResourceId+".id",
-						"2",
-						nullValue,
-						"1",
-						trueValue,
-						"30",
-						"3",
-						[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
-						[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
-						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
-						generatePhoneColumnsBlock("Cell", "cell", ""),
-						generateOutboundMessagingCampaignContactSort(
-							contactSortFieldName,
-							contactSortDirection,
-							contactSortNumeric,
-						),
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateReferencedResourcesForOutboundCampaignTests(
+					contactListResourceId,
+					dncListResourceId,
+					queueResourceId,
+					carResourceId,
+					outboundFlowFilePath,
+					"flow",
+					flowName,
+					clfResourceId,
+					siteId,
+					emergencyNumber,
+					ruleSetResourceId,
+					callableTimeSetId,
+					"${data.genesyscloud_auth_division_home.home.name}",
+					"location",
+					"wrapupcode",
+				) + generateOutboundCampaign(
+					resourceId,
+					nameUpdated,
+					dialingMode,
+					callerNameUpdated,
+					callerAddressUpdated,
+					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
+					nullValue, // campaign_status
+					nullValue, // division id
+					nullValue, // script id
+					"genesyscloud_routing_queue."+queueResourceId+".id",
+					"genesyscloud_telephony_providers_edges_site."+siteId+".id",
+					"2",
+					"genesyscloud_outbound_callabletimeset."+callableTimeSetId+".id",
+					"genesyscloud_outbound_callanalysisresponseset."+carResourceId+".id",
+					"2",
+					nullValue,
+					"1",
+					trueValue,
+					"30",
+					"3",
+					[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
+					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
+					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
+					generatePhoneColumnsBlock("Cell", "cell", ""),
+					generateOutboundMessagingCampaignContactSort(
+						contactSortFieldName,
+						contactSortDirection,
+						contactSortNumeric,
 					),
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", nameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "dialing_mode", dialingMode),
@@ -228,6 +250,9 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		siteId                = "site"
 		outboundFlowFilePath  = "../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 		flowName              = "test flow " + uuid.NewString()
+		flowResourceId        = "flow"
+		wrapupcodeResourceId  = "wrapupcode"
+		locationResourceId    = "location"
 	)
 
 	// necessary to avoid errors during site creation
@@ -247,7 +272,9 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundCampaignBasic(
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateOutboundCampaignBasic(
 					resourceId,
 					name,
 					contactListResourceId,
@@ -256,7 +283,11 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					carResourceId,
 					strconv.Quote("off"),
 					outboundFlowFilePath,
+					flowResourceId,
 					flowName,
+					"${data.genesyscloud_auth_division_home.home.name}",
+					locationResourceId,
+					wrapupcodeResourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
@@ -270,7 +301,9 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 				),
 			},
 			{
-				Config: generateOutboundCampaignBasic(
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateOutboundCampaignBasic(
 					resourceId,
 					name,
 					contactListResourceId,
@@ -279,7 +312,11 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					carResourceId,
 					strconv.Quote("on"),
 					outboundFlowFilePath,
+					flowResourceId,
 					flowName,
+					"${data.genesyscloud_auth_division_home.home.name}",
+					locationResourceId,
+					wrapupcodeResourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
@@ -344,6 +381,10 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 		"",
 		"",
 		"",
+		"",
+		"",
+		"",
+		"",
 	)
 
 	referencedResourcesUpdate := generateReferencedResourcesForOutboundCampaignTests(
@@ -353,11 +394,15 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 		carResourceId,
 		"",
 		"",
+		"",
 		clfResourceId,
 		"",
 		"",
 		ruleSetResourceId,
 		callableTimeSetResourceId,
+		"",
+		"",
+		"",
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -502,19 +547,27 @@ func generateOutboundCampaignBasic(resourceId string,
 	carResourceId string,
 	campaignStatus string,
 	outboundFlowFilePath string,
-	flowName string) string {
+	flowResourceId string,
+	flowName string,
+	divisionName,
+	locationResourceId string,
+	wrapupcodeResourceId string) string {
 	referencedResources := generateReferencedResourcesForOutboundCampaignTests(
 		contactListResourceId,
 		"",
 		"",
 		carResourceId,
 		outboundFlowFilePath,
+		flowResourceId,
 		flowName,
 		"",
 		siteResourceId,
 		emergencyNumber,
 		"",
 		"",
+		divisionName,
+		locationResourceId,
+		wrapupcodeResourceId,
 	)
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_campaign" "%s" {
@@ -600,12 +653,17 @@ func generateReferencedResourcesForOutboundCampaignTests(
 	queueResourceId string,
 	carResourceId string,
 	outboundFlowFilePath string,
+	flowResourceId string,
 	flowName string,
 	clfResourceId string,
 	siteId string,
 	emergencyNumber string,
 	ruleSetId string,
-	callableTimeSetResourceId string) string {
+	callableTimeSetResourceId string,
+	divisionName string,
+	locationResourceId string,
+	wrapUpCodeResourceId string,
+) string {
 	var (
 		contactList             string
 		dncList                 string
@@ -646,21 +704,19 @@ func generateReferencedResourcesForOutboundCampaignTests(
 	}
 	if carResourceId != "" {
 		if outboundFlowFilePath != "" {
-			callAnalysisResponseSet = fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "division" {}
-`) + generateRoutingWrapupcodeResource(
-				"wrap-up-code",
+			callAnalysisResponseSet = generateRoutingWrapupcodeResource(
+				wrapUpCodeResourceId,
 				"wrapupcode "+uuid.NewString(),
 			) + generateFlowResource(
-				"test-flow",
+				flowResourceId,
 				outboundFlowFilePath,
 				"",
 				false,
 				generateFlowSubstitutions(map[string]string{
 					"flow_name":          flowName,
-					"home_division_name": "${data.genesyscloud_auth_division_home.division.name}",
+					"home_division_name": divisionName,
 					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
-					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode.wrap-up-code.name}",
+					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapUpCodeResourceId + ".name}",
 				}),
 			) + generateOutboundCallAnalysisResponseSetResource(
 				carResourceId,
@@ -671,7 +727,7 @@ data "genesyscloud_auth_division_home" "division" {}
 						"callable_person",
 						"transfer_flow",
 						flowName,
-						"${genesyscloud_flow.test-flow.id}",
+						"${genesyscloud_flow."+flowResourceId+".id}",
 					),
 				))
 		} else {
@@ -713,7 +769,7 @@ data "genesyscloud_auth_division_home" "division" {}
 		siteName := "site " + uuid.NewString()
 		locationName := "location " + uuid.NewString()
 		site = fmt.Sprintf(`
-resource "genesyscloud_location" "location" {
+resource "genesyscloud_location" "%s" {
 	name  = "%s"
 	notes = "HQ1"
 	path  = []
@@ -733,11 +789,11 @@ resource "genesyscloud_location" "location" {
 resource "genesyscloud_telephony_providers_edges_site" "%s" {
 	name                            = "%s"
 	description                     = "TestAccResourceSite description 1"
-	location_id                     = genesyscloud_location.location.id
+	location_id                     = genesyscloud_location.%s.id
 	media_model                     = "Cloud"
 	media_regions_use_latency_based = false	
 }
-`, locationName, emergencyNumber, siteId, siteName)
+`, locationResourceId, locationName, emergencyNumber, siteId, siteName, locationResourceId)
 	}
 	if ruleSetId != "" {
 		ruleSetName := "ruleset " + uuid.NewString()

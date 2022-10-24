@@ -28,18 +28,6 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 		outboundFlowFilePath  = "../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 		flowName              = "test flow " + uuid.NewString()
 		emergencyNumber       = "+13172947329"
-
-		campaignResource = generateOutboundCampaignBasic(
-			campaignResourceId,
-			campaignName,
-			contactListResourceId,
-			siteId,
-			emergencyNumber,
-			carResourceId,
-			nullValue,
-			outboundFlowFilePath,
-			flowName,
-		)
 	)
 
 	// necessary to avoid errors during site creation
@@ -59,14 +47,29 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: campaignResource +
-					generateOutboundSequence(
-						sequenceResource,
-						sequenceName1,
-						[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
-						strconv.Quote("off"),
-						trueValue,
-					),
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateOutboundCampaignBasic(
+					campaignResourceId,
+					campaignName,
+					contactListResourceId,
+					siteId,
+					emergencyNumber,
+					carResourceId,
+					nullValue,
+					outboundFlowFilePath,
+					"sequence-test-flow",
+					flowName,
+					"${data.genesyscloud_auth_division_home.home.name}",
+					"sequence-test-location",
+					"sequence-test-wrapupcode",
+				) + generateOutboundSequence(
+					sequenceResource,
+					sequenceName1,
+					[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
+					strconv.Quote("off"),
+					trueValue,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName1),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "status", "off"),
@@ -77,14 +80,29 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 			},
 			{
 				// Update with a new name, status and repeat value
-				Config: campaignResource +
-					generateOutboundSequence(
-						sequenceResource,
-						sequenceName2,
-						[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
-						strconv.Quote("on"),
-						falseValue,
-					),
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateOutboundCampaignBasic(
+					campaignResourceId,
+					campaignName,
+					contactListResourceId,
+					siteId,
+					emergencyNumber,
+					carResourceId,
+					nullValue,
+					outboundFlowFilePath,
+					"sequence-test-flow",
+					flowName,
+					"${data.genesyscloud_auth_division_home.home.name}",
+					"sequence-test-location",
+					"sequence-test-wrapupcode",
+				) + generateOutboundSequence(
+					sequenceResource,
+					sequenceName2,
+					[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
+					strconv.Quote("on"),
+					falseValue,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "status", "on"),
