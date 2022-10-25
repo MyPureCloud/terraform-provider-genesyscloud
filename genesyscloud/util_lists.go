@@ -42,6 +42,26 @@ func sliceDifference(a, b []string) []string {
 	return diff
 }
 
+// Returns true if a and b are equivalent, ignoring the ordering of its items. 
+func listsAreEquivalent(a []string, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for _, aItem := range a {
+		matchFound := false
+		for _, bItem := range b {
+			if bItem == aItem {
+				matchFound = true
+				break
+			}
+		}
+		if !matchFound {
+			return false
+		}
+	}
+	return true
+}
+
 func stringListToSet(list []string) *schema.Set {
 	interfaceList := make([]interface{}, len(list))
 	for i, v := range list {
