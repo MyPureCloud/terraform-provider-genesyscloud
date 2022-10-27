@@ -355,6 +355,9 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	//Copy the example substitution file over to a temp file that can be manipulated and modified
 	copyFile(srcFile, destFile)
 
+	//Clean up the temporary file
+	defer removeFile(destFile)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -398,9 +401,6 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
 	})
-
-	//Clean up the temporary file
-	removeFile(destFile)
 }
 
 func generateFlowSubstitutions(substitutions map[string]string) string {
