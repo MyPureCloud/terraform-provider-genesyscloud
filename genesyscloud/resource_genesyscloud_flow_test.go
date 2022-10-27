@@ -3,12 +3,12 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -18,8 +18,8 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 )
 
-//lockFlow will search for a specific flow and then lock it.  This is to specifically test the force_unlock flag where I want to create a flow,  simulate some one locking it and then attempt to
-//do another CX as Code deploy.
+// lockFlow will search for a specific flow and then lock it.  This is to specifically test the force_unlock flag where I want to create a flow,  simulate some one locking it and then attempt to
+// do another CX as Code deploy.
 func lockFlow(flowName string, flowType string) {
 	archAPI := platformclientv2.NewArchitectApi()
 	ctx := context.Background()
@@ -52,13 +52,14 @@ func lockFlow(flowName string, flowType string) {
 	})
 }
 
-//Tests the force_unlock functionality.
-func TestAccResourceFlowForceUnlock(t *testing.T) {
+// Tests the force_unlock functionality.
+func TestAccResourceArchFlowForceUnlock(t *testing.T) {
+	myDir, _ := os.Getwd()
 	var (
 		flowResource = "test_force_unlock_flow1"
 		flowName     = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
 		flowType     = "INBOUNDCALL"
-		filePath     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		filePath     = myDir + "/../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi again!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
@@ -111,7 +112,9 @@ func TestAccResourceFlowForceUnlock(t *testing.T) {
 	})
 }
 
-func TestAccResourceStandardFlow(t *testing.T) {
+func TestAccResourceArchFlowStandard(t *testing.T) {
+	myDir, _ := os.Getwd()
+
 	var (
 		flowResource1 = "test_flow1"
 		flowResource2 = "test_flow2"
@@ -119,9 +122,9 @@ func TestAccResourceStandardFlow(t *testing.T) {
 		flowName2     = "Terraform Flow Test-" + uuid.NewString()
 		flowType1     = "INBOUNDCALL"
 		flowType2     = "INBOUNDEMAIL"
-		filePath1     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
-		filePath2     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
-		filePath3     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
+		filePath1     = myDir + "/../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml" //Have to use an explicit path because the filesha function gets screwy on relative class names
+		filePath2     = myDir + "/../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
+		filePath3     = myDir + "/../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName1)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName2)
@@ -238,72 +241,13 @@ func TestAccResourceStandardFlow(t *testing.T) {
 	})
 }
 
-func TestAccResourceFlowURL(t *testing.T) {
-	var (
-		flowResource1 = "test_flow1"
-		filePath1     = "http://localhost:8101/inboundcall_flow_example.yaml"
-		filePath2     = "http://localhost:8101/inboundcall_flow_example2.yaml"
-	)
-
-	httpServerExitDone := &sync.WaitGroup{}
-	httpServerExitDone.Add(1)
-	srv := startHttpServer(httpServerExitDone, "../examples/resources/genesyscloud_flow", "8101")
-
-	var homeDivisionName string
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
-				Check: resource.ComposeTestCheckFunc(
-					getHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
-				),
-			},
-		},
-	})
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		Steps: []resource.TestStep{
-			{
-				// Create flow
-				Config: generateFlowResourceURL(
-					flowResource1,
-					filePath1,
-				),
-			},
-			{
-				// Update flow with name
-				Config: generateFlowResourceURL(
-					flowResource1,
-					filePath2,
-				),
-			},
-			{
-				// Import/Read
-				ResourceName:            "genesyscloud_flow." + flowResource1,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
-			},
-		},
-		CheckDestroy: testVerifyFlowDestroyed,
-	})
-	if err := srv.Shutdown(context.TODO()); err != nil {
-		log.Println("Error shutting down server:", err)
-	}
-
-	httpServerExitDone.Wait()
-}
-
-func TestAccResourceFlowSubstitutions(t *testing.T) {
+func TestAccResourceArchFlowSubstitutions(t *testing.T) {
+	myDir, _ := os.Getwd()
 	var (
 		flowResource1 = "test_flow1"
 		flowName1     = "Terraform Flow Test-" + uuid.NewString()
 		flowName2     = "Terraform Flow Test-" + uuid.NewString()
-		filePath1     = "../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+		filePath1     = myDir + "/../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -351,6 +295,116 @@ func TestAccResourceFlowSubstitutions(t *testing.T) {
 	})
 }
 
+func copyFile(src string, dest string) {
+	bytesRead, err := ioutil.ReadFile(src)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = ioutil.WriteFile(dest, bytesRead, 0644)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func removeFile(fileName string) {
+	err := os.Remove(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func transformFile(fileName string) {
+	input, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	lines := strings.Split(string(input), "\n")
+
+	for i, line := range lines {
+		lines[i] = strings.Replace(line, "You are at the Main Menu, press 9 to disconnect.", "Hi you are at the Main Menu, press 9 to disconnect.", 1)
+	}
+
+	output := strings.Join(lines, "\n")
+	err = ioutil.WriteFile(fileName, []byte(output), 0644)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+/*
+This test case was put out here to test for the problem described in: DEVENGAGE-1472.  Basically the bug manifested
+itself when you deploy a flow and then modify the yaml file so that the hash changes.  This bug had two manifestations.
+One the new values in a substitution would not be picked up.  Two, if the flow file changed, a flow would be deployed
+even if the user was only doing a plan or destroy.
+
+This test exercises this bug by first deploying a flow file with a substitution.  Then modifying the flow file and rerunning
+the flow with a substitution.
+*/
+func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
+	myDir, _ := os.Getwd()
+	var (
+		flowResource1 = "test_flow1"
+		flowName1     = "Terraform Flow Test-" + uuid.NewString()
+		flowName2     = "Terraform Flow Test-" + uuid.NewString()
+		srcFile       = myDir + "/../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+		destFile      = myDir + "/../examples/resources/genesyscloud_flow/inboundcall_flow_example_holder.yaml"
+	)
+
+	//Copy the example substitution file over to a temp file that can be manipulated and modified
+	copyFile(srcFile, destFile)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create flow
+				Config: generateFlowResource(
+					flowResource1,
+					destFile,
+					"",
+					false,
+					generateFlowSubstitutions(map[string]string{
+						"flow_name":            flowName1,
+						"default_language":     "en-us",
+						"greeting":             "Archy says hi!!!",
+						"menu_disconnect_name": "Disconnect",
+					}),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow("genesyscloud_flow."+flowResource1, flowName1, "INBOUNDCALL"),
+				),
+			},
+			{ // Update the flow, but make sure that we touch the YAML file and change something int
+				PreConfig: func() { transformFile(destFile) },
+				Config: generateFlowResource(
+					flowResource1,
+					destFile,
+					"",
+					false,
+					generateFlowSubstitutions(map[string]string{
+						"flow_name":            flowName2,
+						"default_language":     "en-us",
+						"greeting":             "Archy says hi!!!",
+						"menu_disconnect_name": "Disconnect",
+					}),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow("genesyscloud_flow."+flowResource1, flowName2, "INBOUNDCALL"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyFlowDestroyed,
+	})
+
+	//Clean up the temporary file
+	removeFile(destFile)
+}
+
 func generateFlowSubstitutions(substitutions map[string]string) string {
 	var substitutionsStr string
 	for k, v := range substitutions {
@@ -367,10 +421,11 @@ func generateFlowResource(resourceID, filepath, filecontent string, force_unlock
 
 	flowResourceStr := fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
         filepath = %s
+		file_content_hash =  filesha256(%s)
 		force_unlock = %v
 		%s
 	}
-	`, resourceID, strconv.Quote(filepath), force_unlock, strings.Join(substitutions, "\n"))
+	`, resourceID, strconv.Quote(filepath), strconv.Quote(filepath), force_unlock, strings.Join(substitutions, "\n"))
 
 	return flowResourceStr
 }
@@ -378,8 +433,9 @@ func generateFlowResource(resourceID, filepath, filecontent string, force_unlock
 func generateFlowResourceURL(resourceID, filepath string) string {
 	return fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
         filepath = %s
+		file_content_hash =  filesha256(%s)
 	}
-	`, resourceID, strconv.Quote(filepath))
+	`, resourceID, strconv.Quote(filepath), strconv.Quote(filepath))
 }
 
 func updateFile(filepath, content string) {
