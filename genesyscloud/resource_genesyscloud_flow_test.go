@@ -114,8 +114,6 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 }
 
 func TestAccResourceArchFlowStandard(t *testing.T) {
-	//myDir, _ := os.Getwd()
-
 	var (
 		flowResource1 = "test_flow1"
 		flowResource2 = "test_flow2"

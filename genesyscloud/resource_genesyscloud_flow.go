@@ -201,7 +201,6 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
 	}
 
-	//d.Set("file_content_hash", hashFileContent(d.Get("filepath").(string)))
 	d.SetId(flowID)
 
 	log.Printf("Updated flow %s. ", d.Id())
