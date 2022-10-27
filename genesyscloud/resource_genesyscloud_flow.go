@@ -184,10 +184,13 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
 		flowJob, response, err := architectAPI.GetFlowsJob(jobId, []string{"messages"})
 		if err != nil {
-			resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
+			return resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 		}
 
 		if *flowJob.Status == "Failure" {
+			if flowJob.Messages == nil {
+				return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, no tracing messages available.", jobId))
+			}
 			messages := make([]string, 0)
 			for _, m := range *flowJob.Messages {
 				messages = append(messages, *m.Text)
