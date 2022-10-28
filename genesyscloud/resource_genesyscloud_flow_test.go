@@ -55,7 +55,6 @@ func lockFlow(flowName string, flowType string) {
 
 // Tests the force_unlock functionality.
 func TestAccResourceArchFlowForceUnlock(t *testing.T) {
-	//myDir, _ := os.Getwd()
 	var (
 		flowResource = "test_force_unlock_flow1"
 		flowName     = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
@@ -241,7 +240,6 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 }
 
 func TestAccResourceArchFlowSubstitutions(t *testing.T) {
-	//myDir, _ := os.Getwd()
 	var (
 		flowResource1 = "test_flow1"
 		flowName1     = "Terraform Flow Test-" + uuid.NewString()
