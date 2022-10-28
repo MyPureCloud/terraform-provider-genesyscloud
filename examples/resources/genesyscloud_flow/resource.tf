@@ -1,5 +1,6 @@
 resource "genesyscloud_flow" "flow" {
-  filepath = "the flow configuration file path or URL"
+  filepath          = "the flow configuration file path"
+  file_content_hash = filesha256("the flow configuration file path")
   // Example flow configuration using substitutions:
   /*
   inboundCall:

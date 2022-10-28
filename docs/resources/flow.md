@@ -17,11 +17,14 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/flows/jobs/{jobId}](https://developer.mypurecloud.com/api/rest/v2/architect/#get-api-v2-flows-jobs--jobId-)
 * [DELETE /api/v2/flows/{flowId}](https://developer.genesys.cloud/api/rest/v2/architect/#delete-api-v2-flows--flowId-)
 
+**NOTE: Version 1.7.0 and lower had a defect that could cause improper variable substitution and an inadvertent deployment of a flow during a terraform plan. Please use version 1.8.0 or higher of the CX as Code provider.  With the newer versions of CX as Code you must set the file_content_hash attribute. See the example below on how to do this.**
+
 ## Example Usage
 
 ```terraform
 resource "genesyscloud_flow" "flow" {
-  filepath = "the flow configuration file path or URL"
+  filepath          = "the flow configuration file path"
+  file_content_hash = filesha256("the flow configuration file path")
   // Example flow configuration using substitutions:
   /*
   inboundCall:
@@ -57,11 +60,11 @@ resource "genesyscloud_flow" "flow" {
 
 ### Required
 
-- `filepath` (String) YAML file path or URL for flow configuration.
+- `file_content_hash` (String) Hash value of the YAML file content. Used to detect changes.
+- `filepath` (String) YAML file path for flow configuration.
 
 ### Optional
 
-- `file_content_hash` (String) Hash value of the YAML file content. Used to detect changes.
 - `force_unlock` (Boolean) Will perform a force unlock on an architect flow before beginning the publication process.  NOTE: The force unlock publishes the 'draft'
 				              architect flow and then publishes the flow named in this resource. This mirrors the behavior found in the archy CLI tool.
 - `substitutions` (Map of String) A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.

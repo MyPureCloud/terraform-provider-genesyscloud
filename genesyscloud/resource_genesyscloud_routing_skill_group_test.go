@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/google/uuid"
@@ -51,10 +50,10 @@ func testAccCheckSkillConditions(resourceName string, targetSkillConditionJson s
 		}
 
 		//Checking to see if our 2 JSON strings are exactly equal.
-		resource := string(r)
+		resourceStr := string(r)
 		target := string(t)
-		if resource != target {
-			return fmt.Errorf("resource skill_conditions does not match skill_conditions passed in. Expected: %s Actual: %s", resource, target)
+		if resourceStr != target {
+			return fmt.Errorf("resource skill_conditions does not match skill_conditions passed in. Expected: %s Actual: %s", resourceStr, target)
 		}
 
 		return nil
@@ -68,9 +67,6 @@ func TestAccResourceRoutingSkillGroupBasic(t *testing.T) {
 		skillGroupDescription1 = "Description1" + uuid.NewString()
 		skillGroupName2        = "SkillGroup2" + uuid.NewString()
 		skillGroupDescription2 = "Description2" + uuid.NewString()
-		divHomeRes             = "auth-division-home" + uuid.NewString()
-		divHomeName            = "Home" + uuid.NewString()
-		homeDesc               = "Home"
 		skillCondition1        = `[
 			{
 			  "routingSkillConditions" : [
@@ -108,35 +104,27 @@ func TestAccResourceRoutingSkillGroupBasic(t *testing.T) {
 		  }]`
 	)
 
-	config1 := generateAuthDivisionResource(
-		divHomeRes,
-		divHomeName,
-		strconv.Quote(homeDesc),
-		trueValue, // Home division
-	) +
-		generateRoutingSkillGroupResource(
-			skillGroupResource,
-			"genesyscloud_auth_division."+divHomeRes,
-			skillGroupName1,
-			skillGroupDescription1,
-			"genesyscloud_auth_division."+divHomeRes+".id",
-			skillCondition1,
-		)
+	config1 := fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateRoutingSkillGroupResource(
+		skillGroupResource,
+		"data.genesyscloud_auth_division_home.home",
+		skillGroupName1,
+		skillGroupDescription1,
+		"data.genesyscloud_auth_division_home.home.id",
+		skillCondition1,
+	)
 
-	config2 := generateAuthDivisionResource(
-		divHomeRes,
-		divHomeName,
-		strconv.Quote(homeDesc),
-		trueValue, // Home division
-	) +
-		generateRoutingSkillGroupResource(
-			skillGroupResource,
-			"genesyscloud_auth_division."+divHomeRes,
-			skillGroupName2,
-			skillGroupDescription2,
-			"genesyscloud_auth_division."+divHomeRes+".id",
-			skillCondition2,
-		)
+	config2 := fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateRoutingSkillGroupResource(
+		skillGroupResource,
+		"data.genesyscloud_auth_division_home.home",
+		skillGroupName2,
+		skillGroupDescription2,
+		"data.genesyscloud_auth_division_home.home.id",
+		skillCondition2,
+	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
