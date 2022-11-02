@@ -64,7 +64,7 @@ func resourceFlow() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"filepath": {
-				Description:  "YAML file path or URL for flow configuration.",
+				Description:  "YAML file path for flow configuration.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validatePath,
@@ -72,8 +72,7 @@ func resourceFlow() *schema.Resource {
 			"file_content_hash": {
 				Description: "Hash value of the YAML file content. Used to detect changes.",
 				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
+				Required:    true,
 			},
 			"substitutions": {
 				Description: "A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.",
@@ -98,16 +97,6 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
-
-	filePath := d.Get("filepath").(string)
-	if filePath != "" {
-		fileContentHash := hashFileContent(filePath)
-		if fileContentHash != d.Get("file_content_hash") {
-			d.Set("file_content_hash", fileContentHash)
-			log.Println("Detected change to config file, updating")
-			return updateFlow(ctx, d, meta)
-		}
-	}
 
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		flow, resp, err := architectAPI.GetFlow(d.Id(), false)
@@ -184,10 +173,13 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
 		flowJob, response, err := architectAPI.GetFlowsJob(jobId, []string{"messages"})
 		if err != nil {
-			resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
+			return resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 		}
 
 		if *flowJob.Status == "Failure" {
+			if flowJob.Messages == nil {
+				return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, no tracing messages available.", jobId))
+			}
 			messages := make([]string, 0)
 			for _, m := range *flowJob.Messages {
 				messages = append(messages, *m.Text)
@@ -212,7 +204,6 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
 	}
 
-	d.Set("file_content_hash", hashFileContent(d.Get("filepath").(string)))
 	d.SetId(flowID)
 
 	log.Printf("Updated flow %s. ", d.Id())
@@ -270,6 +261,7 @@ func prepareAndUploadFile(filename string, substitutions map[string]interface{},
 		for k, v := range substitutions {
 			fileContents = strings.Replace(fileContents, fmt.Sprintf("{{%s}}", k), v.(string), -1)
 		}
+
 		bodyBuf.Reset()
 		bodyBuf.WriteString(fileContents)
 	}

@@ -9,7 +9,7 @@ import (
 
 func TestAccResourceRoutingSettingsBasic(t *testing.T) {
 	var (
-		settingsResource = "settings"
+		settingsResource = "settings-basic"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -18,13 +18,20 @@ func TestAccResourceRoutingSettingsBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
+				Config: generateRoutingSettingsResource(settingsResource, falseValue),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", falseValue),
+				),
+			},
+			{
+				// Update
 				Config: generateRoutingSettingsResource(settingsResource, trueValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", trueValue),
 				),
 			},
 			{
-				// Update with new values
+				// Update
 				Config: generateRoutingSettingsResource(settingsResource, falseValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", falseValue),
