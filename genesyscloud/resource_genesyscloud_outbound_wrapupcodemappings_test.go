@@ -11,6 +11,7 @@ import (
 )
 
 func TestAccResourceOutboundWrapupCodeMapping(t *testing.T) {
+	t.Parallel()
 	var (
 		resourceId            = "wrapupcodemappings"
 		wrapupCode1ResourceId = "wrapupcode1"
