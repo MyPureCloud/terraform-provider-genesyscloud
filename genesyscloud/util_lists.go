@@ -15,6 +15,16 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
+func removeStringFromSlice(slice []string, value string) []string {
+	s := make([]string, 0)
+	for _, v := range slice {
+		if v != value {
+			s = append(s, v)
+		}
+	}
+	return s
+}
+
 func subStringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if strings.Contains(b, a) {
@@ -40,6 +50,26 @@ func sliceDifference(a, b []string) []string {
 		}
 	}
 	return diff
+}
+
+// Returns true if a and b are equivalent, ignoring the ordering of its items. 
+func listsAreEquivalent(a []string, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for _, aItem := range a {
+		matchFound := false
+		for _, bItem := range b {
+			if bItem == aItem {
+				matchFound = true
+				break
+			}
+		}
+		if !matchFound {
+			return false
+		}
+	}
+	return true
 }
 
 func stringListToSet(list []string) *schema.Set {
