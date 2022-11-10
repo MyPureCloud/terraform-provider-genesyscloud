@@ -1,10 +1,14 @@
 package genesyscloud
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 	"testing"
+	"time"
 )
 
 func TestAccResourceResponseManagementLibrary(t *testing.T) {
@@ -40,6 +44,7 @@ func TestAccResourceResponseManagementLibrary(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
+		CheckDestroy: testVerifyResponseManagementLibraryDestroyed,
 	})
 }
 
@@ -51,4 +56,33 @@ func generateResponseManagementLibraryResource(
 			name = "%s"
 		}
 	`, resourceId, name)
+}
+
+func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error {
+	responseAPI := platformclientv2.NewResponseManagementApi()
+
+	diagErr := withRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
+		for _, rs := range state.RootModule().Resources {
+			if rs.Type != "genesyscloud_responsemanagement_library" {
+				continue
+			}
+			_, resp, err := responseAPI.GetResponsemanagementLibrary(rs.Primary.ID)
+			if err != nil {
+				if isStatus404(resp) {
+					continue
+				}
+				return resource.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
+			}
+
+			return resource.RetryableError(fmt.Errorf("Library %s still exists", rs.Primary.ID))
+		}
+		return nil
+	})
+
+	if diagErr != nil {
+		return fmt.Errorf(fmt.Sprintf("%v", diagErr))
+	}
+
+	// Success. All Libraries destroyed
+	return nil
 }
