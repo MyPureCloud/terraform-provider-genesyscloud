@@ -3,9 +3,11 @@ package genesyscloud
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -62,6 +64,7 @@ func testAccCheckSkillConditions(resourceName string, targetSkillConditionJson s
 }
 
 func TestAccResourceRoutingSkillGroupBasic(t *testing.T) {
+	t.Parallel()
 	var (
 		skillGroupResource     = "testskillgroup1"
 		skillGroupName1        = "SkillGroup1" + uuid.NewString()
@@ -165,6 +168,7 @@ data "genesyscloud_auth_division_home" "home" {}
 }
 
 func TestAccResourceRoutingSkillGroupMemberDivisions(t *testing.T) {
+	t.Parallel()
 	var (
 		skillGroupResource     = "testskillgroup2"
 		skillGroupName1        = "SkillGroup3" + uuid.NewString()
@@ -382,11 +386,11 @@ data "genesyscloud_auth_division_home" "home" {}
 	3. Verify the skill group added those users when they match the skill expression.
 */
 func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) {
+	t.Parallel()
 	var (
-		skillGroupResourceId        = "testskillgroup3"
-		skillGroupName              = "testskillgroup3 " + uuid.NewString()
-		skillGroupDescription       = uuid.NewString()
-		skillGroupDescriptionUpdate = uuid.NewString()
+		skillGroupResourceId  = "testskillgroup3"
+		skillGroupName        = "testskillgroup3 " + uuid.NewString()
+		skillGroupDescription = uuid.NewString()
 
 		routingSkillResourceId = "routing_skill"
 		routingSkillName       = "Skill " + uuid.NewString()
@@ -484,8 +488,6 @@ resource "genesyscloud_routing_skill_group" "%s" {
 }	
 `, skillGroupResourceId, skillGroupName, strings.Join(memberDivisionIds, ", "), skillGroupDescription, routingSkillName)
 
-	skillGroupResourceUpdate := strings.Replace(skillGroupResource, skillGroupDescription, skillGroupDescriptionUpdate, 1)
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -500,20 +502,6 @@ resource "genesyscloud_routing_skill_group" "%s" {
 					user2Resource +
 					user3Resource,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceId, "description", skillGroupDescription),
-				),
-			},
-			{
-				Config: skillGroupResourceUpdate +
-					routingSkillResource +
-					division1Resource +
-					division2Resource +
-					division3Resource +
-					user1Resource +
-					user2Resource +
-					user3Resource,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceId, "description", skillGroupDescriptionUpdate),
 					testVerifySkillGroupMemberCount("genesyscloud_routing_skill_group."+skillGroupResourceId, "3"),
 				),
 			},
@@ -573,6 +561,9 @@ func testVerifySkillGroupMemberCount(resourceName string, count string) resource
 			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
 		}
 		resourceID := resourceState.Primary.ID
+
+		log.Print("Sleeping to allow for skillgroups member count to update.")
+		time.Sleep(10 * time.Second)
 
 		// get skill group via GET /api/v2/routing/skillgroups/{skillGroupId}
 		path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s", routingAPI.Configuration.BasePath, resourceID)
