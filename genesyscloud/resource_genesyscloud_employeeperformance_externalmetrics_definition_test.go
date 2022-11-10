@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 	"testing"
 )
 
@@ -81,6 +83,7 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"unit_definition"},
 			},
 		},
+		CheckDestroy: testVerifyEmployeePerformanceExternalMetricsDefinitionsDestroyed,
 	})
 }
 
@@ -103,4 +106,28 @@ func generateEmployeePerformanceExternalMetricsDefinitionsResource(
 			enabled = %s
 		}
 	`, resourceId, name, unit, unitDefinition, precision, defaultObjectiveType, enabled)
+}
+
+func testVerifyEmployeePerformanceExternalMetricsDefinitionsDestroyed(state *terraform.State) error {
+	gamificationAPI := platformclientv2.NewGamificationApi()
+
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != "genesyscloud_employeeperformance_externalmetrics_definitions" {
+			continue
+		}
+
+		definition, resp, err := gamificationAPI.GetEmployeeperformanceExternalmetricsDefinition(rs.Primary.ID)
+		if definition != nil {
+			return fmt.Errorf("Definition (%s) still exists", rs.Primary.ID)
+		} else if isStatus404(resp) {
+			// Definition not found as expected
+			continue
+		} else {
+			// Unexpected error
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+	}
+
+	// Success. All definitions destroyed
+	return nil
 }
