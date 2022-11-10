@@ -356,7 +356,7 @@ data "genesyscloud_auth_division_home" "home" {}
 				),
 			},
 			{
-				// Update members array to ["*"] and create function to verify all division ids are in there.
+				// Update members array to ["*"] and verify all division ids are in there.
 				Config: config5,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResource, "name", skillGroupName2),
@@ -381,7 +381,7 @@ data "genesyscloud_auth_division_home" "home" {}
 }
 
 /*
-	1. Create users, with a particular set of skills, assigned to individual divisions.
+	1. Create users with a particular set of skills and assign to individual divisions.
 	2. Add those divisions to genesyscloud_routing_skill_group.members_divisions_ids array.
 	3. Verify the skill group added those users when they match the skill expression.
 */
