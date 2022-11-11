@@ -15,7 +15,7 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
-func removeStringFromSlice(slice []string, value string) []string {
+func removeStringFromSlice(value string, slice []string) []string {
 	s := make([]string, 0)
 	for _, v := range slice {
 		if v != value {

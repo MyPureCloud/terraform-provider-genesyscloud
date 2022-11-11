@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
@@ -167,7 +168,7 @@ data "genesyscloud_auth_division_home" "home" {}
 	})
 }
 
-func TestAccResourceRoutingSkillGroupMemberDivisions(t *testing.T) {
+func TestAccResourceRoutingSkillGroupMemberDivisionsBasic(t *testing.T) {
 	t.Parallel()
 	var (
 		skillGroupResource     = "testskillgroup2"
@@ -606,8 +607,7 @@ func testVerifyMemberDivisionsCleared(resourceName string) resource.TestCheckFun
 		}
 
 		// get member divisions for this skill group via GET /api/v2/routing/skillgroups/{skillGroupId}/members/divisions
-		path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, resourceID)
-		skillGroupMemberDivisionIds, diagErr := getAllSkillGroupMemberDivisionIds(resourceID, path, routingAPI)
+		skillGroupMemberDivisionIds, diagErr := getAllSkillGroupMemberDivisionIds(routingAPI, resourceID)
 		if diagErr != nil {
 			return fmt.Errorf("%v", diagErr)
 		}
@@ -655,8 +655,7 @@ func testVerifyAllDivisionsAssigned(resourceName string, attrName string) resour
 		}
 
 		// get member divisions for this skill group via GET /api/v2/routing/skillgroups/{skillGroupId}/members/divisions
-		path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, resourceID)
-		skillGroupMemberDivisionIds, diagErr := getAllSkillGroupMemberDivisionIds(resourceID, path, routingAPI)
+		skillGroupMemberDivisionIds, diagErr := getAllSkillGroupMemberDivisionIds(routingAPI, resourceID)
 		if diagErr != nil {
 			return fmt.Errorf("%v", diagErr)
 		}
@@ -730,4 +729,30 @@ func testVerifySkillGroupDestroyed(state *terraform.State) error {
 	}
 	// Success. All skills destroyed
 	return nil
+}
+
+func getAllSkillGroupMemberDivisionIds(routingAPI *platformclientv2.RoutingApi, resourceId string) ([]string, diag.Diagnostics) {
+	headers := buildHeaderParams(routingAPI)
+	apiClient := &routingAPI.Configuration.APIClient
+	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, resourceId)
+	response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
+	if err != nil || response.Error != nil {
+		return nil, diag.Errorf("Failed to get member divisions for skill group %s: %v", resourceId, err)
+	}
+
+	memberDivisionsPayload := make(map[string]interface{}, 0)
+	err = json.Unmarshal(response.RawBody, &memberDivisionsPayload)
+	if err != nil {
+		return nil, diag.Errorf("Failed to unmarshal member divisions. %s", err)
+	}
+
+	apiSkillGroupMemberDivisionIds := make([]string, 0)
+	entities := memberDivisionsPayload["entities"].([]interface{})
+	for _, entity := range entities {
+		if entityMap, ok := entity.(map[string]interface{}); ok {
+			apiSkillGroupMemberDivisionIds = append(apiSkillGroupMemberDivisionIds, entityMap["id"].(string))
+		}
+	}
+
+	return apiSkillGroupMemberDivisionIds, nil
 }
