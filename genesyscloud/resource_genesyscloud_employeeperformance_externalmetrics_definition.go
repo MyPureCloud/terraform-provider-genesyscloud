@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -182,7 +183,7 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
 		}
 
-		// cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceEmployeeperformanceExternalmetricsDefinition())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceEmployeeperformanceExternalmetricsDefinition())
 
 		if sdkexternalmetricdefinition.Name != nil {
 			d.Set("name", *sdkexternalmetricdefinition.Name)
@@ -204,8 +205,7 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 		}
 
 		log.Printf("Read Employeeperformance Externalmetrics Definition %s %s", d.Id(), *sdkexternalmetricdefinition.Name)
-		return nil // TODO calling cc.CheckState() can cause some difficult to understand errors in development. When ready for a PR, remove this line and uncomment the consistency_checker initialization and the the below one
-		// return cc.CheckState()
+		return cc.CheckState()
 	})
 }
 
