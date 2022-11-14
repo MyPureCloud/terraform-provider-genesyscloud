@@ -85,7 +85,8 @@ func resourceSkillGroupExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllSkillGroups),
 		RefAttrs: map[string]*RefAttrSettings{
-			"division_id": {RefType: "genesyscloud_auth_division"},
+			"division_id":         {RefType: "genesyscloud_auth_division"},
+			"member_division_ids": {RefType: "genesyscloud_auth_division"},
 		},
 		RemoveIfMissing: map[string][]string{
 			"division_id": {"division_id"},
@@ -106,7 +107,6 @@ func resourceRoutingSkillGroup() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
-
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The group name",
@@ -132,8 +132,19 @@ func resourceRoutingSkillGroup() *schema.Resource {
 				Computed:         true,
 				DiffSuppressFunc: suppressEquivalentJsonDiffs,
 			},
+			"member_division_ids": {
+				Description: "The IDs of member divisions to add or remove for this skill group. An empty array means all divisions will be removed, \"*\" means all divisions will be added.",
+				Type:        schema.TypeList,
+				MaxItems:    50,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
+}
+
+func createSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return createOrUpdateSkillGroups(ctx, d, meta, "/api/v2/routing/skillgroups", true)
 }
 
 func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}, route string, create bool) diag.Diagnostics {
@@ -201,11 +212,107 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 		log.Printf("Updated skill group %s", skillGroupsRequest.Name)
 	}
 
+	// Update member division IDs
+	apiSkillGroupMemberDivisionIds, diagErr := readSkillGroupMemberDivisionIds(d, routingAPI)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = postSkillGroupMemberDivisions(ctx, d, meta, routingAPI, apiSkillGroupMemberDivisionIds, create)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	return readSkillGroups(ctx, d, meta)
 }
 
-func createSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return createOrUpdateSkillGroups(ctx, d, meta, "/api/v2/routing/skillgroups", true)
+func postSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, meta interface{}, routingAPI *platformclientv2.RoutingApi, apiSkillGroupMemberDivisionIds []string, create bool) diag.Diagnostics {
+	name := d.Get("name").(string)
+	memberDivisionIds := d.Get("member_division_ids").([]interface{})
+
+	if memberDivisionIds == nil {
+		return readSkillGroups(ctx, d, meta)
+	}
+	schemaDivisionIds := interfaceListToStrings(memberDivisionIds)
+
+	toAdd, toRemove, diagErr := createListsForSkillgroupsMembersDivisionsPost(schemaDivisionIds, apiSkillGroupMemberDivisionIds, create, meta)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	toRemove, diagErr = removeSkillGroupDivisionID(d, toRemove)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	if len(toAdd) < 1 && len(toRemove) < 1 {
+		return readSkillGroups(ctx, d, meta)
+	}
+
+	log.Printf("Updating skill group %s member divisions", name)
+
+	skillGroupsMemberDivisionIdsPayload := make(map[string][]string, 0)
+	if len(toRemove) > 0 {
+		skillGroupsMemberDivisionIdsPayload["removeDivisionIds"] = toRemove
+	}
+	if len(toAdd) > 0 {
+		skillGroupsMemberDivisionIdsPayload["addDivisionIds"] = toAdd
+	}
+
+	headerParams := buildHeaderParams(routingAPI)
+	apiClient := &routingAPI.Configuration.APIClient
+	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, d.Id())
+	response, err := apiClient.CallAPI(path, "POST", skillGroupsMemberDivisionIdsPayload, headerParams, nil, nil, "", nil)
+	if err != nil || response.Error != nil {
+		return diag.Errorf("Failed to create/update skill group %s member divisions: %s", name, err)
+	}
+
+	log.Printf("Updated skill group %s member divisions", name)
+	return nil
+}
+
+func getAllAuthDivisionIds(meta interface{}) ([]string, diag.Diagnostics) {
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	allIds := make([]string, 0)
+
+	divisionResourcesMap, err := getAllAuthDivisions(nil, sdkConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, _ := range divisionResourcesMap {
+		allIds = append(allIds, key)
+	}
+
+	return allIds, nil
+}
+
+func createListsForSkillgroupsMembersDivisionsPost(schemaMemberDivisionIds []string, apiMemberDivisionIds []string,
+	create bool, meta interface{}) ([]string, []string, diag.Diagnostics) {
+	toAdd := make([]string, 0)
+	toRemove := make([]string, 0)
+
+	if allMemberDivisionsSpecified(schemaMemberDivisionIds) {
+		if len(schemaMemberDivisionIds) > 1 {
+			return nil, nil, diag.Errorf(`member_division_ids should not contain more than one item when the value of an item is "*"`)
+		}
+		toAdd, err := getAllAuthDivisionIds(meta)
+		return toAdd, nil, err
+	}
+
+	if len(schemaMemberDivisionIds) > 0 {
+		if create == true {
+			return schemaMemberDivisionIds, nil, nil
+		}
+		toAdd, toRemove = organizeMemberDivisionIdsForUpdate(schemaMemberDivisionIds, apiMemberDivisionIds)
+		return toAdd, toRemove, nil
+	}
+
+	// Empty array - remove all
+	for _, id := range apiMemberDivisionIds {
+		toRemove = append(toRemove, id)
+	}
+	return nil, toRemove, nil
 }
 
 /*
@@ -269,11 +376,12 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 			return resource.NonRetryableError(fmt.Errorf("Failed to unmarshal skill groups. %s", err))
 		}
 
-		if err != nil && isStatus404(response) {
+		if err == nil && isStatus404(response) {
 			return resource.RetryableError(fmt.Errorf("Failed to read skill groups %s: %s", d.Id(), err))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSkillGroup())
+
 		name := skillGroupPayload["name"]
 		divisionId := skillGroupPayload["division"].(map[string]interface{})["id"]
 		description := skillGroupPayload["description"]
@@ -308,6 +416,19 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		} else {
 			d.Set("skill_conditions", nil)
 		}
+
+		apiMemberDivisionIds, diagErr := readSkillGroupMemberDivisionIds(d, routingAPI)
+		if diagErr != nil {
+			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+		}
+
+		var schemaMemberDivisionIds []string
+		if divIds, ok := d.Get("member_division_ids").([]interface{}); ok {
+			schemaMemberDivisionIds = interfaceListToStrings(divIds)
+		}
+
+		memberDivisionIds := organizeMemberDivisionIdsForRead(schemaMemberDivisionIds, apiMemberDivisionIds, divisionId.(string))
+		_ = d.Set("member_division_ids", memberDivisionIds)
 
 		log.Printf("Read skill groups name  %s %s", d.Id(), name)
 		return cc.CheckState()
@@ -372,4 +493,93 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 		}
 		return resource.RetryableError(fmt.Errorf("Skill group %s still exists", d.Id()))
 	})
+}
+
+func readSkillGroupMemberDivisionIds(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) ([]string, diag.Diagnostics) {
+	headers := buildHeaderParams(routingAPI)
+	apiClient := &routingAPI.Configuration.APIClient
+	path := fmt.Sprintf("%s/api/v2/routing/skillgroups/%s/members/divisions", routingAPI.Configuration.BasePath, d.Id())
+
+	log.Printf("Reading skill group %s member divisions", d.Get("name").(string))
+
+	response, err := apiClient.CallAPI(path, "GET", nil, headers, nil, nil, "", nil)
+	if err != nil || response.Error != nil {
+		return nil, diag.Errorf("Failed to get member divisions for skill group %s: %v", d.Id(), err)
+	}
+
+	memberDivisionsPayload := make(map[string]interface{}, 0)
+	err = json.Unmarshal(response.RawBody, &memberDivisionsPayload)
+	if err != nil {
+		return nil, diag.Errorf("Failed to unmarshal member divisions. %s", err)
+	}
+
+	apiSkillGroupMemberDivisionIds := make([]string, 0)
+	entities := memberDivisionsPayload["entities"].([]interface{})
+	for _, entity := range entities {
+		if entityMap, ok := entity.(map[string]interface{}); ok {
+			apiSkillGroupMemberDivisionIds = append(apiSkillGroupMemberDivisionIds, entityMap["id"].(string))
+		}
+	}
+
+	log.Printf("Read skill group %s member divisions", d.Get("name").(string))
+
+	return apiSkillGroupMemberDivisionIds, nil
+}
+
+func allMemberDivisionsSpecified(schemaSkillGroupMemberDivisionIds []string) bool {
+	return stringInSlice("*", schemaSkillGroupMemberDivisionIds)
+}
+
+func organizeMemberDivisionIdsForUpdate(schemaIds, apiIds []string) ([]string, []string) {
+	toAdd := make([]string, 0)
+	toRemove := make([]string, 0)
+	// items that are in hcl and not in api-returned list - add
+	for _, id := range schemaIds {
+		if !stringInSlice(id, apiIds) {
+			toAdd = append(toAdd, id)
+		}
+	}
+	// items that are not in hcl and are in api-returned list - remove
+	for _, id := range apiIds {
+		if !stringInSlice(id, schemaIds) {
+			toRemove = append(toRemove, id)
+		}
+	}
+	return toAdd, toRemove
+}
+
+// Prepare member_division_ids list to avoid an unnecessary plan not empty error
+func organizeMemberDivisionIdsForRead(schemaList, apiList []string, divisionId string) []string {
+	if !stringInSlice(divisionId, schemaList) {
+		apiList = removeStringFromSlice(divisionId, apiList)
+	}
+	if len(schemaList) == 1 && schemaList[0] == "*" {
+		return schemaList
+	} else {
+		// if hcl & api lists are the same but with different ordering - set with original ordering
+		if listsAreEquivalent(schemaList, apiList) {
+			return schemaList
+		} else {
+			return apiList
+		}
+	}
+}
+
+// Remove the value of division_id, or if this field was left blank; the home division ID
+func removeSkillGroupDivisionID(d *schema.ResourceData, list []string) ([]string, diag.Diagnostics) {
+	if len(list) == 0 || list == nil {
+		return list, nil
+	}
+	divisionId := d.Get("division_id").(string)
+	if divisionId == "" {
+		id, diagErr := getHomeDivisionID()
+		if diagErr != nil {
+			return nil, diagErr
+		}
+		divisionId = id
+	}
+	if stringInSlice(divisionId, list) {
+		list = removeStringFromSlice(divisionId, list)
+	}
+	return list, nil
 }
