@@ -15,6 +15,16 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
+func removeStringFromSlice(value string, slice []string) []string {
+	s := make([]string, 0)
+	for _, v := range slice {
+		if v != value {
+			s = append(s, v)
+		}
+	}
+	return s
+}
+
 func subStringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if strings.Contains(b, a) {
