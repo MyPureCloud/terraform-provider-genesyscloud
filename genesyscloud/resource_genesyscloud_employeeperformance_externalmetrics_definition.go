@@ -91,6 +91,7 @@ func getAllEmployeeperformanceExternalmetricsDefinition(_ context.Context, clien
 func employeeperformanceExternalmetricsDefinitionExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllEmployeeperformanceExternalmetricsDefinition),
+		AllowZeroValues:  []string{"precision"},
 	}
 }
 
