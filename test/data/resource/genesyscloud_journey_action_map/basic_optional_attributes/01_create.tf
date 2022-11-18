@@ -11,7 +11,7 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   start_date = "2022-07-04T12:00:00.000000"
   # optional
   trigger_with_outcome_probability_conditions {
-    outcome_id = "f2c74231-04a3-4720-88d3-1e974ce4c96e" # This is a random hardcoded value!
+    outcome_id = genesyscloud_journey_outcome.terraform_test_-TEST-CASE-_action_map_dependency.id
     maximum_probability = 0.333
   }
   page_url_conditions {
@@ -21,7 +21,10 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   ignore_frequency_cap = false
   end_date             = "2022-07-20T19:00:00.000000"
 
-  depends_on = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-_action_map_dependency]
+  depends_on = [
+    genesyscloud_journey_segment.terraform_test_-TEST-CASE-_action_map_dependency,
+    genesyscloud_journey_outcome.terraform_test_-TEST-CASE-_action_map_dependency
+  ]
 }
 
 resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-_action_map_dependency" {
@@ -33,5 +36,25 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-_action_map_d
     id     = "4654654654"
     name   = "external segment name"
     source = "AdobeExperiencePlatform"
+  }
+}
+
+resource "genesyscloud_journey_outcome" "terraform_test_-TEST-CASE-_action_map_dependency" {
+  is_active    = true
+  display_name = "terraform_test_-TEST-CASE-_action_map_dependency"
+  description  = "test description of journey outcome"
+  is_positive  = true
+  journey {
+    patterns {
+      criteria {
+        key                = "page.title"
+        values             = ["Title"]
+        operator           = "notEqual"
+        should_ignore_case = true
+      }
+      count        = 1
+      stream_type  = "Web"
+      session_type = "web"
+    }
   }
 }
