@@ -827,6 +827,7 @@ func generateTfExportResource(
 			"genesyscloud_integration_credential",
 			"genesyscloud_location",
 			"genesyscloud_oauth_client",
+			"genesyscloud_outbound_settings",
 			"genesyscloud_responsemanagement_library",
 			"genesyscloud_routing_email_domain",
 			"genesyscloud_routing_email_route",

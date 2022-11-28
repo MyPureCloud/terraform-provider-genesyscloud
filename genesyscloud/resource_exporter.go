@@ -225,6 +225,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_outbound_sequence":                           outboundSequenceExporter(),
 		"genesyscloud_outbound_dnclist":                            outboundDncListExporter(),
 		"genesyscloud_outbound_campaignrule":                       outboundCampaignRuleExporter(),
+		"genesyscloud_outbound_settings":                           outboundSettingsExporter(),
 		"genesyscloud_outbound_wrapupcodemappings":                 outboundWrapupCodeMappingsExporter(),
 		"genesyscloud_processautomation_trigger":                   processAutomationTriggerExporter(),
 		"genesyscloud_quality_forms_evaluation":                    evaluationFormExporter(),
