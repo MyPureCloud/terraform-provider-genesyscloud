@@ -1,0 +1,5 @@
+* [POST /api/v2/responsemanagement/responses](TODO: Add documentation link)
+* [GET /api/v2/responsemanagement/responses/{responseId}](TODO: Add documentation link)
+* [GET /api/v2/responsemanagement/responses](TODO: Add documentation link)
+* [DELETE /api/v2/responsemanagement/responses/{responseId}](TODO: Add documentation link)
+* [PUT /api/v2/responsemanagement/responses/{responseId}](TODO: Add documentation link)

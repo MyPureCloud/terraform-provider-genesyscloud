@@ -1,0 +1,5 @@
+* [POST /api/v2/responsemanagement/responses](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-responsemanagement-responses)
+* [GET /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-responses--responseId-)
+* [GET /api/v2/responsemanagement/responses](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-responses)
+* [DELETE /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-responsemanagement-responses--responseId-)
+* [PUT /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-responsemanagement-responses--responseId-)
