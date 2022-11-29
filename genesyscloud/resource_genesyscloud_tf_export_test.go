@@ -813,6 +813,7 @@ func generateTfExportResource(
 			"genesyscloud_architect_user_prompt",
 			"genesyscloud_auth_division",
 			"genesyscloud_auth_role",
+			"genesyscloud_employeeperformance_externalmetrics_definitions",
 			"genesyscloud_group",
 			"genesyscloud_group_roles",
 			"genesyscloud_idp_adfs",

@@ -192,6 +192,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_architect_user_prompt":                       architectUserPromptExporter(),
 		"genesyscloud_auth_division":                               authDivisionExporter(),
 		"genesyscloud_auth_role":                                   authRoleExporter(),
+    "genesyscloud_employeeperformance_externalmetrics_definitions": employeeperformanceExternalmetricsDefinitionExporter(),
 		"genesyscloud_flow":                                        flowExporter(),
 		"genesyscloud_flow_milestone":                              flowMilestoneExporter(),
 		"genesyscloud_flow_outcome":                                flowOutcomeExporter(),
