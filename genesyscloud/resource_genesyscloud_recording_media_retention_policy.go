@@ -961,7 +961,7 @@ func buildEvaluationAssignments(evaluations []interface{}) *[]platformclientv2.E
 		if evaluationFormId != "" {
 			form, _, err := qualityAPI.GetQualityFormsEvaluation(evaluationFormId)
 			if err != nil {
-				fmt.Errorf("failed to read evaluation form %s: %s", evaluationFormId, err)
+				log.Fatalf("failed to read evaluation form %s: %s", evaluationFormId, err)
 			} else {
 				evaluationFormContextId := form.ContextId
 				assignment.EvaluationForm = &platformclientv2.Evaluationform{Id: &evaluationFormId, ContextId: evaluationFormContextId}
@@ -990,9 +990,9 @@ func flattenEvaluationAssignments(assignments *[]platformclientv2.Evaluationassi
 			formId := *assignment.EvaluationForm.Id
 			formVersions, _, err := qualityAPI.GetQualityFormsEvaluationVersions(formId, 25, 1, "desc")
 			if err != nil {
-				fmt.Errorf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+				log.Fatalf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
 			} else if formVersions.Entities == nil || len(*formVersions.Entities) == 0 {
-				fmt.Errorf("No versions found for form %s", formId)
+				log.Fatalf("No versions found for form %s", formId)
 			} else {
 				formId = *(*formVersions.Entities)[0].Id
 			}
@@ -1080,7 +1080,7 @@ func buildAssignMeteredEvaluations(assignments []interface{}) *[]platformclientv
 		if evaluationFormId != "" {
 			form, _, err := qualityAPI.GetQualityFormsEvaluation(evaluationFormId)
 			if err != nil {
-				fmt.Errorf("failed to read media evaluation form %s: %s", evaluationFormId, err)
+				log.Fatalf("failed to read media evaluation form %s: %s", evaluationFormId, err)
 			} else {
 				evaluationFormContextId := form.ContextId
 				temp.EvaluationForm = &platformclientv2.Evaluationform{Id: &evaluationFormId, ContextId: evaluationFormContextId}
@@ -1115,9 +1115,9 @@ func flattenAssignMeteredEvaluations(assignments *[]platformclientv2.Meteredeval
 			formId := *assignment.EvaluationForm.Id
 			formVersions, _, err := qualityAPI.GetQualityFormsEvaluationVersions(formId, 25, 1, "desc")
 			if err != nil {
-				fmt.Errorf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+				log.Fatalf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
 			} else if formVersions.Entities == nil || len(*formVersions.Entities) == 0 {
-				fmt.Errorf("No versions found for form %s", formId)
+				log.Fatalf("No versions found for form %s", formId)
 			} else {
 				formId = *(*formVersions.Entities)[0].Id
 			}
@@ -1166,7 +1166,7 @@ func buildAssignMeteredAssignmentByAgent(assignments []interface{}) *[]platformc
 		if evaluationFormId != "" {
 			form, _, err := qualityAPI.GetQualityFormsEvaluation(evaluationFormId)
 			if err != nil {
-				fmt.Errorf("failed to read evaluation form %s: %s", evaluationFormId, err)
+				log.Fatalf("failed to read evaluation form %s: %s", evaluationFormId, err)
 			} else {
 				evaluationFormContextId := form.ContextId
 				temp.EvaluationForm = &platformclientv2.Evaluationform{Id: &evaluationFormId, ContextId: evaluationFormContextId}
@@ -1202,9 +1202,9 @@ func flattenAssignMeteredAssignmentByAgent(assignments *[]platformclientv2.Meter
 			formId := *assignment.EvaluationForm.Id
 			formVersions, _, err := qualityAPI.GetQualityFormsEvaluationVersions(formId, 25, 1, "desc")
 			if err != nil {
-				fmt.Errorf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+				log.Fatalf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
 			} else if formVersions.Entities == nil || len(*formVersions.Entities) == 0 {
-				fmt.Errorf("No versions found for form %s", formId)
+				log.Fatalf("No versions found for form %s", formId)
 			} else {
 				formId = *(*formVersions.Entities)[0].Id
 			}
@@ -1251,7 +1251,7 @@ func buildAssignCalibrations(assignments []interface{}) *[]platformclientv2.Cali
 		if evaluationFormId != "" {
 			form, _, err := qualityAPI.GetQualityFormsEvaluation(evaluationFormId)
 			if err != nil {
-				fmt.Errorf("failed to read evaluation form %s: %s", evaluationFormId, err)
+				log.Fatalf("failed to read evaluation form %s: %s", evaluationFormId, err)
 			} else {
 				evaluationFormContextId := form.ContextId
 				temp.EvaluationForm = &platformclientv2.Evaluationform{Id: &evaluationFormId, ContextId: evaluationFormContextId}
@@ -1294,9 +1294,9 @@ func flattenAssignCalibrations(assignments *[]platformclientv2.Calibrationassign
 			formId := *assignment.EvaluationForm.Id
 			formVersions, _, err := qualityAPI.GetQualityFormsEvaluationVersions(formId, 25, 1, "desc")
 			if err != nil {
-				fmt.Errorf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
+				log.Fatalf("Failed to get evaluation form versions %s", *assignment.EvaluationForm.Name)
 			} else if formVersions.Entities == nil || len(*formVersions.Entities) == 0 {
-				fmt.Errorf("No versions found for form %s", formId)
+				log.Fatalf("No versions found for form %s", formId)
 			} else {
 				formId = *(*formVersions.Entities)[0].Id
 			}
@@ -1345,9 +1345,9 @@ func buildAssignSurveys(assignments []interface{}) *[]platformclientv2.Surveyass
 			const pageSize = 100
 			forms, _, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", surveyFormName, "desc")
 			if getErr != nil {
-				fmt.Errorf("Error requesting survey forms %s: %s", surveyFormName, getErr)
+				log.Fatalf("Error requesting survey forms %s: %s", surveyFormName, getErr)
 			} else if forms.Entities == nil || len(*forms.Entities) == 0 {
-				fmt.Errorf("No survey forms found with name %s", surveyFormName)
+				log.Fatalf("No survey forms found with name %s", surveyFormName)
 			} else {
 				surveyFormReference := platformclientv2.Publishedsurveyformreference{Name: &surveyFormName, ContextId: (*forms.Entities)[0].ContextId}
 				temp.SurveyForm = &surveyFormReference
