@@ -37,6 +37,7 @@ resource "genesyscloud_processautomation_trigger" "example-trigger" {
     value     = "CHAT"
   }
   event_ttl_seconds = 60
+  delay_by_seconds  = 30
   description       = "description of trigger"
 }
 ```
@@ -53,6 +54,7 @@ resource "genesyscloud_processautomation_trigger" "example-trigger" {
 
 ### Optional
 
+- `delay_by_seconds` (Number) How long to delay processing of a trigger after an event passes the match criteria. Must be an number greater than 0 and up to and including 900
 - `description` (String) A description of the trigger
 - `event_ttl_seconds` (Number) How old an event can be to fire the trigger. Must be an number greater than or equal to 10
 - `match_criteria` (Block Set) Match criteria that controls when the trigger will fire. (see [below for nested schema](#nestedblock--match_criteria))

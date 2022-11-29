@@ -22,6 +22,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 		match_criteria_operator  = "Equal"
 		match_criteria_value     = "CHAT"
 		eventTtlSeconds1         = "60"
+		delayBySeconds1          = "30"
 		description1             = "description 1"
 
 		flowResource1 = "test_flow1"
@@ -103,6 +104,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
                     }
                     `, match_criteria_json_path, match_criteria_operator, match_criteria_value),
 					eventTtlSeconds1,
+					delayBySeconds1,
 					description1,
 				) + generateProcessAutomationTriggerDataSource(
 					triggerResource2,
