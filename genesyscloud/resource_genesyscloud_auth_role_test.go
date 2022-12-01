@@ -218,6 +218,108 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 				),
 			},
 			{
+				// Queue condition without setting a queue_id
+				Config: generateAuthRoleResource(
+					roleResource1,
+					roleName1,
+					roleDesc1,
+					generateRolePermPolicyCondition(
+						qualityDom,
+						calibrationEntity,
+						addAction,
+						conjAnd,
+						generateRolePermPolicyCondTerm(
+							varNameQueue,
+							opEq,
+							fmt.Sprintf(`
+								operands {
+									type  = "%s"
+								}								
+								`, typeQueue),
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validatePermPolicyCondition(
+						"genesyscloud_auth_role."+roleResource1,
+						qualityDom,
+						calibrationEntity,
+						conjAnd,
+						varNameQueue,
+						opEq,
+						typeQueue,
+						""),
+				),
+			},
+			{
+				// User condition without setting a user_id
+				Config: generateAuthRoleResource(
+					roleResource1,
+					roleName1,
+					roleDesc1,
+					generateRolePermPolicyCondition(
+						qualityDom,
+						calibrationEntity,
+						addAction,
+						conjAnd,
+						generateRolePermPolicyCondTerm(
+							varNameQueue,
+							opEq,
+							fmt.Sprintf(`
+							operands {
+								type  = "USER"
+							}								
+							`),
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validatePermPolicyCondition(
+						"genesyscloud_auth_role."+roleResource1,
+						qualityDom,
+						calibrationEntity,
+						conjAnd,
+						varNameQueue,
+						opEq,
+						"USER",
+						""),
+				),
+			},
+			{
+				// VARIABLE condition without setting a value
+				Config: generateAuthRoleResource(
+					roleResource1,
+					roleName1,
+					roleDesc1,
+					generateRolePermPolicyCondition(
+						"analytics",
+						"userObservation",
+						"*",
+						conjAnd,
+						generateRolePermPolicyCondTerm(
+							varNameQueue,
+							opEq,
+							fmt.Sprintf(`
+							operands {
+								type  = "VARIABLE"
+							}
+							`),
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validatePermPolicyCondition(
+						"genesyscloud_auth_role."+roleResource1,
+						"analytics",
+						"userObservation",
+						conjAnd,
+						varNameQueue,
+						opEq,
+						"VARIABLE",
+						""),
+				),
+			},
+			{
 				// Import/Read
 				ResourceName:      "genesyscloud_auth_role." + roleResource1,
 				ImportState:       true,
@@ -433,6 +535,11 @@ func validatePermPolicyCondition(
 				stateType := roleAttrs["permission_policies."+strNum+".conditions.0.terms.0.operands.0.type"]
 				if stateType != typeVar {
 					return fmt.Errorf("Invalid condition operand type in role %s: %v", roleResource.Primary.ID, stateType)
+				}
+
+				// Don't check value since the roles api allows the type to be set without setting a value
+				if value == "" {
+					return nil
 				}
 
 				if typeVar == "QUEUE" {
