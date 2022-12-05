@@ -137,6 +137,9 @@ func routingQueueExporter() *ResourceExporter {
 			"members":                {"user_id"},
 		},
 		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
+		CustomAttributeResolver: map[string]*RefAttrCustomResolver{
+			"bullseye_rings.member_groups.member_group_id": {ResolverFunc: MemberGroupsResolver},
+		},
 	}
 }
 
