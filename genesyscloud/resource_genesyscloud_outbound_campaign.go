@@ -81,7 +81,7 @@ func resourceOutboundCampaign() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`campaign_status`: {
-				Description:  `The current status of the Campaign.A Campaign may be turned 'on' or 'off'. Required for updates. A Campaign must be turned 'off' when creating.`,
+				Description:  `The current status of the Campaign. A Campaign may be turned 'on' or 'off'. Required for updates. A Campaign must be turned 'off' when creating.`,
 				Optional:     true,
 				Type:         schema.TypeString,
 				Computed:     true,

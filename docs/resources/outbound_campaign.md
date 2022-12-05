@@ -56,7 +56,7 @@ resource "genesyscloud_outbound_campaign" "campaign" {
 - `call_analysis_language` (String) The language the edge will use to analyze the call.
 - `call_analysis_response_set_id` (String) The call analysis response set to handle call analysis results from the edge. Required for all dialing modes except preview.
 - `callable_time_set_id` (String) The callable time set for this campaign to check before placing a call.
-- `campaign_status` (String) The current status of the Campaign.A Campaign may be turned 'on' or 'off'. Required for updates. A Campaign must be turned 'off' when creating.
+- `campaign_status` (String) The current status of the Campaign. A Campaign may be turned 'on' or 'off'. Required for updates. A Campaign must be turned 'off' when creating.
 - `contact_list_filter_ids` (List of String) Filter to apply to the contact list before dialing. Currently a campaign can only have one filter applied.
 - `contact_sorts` (Block List) The order in which to sort contacts for dialing, based on up to four columns. (see [below for nested schema](#nestedblock--contact_sorts))
 - `division_id` (String) The division this campaign belongs to.
