@@ -493,11 +493,17 @@ func flattenRoleConditionOperands(operands []platformclientv2.Domainresourcecond
 			operandMap["type"] = *operand.VarType
 			switch *operand.VarType {
 			case "USER":
-				operandMap["user_id"] = *operand.User.Id
+				if operand.User != nil {
+					operandMap["user_id"] = *operand.User.Id
+				}
 			case "QUEUE":
-				operandMap["queue_id"] = *operand.Queue.Id
+				if operand.Queue != nil {
+					operandMap["queue_id"] = *operand.Queue.Id
+				}
 			default:
-				operandMap["value"] = *operand.Value
+				if operand.Value != nil {
+					operandMap["value"] = *operand.Value
+				}
 			}
 		}
 		operandSet.Add(operandMap)
