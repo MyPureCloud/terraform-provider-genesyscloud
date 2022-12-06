@@ -1,0 +1,720 @@
+go test --tags=flows ./... -v  -timeout 120m -parallel 20
+?   	github.com/mypurecloud/terraform-provider-genesyscloud	[no test files]
+?   	github.com/mypurecloud/terraform-provider-genesyscloud/apidocs	[no test files]
+=== RUN   TestAccDataSourceArchitectDatatable
+    data_source_genesyscloud_architect_datatable_test.go:26: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceArchitectDatatable (0.00s)
+=== RUN   TestAccDataSourceEmergencyGroup
+    data_source_genesyscloud_architect_emergencygroup_test.go:18: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceEmergencyGroup (0.00s)
+=== RUN   TestAccDataSourceArchitectIvr
+=== PAUSE TestAccDataSourceArchitectIvr
+=== RUN   TestAccDataSourceArchitectScheduleGroups
+    data_source_genesyscloud_architect_schedulegroups_test.go:29: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceArchitectScheduleGroups (0.00s)
+=== RUN   TestAccDataSourceSchedule
+    data_source_genesyscloud_architect_schedules_test.go:22: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceSchedule (0.00s)
+=== RUN   TestAccDataSourceUserPrompt
+    data_source_genesyscloud_architect_user_prompt_test.go:18: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceUserPrompt (0.00s)
+=== RUN   TestAccDataSourceAuthDivision
+    data_source_genesyscloud_auth_division_test.go:18: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceAuthDivision (0.00s)
+=== RUN   TestAccDataSourceAuthRole
+    data_source_genesyscloud_auth_role_test.go:19: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceAuthRole (0.00s)
+=== RUN   TestAccDataSourceFlowMilestone
+    data_source_genesyscloud_flow_milestone_test.go:18: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceFlowMilestone (0.00s)
+=== RUN   TestAccDataSourceFlowOutcome
+    data_source_genesyscloud_flow_outcome_test.go:11: Skipping until a DELETE method is publicly available for flow outcomes.
+--- SKIP: TestAccDataSourceFlowOutcome (0.00s)
+=== RUN   TestDataSourceFlow
+    data_source_genesyscloud_flow_test.go:26: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestDataSourceFlow (0.00s)
+=== RUN   TestAccDataSourceGroup
+    data_source_genesyscloud_group_test.go:19: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceGroup (0.00s)
+=== RUN   TestAccDataSourceIntegrationAction
+    data_source_genesyscloud_integration_action_test.go:26: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceIntegrationAction (0.00s)
+=== RUN   TestAccDataSourceIntegrationCredential
+    data_source_genesyscloud_integration_credential_test.go:22: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceIntegrationCredential (0.00s)
+=== RUN   TestAccDataSourceIntegration
+    data_source_genesyscloud_integration_test.go:21: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceIntegration (0.00s)
+=== RUN   TestAccDataJourneyOutcome
+    data_source_genesyscloud_journey_outcome_test.go:21: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataJourneyOutcome (0.91s)
+=== RUN   TestAccDataJourneySegmentSession
+    data_source_genesyscloud_journey_segment_test.go:21: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataJourneySegmentSession (0.76s)
+=== RUN   TestAccDataSourceKnowledgeKnowledgebaseBasic
+    data_source_genesyscloud_knowledge_knowledgebase_test.go:21: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceKnowledgeKnowledgebaseBasic (0.00s)
+=== RUN   TestAccDataSourceLocation
+    data_source_genesyscloud_location_test.go:24: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceLocation (0.00s)
+=== RUN   TestAccDataSourceOAuthClient
+    data_source_genesyscloud_oauth_client_test.go:27: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceOAuthClient (0.00s)
+=== RUN   TestAccDataSourceAttemptLimit
+    data_source_genesyscloud_outbound_attemptlimit_test.go:16: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceAttemptLimit (0.00s)
+=== RUN   TestAccDataSourceOutboundCallableTimeset
+    data_source_genesyscloud_outbound_callabletimeset_test.go:17: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceOutboundCallableTimeset (0.00s)
+=== RUN   TestAccDataSourceCallAnalysisResponseSet
+    data_source_genesyscloud_outbound_callanalysisresponseset_test.go:16: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceCallAnalysisResponseSet (0.00s)
+=== RUN   TestAccDataSourceOutboundCampaign
+    data_source_genesyscloud_outbound_campaign_test.go:27: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceOutboundCampaign (1.07s)
+=== RUN   TestAccDataSourceCampaignRule
+=== PAUSE TestAccDataSourceCampaignRule
+=== RUN   TestAccDataSourceOutboundContactList
+    data_source_genesyscloud_outbound_contactlist_test.go:17: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceOutboundContactList (0.00s)
+=== RUN   TestAccDataSourceOutboundContactListFilter
+    data_source_genesyscloud_outbound_contactlistfilter_test.go:22: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceOutboundContactListFilter (0.00s)
+=== RUN   TestAccDataSourceDncList
+    data_source_genesyscloud_outbound_dnclist_test.go:17: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceDncList (0.00s)
+=== RUN   TestAccDataSourceOutboundMessagingCampaign
+    data_source_genesyscloud_outbound_messagingcampaign_test.go:89: error creating sms phone number +19198793428: sms phone number provisioning failed
+    data_source_genesyscloud_outbound_messagingcampaign_test.go:98: Acceptance tests skipped unless env 'TF_ACC' set
+--- FAIL: TestAccDataSourceOutboundMessagingCampaign (4.65s)
+=== RUN   TestAccDataSourceOutboundRuleset
+=== PAUSE TestAccDataSourceOutboundRuleset
+=== RUN   TestAccDataSourceOutboundSequence
+=== PAUSE TestAccDataSourceOutboundSequence
+=== RUN   TestAccDataSourceProcessAutomationTrigger
+    data_source_genesyscloud_processautomation_trigger_test.go:33: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceProcessAutomationTrigger (0.00s)
+=== RUN   TestAccDataSourceQualityFormsEvaluations
+    data_source_genesyscloud_quality_forms_evaluation_test.go:62: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceQualityFormsEvaluations (0.00s)
+=== RUN   TestAccDataSourceQualityFormsSurvey
+    data_source_genesyscloud_quality_forms_survey_test.go:64: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceQualityFormsSurvey (0.00s)
+=== RUN   TestAccDataSourceRecordingMediaRetentionPolicy
+    data_source_genesyscloud_recording_media_retention_policy_test.go:134: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceRecordingMediaRetentionPolicy (0.75s)
+=== RUN   TestAccDataSourceRoutingEmailDomain
+    data_source_genesyscloud_routing_email_domain_test.go:46: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceRoutingEmailDomain (0.75s)
+=== RUN   TestAccDataSourceRoutingLanguage
+    data_source_genesyscloud_routing_language_test.go:18: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceRoutingLanguage (0.00s)
+=== RUN   TestAccDataSourceRoutingQueueBasic
+    data_source_genesyscloud_routing_queue_test.go:20: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceRoutingQueueBasic (0.00s)
+=== RUN   TestAccDataSourceRoutingSettings
+    data_source_genesyscloud_routing_settings_test.go:18: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceRoutingSettings (0.00s)
+=== RUN   TestAccDataSourceRoutingSkillGroup
+    data_source_genesyscloud_routing_skill_group_test.go:25: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceRoutingSkillGroup (0.00s)
+=== RUN   TestAccDataSourceRoutingSkill
+    data_source_genesyscloud_routing_skill_test.go:18: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceRoutingSkill (0.00s)
+=== RUN   TestAccDataSourceWrapupcode
+    data_source_genesyscloud_routing_wrapupcode_test.go:18: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceWrapupcode (0.00s)
+=== RUN   TestAccDataSourceScript
+    data_source_genesyscloud_script_test.go:12: skipping script data source test until resource is defined
+--- SKIP: TestAccDataSourceScript (0.00s)
+=== RUN   TestAccDataSourceStation
+    data_source_genesyscloud_station_test.go:60: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceStation (0.00s)
+=== RUN   TestAccDataSourceDidPoolBasic
+    data_source_genesyscloud_telephony_providers_edges_did_pool_test.go:25: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceDidPoolBasic (1.43s)
+=== RUN   TestAccDataSourceDidBasic
+    data_source_genesyscloud_telephony_providers_edges_did_test.go:31: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceDidBasic (1.96s)
+=== RUN   TestAccDataSourceEdgeGroup
+=== PAUSE TestAccDataSourceEdgeGroup
+=== RUN   TestAccDataSourceExtensionPoolBasic
+=== PAUSE TestAccDataSourceExtensionPoolBasic
+=== RUN   TestAccDataSourceLineBaseSettings
+=== PAUSE TestAccDataSourceLineBaseSettings
+=== RUN   TestAccDataSourcePhone
+=== PAUSE TestAccDataSourcePhone
+=== RUN   TestAccDataSourcePhoneBaseSettings
+=== PAUSE TestAccDataSourcePhoneBaseSettings
+=== RUN   TestAccDataSourceSite
+=== PAUSE TestAccDataSourceSite
+=== RUN   TestAccDataSourceTrunk
+    data_source_genesyscloud_telephony_providers_edges_trunk_test.go:12: Skipping because we need to manage edges in order to successfully implement and test this resource
+--- SKIP: TestAccDataSourceTrunk (0.00s)
+=== RUN   TestAccDataSourceTrunkBaseSettings
+=== PAUSE TestAccDataSourceTrunkBaseSettings
+=== RUN   TestAccDataSourceUser
+    data_source_genesyscloud_user_test.go:19: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceUser (0.00s)
+=== RUN   TestAccDataSourceWebDeploymentsConfiguration
+    data_source_genesyscloud_webdeployments_configuration_test.go:18: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceWebDeploymentsConfiguration (0.00s)
+=== RUN   TestAccDataSourceWebDeploymentsDeployment
+    data_source_genesyscloud_webdeployments_deployment_test.go:18: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceWebDeploymentsDeployment (0.00s)
+=== RUN   TestAccDataSourceWidgetDeployment
+    data_source_genesyscloud_widget_deployment_test.go:36: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceWidgetDeployment (1.59s)
+=== RUN   TestProvider
+--- PASS: TestProvider (0.01s)
+=== RUN   TestAccResourceArchitectDatatableRow
+    resource_genesyscloud_architect_datatable_row_test.go:57: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceArchitectDatatableRow (0.00s)
+=== RUN   TestAccResourceArchitectDatatable
+    resource_genesyscloud_architect_datatable_test.go:43: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceArchitectDatatable (0.00s)
+=== RUN   TestAccResourceArchitectEmergencyGroups
+=== PAUSE TestAccResourceArchitectEmergencyGroups
+=== RUN   TestAccResourceIvrConfigBasic
+    resource_genesyscloud_architect_ivr_test.go:64: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceIvrConfigBasic (2.20s)
+=== RUN   TestAccResourceIvrConfigDivision
+    resource_genesyscloud_architect_ivr_test.go:137: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceIvrConfigDivision (1.90s)
+=== RUN   TestAccResourceArchitectScheduleGroups
+    resource_genesyscloud_architect_schedulegroups_test.go:44: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceArchitectScheduleGroups (0.00s)
+=== RUN   TestAccResourceArchitectSchedules
+    resource_genesyscloud_architect_schedules_test.go:31: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceArchitectSchedules (0.00s)
+=== RUN   TestAccResourceUserPromptBasic
+    resource_genesyscloud_architect_user_prompt_test.go:66: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceUserPromptBasic (0.00s)
+=== RUN   TestAccResourceUserPromptWavFile
+    resource_genesyscloud_architect_user_prompt_test.go:152: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceUserPromptWavFile (0.00s)
+=== RUN   TestAccResourceUserPromptWavFileURL
+    resource_genesyscloud_architect_user_prompt_test.go:243: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceUserPromptWavFileURL (0.00s)
+=== RUN   TestAccResourceAuthDivision
+    resource_genesyscloud_auth_division_test.go:26: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceAuthDivision (0.00s)
+=== RUN   TestAccResourceAuthRoleDefault
+    resource_genesyscloud_auth_role_test.go:32: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceAuthRoleDefault (0.00s)
+=== RUN   TestAccResourceAuthRoleBasic
+    resource_genesyscloud_auth_role_test.go:86: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceAuthRoleBasic (0.00s)
+=== RUN   TestAccResourceAuthRoleConditions
+    resource_genesyscloud_auth_role_test.go:154: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceAuthRoleConditions (0.00s)
+=== RUN   TestAccResourceFlowMilestone
+    resource_genesyscloud_flow_milestone_test.go:24: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceFlowMilestone (0.00s)
+=== RUN   TestAccResourceFlowOutcome
+    resource_genesyscloud_flow_outcome_test.go:11: Skipping until a DELETE method is publicly available for flow outcomes.
+--- SKIP: TestAccResourceFlowOutcome (0.00s)
+=== RUN   TestAccResourceArchFlowForceUnlock
+    resource_genesyscloud_flow_test.go:75: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceArchFlowForceUnlock (0.00s)
+=== RUN   TestAccResourceArchFlowStandard
+    resource_genesyscloud_flow_test.go:134: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceArchFlowStandard (0.00s)
+=== RUN   TestAccResourceArchFlowSubstitutions
+    resource_genesyscloud_flow_test.go:252: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceArchFlowSubstitutions (0.00s)
+=== RUN   TestAccResourceArchFlowSubstitutionsWithMultipleTouch
+    resource_genesyscloud_flow_test.go:361: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceArchFlowSubstitutionsWithMultipleTouch (0.00s)
+=== RUN   TestAccResourceGroupRolesMembership
+=== PAUSE TestAccResourceGroupRolesMembership
+=== RUN   TestAccResourceGroupBasic
+=== PAUSE TestAccResourceGroupBasic
+=== RUN   TestAccResourceGroupAddresses
+=== PAUSE TestAccResourceGroupAddresses
+=== RUN   TestAccResourceGroupMembers
+=== PAUSE TestAccResourceGroupMembers
+=== RUN   TestAccResourceIdpAdfs
+    resource_genesyscloud_idp_adfs_test.go:21: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceIdpAdfs (0.00s)
+=== RUN   TestAccResourceIdpGeneric
+    resource_genesyscloud_idp_generic_test.go:26: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceIdpGeneric (0.00s)
+=== RUN   TestAccResourceIdpGsuite
+    resource_genesyscloud_idp_gsuite_test.go:21: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceIdpGsuite (0.00s)
+=== RUN   TestAccResourceIdpOkta
+    resource_genesyscloud_idp_okta_test.go:19: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceIdpOkta (0.00s)
+=== RUN   TestAccResourceIdpOnelogin
+    resource_genesyscloud_idp_onelogin_test.go:19: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceIdpOnelogin (0.00s)
+=== RUN   TestAccResourceIdpPing
+    resource_genesyscloud_idp_ping_test.go:21: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceIdpPing (0.00s)
+=== RUN   TestAccResourceIdpSalesforce
+    resource_genesyscloud_idp_salesforce_test.go:19: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceIdpSalesforce (0.00s)
+=== RUN   TestAccResourceIntegrationAction
+    resource_genesyscloud_integration_action_test.go:45: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceIntegrationAction (0.00s)
+=== RUN   TestAccResourceCredential
+    resource_genesyscloud_integration_credential_test.go:35: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceCredential (0.00s)
+=== RUN   TestAccResourceIntegration
+    resource_genesyscloud_integration_test.go:49: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceIntegration (0.00s)
+=== RUN   TestAccResourceJourneyOutcome
+    resource_genesyscloud_journey_outcome_test.go:26: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceJourneyOutcome (0.72s)
+=== RUN   TestAccResourceJourneySegmentSession
+    resource_genesyscloud_journey_segment_test.go:34: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceJourneySegmentSession (0.73s)
+=== RUN   TestAccResourceJourneySegmentCustomer
+    resource_genesyscloud_journey_segment_test.go:34: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceJourneySegmentCustomer (0.66s)
+=== RUN   TestAccResourceJourneySegmentContextOnly
+    resource_genesyscloud_journey_segment_test.go:34: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceJourneySegmentContextOnly (0.70s)
+=== RUN   TestAccResourceKnowledgeCategoryBasic
+    resource_genesyscloud_knowledge_category_test.go:26: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceKnowledgeCategoryBasic (0.00s)
+=== RUN   TestAccResourceKnowledgeDocumentBasic
+    resource_genesyscloud_knowledge_document_test.go:37: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceKnowledgeDocumentBasic (0.00s)
+=== RUN   TestAccResourceKnowledgeKnowledgebaseBasic
+    resource_genesyscloud_knowledge_knowledgebase_test.go:22: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceKnowledgeKnowledgebaseBasic (0.00s)
+=== RUN   TestAccResourceLocationBasic
+    resource_genesyscloud_location_test.go:40: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceLocationBasic (0.00s)
+=== RUN   TestAccResourceOAuthClient
+    resource_genesyscloud_oauth_client_test.go:36: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceOAuthClient (0.00s)
+=== RUN   TestAccResourceOrgAuthorizationPairing
+=== PAUSE TestAccResourceOrgAuthorizationPairing
+=== RUN   TestAccResourceOutboundAttemptLimit
+=== PAUSE TestAccResourceOutboundAttemptLimit
+=== RUN   TestAccResourceOutboundCallabletimeset
+    resource_genesyscloud_outbound_callabletimeset_test.go:44: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceOutboundCallabletimeset (0.00s)
+=== RUN   TestAccResourceCallAnalysisResponseSet
+=== PAUSE TestAccResourceCallAnalysisResponseSet
+=== RUN   TestAccResourceOutboundCampaign
+=== PAUSE TestAccResourceOutboundCampaign
+=== RUN   TestAccResourceOutboundCampaignBasic
+=== PAUSE TestAccResourceOutboundCampaignBasic
+=== RUN   TestAccResourceOutboundCampaignWithScriptId
+=== PAUSE TestAccResourceOutboundCampaignWithScriptId
+=== RUN   TestAccResourceOutboundCampaignRuleBasic
+    resource_genesyscloud_outbound_campaignrule_test.go:91: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceOutboundCampaignRuleBasic (0.00s)
+=== RUN   TestAccResourceOutboundContactList
+=== PAUSE TestAccResourceOutboundContactList
+=== RUN   TestAccResourceOutboundContactListFilter
+=== PAUSE TestAccResourceOutboundContactListFilter
+=== RUN   TestAccResourceOutboundDncListRdsListType
+=== PAUSE TestAccResourceOutboundDncListRdsListType
+=== RUN   TestAccResourceOutboundDncListDncListType
+=== PAUSE TestAccResourceOutboundDncListDncListType
+=== RUN   TestAccResourceOutboundDncListGryphonListType
+=== PAUSE TestAccResourceOutboundDncListGryphonListType
+=== RUN   TestAccResourceOutboundMessagingCampaign
+=== PAUSE TestAccResourceOutboundMessagingCampaign
+=== RUN   TestAccResourceOutboundRulesetNoRules
+=== PAUSE TestAccResourceOutboundRulesetNoRules
+=== RUN   TestAccResourceOutboundRuleset
+=== PAUSE TestAccResourceOutboundRuleset
+=== RUN   TestAccResourceOutboundSequence
+=== PAUSE TestAccResourceOutboundSequence
+=== RUN   TestAccResourceProcessAutomationTrigger
+=== PAUSE TestAccResourceProcessAutomationTrigger
+=== RUN   TestAccResourceEvaluationFormBasic
+    resource_genesyscloud_quality_forms_evaluation_test.go:124: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceEvaluationFormBasic (0.00s)
+=== RUN   TestAccResourceEvaluationFormComplete
+    resource_genesyscloud_quality_forms_evaluation_test.go:259: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceEvaluationFormComplete (0.00s)
+=== RUN   TestAccResourceEvaluationFormRepublishing
+    resource_genesyscloud_quality_forms_evaluation_test.go:333: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceEvaluationFormRepublishing (0.00s)
+=== RUN   TestAccResourceSurveyFormBasic
+    resource_genesyscloud_quality_forms_survey_test.go:117: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceSurveyFormBasic (0.00s)
+=== RUN   TestAccResourceSurveyFormComplete
+    resource_genesyscloud_quality_forms_survey_test.go:244: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceSurveyFormComplete (0.00s)
+=== RUN   TestAccResourceSurveyFormRepublishing
+    resource_genesyscloud_quality_forms_survey_test.go:315: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceSurveyFormRepublishing (0.00s)
+=== RUN   TestAccResourceMediaRetentionPolicyBasic
+    resource_genesyscloud_recording_media_retention_policy_test.go:923: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceMediaRetentionPolicyBasic (0.72s)
+=== RUN   TestAccResourceRoutingEmailDomainSub
+    resource_genesyscloud_routing_email_domain_test.go:28: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingEmailDomainSub (0.94s)
+=== RUN   TestAccResourceRoutingEmailDomainCustom
+    resource_genesyscloud_routing_email_domain_test.go:69: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingEmailDomainCustom (0.76s)
+=== RUN   TestAccResourceRoutingEmailRoute
+    resource_genesyscloud_routing_email_route_test.go:48: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingEmailRoute (0.74s)
+=== RUN   TestAccResourceRoutingLanguageBasic
+    resource_genesyscloud_routing_language_test.go:19: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingLanguageBasic (0.00s)
+=== RUN   TestAccResourceRoutingQueueBasic
+    resource_genesyscloud_routing_queue_test.go:40: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingQueueBasic (0.00s)
+=== RUN   TestAccResourceRoutingQueueFlows
+    resource_genesyscloud_routing_queue_test.go:166: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingQueueFlows (0.00s)
+=== RUN   TestAccResourceRoutingQueueMembers
+    resource_genesyscloud_routing_queue_test.go:293: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingQueueMembers (0.00s)
+=== RUN   TestAccResourceRoutingQueueWrapupCodes
+    resource_genesyscloud_routing_queue_test.go:398: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingQueueWrapupCodes (0.00s)
+=== RUN   TestAccResourceRoutingQueueSkillGroups
+    resource_genesyscloud_routing_queue_test.go:769: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingQueueSkillGroups (0.00s)
+=== RUN   TestAccResourceRoutingSettingsBasic
+    resource_genesyscloud_routing_settings_test.go:15: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingSettingsBasic (0.00s)
+=== RUN   TestAccResourceRoutingSettingsContactCenter
+    resource_genesyscloud_routing_settings_test.go:55: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingSettingsContactCenter (0.00s)
+=== RUN   TestAccResourceRoutingSettingsTranscription
+    resource_genesyscloud_routing_settings_test.go:100: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingSettingsTranscription (0.00s)
+=== RUN   TestAccResourceRoutingSkillGroupBasic
+    resource_genesyscloud_routing_skill_group_test.go:141: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingSkillGroupBasic (0.00s)
+=== RUN   TestAccResourceRoutingSkillBasic
+    resource_genesyscloud_routing_skill_test.go:19: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingSkillBasic (0.00s)
+=== RUN   TestAccResourceRoutingUtilization
+=== PAUSE TestAccResourceRoutingUtilization
+=== RUN   TestAccResourceRoutingWrapupcode
+    resource_genesyscloud_routing_wrapupcode_test.go:20: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingWrapupcode (0.00s)
+=== RUN   TestAccResourceDidPoolBasic
+    resource_genesyscloud_telephony_providers_edges_did_pool_test.go:38: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceDidPoolBasic (1.45s)
+=== RUN   TestAccResourceEdgeGroup
+=== PAUSE TestAccResourceEdgeGroup
+=== RUN   TestAccResourceExtensionPoolBasic
+=== PAUSE TestAccResourceExtensionPoolBasic
+=== RUN   TestAccResourcePhoneBasic
+=== PAUSE TestAccResourcePhoneBasic
+=== RUN   TestAccResourcePhoneStandalone
+=== PAUSE TestAccResourcePhoneStandalone
+=== RUN   TestAccResourcePhoneBaseSettings
+=== PAUSE TestAccResourcePhoneBaseSettings
+=== RUN   TestAccResourceSite
+=== PAUSE TestAccResourceSite
+=== RUN   TestAccResourceSiteNumberPlans
+=== PAUSE TestAccResourceSiteNumberPlans
+=== RUN   TestAccResourceSiteOutboundRoutes
+=== PAUSE TestAccResourceSiteOutboundRoutes
+=== RUN   TestAccResourceTrunk
+    resource_genesyscloud_telephony_providers_edges_trunk_test.go:12: Skipping because we need to manage edges in order to successfully implement and test this resource
+--- SKIP: TestAccResourceTrunk (0.00s)
+=== RUN   TestAccResourceTrunkBaseSettings
+=== PAUSE TestAccResourceTrunkBaseSettings
+=== RUN   TestAccResourceTfExport
+    resource_genesyscloud_tf_export_test.go:46: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceTfExport (0.00s)
+=== RUN   TestAccResourceTfExportByName
+    resource_genesyscloud_tf_export_test.go:121: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceTfExportByName (0.00s)
+=== RUN   TestAccResourceTfExportFormAsHCL
+=== PAUSE TestAccResourceTfExportFormAsHCL
+=== RUN   TestAccResourceTfExportQueueAsHCL
+=== PAUSE TestAccResourceTfExportQueueAsHCL
+=== RUN   TestAccResourceTfExportLogMissingPermissions
+    resource_genesyscloud_tf_export_test.go:551: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceTfExportLogMissingPermissions (0.00s)
+=== RUN   TestForExportCycles
+--- PASS: TestForExportCycles (0.00s)
+=== RUN   TestAccResourceUserRolesMembership
+=== PAUSE TestAccResourceUserRolesMembership
+=== RUN   TestAccResourceUserBasic
+=== PAUSE TestAccResourceUserBasic
+=== RUN   TestAccResourceUserAddresses
+=== PAUSE TestAccResourceUserAddresses
+=== RUN   TestAccResourceUserPhone
+=== PAUSE TestAccResourceUserPhone
+=== RUN   TestAccResourceUserSkills
+=== PAUSE TestAccResourceUserSkills
+=== RUN   TestAccResourceUserLanguages
+=== PAUSE TestAccResourceUserLanguages
+=== RUN   TestAccResourceUserLocations
+=== PAUSE TestAccResourceUserLocations
+=== RUN   TestAccResourceUserEmployerInfo
+=== PAUSE TestAccResourceUserEmployerInfo
+=== RUN   TestAccResourceUserRoutingUtil
+=== PAUSE TestAccResourceUserRoutingUtil
+=== RUN   TestAccResourceUserRestore
+=== PAUSE TestAccResourceUserRestore
+=== RUN   TestAccResourceWebDeploymentsConfiguration
+=== PAUSE TestAccResourceWebDeploymentsConfiguration
+=== RUN   TestAccResourceWebDeploymentsConfigurationComplex
+=== PAUSE TestAccResourceWebDeploymentsConfigurationComplex
+=== RUN   TestAccResourceWebDeploymentsDeployment
+=== PAUSE TestAccResourceWebDeploymentsDeployment
+=== RUN   TestAccResourceWebDeploymentsDeployment_AllowedDomains
+=== PAUSE TestAccResourceWebDeploymentsDeployment_AllowedDomains
+=== RUN   TestAccResourceWebDeploymentsDeployment_Versioning
+=== PAUSE TestAccResourceWebDeploymentsDeployment_Versioning
+=== RUN   TestAccResourceWidgetDeploymentV2Widget
+=== PAUSE TestAccResourceWidgetDeploymentV2Widget
+=== RUN   TestAccResourceWidgetDeploymentV1Widget
+=== PAUSE TestAccResourceWidgetDeploymentV1Widget
+=== CONT  TestAccDataSourceArchitectIvr
+=== CONT  TestAccResourceProcessAutomationTrigger
+=== CONT  TestAccResourceOrgAuthorizationPairing
+=== CONT  TestAccResourceOutboundDncListRdsListType
+=== CONT  TestAccResourceWebDeploymentsConfigurationComplex
+=== CONT  TestAccResourceWidgetDeploymentV1Widget
+=== CONT  TestAccDataSourceArchitectIvr
+    data_source_genesyscloud_architect_ivr_test.go:22: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceArchitectIvr (0.00s)
+=== CONT  TestAccResourceWidgetDeploymentV2Widget
+=== CONT  TestAccResourceOutboundDncListRdsListType
+    resource_genesyscloud_outbound_dnclist_test.go:25: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceOutboundDncListRdsListType (0.00s)
+=== CONT  TestAccResourceExtensionPoolBasic
+=== CONT  TestAccResourcePhoneStandalone
+=== CONT  TestAccResourceProcessAutomationTrigger
+    resource_genesyscloud_processautomation_trigger_test.go:43: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceProcessAutomationTrigger (0.00s)
+=== CONT  TestAccResourceEdgeGroup
+=== CONT  TestAccResourceUserRolesMembership
+=== CONT  TestAccResourceTfExportQueueAsHCL
+=== CONT  TestAccResourceTfExportFormAsHCL
+=== CONT  TestAccResourceWebDeploymentsConfigurationComplex
+    resource_genesyscloud_webdeployments_configuration_test.go:67: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceWebDeploymentsConfigurationComplex (0.00s)
+=== CONT  TestAccResourceRoutingUtilization
+=== CONT  TestAccResourceEdgeGroup
+    resource_genesyscloud_telephony_providers_edges_edge_group_test.go:53: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceEdgeGroup (0.00s)
+=== CONT  TestAccResourceOutboundCampaignBasic
+=== CONT  TestAccResourceSiteOutboundRoutes
+=== CONT  TestAccResourceUserBasic
+=== CONT  TestAccResourceSiteNumberPlans
+=== CONT  TestAccResourceWebDeploymentsDeployment_Versioning
+=== CONT  TestAccResourceSite
+=== CONT  TestAccResourceWebDeploymentsDeployment_AllowedDomains
+=== CONT  TestAccResourceWebDeploymentsDeployment
+=== CONT  TestAccResourcePhoneBaseSettings
+=== CONT  TestAccResourcePhoneBasic
+=== CONT  TestAccResourceOrgAuthorizationPairing
+    resource_genesyscloud_orgauthorization_pairing_test.go:26: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceUserRolesMembership
+    resource_genesyscloud_user_roles_test.go:31: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceTrunkBaseSettings
+=== CONT  TestAccResourceTfExportFormAsHCL
+    resource_genesyscloud_tf_export_test.go:387: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceWebDeploymentsDeployment_Versioning
+    resource_genesyscloud_webdeployments_deployment_test.go:100: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceWebDeploymentsDeployment_Versioning (0.00s)
+=== CONT  TestAccResourceOutboundContactListFilter
+=== CONT  TestAccResourceRoutingUtilization
+    resource_genesyscloud_routing_utilization_test.go:21: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceOutboundCampaignWithScriptId
+=== CONT  TestAccResourceUserLocations
+=== CONT  TestAccResourceOutboundCampaignWithScriptId
+    resource_genesyscloud_outbound_campaign_test.go:369: Skipping test until script resource is defined
+=== CONT  TestAccResourceWebDeploymentsConfiguration
+=== CONT  TestAccResourcePhoneBasic
+    resource_genesyscloud_telephony_providers_edges_phone_test.go:89: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceUserRestore
+=== CONT  TestAccResourceWebDeploymentsDeployment_AllowedDomains
+    resource_genesyscloud_webdeployments_deployment_test.go:58: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceUserRoutingUtil
+=== CONT  TestAccResourceUserRestore
+    resource_genesyscloud_user_test.go:805: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceOutboundRulesetNoRules
+--- SKIP: TestAccResourceTfExportFormAsHCL (0.00s)
+--- SKIP: TestAccResourceUserRolesMembership (0.00s)
+=== CONT  TestAccResourceOutboundSequence
+=== CONT  TestAccResourceUserBasic
+    resource_genesyscloud_user_test.go:37: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceTfExportQueueAsHCL
+    resource_genesyscloud_tf_export_test.go:478: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceOutboundRuleset
+=== CONT  TestAccResourceOutboundContactList
+=== CONT  TestAccResourcePhoneBaseSettings
+    resource_genesyscloud_telephony_providers_edges_phonebasesettings_test.go:26: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceUserLocations
+    resource_genesyscloud_user_test.go:544: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceOutboundDncListGryphonListType
+    resource_genesyscloud_outbound_dnclist_test.go:231: 
+=== CONT  TestAccResourceTrunkBaseSettings
+    resource_genesyscloud_telephony_providers_edges_trunkbasesettings_test.go:28: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceRoutingUtilization (0.00s)
+--- SKIP: TestAccResourceTrunkBaseSettings (0.00s)
+=== CONT  TestAccResourceOutboundCampaign
+--- SKIP: TestAccResourceOutboundCampaignWithScriptId (0.00s)
+=== CONT  TestAccResourceUserSkills
+--- SKIP: TestAccResourcePhoneBasic (0.00s)
+--- SKIP: TestAccResourceWebDeploymentsDeployment_AllowedDomains (0.00s)
+--- SKIP: TestAccResourceUserRestore (0.00s)
+--- SKIP: TestAccResourceOrgAuthorizationPairing (0.00s)
+--- SKIP: TestAccResourceUserBasic (0.00s)
+--- SKIP: TestAccResourceTfExportQueueAsHCL (0.00s)
+--- SKIP: TestAccResourcePhoneBaseSettings (0.00s)
+=== CONT  TestAccResourceOutboundRulesetNoRules
+    resource_genesyscloud_outbound_ruleset_test.go:34: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceUserLanguages
+=== CONT  TestAccResourceWebDeploymentsDeployment
+    resource_genesyscloud_webdeployments_deployment_test.go:24: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceUserLocations (0.00s)
+=== CONT  TestAccDataSourcePhoneBaseSettings
+--- SKIP: TestAccResourceOutboundDncListGryphonListType (0.00s)
+--- SKIP: TestAccResourceOutboundRulesetNoRules (0.00s)
+--- SKIP: TestAccResourceWebDeploymentsDeployment (0.00s)
+=== CONT  TestAccResourceOutboundContactList
+    resource_genesyscloud_outbound_contactlist_test.go:36: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceOutboundRuleset
+    resource_genesyscloud_outbound_ruleset_test.go:118: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceUserLanguages
+    resource_genesyscloud_user_test.go:462: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceGroupAddresses
+=== CONT  TestAccResourceUserSkills
+    resource_genesyscloud_user_test.go:380: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceGroupBasic
+=== CONT  TestAccResourceOutboundContactListFilter
+    resource_genesyscloud_outbound_contactlistfilter_test.go:65: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceGroupAddresses
+    resource_genesyscloud_group_test.go:90: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceGroupRolesMembership
+=== CONT  TestAccResourceCallAnalysisResponseSet
+=== CONT  TestAccResourceGroupBasic
+    resource_genesyscloud_group_test.go:27: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceUserPhone
+=== CONT  TestAccResourceOutboundMessagingCampaign
+=== CONT  TestAccResourceGroupRolesMembership
+    resource_genesyscloud_group_roles_test.go:27: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceArchitectEmergencyGroups
+=== CONT  TestAccResourceUserPhone
+    resource_genesyscloud_user_test.go:267: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccDataSourceTrunkBaseSettings
+=== CONT  TestAccResourceWebDeploymentsConfiguration
+    resource_genesyscloud_webdeployments_configuration_test.go:22: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceUserRoutingUtil
+    resource_genesyscloud_user_test.go:704: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccDataSourceSite
+--- SKIP: TestAccResourceOutboundContactList (0.00s)
+=== CONT  TestAccResourceGroupMembers
+=== CONT  TestAccResourceCallAnalysisResponseSet
+    resource_genesyscloud_outbound_callanalysisresponseset_test.go:36: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccDataSourcePhone
+=== CONT  TestAccResourceGroupMembers
+    resource_genesyscloud_group_test.go:152: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccDataSourceLineBaseSettings
+=== CONT  TestAccDataSourcePhone
+    data_source_genesyscloud_telephony_providers_edges_phone_test.go:31: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccDataSourceExtensionPoolBasic
+=== CONT  TestAccDataSourceLineBaseSettings
+    data_source_genesyscloud_telephony_providers_edges_linebasesettings_test.go:18: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceUserAddresses
+=== CONT  TestAccDataSourceExtensionPoolBasic
+    data_source_genesyscloud_telephony_providers_edges_extension_pool_test.go:19: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccDataSourceOutboundSequence
+=== CONT  TestAccDataSourcePhoneBaseSettings
+    data_source_genesyscloud_telephony_providers_edges_phonebasesettings_test.go:21: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccDataSourceCampaignRule
+=== CONT  TestAccDataSourceTrunkBaseSettings
+    data_source_genesyscloud_telephony_providers_edges_trunkbasesettings_test.go:23: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceUserEmployerInfo
+    resource_genesyscloud_user_test.go:603: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccDataSourceOutboundRuleset
+=== CONT  TestAccDataSourceCampaignRule
+    data_source_genesyscloud_outbound_campaignrule_test.go:59: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceOutboundDncListDncListType
+    resource_genesyscloud_outbound_dnclist_test.go:123: 
+=== CONT  TestAccDataSourceOutboundRuleset
+    data_source_genesyscloud_outbound_ruleset_test.go:17: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccResourceOutboundAttemptLimit
+=== CONT  TestAccResourceUserAddresses
+    resource_genesyscloud_user_test.go:180: Acceptance tests skipped unless env 'TF_ACC' set
+=== CONT  TestAccDataSourceEdgeGroup
+=== CONT  TestAccResourceOutboundAttemptLimit
+    resource_genesyscloud_outbound_attemptlimit_test.go:45: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceOutboundRuleset (0.00s)
+--- SKIP: TestAccResourceUserLanguages (0.00s)
+--- SKIP: TestAccResourceUserSkills (0.00s)
+=== CONT  TestAccDataSourceEdgeGroup
+    data_source_genesyscloud_telephony_providers_edges_edge_group_test.go:38: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceOutboundContactListFilter (0.00s)
+--- SKIP: TestAccResourceGroupAddresses (0.00s)
+--- SKIP: TestAccResourceGroupBasic (0.00s)
+--- SKIP: TestAccResourceGroupRolesMembership (0.00s)
+--- SKIP: TestAccResourceUserPhone (0.00s)
+--- SKIP: TestAccResourceWebDeploymentsConfiguration (0.00s)
+--- SKIP: TestAccResourceUserRoutingUtil (0.00s)
+--- SKIP: TestAccResourceCallAnalysisResponseSet (0.00s)
+--- SKIP: TestAccResourceGroupMembers (0.00s)
+--- SKIP: TestAccDataSourcePhone (0.00s)
+--- SKIP: TestAccDataSourceLineBaseSettings (0.00s)
+--- SKIP: TestAccDataSourceExtensionPoolBasic (0.00s)
+--- SKIP: TestAccDataSourcePhoneBaseSettings (0.00s)
+--- SKIP: TestAccDataSourceTrunkBaseSettings (0.00s)
+--- SKIP: TestAccResourceUserEmployerInfo (0.00s)
+--- SKIP: TestAccDataSourceCampaignRule (0.00s)
+--- SKIP: TestAccDataSourceOutboundRuleset (0.00s)
+--- SKIP: TestAccResourceOutboundDncListDncListType (0.00s)
+--- SKIP: TestAccResourceUserAddresses (0.00s)
+--- SKIP: TestAccResourceOutboundAttemptLimit (0.00s)
+--- SKIP: TestAccDataSourceEdgeGroup (0.00s)
+=== CONT  TestAccResourceArchitectEmergencyGroups
+    resource_genesyscloud_architect_emergencygroup_test.go:34: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceArchitectEmergencyGroups (0.00s)
+POST https://login.usw2.pure.cloud/oauth/token giving up after 1 attempt(s): Post "https://login.usw2.pure.cloud/oauth/token": net/http: cannot rewind body after connection loss
+=== CONT  TestAccResourceWidgetDeploymentV1Widget
+    resource_genesyscloud_widget_deployment_test.go:167: POST https://login.usw2.pure.cloud/oauth/token giving up after 1 attempt(s): Post "https://login.usw2.pure.cloud/oauth/token": net/http: cannot rewind body after connection loss
+POST https://login.usw2.pure.cloud/oauth/token giving up after 1 attempt(s): Post "https://login.usw2.pure.cloud/oauth/token": net/http: cannot rewind body after connection loss
+--- FAIL: TestAccResourceWidgetDeploymentV1Widget (0.38s)
+=== CONT  TestAccResourceExtensionPoolBasic
+    resource_genesyscloud_telephony_providers_edges_extension_pool_test.go:28: POST https://login.usw2.pure.cloud/oauth/token giving up after 1 attempt(s): Post "https://login.usw2.pure.cloud/oauth/token": net/http: cannot rewind body after connection loss
+--- FAIL: TestAccResourceExtensionPoolBasic (0.38s)
+=== CONT  TestAccResourceOutboundCampaign
+    resource_genesyscloud_outbound_campaign_test.go:54: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceOutboundCampaign (0.86s)
+=== CONT  TestAccResourcePhoneStandalone
+    resource_genesyscloud_telephony_providers_edges_phone_test.go:250: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourcePhoneStandalone (0.88s)
+=== CONT  TestAccResourceSiteNumberPlans
+    resource_genesyscloud_telephony_providers_edges_site_test.go:190: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceSiteNumberPlans (0.93s)
+=== CONT  TestAccResourceOutboundCampaignBasic
+    resource_genesyscloud_outbound_campaign_test.go:270: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceOutboundCampaignBasic (0.94s)
+=== CONT  TestAccDataSourceOutboundSequence
+    data_source_genesyscloud_outbound_sequence_test.go:39: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceOutboundSequence (0.94s)
+=== CONT  TestAccResourceSiteOutboundRoutes
+    resource_genesyscloud_telephony_providers_edges_site_test.go:406: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceSiteOutboundRoutes (0.94s)
+=== CONT  TestAccResourceOutboundSequence
+    resource_genesyscloud_outbound_sequence_test.go:44: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceOutboundSequence (1.04s)
+=== CONT  TestAccDataSourceSite
+    data_source_genesyscloud_telephony_providers_edges_site_test.go:52: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccDataSourceSite (1.11s)
+=== CONT  TestAccResourceSite
+    resource_genesyscloud_telephony_providers_edges_site_test.go:66: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceSite (1.15s)
+=== CONT  TestAccResourceWidgetDeploymentV2Widget
+    resource_genesyscloud_widget_deployment_test.go:102: Acceptance tests skipped unless env 'TF_ACC' set
+--- SKIP: TestAccResourceWidgetDeploymentV2Widget (1.97s)
+=== CONT  TestAccResourceOutboundMessagingCampaign
+    resource_genesyscloud_outbound_messagingcampaign_test.go:111: error creating sms phone number +19198793429: sms phone number provisioning failed
+    resource_genesyscloud_outbound_messagingcampaign_test.go:120: Acceptance tests skipped unless env 'TF_ACC' set
+--- FAIL: TestAccResourceOutboundMessagingCampaign (4.64s)
+FAIL
+FAIL	github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud	30.476s
+?   	github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker	[no test files]
+FAIL

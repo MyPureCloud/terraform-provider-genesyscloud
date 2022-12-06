@@ -29,6 +29,11 @@ resource "genesyscloud_routing_queue" "example_queue" {
   bullseye_rings {
     expansion_timeout_seconds = 15.1
     skills_to_remove          = [genesyscloud_routing_skill.example-skill.id]
+
+    member_groups = {
+      member_group_id   = genesyscloud_group.example-group.id
+      member_group_type = "GROUP"
+    }
   }
   default_script_ids = {
     EMAIL = data.genesyscloud_script.email.id
