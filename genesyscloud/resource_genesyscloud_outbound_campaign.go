@@ -81,7 +81,7 @@ func resourceOutboundCampaign() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`campaign_status`: {
-				Description:  `The current status of the Campaign. A Campaign may be turned 'on' or 'off'. Required for updates.`,
+				Description:  `The current status of the Campaign. A Campaign may be turned 'on' or 'off'. Required for updates. A Campaign must be turned 'off' when creating.`,
 				Optional:     true,
 				Type:         schema.TypeString,
 				Computed:     true,
@@ -208,6 +208,9 @@ func getAllOutboundCampaign(_ context.Context, clientConfig *platformclientv2.Co
 		}
 
 		for _, entity := range *sdkcampaignentitylisting.Entities {
+			if *entity.CampaignStatus != "off" && *entity.CampaignStatus != "on" {
+				*entity.CampaignStatus = "off"
+			}
 			resources[*entity.Id] = &ResourceMeta{Name: *entity.Name}
 		}
 	}
