@@ -725,7 +725,7 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 }
 
 func isDefaultPlan(name string) bool {
-	defaultPlans := []string{"Emergency", "Extension", "National", "International", "Network"}
+	defaultPlans := []string{"Emergency", "Extension", "National", "International", "Network", "Suicide Prevent"}
 	for _, defaultPlan := range defaultPlans {
 		if name == defaultPlan {
 			return true
