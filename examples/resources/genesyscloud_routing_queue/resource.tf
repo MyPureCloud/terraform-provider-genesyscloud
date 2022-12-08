@@ -30,7 +30,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
     expansion_timeout_seconds = 15.1
     skills_to_remove          = [genesyscloud_routing_skill.example-skill.id]
 
-    member_groups = {
+    member_groups {
       member_group_id   = genesyscloud_group.example-group.id
       member_group_type = "GROUP"
     }
