@@ -33,7 +33,7 @@ resource "genesyscloud_user_roles" "user-roles" {
 
 ### Required
 
-- `user_id` (String) User ID that will be managed by this resource.
+- `user_id` (String) User ID that will be managed by this resource. Changing the user_id attribute will cause the roles object to be dropped and recreated with a new ID.
 
 ### Optional
 

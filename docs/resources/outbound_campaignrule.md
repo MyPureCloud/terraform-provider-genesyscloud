@@ -92,8 +92,8 @@ Optional:
 
 Optional:
 
-- `campaign_ids` (List of String) The list of campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a campaign.
-- `sequence_ids` (List of String) The list of sequences for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a sequence.
+- `campaign_ids` (List of String) The list of campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
+- `sequence_ids` (List of String) The list of sequences for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a sequence. Changing the outboundCampaignRuleEntitySequenceRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
 - `use_triggering_entity` (Boolean) If true, the CampaignRuleAction will apply to the same entity that triggered the CampaignRuleCondition. Defaults to `false`.
 
 
@@ -144,6 +144,6 @@ Optional:
 
 Optional:
 
-- `campaign_ids` (List of String) The list of campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a campaign.
-- `sequence_ids` (List of String) The list of sequences for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a sequence.
+- `campaign_ids` (List of String) The list of campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
+- `sequence_ids` (List of String) The list of sequences for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a sequence. Changing the outboundCampaignRuleEntitySequenceRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
 

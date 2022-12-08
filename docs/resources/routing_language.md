@@ -29,7 +29,7 @@ resource "genesyscloud_routing_language" "english" {
 
 ### Required
 
-- `name` (String) Language name.
+- `name` (String) Language name. Changing the language_name attribute will cause the language object to be dropped and recreated with a new ID.
 
 ### Read-Only
 
