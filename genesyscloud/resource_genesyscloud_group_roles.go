@@ -40,7 +40,7 @@ func resourceGroupRoles() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"group_id": {
-				Description: "Group ID that will be managed by this resource.",
+				Description: "Group ID that will be managed by this resource. Changing the group_id attribute for the groups_role object will cause the existing group_roles object to be dropped and recreated with a new ID",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

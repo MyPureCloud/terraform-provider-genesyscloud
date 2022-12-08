@@ -61,14 +61,14 @@ func resourceTelephonyDidPool() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"start_phone_number": {
-				Description:      "Starting phone number of the DID Pool range.",
+				Description:      "Starting phone number of the DID Pool range. Changing the start_phone_number attribute will cause the did_pool object to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
 				ValidateDiagFunc: validatePhoneNumber,
 			},
 			"end_phone_number": {
-				Description:      "Ending phone number of the DID Pool range.",
+				Description:      "Ending phone number of the DID Pool range. Changing the end_phone_number attribute will cause the did_pool object to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,

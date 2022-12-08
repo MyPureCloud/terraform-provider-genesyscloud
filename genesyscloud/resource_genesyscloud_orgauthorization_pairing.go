@@ -3,12 +3,13 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"log"
 )
 
 func resourceOrgauthorizationPairing() *schema.Resource {
@@ -24,14 +25,14 @@ func resourceOrgauthorizationPairing() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			`user_ids`: {
-				Description: `The list of trustee users that are requesting access. If no users are specified, at least one group is required.`,
+				Description: `The list of trustee users that are requesting access. If no users are specified, at least one group is required.  Changing the user_ids attribute will cause the orgauthorization_pairing resource to be dropped and recreated with a new ID.`,
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`group_ids`: {
-				Description: `The list of trustee groups that are requesting access. If no groups are specified, at least one user is required.`,
+				Description: `The list of trustee groups that are requesting access. If no groups are specified, at least one user is required. Changing the group_ids attribute will cause the orgauthorization_pairing resource to be dropped and recreated with a new ID.`,
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeList,

@@ -59,7 +59,7 @@ func resourceRoutingLanguage() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Language name.",
+				Description: "Language name. Changing the language_name attribute will cause the language object to be dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
