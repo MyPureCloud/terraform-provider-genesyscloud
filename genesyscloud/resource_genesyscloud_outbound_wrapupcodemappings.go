@@ -112,12 +112,12 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 		if err != nil {
 			return resp, diag.Errorf("failed to read wrap-up code mappings: %s", err)
 		}
-
-		wrapupCodeMappings.DefaultSet = buildSdkStringListFromInterfaceArray(d, "default_set")
-
-		wrapupCodeMappings.Mapping = buildWrapupCodeMappings(d)
-
-		_, _, err = outboundApi.PutOutboundWrapupcodemappings(*wrapupCodeMappings)
+		wrapupCodeUpdate := platformclientv2.Wrapupcodemapping{
+			DefaultSet: buildSdkStringListFromInterfaceArray(d, "default_set"),
+			Mapping:    buildWrapupCodeMappings(d),
+			Version:    wrapupCodeMappings.Version,
+		}
+		_, _, err = outboundApi.PutOutboundWrapupcodemappings(wrapupCodeUpdate)
 		if err != nil {
 			return resp, diag.Errorf("failed to update wrap-up code mappings: %s", err)
 		}
