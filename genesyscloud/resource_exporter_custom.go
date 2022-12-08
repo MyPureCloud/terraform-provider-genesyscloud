@@ -14,23 +14,27 @@ find the appropriate resource out of the exporters and build a reference appropr
 */
 func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
 
-	var exporter *ResourceExporter
 	memberGroupType := configMap["member_group_type"]
 	memberGroupID := configMap["member_group_id"].(string)
 
 	switch memberGroupType {
 	case "SKILLGROUP":
-		exporter = exporters["genesyscloud_routing_skill_group"]
-		exportId := (*exporter.SanitizedResourceMap[memberGroupID]).Name
+		if exporter, ok := exporters["genesyscloud_routing_skill_group"]; ok {
+			exportId := (*exporter.SanitizedResourceMap[memberGroupID]).Name
+			configMap["member_group_id"] = fmt.Sprintf("${genesyscloud_routing_skill_group.%s.id}", exportId)
+		} else {
+			return fmt.Errorf("unable to locate genesyscloud_routing_skill_group in the exporters array. Unable to resolve the ID for the member group resource")
+		}
 
-		configMap["member_group_id"] = fmt.Sprintf("${genesyscloud_routing_skill_group.%s.id}", exportId)
 	case "GROUP":
-		exporter = exporters["genesyscloud_group"]
-		exportId := (*exporter.SanitizedResourceMap[memberGroupID]).Name
-
-		configMap["member_group_id"] = fmt.Sprintf("${genesyscloud_group.%s.id}", exportId)
+		if exporter, ok := exporters["genesyscloud_group"]; ok {
+			exportId := (*exporter.SanitizedResourceMap[memberGroupID]).Name
+			configMap["member_group_id"] = fmt.Sprintf("${genesyscloud_group.%s.id}", exportId)
+		} else {
+			return fmt.Errorf("unable to locate genesyscloud_group in the exporters array. Unable to resolve the ID for the member group resource")
+		}
 	default:
-		fmt.Printf("The memberGroupType %s cannot be located. Can not resolve to a reference attribute", memberGroupType)
+		return fmt.Errorf("the memberGroupType %s cannot be located. Can not resolve to a reference attribute", memberGroupType)
 	}
 
 	return nil

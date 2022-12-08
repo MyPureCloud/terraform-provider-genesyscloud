@@ -53,7 +53,7 @@ func TestAccExporterCustomMemberGroup(t *testing.T) {
 		//Invoke the resolver
 		err := MemberGroupsResolver(configMap, exporters)
 
-		if err != nil {
+		if err != nil && testResult.MemberGroupType != "TEAM" {
 			t.Errorf("Received an unexpected error while calling MemberGroupResolver:  %v", err)
 		}
 

@@ -1197,7 +1197,6 @@ func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter 
 	return string(jsonDataMarshalled), nil
 }
 
-// Could we just do an OK on the map without having to
 func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema.Schema, bool) {
 	for k, v := range myMap {
 		if k == a {
