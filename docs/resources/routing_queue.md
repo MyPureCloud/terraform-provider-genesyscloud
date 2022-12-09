@@ -55,6 +55,11 @@ resource "genesyscloud_routing_queue" "example_queue" {
   bullseye_rings {
     expansion_timeout_seconds = 15.1
     skills_to_remove          = [genesyscloud_routing_skill.example-skill.id]
+
+    member_groups {
+      member_group_id   = genesyscloud_group.example-group.id
+      member_group_type = "GROUP"
+    }
   }
   default_script_ids = {
     EMAIL = data.genesyscloud_script.email.id
@@ -80,7 +85,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `acw_timeout_ms` (Number) The amount of time the agent can stay in ACW. Only set when ACW is MANDATORY_TIMEOUT, MANDATORY_FORCED_TIMEOUT or AGENT_REQUESTED.
 - `acw_wrapup_prompt` (String) This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED). Defaults to `MANDATORY_TIMEOUT`.
 - `auto_answer_only` (Boolean) Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered. Defaults to `true`.
-- `bullseye_rings` (Block List, Max: 6) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
+- `bullseye_rings` (Block List, Max: 5) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
@@ -120,7 +125,17 @@ Required:
 
 Optional:
 
+- `member_groups` (Block Set) (see [below for nested schema](#nestedblock--bullseye_rings--member_groups))
 - `skills_to_remove` (Set of String) Skill IDs to remove on ring exit.
+
+<a id="nestedblock--bullseye_rings--member_groups"></a>
+### Nested Schema for `bullseye_rings.member_groups`
+
+Required:
+
+- `member_group_id` (String) ID (GUID) for Group, SkillGroup, Team
+- `member_group_type` (String) The type of the member group. Accepted values: TEAM, GROUP, SKILLGROUP
+
 
 
 <a id="nestedblock--media_settings_call"></a>

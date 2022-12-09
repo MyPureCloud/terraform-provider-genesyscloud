@@ -1036,11 +1036,13 @@ func sanitizeConfigMap(
 	resourceName string,
 	configMap map[string]interface{},
 	prevAttr string,
-	exporters map[string]*ResourceExporter,
+	exporters map[string]*ResourceExporter, //Map of all of the exporters
 	exportingState bool,
 	exportingAsHCL bool) ([]unresolvableAttributeInfo, bool) {
-	exporter := exporters[resourceType]
+	exporter := exporters[resourceType] //Get the specific export that we will be working with
+
 	unresolvableAttrs := make([]unresolvableAttributeInfo, 0)
+
 	for key, val := range configMap {
 		currAttr := key
 		wildcardAttr := "*"
@@ -1089,12 +1091,14 @@ func sanitizeConfigMap(
 					break
 				}
 			}
+
 			// Check if we are on a reference attribute and update as needed
 			refSettings := exporter.getRefAttrSettings(currAttr)
 			if refSettings == nil {
 				// Check for wildcard attribute indicating all attributes in the map
 				refSettings = exporter.getRefAttrSettings(wildcardAttr)
 			}
+
 			if refSettings != nil {
 				configMap[key] = resolveReference(refSettings, val.(string), exporters, exportingState)
 			} else {
@@ -1127,6 +1131,16 @@ func sanitizeConfigMap(
 		// AllowZeroValues list.
 		if !exporter.allowZeroValues(currAttr) {
 			removeZeroValues(key, configMap[key], configMap)
+		}
+
+		//If the exporter as has customer resolver for an attribute, invoke it.
+		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
+			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
+			err := refAttrCustomResolver.ResolverFunc(configMap, exporters)
+
+			if err != nil {
+				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s", currAttr)
+			}
 		}
 
 		if exportingAsHCL && exporter.isJsonEncodable(currAttr) {
