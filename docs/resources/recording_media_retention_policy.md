@@ -126,7 +126,7 @@ resource "genesyscloud_recording_media_retention_policy" "example-media-retentio
 
 ### Required
 
-- `name` (String) The policy name.
+- `name` (String) The policy name. Changing the policy_name attribute will cause the recording_media_retention_policy to be dropped and recreated with a new ID.
 
 ### Optional
 

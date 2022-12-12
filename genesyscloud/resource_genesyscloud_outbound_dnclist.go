@@ -100,7 +100,7 @@ func resourceOutboundDncList() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`dnc_source_type`: {
-				Description:  `The type of the DNC List.`,
+				Description:  `The type of the DNC List. Changing the dnc_source_attribute will cause the outbound_dnclist object to be dropped and recreated with new ID.`,
 				Required:     true,
 				ForceNew:     true,
 				Type:         schema.TypeString,

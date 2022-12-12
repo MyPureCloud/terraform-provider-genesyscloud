@@ -106,7 +106,7 @@ func resourceRoutingEmailRoute() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"domain_id": {
-				Description: "ID of the routing domain such as: 'example.com'",
+				Description: "ID of the routing domain such as: 'example.com'. Changing the domain_id attribute will cause the email_route object to be dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

@@ -40,7 +40,7 @@ func resourceUserRoles() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"user_id": {
-				Description: "User ID that will be managed by this resource.",
+				Description: "User ID that will be managed by this resource. Changing the user_id attribute will cause the roles object to be dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

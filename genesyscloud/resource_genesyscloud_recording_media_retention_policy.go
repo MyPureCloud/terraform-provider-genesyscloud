@@ -872,7 +872,7 @@ func resourceMediaRetentionPolicy() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "The policy name.",
+				Description: "The policy name. Changing the policy_name attribute will cause the recording_media_retention_policy to be dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

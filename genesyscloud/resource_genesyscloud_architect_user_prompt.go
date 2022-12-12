@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,6 +11,8 @@ import (
 	"net/http"
 	"path/filepath"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -730,7 +731,7 @@ func resourceArchitectUserPrompt() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Name of the user audio prompt.",
+				Description: "Name of the user audio prompt. Note: If the name of the user prompt is changed, this will cause the Prompt to be dropped and recreated with a new ID. This will generate a new ID for the prompt and will invalidate any Architect flows referencing it. ",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

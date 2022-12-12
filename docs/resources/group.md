@@ -52,7 +52,7 @@ resource "genesyscloud_group" "sample_group" {
 - `member_ids` (Set of String) IDs of members assigned to the group. If not set, this resource will not manage group members.
 - `owner_ids` (Set of String) IDs of owners of the group.
 - `rules_visible` (Boolean) Are membership rules visible to the person requesting to view the group. Defaults to `true`.
-- `type` (String) Group type (official | social). This cannot be modified. Defaults to `official`.
+- `type` (String) Group type (official | social). This cannot be modified. Changing type attribute will cause the existing genesys_group object to dropped and recreated with a new ID. Defaults to `official`.
 - `visibility` (String) Who can view this group (public | owners | members). Defaults to `public`.
 
 ### Read-Only

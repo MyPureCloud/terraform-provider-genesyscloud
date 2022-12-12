@@ -58,13 +58,13 @@ func resourceRoutingEmailDomain() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"domain_id": {
-				Description: "Unique Id of the domain such as: 'example.com'. If subdomain is true, the Genesys Cloud regional domain is appended.",
+				Description: "Unique Id of the domain such as: 'example.com'. If subdomain is true, the Genesys Cloud regional domain is appended. Changing the domain_id attribute will cause the routing_email_domain to be dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
 			"subdomain": {
-				Description: "Indicates if this a Genesys Cloud sub-domain. If true, then the appropriate DNS records are created for sending/receiving email.",
+				Description: "Indicates if this a Genesys Cloud sub-domain. If true, then the appropriate DNS records are created for sending/receiving email. Changing the subdomain attribute will cause the routing_email_domain to be dropped and recreated with a new ID.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,

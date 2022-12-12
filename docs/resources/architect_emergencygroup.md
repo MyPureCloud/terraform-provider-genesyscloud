@@ -35,7 +35,7 @@ resource "genesyscloud_architect_emergencygroup" "emergency-group" {
 
 ### Required
 
-- `name` (String) Name of the emergency group.
+- `name` (String) Name of the emergency group. Note:  If the name is changed, the emergency group is dropped and recreated with a new ID. This can cause an Architect flow to be invalid if it references the old emergency group
 
 ### Optional
 

@@ -33,8 +33,8 @@ resource "genesyscloud_telephony_providers_edges_extension_pool" "example_extens
 
 ### Required
 
-- `end_number` (String) Ending phone number of the Extension Pool range.
-- `start_number` (String) Starting phone number of the Extension Pool range.
+- `end_number` (String) Ending phone number of the Extension Pool range. Changing the end_number attribute will cause the extension object to be dropped and recreated with a new ID.
+- `start_number` (String) Starting phone number of the Extension Pool range. Changing the start_number attribute will cause the extension object to be dropped and recreated with a new ID.
 
 ### Optional
 

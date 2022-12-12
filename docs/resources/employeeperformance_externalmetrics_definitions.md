@@ -39,11 +39,11 @@ resource "genesyscloud_employeeperformance_externalmetrics_definition" "example_
 - `enabled` (Boolean) True if the External Metric Definition is enabled
 - `name` (String) The name of the External Metric Definition
 - `precision` (Number) The decimal precision of the External Metric Definition. Must be at least 0 and at most 5
-- `unit` (String) The unit of the External Metric Definition
+- `unit` (String) The unit of the External Metric Definition. Note: Changing the unit property will cause the external metric object to be dropped and recreated with a new ID.
 
 ### Optional
 
-- `unit_definition` (String) The unit definition of the External Metric Definition
+- `unit_definition` (String) The unit definition of the External Metric Definition. Note: Changing the unit definition property will cause the external metric object to be dropped and recreated with a new ID.
 
 ### Read-Only
 

@@ -59,7 +59,7 @@ func resourceRoutingSkill() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Skill name.",
+				Description: "Skill name. Changing the name attribute will cause the skill object object to dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
