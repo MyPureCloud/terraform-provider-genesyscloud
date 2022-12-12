@@ -99,7 +99,7 @@ func resourceGroup() *schema.Resource {
 				Optional:    true,
 			},
 			"type": {
-				Description:  "Group type (official | social). This cannot be modified.",
+				Description:  "Group type (official | social). This cannot be modified. Changing type attribute will cause the existing genesys_group object to dropped and recreated with a new ID.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "official",

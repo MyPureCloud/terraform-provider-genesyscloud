@@ -33,7 +33,7 @@ resource "genesyscloud_group_roles" "group-roles" {
 
 ### Required
 
-- `group_id` (String) Group ID that will be managed by this resource.
+- `group_id` (String) Group ID that will be managed by this resource. Changing the group_id attribute for the groups_role object will cause the existing group_roles object to be dropped and recreated with a new ID
 
 ### Optional
 

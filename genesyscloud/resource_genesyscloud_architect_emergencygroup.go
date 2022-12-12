@@ -63,7 +63,7 @@ func resourceArchitectEmergencyGroup() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Name of the emergency group.",
+				Description: "Name of the emergency group. Note:  If the name is changed, the emergency group is dropped and recreated with a new ID. This can cause an Architect flow to be invalid if it references the old emergency group",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

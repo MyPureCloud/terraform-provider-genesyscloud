@@ -47,7 +47,7 @@ resource "genesyscloud_routing_email_route" "support-route" {
 
 ### Required
 
-- `domain_id` (String) ID of the routing domain such as: 'example.com'
+- `domain_id` (String) ID of the routing domain such as: 'example.com'. Changing the domain_id attribute will cause the email_route object to be dropped and recreated with a new ID.
 - `from_email` (String) The sender email to use for outgoing replies.
 - `from_name` (String) The sender name to use for outgoing replies.
 - `pattern` (String) The search pattern that the mailbox name should match.

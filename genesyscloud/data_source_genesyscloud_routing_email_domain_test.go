@@ -2,10 +2,12 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
@@ -25,7 +27,12 @@ func cleanupRoutingEmailDomains() {
 
 	for _, routingEmailDomain := range *routingEmailDomains.Entities {
 		if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
-			routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
+			_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
+			if err != nil {
+				log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
+				continue
+			}
+			time.Sleep(5 * time.Second)
 		}
 	}
 }

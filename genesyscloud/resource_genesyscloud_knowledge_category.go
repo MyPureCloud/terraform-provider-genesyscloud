@@ -20,7 +20,7 @@ var (
 	knowledgeCategory = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Knowledge base name",
+				Description: "Knowledge base name. Changing the name attribute will cause the knowledge_category resource to be dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,

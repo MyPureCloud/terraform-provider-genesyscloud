@@ -1,0 +1,2 @@
+* [GET /api/v2/outbound/settings](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-settings)
+* [PATCH /api/v2/outbound/settings](https://developer.genesys.cloud/routing/outbound/#patch-api-v2-outbound-settings)

@@ -46,6 +46,7 @@ func validateDateTime(date interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Date %v is not a string", date)
 }
 
+// Validates a date string is in format hh:mm:ss
 func validateTime(time interface{}, _ cty.Path) diag.Diagnostics {
 	timeStr := time.(string)
 	if len(timeStr) > 9 {
@@ -56,6 +57,20 @@ func validateTime(time interface{}, _ cty.Path) diag.Diagnostics {
 	}
 
 	return diag.Errorf("Time %v is not a valid time", time)
+}
+
+// Validates a date string is in format hh:mm
+func validateTimeHHMM(time interface{}, _ cty.Path) diag.Diagnostics {
+	timeStr := time.(string)
+	if timeStr == "" {
+		return nil
+	}
+
+	if valid, _ := regexp.MatchString("^(0?[0-9]|1?[0-9]|2[0-4]):([0-5][0-9])", timeStr); valid {
+		return nil
+	}
+
+	return diag.Errorf("Time %v is not a valid time, must use format HH:mm", time)
 }
 
 // Validates a date string is in the format 2006-01-02T15:04:05.000000

@@ -83,7 +83,7 @@ resource "genesyscloud_telephony_providers_edges_site" "site" {
 ### Required
 
 - `location_id` (String) Site location ID
-- `media_model` (String) Media model for the site Valid Values: Premises, Cloud
+- `media_model` (String) Media model for the site Valid Values: Premises, Cloud. Changing the media_model attribute will cause the site object to be dropped and created with a new ID.
 - `name` (String) The name of the entity.
 
 ### Optional

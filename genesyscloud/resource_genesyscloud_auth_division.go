@@ -68,7 +68,7 @@ func resourceAuthDivision() *schema.Resource {
 				Optional:    true,
 			},
 			"home": {
-				Description: "True if this is the home division. This can be set to manage the pre-existing home division.",
+				Description: "True if this is the home division. This can be set to manage the pre-existing home division.  Note: If name attribute is changed, this will cause the auth_division to be dropped and recreated. This will generate a new ID the division.  Existing objects with the old division will not be migrated to the new division",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				ForceNew:    true,
