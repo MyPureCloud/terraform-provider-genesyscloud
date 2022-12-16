@@ -318,6 +318,9 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 			_ = d.Set("dnc_codes", dncCodes)
 		}
+		if sdkDncList.DncSourceType != nil {
+			_ = d.Set("dnc_source_type", *sdkDncList.DncSourceType)
+		}
 		if sdkDncList.LicenseId != nil {
 			_ = d.Set("license_id", *sdkDncList.LicenseId)
 		}
