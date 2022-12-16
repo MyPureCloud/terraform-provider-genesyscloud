@@ -66,6 +66,7 @@ func resourceOutboundDncList() *schema.Resource {
 			`contact_method`: {
 				Description:  `The contact method. Required if dncSourceType is rds.`,
 				Optional:     true,
+				Computed:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{`Email`, `Phone`}, false),
 			},
@@ -296,27 +297,13 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			_ = d.Set("campaign_id", *sdkDncList.CampaignId)
 		}
 		if sdkDncList.DncCodes != nil {
-			var dncCodes []string
 			schemaCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
-			if len(*sdkDncList.DncCodes) == len(schemaCodes) {
-				// Rearrange to the original ordering
-				for _, schemaCode := range schemaCodes {
-					for _, sdkCode := range *sdkDncList.DncCodes {
-						if schemaCode == sdkCode {
-							dncCodes = append(dncCodes, sdkCode)
-						}
-					}
-				}
-				if len(dncCodes) != len(*sdkDncList.DncCodes) {
-					dncCodes = nil
-				}
+			// preserve ordering and avoid a plan not empty error
+			if listsAreEquivalent(schemaCodes, *sdkDncList.DncCodes) {
+				_ = d.Set("dnc_codes", schemaCodes)
+			} else {
+				_ = d.Set("dnc_codes", stringListToInterfaceList(*sdkDncList.DncCodes))
 			}
-			if len(dncCodes) == 0 {
-				for _, v := range *sdkDncList.DncCodes {
-					dncCodes = append(dncCodes, v)
-				}
-			}
-			_ = d.Set("dnc_codes", dncCodes)
 		}
 		if sdkDncList.DncSourceType != nil {
 			_ = d.Set("dnc_source_type", *sdkDncList.DncSourceType)
