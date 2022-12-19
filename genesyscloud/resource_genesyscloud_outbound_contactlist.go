@@ -3,13 +3,14 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"log"
-	"time"
 )
 
 var (
@@ -92,14 +93,14 @@ func resourceOutboundContactList() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`column_names`: {
-				Description: `The names of the contact data columns.`,
+				Description: `The names of the contact data columns. Changing the column_names attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID`,
 				Required:    true,
 				ForceNew:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`phone_columns`: {
-				Description: `Indicates which columns are phone numbers.`,
+				Description: `Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID`,
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeSet,
@@ -122,13 +123,13 @@ func resourceOutboundContactList() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`automatic_time_zone_mapping`: {
-				Description: `Indicates if automatic time zone mapping is to be used for this ContactList.`,
+				Description: `Indicates if automatic time zone mapping is to be used for this ContactList. Changing the automatic_time_zone_mappings attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID`,
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeBool,
 			},
 			`zip_code_column_name`: {
-				Description: `The name of contact list column containing the zip code for use with automatic time zone mapping. Only allowed if 'automaticTimeZoneMapping' is set to true.`,
+				Description: `The name of contact list column containing the zip code for use with automatic time zone mapping. Only allowed if 'automaticTimeZoneMapping' is set to true. Changing the zip_code_column_name attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID`,
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeString,

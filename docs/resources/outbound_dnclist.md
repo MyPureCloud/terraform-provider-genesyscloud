@@ -33,7 +33,7 @@ resource "genesyscloud_outbound_dnclist" "dnc_list" {
 
 ### Required
 
-- `dnc_source_type` (String) The type of the DNC List.
+- `dnc_source_type` (String) The type of the DNC List. Changing the dnc_source_attribute will cause the outbound_dnclist object to be dropped and recreated with new ID.
 - `name` (String) The name of the DncList.
 
 ### Optional

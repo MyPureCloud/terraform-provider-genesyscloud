@@ -28,8 +28,8 @@ resource "genesyscloud_orgauthorization_pairing" "example_orgauthorization_pairi
 
 ### Optional
 
-- `group_ids` (List of String) The list of trustee groups that are requesting access. If no groups are specified, at least one user is required.
-- `user_ids` (List of String) The list of trustee users that are requesting access. If no users are specified, at least one group is required.
+- `group_ids` (List of String) The list of trustee groups that are requesting access. If no groups are specified, at least one user is required. Changing the group_ids attribute will cause the orgauthorization_pairing resource to be dropped and recreated with a new ID.
+- `user_ids` (List of String) The list of trustee users that are requesting access. If no users are specified, at least one group is required.  Changing the user_ids attribute will cause the orgauthorization_pairing resource to be dropped and recreated with a new ID.
 
 ### Read-Only
 

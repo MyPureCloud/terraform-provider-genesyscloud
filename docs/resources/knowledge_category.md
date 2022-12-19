@@ -50,6 +50,6 @@ resource "genesyscloud_knowledge_category" "example_category" {
 Optional:
 
 - `description` (String) Knowledge base description
-- `name` (String) Knowledge base name
+- `name` (String) Knowledge base name. Changing the name attribute will cause the knowledge_category resource to be dropped and recreated with a new ID.
 - `parent_id` (String) Knowledge category parent id
 

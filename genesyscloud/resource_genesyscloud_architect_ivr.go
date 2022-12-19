@@ -66,7 +66,7 @@ func resourceArchitectIvrConfig() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Name of the IVR config.",
+				Description: "Name of the IVR config. Note: If the name changes, the existing Genesys Cloud IVR config will be dropped and recreated with a new ID. This can cause an Architect Flow to become invalid if the old flow is reference in the flow.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

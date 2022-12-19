@@ -60,7 +60,7 @@ resource "genesyscloud_journey_segment" "example_journey_segment_resource" {
 
 - `color` (String) The hexadecimal color value of the segment.
 - `display_name` (String) The display name of the segment.
-- `scope` (String) The target entity that a segment applies to.Valid values: Session, Customer.
+- `scope` (String) The target entity that a segment applies to.Valid values: Session, Customer. Changing the scope attribute will cause the existing journey_segment to be dropped and recreated with new ID.
 
 ### Optional
 
@@ -112,9 +112,9 @@ Optional:
 
 Required:
 
-- `id` (String) Identifier for the external segment in the system where it originates from.
+- `id` (String) Identifier for the external segment in the system where it originates from.  Changing the id attribute will cause the journey_segment resource to be dropped and recreated with a new ID.
 - `name` (String) Name for the external segment in the system where it originates from.
-- `source` (String) The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom.
+- `source` (String) The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom. Changing the source attribute will cause the journey_segment resource to be dropped and recreated with a new ID.
 
 
 <a id="nestedblock--journey"></a>

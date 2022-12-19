@@ -49,7 +49,7 @@ resource "genesyscloud_processautomation_trigger" "example-trigger" {
 - `enabled` (Boolean) Whether or not the trigger should be fired on events
 - `name` (String) Name of the Trigger
 - `target` (Block Set, Min: 1, Max: 1) Target the trigger will invoke when fired (see [below for nested schema](#nestedblock--target))
-- `topic_name` (String) Topic name that will fire trigger. (Updating requires replacement of trigger)
+- `topic_name` (String) Topic name that will fire trigger. Changing the topic_name attribute will cause the processautomation_trigger object to be dropped and recreated with a new ID.
 
 ### Optional
 

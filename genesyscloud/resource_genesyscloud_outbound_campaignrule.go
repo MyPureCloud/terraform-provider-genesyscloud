@@ -3,19 +3,20 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"log"
-	"time"
 )
 
 var (
 	outboundCampaignRuleEntityCampaignRuleId = &schema.Schema{
-		Description: `The list of campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a campaign.`,
+		Description: `The list of campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.`,
 		Optional:    true,
 		ForceNew:    true,
 		Type:        schema.TypeList,
@@ -23,7 +24,7 @@ var (
 	}
 
 	outboundCampaignRuleEntitySequenceRuleId = &schema.Schema{
-		Description: `The list of sequences for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a sequence.`,
+		Description: `The list of sequences for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a sequence. Changing the outboundCampaignRuleEntitySequenceRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.`,
 		Optional:    true,
 		ForceNew:    true,
 		Type:        schema.TypeList,

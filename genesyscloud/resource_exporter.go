@@ -38,6 +38,11 @@ type RefAttrSettings struct {
 	AltValues []string
 }
 
+// Allows the definition of a custom resolver for an exporter.
+type RefAttrCustomResolver struct {
+	ResolverFunc func(map[string]interface{}, map[string]*ResourceExporter) error
+}
+
 type JsonEncodeRefAttr struct {
 	// The outer key
 	Attr string
@@ -61,6 +66,12 @@ type ResourceExporter struct {
 	// AllowZeroValues is a list of attributes that should allow zero values in the export.
 	// By default zero values are removed from the config due to lack of "null" support in the plugin SDK
 	AllowZeroValues []string
+
+	// Some of our dependencies can not be exported properly because they have interdependencies between attributes.  You can
+	// define a map of custom attribute resolvers with an exporter.  See resource_genesyscloud_routing_queue for an example of how to define this.
+	// NOTE: CustomAttributeResolvers should be the exception and not the norm so use them when you have to do logic that will help you
+	// resolve to the write reference
+	CustomAttributeResolver map[string]*RefAttrCustomResolver
 
 	// RemoveIfMissing is a map of attributes to a list of inner object attributes.
 	// When all specified inner attributes are missing from an object, that object is removed

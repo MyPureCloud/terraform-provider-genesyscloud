@@ -135,7 +135,7 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(1, 256),
 			},
 			"topic_name": {
-				Description:  "Topic name that will fire trigger. (Updating requires replacement of trigger)",
+				Description:  "Topic name that will fire trigger. Changing the topic_name attribute will cause the processautomation_trigger object to be dropped and recreated with a new ID. ",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
