@@ -18,7 +18,7 @@ func TestAccResourceRoutingSmsAddresses(t *testing.T) {
 		city         = "Galway"
 		region       = "Galway"
 		postalCode   = "H91DZ48"
-		countryCode  = "IE"
+		countryCode  = "US"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -37,13 +37,22 @@ func TestAccResourceRoutingSmsAddresses(t *testing.T) {
 					countryCode,
 					falseValue,
 				),
-				Check: resource.ComposeTestCheckFunc(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "street", street),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "city", city),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "region", region),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "postal_code", postalCode),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "country_code", countryCode),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "auto_correct_address", falseValue),
+				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_sms_address." + resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_routing_sms_address." + resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"auto_correct_address"},
 			},
 		},
 		CheckDestroy: testVerifySmsAddressDestroyed,
