@@ -195,6 +195,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_routing_queue":                                   dataSourceRoutingQueue(),
 				"genesyscloud_routing_settings":                                dataSourceRoutingSettings(),
 				"genesyscloud_routing_skill":                                   dataSourceRoutingSkill(),
+				"genesyscloud_routing_sms_address":                             dataSourceRoutingSmsAddress(),
 				"genesyscloud_routing_skill_group":                             dataSourceRoutingSkillGroup(),
 				"genesyscloud_routing_email_domain":                            dataSourceRoutingEmailDomain(),
 				"genesyscloud_routing_wrapupcode":                              dataSourceRoutingWrapupcode(),
