@@ -186,6 +186,7 @@ func registerDataSources() {
 	RegisterDataSource("genesyscloud_routing_settings", dataSourceRoutingSettings())
 	RegisterDataSource("genesyscloud_routing_skill", dataSourceRoutingSkill())
 	RegisterDataSource("genesyscloud_routing_skill_group", dataSourceRoutingSkillGroup())
+	RegisterDataSource("genesyscloud_routing_sms_address", dataSourceRoutingSmsAddress())
 	RegisterDataSource("genesyscloud_routing_email_domain", dataSourceRoutingEmailDomain())
 	RegisterDataSource("genesyscloud_routing_wrapupcode", dataSourceRoutingWrapupcode())
 	RegisterDataSource("genesyscloud_script", dataSourceScript())

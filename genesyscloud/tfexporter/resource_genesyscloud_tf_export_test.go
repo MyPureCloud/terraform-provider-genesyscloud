@@ -998,6 +998,7 @@ func generateTfExportResource(
 			"genesyscloud_routing_queue",
 			"genesyscloud_routing_settings",
 			"genesyscloud_routing_skill",
+			"genesyscloud_routing_sms_address",
 			"genesyscloud_routing_utilization",
 			"genesyscloud_routing_wrapupcode",
 			"genesyscloud_telephony_providers_edges_did_pool",
