@@ -7,18 +7,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
 
 func resourceRoutingSmsAddress() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud routing sms addresse`,
+		Description: `Genesys Cloud routing sms address`,
 
-		CreateContext: createWithPooledClient(createRoutingSmsAddresse),
-		ReadContext:   readWithPooledClient(readRoutingSmsAddresse),
-
-		DeleteContext: deleteWithPooledClient(deleteRoutingSmsAddresse),
+		CreateContext: createWithPooledClient(createRoutingSmsAddress),
+		ReadContext:   readWithPooledClient(readRoutingSmsAddress),
+		DeleteContext: deleteWithPooledClient(deleteRoutingSmsAddress),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -70,7 +70,7 @@ func resourceRoutingSmsAddress() *schema.Resource {
 	}
 }
 
-func getAllRoutingSmsAddresse(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingSmsAddress(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	routingApi := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
@@ -78,7 +78,7 @@ func getAllRoutingSmsAddresse(_ context.Context, clientConfig *platformclientv2.
 		const pageSize = 100
 		sdksmsaddressentitylisting, _, getErr := routingApi.GetRoutingSmsAddresses(pageSize, pageNum)
 		if getErr != nil {
-			return nil, diag.Errorf("Error requesting page of Routing Sms Addresse: %s", getErr)
+			return nil, diag.Errorf("Error requesting page of Routing Sms Address: %s", getErr)
 		}
 
 		if sdksmsaddressentitylisting.Entities == nil || len(*sdksmsaddressentitylisting.Entities) == 0 {
@@ -93,17 +93,13 @@ func getAllRoutingSmsAddresse(_ context.Context, clientConfig *platformclientv2.
 	return resources, nil
 }
 
-func routingSmsAddresseExporter() *ResourceExporter {
+func routingSmsAddressExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllRoutingSmsAddresse),
-		RefAttrs:         map[string]*RefAttrSettings{
-			// No RefAttrs
-		},
-		// TODO RemoveIfMissing, AllowZeroValues and UnResolvableAttributes may need to be added
+		GetResourcesFunc: getAllWithPooledClient(getAllRoutingSmsAddress),
 	}
 }
 
-func createRoutingSmsAddresse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	street := d.Get("street").(string)
 	city := d.Get("city").(string)
@@ -138,34 +134,34 @@ func createRoutingSmsAddresse(ctx context.Context, d *schema.ResourceData, meta 
 		sdksmsaddressprovision.CountryCode = &countryCode
 	}
 
-	log.Printf("Creating Routing Sms Addresse %s", name)
-	routingSmsAddresse, _, err := routingApi.PostRoutingSmsAddresses(sdksmsaddressprovision)
+	log.Printf("Creating Routing Sms Address %s", name)
+	routingSmsAddress, _, err := routingApi.PostRoutingSmsAddresses(sdksmsaddressprovision)
 	if err != nil {
 		return diag.Errorf("Failed to create Routing Sms Addresse %s: %s", name, err)
 	}
 
-	d.SetId(*routingSmsAddresse.Id)
+	d.SetId(*routingSmsAddress.Id)
 
-	log.Printf("Created Routing Sms Addresse %s %s", name, *routingSmsAddresse.Id)
-	return readRoutingSmsAddresse(ctx, d, meta)
+	log.Printf("Created Routing Sms Address %s %s", name, *routingSmsAddress.Id)
+	return readRoutingSmsAddress(ctx, d, meta)
 }
 
-func readRoutingSmsAddresse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
-	log.Printf("Reading Routing Sms Addresse %s", d.Id())
+	log.Printf("Reading Routing Sms Address %s", d.Id())
 
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdksmsaddress, resp, getErr := routingApi.GetRoutingSmsAddress(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Routing Sms Addresse %s: %s", d.Id(), getErr))
+				return resource.RetryableError(fmt.Errorf("Failed to read Routing Sms Address %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Sms Addresse %s: %s", d.Id(), getErr))
+			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Sms Address %s: %s", d.Id(), getErr))
 		}
 
-		// cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSmsAddresse())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSmsAddress())
 
 		if sdksmsaddress.Name != nil {
 			d.Set("name", *sdksmsaddress.Name)
@@ -186,21 +182,20 @@ func readRoutingSmsAddresse(ctx context.Context, d *schema.ResourceData, meta in
 			d.Set("country_code", *sdksmsaddress.CountryCode)
 		}
 
-		log.Printf("Read Routing Sms Addresse %s %s", d.Id(), *sdksmsaddress.Name)
-		return nil // TODO calling cc.CheckState() can cause some difficult to understand errors in development. When ready for a PR, remove this line and uncomment the consistency_checker initialization and the the below one
-		// return cc.CheckState()
+		log.Printf("Read Routing Sms Address %s %s", d.Id(), *sdksmsaddress.Name)
+		return cc.CheckState()
 	})
 }
 
-func deleteRoutingSmsAddresse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		log.Printf("Deleting Routing Sms Addresse")
+		log.Printf("Deleting Routing Sms Address")
 		resp, err := routingApi.DeleteRoutingSmsAddress(d.Id())
 		if err != nil {
-			return resp, diag.Errorf("Failed to delete Routing Sms Addresse: %s", err)
+			return resp, diag.Errorf("Failed to delete Routing Sms Address: %s", err)
 		}
 		return resp, nil
 	})
@@ -212,13 +207,13 @@ func deleteRoutingSmsAddresse(ctx context.Context, d *schema.ResourceData, meta 
 		_, resp, err := routingApi.GetRoutingSmsAddress(d.Id())
 		if err != nil {
 			if isStatus404(resp) {
-				// Routing Sms Addresse deleted
-				log.Printf("Deleted Routing Sms Addresse %s", d.Id())
+				// Routing Sms Address deleted
+				log.Printf("Deleted Routing Sms Address %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Routing Sms Addresse %s: %s", d.Id(), err))
+			return resource.NonRetryableError(fmt.Errorf("Error deleting Routing Sms Address %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Routing Sms Addresse %s still exists", d.Id()))
+		return resource.RetryableError(fmt.Errorf("Routing Sms Address %s still exists", d.Id()))
 	})
 }
