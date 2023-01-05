@@ -83,7 +83,7 @@ func resourceOutboundContactList() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `The name for the contact list.`,
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			`division_id`: {
