@@ -33,6 +33,26 @@ var (
 			},
 		},
 	}
+
+	outboundContactListEmailColumnResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`column_name`: {
+				Description: `The name of the email column.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`type`: {
+				Description: `Indicates the type of the email column. For example, 'work' or 'personal'.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`contactable_time_column`: {
+				Description: `A column that indicates the timezone to use for a given contact when checking contactable times.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
 )
 
 func getAllOutboundContactLists(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -100,11 +120,18 @@ func resourceOutboundContactList() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`phone_columns`: {
-				Description: `Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID`,
+				Description: `Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID. Required if email_columns is empty`,
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeSet,
 				Elem:        outboundContactListContactPhoneNumberColumnResource,
+			},
+			`email_columns`: {
+				Description: `Indicates which columns are email addresses. Changing the email_columns attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID. Required if phone_columns is empty`,
+				Optional:    true,
+				ForceNew:    true,
+				Type:        schema.TypeSet,
+				Elem:        outboundContactListEmailColumnResource,
 			},
 			`preview_mode_column_name`: {
 				Description: `A column to check if a contact should always be dialed in preview mode.`,
@@ -153,6 +180,7 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		Division:                  buildSdkDomainEntityRef(d, "division_id"),
 		ColumnNames:               &columnNames,
 		PhoneColumns:              buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
+		EmailColumns:              buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
 		PreviewModeAcceptedValues: &previewModeAcceptedValues,
 		AttemptLimits:             buildSdkDomainEntityRef(d, "attempt_limit_id"),
 		AutomaticTimeZoneMapping:  &automaticTimeZoneMapping,
@@ -195,6 +223,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		Division:                  buildSdkDomainEntityRef(d, "division_id"),
 		ColumnNames:               &columnNames,
 		PhoneColumns:              buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
+		EmailColumns:              buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
 		PreviewModeAcceptedValues: &previewModeAcceptedValues,
 		AttemptLimits:             buildSdkDomainEntityRef(d, "attempt_limit_id"),
 		AutomaticTimeZoneMapping:  &automaticTimeZoneMapping,
@@ -264,6 +293,9 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 		}
 		if sdkContactList.PhoneColumns != nil {
 			_ = d.Set("phone_columns", flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns))
+		}
+		if sdkContactList.EmailColumns != nil {
+			_ = d.Set("email_columns", flattenSdkOutboundContactListContactEmailAddressColumnSlice(*sdkContactList.EmailColumns))
 		}
 		if sdkContactList.PreviewModeColumnName != nil {
 			_ = d.Set("preview_mode_column_name", *sdkContactList.PreviewModeColumnName)
@@ -368,4 +400,53 @@ func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumb
 	}
 
 	return contactPhoneNumberColumnSet
+}
+
+func buildSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddressColumn *schema.Set) *[]platformclientv2.Emailcolumn {
+	if contactEmailAddressColumn == nil {
+		return nil
+	}
+	sdkContactEmailAddressColumnSlice := make([]platformclientv2.Emailcolumn, 0)
+	contactEmailAddressColumnList := contactEmailAddressColumn.List()
+	for _, configEmailColumn := range contactEmailAddressColumnList {
+		var sdkContactEmailAddressColumn platformclientv2.Emailcolumn
+		contactEmailAddressColumnMap := configEmailColumn.(map[string]interface{})
+		if columnName := contactEmailAddressColumnMap["column_name"].(string); columnName != "" {
+			sdkContactEmailAddressColumn.ColumnName = &columnName
+		}
+		if varType := contactEmailAddressColumnMap["type"].(string); varType != "" {
+			sdkContactEmailAddressColumn.VarType = &varType
+		}
+		if contactableTimeColumn := contactEmailAddressColumnMap["contactable_time_column"].(string); contactableTimeColumn != "" {
+			sdkContactEmailAddressColumn.ContactableTimeColumn = &contactableTimeColumn
+		}
+
+		sdkContactEmailAddressColumnSlice = append(sdkContactEmailAddressColumnSlice, sdkContactEmailAddressColumn)
+	}
+	return &sdkContactEmailAddressColumnSlice
+}
+
+func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddressColumns []platformclientv2.Emailcolumn) *schema.Set {
+	if len(contactEmailAddressColumns) == 0 {
+		return nil
+	}
+
+	contactEmailAddressColumnSet := schema.NewSet(schema.HashResource(outboundContactListEmailColumnResource), []interface{}{})
+	for _, contactEmailAddressColumn := range contactEmailAddressColumns {
+		contactEmailAddressColumnMap := make(map[string]interface{})
+
+		if contactEmailAddressColumn.ColumnName != nil {
+			contactEmailAddressColumnMap["column_name"] = *contactEmailAddressColumn.ColumnName
+		}
+		if contactEmailAddressColumn.VarType != nil {
+			contactEmailAddressColumnMap["type"] = *contactEmailAddressColumn.VarType
+		}
+		if contactEmailAddressColumn.ContactableTimeColumn != nil {
+			contactEmailAddressColumnMap["contactable_time_column"] = *contactEmailAddressColumn.ContactableTimeColumn
+		}
+
+		contactEmailAddressColumnSet.Add(contactEmailAddressColumnMap)
+	}
+
+	return contactEmailAddressColumnSet
 }
