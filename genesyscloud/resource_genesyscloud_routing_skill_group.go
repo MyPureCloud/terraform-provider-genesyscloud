@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -316,12 +316,12 @@ func createListsForSkillgroupsMembersDivisionsPost(schemaMemberDivisionIds []str
 }
 
 /*
-   Sometimes you just need to get ugly.  skillConditions has a recursive function that is super ugly to manage to a static Golang
-   Struct.  So our struct always has a placeholder "skillConditions": {} field. So what I do is convert the struct to JSON and then
-   check to see if skill_conditions on the Terraform resource data.  I then do a string replace on the skillConditions json attribute
-   and replace the empty stringConditions string with the contents of skill_conditions.
+Sometimes you just need to get ugly.  skillConditions has a recursive function that is super ugly to manage to a static Golang
+Struct.  So our struct always has a placeholder "skillConditions": {} field. So what I do is convert the struct to JSON and then
+check to see if skill_conditions on the Terraform resource data.  I then do a string replace on the skillConditions json attribute
+and replace the empty stringConditions string with the contents of skill_conditions.
 
-   Not the most eloquent code, but these are uncivilized times.
+Not the most eloquent code, but these are uncivilized times.
 */
 func mergeSkillConditionsIntoSkillGroups(d *schema.ResourceData, skillGroupsRequest *SkillGroupsRequest) (string, error) {
 	skillsConditionsJsonString := fmt.Sprintf(`"skillConditions": %s`, d.Get("skill_conditions").(string))
