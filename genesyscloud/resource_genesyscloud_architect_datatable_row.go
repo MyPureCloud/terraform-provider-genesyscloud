@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 // Row IDs structured as {table-id}/{key-value}
@@ -42,7 +42,7 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 	for tableId, tableMeta := range tables {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			rows, _, getErr := archAPI.GetFlowsDatatableRows(tableId, pageNum, pageSize, false)
+			rows, _, getErr := archAPI.GetFlowsDatatableRows(tableId, pageNum, pageSize, false, "")
 			if getErr != nil {
 				return nil, diag.Errorf("Failed to get page of Datatable Rows: %v", getErr)
 			}

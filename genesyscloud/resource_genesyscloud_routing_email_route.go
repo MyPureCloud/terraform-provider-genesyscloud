@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -36,35 +36,38 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
-	domains, _, getErr := routingAPI.GetRoutingEmailDomains(false)
-	if getErr != nil {
-		return nil, diag.Errorf("Failed to get routing email domains: %v", getErr)
-	}
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		domains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false)
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get routing email domains: %v", getErr)
+		}
 
-	if domains.Entities == nil || len(*domains.Entities) == 0 {
-		return resources, nil
-	}
+		if domains.Entities == nil || len(*domains.Entities) == 0 {
+			return resources, nil
+		}
 
-	for _, domain := range *domains.Entities {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(*domain.Id, pageSize, pageNum, "")
-			if getErr != nil {
-				if isStatus404(resp) {
-					// Domain not found
+		for _, domain := range *domains.Entities {
+			for pageNum := 1; ; pageNum++ {
+				const pageSize = 100
+				routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(*domain.Id, pageSize, pageNum, "")
+				if getErr != nil {
+					if isStatus404(resp) {
+						// Domain not found
+						break
+					}
+					return nil, diag.Errorf("Failed to get page of email routes: %v", getErr)
+				}
+
+				if routes.Entities == nil || len(*routes.Entities) == 0 {
 					break
 				}
-				return nil, diag.Errorf("Failed to get page of email routes: %v", getErr)
-			}
 
-			if routes.Entities == nil || len(*routes.Entities) == 0 {
-				break
-			}
-
-			for _, route := range *routes.Entities {
-				resources[*route.Id] = &ResourceMeta{
-					Name:     *route.Pattern + *domain.Id,
-					IdPrefix: *domain.Id + "/",
+				for _, route := range *routes.Entities {
+					resources[*route.Id] = &ResourceMeta{
+						Name:     *route.Pattern + *domain.Id,
+						IdPrefix: *domain.Id + "/",
+					}
 				}
 			}
 		}

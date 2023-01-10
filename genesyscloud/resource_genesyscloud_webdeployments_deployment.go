@@ -14,14 +14,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	webDeploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(clientConfig)
 
-	deployments, _, getErr := webDeploymentsAPI.GetWebdeploymentsDeployments()
+	deployments, _, getErr := webDeploymentsAPI.GetWebdeploymentsDeployments([]string{})
 	if getErr != nil {
 		return nil, diag.Errorf("Failed to get web deployments: %v", getErr)
 	}
