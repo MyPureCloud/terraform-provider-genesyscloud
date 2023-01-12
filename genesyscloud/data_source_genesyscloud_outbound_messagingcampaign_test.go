@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 	"os"
 	"strconv"
 	"testing"
 )
 
 /*
- This test can only pass in a test org because it requires an active provisioned sms phone number
- Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone number in test orgs only.
+This test can only pass in a test org because it requires an active provisioned sms phone number
+Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone number in test orgs only.
 */
 func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 	var (

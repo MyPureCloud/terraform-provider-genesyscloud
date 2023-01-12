@@ -120,9 +120,9 @@ func TestAccResourceOAuthClient(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_oauth_client." + clientResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_oauth_client." + clientResource1,
+				ImportState:             true,
+				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"integration_credential_id", "integration_credential_name"},
 			},
 		},

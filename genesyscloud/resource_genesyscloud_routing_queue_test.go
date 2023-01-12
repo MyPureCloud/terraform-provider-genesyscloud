@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -729,14 +729,17 @@ func validateGroups(queueResourceName string, skillGroupResourceName string, gro
 			return fmt.Errorf("No groups found for queue %s in state", queueID)
 		}
 
+		foundSkillGroup := false
 		numSkillGroups, _ := strconv.Atoi(numSkillGroupAttr)
 		for i := 0; i < numSkillGroups; i++ {
 			if queueResource.Primary.Attributes["skill_groups."+strconv.Itoa(i)] == skillGroupID {
-				// Found skill group
-				return nil
+				foundSkillGroup = true
+				break
 			}
 		}
-		return fmt.Errorf("Skill group id %s not found for queue %s in state", skillGroupID, queueID)
+		if !foundSkillGroup {
+			return fmt.Errorf("Skill group id %s not found for queue %s in state", skillGroupID, queueID)
+		}
 
 		numGroups, _ := strconv.Atoi(numGroupAttr)
 		for i := 0; i < numGroups; i++ {
