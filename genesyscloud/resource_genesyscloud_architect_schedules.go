@@ -62,10 +62,9 @@ func resourceArchitectSchedules() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Name of the schedule. Note: If the name is changed, this will cause the schedule object to be dropped and recreated with a new ID.  This can cause an Architect Flow to become invalid.",
+				Description: "Name of the schedule.",
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 			},
 			"division_id": {
 				Description: "The division to which this schedule group will belong. If not set, the home division will be used. If set, you must have all divisions and future divisions selected in your OAuth client role",
