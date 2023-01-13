@@ -37,7 +37,7 @@ resource "genesyscloud_architect_ivr" "sample_ivr" {
 
 ### Required
 
-- `name` (String) Name of the IVR config.
+- `name` (String) Name of the IVR config. Note: If the name changes, the existing Genesys Cloud IVR config will be dropped and recreated with a new ID. This can cause an Architect Flow to become invalid if the old flow is reference in the flow.
 
 ### Optional
 

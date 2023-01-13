@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 var (
@@ -135,27 +135,27 @@ func resourceIntegrationAction() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(1, 256),
 			},
 			"integration_id": {
-				Description: "The ID of the integration this action is associated with. Changes will create a new action.",
+				Description: "The ID of the integration this action is associated with. Changing the integration_id attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 			},
 			"secure": {
-				Description: "Indication of whether or not the action is designed to accept sensitive data. Changes will create a new action.",
+				Description: "Indication of whether or not the action is designed to accept sensitive data. Changing the secure attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
 				ForceNew:    true,
 			},
 			"contract_input": {
-				Description:      "JSON Schema that defines the body of the request that the client (edge/architect/postman) is sending to the service, on the /execute path. Changes will create a new action.",
+				Description:      "JSON Schema that defines the body of the request that the client (edge/architect/postman) is sending to the service, on the /execute path. Changing the contract_input attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: suppressEquivalentJsonDiffs,
 			},
 			"contract_output": {
-				Description:      "JSON schema that defines the transformed, successful result that will be sent back to the caller. Changes will create a new action.",
+				Description:      "JSON schema that defines the transformed, successful result that will be sent back to the caller. Changing the contract_output attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,

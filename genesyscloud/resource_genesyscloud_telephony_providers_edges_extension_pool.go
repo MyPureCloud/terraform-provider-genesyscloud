@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 func getAllExtensionPools(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -61,14 +61,14 @@ func resourceTelephonyExtensionPool() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"start_number": {
-				Description:      "Starting phone number of the Extension Pool range.",
+				Description:      "Starting phone number of the Extension Pool range. Changing the start_number attribute will cause the extension object to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
 				ValidateDiagFunc: validatePhoneNumber,
 			},
 			"end_number": {
-				Description:      "Ending phone number of the Extension Pool range.",
+				Description:      "Ending phone number of the Extension Pool range. Changing the end_number attribute will cause the extension object to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,

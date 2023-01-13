@@ -2,30 +2,40 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 func cleanupRoutingEmailDomains() {
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
-	routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(false)
-	if getErr != nil {
-		return
-	}
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false)
+		if getErr != nil {
+			return
+		}
 
-	if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
-		return
-	}
+		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
+			return
+		}
 
-	for _, routingEmailDomain := range *routingEmailDomains.Entities {
-		if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
-			routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
+		for _, routingEmailDomain := range *routingEmailDomains.Entities {
+			if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
+				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
+				if err != nil {
+					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
+					continue
+				}
+				time.Sleep(5 * time.Second)
+			}
 		}
 	}
 }
@@ -62,7 +72,7 @@ func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 	})
 }
 
-//Generates the data source string that will be used in doiung the lookuo
+// Generates the data source string that will be used in doiung the lookuo
 func generateRoutingEmailDomainDataSource(
 	resourceID string,
 	name string,

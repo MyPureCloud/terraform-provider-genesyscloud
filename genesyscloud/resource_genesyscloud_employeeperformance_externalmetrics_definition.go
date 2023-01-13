@@ -3,14 +3,15 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"log"
-	"time"
 )
 
 func resourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
@@ -49,14 +50,14 @@ func resourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 				Type:        schema.TypeBool,
 			},
 			`unit`: {
-				Description:  `The unit of the External Metric Definition`,
+				Description:  `The unit of the External Metric Definition. Note: Changing the unit property will cause the external metric object to be dropped and recreated with a new ID.`,
 				Required:     true,
 				ForceNew:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{`Seconds`, `Percent`, `Number`, `Currency`}, false),
 			},
 			`unit_definition`: {
-				Description: `The unit definition of the External Metric Definition`,
+				Description: `The unit definition of the External Metric Definition. Note: Changing the unit definition property will cause the external metric object to be dropped and recreated with a new ID.`,
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeString,

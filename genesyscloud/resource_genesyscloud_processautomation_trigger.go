@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -137,7 +137,7 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(1, 256),
 			},
 			"topic_name": {
-				Description:  "Topic name that will fire trigger. (Updating requires replacement of trigger)",
+				Description:  "Topic name that will fire trigger. Changing the topic_name attribute will cause the processautomation_trigger object to be dropped and recreated with a new ID. ",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
@@ -163,13 +163,13 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				Elem:        matchCriteria,
 			},
 			"event_ttl_seconds": {
-				Description:  "How old an event can be to fire the trigger. Must be an number greater than or equal to 10",
+				Description:  "How old an event can be to fire the trigger. Must be an number greater than or equal to 10. Only one of event_ttl_seconds or delay_by_seconds can be set.",
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(10),
 			},
 			"delay_by_seconds": {
-				Description:  "How long to delay processing of a trigger after an event passes the match criteria. Must be an number between 60 and 900 inclusive",
+				Description:  "How long to delay processing of a trigger after an event passes the match criteria. Must be an number between 60 and 900 inclusive. Only one of event_ttl_seconds or delay_by_seconds can be set.",
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ValidateFunc: validation.IntBetween(60, 900),
@@ -203,6 +203,10 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+
+	if eventTTLSeconds > 0 && delayBySeconds > 0 {
+		return diag.Errorf("Only one of event_ttl_seconds or delay_by_seconds can be set.")
+	}
 
 	log.Printf("Creating process automation trigger %s", name)
 
@@ -321,6 +325,10 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr)
+		}
+
+		if eventTTLSeconds > 0 && delayBySeconds > 0 {
+			return resp, diag.Errorf("Only one of event_ttl_seconds or delay_by_seconds can be set.")
 		}
 
 		triggerInput := &UpdateTriggerInput{

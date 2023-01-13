@@ -40,18 +40,18 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
 
 ### Required
 
-- `column_names` (List of String) The names of the contact data columns.
+- `column_names` (List of String) The names of the contact data columns. Changing the column_names attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID
 
 ### Optional
 
 - `attempt_limit_id` (String) Attempt Limit for this ContactList.
-- `automatic_time_zone_mapping` (Boolean) Indicates if automatic time zone mapping is to be used for this ContactList.
+- `automatic_time_zone_mapping` (Boolean) Indicates if automatic time zone mapping is to be used for this ContactList. Changing the automatic_time_zone_mappings attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID
 - `division_id` (String) The division this entity belongs to.
 - `name` (String) The name for the contact list.
-- `phone_columns` (Block Set) Indicates which columns are phone numbers. (see [below for nested schema](#nestedblock--phone_columns))
+- `phone_columns` (Block Set) Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID (see [below for nested schema](#nestedblock--phone_columns))
 - `preview_mode_accepted_values` (List of String) The values in the previewModeColumnName column that indicate a contact should always be dialed in preview mode.
 - `preview_mode_column_name` (String) A column to check if a contact should always be dialed in preview mode.
-- `zip_code_column_name` (String) The name of contact list column containing the zip code for use with automatic time zone mapping. Only allowed if 'automaticTimeZoneMapping' is set to true.
+- `zip_code_column_name` (String) The name of contact list column containing the zip code for use with automatic time zone mapping. Only allowed if 'automaticTimeZoneMapping' is set to true. Changing the zip_code_column_name attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID
 
 ### Read-Only
 

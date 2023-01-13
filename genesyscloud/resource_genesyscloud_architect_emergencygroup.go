@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -63,7 +63,7 @@ func resourceArchitectEmergencyGroup() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Name of the emergency group.",
+				Description: "Name of the emergency group. Note:  If the name is changed, the emergency group is dropped and recreated with a new ID. This can cause an Architect flow to be invalid if it references the old emergency group",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

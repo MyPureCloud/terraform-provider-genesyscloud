@@ -52,7 +52,7 @@ func sliceDifference(a, b []string) []string {
 	return diff
 }
 
-// Returns true if a and b are equivalent, ignoring the ordering of its items. 
+// Returns true if a and b are equivalent, ignoring the ordering of the items.
 func listsAreEquivalent(a []string, b []string) bool {
 	if len(a) != len(b) {
 		return false

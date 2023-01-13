@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -43,7 +43,7 @@ var (
 			}(), ""),
 		},
 		"scope": {
-			Description:  "The target entity that a segment applies to.Valid values: Session, Customer.",
+			Description:  "The target entity that a segment applies to.Valid values: Session, Customer. Changing the scope attribute will cause the existing journey_segment to be dropped and recreated with new ID.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true, // scope can be only set during creation
@@ -108,7 +108,7 @@ var (
 	externalSegmentResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"id": {
-				Description: "Identifier for the external segment in the system where it originates from.",
+				Description: "Identifier for the external segment in the system where it originates from.  Changing the id attribute will cause the journey_segment resource to be dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
@@ -119,7 +119,7 @@ var (
 				Required:    true,
 			},
 			"source": {
-				Description:  "The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom.",
+				Description:  "The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom. Changing the source attribute will cause the journey_segment resource to be dropped and recreated with a new ID.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,

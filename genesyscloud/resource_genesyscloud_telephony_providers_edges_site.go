@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -44,7 +44,7 @@ func resourceSite() *schema.Resource {
 				Required:    true,
 			},
 			"media_model": {
-				Description:  "Media model for the site Valid Values: Premises, Cloud",
+				Description:  "Media model for the site Valid Values: Premises, Cloud. Changing the media_model attribute will cause the site object to be dropped and created with a new ID.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Premises", "Cloud"}, false),
@@ -725,7 +725,7 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 }
 
 func isDefaultPlan(name string) bool {
-	defaultPlans := []string{"Emergency", "Extension", "National", "International", "Network"}
+	defaultPlans := []string{"Emergency", "Extension", "National", "International", "Network", "Suicide Prevent"}
 	for _, defaultPlan := range defaultPlans {
 		if name == defaultPlan {
 			return true

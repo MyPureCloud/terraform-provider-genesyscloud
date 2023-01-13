@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 func getAllOutboundDncLists(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -66,6 +66,7 @@ func resourceOutboundDncList() *schema.Resource {
 			`contact_method`: {
 				Description:  `The contact method. Required if dncSourceType is rds.`,
 				Optional:     true,
+				Computed:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{`Email`, `Phone`}, false),
 			},
@@ -100,7 +101,7 @@ func resourceOutboundDncList() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`dnc_source_type`: {
-				Description:  `The type of the DNC List.`,
+				Description:  `The type of the DNC List. Changing the dnc_source_attribute will cause the outbound_dnclist object to be dropped and recreated with new ID.`,
 				Required:     true,
 				ForceNew:     true,
 				Type:         schema.TypeString,
@@ -296,27 +297,16 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			_ = d.Set("campaign_id", *sdkDncList.CampaignId)
 		}
 		if sdkDncList.DncCodes != nil {
-			var dncCodes []string
 			schemaCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
-			if len(*sdkDncList.DncCodes) == len(schemaCodes) {
-				// Rearrange to the original ordering
-				for _, schemaCode := range schemaCodes {
-					for _, sdkCode := range *sdkDncList.DncCodes {
-						if schemaCode == sdkCode {
-							dncCodes = append(dncCodes, sdkCode)
-						}
-					}
-				}
-				if len(dncCodes) != len(*sdkDncList.DncCodes) {
-					dncCodes = nil
-				}
+			// preserve ordering and avoid a plan not empty error
+			if listsAreEquivalent(schemaCodes, *sdkDncList.DncCodes) {
+				_ = d.Set("dnc_codes", schemaCodes)
+			} else {
+				_ = d.Set("dnc_codes", stringListToInterfaceList(*sdkDncList.DncCodes))
 			}
-			if len(dncCodes) == 0 {
-				for _, v := range *sdkDncList.DncCodes {
-					dncCodes = append(dncCodes, v)
-				}
-			}
-			_ = d.Set("dnc_codes", dncCodes)
+		}
+		if sdkDncList.DncSourceType != nil {
+			_ = d.Set("dnc_source_type", *sdkDncList.DncSourceType)
 		}
 		if sdkDncList.LicenseId != nil {
 			_ = d.Set("license_id", *sdkDncList.LicenseId)

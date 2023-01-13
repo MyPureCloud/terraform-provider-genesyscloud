@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 var (
@@ -28,6 +28,22 @@ var (
 	mediaSettingsKeyMessage  = "message"
 
 	bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
+
+	bullseyeRingMemberGroupResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"member_group_id": {
+				Description: "ID (GUID) for Group, SkillGroup, Team",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"member_group_type": {
+				Description:  "The type of the member group. Accepted values: TEAM, GROUP, SKILLGROUP",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"TEAM", "GROUP", "SKILLGROUP"}, false),
+			},
+		},
+	}
 
 	queueMediaSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -121,6 +137,9 @@ func routingQueueExporter() *ResourceExporter {
 			"members":                {"user_id"},
 		},
 		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
+		CustomAttributeResolver: map[string]*RefAttrCustomResolver{
+			"bullseye_rings.member_groups.member_group_id": {ResolverFunc: MemberGroupsResolver},
+		},
 	}
 }
 
@@ -226,7 +245,7 @@ func resourceRoutingQueue() *schema.Resource {
 				Description: "The bullseye ring settings for the queue.",
 				Type:        schema.TypeList,
 				Optional:    true,
-				MaxItems:    6,
+				MaxItems:    5,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"expansion_timeout_seconds": {
@@ -240,6 +259,11 @@ func resourceRoutingQueue() *schema.Resource {
 							Type:        schema.TypeSet,
 							Optional:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"member_groups": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							Elem:     bullseyeRingMemberGroupResource,
 						},
 					},
 				},
@@ -845,6 +869,7 @@ func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye
 		for _, configRing := range configRings.([]interface{}) {
 			ringSettings := configRing.(map[string]interface{})
 			var sdkRing platformclientv2.Ring
+
 			if waitSeconds, ok := ringSettings["expansion_timeout_seconds"].(float64); ok {
 				sdkRing.ExpansionCriteria = &[]platformclientv2.Expansioncriterium{
 					{
@@ -853,6 +878,7 @@ func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye
 					},
 				}
 			}
+
 			if skillsToRemove, ok := ringSettings["skills_to_remove"]; ok {
 				skillIds := skillsToRemove.(*schema.Set).List()
 				if len(skillIds) > 0 {
@@ -868,33 +894,96 @@ func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye
 					}
 				}
 			}
+
+			if memberGroups, ok := ringSettings["member_groups"]; ok {
+				memberGroupList := memberGroups.(*schema.Set).List()
+				if len(memberGroupList) > 0 {
+
+					sdkMemberGroups := make([]platformclientv2.Membergroup, len(memberGroupList))
+					for i, memberGroup := range memberGroupList {
+						settingsMap := memberGroup.(map[string]interface{})
+						memberGroupID := settingsMap["member_group_id"].(string)
+						memberGroupType := settingsMap["member_group_type"].(string)
+
+						sdkMemberGroups[i] = platformclientv2.Membergroup{
+							Id:      &memberGroupID,
+							VarType: &memberGroupType,
+						}
+					}
+					sdkRing.MemberGroups = &sdkMemberGroups
+				}
+			}
 			sdkRings = append(sdkRings, sdkRing)
 		}
+
+		/*
+			The routing queues API is a little unusual.  You can have up to six bullseye routing rings but the last one is always
+			a treated as the default ring.  This means you can actually ony define a maximum of 5.  So, I have changed the behavior of this
+			resource to only allow you to add 5 items and then the code always adds a 6 item (see the code below) with a default timeout of 2.
+		*/
+		var defaultSdkRing platformclientv2.Ring
+		defaultTimeoutInt := 2
+		defaultTimeoutFloat := float64(defaultTimeoutInt)
+		defaultSdkRing.ExpansionCriteria = &[]platformclientv2.Expansioncriterium{
+			{
+				VarType:   &bullseyeExpansionTypeTimeout,
+				Threshold: &defaultTimeoutFloat,
+			},
+		}
+
+		sdkRings = append(sdkRings, defaultSdkRing)
+
 		return &platformclientv2.Bullseye{Rings: &sdkRings}
 	}
 	return nil
 }
 
+/*
+The flattenBullseyeRings function maps the data retrieved from our SDK call over to the bullseye_ring attribute within the provider.
+You might notice in the code that we are always mapping all but the last item in the list of rings retrieved by the API.  The reason for this
+is that when you submit a list of bullseye_rings to the API, the API will always take the last item in the list and use it to drive default behavior
+This is a change from earlier parts of the API where you could define 6 bullseye rings and there would always be six.  Now when you define bullseye rings,
+the public API will take the list item in the list and make it the default and it will not show up on the screen.  To get around this you needed
+to always add a dumb bullseye ring block.  Now, we automatically add one for you.  We only except a maximum of 5 bullseyes_ring blocks, but we will always
+remove the last block returned by the API.
+*/
 func flattenBullseyeRings(sdkRings []platformclientv2.Ring) []interface{} {
-	rings := make([]interface{}, len(sdkRings))
+	rings := make([]interface{}, len(sdkRings)-1) //Sizing the target array of Rings to account for us removing the default block
 	for i, sdkRing := range sdkRings {
-		ringSettings := make(map[string]interface{})
-		if sdkRing.ExpansionCriteria != nil {
-			for _, criteria := range *sdkRing.ExpansionCriteria {
-				if *criteria.VarType == bullseyeExpansionTypeTimeout {
-					ringSettings["expansion_timeout_seconds"] = *criteria.Threshold
-					break
+		if i < len(sdkRings)-1 { //Checking to make sure we are do nothing with the last item in the list by skipping processing if it is defined
+			ringSettings := make(map[string]interface{})
+			if sdkRing.ExpansionCriteria != nil {
+				for _, criteria := range *sdkRing.ExpansionCriteria {
+					if *criteria.VarType == bullseyeExpansionTypeTimeout {
+						ringSettings["expansion_timeout_seconds"] = *criteria.Threshold
+						break
+					}
 				}
 			}
-		}
-		if sdkRing.Actions != nil && sdkRing.Actions.SkillsToRemove != nil {
-			skillIds := make([]interface{}, len(*sdkRing.Actions.SkillsToRemove))
-			for s, skill := range *sdkRing.Actions.SkillsToRemove {
-				skillIds[s] = *skill.Id
+
+			if sdkRing.Actions != nil && sdkRing.Actions.SkillsToRemove != nil {
+				skillIds := make([]interface{}, len(*sdkRing.Actions.SkillsToRemove))
+				for s, skill := range *sdkRing.Actions.SkillsToRemove {
+					skillIds[s] = *skill.Id
+				}
+				ringSettings["skills_to_remove"] = schema.NewSet(schema.HashString, skillIds)
 			}
-			ringSettings["skills_to_remove"] = schema.NewSet(schema.HashString, skillIds)
+
+			if sdkRing.MemberGroups != nil {
+				memberGroups := schema.NewSet(schema.HashResource(bullseyeRingMemberGroupResource), []interface{}{})
+
+				for _, memberGroup := range *sdkRing.MemberGroups {
+					memberGroupMap := make(map[string]interface{})
+					memberGroupMap["member_group_id"] = *memberGroup.Id
+					memberGroupMap["member_group_type"] = *memberGroup.VarType
+
+					memberGroups.Add(memberGroupMap)
+				}
+
+				ringSettings["member_groups"] = memberGroups
+			}
+			rings[i] = ringSettings
 		}
-		rings[i] = ringSettings
 	}
 	return rings
 }

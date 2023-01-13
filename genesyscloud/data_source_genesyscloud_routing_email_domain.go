@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 // Returns the schema for the routing email domain
@@ -35,7 +35,9 @@ func dataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceDat
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			domains, _, getErr := routingAPI.GetRoutingEmailDomains(false)
+			const pageSize = 100
+
+			domains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting email domain %s: %s", name, getErr))

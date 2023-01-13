@@ -8,21 +8,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
-func TestAccResourceAuthDivision(t *testing.T) {
+func TestAccResourceAuthDivisionBasic(t *testing.T) {
 	var (
 		divResource1 = "auth-division1"
-		divHomeRes   = "auth-division-home"
 		divName1     = "Terraform Div-" + uuid.NewString()
 		divName2     = "Terraform Div-" + uuid.NewString()
 		divDesc1     = "Terraform test division"
-		divHomeName  = "New Home"
-		homeDesc     = "Home"
-		homeDesc2    = "Home Division"
 	)
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -54,6 +49,29 @@ func TestAccResourceAuthDivision(t *testing.T) {
 				),
 			},
 			{
+				// Import/Read
+				ResourceName:      "genesyscloud_auth_division." + divResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyDivisionsDestroyed,
+	})
+}
+
+func TestAccResourceAuthDivisionHome(t *testing.T) {
+	var (
+		divHomeRes  = "auth-division-home"
+		divHomeName = "New Home"
+		homeDesc    = "Home"
+		homeDesc2   = "Home Division"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
 				// Set home division description
 				Config: generateAuthDivisionResource(
 					divHomeRes,
@@ -79,6 +97,12 @@ func TestAccResourceAuthDivision(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "name", divHomeName),
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "description", homeDesc2),
 				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_auth_division." + divHomeRes,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyDivisionsDestroyed,

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -62,7 +62,7 @@ func resourceArchitectSchedules() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Name of the schedule.",
+				Description: "Name of the schedule. Note: If the name is changed, this will cause the schedule object to be dropped and recreated with a new ID.  This can cause an Architect Flow to become invalid.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

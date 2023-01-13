@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -35,6 +35,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		callingPartyNumber       = "3173416548"
 		queueSkillResource       = "test-queue-skill"
 		queueSkillName           = "Terraform Skill " + uuid.NewString()
+
+		bullseyeMemberGroupName = "test_membergroup_series6"
+		bullseyeMemberGroupType = "GROUP"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -43,7 +46,15 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingQueueResource(
+				Config: generateRoutingSkillResource(queueSkillResource, queueSkillName) +
+					generateGroupResource(
+						bullseyeMemberGroupName,
+						"MySeries6Group",
+						strconv.Quote("TestGroupForSeries6"),
+						nullValue, // Default type
+						nullValue, // Default visibility
+						nullValue, // Default rules_visible
+					) + generateRoutingQueueResource(
 					queueResource1,
 					queueName1,
 					queueDesc1,
@@ -62,8 +73,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					generateMediaSettings("media_settings_message", alertTimeout1, slPercent1, slDuration1),
 					generateBullseyeSettings(alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource+".id"),
 					generateBullseyeSettings(alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource+".id"),
+					generateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupName+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResource+".id"),
 					generateRoutingRules(routingRuleOpAny, "50", nullValue),
-				) + generateRoutingSkillResource(queueSkillResource, queueSkillName),
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "name", queueName1),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "description", queueDesc1),
@@ -598,6 +610,18 @@ func generateBullseyeSettings(expTimeout string, skillsToRemove ...string) strin
 	`, expTimeout, strings.Join(skillsToRemove, ", "))
 }
 
+func generateBullseyeSettingsWithMemberGroup(expTimeout string, memberGroupId string, memberGroupType string, skillsToRemove ...string) string {
+	return fmt.Sprintf(`bullseye_rings {
+		expansion_timeout_seconds = %s
+		skills_to_remove = [%s]
+		member_groups {
+			member_group_id = %s
+			member_group_type = "%s"
+		}
+	}
+	`, expTimeout, strings.Join(skillsToRemove, ", "), memberGroupId, memberGroupType)
+}
+
 func generateMemberBlock(userID string, ringNum string) string {
 	return fmt.Sprintf(`members {
 		user_id = %s
@@ -705,14 +729,17 @@ func validateGroups(queueResourceName string, skillGroupResourceName string, gro
 			return fmt.Errorf("No groups found for queue %s in state", queueID)
 		}
 
+		foundSkillGroup := false
 		numSkillGroups, _ := strconv.Atoi(numSkillGroupAttr)
 		for i := 0; i < numSkillGroups; i++ {
 			if queueResource.Primary.Attributes["skill_groups."+strconv.Itoa(i)] == skillGroupID {
-				// Found skill group
-				return nil
+				foundSkillGroup = true
+				break
 			}
 		}
-		return fmt.Errorf("Skill group id %s not found for queue %s in state", skillGroupID, queueID)
+		if !foundSkillGroup {
+			return fmt.Errorf("Skill group id %s not found for queue %s in state", skillGroupID, queueID)
+		}
 
 		numGroups, _ := strconv.Atoi(numGroupAttr)
 		for i := 0; i < numGroups; i++ {

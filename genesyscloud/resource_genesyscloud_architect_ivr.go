@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -20,7 +20,7 @@ func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configur
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		ivrConfigs, _, getErr := architectAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "", "")
+		ivrConfigs, _, getErr := architectAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of IVR configs: %v", getErr)
 		}
@@ -66,7 +66,7 @@ func resourceArchitectIvrConfig() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Name of the IVR config.",
+				Description: "Name of the IVR config. Note: If the name changes, the existing Genesys Cloud IVR config will be dropped and recreated with a new ID. This can cause an Architect Flow to become invalid if the old flow is reference in the flow.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

@@ -13,14 +13,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 var (
 	knowledgeCategory = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Knowledge base name",
+				Description: "Knowledge base name. Changing the name attribute will cause the knowledge_category resource to be dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,

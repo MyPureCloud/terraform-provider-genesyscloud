@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -99,7 +99,7 @@ func resourceGroup() *schema.Resource {
 				Optional:    true,
 			},
 			"type": {
-				Description:  "Group type (official | social). This cannot be modified.",
+				Description:  "Group type (official | social). This cannot be modified. Changing type attribute will cause the existing genesys_group object to dropped and recreated with a new ID.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "official",

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 var (
@@ -183,7 +183,7 @@ func resourceAuthRole() *schema.Resource {
 				Elem:        rolePermPolicyResource,
 			},
 			"default_role_id": {
-				Description: "Internal ID for an existing default role, e.g. 'employee'. This can be set to manage permissions on existing default roles.",
+				Description: "Internal ID for an existing default role, e.g. 'employee'. This can be set to manage permissions on existing default roles.  Note: Changing the default_role_id attribute will cause this auth_role to be dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				ForceNew:    true,
 				Optional:    true,
@@ -493,11 +493,17 @@ func flattenRoleConditionOperands(operands []platformclientv2.Domainresourcecond
 			operandMap["type"] = *operand.VarType
 			switch *operand.VarType {
 			case "USER":
-				operandMap["user_id"] = *operand.User.Id
+				if operand.User != nil {
+					operandMap["user_id"] = *operand.User.Id
+				}
 			case "QUEUE":
-				operandMap["queue_id"] = *operand.Queue.Id
+				if operand.Queue != nil {
+					operandMap["queue_id"] = *operand.Queue.Id
+				}
 			default:
-				operandMap["value"] = *operand.Value
+				if operand.Value != nil {
+					operandMap["value"] = *operand.Value
+				}
 			}
 		}
 		operandSet.Add(operandMap)
