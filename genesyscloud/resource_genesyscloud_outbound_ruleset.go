@@ -3,14 +3,15 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"log"
-	"time"
 )
 
 var (
@@ -305,11 +306,20 @@ func outboundRulesetExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllOutboundRuleset),
 		RefAttrs: map[string]*RefAttrSettings{
-			`contact_list_id`: {
+			"contact_list_id": {
 				RefType: "genesyscloud_outbound_contact_list",
 			},
-			`queue_id`: {
+			"queue_id": {
 				RefType: "genesyscloud_routing_queue",
+			},
+			"rules.conditions.codes": {
+				RefType: "genesyscloud_routing_wrapupcode",
+			},
+			"rules.conditions.data_action_id": {
+				RefType: "genesyscloud_integration_action",
+			},
+			"rules.actions.data_action_id": {
+				RefType: "genesyscloud_integration_action",
 			},
 		},
 	}
