@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 func dataSourceWebDeploymentsDeployment() *schema.Resource {
@@ -32,7 +32,7 @@ func dataSourceDeploymentRead(ctx context.Context, d *schema.ResourceData, m int
 	name := d.Get("name").(string)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		deployments, _, err := api.GetWebdeploymentsDeployments()
+		deployments, _, err := api.GetWebdeploymentsDeployments([]string{})
 
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error retrieving web deployment %s: %s", name, err))

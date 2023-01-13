@@ -12,24 +12,28 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
-	domains, _, getErr := routingAPI.GetRoutingEmailDomains(false)
-	if getErr != nil {
-		return nil, diag.Errorf("Failed to get routing email domains: %v", getErr)
-	}
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
 
-	if domains.Entities == nil || len(*domains.Entities) == 0 {
-		return resources, nil
-	}
+		domains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false)
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get routing email domains: %v", getErr)
+		}
 
-	for _, domain := range *domains.Entities {
-		resources[*domain.Id] = &ResourceMeta{Name: *domain.Id}
+		if domains.Entities == nil || len(*domains.Entities) == 0 {
+			return resources, nil
+		}
+
+		for _, domain := range *domains.Entities {
+			resources[*domain.Id] = &ResourceMeta{Name: *domain.Id}
+		}
 	}
 
 	return resources, nil

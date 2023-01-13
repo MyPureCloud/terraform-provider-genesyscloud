@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
 )
 
 func testAccCheckSkillConditions(resourceName string, targetSkillConditionJson string) resource.TestCheckFunc {
@@ -382,9 +382,9 @@ data "genesyscloud_auth_division_home" "home" {}
 }
 
 /*
-	1. Create users with a particular set of skills and assign to individual divisions.
-	2. Add those divisions to genesyscloud_routing_skill_group.members_divisions_ids array.
-	3. Verify the skill group added those users when they match the skill expression.
+1. Create users with a particular set of skills and assign to individual divisions.
+2. Add those divisions to genesyscloud_routing_skill_group.members_divisions_ids array.
+3. Verify the skill group added those users when they match the skill expression.
 */
 func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) {
 	t.Parallel()
