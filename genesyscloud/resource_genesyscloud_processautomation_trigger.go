@@ -169,10 +169,10 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				ValidateFunc: validation.IntAtLeast(10),
 			},
 			"delay_by_seconds": {
-				Description:  "How long to delay processing of a trigger after an event passes the match criteria. Must be an number greater than 0 and up to and including 900",
+				Description:  "How long to delay processing of a trigger after an event passes the match criteria. Must be an number between 60 and 900 inclusive",
 				Type:         schema.TypeInt,
 				Optional:     true,
-				ValidateFunc: validation.IntBetween(1, 900),
+				ValidateFunc: validation.IntBetween(60, 900),
 			},
 			"description": {
 				Description:  "A description of the trigger",

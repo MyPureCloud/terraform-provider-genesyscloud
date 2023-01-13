@@ -24,7 +24,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 		match_criteria_operator1  = "Equal"
 		match_criteria_value1     = "CHAT"
 		eventTtlSeconds1          = "60"
-		delayBySeconds1           = "30"
+		delayBySeconds1           = "60"
 		description1              = "description1"
 
 		triggerName2              = "Terraform trigger2-" + uuid.NewString()
@@ -33,7 +33,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 		match_criteria_operator2  = "In"
 		match_criteria_value2     = "CLIENT"
 		eventTtlSeconds2          = "120"
-		delayBySeconds2           = "60"
+		delayBySeconds2           = "90"
 		description2              = "description2"
 
 		flowResource1 = "test_flow1"
