@@ -26,10 +26,11 @@ func resourceResponseManagamentResponseAsset() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			`filename`: {
-				Description: "Name of the file to upload. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. Whitespace and the following characters are not allowed: \\{^}%`]\">[~<#|",
-				Required:    true,
-				ForceNew:    true,
-				Type:        schema.TypeString,
+				Description:      "Name of the file to upload. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. Whitespace and the following characters are not allowed: \\{^}%`]\">[~<#|",
+				Required:         true,
+				ForceNew:         true,
+				Type:             schema.TypeString,
+				ValidateDiagFunc: validateResponseAssetName,
 			},
 			`division_id`: {
 				Description: `Division to associate to this asset. Can only be used with this division. Changing the division_id attribute will cause the existing response asset to be dropped and recreated with a new ID.`,

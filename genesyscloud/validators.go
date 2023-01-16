@@ -107,3 +107,18 @@ func validatePath(i interface{}, k string) (warnings []string, errors []error) {
 
 	return warnings, errors
 }
+
+// Validate a response asset filename matches the criteria outlined in the description
+func validateResponseAssetName(name interface{}, _ cty.Path) diag.Diagnostics {
+	if nameStr, ok := name.(string); ok {
+		matched, err := regexp.MatchString("^[^\\.][^\\`\\\\{\\^\\}\\% \"\\>\\<\\[\\]\\#\\~|]+[^/]$", nameStr)
+		if err != nil {
+			return diag.Errorf("Error applying regular expression against filename: %v", err)
+		}
+		if !matched {
+			return diag.Errorf("Invalid filename. It must not start with a dot and not end with a forward slash. Whitespace and the following characters are not allowed: \\{^}%s]\">[~<#|", "%`")
+		}
+		return nil
+	}
+	return diag.Errorf("filename %v is not a string", name)
+}
