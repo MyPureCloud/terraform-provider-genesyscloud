@@ -388,6 +388,13 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Deleting Phone")
 	_, err := edgesAPI.DeleteTelephonyProvidersEdgesPhone(d.Id())
+
+	/*
+	  Adding a small sleep because when a phone is deleted, the station associated with the phone and the site
+	  objects need time to disassociate from the phone. This eventual consistency problem was discovered during
+	  building the GCX Now project.  Adding the sleep gives the platform time to settle down.
+	*/
+	time.Sleep(5 * time.Second)
 	if err != nil {
 		return diag.Errorf("Failed to delete phone: %s", err)
 	}
@@ -404,6 +411,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		if phone.State != nil && *phone.State == "deleted" {
+
 			// phone deleted
 			log.Printf("Deleted Phone %s", d.Id())
 			return nil
