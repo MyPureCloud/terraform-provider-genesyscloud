@@ -32,7 +32,7 @@ resource "genesyscloud_responsemanagement_responseasset" "asset" {
 
 ### Optional
 
-- `division_id` (String) Division to associate to this asset. Can only be used with this division. Changing the division_id attribute will cause the existing response asset to be dropped and recreated with a new ID.
+- `division_id` (String) Division to associate to this asset. Can only be used with this division.
 
 ### Read-Only
 

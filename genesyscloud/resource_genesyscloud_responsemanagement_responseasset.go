@@ -19,6 +19,7 @@ func resourceResponseManagamentResponseAsset() *schema.Resource {
 
 		CreateContext: createWithPooledClient(createResponsemanagementResponseAsset),
 		ReadContext:   readWithPooledClient(readResponsemanagementResponseAsset),
+		UpdateContext: updateWithPooledClient(updateResponsemanagementResponseAsset),
 		DeleteContext: deleteWithPooledClient(deleteResponsemanagementResponseAsset),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -33,9 +34,8 @@ func resourceResponseManagamentResponseAsset() *schema.Resource {
 				ValidateDiagFunc: validateResponseAssetName,
 			},
 			`division_id`: {
-				Description: `Division to associate to this asset. Can only be used with this division. Changing the division_id attribute will cause the existing response asset to be dropped and recreated with a new ID.`,
+				Description: `Division to associate to this asset. Can only be used with this division.`,
 				Optional:    true,
-				ForceNew:    true,
 				Computed:    true,
 				Type:        schema.TypeString,
 			},
@@ -82,7 +82,7 @@ func readResponsemanagementResponseAsset(ctx context.Context, d *schema.Resource
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
-	log.Printf("Reading Responsemanagement response management response asset %s", d.Id())
+	log.Printf("Reading Responsemanagement response asset %s", d.Id())
 
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkAsset, resp, getErr := responseManagementApi.GetResponsemanagementResponseasset(d.Id())
@@ -106,6 +106,46 @@ func readResponsemanagementResponseAsset(ctx context.Context, d *schema.Resource
 	})
 }
 
+func updateResponsemanagementResponseAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
+
+	fileName := d.Get("filename").(string)
+	divisionId := d.Get("division_id").(string)
+
+	var bodyRequest platformclientv2.Responseassetrequest
+	bodyRequest.Name = &fileName
+
+	if divisionId != "" {
+		bodyRequest.DivisionId = &divisionId
+	}
+
+	log.Printf("Updating Responsemanagement response asset %s", d.Id())
+	putResponseData, _, err := responseManagementApi.PutResponsemanagementResponseasset(d.Id(), bodyRequest)
+	if err != nil {
+		diag.Errorf("Failed to delete Responsemanagement response asset %s: %v", d.Id(), err)
+	}
+
+	// Adding a sleep with retry logic to determine when the division ID has actually been updated.
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		log.Printf("Reading response asset %s", d.Id())
+		time.Sleep(20 * time.Second)
+		getResponseData, _, err := responseManagementApi.GetResponsemanagementResponseasset(d.Id())
+		if err != nil {
+			return diag.Errorf("Failed to read response asset %s: %v", d.Id(), err)
+		}
+		if *getResponseData.Division.Id != *putResponseData.Division.Id {
+			continue
+		} else {
+			log.Printf("Updated Responsemanagement response asset %s", d.Id())
+			return readResponsemanagementResponseAsset(ctx, d, meta)
+		}
+	}
+
+	return diag.Errorf("Responsemanagement response asset %s did not update properly", d.Id())
+}
+
 func deleteResponsemanagementResponseAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
@@ -121,7 +161,7 @@ func deleteResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 	if diagErr != nil {
 		return diagErr
 	}
-
+	time.Sleep(20 * time.Second)
 	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := responseManagementApi.GetResponsemanagementResponseasset(d.Id())
 		if err != nil {
