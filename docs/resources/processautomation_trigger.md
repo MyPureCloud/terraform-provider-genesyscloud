@@ -37,7 +37,6 @@ resource "genesyscloud_processautomation_trigger" "example-trigger" {
     value     = "CHAT"
   }
   event_ttl_seconds = 60
-  delay_by_seconds  = 30
   description       = "description of trigger"
 }
 ```
