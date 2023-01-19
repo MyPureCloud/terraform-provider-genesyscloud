@@ -53,8 +53,9 @@ resource "genesyscloud_processautomation_trigger" "example-trigger" {
 
 ### Optional
 
+- `delay_by_seconds` (Number) How long to delay processing of a trigger after an event passes the match criteria. Must be an number between 60 and 900 inclusive. Only one of event_ttl_seconds or delay_by_seconds can be set.
 - `description` (String) A description of the trigger
-- `event_ttl_seconds` (Number) How old an event can be to fire the trigger. Must be an number greater than or equal to 10
+- `event_ttl_seconds` (Number) How old an event can be to fire the trigger. Must be an number greater than or equal to 10. Only one of event_ttl_seconds or delay_by_seconds can be set.
 - `match_criteria` (Block Set) Match criteria that controls when the trigger will fire. (see [below for nested schema](#nestedblock--match_criteria))
 
 ### Read-Only

@@ -86,7 +86,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 					filePath1,
 					workflowConfig1,
 					false,
-				) + generateProcessAutomationTriggerResource(
+				) + generateProcessAutomationTriggerResourceEventTTL(
 					triggerResource1,
 					triggerName1,
 					topicName1,
