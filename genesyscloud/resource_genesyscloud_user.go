@@ -8,13 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -402,15 +401,6 @@ func resourceUser() *schema.Resource {
 						},
 						"message": {
 							Description: "Message media settings. If not set, this reverts to the default media type settings.",
-							Type:        schema.TypeList,
-							MaxItems:    1,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
-						},
-						"video": {
-							Description: "Video media settings. If not set, this reverts to the default media type settings.",
 							Type:        schema.TypeList,
 							MaxItems:    1,
 							Optional:    true,
