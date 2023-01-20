@@ -37,7 +37,7 @@ resource "genesyscloud_tf_export" "export" {
 - `directory` (String) Directory where the config and state files will be exported. Defaults to `./genesyscloud`.
 - `exclude_attributes` (List of String) Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_name}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.
 - `export_as_hcl` (Boolean) Export the config as HCL. Defaults to `false`.
-- `include_state_file` (Boolean) Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. Defaults to `false`.
+- `include_state_file` (Boolean) Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. When `false`, GUID fields will be omitted from the config file unless a resource reference can be supplied. In this case, the resource type will need to be included in the `resource_types` array. Defaults to `false`.
 - `log_permission_errors` (Boolean) Log permission/product issues rather than fail. Defaults to `false`.
 - `resource_types` (List of String) Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types.
 

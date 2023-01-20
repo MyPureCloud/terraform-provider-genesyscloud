@@ -26,6 +26,7 @@ type ProcessAutomationTrigger struct {
 	MatchCriteria   *[]MatchCriteria `json:"matchCriteria,omitempty"`
 	Enabled         *bool            `json:"enabled,omitempty"`
 	EventTTLSeconds *int             `json:"eventTTLSeconds,omitempty"`
+	DelayBySeconds  *int             `json:"delayBySeconds,omitempty"`
 	Version         *int             `json:"version,omitempty"`
 	Description     *string          `json:"description,omitempty"`
 }
@@ -37,6 +38,7 @@ type UpdateTriggerInput struct {
 	MatchCriteria   *[]MatchCriteria `json:"matchCriteria,omitempty"`
 	Enabled         *bool            `json:"enabled,omitempty"`
 	EventTTLSeconds *int             `json:"eventTTLSeconds,omitempty"`
+	DelayBySeconds  *int             `json:"delayBySeconds,omitempty"`
 	Version         *int             `json:"version,omitempty"`
 	Description     *string          `json:"description,omitempty"`
 }
@@ -161,10 +163,16 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				Elem:        matchCriteria,
 			},
 			"event_ttl_seconds": {
-				Description:  "How old an event can be to fire the trigger. Must be an number greater than or equal to 10",
+				Description:  "How old an event can be to fire the trigger. Must be an number greater than or equal to 10. Only one of event_ttl_seconds or delay_by_seconds can be set.",
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(10),
+			},
+			"delay_by_seconds": {
+				Description:  "How long to delay processing of a trigger after an event passes the match criteria. Must be an number between 60 and 900 inclusive. Only one of event_ttl_seconds or delay_by_seconds can be set.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntBetween(60, 900),
 			},
 			"description": {
 				Description:  "A description of the trigger",
@@ -190,10 +198,15 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	topic_name := d.Get("topic_name").(string)
 	enabled := d.Get("enabled").(bool)
 	eventTTLSeconds := d.Get("event_ttl_seconds").(int)
+	delayBySeconds := d.Get("delay_by_seconds").(int)
 	description := d.Get("description").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+
+	if eventTTLSeconds > 0 && delayBySeconds > 0 {
+		return diag.Errorf("Only one of event_ttl_seconds or delay_by_seconds can be set.")
+	}
 
 	log.Printf("Creating process automation trigger %s", name)
 
@@ -208,6 +221,10 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	if eventTTLSeconds > 0 {
 		triggerInput.EventTTLSeconds = &eventTTLSeconds
+	}
+
+	if delayBySeconds > 0 {
+		triggerInput.DelayBySeconds = &delayBySeconds
 	}
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -272,6 +289,12 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 			d.Set("event_ttl_seconds", nil)
 		}
 
+		if trigger.DelayBySeconds != nil {
+			d.Set("delay_by_seconds", *trigger.DelayBySeconds)
+		} else {
+			d.Set("delay_by_seconds", nil)
+		}
+
 		if trigger.Description != nil {
 			d.Set("description", *trigger.Description)
 		} else {
@@ -287,6 +310,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	name := d.Get("name").(string)
 	enabled := d.Get("enabled").(bool)
 	eventTTLSeconds := d.Get("event_ttl_seconds").(int)
+	delayBySeconds := d.Get("delay_by_seconds").(int)
 	description := d.Get("description").(string)
 
 	topic_name := d.Get("topic_name").(string)
@@ -303,6 +327,10 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 			return resp, diag.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr)
 		}
 
+		if eventTTLSeconds > 0 && delayBySeconds > 0 {
+			return resp, diag.Errorf("Only one of event_ttl_seconds or delay_by_seconds can be set.")
+		}
+
 		triggerInput := &UpdateTriggerInput{
 			TopicName:     &topic_name,
 			Name:          &name,
@@ -315,6 +343,10 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 		if eventTTLSeconds > 0 {
 			triggerInput.EventTTLSeconds = &eventTTLSeconds
+		}
+
+		if delayBySeconds > 0 {
+			triggerInput.DelayBySeconds = &delayBySeconds
 		}
 
 		_, putResp, err := putProcessAutomationTrigger(d.Id(), triggerInput, integAPI)

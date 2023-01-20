@@ -24,6 +24,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 		match_criteria_operator1  = "Equal"
 		match_criteria_value1     = "CHAT"
 		eventTtlSeconds1          = "60"
+		delayBySeconds1           = "60"
 		description1              = "description1"
 
 		triggerName2              = "Terraform trigger2-" + uuid.NewString()
@@ -32,6 +33,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 		match_criteria_operator2  = "In"
 		match_criteria_value2     = "CLIENT"
 		eventTtlSeconds2          = "120"
+		delayBySeconds2           = "90"
 		description2              = "description2"
 
 		flowResource1 = "test_flow1"
@@ -96,7 +98,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 					filePath1,
 					workflowConfig1,
 					false,
-				) + generateProcessAutomationTriggerResource(
+				) + generateProcessAutomationTriggerResourceEventTTL(
 					triggerResource1,
 					triggerName1,
 					topicName1,
@@ -133,7 +135,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 					filePath1,
 					workflowConfig1,
 					false,
-				) + generateProcessAutomationTriggerResource(
+				) + generateProcessAutomationTriggerResourceEventTTL(
 					triggerResource1,
 					triggerName2,
 					topicName1,
@@ -172,9 +174,97 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 		},
 		CheckDestroy: testVerifyProcessAutomationTriggerDestroyed,
 	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create flow and trigger
+				Config: generateFlowResource(
+					flowResource1,
+					filePath1,
+					workflowConfig1,
+					false,
+				) + generateProcessAutomationTriggerResourceDelayBy(
+					triggerResource1,
+					triggerName1,
+					topicName1,
+					enabled1,
+					fmt.Sprintf(`target {
+                        id = %s
+                        type = "%s"
+                    }
+                    `, "genesyscloud_flow."+flowResource1+".id", targetType1),
+					fmt.Sprintf(`match_criteria {
+                        json_path = "%s"
+                        operator = "%s"
+                        value = "%s"
+                    }
+                    `, match_criteria_json_path1, match_criteria_operator1, match_criteria_value1),
+					delayBySeconds1,
+					description1,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "name", triggerName1),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "topic_name", topicName1),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "enabled", enabled1),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "delay_by_seconds", delayBySeconds1),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "description", description1),
+					validateTargetFlowId("genesyscloud_flow."+flowResource1, "genesyscloud_processautomation_trigger."+triggerResource1),
+					validateTargetType("genesyscloud_processautomation_trigger."+triggerResource1, targetType1),
+					validateMatchCriteriaWithValue("genesyscloud_processautomation_trigger."+triggerResource1, match_criteria_json_path1, match_criteria_operator1, match_criteria_value1, 0),
+				),
+			},
+			{
+				// Update trigger name, enabled, eventTTLSeconds and match criteria
+				Config: generateFlowResource(
+					flowResource1,
+					filePath1,
+					workflowConfig1,
+					false,
+				) + generateProcessAutomationTriggerResourceDelayBy(
+					triggerResource1,
+					triggerName2,
+					topicName1,
+					enabled2,
+					fmt.Sprintf(`target {
+                        id = %s
+                        type = "%s"
+                    }
+                    `, "genesyscloud_flow."+flowResource1+".id", targetType1),
+					fmt.Sprintf(`match_criteria {
+                        json_path = "%s"
+                        operator = "%s"
+                        values = ["%s"]
+                    }
+                    `, match_criteria_json_path2, match_criteria_operator2, match_criteria_value2),
+					delayBySeconds2,
+					description2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "name", triggerName2),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "topic_name", topicName1),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "enabled", enabled2),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "delay_by_seconds", delayBySeconds2),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "description", description2),
+					validateTargetFlowId("genesyscloud_flow."+flowResource1, "genesyscloud_processautomation_trigger."+triggerResource1),
+					validateTargetType("genesyscloud_processautomation_trigger."+triggerResource1, targetType1),
+					validateMatchCriteriaWithValues("genesyscloud_processautomation_trigger."+triggerResource1, match_criteria_json_path2, match_criteria_operator2, []string{match_criteria_value2}, 0),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_processautomation_trigger." + triggerResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyProcessAutomationTriggerDestroyed,
+	})
 }
 
-func generateProcessAutomationTriggerResource(resourceID, name, topic_name, enabled, target, match_criteria, event_ttl_seconds, description string) string {
+func generateProcessAutomationTriggerResourceEventTTL(resourceID, name, topic_name, enabled, target, match_criteria, event_ttl_seconds, description string) string {
 	return fmt.Sprintf(`resource "genesyscloud_processautomation_trigger" "%s" {
         name = "%s"
         topic_name = "%s"
@@ -185,6 +275,19 @@ func generateProcessAutomationTriggerResource(resourceID, name, topic_name, enab
 		description = "%s"
 	}
 	`, resourceID, name, topic_name, enabled, target, match_criteria, event_ttl_seconds, description)
+}
+
+func generateProcessAutomationTriggerResourceDelayBy(resourceID, name, topic_name, enabled, target, match_criteria, delay_by_seconds, description string) string {
+	return fmt.Sprintf(`resource "genesyscloud_processautomation_trigger" "%s" {
+        name = "%s"
+        topic_name = "%s"
+        enabled = %s
+        %s
+        %s
+		delay_by_seconds = %s
+		description = "%s"
+	}
+	`, resourceID, name, topic_name, enabled, target, match_criteria, delay_by_seconds, description)
 }
 
 func testVerifyProcessAutomationTriggerDestroyed(state *terraform.State) error {

@@ -19,12 +19,11 @@ import (
 var (
 	// Map of SDK media type name to schema media type name
 	utilizationMediaTypes = map[string]string{
-		"call":      "call",
-		"callback":  "callback",
-		"chat":      "chat",
-		"email":     "email",
-		"message":   "message",
-		"videoComm": "video",
+		"call":     "call",
+		"callback": "callback",
+		"chat":     "chat",
+		"email":    "email",
+		"message":  "message",
 	}
 
 	utilizationSettingsResource = &schema.Resource{
@@ -109,14 +108,6 @@ func resourceRoutingUtilization() *schema.Resource {
 			},
 			"message": {
 				Description: "Message media settings. If not set, this reverts to the default media type settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        utilizationSettingsResource,
-			},
-			"video": {
-				Description: "Video media settings. If not set, this reverts to the default media type settings.",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,

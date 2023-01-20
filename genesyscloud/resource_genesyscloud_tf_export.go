@@ -110,7 +110,7 @@ func resourceTfExport() *schema.Resource {
 				ForceNew: true,
 			},
 			"include_state_file": {
-				Description: "Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform.",
+				Description: "Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. When `false`, GUID fields will be omitted from the config file unless a resource reference can be supplied. In this case, the resource type will need to be included in the `resource_types` array.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,

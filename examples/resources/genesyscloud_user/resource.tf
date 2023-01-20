@@ -59,11 +59,6 @@ resource "genesyscloud_user" "example_user" {
       include_non_acd           = false
       interruptible_media_types = ["call", "chat"]
     }
-    video {
-      maximum_capacity          = 1
-      include_non_acd           = false
-      interruptible_media_types = ["call"]
-    }
     message {
       maximum_capacity          = 4
       include_non_acd           = false

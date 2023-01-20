@@ -15,7 +15,7 @@ func TestAccResourceRoutingUtilization(t *testing.T) {
 		maxCapacity1  = "3"
 		maxCapacity2  = "4"
 		utilTypeCall  = "call"
-		utilTypeVideo = "videoComm"
+		utilTypeEmail = "email"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,7 +30,6 @@ func TestAccResourceRoutingUtilization(t *testing.T) {
 					generateRoutingUtilMediaType("chat", maxCapacity1, falseValue),
 					generateRoutingUtilMediaType("email", maxCapacity1, falseValue),
 					generateRoutingUtilMediaType("message", maxCapacity1, falseValue),
-					generateRoutingUtilMediaType("video", maxCapacity1, falseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity1),
@@ -48,25 +47,21 @@ func TestAccResourceRoutingUtilization(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.maximum_capacity", maxCapacity1),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.include_non_acd", falseValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.interruptible_media_types"),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "video.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "video.0.include_non_acd", falseValue),
-					resource.TestCheckNoResourceAttr("genesyscloud_routing_utilization.routing-util", "video.0.interruptible_media_types"),
 				),
 			},
 			{
 				// Update with a new max capacities and interruptible media types
 				Config: generateRoutingUtilizationResource(
-					generateRoutingUtilMediaType("call", maxCapacity2, trueValue, strconv.Quote(utilTypeVideo)),
+					generateRoutingUtilMediaType("call", maxCapacity2, trueValue, strconv.Quote(utilTypeEmail)),
 					generateRoutingUtilMediaType("callback", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
 					generateRoutingUtilMediaType("chat", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
 					generateRoutingUtilMediaType("email", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
 					generateRoutingUtilMediaType("message", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
-					generateRoutingUtilMediaType("video", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.include_non_acd", trueValue),
-					validateStringInArray("genesyscloud_routing_utilization.routing-util", "call.0.interruptible_media_types", utilTypeVideo),
+					validateStringInArray("genesyscloud_routing_utilization.routing-util", "call.0.interruptible_media_types", utilTypeEmail),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.maximum_capacity", maxCapacity2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "callback.0.include_non_acd", trueValue),
 					validateStringInArray("genesyscloud_routing_utilization.routing-util", "callback.0.interruptible_media_types", utilTypeCall),
@@ -79,9 +74,6 @@ func TestAccResourceRoutingUtilization(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.maximum_capacity", maxCapacity2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "message.0.include_non_acd", trueValue),
 					validateStringInArray("genesyscloud_routing_utilization.routing-util", "message.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "video.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "video.0.include_non_acd", trueValue),
-					validateStringInArray("genesyscloud_routing_utilization.routing-util", "video.0.interruptible_media_types", utilTypeCall),
 				),
 			},
 			{

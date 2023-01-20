@@ -88,11 +88,6 @@ resource "genesyscloud_user" "example_user" {
       include_non_acd           = false
       interruptible_media_types = ["call", "chat"]
     }
-    video {
-      maximum_capacity          = 1
-      include_non_acd           = false
-      interruptible_media_types = ["call"]
-    }
     message {
       maximum_capacity          = 4
       include_non_acd           = false
@@ -209,7 +204,6 @@ Optional:
 - `chat` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--chat))
 - `email` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--email))
 - `message` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--message))
-- `video` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--video))
 
 <a id="nestedobjatt--routing_utilization--call"></a>
 ### Nested Schema for `routing_utilization.call`
@@ -253,16 +247,6 @@ Optional:
 
 <a id="nestedobjatt--routing_utilization--message"></a>
 ### Nested Schema for `routing_utilization.message`
-
-Optional:
-
-- `include_non_acd` (Boolean)
-- `interruptible_media_types` (Set of String)
-- `maximum_capacity` (Number)
-
-
-<a id="nestedobjatt--routing_utilization--video"></a>
-### Nested Schema for `routing_utilization.video`
 
 Optional:
 

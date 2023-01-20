@@ -18,11 +18,6 @@ resource "genesyscloud_routing_utilization" "org-utililzation" {
     include_non_acd           = false
     interruptible_media_types = ["call", "chat"]
   }
-  video {
-    maximum_capacity          = 1
-    include_non_acd           = false
-    interruptible_media_types = ["call"]
-  }
   message {
     maximum_capacity          = 4
     include_non_acd           = false
