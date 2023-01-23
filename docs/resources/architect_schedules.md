@@ -35,7 +35,7 @@ resource "genesyscloud_architect_schedules" "sample_schedule" {
 ### Required
 
 - `end` (String) Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
-- `name` (String) Name of the schedule. Note: If the name is changed, this will cause the schedule object to be dropped and recreated with a new ID.  This can cause an Architect Flow to become invalid.
+- `name` (String) Name of the schedule.
 - `start` (String) Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
 
 ### Optional
