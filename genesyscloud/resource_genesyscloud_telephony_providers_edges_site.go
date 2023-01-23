@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
@@ -55,6 +55,23 @@ func resourceSite() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+			},
+			"media_regions": {
+				Description: "The ordered list of AWS regions through which media can stream",
+				Type:        schema.TypeList, //This has to be a list because it must be ordered
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"caller_id": {
+				Description:      "The caller ID value for the site. The callerID is a valid E.164 formatted phone number",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateDiagFunc: validatePhoneNumber,
+			},
+			"caller_name": {
+				Description: "The caller name for the site",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			"edge_auto_update_config": {
 				Description: "Recurrence rule, time zone, and start/end settings for automatic edge updates for this site",
@@ -272,6 +289,10 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.FromErr(err)
 	}
 
+	mediaRegions := buildMediaRegionList(d)
+	callerID := d.Get("caller_id").(string)
+	callerName := d.Get("caller_name").(string)
+
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	locationAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 	location, _, err := locationAPI.GetLocation(locationId, nil)
@@ -294,6 +315,18 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	if edgeAutoUpdateConfig != nil {
 		site.EdgeAutoUpdateConfig = edgeAutoUpdateConfig
+	}
+
+	if mediaRegions != nil {
+		site.MediaRegions = mediaRegions
+	}
+
+	if callerID != "" {
+		site.CallerId = &callerID
+	}
+
+	if callerName != "" {
+		site.CallerName = &callerName
 	}
 
 	if description != "" {
@@ -327,6 +360,9 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Created site %s", *site.Id)
+	if site.CallerId != nil && callerID != *site.CallerId {
+		return diag.Errorf("Site was created but caller id presented must match the format returned by the site service.  Defined %s, returned %s. Please change the value in your site defined to match the returned value and reapply your script", callerID, *site.CallerId)
+	}
 
 	return readSite(ctx, d, meta)
 }
@@ -363,6 +399,14 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			d.Set("edge_auto_update_config", flattenSdkEdgeAutoUpdateConfig(currentSite.EdgeAutoUpdateConfig))
 		}
 
+		d.Set("media_regions", nil)
+		if currentSite.MediaRegions != nil {
+			d.Set("media_regions", *currentSite.MediaRegions)
+		}
+
+		d.Set("caller_id", currentSite.CallerId)
+		d.Set("caller_name", currentSite.CallerName)
+
 		if retryErr := readSiteNumberPlans(d, edgesAPI); retryErr != nil {
 			return retryErr
 		}
@@ -387,6 +431,9 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.FromErr(err)
 	}
 
+	mediaRegions := buildMediaRegionList(d)
+	callerID := d.Get("caller_id").(string)
+	callerName := d.Get("caller_name").(string)
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	locationAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 	location, _, err := locationAPI.GetLocation(locationId, nil)
@@ -411,6 +458,18 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		site.EdgeAutoUpdateConfig = edgeAutoUpdateConfig
 	}
 
+	if mediaRegions != nil {
+		site.MediaRegions = mediaRegions
+	}
+
+	if callerID != "" {
+		site.CallerId = &callerID
+	}
+
+	if callerName != "" {
+		site.CallerName = &callerName
+	}
+
 	if description != "" {
 		site.Description = &description
 	}
@@ -429,6 +488,10 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		site, resp, err = edgesAPI.PutTelephonyProvidersEdgesSite(d.Id(), *site)
 		if err != nil {
 			return resp, diag.Errorf("Failed to update site %s: %s", name, err)
+		}
+
+		if site.CallerId != nil && callerID != *site.CallerId {
+			return resp, diag.Errorf("Site was created but caller id presented must match the format returned by the site service.  Defined %s, returned %s. Please change the value in your site defined to match the returned value and reapply your script", callerID, *site.CallerId)
 		}
 
 		return resp, nil
@@ -491,6 +554,22 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 		return resource.RetryableError(fmt.Errorf("Site %s still exists", d.Id()))
 	})
+}
+
+func buildMediaRegionList(d *schema.ResourceData) *[]string {
+	var mediaRegions []string
+
+	mrg := d.Get("media_regions")
+
+	if mrg != nil {
+		for _, mediaRegion := range mrg.([]interface{}) {
+			v := mediaRegion.(string)
+
+			mediaRegions = append(mediaRegions, v)
+		}
+	}
+
+	return &mediaRegions
 }
 
 func nameInPlans(name string, plans []platformclientv2.Numberplan) (*platformclientv2.Numberplan, bool) {

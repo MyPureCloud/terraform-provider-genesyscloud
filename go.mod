@@ -11,6 +11,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.24.1
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mypurecloud/platform-client-sdk-go/v89 v89.0.1
+	github.com/mypurecloud/platform-client-sdk-go/v90 v90.0.0
 	github.com/nyaruka/phonenumbers v1.1.4
 	github.com/zclconf/go-cty v1.12.1
 	gonum.org/v1/gonum v0.12.0
@@ -62,6 +63,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/mypurecloud/platform-client-sdk-go/v91 v91.0.0 // indirect
 	github.com/nsf/jsondiff v0.0.0-20210303162244-6ea32392771e // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect

@@ -60,7 +60,10 @@ func TestAccDataSourceSite(t *testing.T) {
 					description1,
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
-					false) + location + generateSiteDataSource(
+					false,
+					"[\"us-west-2\"]",
+					"+19205551212",
+					"Wilco plumbing") + location + generateSiteDataSource(
 					siteDataRes,
 					name,
 					"genesyscloud_telephony_providers_edges_site."+siteRes),

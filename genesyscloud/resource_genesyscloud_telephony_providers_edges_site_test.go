@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
 )
 
 func TestAccResourceSite(t *testing.T) {
@@ -41,7 +41,7 @@ func TestAccResourceSite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	emergencyNumber := "3173124740"
+	emergencyNumber := "+13173124740"
 	err = deleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
@@ -74,7 +74,10 @@ func TestAccResourceSite(t *testing.T) {
 					description1,
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
-					false) + location,
+					false,
+					"[\"us-west-2\"]",
+					"+19205551212",
+					"Wilco plumbing") + location,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "description", description1),
@@ -91,7 +94,10 @@ func TestAccResourceSite(t *testing.T) {
 					description2,
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
-					true) + location,
+					true,
+					"[\"us-west-2\"]",
+					"+19205551212",
+					"Wilco plumbing") + location,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "description", description2),
@@ -109,6 +115,9 @@ func TestAccResourceSite(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					true,
+					"[\"us-west-2\"]",
+					"+19205551212",
+					"Wilco plumbing",
 					generateSiteEdgeAutoUpdateConfig(
 						timeZone,
 						rrule,
@@ -130,6 +139,9 @@ func TestAccResourceSite(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					true,
+					"[\"us-west-2\"]",
+					"+19205551212",
+					"Wilco plumbing",
 					generateSiteEdgeAutoUpdateConfig(
 						timeZone,
 						rrule,
@@ -165,7 +177,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	emergencyNumber := "3173124741"
+	emergencyNumber := "+13173124741"
 	err = deleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
@@ -199,6 +211,9 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
+					"[\"us-west-2\"]",
+					"+19205551212",
+					"Wilco plumbing",
 					generateSiteNumberPlansWithCustomAttrs(
 						"numberList name",
 						"numberList classification",
@@ -254,6 +269,9 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
+					"[\"us-west-2\"]",
+					"+19205551212",
+					"Wilco plumbing",
 					generateSiteNumberPlansWithCustomAttrs(
 						"numberList name",
 						"numberList classification",
@@ -294,6 +312,9 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
+					"[\"us-west-2\"]",
+					"+19205551212",
+					"Wilco plumbing",
 					generateSiteNumberPlansWithCustomAttrs(
 						"numberList name",
 						"numberList classification",
@@ -357,7 +378,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	emergencyNumber := "3173124742"
+	emergencyNumber := "+13173124742"
 	err = deleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
@@ -415,6 +436,9 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
+					"[\"us-west-2\"]",
+					"+19205551212",
+					"Wilco plumbing",
 					generateSiteOutboundRoutesWithCustomAttrs(
 						"outboundRoute name 1",
 						"outboundRoute description",
@@ -454,6 +478,9 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 					"genesyscloud_location."+locationRes+".id",
 					mediaModel,
 					false,
+					"[\"us-west-2\"]",
+					"+19205551212",
+					"Wilco plumbing",
 					generateSiteOutboundRoutesWithCustomAttrs(
 						"outboundRoute name 1",
 						"outboundRoute description updated",
@@ -574,6 +601,9 @@ func generateSiteResourceWithCustomAttrs(
 	locationId,
 	mediaModel string,
 	mediaRegionsUseLatencyBased bool,
+	mediaRegions string,
+	callerId string,
+	callerName string,
 	otherAttrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_site" "%s" {
 		name = "%s"
@@ -581,9 +611,12 @@ func generateSiteResourceWithCustomAttrs(
 		location_id = %s
 		media_model = "%s"
 		media_regions_use_latency_based = %v
+		media_regions= %s
+		caller_id = "%s"
+		caller_name = "%s"
 		%s
 	}
-	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, strings.Join(otherAttrs, "\n"))
+	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
 }
 
 func generateSiteEdgeAutoUpdateConfig(timeZone, rrule, start, end string) string {

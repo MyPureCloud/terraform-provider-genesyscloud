@@ -12,9 +12,14 @@ import (
 
 func validatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 	if numberStr, ok := number.(string); ok {
-		_, err := phonenumbers.Parse(numberStr, "US")
+		phoneNumber, err := phonenumbers.Parse(numberStr, "US")
 		if err != nil {
 			return diag.Errorf("Failed to validate phone number %s: %s", numberStr, err)
+		}
+
+		formattedNum := phonenumbers.Format(phoneNumber, phonenumbers.E164)
+		if formattedNum != numberStr {
+			return diag.Errorf("Failed to parse number in an E164 format.  Passed %s and expected: %s", numberStr, formattedNum)
 		}
 		return nil
 	}
