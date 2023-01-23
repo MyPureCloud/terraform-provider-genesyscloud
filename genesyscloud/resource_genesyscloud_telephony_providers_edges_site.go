@@ -57,13 +57,13 @@ func resourceSite() *schema.Resource {
 				Default:     false,
 			},
 			"media_regions": {
-				Description: "The ordered list of AWS regions through which media can stream",
+				Description: "The ordered list of AWS regions through which media can stream. A full list of available media regions can be found at the GET /api/v2/telephony/mediaregions endpoint",
 				Type:        schema.TypeList, //This has to be a list because it must be ordered
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"caller_id": {
-				Description:      "The caller ID value for the site. The callerID is a valid E.164 formatted phone number",
+				Description:      "The caller ID value for the site. The callerID must be a valid E.164 formatted phone number",
 				Type:             schema.TypeString,
 				Optional:         true,
 				ValidateDiagFunc: validatePhoneNumber,
@@ -360,10 +360,6 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Created site %s", *site.Id)
-	if site.CallerId != nil && callerID != *site.CallerId {
-		return diag.Errorf("Site was created but caller id presented must match the format returned by the site service.  Defined %s, returned %s. Please change the value in your site defined to match the returned value and reapply your script", callerID, *site.CallerId)
-	}
-
 	return readSite(ctx, d, meta)
 }
 
@@ -489,11 +485,6 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		if err != nil {
 			return resp, diag.Errorf("Failed to update site %s: %s", name, err)
 		}
-
-		if site.CallerId != nil && callerID != *site.CallerId {
-			return resp, diag.Errorf("Site was created but caller id presented must match the format returned by the site service.  Defined %s, returned %s. Please change the value in your site defined to match the returned value and reapply your script", callerID, *site.CallerId)
-		}
-
 		return resp, nil
 	})
 	if diagErr != nil {
