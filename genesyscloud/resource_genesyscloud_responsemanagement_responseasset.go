@@ -135,9 +135,7 @@ func updateResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 		if err != nil {
 			return diag.Errorf("Failed to read response asset %s: %v", d.Id(), err)
 		}
-		if *getResponseData.Division.Id != *putResponseData.Division.Id {
-			continue
-		} else {
+		if *getResponseData.Division.Id == *putResponseData.Division.Id {
 			log.Printf("Updated Responsemanagement response asset %s", d.Id())
 			return readResponsemanagementResponseAsset(ctx, d, meta)
 		}

@@ -57,7 +57,8 @@ func TestAccResponseManagementResponseAsset(t *testing.T) {
 				Config: generateResponseManagementResponseAssetResource(resourceId, fullPath2, "data.genesyscloud_auth_division_home.home.id") +
 					fmt.Sprint("\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"),
 				Check: resource.ComposeTestCheckFunc(
-					testDefaultHomeDivision("genesyscloud_responsemanagement_responseasset." + resourceId),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath2),
+					testDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceId),
 				),
 			},
 			{
