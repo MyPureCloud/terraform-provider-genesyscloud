@@ -529,22 +529,22 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	}
 }
 
-func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Patchactionmap {
-	isActive := actionMap.Get("is_active").(bool)
-	displayName := actionMap.Get("display_name").(string)
-	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
-	triggerWithEventConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition))
-	triggerWithOutcomeProbabilityConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
-	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition))
-	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation, true)
-	weight := actionMap.Get("weight").(int)
-	action := resourcedata.BuildSdkListFirstElement(actionMap, "action", buildSdkPatchAction, true)
-	actionMapScheduleGroups := resourcedata.BuildSdkListFirstElement(actionMap, "action_map_schedule_groups", buildSdkPatchActionMapScheduleGroups, true)
-	ignoreFrequencyCap := actionMap.Get("ignore_frequency_cap").(bool)
-	startDate := resourcedata.GetNillableTime(actionMap, "start_date")
-	endDate := resourcedata.GetNillableTime(actionMap, "end_date")
+func buildSdkPatchActionMap(patchActionMap *schema.ResourceData) *platformclientv2.Patchactionmap {
+	isActive := patchActionMap.Get("is_active").(bool)
+	displayName := patchActionMap.Get("display_name").(string)
+	triggerWithSegments := buildSdkStringList(patchActionMap, "trigger_with_segments")
+	triggerWithEventConditions := nilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_event_conditions", buildSdkEventCondition))
+	triggerWithOutcomeProbabilityConditions := nilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
+	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "page_url_conditions", buildSdkUrlCondition))
+	activation := resourcedata.BuildSdkListFirstElement(patchActionMap, "activation", buildSdkActivation, true)
+	weight := patchActionMap.Get("weight").(int)
+	action := resourcedata.BuildSdkListFirstElement(patchActionMap, "action", buildSdkPatchAction, true)
+	actionMapScheduleGroups := resourcedata.BuildSdkListFirstElement(patchActionMap, "action_map_schedule_groups", buildSdkPatchActionMapScheduleGroups, true)
+	ignoreFrequencyCap := patchActionMap.Get("ignore_frequency_cap").(bool)
+	startDate := resourcedata.GetNillableTime(patchActionMap, "start_date")
+	endDate := resourcedata.GetNillableTime(patchActionMap, "end_date")
 
-	return &platformclientv2.Patchactionmap{
+	sdkPatchActionMap := platformclientv2.Patchactionmap{
 		IsActive:                                &isActive,
 		DisplayName:                             &displayName,
 		TriggerWithSegments:                     triggerWithSegments,
@@ -559,6 +559,7 @@ func buildSdkPatchActionMap(actionMap *schema.ResourceData) *platformclientv2.Pa
 		StartDate:                               startDate,
 		EndDate:                                 endDate,
 	}
+	return &sdkPatchActionMap
 }
 
 func flattenEventCondition(eventCondition *platformclientv2.Eventcondition) map[string]interface{} {
@@ -680,13 +681,13 @@ func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.P
 	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(patchAction, "web_messaging_offer_fields", buildSdkPatchWebMessagingOfferFields, true)
 	openActionFields := stringmap.BuildSdkListFirstElement(patchAction, "open_action_fields", buildSdkOpenActionFields, true)
 
-	return &platformclientv2.Patchaction{
-		MediaType:               &mediaType,
-		ActionTemplate:          actionMapActionTemplate,
-		ArchitectFlowFields:     architectFlowFields,
-		WebMessagingOfferFields: webMessagingOfferFields,
-		OpenActionFields:        openActionFields,
-	}
+	sdkPatchAction := platformclientv2.Patchaction{}
+	sdkPatchAction.SetField("MediaType", &mediaType)
+	sdkPatchAction.SetField("ActionTemplate", actionMapActionTemplate)
+	sdkPatchAction.SetField("ArchitectFlowFields", architectFlowFields)
+	sdkPatchAction.SetField("WebMessagingOfferFields", webMessagingOfferFields)
+	sdkPatchAction.SetField("OpenActionFields", openActionFields)
+	return &sdkPatchAction
 }
 
 func getActionMapActionTemplate(actionMapAction map[string]interface{}) *platformclientv2.Actionmapactiontemplate {
