@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
 )
 
 func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -90,11 +90,11 @@ func createRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 
 func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*providerMeta).ClientConfig
-	languagesAPI := platformclientv2.NewLanguagesApiWithConfig(sdkConfig)
+	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading language %s", d.Id())
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
-		language, resp, getErr := languagesAPI.GetRoutingLanguage(d.Id())
+		language, resp, getErr := routingApi.GetRoutingLanguage(d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
@@ -118,17 +118,17 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
-	languagesAPI := platformclientv2.NewLanguagesApiWithConfig(sdkConfig)
+	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting language %s", name)
-	_, err := languagesAPI.DeleteRoutingLanguage(d.Id())
+	_, err := routingApi.DeleteRoutingLanguage(d.Id())
 
 	if err != nil {
 		return diag.Errorf("Failed to delete language %s: %s", name, err)
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		routingLanguage, resp, err := languagesAPI.GetRoutingLanguage(d.Id())
+		routingLanguage, resp, err := routingApi.GetRoutingLanguage(d.Id())
 		if err != nil {
 			if isStatus404(resp) {
 				// Routing language deleted
