@@ -544,21 +544,20 @@ func buildSdkPatchActionMap(patchActionMap *schema.ResourceData) *platformclient
 	startDate := resourcedata.GetNillableTime(patchActionMap, "start_date")
 	endDate := resourcedata.GetNillableTime(patchActionMap, "end_date")
 
-	sdkPatchActionMap := platformclientv2.Patchactionmap{
-		IsActive:                                &isActive,
-		DisplayName:                             &displayName,
-		TriggerWithSegments:                     triggerWithSegments,
-		TriggerWithEventConditions:              triggerWithEventConditions,
-		TriggerWithOutcomeProbabilityConditions: triggerWithOutcomeProbabilityConditions,
-		PageUrlConditions:                       pageUrlConditions,
-		Activation:                              activation,
-		Weight:                                  &weight,
-		Action:                                  action,
-		ActionMapScheduleGroups:                 actionMapScheduleGroups,
-		IgnoreFrequencyCap:                      &ignoreFrequencyCap,
-		StartDate:                               startDate,
-		EndDate:                                 endDate,
-	}
+	sdkPatchActionMap := platformclientv2.Patchactionmap{}
+	sdkPatchActionMap.SetField("IsActive", &isActive)
+	sdkPatchActionMap.SetField("DisplayName", &displayName)
+	sdkPatchActionMap.SetField("TriggerWithSegments", triggerWithSegments)
+	sdkPatchActionMap.SetField("TriggerWithEventConditions", triggerWithEventConditions)
+	sdkPatchActionMap.SetField("TriggerWithOutcomeProbabilityConditions", triggerWithOutcomeProbabilityConditions)
+	sdkPatchActionMap.SetField("PageUrlConditions", pageUrlConditions)
+	sdkPatchActionMap.SetField("Activation", activation)
+	sdkPatchActionMap.SetField("Weight", &weight)
+	sdkPatchActionMap.SetField("Action", action)
+	sdkPatchActionMap.SetField("ActionMapScheduleGroups", actionMapScheduleGroups)
+	sdkPatchActionMap.SetField("IgnoreFrequencyCap", &ignoreFrequencyCap)
+	sdkPatchActionMap.SetField("StartDate", startDate)
+	sdkPatchActionMap.SetField("EndDate", endDate)
 	return &sdkPatchActionMap
 }
 
@@ -858,10 +857,10 @@ func buildSdkPatchActionMapScheduleGroups(actionMapScheduleGroups map[string]int
 
 	actionMapScheduleGroup, emergencyActionMapScheduleGroup := getActionMapScheduleGroupPair(actionMapScheduleGroups)
 
-	return &platformclientv2.Patchactionmapschedulegroups{
-		ActionMapScheduleGroup:          actionMapScheduleGroup,
-		EmergencyActionMapScheduleGroup: emergencyActionMapScheduleGroup,
-	}
+	sdkPatchActionMapScheduleGroups := platformclientv2.Patchactionmapschedulegroups{}
+	sdkPatchActionMapScheduleGroups.SetField("ActionMapScheduleGroup", actionMapScheduleGroup)
+	sdkPatchActionMapScheduleGroups.SetField("EmergencyActionMapScheduleGroup", emergencyActionMapScheduleGroup)
+	return &sdkPatchActionMapScheduleGroups
 }
 
 func getActionMapScheduleGroupPair(actionMapScheduleGroups map[string]interface{}) (*platformclientv2.Actionmapschedulegroup, *platformclientv2.Actionmapschedulegroup) {

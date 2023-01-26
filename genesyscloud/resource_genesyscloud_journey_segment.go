@@ -440,17 +440,17 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment, true)
 	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
-	return &platformclientv2.Patchsegment{
-		IsActive:                 &isActive,
-		DisplayName:              &displayName,
-		Description:              description,
-		Color:                    &color,
-		ShouldDisplayToAgent:     shouldDisplayToAgent,
-		Context:                  sdkContext,
-		Journey:                  journey,
-		ExternalSegment:          externalSegment,
-		AssignmentExpirationDays: assignmentExpirationDays,
-	}
+	sdkPatchSegment := platformclientv2.Patchsegment{}
+	sdkPatchSegment.SetField("IsActive", &isActive)
+	sdkPatchSegment.SetField("DisplayName", &displayName)
+	sdkPatchSegment.SetField("Description", description)
+	sdkPatchSegment.SetField("Color", &color)
+	sdkPatchSegment.SetField("ShouldDisplayToAgent", shouldDisplayToAgent)
+	sdkPatchSegment.SetField("Context", sdkContext)
+	sdkPatchSegment.SetField("Journey", journey)
+	sdkPatchSegment.SetField("ExternalSegment", externalSegment)
+	sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	return &sdkPatchSegment
 }
 
 func flattenContext(context *platformclientv2.Context) map[string]interface{} {
