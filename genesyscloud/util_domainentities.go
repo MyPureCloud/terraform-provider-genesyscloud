@@ -2,7 +2,7 @@ package genesyscloud
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
 )
 
 func buildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Domainentityref {

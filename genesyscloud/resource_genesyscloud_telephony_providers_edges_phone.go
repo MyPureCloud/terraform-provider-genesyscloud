@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
 )
 
 var (
@@ -158,7 +158,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	name := d.Get("name").(string)
 	state := d.Get("state").(string)
 	site := buildSdkDomainEntityRef(d, "site_id")
-	phoneBaseSettings := buildSdkDomainEntityRef(d, "phone_base_settings_id")
+	phoneBaseSettings := buildSdkPhoneBaseSettings(d, "phone_base_settings_id")
 
 	capabilities := buildSdkCapabilities(d)
 	webRtcUserId := d.Get("web_rtc_user_id")
@@ -322,7 +322,7 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	site := buildSdkDomainEntityRef(d, "site_id")
-	phoneBaseSettings := buildSdkDomainEntityRef(d, "phone_base_settings_id")
+	phoneBaseSettings := buildSdkPhoneBaseSettings(d, "phone_base_settings_id")
 	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
 	webRtcUserId := d.Get("web_rtc_user_id")
 
@@ -419,6 +419,14 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 		return resource.RetryableError(fmt.Errorf("Phone %s still exists", d.Id()))
 	})
+}
+
+func buildSdkPhoneBaseSettings(d *schema.ResourceData, idAttr string) *platformclientv2.Phonebasesettings {
+	idVal := d.Get(idAttr).(string)
+	if idVal == "" {
+		return nil
+	}
+	return &platformclientv2.Phonebasesettings{Id: &idVal}
 }
 
 func getPhoneMetaBaseId(api *platformclientv2.TelephonyProvidersEdgeApi, phoneBaseSettingsId string) (string, error) {
