@@ -9,6 +9,8 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -20,6 +22,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
 )
+
+type PromptAudioData struct {
+	Language string
+	FileName string
+	MediaUri string
+}
 
 var userPromptResource = &schema.Resource{
 	Schema: map[string]*schema.Schema{
@@ -714,6 +722,10 @@ func architectUserPromptExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllUserPrompts),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		CustomFileWriter: CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
+			SubDirectory:              "audio",
+		},
 	}
 }
 
@@ -1131,4 +1143,74 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 	}
 
 	return nil
+}
+
+func getArchitectPromptAudioData(promptId string, meta interface{}) ([]PromptAudioData, error) {
+	sdkConfig := meta.(*providerMeta).ClientConfig
+	apiInstance := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	data, _, err := apiInstance.GetArchitectPrompt(promptId)
+	if err != nil {
+		fmt.Println("i")
+		return nil, err
+	}
+
+	promptResourceData := []PromptAudioData{}
+	for _, r := range *data.Resources {
+		var data PromptAudioData
+		if *r.MediaUri != "" && *r.Language != "" {
+			data.MediaUri = *r.MediaUri
+			data.Language = *r.Language
+			data.FileName = fmt.Sprintf("%s-%s.wav", *r.Language, promptId)
+			promptResourceData = append(promptResourceData, data)
+		}
+	}
+
+	return promptResourceData, nil
+}
+
+// Download audio file from mediaUri to directory/fileName
+func downloadAudioFile(directory string, fileName string, mediaUri string) error {
+	resp, err := http.Get(mediaUri)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+		return fmt.Errorf("error occured while creating directory %s: %v", directory, err)
+	}
+
+	out, err := os.Create(fmt.Sprintf("%s/%s", directory, fileName))
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+// Find and replace the filenames in configMap with the FileName fields in audioDataList
+// which point towards the downloaded audio files stored in the export folder.
+func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDataList []PromptAudioData, subDir string) {
+	if resources, ok := configMap["resources"].([]interface{}); ok && len(resources) > 0 {
+		for _, resource := range resources {
+			if r, ok := resource.(map[string]interface{}); ok {
+				var fileName string
+				if fileStr, ok := r["filename"].(string); !ok || fileStr == "" {
+					continue
+				}
+				languageStr := r["language"].(string)
+				for _, data := range audioDataList {
+					if data.Language == languageStr {
+						fileName = data.FileName
+						break
+					}
+				}
+				r["filename"] = path.Join(subDir, fileName)
+			}
+		}
+	}
 }
