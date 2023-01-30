@@ -7,7 +7,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v80/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
 )
@@ -92,7 +93,7 @@ func resourceResponsemanagementResponse() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `Name of the responsemanagement response`,
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			`library_ids`: {
@@ -180,11 +181,8 @@ func responsemanagementResponseExporter() *ResourceExporter {
 			`library_ids`: {
 				RefType: "genesyscloud_responsemanagement_library",
 			},
-			`substitutions_schema_id`: {
-				RefType: "// TODO add reference type",
-			},
 			`asset_ids`: {
-				RefType: "// TODO add reference type",
+				RefType: "genesyscloud_responsemanagement_responseasset",
 			},
 		},
 	}
@@ -195,16 +193,16 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	interactionType := d.Get("interaction_type").(string)
 	substitutionsSchema := d.Get("substitutions_schema_id").(string)
 	responseType := d.Get("response_type").(string)
+	messagingTemplate := d.Get("messaging_template").(*schema.Set)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	sdkresponse := platformclientv2.Response{
-		Libraries:         buildSdkDomainEntityRefArr(d, "library_ids"),
-		Texts:             buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
-		Substitutions:     buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
-		MessagingTemplate: buildSdkresponsemanagementresponseMessagingtemplate(d.Get("messaging_template").(*schema.Set)),
-		Assets:            buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
+		Libraries:     buildSdkDomainEntityRefArr(d, "library_ids"),
+		Texts:         buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
+		Substitutions: buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
+		Assets:        buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
 	}
 
 	if name != "" {
@@ -219,13 +217,16 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	if responseType != "" {
 		sdkresponse.ResponseType = &responseType
 	}
+	// Need to check messaging template like this to avoid the responseType being giving a default value
+	if messagingTemplate.Len() > 0 {
+		sdkresponse.MessagingTemplate = buildSdkresponsemanagementresponseMessagingtemplate(messagingTemplate)
+	}
 
 	log.Printf("Creating Responsemanagement Response %s", name)
 	responsemanagementResponse, _, err := responseManagementApi.PostResponsemanagementResponses(sdkresponse, "")
 	if err != nil {
 		return diag.Errorf("Failed to create Responsemanagement Response %s: %s", name, err)
 	}
-
 	d.SetId(*responsemanagementResponse.Id)
 
 	log.Printf("Created Responsemanagement Response %s %s", name, *responsemanagementResponse.Id)
@@ -237,16 +238,16 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	interactionType := d.Get("interaction_type").(string)
 	substitutionsSchema := d.Get("substitutions_schema_id").(string)
 	responseType := d.Get("response_type").(string)
+	messagingTemplate := d.Get("messaging_template").(*schema.Set)
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	sdkresponse := platformclientv2.Response{
-		Libraries:         buildSdkDomainEntityRefArr(d, "library_ids"),
-		Texts:             buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
-		Substitutions:     buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
-		MessagingTemplate: buildSdkresponsemanagementresponseMessagingtemplate(d.Get("messaging_template").(*schema.Set)),
-		Assets:            buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
+		Libraries:     buildSdkDomainEntityRefArr(d, "library_ids"),
+		Texts:         buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
+		Substitutions: buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
+		Assets:        buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
 	}
 
 	if name != "" {
@@ -260,6 +261,10 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	}
 	if responseType != "" {
 		sdkresponse.ResponseType = &responseType
+	}
+	// Need to check messaging template like this to avoid the responseType being giving a default value
+	if messagingTemplate.Len() > 0 {
+		sdkresponse.MessagingTemplate = buildSdkresponsemanagementresponseMessagingtemplate(messagingTemplate)
 	}
 
 	log.Printf("Updating Responsemanagement Response %s", name)
@@ -299,7 +304,7 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
 		}
 
-		// cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceResponsemanagementResponse())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceResponsemanagementResponse())
 
 		if sdkresponse.Name != nil {
 			d.Set("name", *sdkresponse.Name)
@@ -330,8 +335,7 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 		}
 
 		log.Printf("Read Responsemanagement Response %s %s", d.Id(), *sdkresponse.Name)
-		return nil // TODO calling cc.CheckState() can cause some difficult to understand errors in development. When ready for a PR, remove this line and uncomment the consistency_checker initialization and the the below one
-		// return cc.CheckState()
+		return cc.CheckState()
 	})
 }
 

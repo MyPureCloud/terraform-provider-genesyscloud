@@ -75,7 +75,7 @@ func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 		sdklibrary.Name = &name
 	}
 
-	log.Printf("Creating Responsemanagement Library %s", name)
+	//log.Printf("Creating Responsemanagement Library %s", name)
 	responsemanagementLibrary, _, err := responseManagementApi.PostResponsemanagementLibraries(sdklibrary)
 	if err != nil {
 		return diag.Errorf("Failed to create Responsemanagement Library %s: %s", name, err)
@@ -83,7 +83,7 @@ func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 
 	d.SetId(*responsemanagementLibrary.Id)
 
-	log.Printf("Created Responsemanagement Library %s %s", name, *responsemanagementLibrary.Id)
+	//log.Printf("Created Responsemanagement Library %s %s", name, *responsemanagementLibrary.Id)
 	return readResponsemanagementLibrary(ctx, d, meta)
 }
 
@@ -125,7 +125,7 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
-	log.Printf("Reading Responsemanagement Library %s", d.Id())
+	//log.Printf("Reading Responsemanagement Library %s", d.Id())
 
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdklibrary, resp, getErr := responseManagementApi.GetResponsemanagementLibrary(d.Id())
@@ -142,7 +142,7 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 			d.Set("name", *sdklibrary.Name)
 		}
 
-		log.Printf("Read Responsemanagement Library %s %s", d.Id(), *sdklibrary.Name)
+		//log.Printf("Read Responsemanagement Library %s %s", d.Id(), *sdklibrary.Name)
 		return cc.CheckState()
 	})
 }
@@ -152,7 +152,7 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		log.Printf("Deleting Responsemanagement Library")
+		//log.Printf("Deleting Responsemanagement Library")
 		resp, err := responseManagementApi.DeleteResponsemanagementLibrary(d.Id())
 		if err != nil {
 			return resp, diag.Errorf("Failed to delete Responsemanagement Library: %s", err)
@@ -168,7 +168,7 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 		if err != nil {
 			if isStatus404(resp) {
 				// Responsemanagement Library deleted
-				log.Printf("Deleted Responsemanagement Library %s", d.Id())
+				//log.Printf("Deleted Responsemanagement Library %s", d.Id())
 				return nil
 			}
 			return resource.NonRetryableError(fmt.Errorf("Error deleting Responsemanagement Library %s: %s", d.Id(), err))

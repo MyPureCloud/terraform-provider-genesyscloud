@@ -223,30 +223,6 @@ func generateIntegrationActionConfigResponse(successTemp string, blocks ...strin
 	`, successTemp, strings.Join(blocks, "\n"))
 }
 
-func generateJsonSchemaDocStr(properties ...string) string {
-	attrType := "type"
-	attrProperties := "properties"
-	typeObject := "object"
-	typeStr := "string" // All string props
-
-	propStrs := []string{}
-	for _, prop := range properties {
-		propStrs = append(propStrs, generateJsonProperty(prop, generateJsonObject(
-			generateJsonProperty(attrType, strconv.Quote(typeStr)),
-		)))
-	}
-	allProps := strings.Join(propStrs, "\n")
-
-	return generateJsonEncodedProperties(
-		// First field is required
-		generateJsonArrayProperty("required", strconv.Quote(properties[0])),
-		generateJsonProperty(attrType, strconv.Quote(typeObject)),
-		generateJsonProperty(attrProperties, generateJsonObject(
-			allProps,
-		)),
-	)
-}
-
 func testVerifyIntegrationActionDestroyed(state *terraform.State) error {
 	integrationAPI := platformclientv2.NewIntegrationsApi()
 	for _, rs := range state.RootModule().Resources {

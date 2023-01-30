@@ -5,9 +5,35 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+func generateJsonSchemaDocStr(properties ...string) string {
+	attrType := "type"
+	attrProperties := "properties"
+	typeObject := "object"
+	typeStr := "string" // All string props
+
+	propStrs := []string{}
+	for _, prop := range properties {
+		propStrs = append(propStrs, generateJsonProperty(prop, generateJsonObject(
+			generateJsonProperty(attrType, strconv.Quote(typeStr)),
+		)))
+	}
+	allProps := strings.Join(propStrs, "\n")
+
+	return generateJsonEncodedProperties(
+		// First field is required
+		generateJsonArrayProperty("required", strconv.Quote(properties[0])),
+		generateJsonProperty(attrType, strconv.Quote(typeObject)),
+		generateJsonProperty(attrProperties, generateJsonObject(
+			allProps,
+		)),
+	)
+}
 
 func suppressEquivalentJsonDiffs(k, old, new string, d *schema.ResourceData) bool {
 	if old == new {
