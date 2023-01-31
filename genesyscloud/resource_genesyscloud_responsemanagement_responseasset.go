@@ -59,7 +59,7 @@ func createResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 		sdkResponseAsset.DivisionId = &divisionId
 	}
 
-	//log.Printf("Creating Responsemanagement response asset %s", fileName)
+	log.Printf("Creating Responsemanagement response asset %s", fileName)
 	postResponseData, _, err := responseManagementApi.PostResponsemanagementResponseassetsUploads(sdkResponseAsset)
 	if err != nil {
 		return diag.Errorf("Failed to upload response asset %s: %v", fileName, err)
@@ -74,7 +74,7 @@ func createResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 
 	d.SetId(*postResponseData.Id)
 
-	//log.Printf("Created Responsemanagement response asset %s %s", fileName, *postResponseData.Id)
+	log.Printf("Created Responsemanagement response asset %s %s", fileName, *postResponseData.Id)
 	return readResponsemanagementResponseAsset(ctx, d, meta)
 }
 
@@ -82,7 +82,7 @@ func readResponsemanagementResponseAsset(ctx context.Context, d *schema.Resource
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
-	//log.Printf("Reading Responsemanagement response asset %s", d.Id())
+	log.Printf("Reading Responsemanagement response asset %s", d.Id())
 
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkAsset, resp, getErr := responseManagementApi.GetResponsemanagementResponseasset(d.Id())
@@ -101,7 +101,7 @@ func readResponsemanagementResponseAsset(ctx context.Context, d *schema.Resource
 			_ = d.Set("division_id", *sdkAsset.Division.Id)
 		}
 
-		//log.Printf("Read Responsemanagement response asset %s %s", d.Id(), *sdkAsset.Name)
+		log.Printf("Read Responsemanagement response asset %s %s", d.Id(), *sdkAsset.Name)
 		return cc.CheckState()
 	})
 }
@@ -149,7 +149,7 @@ func deleteResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		//log.Printf("Deleting Responsemanagement response asset")
+		log.Printf("Deleting Responsemanagement response asset")
 		resp, err := responseManagementApi.DeleteResponsemanagementResponseasset(d.Id())
 		if err != nil {
 			return resp, diag.Errorf("Failed to delete response asset: %s", err)
@@ -165,7 +165,7 @@ func deleteResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 		if err != nil {
 			if isStatus404(resp) {
 				// Response asset deleted
-				//log.Printf("Deleted Responsemanagement response asset %s", d.Id())
+				log.Printf("Deleted Responsemanagement response asset %s", d.Id())
 				return nil
 			}
 			return resource.NonRetryableError(fmt.Errorf("Error deleting response asset %s: %s", d.Id(), err))

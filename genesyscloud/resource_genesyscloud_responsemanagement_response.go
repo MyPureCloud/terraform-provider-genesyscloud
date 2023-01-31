@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v89/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"log"
 	"time"
@@ -97,8 +97,9 @@ func resourceResponsemanagementResponse() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`library_ids`: {
-				Description: `One or more libraries response is associated with.`,
+				Description: `One or more libraries response is associated with. Changing the library IDs will result in the resource being recreated`,
 				Required:    true,
+				ForceNew:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
@@ -355,6 +356,7 @@ func deleteResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 		return diagErr
 	}
 
+	time.Sleep(30 * time.Second)
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := responseManagementApi.GetResponsemanagementResponse(d.Id(), "")
 		if err != nil {
