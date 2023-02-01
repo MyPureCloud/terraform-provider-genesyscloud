@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestAccDataSourceResponsemanagementResponses(t *testing.T) {
+func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 	var (
 		responseResource  = "response-resource"
 		responseData      = "response-data"
@@ -29,7 +29,7 @@ func TestAccDataSourceResponsemanagementResponses(t *testing.T) {
 				Config: generateResponseManagementLibraryResource(
 					libraryResource,
 					libraryName,
-				) + generateResponseManagementResponsesResource(
+				) + generateResponseManagementResponseResource(
 					responseResource,
 					name,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource + ".id"},
@@ -41,16 +41,16 @@ func TestAccDataSourceResponsemanagementResponses(t *testing.T) {
 						textsContent,
 						textsContentTypes[0],
 					),
-				) + generateResponsemanagementResponsesDataSource(
+				) + generateResponsemanagementResponseDataSource(
 					responseData,
 					name,
 					"genesyscloud_responsemanagement_library."+libraryResource+".id",
-					"genesyscloud_responsemanagement_responses."+responseResource,
+					"genesyscloud_responsemanagement_response."+responseResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_responsemanagement_responses."+responseData, "id",
-						"genesyscloud_responsemanagement_responses."+responseResource, "id",
+						"data.genesyscloud_responsemanagement_response."+responseData, "id",
+						"genesyscloud_responsemanagement_response."+responseResource, "id",
 					),
 				),
 			},
@@ -58,13 +58,13 @@ func TestAccDataSourceResponsemanagementResponses(t *testing.T) {
 	})
 }
 
-func generateResponsemanagementResponsesDataSource(
+func generateResponsemanagementResponseDataSource(
 	resourceID string,
 	name string,
 	libraryID string,
 	dependsOn string) string {
 	return fmt.Sprintf(`
-		data "genesyscloud_responsemanagement_responses" "%s" {
+		data "genesyscloud_responsemanagement_response" "%s" {
 			name = "%s"
 			library_id = %s
 			depends_on=[%s]
