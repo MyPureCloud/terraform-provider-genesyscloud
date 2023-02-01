@@ -126,6 +126,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_quality_forms_evaluation":                        resourceEvaluationForm(),
 				"genesyscloud_quality_forms_survey":                            resourceSurveyForm(),
 				"genesyscloud_responsemanagement_library":                      resourceResponsemanagementLibrary(),
+				"genesyscloud_responsemanagement_responses":                    resourceResponsemanagementResponse(),
 				"genesyscloud_responsemanagement_responseasset":                resourceResponseManagamentResponseAsset(),
 				"genesyscloud_routing_email_domain":                            resourceRoutingEmailDomain(),
 				"genesyscloud_routing_email_route":                             resourceRoutingEmailRoute(),
