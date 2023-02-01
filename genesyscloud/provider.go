@@ -192,6 +192,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_quality_forms_survey":                            dataSourceQualityFormsSurvey(),
 				"genesyscloud_recording_media_retention_policy":                dataSourceRecordingMediaRetentionPolicy(),
 				"genesyscloud_responsemanagement_library":                      dataSourceResponsemanagementLibrary(),
+				"genesyscloud_responsemanagement_responses":                    dataSourceResponsemanagementResponse(),
 				"genesyscloud_responsemanagement_responseasset":                dataSourceResponseManagamentResponseAsset(),
 				"genesyscloud_routing_language":                                dataSourceRoutingLanguage(),
 				"genesyscloud_routing_queue":                                   dataSourceRoutingQueue(),
