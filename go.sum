@@ -292,8 +292,8 @@ github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
-github.com/mypurecloud/platform-client-sdk-go/v91 v91.1.0 h1:vqZ77PzgMCfhY7X9lGnMs5jXpyHx4E7w6fh7I5TAJnE=
-github.com/mypurecloud/platform-client-sdk-go/v91 v91.1.0/go.mod h1:tpy6jLTca9jg+w1WN7D1UvKtZuwutvHZKFd/F2zP8Kc=
+github.com/mypurecloud/platform-client-sdk-go/v92 v92.0.0 h1:lX3CdGKjmWn73zpupccFa0FsLtTQnfPuQvs5Oyh1j0s=
+github.com/mypurecloud/platform-client-sdk-go/v92 v92.0.0/go.mod h1:l0ynLnwoGMMaH5CnKgbGp7NkxpXVKZWLu8QypzrF5Ek=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nishanths/predeclared v0.0.0-20200524104333-86fad755b4d3/go.mod h1:nt3d53pc1VYcphSCIaYAJtnPYnr3Zyn8fMq2wvPGPso=
 github.com/nsf/jsondiff v0.0.0-20210303162244-6ea32392771e h1:S+/ptYdZtpK/MDstwCyt+ZHdXEpz86RJZ5gyZU4txJY=
