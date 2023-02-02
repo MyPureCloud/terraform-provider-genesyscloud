@@ -120,6 +120,7 @@ func registerResources() {
 	RegisterResource("genesyscloud_routing_skill", resourceRoutingSkill())
 	RegisterResource("genesyscloud_routing_skill_group", resourceRoutingSkillGroup())
 	RegisterResource("genesyscloud_routing_settings", resourceRoutingSettings())
+	RegisterResource("genesyscloud_routing_sms_address", resourceRoutingSmsAddress())
 	RegisterResource("genesyscloud_routing_utilization", resourceRoutingUtilization())
 	RegisterResource("genesyscloud_routing_wrapupcode", resourceRoutingWrapupCode())
 	RegisterResource("genesyscloud_telephony_providers_edges_did_pool", resourceTelephonyDidPool())
