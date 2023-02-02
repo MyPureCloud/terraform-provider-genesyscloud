@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -612,8 +613,160 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 	mockError = nil
 }
 
+func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
+	var (
+		userPromptResourceId        = "test_prompt"
+		userPromptName              = "TestPrompt" + strings.Replace(uuid.NewString(), "-", "", -1)
+		userPromptDescription       = "Test description"
+		userPromptResourceLanguage  = "en-us"
+		userPromptResourceText      = "This is a test greeting!"
+		userResourcePromptFilename1 = "test-prompt-01.wav"
+		userResourcePromptFilename2 = "test-prompt-02.wav"
+
+		userPromptResourceLanguage2 = "pt-br"
+		userPromptResourceText2     = "This is a test greeting!!!"
+
+		exportResourceId = "export"
+		exportTestDir    = "../.terraform" + uuid.NewString()
+	)
+
+	userPromptAsset := userPromptResourceStruct{
+		userPromptResourceLanguage,
+		nullValue,
+		strconv.Quote(userPromptResourceText),
+		strconv.Quote(userResourcePromptFilename1),
+	}
+
+	userPromptAsset2 := userPromptResourceStruct{
+		userPromptResourceLanguage2,
+		nullValue,
+		strconv.Quote(userPromptResourceText2),
+		strconv.Quote(userResourcePromptFilename2),
+	}
+
+	userPromptResources := []*userPromptResourceStruct{&userPromptAsset}
+	userPromptResources2 := []*userPromptResourceStruct{&userPromptAsset, &userPromptAsset2}
+
+	defer os.RemoveAll(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: generateUserPromptResource(&userPromptStruct{
+					userPromptResourceId,
+					userPromptName,
+					strconv.Quote(userPromptDescription),
+					userPromptResources,
+				}),
+			},
+			{
+				Config: generateTfExportByName(
+					exportResourceId,
+					exportTestDir,
+					falseValue,
+					[]string{strconv.Quote("genesyscloud_architect_user_prompt::" + userPromptName)},
+					"",
+					falseValue,
+					falseValue,
+				) + generateUserPromptResource(&userPromptStruct{
+					userPromptResourceId,
+					userPromptName,
+					strconv.Quote(userPromptDescription),
+					userPromptResources,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "name", userPromptName),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "description", userPromptDescription),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.language", userPromptResourceLanguage),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.text", userPromptResourceText),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.filename", userResourcePromptFilename1),
+					testUserPromptAudioFileExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
+				),
+			},
+			// Update to two resources with separate audio files
+			{
+				Config: generateUserPromptResource(&userPromptStruct{
+					userPromptResourceId,
+					userPromptName,
+					strconv.Quote(userPromptDescription),
+					userPromptResources2,
+				}),
+			},
+			{
+				Config: generateTfExportByName(
+					exportResourceId,
+					exportTestDir,
+					falseValue,
+					[]string{strconv.Quote("genesyscloud_architect_user_prompt::" + userPromptName)},
+					"",
+					falseValue,
+					falseValue,
+				) + generateUserPromptResource(&userPromptStruct{
+					userPromptResourceId,
+					userPromptName,
+					strconv.Quote(userPromptDescription),
+					userPromptResources2,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "name", userPromptName),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "description", userPromptDescription),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.language", userPromptResourceLanguage),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.text", userPromptResourceText),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.filename", userResourcePromptFilename1),
+					testUserPromptAudioFileExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
 func removeTfConfigBlock(export string) string {
 	return strings.Replace(export, terraformHCLBlock, "", -1)
+}
+
+func testUserPromptAudioFileExport(filePath, resourceType, resourceId, exportDir, resourceName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		raw, err := getResourceDefinition(filePath, resourceType)
+		if err != nil {
+			return err
+		}
+		var r *json.RawMessage
+		if err := json.Unmarshal(*raw[resourceName], &r); err != nil {
+			return err
+		}
+
+		var obj interface{}
+		if err := json.Unmarshal(*r, &obj); err != nil {
+			return err
+		}
+
+		// Collect each filename from resources list
+		var fileNames []string
+		if objMap, ok := obj.(map[string]interface{}); ok {
+			if resourcesList, ok := objMap["resources"].([]interface{}); ok {
+				for _, r := range resourcesList {
+					if rMap, ok := r.(map[string]interface{}); ok {
+						if fileNameStr, ok := rMap["filename"].(string); ok && fileNameStr != "" {
+							fileNames = append(fileNames, fileNameStr)
+						}
+					}
+				}
+			}
+		}
+
+		// Check that file exists in export directory
+		for _, filename := range fileNames {
+			pathToWavFile := path.Join(exportDir, filename)
+			if _, err := os.Stat(pathToWavFile); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
 }
 
 func testUserExport(filePath, resourceType, resourceName string, expectedUser *UserExport) resource.TestCheckFunc {

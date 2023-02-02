@@ -49,8 +49,8 @@ type CustomFileWriterSettings struct {
 	RetrieveAndWriteFilesFunc func(string, string, string, map[string]interface{}, interface{}) error
 
 	// Sub directory within export folder in which to write files retrieved by RetrieveAndWriteFilesFunc
-	// For example, user_prompt resource defines SubDirectory as "audio", so the prompt audio files will
-	// be written to {{genesyscloud_tf_export.directory}}/audio/
+	// For example, the user_prompt resource defines SubDirectory as "audio", so the prompt audio files will
+	// be written to genesyscloud_tf_export.directory/audio/
 	// The logic for retrieving and writing data to this dir should be defined in RetrieveAndWriteFilesFunc
 	SubDirectory string
 }

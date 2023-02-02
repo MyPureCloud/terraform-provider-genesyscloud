@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -186,67 +185,6 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_architect_user_prompt." + userPromptResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-		},
-		CheckDestroy: testVerifyUserPromptsDestroyed,
-	})
-}
-
-func TestAccResourceUserPromptExportWavFile(t *testing.T) {
-	var (
-		resourceId    = "test_prompt"
-		name          = "TestPrompt" + strings.Replace(uuid.NewString(), "-", "", -1)
-		description   = "Test description"
-		exportTestDir = "../.terraform" + uuid.NewString()
-	)
-
-	defer os.RemoveAll(exportTestDir)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: fmt.Sprintf(`
-resource "genesyscloud_architect_user_prompt" "%s" {
-	name        = "%s"
-	description = "%s"
-	resources {
-		language   = "en-us"
-		text       = "Hello"
-		filename   = "test-prompt-02.wav"
-	}
-}	
-`, resourceId, name, description),
-			},
-			{
-				Config: fmt.Sprintf(`
-resource "genesyscloud_tf_export" "export" {
-	directory      = "%s"
-	export_as_hcl  = false
-	resource_types = ["genesyscloud_architect_user_prompt::%s"]
-}
-
-resource "genesyscloud_architect_user_prompt" "%s" {
-	name        = "%s"
-	description = "%s"
-	resources {
-		language   = "en-us"
-		text       = "Hello"
-		filename   = "test-prompt-02.wav"
-	}
-}				
-`, exportTestDir, name, resourceId, name, description),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+resourceId, "description", description),
-				),
-			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_architect_user_prompt." + resourceId,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

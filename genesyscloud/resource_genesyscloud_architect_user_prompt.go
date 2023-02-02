@@ -1151,7 +1151,6 @@ func getArchitectPromptAudioData(promptId string, meta interface{}) ([]PromptAud
 
 	data, _, err := apiInstance.GetArchitectPrompt(promptId)
 	if err != nil {
-		fmt.Println("i")
 		return nil, err
 	}
 
