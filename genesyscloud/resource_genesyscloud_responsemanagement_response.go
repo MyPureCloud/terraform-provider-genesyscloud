@@ -158,17 +158,31 @@ func getAllResponsemanagementResponse(_ context.Context, clientConfig *platformc
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		sdkresponseentitylisting, _, getErr := responseManagementApi.GetResponsemanagementResponses("", pageNum, pageSize, "")
-		if getErr != nil {
-			return nil, diag.Errorf("Error requesting page of Responsemanagement Response: %s", getErr)
-		}
+		libraries, _, getErr := responseManagementApi.GetResponsemanagementLibraries(pageNum, pageSize, "")
 
-		if sdkresponseentitylisting.Entities == nil || len(*sdkresponseentitylisting.Entities) == 0 {
+		if getErr != nil {
+			return nil, diag.Errorf("Error requesting page of Responsemanagement library: %s", getErr)
+		}
+		if libraries.Entities == nil || len(*libraries.Entities) == 0 {
 			break
 		}
 
-		for _, entity := range *sdkresponseentitylisting.Entities {
-			resources[*entity.Id] = &ResourceMeta{Name: *entity.Name}
+		for _, library := range *libraries.Entities {
+			for pageNum := 1; ; pageNum++ {
+				const pageSize = 100
+				sdkresponseentitylisting, _, getErr := responseManagementApi.GetResponsemanagementResponses(*library.Id, pageNum, pageSize, "")
+				if getErr != nil {
+					return nil, diag.Errorf("Error requesting page of Responsemanagement Response: %s", getErr)
+				}
+
+				if sdkresponseentitylisting.Entities == nil || len(*sdkresponseentitylisting.Entities) == 0 {
+					break
+				}
+
+				for _, entity := range *sdkresponseentitylisting.Entities {
+					resources[*entity.Id] = &ResourceMeta{Name: *entity.Name}
+				}
+			}
 		}
 	}
 
@@ -186,6 +200,7 @@ func responsemanagementResponseExporter() *ResourceExporter {
 				RefType: "genesyscloud_responsemanagement_responseasset",
 			},
 		},
+		JsonEncodeAttributes: []string{"substitutions_schema_id"},
 	}
 }
 

@@ -244,6 +244,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_quality_forms_survey":                            surveyFormExporter(),
 		"genesyscloud_recording_media_retention_policy":                mediaRetentionPolicyExporter(),
 		"genesyscloud_responsemanagement_library":                      responsemanagementLibraryExporter(),
+		"genesyscloud_responsemanagement_response":                     responsemanagementResponseExporter(),
 		"genesyscloud_routing_email_domain":                            routingEmailDomainExporter(),
 		"genesyscloud_routing_email_route":                             routingEmailRouteExporter(),
 		"genesyscloud_routing_language":                                routingLanguageExporter(),
