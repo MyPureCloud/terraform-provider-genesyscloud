@@ -44,9 +44,8 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 
 func ArchitectPromptAudioResolver(promptId string, exportDirectory string, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
 	fullPath := path.Join(exportDirectory, subDirectory)
-
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
-		return fmt.Errorf("error occured while creating directory %s: %v", fullPath, err)
+		return err
 	}
 
 	audioDataList, err := getArchitectPromptAudioData(promptId, meta)

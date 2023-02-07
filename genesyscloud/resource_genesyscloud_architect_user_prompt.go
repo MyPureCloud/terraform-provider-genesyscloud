@@ -1177,10 +1177,6 @@ func downloadAudioFile(directory string, fileName string, mediaUri string) error
 
 	defer resp.Body.Close()
 
-	if err := os.MkdirAll(directory, os.ModePerm); err != nil {
-		return fmt.Errorf("error occured while creating directory %s: %v", directory, err)
-	}
-
 	out, err := os.Create(fmt.Sprintf("%s/%s", directory, fileName))
 	if err != nil {
 		return err
