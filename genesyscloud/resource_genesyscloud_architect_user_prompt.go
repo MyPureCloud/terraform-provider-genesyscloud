@@ -724,7 +724,7 @@ func architectUserPromptExporter() *ResourceExporter {
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 		CustomFileWriter: CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
-			SubDirectory:              "audio",
+			SubDirectory:              "audio_prompts",
 		},
 	}
 }
