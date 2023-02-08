@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -265,6 +266,15 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		unresolved, _ := sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", exporters, includeStateFile, exportAsHCL)
 		if len(unresolved) > 0 {
 			unresolvedAttrs = append(unresolvedAttrs, unresolved...)
+		}
+
+		exporter := exporters[resource.Type]
+		if resourceFilesWriterFunc := exporter.CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
+			exportDir, _ := getFilePath(d, "")
+			err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporter.CustomFileWriter.SubDirectory, jsonResult, meta)
+			if err != nil {
+				log.Printf("An error has occured while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
+			}
 		}
 
 		resourceTypeHCLBlocks = append(resourceTypeHCLBlocks, instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
@@ -629,6 +639,19 @@ func deleteTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) di
 	if _, err := os.Stat(tfVarsFile); err == nil {
 		log.Printf("Deleting export vars %s", tfVarsFile)
 		os.Remove(tfVarsFile)
+	}
+
+	// delete left over folders e.g. prompt audio data
+	dir, _ := getFilePath(d, "")
+	contents, err := ioutil.ReadDir(dir)
+	if err == nil {
+		for _, c := range contents {
+			if c.IsDir() {
+				pathToLeftoverDir := path.Join(dir, c.Name())
+				log.Printf("Deleting leftover directory %s", pathToLeftoverDir)
+				_ = os.RemoveAll(pathToLeftoverDir)
+			}
+		}
 	}
 
 	return nil

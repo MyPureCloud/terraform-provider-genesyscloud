@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"os"
+	"path"
 )
 
 /*
@@ -37,5 +39,25 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 		return fmt.Errorf("the memberGroupType %s cannot be located. Can not resolve to a reference attribute", memberGroupType)
 	}
 
+	return nil
+}
+
+func ArchitectPromptAudioResolver(promptId string, exportDirectory string, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+	fullPath := path.Join(exportDirectory, subDirectory)
+	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
+		return err
+	}
+
+	audioDataList, err := getArchitectPromptAudioData(promptId, meta)
+	if err != nil || len(audioDataList) == 0 {
+		return err
+	}
+
+	for _, data := range audioDataList {
+		if err := downloadAudioFile(fullPath, data.FileName, data.MediaUri); err != nil {
+			return err
+		}
+	}
+	updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory)
 	return nil
 }
