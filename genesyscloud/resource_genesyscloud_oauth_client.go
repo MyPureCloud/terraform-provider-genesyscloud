@@ -6,13 +6,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 var (
@@ -182,7 +182,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diag.Errorf("Failed to create oauth client %s: %s", name, err)
 	}
 
-	credentialName := getNillableValue[string](d, "integration_credential_name")
+	credentialName := resourcedata.GetNillableValue[string](d, "integration_credential_name")
 	if credentialName != nil {
 		integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 		cred_type := "pureCloudOAuthClient"
@@ -317,7 +317,7 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	sdkConfig := meta.(*providerMeta).ClientConfig
 
 	// check if there is a integration credential to delete
-	credentialId := getNillableValue[string](d, "integration_credential_id")
+	credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
 	if credentialId != nil {
 		integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 		currentCredential, _, getErr := integrationAPI.GetIntegrationsCredential(d.Id())
