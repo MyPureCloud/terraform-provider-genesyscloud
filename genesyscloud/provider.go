@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 )
 
 func init() {
@@ -100,6 +100,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_integration":                                     resourceIntegration(),
 				"genesyscloud_integration_action":                              resourceIntegrationAction(),
 				"genesyscloud_integration_credential":                          resourceCredential(),
+				"genesyscloud_journey_action_map":                              resourceJourneyActionMap(),
 				"genesyscloud_journey_outcome":                                 resourceJourneyOutcome(),
 				"genesyscloud_journey_segment":                                 resourceJourneySegment(),
 				"genesyscloud_knowledge_knowledgebase":                         resourceKnowledgeKnowledgebase(),
@@ -169,6 +170,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_integration":                                     dataSourceIntegration(),
 				"genesyscloud_integration_action":                              dataSourceIntegrationAction(),
 				"genesyscloud_integration_credential":                          dataSourceIntegrationCredential(),
+				"genesyscloud_journey_action_map":                              dataSourceJourneyActionMap(),
 				"genesyscloud_journey_outcome":                                 dataSourceJourneyOutcome(),
 				"genesyscloud_journey_segment":                                 dataSourceJourneySegment(),
 				"genesyscloud_knowledge_knowledgebase":                         dataSourceKnowledgeKnowledgebase(),
@@ -316,7 +318,7 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		RetryMax:     20,
 		RequestLogHook: func(request *http.Request, count int) {
 			if count > 0 && request != nil {
-				log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
+				log.Printf("Retry #%d for %s %s", count, request.Method, request.URL)
 			}
 		},
 		ResponseLogHook: func(response *http.Response) {
