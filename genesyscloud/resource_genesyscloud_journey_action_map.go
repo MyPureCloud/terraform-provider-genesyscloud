@@ -367,7 +367,13 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 func journeyActionMapExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllJourneyActionMaps),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs: map[string]*RefAttrSettings{
+			"trigger_with_segments":                                             {RefType: "genesyscloud_journey_segment"},
+			"trigger_with_outcome_probability_conditions.outcome_id":            {RefType: "genesyscloud_journey_outcome"},
+			"action.architect_flow_fields.architect_flow_id":                    {RefType: "genesyscloud_flow"},
+			"action_map_schedule_groups.action_map_schedule_group_id":           {RefType: "genesyscloud_architect_schedulegroups"},
+			"action_map_schedule_groups.emergency_action_map_schedule_group_id": {RefType: "genesyscloud_architect_schedulegroups"},
+		},
 	}
 }
 
