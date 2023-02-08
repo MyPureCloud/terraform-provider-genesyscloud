@@ -1,18 +1,18 @@
 package genesyscloud
 
 import (
-	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
-	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/fileserver"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
 type userPromptStruct struct {
@@ -129,8 +129,8 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 	userPromptDescription1 := "Test prompt with wav audio file"
 	userPromptResourceLang1 := "en-us"
 	userPromptResourceText1 := "This is a test greeting!"
-	userPromptResourceFileName1 := "test-prompt-01.wav"
-	userPromptResourceFileName2 := "test-prompt-02.wav"
+	userPromptResourceFileName1 := testrunner.GetTestDataPath("test-prompt-01.wav")
+	userPromptResourceFileName2 := testrunner.GetTestDataPath("test-prompt-02.wav")
 
 	userPromptAsset1 := userPromptResourceStruct{
 		userPromptResourceLang1,
@@ -190,24 +190,6 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 		},
 		CheckDestroy: testVerifyUserPromptsDestroyed,
 	})
-}
-
-func startHttpServer(wg *sync.WaitGroup, directory, port string) *http.Server {
-	srv := &http.Server{Addr: ":" + port}
-
-	http.DefaultServeMux = new(http.ServeMux)
-	http.Handle("/", http.FileServer(http.Dir(directory)))
-
-	go func() {
-		defer wg.Done()
-
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Printf("ListenAndServe(): %v", err)
-		}
-		log.Println("Finished serving")
-	}()
-
-	return srv
 }
 
 func TestAccResourceUserPromptWavFileURL(t *testing.T) {
@@ -238,7 +220,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	srv := startHttpServer(httpServerExitDone, ".", "8100")
+	srv := fileserver.Start(httpServerExitDone, testrunner.GetTestDataPath(), 8100)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -281,11 +263,8 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 		},
 		CheckDestroy: testVerifyUserPromptsDestroyed,
 	})
-	if err := srv.Shutdown(context.TODO()); err != nil {
-		log.Println("Error shutting down server:", err)
-	}
 
-	httpServerExitDone.Wait()
+	fileserver.ShutDown(srv, httpServerExitDone)
 }
 
 func generateUserPromptResource(userPrompt *userPromptStruct) string {
