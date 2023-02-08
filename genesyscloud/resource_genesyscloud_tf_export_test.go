@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/google/uuid"
 
@@ -620,8 +621,8 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		userPromptDescription       = "Test description"
 		userPromptResourceLanguage  = "en-us"
 		userPromptResourceText      = "This is a test greeting!"
-		userResourcePromptFilename1 = "test-prompt-01.wav"
-		userResourcePromptFilename2 = "test-prompt-02.wav"
+		userResourcePromptFilename1 = testrunner.GetTestDataPath("test-prompt-01.wav")
+		userResourcePromptFilename2 = testrunner.GetTestDataPath("test-prompt-02.wav")
 
 		userPromptResourceLanguage2 = "pt-br"
 		userPromptResourceText2     = "This is a test greeting!!!"
