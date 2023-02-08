@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -56,9 +57,9 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 					responseResource,
 					name1,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
-					"",
-					"",
-					"",
+					nullValue,
+					nullValue,
+					nullValue,
 					[]string{},
 					generateTextsBlock(
 						textsContent1,
@@ -87,9 +88,9 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 					responseResource,
 					name2,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
-					interactionTypes[0],
+					strconv.Quote(interactionTypes[0]),
 					generateJsonSchemaDocStr(substitutionsSchema),
-					responseTypes[0],
+					strconv.Quote(responseTypes[0]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
 					generateTextsBlock(
 						textsContent2,
@@ -145,9 +146,9 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 					responseResource,
 					name2,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource2 + ".id", "genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
-					interactionTypes[0],
+					strconv.Quote(interactionTypes[0]),
 					generateJsonSchemaDocStr(substitutionsSchema),
-					responseTypes[0],
+					strconv.Quote(responseTypes[0]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
 					generateTextsBlock(
 						textsContent1,
@@ -218,22 +219,13 @@ func generateResponseManagementResponseResource(
 	assetIds []string,
 	nestedBlocks ...string,
 ) string {
-	if interactionType != "" {
-		interactionType = fmt.Sprintf(`interaction_type = "%s"`, interactionType)
-	}
-	if schema != "" {
-		schema = fmt.Sprintf(`substitutions_schema_id = %s`, schema)
-	}
-	if responseType != "" {
-		responseType = fmt.Sprintf(`response_type = "%s"`, responseType)
-	}
 	return fmt.Sprintf(`
 		resource "genesyscloud_responsemanagement_response" "%s" {
 			name = "%s"
 			library_ids = [%s]
-			%s
-			%s
-			%s
+			interaction_type = %s
+			substitutions_schema_id = %s
+			response_type = %s
 			asset_ids = [%s]
 			%s
 		}
