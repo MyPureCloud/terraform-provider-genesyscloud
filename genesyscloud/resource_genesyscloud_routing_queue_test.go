@@ -912,14 +912,14 @@ func validateDirectRouting(resourceName string,
 	messageEnabled string,
 	messageInboundFlowId string,) resource.TestCheckFunc {
 	return resource.ComposeAggregateTestCheckFunc(
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.agent_wait_seconds",		 agentWaitSeconds),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.wait_for_agent",		 	 waitForAgent),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_enabled", 			 callEnabled),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_inbound_flow_id", 	 callInboundFlowId),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.voicemail_flow_id", 		 voicemailFlowId),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_enabled", 			 emailEnabled),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_inbound_flow_id", 	 emailInboundFlowId),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.message_enabled", 		 messageEnabled),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.agent_wait_seconds",	   agentWaitSeconds),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.wait_for_agent",		   waitForAgent),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_enabled", 		   callEnabled),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_inbound_flow_id",    callInboundFlowId),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.voicemail_flow_id", 	   voicemailFlowId),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_enabled", 		   emailEnabled),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_inbound_flow_id",   emailInboundFlowId),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.message_enabled", 		   messageEnabled),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.message_inbound_flow_id", messageInboundFlowId),
 	)
 }
