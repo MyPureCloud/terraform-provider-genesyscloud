@@ -41,7 +41,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v4.1.0
         with:
           version: latest
-          args: release --rm-dist --release-notes=CHANGELOG.md
+          args: release --clean --release-notes=CHANGELOG.md
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
