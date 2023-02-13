@@ -127,7 +127,7 @@ func validateResponseAssetName(name interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("filename %v is not a string", name)
 }
 
-func validateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
+func ValidateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (warnings []string, errors []error) {
 		v, ok := i.(string)
 		if !ok {
@@ -141,7 +141,7 @@ func validateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 			}
 		}
 
-		if !stringInSlice(v, valid) || !subStringInSlice(v, valid) {
+		if !StringInSlice(v, valid) || !subStringInSlice(v, valid) {
 			errors = append(errors, fmt.Errorf("string %s not in slice", v))
 			return warnings, errors
 		}

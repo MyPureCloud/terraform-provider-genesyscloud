@@ -527,7 +527,7 @@ func readSkillGroupMemberDivisionIds(d *schema.ResourceData, routingAPI *platfor
 }
 
 func allMemberDivisionsSpecified(schemaSkillGroupMemberDivisionIds []string) bool {
-	return stringInSlice("*", schemaSkillGroupMemberDivisionIds)
+	return StringInSlice("*", schemaSkillGroupMemberDivisionIds)
 }
 
 func organizeMemberDivisionIdsForUpdate(schemaIds, apiIds []string) ([]string, []string) {
@@ -535,13 +535,13 @@ func organizeMemberDivisionIdsForUpdate(schemaIds, apiIds []string) ([]string, [
 	toRemove := make([]string, 0)
 	// items that are in hcl and not in api-returned list - add
 	for _, id := range schemaIds {
-		if !stringInSlice(id, apiIds) {
+		if !StringInSlice(id, apiIds) {
 			toAdd = append(toAdd, id)
 		}
 	}
 	// items that are not in hcl and are in api-returned list - remove
 	for _, id := range apiIds {
-		if !stringInSlice(id, schemaIds) {
+		if !StringInSlice(id, schemaIds) {
 			toRemove = append(toRemove, id)
 		}
 	}
@@ -550,7 +550,7 @@ func organizeMemberDivisionIdsForUpdate(schemaIds, apiIds []string) ([]string, [
 
 // Prepare member_division_ids list to avoid an unnecessary plan not empty error
 func organizeMemberDivisionIdsForRead(schemaList, apiList []string, divisionId string) []string {
-	if !stringInSlice(divisionId, schemaList) {
+	if !StringInSlice(divisionId, schemaList) {
 		apiList = removeStringFromSlice(divisionId, apiList)
 	}
 	if len(schemaList) == 1 && schemaList[0] == "*" {
@@ -578,7 +578,7 @@ func removeSkillGroupDivisionID(d *schema.ResourceData, list []string) ([]string
 		}
 		divisionId = id
 	}
-	if stringInSlice(divisionId, list) {
+	if StringInSlice(divisionId, list) {
 		list = removeStringFromSlice(divisionId, list)
 	}
 	return list, nil

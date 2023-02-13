@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -592,4 +593,135 @@ func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibility
 	}
 
 	return []interface{}{visibilityConditionMap}
+}
+
+func GenerateEvaluationFormResource(resourceID string, evaluationForm *EvaluationFormStruct) string {
+	return fmt.Sprintf(`resource "genesyscloud_quality_forms_evaluation" "%s" {
+		name = "%s"
+		published = %v
+		%s
+	}
+	`, resourceID,
+		evaluationForm.Name,
+		evaluationForm.Published,
+		GenerateEvaluationFormQuestionGroups(&evaluationForm.QuestionGroups),
+	)
+}
+
+func GenerateEvaluationFormQuestionGroups(questionGroups *[]EvaluationFormQuestionGroupStruct) string {
+	if questionGroups == nil {
+		return ""
+	}
+
+	questionGroupsString := ""
+
+	for _, questionGroup := range *questionGroups {
+		questionGroupString := fmt.Sprintf(`
+        question_groups {
+            name = "%s"
+            default_answers_to_highest = %v
+            default_answers_to_na  = %v
+            na_enabled = %v
+            weight = %v
+            manual_weight = %v
+            %s
+            %s
+        }
+        `, questionGroup.Name,
+			questionGroup.DefaultAnswersToHighest,
+			questionGroup.DefaultAnswersToNA,
+			questionGroup.NaEnabled,
+			questionGroup.Weight,
+			questionGroup.ManualWeight,
+			GenerateEvaluationFormQuestions(&questionGroup.Questions),
+			GenerateFormVisibilityCondition(&questionGroup.VisibilityCondition),
+		)
+
+		questionGroupsString += questionGroupString
+	}
+
+	return questionGroupsString
+}
+
+func GenerateEvaluationFormQuestions(questions *[]EvaluationFormQuestionStruct) string {
+	if questions == nil {
+		return ""
+	}
+
+	questionsString := ""
+
+	for _, question := range *questions {
+		questionString := fmt.Sprintf(`
+        questions {
+            text = "%s"
+            help_text = "%s"
+            na_enabled = %v
+            comments_required = %v
+            is_kill = %v
+            is_critical = %v
+            %s
+            %s
+        }
+        `, question.Text,
+			question.HelpText,
+			question.NaEnabled,
+			question.CommentsRequired,
+			question.IsKill,
+			question.IsCritical,
+			GenerateFormVisibilityCondition(&question.VisibilityCondition),
+			GenerateFormAnswerOptions(&question.AnswerOptions),
+		)
+
+		questionsString += questionString
+	}
+
+	return questionsString
+}
+
+func GenerateFormAnswerOptions(answerOptions *[]AnswerOptionStruct) string {
+	if answerOptions == nil {
+		return ""
+	}
+
+	answerOptionsString := ""
+
+	for _, answerOption := range *answerOptions {
+		answerOptionString := fmt.Sprintf(`
+        answer_options {
+            text = "%s"
+            value = %v
+        }
+        `, answerOption.Text,
+			answerOption.Value,
+		)
+
+		answerOptionsString += answerOptionString
+	}
+
+	return fmt.Sprintf(`%s`, answerOptionsString)
+}
+
+func GenerateFormVisibilityCondition(condition *VisibilityConditionStruct) string {
+	if condition == nil || len(condition.CombiningOperation) == 0 {
+		return ""
+	}
+
+	predicateString := ""
+
+	for i, predicate := range condition.Predicates {
+		if i > 0 {
+			predicateString += ", "
+		}
+
+		predicateString += strconv.Quote(predicate)
+	}
+
+	return fmt.Sprintf(`
+	visibility_condition {
+        combining_operation = "%s"
+        predicates = [%s]
+    }
+	`, condition.CombiningOperation,
+		predicateString,
+	)
 }

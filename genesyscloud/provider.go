@@ -14,6 +14,15 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 )
 
+// ProviderFactories are used to instantiate a provider during acceptance testing.
+// The factory function will be invoked for every Terraform CLI command executed
+// to create a provider server to which the CLI can reattach.
+var ProviderFactories = map[string]func() (*schema.Provider, error){
+	"genesyscloud": func() (*schema.Provider, error) {
+		return New("0.1.0")(), nil
+	},
+}
+
 func init() {
 	// Set descriptions to support markdown syntax, this will be used in document generation
 	// and the language server.

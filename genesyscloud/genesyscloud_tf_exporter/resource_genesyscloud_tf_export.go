@@ -79,7 +79,7 @@ func resourceTfExport() *schema.Resource {
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: gcloud.ValidateSubStringInSlice(getAvailableExporterTypes()),
+					ValidateFunc: gcloud.ValidateSubStringInSlice(gcloud.GetAvailableExporterTypes()),
 				},
 				ForceNew: true,
 			},
@@ -174,7 +174,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	includeStateFile := d.Get("include_state_file").(bool)
-	provider := New(version)()
+	provider := gcloud.New(version)()
 
 	// Read the instance data from each exporter
 	var resources []resourceInfo
@@ -1053,7 +1053,7 @@ func sanitizeConfigMap(
 			continue
 		}
 
-		if exporter.isAttributeExcluded(currAttr) {
+		if exporter.IsAttributeExcluded(currAttr) {
 			// Excluded. Remove from the config.
 			configMap[key] = nil
 			continue
@@ -1162,7 +1162,7 @@ func sanitizeConfigMap(
 	return unresolvableAttrs, true
 }
 
-func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *gcloud.ResourceExporter, exporters map[string]*ResourceExporter, exportingState bool) (string, error) {
+func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *gcloud.ResourceExporter, exporters map[string]*gcloud.ResourceExporter, exportingState bool) (string, error) {
 	var jsonData interface{}
 	err := json.Unmarshal([]byte(currVal), &jsonData)
 	if err != nil {
@@ -1202,7 +1202,7 @@ func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema
 	return nil, false
 }
 
-func removeZeroValues(key string, val interface{}, configMap jsonMap) {
+func removeZeroValues(key string, val interface{}, configMap gcloud.JsonMap) {
 	switch val.(type) {
 	case string:
 		if val.(string) == "" {
@@ -1231,7 +1231,7 @@ func sanitizeConfigArray(
 	resourceType string,
 	anArray []interface{},
 	currAttr string,
-	exporters map[string]*ResourceExporter,
+	exporters map[string]*gcloud.ResourceExporter,
 	exportingState bool,
 	exportingAsHCL bool) []interface{} {
 	exporter := exporters[resourceType]
@@ -1251,7 +1251,7 @@ func sanitizeConfigArray(
 			}
 		case string:
 			// Check if we are on a reference attribute and update value in array
-			if refSettings := exporter.getRefAttrSettings(currAttr); refSettings != nil {
+			if refSettings := exporter.GetRefAttrSettings(currAttr); refSettings != nil {
 				referenceVal := resolveReference(refSettings, val.(string), exporters, exportingState)
 				if referenceVal != "" {
 					result = append(result, referenceVal)
@@ -1266,8 +1266,8 @@ func sanitizeConfigArray(
 	return result
 }
 
-func resolveReference(refSettings *RefAttrSettings, refID string, exporters map[string]*gcloud.ResourceExporter, exportingState bool) string {
-	if stringInSlice(refID, refSettings.AltValues) {
+func resolveReference(refSettings *gcloud.RefAttrSettings, refID string, exporters map[string]*gcloud.ResourceExporter, exportingState bool) string {
+	if gcloud.StringInSlice(refID, refSettings.AltValues) {
 		// This is not actually a reference to another object. Keep the value
 		return refID
 	}

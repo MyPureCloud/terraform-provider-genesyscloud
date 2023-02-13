@@ -15,6 +15,44 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
+type EvaluationFormQuestionGroupStruct struct {
+	Name                    string
+	DefaultAnswersToHighest bool
+	DefaultAnswersToNA      bool
+	NaEnabled               bool
+	Weight                  float32
+	ManualWeight            bool
+	Questions               []EvaluationFormQuestionStruct
+	VisibilityCondition     VisibilityConditionStruct
+}
+
+type EvaluationFormStruct struct {
+	Name           string
+	Published      bool
+	QuestionGroups []EvaluationFormQuestionGroupStruct
+}
+
+type EvaluationFormQuestionStruct struct {
+	Text                string
+	HelpText            string
+	NaEnabled           bool
+	CommentsRequired    bool
+	IsKill              bool
+	IsCritical          bool
+	VisibilityCondition VisibilityConditionStruct
+	AnswerOptions       []AnswerOptionStruct
+}
+
+type AnswerOptionStruct struct {
+	Text  string
+	Value int
+}
+
+type VisibilityConditionStruct struct {
+	CombiningOperation string
+	Predicates         []string
+}
+
 var (
 	mediaPolicies = &schema.Resource{
 		Schema: map[string]*schema.Schema{

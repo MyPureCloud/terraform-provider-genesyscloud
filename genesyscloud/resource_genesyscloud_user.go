@@ -1325,3 +1325,33 @@ func flattenUserCertifications(certs *[]string) *schema.Set {
 	}
 	return nil
 }
+
+// Basic user with minimum required fields
+func GenerateBasicUserResource(resourceID string, email string, name string) string {
+	return generateUserResource(resourceID, email, name, nullValue, nullValue, nullValue, nullValue, nullValue, "", "")
+}
+
+func generateUserResource(
+	resourceID string,
+	email string,
+	name string,
+	state string,
+	title string,
+	department string,
+	manager string,
+	acdAutoAnswer string,
+	profileSkills string,
+	certifications string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		state = %s
+		title = %s
+		department = %s
+		manager = %s
+		acd_auto_answer = %s
+		profile_skills = [%s]
+		certifications = [%s]
+	}
+	`, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
+}

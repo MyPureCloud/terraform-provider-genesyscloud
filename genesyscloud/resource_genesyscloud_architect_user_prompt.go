@@ -29,6 +29,20 @@ type PromptAudioData struct {
 	MediaUri string
 }
 
+type UserPromptStruct struct {
+	ResourceID  string
+	Name        string
+	Description string
+	Resources   []*UserPromptResourceStruct
+}
+
+type UserPromptResourceStruct struct {
+	Language   string
+	Tts_string string
+	Text       string
+	Filename   string
+}
+
 var userPromptResource = &schema.Resource{
 	Schema: map[string]*schema.Schema{
 		"language": {
@@ -1208,4 +1222,34 @@ func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDat
 			}
 		}
 	}
+}
+
+func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
+	resourcesString := ``
+	for _, p := range userPrompt.Resources {
+
+		resourcesString += fmt.Sprintf(`resources {
+            language = "%s"
+            tts_string = %s
+            text = %s
+            filename = %s
+        }
+        `,
+			p.Language,
+			p.Tts_string,
+			p.Text,
+			p.Filename,
+		)
+	}
+
+	return fmt.Sprintf(`resource "genesyscloud_architect_user_prompt" "%s" {
+		name = "%s"
+		description = %s
+		%s
+	}
+	`, userPrompt.ResourceID,
+		userPrompt.Name,
+		userPrompt.Description,
+		resourcesString,
+	)
 }

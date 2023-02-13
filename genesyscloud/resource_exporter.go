@@ -169,18 +169,18 @@ func (r *ResourceExporter) ContainsNestedRefAttrs(attribute string) ([]string, b
 }
 
 func (r *ResourceExporter) AllowForZeroValues(attribute string) bool {
-	return stringInSlice(attribute, r.AllowZeroValues)
+	return StringInSlice(attribute, r.AllowZeroValues)
 }
 
 func (r *ResourceExporter) IsJsonEncodable(attribute string) bool {
-	return stringInSlice(attribute, r.JsonEncodeAttributes)
+	return StringInSlice(attribute, r.JsonEncodeAttributes)
 }
 
 func (r *ResourceExporter) AddExcludedAttribute(attribute string) {
 	r.ExcludedAttributes = append(r.ExcludedAttributes, attribute)
 }
 
-func (r *ResourceExporter) isAttributeExcluded(attribute string) bool {
+func (r *ResourceExporter) IsAttributeExcluded(attribute string) bool {
 	for _, excluded := range r.ExcludedAttributes {
 		// Excluded if attributes match, or the specified attribute is nested in the excluded attribute
 		if excluded == attribute || strings.HasPrefix(attribute, excluded+".") {
@@ -205,7 +205,7 @@ func (r *ResourceExporter) RemoveFieldIfMissing(attribute string, config map[str
 	return false
 }
 
-func getResourceExporters(filter []string) map[string]*ResourceExporter {
+func GetResourceExporters(filter []string) map[string]*ResourceExporter {
 	exporters := map[string]*ResourceExporter{
 		// Add new resources that can be exported here
 		"genesyscloud_architect_datatable":                             architectDatatableExporter(),
@@ -287,7 +287,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 	// Include all if no filters
 	if len(filter) > 0 {
 		for resType := range exporters {
-			if !stringInSlice(resType, formatFilter(filter)) {
+			if !StringInSlice(resType, formatFilter(filter)) {
 				delete(exporters, resType)
 			}
 		}
@@ -304,8 +304,8 @@ func formatFilter(filter []string) []string {
 	return newFilter
 }
 
-func etAvailableExporterTypes() []string {
-	exporters := getResourceExporters(nil)
+func GetAvailableExporterTypes() []string {
+	exporters := GetResourceExporters(nil)
 	types := make([]string, len(exporters))
 	i := 0
 	for k := range exporters {
@@ -326,11 +326,11 @@ var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
 
 func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
 	for _, meta := range idMetaMap {
-		meta.Name = sanitizeResourceName(meta.Name)
+		meta.Name = SanitizeResourceName(meta.Name)
 	}
 }
 
-func sanitizeResourceName(inputName string) string {
+func SanitizeResourceName(inputName string) string {
 	name := unsafeNameChars.ReplaceAllStringFunc(inputName, escapeRune)
 	if name != inputName {
 		// Append a hash of the original name to ensure uniqueness for similar names
