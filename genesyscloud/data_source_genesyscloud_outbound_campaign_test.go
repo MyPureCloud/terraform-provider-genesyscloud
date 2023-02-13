@@ -2,9 +2,10 @@ package genesyscloud
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"testing"
 )
 
 func TestAccDataSourceOutboundCampaign(t *testing.T) {
@@ -19,7 +20,7 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	emergencyNumber := "3173124740"
+	emergencyNumber := "+1(317)3124740"
 	err = deleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
