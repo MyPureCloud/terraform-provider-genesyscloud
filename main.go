@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
+
+	provider "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	provider "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -14,6 +16,7 @@ import (
 
 // Run the docs generation tool, check its repository for more information on how it works and how docs
 // can be customized.
+//
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 //go:generate git restore docs/index.md
 //go:generate go run github.com/mypurecloud/terraform-provider-genesyscloud/apidocs

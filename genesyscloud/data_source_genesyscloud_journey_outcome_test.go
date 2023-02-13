@@ -3,8 +3,9 @@ package genesyscloud
 import (
 	"testing"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
 func TestAccDataJourneyOutcome(t *testing.T) {

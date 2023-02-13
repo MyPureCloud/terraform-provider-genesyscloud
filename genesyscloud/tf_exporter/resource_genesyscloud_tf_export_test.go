@@ -1,4 +1,4 @@
-package tf_exporter
+package tfexporter
 
 import (
 	"encoding/json"
@@ -12,9 +12,11 @@ import (
 	"strings"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/google/uuid"
 
@@ -1113,4 +1115,21 @@ func validateConfigFile(path string) resource.TestCheckFunc {
 		}
 		return nil
 	}
+}
+
+func validateMediaSettings(resourceName string, settingsAttr string, alertingTimeout string, slPercent string, slDurationMs string) resource.TestCheckFunc {
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.alerting_timeout_sec", alertingTimeout),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.service_level_percentage", slPercent),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.service_level_duration_ms", slDurationMs),
+	)
+}
+
+func validateRoutingRules(resourceName string, ringNum int, operator string, threshold string, waitSec string) resource.TestCheckFunc {
+	ringNumStr := strconv.Itoa(ringNum)
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "routing_rules."+ringNumStr+".operator", operator),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "routing_rules."+ringNumStr+".threshold", threshold),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "routing_rules."+ringNumStr+".wait_seconds", waitSec),
+	)
 }

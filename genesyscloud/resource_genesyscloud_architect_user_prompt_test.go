@@ -7,27 +7,15 @@ import (
 	"sync"
 	"testing"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/fileserver"
+
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/fileserver"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
-
-type UserPromptStruct struct {
-	ResourceID  string
-	Name        string
-	Description string
-	Resources   []*UserPromptResourceStruct
-}
-
-type UserPromptResourceStruct struct {
-	Language   string
-	Tts_string string
-	Text       string
-	Filename   string
-}
 
 func TestAccResourceUserPromptBasic(t *testing.T) {
 	userPromptResource1 := "test-user_prompt_1"
