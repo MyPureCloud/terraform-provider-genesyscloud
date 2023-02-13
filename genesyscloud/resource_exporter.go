@@ -107,7 +107,7 @@ type ResourceExporter struct {
 	CustomFileWriter CustomFileWriterSettings
 }
 
-func (r *ResourceExporter) loadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
+func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
 	result, err := r.GetResourcesFunc(ctx)
 	if err != nil {
 		return err
@@ -142,14 +142,14 @@ func filterResources(result ResourceIDMetaMap, name string, filter []string) Res
 	return newResult
 }
 
-func (r *ResourceExporter) getRefAttrSettings(attribute string) *RefAttrSettings {
+func (r *ResourceExporter) GetRefAttrSettings(attribute string) *RefAttrSettings {
 	if r.RefAttrs == nil {
 		return nil
 	}
 	return r.RefAttrs[attribute]
 }
 
-func (r *ResourceExporter) getNestedRefAttrSettings(attribute string) *RefAttrSettings {
+func (r *ResourceExporter) GetNestedRefAttrSettings(attribute string) *RefAttrSettings {
 	for key, val := range r.EncodedRefAttrs {
 		if key.NestedAttr == attribute {
 			return val
@@ -158,7 +158,7 @@ func (r *ResourceExporter) getNestedRefAttrSettings(attribute string) *RefAttrSe
 	return nil
 }
 
-func (r *ResourceExporter) containsNestedRefAttrs(attribute string) ([]string, bool) {
+func (r *ResourceExporter) ContainsNestedRefAttrs(attribute string) ([]string, bool) {
 	var nestedAttributes []string
 	for key, _ := range r.EncodedRefAttrs {
 		if key.Attr == attribute {
@@ -168,15 +168,15 @@ func (r *ResourceExporter) containsNestedRefAttrs(attribute string) ([]string, b
 	return nestedAttributes, len(nestedAttributes) > 0
 }
 
-func (r *ResourceExporter) allowZeroValues(attribute string) bool {
+func (r *ResourceExporter) AllowForZeroValues(attribute string) bool {
 	return stringInSlice(attribute, r.AllowZeroValues)
 }
 
-func (r *ResourceExporter) isJsonEncodable(attribute string) bool {
+func (r *ResourceExporter) IsJsonEncodable(attribute string) bool {
 	return stringInSlice(attribute, r.JsonEncodeAttributes)
 }
 
-func (r *ResourceExporter) addExcludedAttribute(attribute string) {
+func (r *ResourceExporter) AddExcludedAttribute(attribute string) {
 	r.ExcludedAttributes = append(r.ExcludedAttributes, attribute)
 }
 
@@ -190,7 +190,7 @@ func (r *ResourceExporter) isAttributeExcluded(attribute string) bool {
 	return false
 }
 
-func (r *ResourceExporter) removeIfMissing(attribute string, config map[string]interface{}) bool {
+func (r *ResourceExporter) RemoveFieldIfMissing(attribute string, config map[string]interface{}) bool {
 	if attrs, ok := r.RemoveIfMissing[attribute]; ok {
 		// Check if all required inner attributes are missing
 		missingAll := true
@@ -304,7 +304,7 @@ func formatFilter(filter []string) []string {
 	return newFilter
 }
 
-func getAvailableExporterTypes() []string {
+func etAvailableExporterTypes() []string {
 	exporters := getResourceExporters(nil)
 	types := make([]string, len(exporters))
 	i := 0

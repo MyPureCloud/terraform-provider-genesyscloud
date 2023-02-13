@@ -126,7 +126,7 @@ func createIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP Generic")
@@ -213,7 +213,7 @@ func updateIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 	endpointCompression := d.Get("endpoint_compression").(bool)
 	nameIdentifierFormat := d.Get("name_identifier_format").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Updating IDP Generic")
@@ -246,7 +246,7 @@ func updateIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func deleteIdpGeneric(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting IDP Generic")

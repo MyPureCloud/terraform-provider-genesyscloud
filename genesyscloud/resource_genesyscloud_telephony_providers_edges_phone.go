@@ -163,7 +163,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	capabilities := buildSdkCapabilities(d)
 	webRtcUserId := d.Get("web_rtc_user_id")
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	var err error
@@ -239,7 +239,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading phone %s", d.Id())
@@ -326,7 +326,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
 	webRtcUserId := d.Get("web_rtc_user_id")
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	var err error
@@ -383,7 +383,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting Phone")
@@ -542,7 +542,7 @@ func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Do
 	isStandAlone = false
 
 	lineAddresses, ok := d.GetOk("line_addresses")
-	lineStringList := interfaceListToStrings(lineAddresses.([]interface{}))
+	lineStringList := InterfaceListToStrings(lineAddresses.([]interface{}))
 
 	// If line_addresses is not provided, phone is not standalone
 	if !ok || len(lineStringList) == 0 {

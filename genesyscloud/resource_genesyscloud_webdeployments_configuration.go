@@ -369,7 +369,7 @@ func waitForConfigurationDraftToBeActive(ctx context.Context, api *platformclien
 
 func readWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (string, *platformclientv2.Webdeploymentconfigurationversion) {
 	name := d.Get("name").(string)
-	languages := interfaceListToStrings(d.Get("languages").([]interface{}))
+	languages := InterfaceListToStrings(d.Get("languages").([]interface{}))
 	defaultLanguage := d.Get("default_language").(string)
 
 	inputCfg := &platformclientv2.Webdeploymentconfigurationversion{
@@ -414,14 +414,14 @@ func readJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyevents
 		Enabled: &enabled,
 	}
 
-	excludedQueryParams := interfaceListToStrings(cfg["excluded_query_parameters"].([]interface{}))
+	excludedQueryParams := InterfaceListToStrings(cfg["excluded_query_parameters"].([]interface{}))
 	journeySettings.ExcludedQueryParameters = &excludedQueryParams
 
 	if keepUrlFragment, ok := cfg["should_keep_url_fragment"].(bool); ok && keepUrlFragment {
 		journeySettings.ShouldKeepUrlFragment = &keepUrlFragment
 	}
 
-	searchQueryParameters := interfaceListToStrings(cfg["search_query_parameters"].([]interface{}))
+	searchQueryParameters := InterfaceListToStrings(cfg["search_query_parameters"].([]interface{}))
 	journeySettings.SearchQueryParameters = &searchQueryParameters
 
 	pageviewConfig := cfg["pageview_config"]
@@ -580,7 +580,7 @@ func readMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengerse
 			for i, modeCfg := range modesCfg {
 				if mode, ok := modeCfg.(map[string]interface{}); ok {
 					maxFileSize := mode["max_file_size_kb"].(int)
-					fileTypes := interfaceListToStrings(mode["file_types"].([]interface{}))
+					fileTypes := InterfaceListToStrings(mode["file_types"].([]interface{}))
 					modes[i] = platformclientv2.Fileuploadmode{
 						FileTypes:     &fileTypes,
 						MaxFileSizeKB: &maxFileSize,
@@ -604,7 +604,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 	log.Printf("Creating web deployment configuration %s", name)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	diagErr := withRetries(ctx, 30*time.Second, func() *resource.RetryError {
@@ -691,7 +691,7 @@ func determineLatestVersion(ctx context.Context, api *platformclientv2.WebDeploy
 }
 
 func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	version := d.Get("version").(string)
@@ -742,7 +742,7 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 	log.Printf("Updating web deployment configuration %s", name)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	diagErr := withRetries(ctx, 30*time.Second, func() *resource.RetryError {
@@ -787,7 +787,7 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting web deployment configuration %s", name)

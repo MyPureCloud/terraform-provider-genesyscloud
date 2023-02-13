@@ -33,7 +33,7 @@ func dataSourceExtensionPool() *schema.Resource {
 }
 
 func dataSourceExtensionPoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	telephonyAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	extensionPoolStartPhoneNumber := d.Get("start_number").(string)

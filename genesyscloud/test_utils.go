@@ -170,7 +170,7 @@ func validateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 			}
 			if arr, ok := val.([]interface{}); ok {
 				// Property is an array. Check if string value exists in array.
-				if stringInSlice(jsonValue, interfaceListToStrings(arr)) {
+				if stringInSlice(jsonValue, InterfaceListToStrings(arr)) {
 					return nil
 				}
 				return fmt.Errorf("JSON array property for resourceState %s.%s does not contain expected %s", resourceName, jsonProp, jsonValue)

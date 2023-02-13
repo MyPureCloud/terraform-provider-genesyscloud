@@ -349,7 +349,7 @@ func flattenCategories(categories *[]platformclientv2.Knowledgecategory) *schema
 }
 
 func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
@@ -375,7 +375,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 	knowledgeBaseId := id[1]
 	languageCode := id[2]
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
@@ -409,7 +409,7 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeBaseId := id[1]
 	languageCode := id[2]
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating Knowledge document %s", d.Id())
@@ -458,7 +458,7 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeBaseId := id[1]
 	languageCode := id[2]
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting Knowledge document %s", knowledgeCategoryId)

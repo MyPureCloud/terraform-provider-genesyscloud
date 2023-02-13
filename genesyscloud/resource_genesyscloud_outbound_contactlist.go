@@ -167,13 +167,13 @@ func resourceOutboundContactList() *schema.Resource {
 
 func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
-	columnNames := interfaceListToStrings(d.Get("column_names").([]interface{}))
+	columnNames := InterfaceListToStrings(d.Get("column_names").([]interface{}))
 	previewModeColumnName := d.Get("preview_mode_column_name").(string)
-	previewModeAcceptedValues := interfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
+	previewModeAcceptedValues := InterfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
@@ -210,13 +210,13 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 
 func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
-	columnNames := interfaceListToStrings(d.Get("column_names").([]interface{}))
+	columnNames := InterfaceListToStrings(d.Get("column_names").([]interface{}))
 	previewModeColumnName := d.Get("preview_mode_column_name").(string)
-	previewModeAcceptedValues := interfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
+	previewModeAcceptedValues := InterfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
@@ -262,7 +262,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound Contact List %s", d.Id())
@@ -323,7 +323,7 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

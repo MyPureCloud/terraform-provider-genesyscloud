@@ -227,7 +227,7 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		return qgErr
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
 	log.Printf("Creating Evaluation Form %s", name)
@@ -262,7 +262,7 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 	log.Printf("Reading evaluation form %s", d.Id())
 
@@ -299,7 +299,7 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		return qgErr
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
 	// Get the latest unpublished version of the form
@@ -340,7 +340,7 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
 	// Get the latest unpublished version of the form
@@ -588,7 +588,7 @@ func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibility
 		visibilityConditionMap["combining_operation"] = *visibilityCondition.CombiningOperation
 	}
 	if visibilityCondition.Predicates != nil {
-		visibilityConditionMap["predicates"] = interfaceListToStrings(*visibilityCondition.Predicates)
+		visibilityConditionMap["predicates"] = InterfaceListToStrings(*visibilityCondition.Predicates)
 	}
 
 	return []interface{}{visibilityConditionMap}

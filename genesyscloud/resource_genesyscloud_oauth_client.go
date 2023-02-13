@@ -159,7 +159,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	grantType := d.Get("authorized_grant_type").(string)
 	state := d.Get("state").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	oauthAPI := platformclientv2.NewOAuthApiWithConfig(sdkConfig)
 
 	roles, diagErr := buildOAuthRoles(d)
@@ -214,7 +214,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	oauthAPI := platformclientv2.NewOAuthApiWithConfig(sdkConfig)
 
 	log.Printf("Reading oauth client %s", d.Id())
@@ -285,7 +285,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	grantType := d.Get("authorized_grant_type").(string)
 	state := d.Get("state").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	oauthAPI := platformclientv2.NewOAuthApiWithConfig(sdkConfig)
 
 	roles, diagErr := buildOAuthRoles(d)
@@ -314,7 +314,7 @@ func updateOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 
 	// check if there is a integration credential to delete
 	credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")

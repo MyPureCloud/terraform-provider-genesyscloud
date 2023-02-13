@@ -1,4 +1,4 @@
-package genesyscloud
+package tf_exporter
 
 import (
 	"context"
@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	zclconfCty "github.com/zclconf/go-cty/cty"
 )
 
@@ -51,34 +52,6 @@ type unresolvableAttributeInfo struct {
 	Schema       *schema.Schema
 }
 
-func validateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (warnings []string, errors []error) {
-		v, ok := i.(string)
-		if !ok {
-			errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
-			return warnings, errors
-		}
-
-		for _, b := range valid {
-			if strings.Contains(v, b) {
-				return warnings, errors
-			}
-		}
-
-		if !stringInSlice(v, valid) || !subStringInSlice(v, valid) {
-			errors = append(errors, fmt.Errorf("string %s not in slice", v))
-			return warnings, errors
-		}
-
-		if !subStringInSlice(v, valid) {
-			errors = append(errors, fmt.Errorf("substring %s not in slice", v))
-			return warnings, errors
-		}
-
-		return warnings, errors
-	}
-}
-
 func resourceTfExport() *schema.Resource {
 	return &schema.Resource{
 		Description: fmt.Sprintf(`
@@ -106,7 +79,7 @@ func resourceTfExport() *schema.Resource {
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: validateSubStringInSlice(getAvailableExporterTypes()),
+					ValidateFunc: gcloud.ValidateSubStringInSlice(getAvailableExporterTypes()),
 				},
 				ForceNew: true,
 			},
@@ -170,13 +143,13 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diagErr
 	}
 
-	version := meta.(*providerMeta).Version
+	version := meta.(*gcloud.ProviderMeta).Version
 
 	var filter []string
 	if resourceTypes, ok := d.GetOk("resource_types"); ok {
-		filter = interfaceListToStrings(resourceTypes.([]interface{}))
+		filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
 	}
-	exporters := getResourceExporters(filter)
+	exporters := gcloud.GetResourceExporters(filter)
 
 	newFilter := make([]string, 0)
 	for _, f := range filter {
@@ -190,7 +163,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	if excludedAttrs, ok := d.GetOk("exclude_attributes"); ok {
-		if diagErr := populateConfigExcluded(exporters, interfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
+		if diagErr := populateConfigExcluded(exporters, gcloud.InterfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
 			return diagErr
 		}
 	}
@@ -215,7 +188,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	for resType, exporter := range exporters {
 		wg.Add(1)
-		go func(resType string, exporter *ResourceExporter) {
+		go func(resType string, exporter *gcloud.ResourceExporter) {
 			defer wg.Done()
 			typeResources, err := getResourcesForType(resType, provider, exporter, meta)
 			if err != nil {
@@ -243,7 +216,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	// Generate the JSON config map
-	resourceTypeJSONMaps := make(map[string]map[string]jsonMap)
+	resourceTypeJSONMaps := make(map[string]map[string]gcloud.JsonMap)
 	resourceTypeHCLBlocks := make([][]byte, 0)
 	unresolvedAttrs := make([]unresolvableAttributeInfo, 0)
 	for _, resource := range resources {
@@ -253,7 +226,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		if resourceTypeJSONMaps[resource.Type] == nil {
-			resourceTypeJSONMaps[resource.Type] = make(map[string]jsonMap)
+			resourceTypeJSONMaps[resource.Type] = make(map[string]gcloud.JsonMap)
 		}
 
 		if len(resourceTypeJSONMaps[resource.Type][resource.Name]) > 0 {
@@ -367,17 +340,17 @@ func exportHCLConfig(
 }
 
 func exportJSONConfig(
-	resourceTypeJSONMaps map[string]map[string]jsonMap,
+	resourceTypeJSONMaps map[string]map[string]gcloud.JsonMap,
 	unresolvedAttrs []unresolvableAttributeInfo,
 	providerSource,
 	version,
 	filePath,
 	tfVarsFilePath string) diag.Diagnostics {
-	rootJSONObject := jsonMap{
+	rootJSONObject := gcloud.JsonMap{
 		"resource": resourceTypeJSONMaps,
-		"terraform": jsonMap{
-			"required_providers": jsonMap{
-				"genesyscloud": jsonMap{
+		"terraform": gcloud.JsonMap{
+			"required_providers": gcloud.JsonMap{
+				"genesyscloud": gcloud.JsonMap{
 					"source":  providerSource,
 					"version": version,
 				},
@@ -387,11 +360,11 @@ func exportJSONConfig(
 
 	if len(unresolvedAttrs) > 0 {
 		tfVars := make(map[string]interface{})
-		variable := make(map[string]jsonMap)
+		variable := make(map[string]gcloud.JsonMap)
 		for _, attr := range unresolvedAttrs {
 			key := fmt.Sprintf("%s_%s_%s", attr.ResourceType, attr.ResourceName, attr.Name)
-			variable[key] = make(jsonMap)
-			tfVars[key] = make(jsonMap)
+			variable[key] = make(gcloud.JsonMap)
+			tfVars[key] = make(gcloud.JsonMap)
 			variable[key]["description"] = attr.Schema.Description
 			if variable[key]["description"] == "" {
 				variable[key]["description"] = fmt.Sprintf("%s value for resource %s of type %s", attr.Name, attr.ResourceName, attr.ResourceType)
@@ -415,7 +388,7 @@ func exportJSONConfig(
 	return writeConfig(rootJSONObject, filePath)
 }
 
-func instanceStateToHCLBlock(resType, resName string, json jsonMap) []byte {
+func instanceStateToHCLBlock(resType, resName string, json gcloud.JsonMap) []byte {
 	f := hclwrite.NewEmptyFile()
 	rootBody := f.Body()
 
@@ -428,7 +401,7 @@ func instanceStateToHCLBlock(resType, resName string, json jsonMap) []byte {
 	return []byte(newCopy)
 }
 
-func addBody(body *hclwrite.Body, json jsonMap) {
+func addBody(body *hclwrite.Body, json gcloud.JsonMap) {
 	for k, v := range json {
 		addValue(body, k, v)
 	}
@@ -677,7 +650,7 @@ func getFilePath(d *schema.ResourceData, filename string) (string, diag.Diagnost
 	return path, nil
 }
 
-func buildSanitizedResourceMaps(exporters map[string]*ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
+func buildSanitizedResourceMaps(exporters map[string]*gcloud.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
 	errorChan := make(chan diag.Diagnostics)
 	wgDone := make(chan bool)
 	// Cancel remaining goroutines if an error occurs
@@ -687,10 +660,10 @@ func buildSanitizedResourceMaps(exporters map[string]*ResourceExporter, filter [
 	var wg sync.WaitGroup
 	for name, exporter := range exporters {
 		wg.Add(1)
-		go func(name string, exporter *ResourceExporter) {
+		go func(name string, exporter *gcloud.ResourceExporter) {
 			defer wg.Done()
 			log.Printf("Getting all resources for type %s", name)
-			err := exporter.loadSanitizedResourceMap(ctx, name, filter)
+			err := exporter.LoadSanitizedResourceMap(ctx, name, filter)
 			// Used in tests
 			if mockError != nil {
 				err = mockError
@@ -754,7 +727,7 @@ func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
 	return err
 }
 
-func getResourcesForType(resType string, provider *schema.Provider, exporter *ResourceExporter, meta interface{}) ([]resourceInfo, diag.Diagnostics) {
+func getResourcesForType(resType string, provider *schema.Provider, exporter *gcloud.ResourceExporter, meta interface{}) ([]resourceInfo, diag.Diagnostics) {
 	lenResources := len(exporter.SanitizedResourceMap)
 	errorChan := make(chan diag.Diagnostics, lenResources)
 	resourceChan := make(chan resourceInfo, lenResources)
@@ -770,7 +743,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *Re
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
 	for id, resMeta := range exporter.SanitizedResourceMap {
-		go func(id string, resMeta *ResourceMeta) {
+		go func(id string, resMeta *gcloud.ResourceMeta) {
 			defer wg.Done()
 
 			fetchResourceState := func() error {
@@ -843,7 +816,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *Re
 	}
 }
 
-func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
+func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *gcloud.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
@@ -871,7 +844,7 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 	return state, nil
 }
 
-func instanceStateToJSONMap(state *terraform.InstanceState, ctyType cty.Type) (jsonMap, diag.Diagnostics) {
+func instanceStateToJSONMap(state *terraform.InstanceState, ctyType cty.Type) (gcloud.JsonMap, diag.Diagnostics) {
 	stateVal, err := schema.StateValueFromInstanceState(state, ctyType)
 	if err != nil {
 		return nil, diag.FromErr(err)
@@ -1059,7 +1032,7 @@ func sanitizeConfigMap(
 	resourceName string,
 	configMap map[string]interface{},
 	prevAttr string,
-	exporters map[string]*ResourceExporter, //Map of all of the exporters
+	exporters map[string]*gcloud.ResourceExporter, //Map of all of the exporters
 	exportingState bool,
 	exportingAsHCL bool) ([]unresolvableAttributeInfo, bool) {
 	exporter := exporters[resourceType] //Get the specific export that we will be working with
@@ -1104,7 +1077,7 @@ func sanitizeConfigMap(
 			}
 		case string:
 			// Check if string contains nested Ref Attributes (can occur if the string is escaped json)
-			if _, ok := exporter.containsNestedRefAttrs(currAttr); ok {
+			if _, ok := exporter.ContainsNestedRefAttrs(currAttr); ok {
 				resolvedJsonString, err := resolveRefAttributesInJsonString(currAttr, val.(string), exporter, exporters, exportingState)
 				if err != nil {
 					log.Println(err)
@@ -1116,10 +1089,10 @@ func sanitizeConfigMap(
 			}
 
 			// Check if we are on a reference attribute and update as needed
-			refSettings := exporter.getRefAttrSettings(currAttr)
+			refSettings := exporter.GetRefAttrSettings(currAttr)
 			if refSettings == nil {
 				// Check for wildcard attribute indicating all attributes in the map
-				refSettings = exporter.getRefAttrSettings(wildcardAttr)
+				refSettings = exporter.GetRefAttrSettings(wildcardAttr)
 			}
 
 			if refSettings != nil {
@@ -1152,7 +1125,7 @@ func sanitizeConfigMap(
 		// This can cause invalid config files due to including attributes with limits that don't allow for zero values, so we remove
 		// those attributes from the config by default. Attributes can opt-out of this behavior by being added to a ResourceExporter's
 		// AllowZeroValues list.
-		if !exporter.allowZeroValues(currAttr) {
+		if !exporter.AllowForZeroValues(currAttr) {
 			removeZeroValues(key, configMap[key], configMap)
 		}
 
@@ -1166,7 +1139,7 @@ func sanitizeConfigMap(
 			}
 		}
 
-		if exportingAsHCL && exporter.isJsonEncodable(currAttr) {
+		if exportingAsHCL && exporter.IsJsonEncodable(currAttr) {
 			if vStr, ok := configMap[key].(string); ok {
 				decodedData, err := getDecodedData(vStr, currAttr)
 				if err != nil {
@@ -1181,7 +1154,7 @@ func sanitizeConfigMap(
 		}
 	}
 
-	if exporter.removeIfMissing(prevAttr, configMap) {
+	if exporter.RemoveFieldIfMissing(prevAttr, configMap) {
 		// Missing some inner attributes causes the outer object to be removed
 		return unresolvableAttrs, false
 	}
@@ -1189,16 +1162,16 @@ func sanitizeConfigMap(
 	return unresolvableAttrs, true
 }
 
-func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *ResourceExporter, exporters map[string]*ResourceExporter, exportingState bool) (string, error) {
+func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *gcloud.ResourceExporter, exporters map[string]*ResourceExporter, exportingState bool) (string, error) {
 	var jsonData interface{}
 	err := json.Unmarshal([]byte(currVal), &jsonData)
 	if err != nil {
 		return "", err
 	}
 
-	nestedAttrs, _ := exporter.containsNestedRefAttrs(currAttr)
+	nestedAttrs, _ := exporter.ContainsNestedRefAttrs(currAttr)
 	for _, value := range nestedAttrs {
-		refSettings := exporter.getNestedRefAttrSettings(value)
+		refSettings := exporter.GetNestedRefAttrSettings(value)
 		if data, ok := jsonData.(map[string]interface{}); ok {
 			switch data[value].(type) {
 			case string:
@@ -1293,7 +1266,7 @@ func sanitizeConfigArray(
 	return result
 }
 
-func resolveReference(refSettings *RefAttrSettings, refID string, exporters map[string]*ResourceExporter, exportingState bool) string {
+func resolveReference(refSettings *RefAttrSettings, refID string, exporters map[string]*gcloud.ResourceExporter, exportingState bool) string {
 	if stringInSlice(refID, refSettings.AltValues) {
 		// This is not actually a reference to another object. Keep the value
 		return refID
@@ -1316,7 +1289,7 @@ func resolveReference(refSettings *RefAttrSettings, refID string, exporters map[
 	return ""
 }
 
-func populateConfigExcluded(exporters map[string]*ResourceExporter, configExcluded []string) diag.Diagnostics {
+func populateConfigExcluded(exporters map[string]*gcloud.ResourceExporter, configExcluded []string) diag.Diagnostics {
 	for _, excluded := range configExcluded {
 		resourceIdx := strings.Index(excluded, ".")
 		if resourceIdx == -1 {
@@ -1333,7 +1306,7 @@ func populateConfigExcluded(exporters map[string]*ResourceExporter, configExclud
 			return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceName)
 		}
 		excludedAttr := excluded[resourceIdx+1:]
-		exporter.addExcludedAttribute(excludedAttr)
+		exporter.AddExcludedAttribute(excludedAttr)
 		log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceName)
 	}
 	return nil

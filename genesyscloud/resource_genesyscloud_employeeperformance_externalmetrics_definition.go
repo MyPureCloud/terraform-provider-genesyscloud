@@ -104,7 +104,7 @@ func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	unit := d.Get("unit").(string)
 	unitDefinition := d.Get("unit_definition").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	gamificationApi := platformclientv2.NewGamificationApiWithConfig(sdkConfig)
 
 	sdkexternalmetricdefinitioncreaterequest := platformclientv2.Externalmetricdefinitioncreaterequest{
@@ -143,7 +143,7 @@ func updateEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	defaultObjectiveType := d.Get("default_objective_type").(string)
 	enabled := d.Get("enabled").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	gamificationApi := platformclientv2.NewGamificationApiWithConfig(sdkConfig)
 
 	sdkexternalmetricdefinitionupdaterequest := platformclientv2.Externalmetricdefinitionupdaterequest{
@@ -171,7 +171,7 @@ func updateEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 }
 
 func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	gamificationApi := platformclientv2.NewGamificationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Employeeperformance Externalmetrics Definition %s", d.Id())
@@ -212,7 +212,7 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 }
 
 func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	gamificationApi := platformclientv2.NewGamificationApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

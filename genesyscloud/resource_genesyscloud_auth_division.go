@@ -82,7 +82,7 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	description := d.Get("description").(string)
 	home := d.Get("home").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	if home {
@@ -110,7 +110,7 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading division %s", d.Id())
@@ -148,7 +148,7 @@ func updateAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Updating division %s", name)
@@ -169,7 +169,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 	name := d.Get("name").(string)
 	home := d.Get("home").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	if home {

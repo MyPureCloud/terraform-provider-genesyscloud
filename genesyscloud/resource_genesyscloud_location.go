@@ -148,7 +148,7 @@ func createLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 	name := d.Get("name").(string)
 	notes := d.Get("notes").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	create := platformclientv2.Locationcreatedefinition{
@@ -175,7 +175,7 @@ func createLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 }
 
 func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading location %s", d.Id())
@@ -220,7 +220,7 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 	name := d.Get("name").(string)
 	notes := d.Get("notes").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	log.Printf("Updating location %s", name)
@@ -271,7 +271,7 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting location %s", name)
@@ -311,7 +311,7 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 func buildSdkLocationPath(d *schema.ResourceData) *[]string {
 	path := []string{}
 	if pathConfig, ok := d.GetOk("path"); ok {
-		path = interfaceListToStrings(pathConfig.([]interface{}))
+		path = InterfaceListToStrings(pathConfig.([]interface{}))
 	}
 	return &path
 }

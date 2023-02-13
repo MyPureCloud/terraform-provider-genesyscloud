@@ -102,7 +102,7 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	comments := d.Get("comments").(string)
 	poolProvider := d.Get("pool_provider").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Creating DID pool %s", startPhoneNumber)
@@ -124,7 +124,7 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 }
 
 func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading DID pool %s", d.Id())
@@ -176,7 +176,7 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	comments := d.Get("comments").(string)
 	poolProvider := d.Get("pool_provider").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	didPoolBody := platformclientv2.Didpool{
@@ -199,7 +199,7 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	startPhoneNumber := d.Get("start_phone_number").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting DID pool with starting number %s", startPhoneNumber)

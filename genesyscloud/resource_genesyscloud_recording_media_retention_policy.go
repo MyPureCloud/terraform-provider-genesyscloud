@@ -2679,7 +2679,7 @@ func flattenPolicyErrors(policyErrors *platformclientv2.Policyerrors) []interfac
 }
 
 func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	recordingAPI := platformclientv2.NewRecordingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading media retention policy %s", d.Id())
@@ -2732,7 +2732,7 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	conditions := buildConditions(d)
 	actions := buildPolicyActions2(d)
 	policyErrors := buildPolicyErrors(d)
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	recordingAPI := platformclientv2.NewRecordingApiWithConfig(sdkConfig)
 
 	reqBody := platformclientv2.Policycreate{
@@ -2772,7 +2772,7 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	actions := buildPolicyActions2(d)
 	policyErrors := buildPolicyErrors(d)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	recordingAPI := platformclientv2.NewRecordingApiWithConfig(sdkConfig)
 
 	reqBody := platformclientv2.Policy{
@@ -2895,7 +2895,7 @@ func mediaRetentionPolicyExporter() *ResourceExporter {
 func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	recordingAPI := platformclientv2.NewRecordingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting media retention policy %s", name)

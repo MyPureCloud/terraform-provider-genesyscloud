@@ -769,7 +769,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	prompt := platformclientv2.Prompt{
@@ -847,7 +847,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading User Prompt %s", d.Id())
@@ -913,7 +913,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	prompt := platformclientv2.Prompt{
@@ -943,7 +943,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user prompt %s", name)
@@ -1146,7 +1146,7 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 }
 
 func getArchitectPromptAudioData(promptId string, meta interface{}) ([]PromptAudioData, error) {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	apiInstance := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	data, _, err := apiInstance.GetArchitectPrompt(promptId)

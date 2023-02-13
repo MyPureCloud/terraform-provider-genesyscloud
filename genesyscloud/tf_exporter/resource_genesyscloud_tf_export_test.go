@@ -1,4 +1,4 @@
-package genesyscloud
+package tf_exporter
 
 import (
 	"encoding/json"

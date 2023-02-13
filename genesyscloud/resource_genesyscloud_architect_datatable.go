@@ -125,7 +125,7 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Creating datatable %s", name)
@@ -160,7 +160,7 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading datatable %s", d.Id())
@@ -201,7 +201,7 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Updating datatable %s", name)
@@ -237,7 +237,7 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting datatable %s", name)

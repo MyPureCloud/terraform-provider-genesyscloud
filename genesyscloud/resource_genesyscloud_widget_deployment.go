@@ -65,7 +65,7 @@ func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.C
 func buildSdkAllowedDomains(d *schema.ResourceData) *[]string {
 	allowed_domains := []string{}
 	if domains, ok := d.GetOk("allowed_domains"); ok {
-		allowed_domains = interfaceListToStrings(domains.([]interface{}))
+		allowed_domains = InterfaceListToStrings(domains.([]interface{}))
 	}
 	return &allowed_domains
 }
@@ -235,7 +235,7 @@ func flattenClientConfig(clientType string, clientConfig platformclientv2.Widget
 }
 
 func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading widget deployment %s", d.Id())
@@ -312,7 +312,7 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.Errorf("Failed to create widget deployment %s, %s", name, client_config_err)
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	createWidget := platformclientv2.Widgetdeployment{
@@ -372,7 +372,7 @@ func deletePotentialDuplicateDeployments(widgetAPI *platformclientv2.WidgetsApi,
 func deleteWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	widgetAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting widget deployment %s", name)
@@ -408,7 +408,7 @@ func updateWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.Errorf("Failed updating widget deployment %s, %s", name, client_config_err)
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	updateWidget := platformclientv2.Widgetdeployment{

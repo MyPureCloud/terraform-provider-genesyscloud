@@ -106,7 +106,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	end := d.Get("end").(string)
 	rrule := d.Get("rrule").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
@@ -152,7 +152,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading schedule %s", d.Id())
@@ -209,7 +209,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	end := d.Get("end").(string)
 	rrule := d.Get("rrule").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	schedStart, err := time.Parse("2006-01-02T15:04:05.000000", start)
@@ -257,7 +257,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting schedule %s", d.Id())

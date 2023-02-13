@@ -64,7 +64,7 @@ func createUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading roles for user %s", d.Id())
@@ -83,7 +83,7 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 }
 
 func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Updating roles for user %s", d.Id())

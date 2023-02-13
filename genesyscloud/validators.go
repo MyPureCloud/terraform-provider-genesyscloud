@@ -5,8 +5,11 @@ import (
 	"regexp"
 	"time"
 
+	"strings"
+
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"github.com/nyaruka/phonenumbers"
 )
@@ -122,4 +125,32 @@ func validateResponseAssetName(name interface{}, _ cty.Path) diag.Diagnostics {
 		return nil
 	}
 	return diag.Errorf("filename %v is not a string", name)
+}
+
+func validateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (warnings []string, errors []error) {
+		v, ok := i.(string)
+		if !ok {
+			errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
+			return warnings, errors
+		}
+
+		for _, b := range valid {
+			if strings.Contains(v, b) {
+				return warnings, errors
+			}
+		}
+
+		if !stringInSlice(v, valid) || !subStringInSlice(v, valid) {
+			errors = append(errors, fmt.Errorf("string %s not in slice", v))
+			return warnings, errors
+		}
+
+		if !subStringInSlice(v, valid) {
+			errors = append(errors, fmt.Errorf("substring %s not in slice", v))
+			return warnings, errors
+		}
+
+		return warnings, errors
+	}
 }

@@ -46,7 +46,7 @@ func resourceResponseManagamentResponseAsset() *schema.Resource {
 func createResponsemanagementResponseAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	fileName := d.Get("filename").(string)
 	divisionId := d.Get("division_id").(string)
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	sdkResponseAsset := platformclientv2.Createresponseassetrequest{}
@@ -79,7 +79,7 @@ func createResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 }
 
 func readResponsemanagementResponseAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Responsemanagement response asset %s", d.Id())
@@ -107,7 +107,7 @@ func readResponsemanagementResponseAsset(ctx context.Context, d *schema.Resource
 }
 
 func updateResponsemanagementResponseAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	fileName := d.Get("filename").(string)
@@ -145,7 +145,7 @@ func updateResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 }
 
 func deleteResponsemanagementResponseAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

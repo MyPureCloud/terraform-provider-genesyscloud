@@ -115,7 +115,7 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	divisionId := d.Get("division_id").(string)
 	enabled := d.Get("enabled").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	emergencyGroup := platformclientv2.Emergencygroup{
@@ -147,7 +147,7 @@ func createEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading emergency group %s", d.Id())
@@ -199,7 +199,7 @@ func updateEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	divisionId := d.Get("division_id").(string)
 	enabled := d.Get("enabled").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -234,7 +234,7 @@ func updateEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func deleteEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting emergency group %s", d.Id())

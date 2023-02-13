@@ -150,7 +150,7 @@ func createOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	resetPeriod := d.Get("reset_period").(string)
 	recallEntries := d.Get("recall_entries").([]interface{})
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkAttemptLimits := platformclientv2.Attemptlimits{}
@@ -194,7 +194,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	resetPeriod := d.Get("reset_period").(string)
 	recallEntries := d.Get("recall_entries").([]interface{})
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkAttemptLimits := platformclientv2.Attemptlimits{}
@@ -241,7 +241,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 }
 
 func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound Attempt Limit %s", d.Id())
@@ -283,7 +283,7 @@ func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func deleteOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

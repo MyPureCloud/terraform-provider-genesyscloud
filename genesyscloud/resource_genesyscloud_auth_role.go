@@ -197,7 +197,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	description := d.Get("description").(string)
 	defaultRoleID := d.Get("default_role_id").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Creating role %s", name)
@@ -227,7 +227,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 }
 
 func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading role %s", d.Id())
@@ -278,7 +278,7 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	description := d.Get("description").(string)
 	defaultRoleID := d.Get("default_role_id").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Updating role %s", name)
@@ -302,7 +302,7 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	name := d.Get("name").(string)
 	defaultRoleID := d.Get("default_role_id").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	if defaultRoleID != "" {

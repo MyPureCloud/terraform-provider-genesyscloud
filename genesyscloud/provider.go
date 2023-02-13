@@ -225,7 +225,7 @@ func New(version string) func() *schema.Provider {
 	}
 }
 
-type providerMeta struct {
+type ProviderMeta struct {
 	Version      string
 	ClientConfig *platformclientv2.Configuration
 	Domain       string
@@ -252,7 +252,7 @@ func configure(version string) schema.ConfigureContextFunc {
 				return nil, err
 			}
 		}
-		return &providerMeta{
+		return &ProviderMeta{
 			Version:      version,
 			ClientConfig: platformclientv2.GetDefaultConfiguration(),
 			Domain:       getRegionDomain(data.Get("aws_region").(string)),

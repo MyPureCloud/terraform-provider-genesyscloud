@@ -171,7 +171,7 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("Failed to read the before skills groups request before: %s: %s", skillGroupsRequest.Name, err)
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := routingAPI.Configuration.BasePath + route
@@ -233,7 +233,7 @@ func postSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 	if memberDivisionIds == nil {
 		return readSkillGroups(ctx, d, meta)
 	}
-	schemaDivisionIds := interfaceListToStrings(memberDivisionIds)
+	schemaDivisionIds := InterfaceListToStrings(memberDivisionIds)
 
 	toAdd, toRemove, diagErr := createListsForSkillgroupsMembersDivisionsPost(schemaDivisionIds, apiSkillGroupMemberDivisionIds, create, meta)
 	if diagErr != nil {
@@ -272,7 +272,7 @@ func postSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 }
 
 func getAllAuthDivisionIds(meta interface{}) ([]string, diag.Diagnostics) {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	allIds := make([]string, 0)
 
 	divisionResourcesMap, err := getAllAuthDivisions(nil, sdkConfig)
@@ -346,7 +346,7 @@ func mergeSkillConditionsIntoSkillGroups(d *schema.ResourceData, skillGroupsRequ
 }
 
 func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
@@ -424,7 +424,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 
 		var schemaMemberDivisionIds []string
 		if divIds, ok := d.Get("member_division_ids").([]interface{}); ok {
-			schemaMemberDivisionIds = interfaceListToStrings(divIds)
+			schemaMemberDivisionIds = InterfaceListToStrings(divIds)
 		}
 
 		memberDivisionIds := organizeMemberDivisionIdsForRead(schemaMemberDivisionIds, apiMemberDivisionIds, divisionId.(string))
@@ -457,7 +457,7 @@ func updateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation

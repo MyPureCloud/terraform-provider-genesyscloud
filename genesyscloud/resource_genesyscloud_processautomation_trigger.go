@@ -201,7 +201,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	delayBySeconds := d.Get("delay_by_seconds").(int)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	if eventTTLSeconds > 0 && delayBySeconds > 0 {
@@ -246,7 +246,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 }
 
 func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading process automation trigger %s", d.Id())
@@ -315,7 +315,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	topic_name := d.Get("topic_name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Updating process automation trigger %s", name)
@@ -367,7 +367,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting process automation trigger %s", name)

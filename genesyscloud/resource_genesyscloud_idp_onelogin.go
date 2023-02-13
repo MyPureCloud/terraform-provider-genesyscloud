@@ -88,7 +88,7 @@ func createIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP Onelogin")
@@ -140,7 +140,7 @@ func updateIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 	targetUri := d.Get("target_uri").(string)
 	disabled := d.Get("disabled").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Updating IDP Onelogin")
@@ -168,7 +168,7 @@ func updateIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func deleteIdpOnelogin(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting IDP Onelogin")
