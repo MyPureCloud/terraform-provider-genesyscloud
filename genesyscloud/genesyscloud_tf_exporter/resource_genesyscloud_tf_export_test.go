@@ -397,13 +397,13 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateEvaluationFormResource(formResourceName, &evaluationForm1),
+				Config: gcloud.GenerateEvaluationFormResource(formResourceName, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
 					validateEvaluationFormAttributes(formResourceName, evaluationForm1),
 				),
 			},
 			{
-				Config: generateEvaluationFormResource(formResourceName, &evaluationForm1) + generateTfExportByName(
+				Config: gcloud.GenerateEvaluationFormResource(formResourceName, &evaluationForm1) + generateTfExportByName(
 					formResourceName,
 					exportTestDir,
 					trueValue,
@@ -478,13 +478,13 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		nullValue,
 		"true",
 		"true",
-		generateMediaSettings("media_settings_call", alertTimeoutSec, slPercentage, slDurationMs),
-		generateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
-		generateDefaultScriptIDs(chatScriptID, emailScriptID),
+		gcloud.GenerateMediaSettings("media_settings_call", alertTimeoutSec, slPercentage, slDurationMs),
+		gcloud.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
+		gcloud.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
@@ -580,8 +580,8 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 	mockError = errors2
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateTfExportByName("test-export",
@@ -637,31 +637,31 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		exportTestDir    = "../.terraform" + uuid.NewString()
 	)
 
-	userPromptAsset := userPromptResourceStruct{
+	userPromptAsset := gcloud.UserPromptResourceStruct{
 		userPromptResourceLanguage,
 		nullValue,
 		strconv.Quote(userPromptResourceText),
 		strconv.Quote(userResourcePromptFilename1),
 	}
 
-	userPromptAsset2 := userPromptResourceStruct{
+	userPromptAsset2 := gcloud.UserPromptResourceStruct{
 		userPromptResourceLanguage2,
 		nullValue,
 		strconv.Quote(userPromptResourceText2),
 		strconv.Quote(userResourcePromptFilename2),
 	}
 
-	userPromptResources := []*userPromptResourceStruct{&userPromptAsset}
-	userPromptResources2 := []*userPromptResourceStruct{&userPromptAsset, &userPromptAsset2}
+	userPromptResources := []*gcloud.UserPromptResourceStruct{&userPromptAsset}
+	userPromptResources2 := []*gcloud.UserPromptResourceStruct{&userPromptAsset, &userPromptAsset2}
 
 	defer os.RemoveAll(exportTestDir)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateUserPromptResource(&userPromptStruct{
+				Config: gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
 					userPromptResourceId,
 					userPromptName,
 					strconv.Quote(userPromptDescription),
@@ -677,7 +677,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					"",
 					falseValue,
 					falseValue,
-				) + generateUserPromptResource(&userPromptStruct{
+				) + gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
 					userPromptResourceId,
 					userPromptName,
 					strconv.Quote(userPromptDescription),
@@ -694,7 +694,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 			},
 			// Update to two resources with separate audio files
 			{
-				Config: generateUserPromptResource(&userPromptStruct{
+				Config: gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
 					userPromptResourceId,
 					userPromptName,
 					strconv.Quote(userPromptDescription),
@@ -710,7 +710,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					"",
 					falseValue,
 					falseValue,
-				) + generateUserPromptResource(&userPromptStruct{
+				) + gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
 					userPromptResourceId,
 					userPromptName,
 					strconv.Quote(userPromptDescription),
@@ -1073,18 +1073,18 @@ func testVerifyExportsDestroyedFunc(exportTestDir string) resource.TestCheckFunc
 	}
 }
 
-func validateEvaluationFormAttributes(resourceName string, form evaluationFormStruct) resource.TestCheckFunc {
+func validateEvaluationFormAttributes(resourceName string, form gcloud.EvaluationFormStruct) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "name", resourceName),
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "published", falseValue),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.name", form.questionGroups[0].name),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.weight", fmt.Sprintf("%v", form.questionGroups[0].weight)),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.text", form.questionGroups[0].questions[1].text),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.1.questions.0.answer_options.0.text", form.questionGroups[1].questions[0].answerOptions[0].text),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.1.questions.0.answer_options.1.value", fmt.Sprintf("%v", form.questionGroups[1].questions[0].answerOptions[1].value)),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.combining_operation", form.questionGroups[0].questions[1].visibilityCondition.combiningOperation),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.0", form.questionGroups[0].questions[1].visibilityCondition.predicates[0]),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.1", form.questionGroups[0].questions[1].visibilityCondition.predicates[1]),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.name", form.QuestionGroups[0].Name),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.weight", fmt.Sprintf("%v", form.QuestionGroups[0].Weight)),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.text", form.QuestionGroups[0].Questions[1].Text),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.1.questions.0.answer_options.0.text", form.QuestionGroups[1].Questions[0].AnswerOptions[0].Text),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.1.questions.0.answer_options.1.value", fmt.Sprintf("%v", form.QuestionGroups[1].Questions[0].AnswerOptions[1].Value)),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.combining_operation", form.QuestionGroups[0].Questions[1].VisibilityCondition.CombiningOperation),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.0", form.QuestionGroups[0].Questions[1].VisibilityCondition.Predicates[0]),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.1", form.QuestionGroups[0].Questions[1].VisibilityCondition.Predicates[1]),
 	)
 }
 
