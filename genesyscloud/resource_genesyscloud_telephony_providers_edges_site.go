@@ -278,6 +278,31 @@ func siteExporter() *ResourceExporter {
 	}
 }
 
+func validateMediaRegions(regions *[]string, sdkConfig *platformclientv2.Configuration) error {
+
+	telephonyAPI := platformclientv2.NewTelephonyApiWithConfig(sdkConfig)
+	telephonyRegions, _, err := telephonyAPI.GetTelephonyMediaregions()
+
+	if err != nil {
+		return err
+	}
+
+	homeRegion := telephonyRegions.AwsHomeRegion
+	coreRegions := telephonyRegions.AwsCoreRegions
+	satRegions := telephonyRegions.AwsSatelliteRegions
+
+	for _, region := range *regions {
+		if region != *homeRegion &&
+			!stringInSlice(region, *coreRegions) &&
+			!stringInSlice(region, *satRegions) {
+			fmt.Errorf("Region %s is not a valid media region.  Please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions.", regions)
+		}
+
+	}
+
+	return nil
+}
+
 func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	locationId := d.Get("location_id").(string)
@@ -301,6 +326,11 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 	if location.EmergencyNumber == nil {
 		return diag.Errorf("Location with id %v does not have an emergency number", locationId)
+	}
+
+	err = validateMediaRegions(mediaRegions, sdkConfig)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	site := &platformclientv2.Site{
@@ -438,6 +468,11 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 	if location.EmergencyNumber == nil {
 		return diag.Errorf("Location with id %v does not have an emergency number", locationId)
+	}
+
+	err = validateMediaRegions(mediaRegions, sdkConfig)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	site := &platformclientv2.Site{
