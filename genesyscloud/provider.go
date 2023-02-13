@@ -100,6 +100,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_integration":                                     resourceIntegration(),
 				"genesyscloud_integration_action":                              resourceIntegrationAction(),
 				"genesyscloud_integration_credential":                          resourceCredential(),
+				"genesyscloud_journey_action_map":                              resourceJourneyActionMap(),
 				"genesyscloud_journey_outcome":                                 resourceJourneyOutcome(),
 				"genesyscloud_journey_segment":                                 resourceJourneySegment(),
 				"genesyscloud_knowledge_knowledgebase":                         resourceKnowledgeKnowledgebase(),
@@ -126,6 +127,8 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_quality_forms_evaluation":                        resourceEvaluationForm(),
 				"genesyscloud_quality_forms_survey":                            resourceSurveyForm(),
 				"genesyscloud_responsemanagement_library":                      resourceResponsemanagementLibrary(),
+				"genesyscloud_responsemanagement_response":                     resourceResponsemanagementResponse(),
+				"genesyscloud_responsemanagement_responseasset":                resourceResponseManagamentResponseAsset(),
 				"genesyscloud_routing_email_domain":                            resourceRoutingEmailDomain(),
 				"genesyscloud_routing_email_route":                             resourceRoutingEmailRoute(),
 				"genesyscloud_routing_language":                                resourceRoutingLanguage(),
@@ -168,6 +171,7 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_integration":                                     dataSourceIntegration(),
 				"genesyscloud_integration_action":                              dataSourceIntegrationAction(),
 				"genesyscloud_integration_credential":                          dataSourceIntegrationCredential(),
+				"genesyscloud_journey_action_map":                              dataSourceJourneyActionMap(),
 				"genesyscloud_journey_outcome":                                 dataSourceJourneyOutcome(),
 				"genesyscloud_journey_segment":                                 dataSourceJourneySegment(),
 				"genesyscloud_knowledge_knowledgebase":                         dataSourceKnowledgeKnowledgebase(),
@@ -190,6 +194,8 @@ func New(version string) func() *schema.Provider {
 				"genesyscloud_quality_forms_survey":                            dataSourceQualityFormsSurvey(),
 				"genesyscloud_recording_media_retention_policy":                dataSourceRecordingMediaRetentionPolicy(),
 				"genesyscloud_responsemanagement_library":                      dataSourceResponsemanagementLibrary(),
+				"genesyscloud_responsemanagement_response":                     dataSourceResponsemanagementResponse(),
+				"genesyscloud_responsemanagement_responseasset":                dataSourceResponseManagamentResponseAsset(),
 				"genesyscloud_routing_language":                                dataSourceRoutingLanguage(),
 				"genesyscloud_routing_queue":                                   dataSourceRoutingQueue(),
 				"genesyscloud_routing_settings":                                dataSourceRoutingSettings(),
@@ -314,7 +320,7 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		RetryMax:     20,
 		RequestLogHook: func(request *http.Request, count int) {
 			if count > 0 && request != nil {
-				log.Printf("Retry #%d for %s %s%s", count, request.Method, request.Host, request.RequestURI)
+				log.Printf("Retry #%d for %s %s", count, request.Method, request.URL)
 			}
 		},
 		ResponseLogHook: func(response *http.Response) {

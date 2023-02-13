@@ -118,3 +118,10 @@ func isStatus400(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 	}
 	return false
 }
+
+func getBody(apiResponse *platformclientv2.APIResponse) string {
+	if apiResponse != nil {
+		return string(apiResponse.RawBody)
+	}
+	return ""
+}

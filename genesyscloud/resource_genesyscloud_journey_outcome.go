@@ -7,13 +7,13 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 var (
@@ -227,11 +227,11 @@ func deleteJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 func flattenJourneyOutcome(d *schema.ResourceData, journeyOutcome *platformclientv2.Outcome) {
 	d.Set("is_active", *journeyOutcome.IsActive)
 	d.Set("display_name", *journeyOutcome.DisplayName)
-	setNillableValue(d, "description", journeyOutcome.Description)
-	setNillableValue(d, "is_positive", journeyOutcome.IsPositive)
-	setNillableValue(d, "context", flattenGenericAsList(journeyOutcome.Context, flattenContext))
-	setNillableValue(d, "journey", flattenGenericAsList(journeyOutcome.Journey, flattenJourney))
-	setNillableValue(d, "associated_value_field", flattenGenericAsList(journeyOutcome.AssociatedValueField, flattenAssociatedValueField))
+	resourcedata.SetNillableValue(d, "description", journeyOutcome.Description)
+	resourcedata.SetNillableValue(d, "is_positive", journeyOutcome.IsPositive)
+	resourcedata.SetNillableValue(d, "context", flattenAsList(journeyOutcome.Context, flattenContext))
+	resourcedata.SetNillableValue(d, "journey", flattenAsList(journeyOutcome.Journey, flattenJourney))
+	resourcedata.SetNillableValue(d, "associated_value_field", flattenAsList(journeyOutcome.AssociatedValueField, flattenAssociatedValueField))
 }
 
 func flattenAssociatedValueField(associatedValueField *platformclientv2.Associatedvaluefield) map[string]interface{} {
@@ -242,17 +242,17 @@ func flattenAssociatedValueField(associatedValueField *platformclientv2.Associat
 }
 
 func buildSdkJourneyOutcome(journeyOutcome *schema.ResourceData) *platformclientv2.Outcome {
-	isActive := getNillableBool(journeyOutcome, "is_active")
-	displayName := getNillableValue[string](journeyOutcome, "display_name")
-	description := getNillableValue[string](journeyOutcome, "description")
-	isPositive := getNillableBool(journeyOutcome, "is_positive")
-	sdkContext := buildSdkGenericListFirstElement(journeyOutcome, "context", buildSdkContext)
-	journey := buildSdkGenericListFirstElement(journeyOutcome, "journey", buildSdkJourney)
-	associatedValueField := buildSdkGenericListFirstElement(journeyOutcome, "associated_value_field", buildSdkAssociatedValueField)
+	isActive := journeyOutcome.Get("is_active").(bool)
+	displayName := journeyOutcome.Get("display_name").(string)
+	description := resourcedata.GetNillableValue[string](journeyOutcome, "description")
+	isPositive := resourcedata.GetNillableBool(journeyOutcome, "is_positive")
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeyOutcome, "context", buildSdkContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeyOutcome, "journey", buildSdkJourney, false)
+	associatedValueField := resourcedata.BuildSdkListFirstElement(journeyOutcome, "associated_value_field", buildSdkAssociatedValueField, true)
 
 	return &platformclientv2.Outcome{
-		IsActive:             isActive,
-		DisplayName:          displayName,
+		IsActive:             &isActive,
+		DisplayName:          &displayName,
 		Description:          description,
 		IsPositive:           isPositive,
 		Context:              sdkContext,
@@ -261,34 +261,30 @@ func buildSdkJourneyOutcome(journeyOutcome *schema.ResourceData) *platformclient
 	}
 }
 
-func buildSdkAssociatedValueField(associatedValueField map[string]interface{}) *platformclientv2.Associatedvaluefield {
-	if associatedValueField == nil {
-		return nil
-	}
+func buildSdkPatchOutcome(journeyOutcome *schema.ResourceData) *platformclientv2.Patchoutcome {
+	isActive := journeyOutcome.Get("is_active").(bool)
+	displayName := journeyOutcome.Get("display_name").(string)
+	description := resourcedata.GetNillableValue[string](journeyOutcome, "description")
+	isPositive := resourcedata.GetNillableBool(journeyOutcome, "is_positive")
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeyOutcome, "context", buildSdkContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeyOutcome, "journey", buildSdkJourney, false)
 
+	return &platformclientv2.Patchoutcome{
+		IsActive:    &isActive,
+		DisplayName: &displayName,
+		Description: description,
+		IsPositive:  isPositive,
+		Context:     sdkContext,
+		Journey:     journey,
+	}
+}
+
+func buildSdkAssociatedValueField(associatedValueField map[string]interface{}) *platformclientv2.Associatedvaluefield {
 	dataType := associatedValueField["data_type"].(string)
 	name := associatedValueField["name"].(string)
 
 	return &platformclientv2.Associatedvaluefield{
 		DataType: &dataType,
 		Name:     &name,
-	}
-}
-
-func buildSdkPatchOutcome(journeyOutcome *schema.ResourceData) *platformclientv2.Patchoutcome {
-	isActive := getNillableBool(journeyOutcome, "is_active")
-	displayName := getNillableValue[string](journeyOutcome, "display_name")
-	description := getNillableValue[string](journeyOutcome, "description")
-	isPositive := getNillableBool(journeyOutcome, "is_positive")
-	sdkContext := buildSdkGenericListFirstElement(journeyOutcome, "context", buildSdkContext)
-	journey := buildSdkGenericListFirstElement(journeyOutcome, "journey", buildSdkJourney)
-
-	return &platformclientv2.Patchoutcome{
-		IsActive:    isActive,
-		DisplayName: displayName,
-		Description: description,
-		IsPositive:  isPositive,
-		Context:     sdkContext,
-		Journey:     journey,
 	}
 }

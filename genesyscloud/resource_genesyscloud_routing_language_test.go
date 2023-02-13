@@ -51,13 +51,13 @@ func generateRoutingLanguageResource(
 }
 
 func testVerifyLanguagesDestroyed(state *terraform.State) error {
-	languagesAPI := platformclientv2.NewLanguagesApi()
+	routingApi := platformclientv2.NewRoutingApi()
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_routing_language" {
 			continue
 		}
 
-		lang, resp, err := languagesAPI.GetLanguage(rs.Primary.ID)
+		lang, resp, err := routingApi.GetRoutingLanguage(rs.Primary.ID)
 		if lang != nil {
 			if lang.State != nil && *lang.State == "deleted" {
 				// Language deleted

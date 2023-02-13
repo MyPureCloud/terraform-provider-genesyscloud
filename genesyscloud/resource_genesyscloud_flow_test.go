@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
@@ -499,6 +500,33 @@ func validateFlowUnlocked(flowResourceName string) resource.TestCheckFunc {
 		}
 
 		return nil
+	}
+}
+
+func cleanupFlows(idPrefix string) {
+	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 50
+		flows, _, getErr := architectApi.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
+		if getErr != nil {
+			return
+		}
+
+		if flows.Entities == nil || len(*flows.Entities) == 0 {
+			break
+		}
+
+		for _, flow := range *flows.Entities {
+			if flow.Name != nil && strings.HasPrefix(*flow.Name, idPrefix) {
+				_, delErr := architectApi.DeleteFlow(*flow.Id)
+				if delErr != nil {
+					diag.Errorf("failed to delete flow %s (%s): %s", *flow.Id, *flow.Name, delErr)
+					return
+				}
+				log.Printf("Deleted flow %s (%s)", *flow.Id, *flow.Name)
+			}
+		}
 	}
 }
 

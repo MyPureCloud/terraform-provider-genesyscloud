@@ -1,0 +1,34 @@
+resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
+  display_name          = "terraform_test_-TEST-CASE-_updated"
+  trigger_with_segments = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-_action_map_dependency.id]
+  activation {
+    type = "immediate"
+  }
+  action {
+    media_type = "openAction"
+    open_action_fields {
+      open_action {
+        # OpenAction[id=e8275a96-fde5-11ec-b939-0242ac120002] does not exist
+        # OpenAction currently is not preparable by provider therefore we cannot execute test for it
+        id   = "e8275a96-fde5-11ec-b939-0242ac120002" # This is a random hardcoded value!
+        name = "terraform_test_-TEST-CASE-"
+      }
+      configuration_fields = "{\"value1\":\"string_value\",\"value2\":100}"
+    }
+  }
+  start_date = "2022-07-04T12:00:00.000000"
+
+  depends_on = [genesyscloud_journey_segment.terraform_test_-TEST-CASE-_action_map_dependency]
+}
+
+resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-_action_map_dependency" {
+  display_name            = "terraform_test_-TEST-CASE-_action_map_dependency"
+  color                   = "#008000"
+  scope                   = "Customer"
+  should_display_to_agent = false
+  external_segment {
+    id     = "4654654654"
+    name   = "external segment name"
+    source = "AdobeExperiencePlatform"
+  }
+}

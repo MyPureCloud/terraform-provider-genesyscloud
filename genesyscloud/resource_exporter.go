@@ -43,6 +43,18 @@ type RefAttrCustomResolver struct {
 	ResolverFunc func(map[string]interface{}, map[string]*ResourceExporter) error
 }
 
+type CustomFileWriterSettings struct {
+	// Custom function for dumping data/media stored in an object in a sub directory along
+	// with the exported config. For example: prompt audio files, csv data, jps/pngs
+	RetrieveAndWriteFilesFunc func(string, string, string, map[string]interface{}, interface{}) error
+
+	// Sub directory within export folder in which to write files retrieved by RetrieveAndWriteFilesFunc
+	// For example, the user_prompt resource defines SubDirectory as "audio", so the prompt audio files will
+	// be written to genesyscloud_tf_export.directory/audio/
+	// The logic for retrieving and writing data to this dir should be defined in RetrieveAndWriteFilesFunc
+	SubDirectory string
+}
+
 type JsonEncodeRefAttr struct {
 	// The outer key
 	Attr string
@@ -91,6 +103,8 @@ type ResourceExporter struct {
 
 	// Attributes that are jsonencode objects, and that contain nested RefAttrs
 	EncodedRefAttrs map[*JsonEncodeRefAttr]*RefAttrSettings
+
+	CustomFileWriter CustomFileWriterSettings
 }
 
 func (r *ResourceExporter) loadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
@@ -219,6 +233,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_integration":                                     integrationExporter(),
 		"genesyscloud_integration_action":                              integrationActionExporter(),
 		"genesyscloud_integration_credential":                          credentialExporter(),
+		"genesyscloud_journey_action_map":                              journeyActionMapExporter(),
 		"genesyscloud_journey_outcome":                                 journeyOutcomeExporter(),
 		"genesyscloud_journey_segment":                                 journeySegmentExporter(),
 		"genesyscloud_knowledge_knowledgebase":                         knowledgeKnowledgebaseExporter(),
@@ -244,6 +259,7 @@ func getResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_quality_forms_survey":                            surveyFormExporter(),
 		"genesyscloud_recording_media_retention_policy":                mediaRetentionPolicyExporter(),
 		"genesyscloud_responsemanagement_library":                      responsemanagementLibraryExporter(),
+		"genesyscloud_responsemanagement_response":                     responsemanagementResponseExporter(),
 		"genesyscloud_routing_email_domain":                            routingEmailDomainExporter(),
 		"genesyscloud_routing_email_route":                             routingEmailRouteExporter(),
 		"genesyscloud_routing_language":                                routingLanguageExporter(),

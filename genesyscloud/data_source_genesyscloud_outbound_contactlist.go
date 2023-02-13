@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
