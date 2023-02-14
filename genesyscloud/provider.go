@@ -37,7 +37,7 @@ func init() {
 		return strings.TrimSpace(desc)
 	}
 
-	//Registering the schemas
+	//Registering the schema resources.  We do this in the init to make sure everything is setup before anyone uses a provider.
 	registerResources()
 	registerDataSources()
 }
@@ -209,6 +209,11 @@ func registerDataSources() {
 func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
 
+		/*
+		  The next two lines are important.  We have to make sure the Terraform provider has their own deep copies of the resource
+		  and data source maps.  If you do not do a deep copy and try to pass in the original maps, you open yourself up to race conditions
+		  because they map are being read and written to concurrently.
+		*/
 		copiedResources := make(map[string]*schema.Resource)
 		for k, v := range providerResources {
 			copiedResources[k] = v
