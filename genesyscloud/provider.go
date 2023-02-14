@@ -36,6 +36,10 @@ func init() {
 		}
 		return strings.TrimSpace(desc)
 	}
+
+	//Registering the schemas
+	registerResources()
+	registerDataSources()
 }
 
 // So I am basically inverting the registration process as we refactor.
@@ -204,9 +208,16 @@ func registerDataSources() {
 // New initializes the provider schema
 func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
-		//Registering the schemas
-		registerResources()
-		registerDataSources()
+
+		copiedResources := make(map[string]*schema.Resource)
+		for k, v := range providerResources {
+			copiedResources[k] = v
+		}
+
+		copiedDataSources := make(map[string]*schema.Resource)
+		for k, v := range providerDataSources {
+			copiedDataSources[k] = v
+		}
 
 		return &schema.Provider{
 			Schema: map[string]*schema.Schema{
@@ -250,8 +261,8 @@ func New(version string) func() *schema.Provider {
 					ValidateFunc: validation.IntBetween(1, 20),
 				},
 			},
-			ResourcesMap:         providerResources,
-			DataSourcesMap:       providerDataSources,
+			ResourcesMap:         copiedResources,
+			DataSourcesMap:       copiedDataSources,
 			ConfigureContextFunc: configure(version),
 		}
 	}
