@@ -3,6 +3,7 @@
 #
 name: release
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -68,4 +69,4 @@ jobs:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOOS: windows
-          #GOARCH: arm64
+          #5GOARCH: arm64
