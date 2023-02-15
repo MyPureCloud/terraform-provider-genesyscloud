@@ -37,8 +37,8 @@ jobs:
           outputFile: "CHANGELOG.md"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Run GoReleaser darwin_amd64
+       -
+        name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4.2.0
         with:
           version: latest
@@ -46,27 +46,3 @@ jobs:
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOOS: darwin
-          GOARCH: amd64
-      -
-        name: Run GoReleaser darwin_arm64
-        uses: goreleaser/goreleaser-action@v4.2.0
-        with:
-          version: latest
-          args: release --release-notes=CHANGELOG.md
-        env:
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOOS: darwin
-          GOARCH: arm64
-      -
-        name: Run GoReleaser windows_arm64
-        uses: goreleaser/goreleaser-action@v4.2.0
-        with:
-          version: latest
-          args: release --release-notes=CHANGELOG.md
-        env:
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOOS: windows
-          GOARCH: arm64
