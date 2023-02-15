@@ -37,7 +37,7 @@ jobs:
           outputFile: "CHANGELOG.md"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-       -
+      -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4.2.0
         with:
