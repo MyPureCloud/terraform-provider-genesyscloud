@@ -3,13 +3,12 @@
 #
 name: release
 on:
-  workflow_dispatch:
   push:
     tags:
       - 'v*'
 jobs:
   goreleaser:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
@@ -42,7 +41,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v4.2.0
         with:
           version: latest
-          args: release --clean --release-notes=CHANGELOG.md
+          args: release --clean --release-notes=CHANGELOG.md --timeout 45m --parallelism 1
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
