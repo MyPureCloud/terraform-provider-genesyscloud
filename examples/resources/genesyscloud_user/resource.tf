@@ -23,7 +23,7 @@ resource "genesyscloud_user" "example_user" {
   }
   routing_skills {
     skill_id    = genesyscloud_routing_skill.test-skill.id
-    proficiency = 4.5
+    proficiency = 4
   }
   routing_languages {
     language_id = genesyscloud_routing_language.english.id
