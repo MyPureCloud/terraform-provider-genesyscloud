@@ -5,6 +5,8 @@ import (
 
 	provider "terraform-provider-genesyscloud/genesyscloud"
 
+	_ "terraform-provider-genesyscloud/genesyscloud/tfexporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
