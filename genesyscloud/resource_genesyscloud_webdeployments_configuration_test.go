@@ -31,6 +31,7 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
 					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
 				),
 			},
@@ -42,6 +43,7 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
 					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
 				),
 			},
@@ -86,6 +88,11 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", "true"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", "true"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.0", "selector-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", "true"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
@@ -167,6 +174,11 @@ func complexConfigurationResource(name, description string) string {
 					max_file_size_kb = 123
 				}
 			}
+		}
+		cobrowse {
+			enabled = true
+			allow_agent_control = true
+			mask_selectors = [ "selector-one" ]
 		}
 		journey_events {
 			enabled = true
