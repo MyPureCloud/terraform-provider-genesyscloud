@@ -627,6 +627,10 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		userPromptResourceLanguage2 = "pt-br"
 		userPromptResourceText2     = "This is a test greeting!!!"
 
+		userPromptResourceLanguage3 = "ga-ie"
+		userPromptResourceText3     = "Dia dhuit!"
+		userPromptResourceTTS3      = "Dia dhuit!"
+
 		exportResourceId = "export"
 		exportTestDir    = "../.terraform" + uuid.NewString()
 	)
@@ -645,8 +649,15 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		strconv.Quote(userResourcePromptFilename2),
 	}
 
+	userPromptAsset3 := userPromptResourceStruct{
+		userPromptResourceLanguage3,
+		strconv.Quote(userPromptResourceTTS3),
+		strconv.Quote(userPromptResourceText3),
+		nullValue,
+	}
+
 	userPromptResources := []*userPromptResourceStruct{&userPromptAsset}
-	userPromptResources2 := []*userPromptResourceStruct{&userPromptAsset, &userPromptAsset2}
+	userPromptResources2 := []*userPromptResourceStruct{&userPromptAsset, &userPromptAsset2, &userPromptAsset3}
 
 	defer os.RemoveAll(exportTestDir)
 
@@ -686,7 +697,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					testUserPromptAudioFileExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
 				),
 			},
-			// Update to two resources with separate audio files
+			// Update to two resources with separate audio files and one with tts and no filename
 			{
 				Config: generateUserPromptResource(&userPromptStruct{
 					userPromptResourceId,
@@ -713,10 +724,8 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "name", userPromptName),
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "description", userPromptDescription),
-					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.language", userPromptResourceLanguage),
-					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.text", userPromptResourceText),
-					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.filename", userResourcePromptFilename1),
-					testUserPromptAudioFileExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
+					testUserPromptAudioFileExport(path.Join(exportTestDir, defaultTfJSONFile), "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
+					testVerifyUserPromptFileNameNotSetInExport(path.Join(exportTestDir, defaultTfJSONFile), "genesyscloud_architect_user_prompt", userPromptResourceId, userPromptResourceLanguage3, userPromptName),
 				),
 			},
 		},
@@ -766,6 +775,50 @@ func testUserPromptAudioFileExport(filePath, resourceType, resourceId, exportDir
 			}
 		}
 
+		return nil
+	}
+}
+
+// Verify that when there is no filename set for a resource, the same field is not set in the export config
+func testVerifyUserPromptFileNameNotSetInExport(filePath, resourceType, resourceId, language, resourceName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		raw, err := getResourceDefinition(filePath, resourceType)
+		if err != nil {
+			return err
+		}
+		var r *json.RawMessage
+		if err := json.Unmarshal(*raw[resourceName], &r); err != nil {
+			return err
+		}
+
+		var obj interface{}
+		if err := json.Unmarshal(*r, &obj); err != nil {
+			return err
+		}
+
+		var configMap map[string]interface{}
+		if objMap, ok := obj.(map[string]interface{}); ok {
+			configMap = objMap
+		} else {
+			return fmt.Errorf("Could not evaluate export config map")
+		}
+
+		var resourcesList []interface{}
+		if rl, ok := configMap["resources"].([]interface{}); ok {
+			resourcesList = rl
+		} else {
+			return fmt.Errorf("Could not locate resources list in export config.")
+		}
+
+		for _, r := range resourcesList {
+			if rMap, ok := r.(map[string]interface{}); ok {
+				if langStr, ok := rMap["language"].(string); ok && langStr == language {
+					if fileNameStr, ok := rMap["filename"].(string); ok && fileNameStr != "" {
+						return fmt.Errorf("Expected filename to be nil for language %s", language)
+					}
+				}
+			}
+		}
 		return nil
 	}
 }

@@ -1157,7 +1157,7 @@ func getArchitectPromptAudioData(promptId string, meta interface{}) ([]PromptAud
 	promptResourceData := []PromptAudioData{}
 	for _, r := range *data.Resources {
 		var data PromptAudioData
-		if *r.MediaUri != "" && *r.Language != "" {
+		if r.MediaUri != nil && *r.MediaUri != "" {
 			data.MediaUri = *r.MediaUri
 			data.Language = *r.Language
 			data.FileName = fmt.Sprintf("%s-%s.wav", *r.Language, promptId)
@@ -1187,16 +1187,14 @@ func downloadAudioFile(directory string, fileName string, mediaUri string) error
 	return err
 }
 
-// Find and replace the filenames in configMap with the FileName fields in audioDataList
+// Replace (or create) the filenames key in configMap with the FileName fields in audioDataList
 // which point towards the downloaded audio files stored in the export folder.
+// Since a language can only appear once in a resources array, we can match resources[n]["language"] with audioDataList[n].Language
 func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDataList []PromptAudioData, subDir string) {
 	if resources, ok := configMap["resources"].([]interface{}); ok && len(resources) > 0 {
 		for _, resource := range resources {
 			if r, ok := resource.(map[string]interface{}); ok {
-				var fileName string
-				if fileStr, ok := r["filename"].(string); !ok || fileStr == "" {
-					continue
-				}
+				fileName := ""
 				languageStr := r["language"].(string)
 				for _, data := range audioDataList {
 					if data.Language == languageStr {
@@ -1204,7 +1202,9 @@ func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDat
 						break
 					}
 				}
-				r["filename"] = path.Join(subDir, fileName)
+				if fileName != "" {
+					r["filename"] = path.Join(subDir, fileName)
+				}
 			}
 		}
 	}
