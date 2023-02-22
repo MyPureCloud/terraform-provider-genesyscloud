@@ -21,8 +21,8 @@ func TestAccResourceLocationBasic(t *testing.T) {
 		locName3         = "Terraform location" + uuid.NewString()
 		locNotes1        = "HQ1"
 		locNotes2        = "HQ2"
-		emergencyNum1    = "3173124756"
-		emergencyNum2    = "7654182735"
+		emergencyNum1    = "+13173124756"
+		emergencyNum2    = "+17654182735"
 		locNumberDefault = "default"
 		locNumberElin    = "elin"
 
