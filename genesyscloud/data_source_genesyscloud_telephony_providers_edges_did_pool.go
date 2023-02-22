@@ -33,7 +33,7 @@ func dataSourceDidPool() *schema.Resource {
 }
 
 func dataSourceDidPoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	telephonyAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	didPoolStartPhoneNumber := d.Get("start_phone_number").(string)

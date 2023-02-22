@@ -26,7 +26,7 @@ func dataSourceWidgetDeployments() *schema.Resource {
 }
 
 func dataSourceWidgetDeploymentRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	widgetAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)

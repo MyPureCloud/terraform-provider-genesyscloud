@@ -3,8 +3,9 @@ package genesyscloud
 import (
 	"testing"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
 func TestAccDataJourneyOutcome(t *testing.T) {
@@ -18,8 +19,8 @@ func runDataJourneyOutcomeTestCase(t *testing.T, testCaseName string) {
 	setupJourneyOutcome(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: testrunner.GenerateDataSourceTestSteps(resourceName, testCaseName, []resource.TestCheckFunc{
 			resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttrPair("data."+testObjectFullName, "id", testObjectFullName, "id"),

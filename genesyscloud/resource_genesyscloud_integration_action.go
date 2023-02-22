@@ -10,8 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -186,7 +187,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	integrationId := d.Get("integration_id").(string)
 	secure := d.Get("secure").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Creating integration action %s", name)
@@ -221,7 +222,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading integration action %s", d.Id())
@@ -322,7 +323,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	category := d.Get("category").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Updating integration action %s", name)
@@ -356,7 +357,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting integration action %s", name)

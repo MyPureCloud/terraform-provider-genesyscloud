@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -416,7 +416,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	enableManualAssignment := d.Get("enable_manual_assignment").(bool)
 	callingPartyName := d.Get("calling_party_name").(string)
 	callingPartyNumber := d.Get("calling_party_number").(string)
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
@@ -473,7 +473,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
@@ -665,7 +665,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	callingPartyName := d.Get("calling_party_name").(string)
 	callingPartyNumber := d.Get("calling_party_number").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
@@ -725,7 +725,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting queue %s", name)
@@ -1040,7 +1040,7 @@ func validateMapCommTypes(val interface{}, _ cty.Path) diag.Diagnostics {
 	commTypes := []string{"CALL", "CALLBACK", "CHAT", "COBROWSE", "EMAIL", "MESSAGE", "SOCIAL_EXPRESSION", "VIDEO", "SCREENSHARE"}
 	m := val.(map[string]interface{})
 	for k := range m {
-		if !stringInSlice(k, commTypes) {
+		if !StringInSlice(k, commTypes) {
 			return diag.Errorf("%s is an invalid communication type key.", k)
 		}
 	}
@@ -1387,4 +1387,121 @@ func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *stri
 	}
 
 	return nil
+}
+
+func GenerateRoutingQueueResource(
+	resourceID string,
+	name string,
+	desc string,
+	acwWrapupPrompt string,
+	acwTimeout string,
+	skillEvalMethod string,
+	autoAnswerOnly string,
+	callingPartyName string,
+	callingPartyNumber string,
+	enableTranscription string,
+	enableManualAssignment string,
+	nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
+		name = "%s"
+		description = "%s"
+		acw_wrapup_prompt = %s
+		acw_timeout_ms = %s
+		skill_evaluation_method = %s
+		auto_answer_only = %s
+		calling_party_name = %s
+		calling_party_number = %s
+		enable_transcription = %s
+  		enable_manual_assignment = %s
+		%s
+	}
+	`, resourceID,
+		name,
+		desc,
+		acwWrapupPrompt,
+		acwTimeout,
+		skillEvalMethod,
+		autoAnswerOnly,
+		callingPartyName,
+		callingPartyNumber,
+		enableTranscription,
+		enableManualAssignment,
+		strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateRoutingQueueResourceBasic(resourceID string, name string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
+		name = "%s"
+		%s
+	}
+	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
+}
+
+// Used when testing skills group dependencies.
+func GenerateRoutingQueueResourceBasicWithDepends(resourceID string, dependsOn string, name string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
+		depends_on = [%s]
+		name = "%s"
+		%s
+	}
+	`, resourceID, dependsOn, name, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateMediaSettings(attrName string, alertingTimeout string, slPercent string, slDurationMs string) string {
+	return fmt.Sprintf(`%s {
+		alerting_timeout_sec = %s
+		service_level_percentage = %s
+		service_level_duration_ms = %s
+	}
+	`, attrName, alertingTimeout, slPercent, slDurationMs)
+}
+
+func GenerateRoutingRules(operator string, threshold string, waitSeconds string) string {
+	return fmt.Sprintf(`routing_rules {
+		operator = "%s"
+		threshold = %s
+		wait_seconds = %s
+	}
+	`, operator, threshold, waitSeconds)
+}
+
+func GenerateDefaultScriptIDs(chat string, email string) string {
+	return fmt.Sprintf(`default_script_ids = {
+		CHAT  = "%s"
+		EMAIL = "%s"
+	}`, chat, email)
+}
+
+func GenerateBullseyeSettings(expTimeout string, skillsToRemove ...string) string {
+	return fmt.Sprintf(`bullseye_rings {
+		expansion_timeout_seconds = %s
+		skills_to_remove = [%s]
+	}
+	`, expTimeout, strings.Join(skillsToRemove, ", "))
+}
+
+func GenerateBullseyeSettingsWithMemberGroup(expTimeout string, memberGroupId string, memberGroupType string, skillsToRemove ...string) string {
+	return fmt.Sprintf(`bullseye_rings {
+		expansion_timeout_seconds = %s
+		skills_to_remove = [%s]
+		member_groups {
+			member_group_id = %s
+			member_group_type = "%s"
+		}
+	}
+	`, expTimeout, strings.Join(skillsToRemove, ", "), memberGroupId, memberGroupType)
+}
+
+func GenerateMemberBlock(userID string, ringNum string) string {
+	return fmt.Sprintf(`members {
+		user_id = %s
+		ring_num = %s
+	}
+	`, userID, ringNum)
+}
+
+func GenerateQueueWrapupCodes(wrapupCodes ...string) string {
+	return fmt.Sprintf(`
+		wrapup_codes = [%s]
+	`, strings.Join(wrapupCodes, ", "))
 }

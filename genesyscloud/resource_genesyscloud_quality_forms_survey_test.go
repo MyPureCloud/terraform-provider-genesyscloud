@@ -26,7 +26,7 @@ type surveyFormQuestionGroupStruct struct {
 	name                string
 	naEnabled           bool
 	questions           []surveyFormQuestionStruct
-	visibilityCondition visibilityConditionStruct
+	visibilityCondition VisibilityConditionStruct
 }
 
 type surveyFormQuestionStruct struct {
@@ -34,8 +34,8 @@ type surveyFormQuestionStruct struct {
 	helpText              string
 	varType               string
 	naEnabled             bool
-	visibilityCondition   visibilityConditionStruct
-	answerOptions         []answerOptionStruct
+	visibilityCondition   VisibilityConditionStruct
+	answerOptions         []AnswerOptionStruct
 	maxResponseCharacters int
 	explanationPrompt     string
 }
@@ -54,14 +54,14 @@ func TestAccResourceSurveyFormBasic(t *testing.T) {
 					{
 						text:    "Did the agent perform the opening spiel?",
 						varType: "multipleChoiceQuestion",
-						answerOptions: []answerOptionStruct{
+						answerOptions: []AnswerOptionStruct{
 							{
-								text:  "Yes",
-								value: 1,
+								Text:  "Yes",
+								Value: 1,
 							},
 							{
-								text:  "No",
-								value: 0,
+								Text:  "No",
+								Value: 0,
 							},
 						},
 					},
@@ -79,32 +79,32 @@ func TestAccResourceSurveyFormBasic(t *testing.T) {
 			{
 				text:    "Yet another yes or no question.",
 				varType: "multipleChoiceQuestion",
-				answerOptions: []answerOptionStruct{
+				answerOptions: []AnswerOptionStruct{
 					{
-						text:  "Yes",
-						value: 1,
+						Text:  "Yes",
+						Value: 1,
 					},
 					{
-						text:  "No",
-						value: 0,
+						Text:  "No",
+						Value: 0,
 					},
 				},
 			},
 			{
 				text:    "Multiple Choice Question.",
 				varType: "multipleChoiceQuestion",
-				answerOptions: []answerOptionStruct{
+				answerOptions: []AnswerOptionStruct{
 					{
-						text:  "Option 1",
-						value: 1,
+						Text:  "Option 1",
+						Value: 1,
 					},
 					{
-						text:  "Option 2",
-						value: 2,
+						Text:  "Option 2",
+						Value: 2,
 					},
 					{
-						text:  "Option 3",
-						value: 3,
+						Text:  "Option 3",
+						Value: 3,
 					},
 				},
 			},
@@ -115,8 +115,8 @@ func TestAccResourceSurveyFormBasic(t *testing.T) {
 	surveyForm3.published = true
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -198,14 +198,14 @@ func TestAccResourceSurveyFormComplete(t *testing.T) {
 					{
 						text:    "Would you recommend our services?",
 						varType: "multipleChoiceQuestion",
-						answerOptions: []answerOptionStruct{
+						answerOptions: []AnswerOptionStruct{
 							{
-								text:  "Yes",
-								value: 1,
+								Text:  "Yes",
+								Value: 1,
 							},
 							{
-								text:  "No",
-								value: 0,
+								Text:  "No",
+								Value: 0,
 							},
 						},
 					},
@@ -217,33 +217,33 @@ func TestAccResourceSurveyFormComplete(t *testing.T) {
 					{
 						text:    "Did the agent offer to sell product?",
 						varType: "multipleChoiceQuestion",
-						answerOptions: []answerOptionStruct{
+						answerOptions: []AnswerOptionStruct{
 							{
-								text:  "Yes",
-								value: 1,
+								Text:  "Yes",
+								Value: 1,
 							},
 							{
-								text:  "No",
-								value: 0,
+								Text:  "No",
+								Value: 0,
 							},
 						},
-						visibilityCondition: visibilityConditionStruct{
-							combiningOperation: "AND",
-							predicates:         []string{"/form/questionGroup/0/question/2/answer/1"},
+						visibilityCondition: VisibilityConditionStruct{
+							CombiningOperation: "AND",
+							Predicates:         []string{"/form/questionGroup/0/question/2/answer/1"},
 						},
 					},
 				},
-				visibilityCondition: visibilityConditionStruct{
-					combiningOperation: "AND",
-					predicates:         []string{"/form/questionGroup/0/question/2/answer/1"},
+				visibilityCondition: VisibilityConditionStruct{
+					CombiningOperation: "AND",
+					Predicates:         []string{"/form/questionGroup/0/question/2/answer/1"},
 				},
 			},
 		},
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -253,8 +253,8 @@ func TestAccResourceSurveyFormComplete(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "published", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.name", surveyForm1.questionGroups[0].name),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.na_enabled", strconv.FormatBool(surveyForm1.questionGroups[0].naEnabled)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.1.visibility_condition.0.combining_operation", surveyForm1.questionGroups[1].visibilityCondition.combiningOperation),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.1.visibility_condition.0.predicates.0", surveyForm1.questionGroups[1].visibilityCondition.predicates[0]),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.1.visibility_condition.0.combining_operation", surveyForm1.questionGroups[1].visibilityCondition.CombiningOperation),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.1.visibility_condition.0.predicates.0", surveyForm1.questionGroups[1].visibilityCondition.Predicates[0]),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.#", fmt.Sprint(len(surveyForm1.questionGroups))),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.questions.1.text", surveyForm1.questionGroups[0].questions[1].text),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.questions.1.help_text", surveyForm1.questionGroups[0].questions[1].helpText),
@@ -262,8 +262,8 @@ func TestAccResourceSurveyFormComplete(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.questions.1.max_response_characters", fmt.Sprint(surveyForm1.questionGroups[0].questions[1].maxResponseCharacters)),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.questions.1.explanation_prompt", surveyForm1.questionGroups[0].questions[1].explanationPrompt),
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.0.questions.1.answer_options.#", fmt.Sprint(len(surveyForm1.questionGroups[0].questions[1].answerOptions))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.1.questions.0.visibility_condition.0.combining_operation", surveyForm1.questionGroups[1].questions[0].visibilityCondition.combiningOperation),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.1.questions.0.visibility_condition.0.predicates.0", surveyForm1.questionGroups[1].questions[0].visibilityCondition.predicates[0]),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.1.questions.0.visibility_condition.0.combining_operation", surveyForm1.questionGroups[1].questions[0].visibilityCondition.CombiningOperation),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResource1, "question_groups.1.questions.0.visibility_condition.0.predicates.0", surveyForm1.questionGroups[1].questions[0].visibilityCondition.Predicates[0]),
 				),
 			},
 			{
@@ -292,14 +292,14 @@ func TestAccResourceSurveyFormRepublishing(t *testing.T) {
 					{
 						text:    "Was your problem solved?",
 						varType: "multipleChoiceQuestion",
-						answerOptions: []answerOptionStruct{
+						answerOptions: []AnswerOptionStruct{
 							{
-								text:  "Yes",
-								value: 1,
+								Text:  "Yes",
+								Value: 1,
 							},
 							{
-								text:  "No",
-								value: 0,
+								Text:  "No",
+								Value: 0,
 							},
 						},
 					},
@@ -313,8 +313,8 @@ func TestAccResourceSurveyFormRepublishing(t *testing.T) {
 	surveyForm2.published = false
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Publish form on creation
@@ -437,7 +437,7 @@ func generateSurveyFormQuestionGroups(questionGroups *[]surveyFormQuestionGroupS
         `, questionGroup.name,
 			questionGroup.naEnabled,
 			generateSurveyFormQuestions(&questionGroup.questions),
-			generateFormVisibilityCondition(&questionGroup.visibilityCondition),
+			GenerateFormVisibilityCondition(&questionGroup.visibilityCondition),
 		)
 
 		questionGroupsString += questionGroupString
@@ -469,8 +469,8 @@ func generateSurveyFormQuestions(questions *[]surveyFormQuestionStruct) string {
 			question.helpText,
 			question.varType,
 			question.naEnabled,
-			generateFormVisibilityCondition(&question.visibilityCondition),
-			generateFormAnswerOptions(&question.answerOptions),
+			GenerateFormVisibilityCondition(&question.visibilityCondition),
+			GenerateFormAnswerOptions(&question.answerOptions),
 			question.maxResponseCharacters,
 			question.explanationPrompt,
 		)

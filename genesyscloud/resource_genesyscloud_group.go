@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -150,7 +150,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	visibility := d.Get("visibility").(string)
 	rulesVisible := d.Get("rules_visible").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(sdkConfig)
 
 	log.Printf("Creating group %s", name)
@@ -186,7 +186,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading group %s", d.Id())
@@ -260,7 +260,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	visibility := d.Get("visibility").(string)
 	rulesVisible := d.Get("rules_visible").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -301,7 +301,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(sdkConfig)
 
 	retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

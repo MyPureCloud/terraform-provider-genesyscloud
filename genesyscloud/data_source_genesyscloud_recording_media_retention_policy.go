@@ -26,7 +26,7 @@ func dataSourceRecordingMediaRetentionPolicy() *schema.Resource {
 }
 
 func dataSourceRecordingMediaRetentionPolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	recordingAPI := platformclientv2.NewRecordingApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)

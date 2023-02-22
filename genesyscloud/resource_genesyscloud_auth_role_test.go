@@ -30,8 +30,8 @@ func TestAccResourceAuthRoleDefault(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Modify default role
@@ -84,8 +84,8 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -152,8 +152,8 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create with a scalar condition
@@ -188,7 +188,7 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 			},
 			{
 				// Create a queue and update with a queue condition
-				Config: generateRoutingQueueResourceBasic(queueResource1, queueName1) +
+				Config: GenerateRoutingQueueResourceBasic(queueResource1, queueName1) +
 					generateAuthRoleResource(
 						roleResource1,
 						roleName1,
