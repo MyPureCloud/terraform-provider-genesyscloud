@@ -502,9 +502,9 @@ func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 		inboundEmailFlowId   = uuid.NewString()
 		inboundMessageFlowId = uuid.NewString()
 		agentWaitSeconds1    = "200"
-		waitForAgent1		 = "true"
+		waitForAgent1        = "true"
 		agentWaitSeconds2    = "300"
-		waitForAgent2		 = "false"
+		waitForAgent2        = "false"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -513,24 +513,24 @@ func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingQueueResourceBasic(queueResource2, queueName2) + 
-				generateRoutingQueueResourceBasicWithDepends(
-					queueResource1,
-					"genesyscloud_routing_queue."+queueResource2,
-					queueName1,
-					generateDirectRouting(
-						agentWaitSeconds1, 	  // agentWaitSeconds
-						waitForAgent1, 	  	  // waitForAgent
-						"true", 	      	  // callEnabled
-						inboundCallFlowId, 	  // inboundCallFlowId
-						voicemailFlowId, 	  // voicemailFlowId
-						"true", 			  // emailEnabled
-						inboundEmailFlowId,   // inboundEmailFlowId
-						"true", 			  // messageEnabled
-						inboundMessageFlowId, // inboundMessageFlowId
-						"backup_queue_id = genesyscloud_routing_queue."+queueResource2+".id",
+				Config: generateRoutingQueueResourceBasic(queueResource2, queueName2) +
+					generateRoutingQueueResourceBasicWithDepends(
+						queueResource1,
+						"genesyscloud_routing_queue."+queueResource2,
+						queueName1,
+						generateDirectRouting(
+							agentWaitSeconds1,    // agentWaitSeconds
+							waitForAgent1,        // waitForAgent
+							"true",               // callEnabled
+							inboundCallFlowId,    // inboundCallFlowId
+							voicemailFlowId,      // voicemailFlowId
+							"true",               // emailEnabled
+							inboundEmailFlowId,   // inboundEmailFlowId
+							"true",               // messageEnabled
+							inboundMessageFlowId, // inboundMessageFlowId
+							"backup_queue_id = genesyscloud_routing_queue."+queueResource2+".id",
+						),
 					),
-				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "name", queueName1),
 					validateDirectRouting(queueResource1, agentWaitSeconds1, waitForAgent1, "true", inboundCallFlowId, voicemailFlowId, "true", inboundEmailFlowId, "true", inboundMessageFlowId),
@@ -539,24 +539,24 @@ func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateRoutingQueueResourceBasic(queueResource2, queueName3) + 
-				generateRoutingQueueResourceBasicWithDepends(
-					queueResource1,
-					"genesyscloud_routing_queue."+queueResource2,
-					queueName1,
-					generateDirectRouting(
-						agentWaitSeconds2, 	  // agentWaitSeconds
-						waitForAgent2, 	  	  // waitForAgent
-						"true", 	      	  // callEnabled
-						inboundCallFlowId, 	  // inboundCallFlowId
-						voicemailFlowId, 	  // voicemailFlowId
-						"true", 			  // emailEnabled
-						inboundEmailFlowId,   // inboundEmailFlowId
-						"true", 			  // messageEnabled
-						inboundMessageFlowId, // inboundMessageFlowId
-						"backup_queue_id = genesyscloud_routing_queue."+queueResource2+".id",
+				Config: generateRoutingQueueResourceBasic(queueResource2, queueName3) +
+					generateRoutingQueueResourceBasicWithDepends(
+						queueResource1,
+						"genesyscloud_routing_queue."+queueResource2,
+						queueName1,
+						generateDirectRouting(
+							agentWaitSeconds2,    // agentWaitSeconds
+							waitForAgent2,        // waitForAgent
+							"true",               // callEnabled
+							inboundCallFlowId,    // inboundCallFlowId
+							voicemailFlowId,      // voicemailFlowId
+							"true",               // emailEnabled
+							inboundEmailFlowId,   // inboundEmailFlowId
+							"true",               // messageEnabled
+							inboundMessageFlowId, // inboundMessageFlowId
+							"backup_queue_id = genesyscloud_routing_queue."+queueResource2+".id",
+						),
 					),
-				),
 				Check: resource.ComposeTestCheckFunc(
 					validateDirectRouting(queueResource1, agentWaitSeconds2, waitForAgent2, "true", inboundCallFlowId, voicemailFlowId, "true", inboundEmailFlowId, "true", inboundMessageFlowId),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "direct_routing.0.backup_queue_id", "genesyscloud_routing_queue."+queueResource2, "id"),
@@ -720,8 +720,8 @@ func generateQueueWrapupCodes(wrapupCodes ...string) string {
 }
 
 func generateDirectRouting(
-	agentWaitSeconds string, 
-	waitForAgent string, 
+	agentWaitSeconds string,
+	waitForAgent string,
 	callEnabled string,
 	callInboundFlowId string,
 	voicemailFlowId string,
@@ -743,16 +743,16 @@ func generateDirectRouting(
 		%s
 	}
 	`,
-	agentWaitSeconds,
-	waitForAgent,
-	callEnabled,
-	callInboundFlowId,
-	voicemailFlowId,
-	emailEnabled,
-	emailInboundFlowId,
-	messageEnabled,
-	messageInboundFlowId,
-	strings.Join(extraArgs, "\n"))
+		agentWaitSeconds,
+		waitForAgent,
+		callEnabled,
+		callInboundFlowId,
+		voicemailFlowId,
+		emailEnabled,
+		emailInboundFlowId,
+		messageEnabled,
+		messageInboundFlowId,
+		strings.Join(extraArgs, "\n"))
 }
 
 func validateRoutingRules(resourceName string, ringNum int, operator string, threshold string, waitSec string) resource.TestCheckFunc {
@@ -901,25 +901,25 @@ func validateQueueWrapupCode(queueResourceName string, codeResourceName string) 
 	}
 }
 
-func validateDirectRouting(resourceName string, 
-	agentWaitSeconds string, 
-	waitForAgent string, 
+func validateDirectRouting(resourceName string,
+	agentWaitSeconds string,
+	waitForAgent string,
 	callEnabled string,
 	callInboundFlowId string,
 	voicemailFlowId string,
 	emailEnabled string,
 	emailInboundFlowId string,
 	messageEnabled string,
-	messageInboundFlowId string,) resource.TestCheckFunc {
+	messageInboundFlowId string) resource.TestCheckFunc {
 	return resource.ComposeAggregateTestCheckFunc(
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.agent_wait_seconds",	   agentWaitSeconds),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.wait_for_agent",		   waitForAgent),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_enabled", 		   callEnabled),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_inbound_flow_id",    callInboundFlowId),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.voicemail_flow_id", 	   voicemailFlowId),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_enabled", 		   emailEnabled),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_inbound_flow_id",   emailInboundFlowId),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.message_enabled", 		   messageEnabled),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.agent_wait_seconds", agentWaitSeconds),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.wait_for_agent", waitForAgent),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_enabled", callEnabled),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_inbound_flow_id", callInboundFlowId),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.voicemail_flow_id", voicemailFlowId),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_enabled", emailEnabled),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_inbound_flow_id", emailInboundFlowId),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.message_enabled", messageEnabled),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.message_inbound_flow_id", messageInboundFlowId),
 	)
 }
