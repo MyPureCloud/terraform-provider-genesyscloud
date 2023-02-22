@@ -31,7 +31,7 @@ func dataSourceOutboundSequence() *schema.Resource {
 }
 
 func dataSourceOutboundSequenceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)

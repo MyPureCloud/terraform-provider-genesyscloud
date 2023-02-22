@@ -31,7 +31,7 @@ func dataSourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 }
 
 func dataSourceEmployeeperformanceExternalmetricsDefinitionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	gamificationApi := platformclientv2.NewGamificationApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)

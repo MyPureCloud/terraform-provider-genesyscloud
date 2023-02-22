@@ -92,7 +92,7 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
@@ -131,7 +131,7 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 }
 
 func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	//Check to see if we need to force and unlock on an architect flow
@@ -208,7 +208,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	//Check to see if we need to force

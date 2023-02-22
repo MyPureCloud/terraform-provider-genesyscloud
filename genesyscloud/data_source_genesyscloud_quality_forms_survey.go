@@ -26,7 +26,7 @@ func dataSourceQualityFormsSurvey() *schema.Resource {
 }
 
 func dataSourceQualityFormsSurveyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)

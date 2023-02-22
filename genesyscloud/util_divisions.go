@@ -9,7 +9,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 )
 
-type jsonMap map[string]interface{}
+type JsonMap map[string]interface{}
 
 // Attempt to get the home division once during a provider run
 var divOnce sync.Once

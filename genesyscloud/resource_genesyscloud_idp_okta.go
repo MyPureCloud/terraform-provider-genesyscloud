@@ -6,8 +6,9 @@ import (
 	"log"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -88,7 +89,7 @@ func createIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 }
 
 func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP Okta")
@@ -140,7 +141,7 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	targetUri := d.Get("target_uri").(string)
 	disabled := d.Get("disabled").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Updating IDP Okta")
@@ -168,7 +169,7 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 }
 
 func deleteIdpOkta(ctx context.Context, _ *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting IDP Okta")

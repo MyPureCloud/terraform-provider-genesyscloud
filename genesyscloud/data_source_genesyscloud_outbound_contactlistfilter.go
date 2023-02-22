@@ -26,7 +26,7 @@ func dataSourceOutboundContactListFilter() *schema.Resource {
 }
 
 func dataSourceOutboundContactListFilterRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 	name := d.Get("name").(string)
 

@@ -18,7 +18,7 @@ func dataSourceRoutingSettings() *schema.Resource {
 }
 
 func dataSourceRoutingSettingsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	settings, _, getErr := routingAPI.GetRoutingSettings()

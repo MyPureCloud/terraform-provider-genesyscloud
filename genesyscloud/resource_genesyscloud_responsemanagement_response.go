@@ -6,12 +6,13 @@ import (
 	"log"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 var (
@@ -212,7 +213,7 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	responseType := d.Get("response_type").(string)
 	messagingTemplate := d.Get("messaging_template").(*schema.Set)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	sdkresponse := platformclientv2.Response{
@@ -257,7 +258,7 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	responseType := d.Get("response_type").(string)
 	messagingTemplate := d.Get("messaging_template").(*schema.Set)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	sdkresponse := platformclientv2.Response{
@@ -307,7 +308,7 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 }
 
 func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Responsemanagement Response %s", d.Id())
@@ -357,7 +358,7 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 }
 
 func deleteResponsemanagementResponse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

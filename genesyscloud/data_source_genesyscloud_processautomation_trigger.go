@@ -34,7 +34,7 @@ func dataSourceProcessAutomationTrigger() *schema.Resource {
 }
 
 func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	triggerName := d.Get("name").(string)

@@ -22,8 +22,8 @@ func TestAccResourceOutboundWrapupCodeMapping(t *testing.T) {
 		wrapupCode3Name       = "tf test wrapupcode" + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateRoutingWrapupcodeResource(wrapupCode1ResourceId, wrapupCode1Name) +

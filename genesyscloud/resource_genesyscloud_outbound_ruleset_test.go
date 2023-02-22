@@ -33,8 +33,8 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 		ruleSetName2      = "Test Rule Set " + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundContactList(
@@ -52,7 +52,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 						"cell",
 						"Cell",
 					),
-				) + generateRoutingQueueResourceBasic(
+				) + GenerateRoutingQueueResourceBasic(
 					queueResource1,
 					queueName1) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
@@ -80,7 +80,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 						"cell",
 						"Cell",
 					),
-				) + generateRoutingQueueResourceBasic(
+				) + GenerateRoutingQueueResourceBasic(
 					queueResource2,
 					queueName2) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
@@ -117,8 +117,8 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundContactList(

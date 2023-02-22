@@ -35,8 +35,8 @@ func TestAccResourceUserBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -178,8 +178,8 @@ func TestAccResourceUserAddresses(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -265,8 +265,8 @@ func TestAccResourceUserPhone(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -378,8 +378,8 @@ func TestAccResourceUserSkills(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 skill
@@ -460,8 +460,8 @@ func TestAccResourceUserLanguages(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 language
@@ -542,8 +542,8 @@ func TestAccResourceUserLocations(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create user with a location
@@ -601,8 +601,8 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -702,8 +702,8 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create with utilization settings
@@ -799,12 +799,12 @@ func TestAccResourceUserRestore(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create a basic user
-				Config: generateBasicUserResource(
+				Config: GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -815,7 +815,7 @@ func TestAccResourceUserRestore(t *testing.T) {
 				),
 			},
 			{
-				Config: generateBasicUserResource(
+				Config: GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -825,7 +825,7 @@ func TestAccResourceUserRestore(t *testing.T) {
 			},
 			{
 				// Restore the same user email but set a different name
-				Config: generateBasicUserResource(
+				Config: GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName2,
@@ -951,36 +951,6 @@ func validateUserUtilizationLevel(userResourceName string, level string) resourc
 
 		return nil
 	}
-}
-
-// Basic user with minimum required fields
-func generateBasicUserResource(resourceID string, email string, name string) string {
-	return generateUserResource(resourceID, email, name, nullValue, nullValue, nullValue, nullValue, nullValue, "", "")
-}
-
-func generateUserResource(
-	resourceID string,
-	email string,
-	name string,
-	state string,
-	title string,
-	department string,
-	manager string,
-	acdAutoAnswer string,
-	profileSkills string,
-	certifications string) string {
-	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
-		email = "%s"
-		name = "%s"
-		state = %s
-		title = %s
-		department = %s
-		manager = %s
-		acd_auto_answer = %s
-		profile_skills = [%s]
-		certifications = [%s]
-	}
-	`, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
 }
 
 func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {

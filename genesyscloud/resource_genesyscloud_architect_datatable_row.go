@@ -9,8 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -115,7 +116,7 @@ func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	keyStr := d.Get("key_value").(string)
 	properties := d.Get("properties_json").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	rowMap, diagErr := buildSdkRowPropertyMap(properties, keyStr)
@@ -143,7 +144,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("Invalid Row ID %s", d.Id())
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Datatable Row %s", d.Id())
@@ -180,7 +181,7 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	keyStr := d.Get("key_value").(string)
 	properties := d.Get("properties_json").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	rowMap, diagErr := buildSdkRowPropertyMap(properties, keyStr)
@@ -205,7 +206,7 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 		return diag.Errorf("Invalid Row ID %s", d.Id())
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting Datatable Row %s", d.Id())
@@ -267,7 +268,7 @@ func customizeDatatableRowDiff(_ context.Context, diff *schema.ResourceDiff, met
 
 	propertiesJson := diff.Get("properties_json").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	// Retrieve defaults from the datatable for this row

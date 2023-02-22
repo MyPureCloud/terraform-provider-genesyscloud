@@ -3,7 +3,6 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -27,7 +26,7 @@ func dataSourceOutboundCallabletimeset() *schema.Resource {
 }
 
 func dataSourceOutboundCallabletimesetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	timesetName := d.Get("name").(string)

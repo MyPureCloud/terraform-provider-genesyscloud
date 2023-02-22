@@ -9,10 +9,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 var (
@@ -218,7 +219,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	priority := d.Get("priority").(int)
 
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	//Checking the self_reference_route flag and routeId rules
@@ -271,7 +272,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	domainID := d.Get("domain_id").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading routing email route %s", d.Id())
@@ -406,7 +407,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Error occurred while validating the reply email address while trying to update the record: %s", err)
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)
@@ -448,7 +449,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	domainID := d.Get("domain_id").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting email route %s", d.Id())

@@ -2,9 +2,10 @@ package genesyscloud
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"testing"
 )
 
 func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
@@ -24,12 +25,12 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			// 1 user and 1 group
 			{
-				Config: generateBasicUserResource(
+				Config: GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -47,11 +48,11 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 2 users and 2 groups
 			{
-				Config: generateBasicUserResource(
+				Config: GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
-				) + generateBasicUserResource(
+				) + GenerateBasicUserResource(
 					userResource2,
 					email2,
 					userName2,
@@ -74,7 +75,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 1 user
 			{
-				Config: generateBasicUserResource(
+				Config: GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -87,11 +88,11 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 2 users
 			{
-				Config: generateBasicUserResource(
+				Config: GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
-				) + generateBasicUserResource(
+				) + GenerateBasicUserResource(
 					userResource2,
 					email2,
 					userName2,

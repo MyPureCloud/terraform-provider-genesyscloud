@@ -26,7 +26,7 @@ func dataSourceIntegrationAction() *schema.Resource {
 }
 
 func dataSourceIntegrationActionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	actionName := d.Get("name").(string)

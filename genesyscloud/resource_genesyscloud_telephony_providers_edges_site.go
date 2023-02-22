@@ -6,13 +6,14 @@ import (
 	"log"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/leekchan/timeutil"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 func resourceSite() *schema.Resource {
@@ -293,8 +294,8 @@ func validateMediaRegions(regions *[]string, sdkConfig *platformclientv2.Configu
 
 	for _, region := range *regions {
 		if region != *homeRegion &&
-			!stringInSlice(region, *coreRegions) &&
-			!stringInSlice(region, *satRegions) {
+			!StringInSlice(region, *coreRegions) &&
+			!StringInSlice(region, *satRegions) {
 			fmt.Errorf("Region %s is not a valid media region.  Please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions.", regions)
 		}
 
@@ -318,7 +319,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	callerID := d.Get("caller_id").(string)
 	callerName := d.Get("caller_name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	locationAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 	location, _, err := locationAPI.GetLocation(locationId, nil)
 	if err != nil {
@@ -394,7 +395,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading site %s", d.Id())
@@ -460,7 +461,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	mediaRegions := buildMediaRegionList(d)
 	callerID := d.Get("caller_id").(string)
 	callerName := d.Get("caller_name").(string)
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	locationAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 	location, _, err := locationAPI.GetLocation(locationId, nil)
 	if err != nil {
@@ -542,7 +543,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting site")

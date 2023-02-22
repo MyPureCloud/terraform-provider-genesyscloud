@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"log"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 func resourceOrgauthorizationPairing() *schema.Resource {
@@ -47,10 +48,10 @@ func deleteOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 }
 
 func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	userIds := interfaceListToStrings(d.Get("user_ids").([]interface{}))
-	groupIds := interfaceListToStrings(d.Get("group_ids").([]interface{}))
+	userIds := InterfaceListToStrings(d.Get("user_ids").([]interface{}))
+	groupIds := InterfaceListToStrings(d.Get("group_ids").([]interface{}))
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	organizationAuthorizationApi := platformclientv2.NewOrganizationAuthorizationApiWithConfig(sdkConfig)
 
 	sdktrustrequestcreate := platformclientv2.Trustrequestcreate{
@@ -71,7 +72,7 @@ func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 }
 
 func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	organizationAuthorizationApi := platformclientv2.NewOrganizationAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Orgauthorization Pairing %s", d.Id())

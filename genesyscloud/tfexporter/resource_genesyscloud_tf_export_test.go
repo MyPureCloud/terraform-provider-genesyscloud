@@ -1,4 +1,4 @@
-package genesyscloud
+package tfexporter
 
 import (
 	"encoding/json"
@@ -12,8 +12,11 @@ import (
 	"strings"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/google/uuid"
 
@@ -22,6 +25,10 @@ import (
 	"gonum.org/v1/gonum/graph/simple"
 	"gonum.org/v1/gonum/graph/topo"
 )
+
+const falseValue = "false"
+const trueValue = "true"
+const nullValue = "null"
 
 type UserExport struct {
 	Email string `json:"email"`
@@ -37,7 +44,7 @@ type QueueExport struct {
 
 func TestAccResourceTfExport(t *testing.T) {
 	var (
-		exportTestDir   = "../.terraform" + uuid.NewString()
+		exportTestDir   = "../../.terraform" + uuid.NewString()
 		exportResource1 = "test-export1"
 		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
 		statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
@@ -46,8 +53,8 @@ func TestAccResourceTfExport(t *testing.T) {
 	defer os.RemoveAll(exportTestDir)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Run export without state file
@@ -121,12 +128,12 @@ func TestAccResourceTfExportByName(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Generate a user and export it
-				Config: generateBasicUserResource(
+				Config: gcloud.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
@@ -134,7 +141,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 			},
 			{
 				// Generate a user and export it
-				Config: generateBasicUserResource(
+				Config: gcloud.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
@@ -150,16 +157,16 @@ func TestAccResourceTfExportByName(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_tf_export."+exportResource1,
 						"resource_types.0", "genesyscloud_user::"+userEmail1),
-					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", sanitizeResourceName(userEmail1), testUser1),
+					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", gcloud.SanitizeResourceName(userEmail1), testUser1),
 				),
 			},
 			{
 				// Generate a queue as well and export it
-				Config: generateBasicUserResource(
+				Config: gcloud.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + generateRoutingQueueResource(
+				) + gcloud.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -188,17 +195,17 @@ func TestAccResourceTfExportByName(t *testing.T) {
 						"resource_types.0", "genesyscloud_user::"+userEmail1),
 					resource.TestCheckResourceAttr("genesyscloud_tf_export."+exportResource1,
 						"resource_types.1", "genesyscloud_routing_queue::"+queueName),
-					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", sanitizeResourceName(userEmail1), testUser1),
-					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizeResourceName(queueName), testQueue),
+					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", gcloud.SanitizeResourceName(userEmail1), testUser1),
+					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueName), testQueue),
 				),
 			},
 			{
 				// Export all trunk base settings as well
-				Config: generateBasicUserResource(
+				Config: gcloud.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + generateRoutingQueueResource(
+				) + gcloud.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -233,22 +240,22 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"genesyscloud_tf_export."+exportResource1, "resource_types.2",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings"),
-					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", sanitizeResourceName(userEmail1), testUser1),
-					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizeResourceName(queueName), testQueue),
+					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", gcloud.SanitizeResourceName(userEmail1), testUser1),
+					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueName), testQueue),
 					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunkbasesettings"),
 				),
 			},
 			{
 				// Export all trunk base settings as well
-				Config: generateBasicUserResource(
+				Config: gcloud.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + generateBasicUserResource(
+				) + gcloud.GenerateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
-				) + generateRoutingQueueResource(
+				) + gcloud.GenerateRoutingQueueResource(
 					queueResource,
 					queueName,
 					queueDesc,
@@ -287,9 +294,9 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"genesyscloud_tf_export."+exportResource1, "resource_types.3",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings"),
-					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", sanitizeResourceName(userEmail1), testUser1),
-					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", sanitizeResourceName(userEmail2), testUser2),
-					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", sanitizeResourceName(queueName), testQueue),
+					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", gcloud.SanitizeResourceName(userEmail1), testUser1),
+					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", gcloud.SanitizeResourceName(userEmail2), testUser2),
+					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueName), testQueue),
 					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunkbasesettings"),
 				),
 			},
@@ -308,76 +315,77 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 		formResourceName = formName
 
 		// Complete evaluation form
-		evaluationForm1 = evaluationFormStruct{
-			name:      formName,
-			published: false,
-			questionGroups: []evaluationFormQuestionGroupStruct{
+		evaluationForm1 = gcloud.EvaluationFormStruct{
+			Name:      formName,
+			Published: false,
+
+			QuestionGroups: []gcloud.EvaluationFormQuestionGroupStruct{
 				{
-					name:                    "Test Question Group 1",
-					defaultAnswersToHighest: true,
-					defaultAnswersToNA:      true,
-					naEnabled:               true,
-					weight:                  1,
-					manualWeight:            true,
-					questions: []evaluationFormQuestionStruct{
+					Name:                    "Test Question Group 1",
+					DefaultAnswersToHighest: true,
+					DefaultAnswersToNA:      true,
+					NaEnabled:               true,
+					Weight:                  1,
+					ManualWeight:            true,
+					Questions: []gcloud.EvaluationFormQuestionStruct{
 						{
-							text: "Did the agent perform the opening spiel?",
-							answerOptions: []answerOptionStruct{
+							Text: "Did the agent perform the opening spiel?",
+							AnswerOptions: []gcloud.AnswerOptionStruct{
 								{
-									text:  "Yes",
-									value: 1,
+									Text:  "Yes",
+									Value: 1,
 								},
 								{
-									text:  "No",
-									value: 0,
+									Text:  "No",
+									Value: 0,
 								},
 							},
 						},
 						{
-							text:             "Did the agent greet the customer?",
-							helpText:         "Help text here",
-							naEnabled:        true,
-							commentsRequired: true,
-							isKill:           true,
-							isCritical:       true,
-							visibilityCondition: visibilityConditionStruct{
-								combiningOperation: "AND",
-								predicates:         []string{"/form/questionGroup/0/question/0/answer/0", "/form/questionGroup/0/question/0/answer/1"},
+							Text:             "Did the agent greet the customer?",
+							HelpText:         "Help text here",
+							NaEnabled:        true,
+							CommentsRequired: true,
+							IsKill:           true,
+							IsCritical:       true,
+							VisibilityCondition: gcloud.VisibilityConditionStruct{
+								CombiningOperation: "AND",
+								Predicates:         []string{"/form/questionGroup/0/question/0/answer/0", "/form/questionGroup/0/question/0/answer/1"},
 							},
-							answerOptions: []answerOptionStruct{
+							AnswerOptions: []gcloud.AnswerOptionStruct{
 								{
-									text:  "Yes",
-									value: 1,
+									Text:  "Yes",
+									Value: 1,
 								},
 								{
-									text:  "No",
-									value: 0,
+									Text:  "No",
+									Value: 0,
 								},
 							},
 						},
 					},
 				},
 				{
-					name:   "Test Question Group 2",
-					weight: 2,
-					questions: []evaluationFormQuestionStruct{
+					Name:   "Test Question Group 2",
+					Weight: 2,
+					Questions: []gcloud.EvaluationFormQuestionStruct{
 						{
-							text: "Did the agent offer to sell product?",
-							answerOptions: []answerOptionStruct{
+							Text: "Did the agent offer to sell product?",
+							AnswerOptions: []gcloud.AnswerOptionStruct{
 								{
-									text:  "Yes",
-									value: 1,
+									Text:  "Yes",
+									Value: 1,
 								},
 								{
-									text:  "No",
-									value: 0,
+									Text:  "No",
+									Value: 0,
 								},
 							},
 						},
 					},
-					visibilityCondition: visibilityConditionStruct{
-						combiningOperation: "AND",
-						predicates:         []string{"/form/questionGroup/0/question/0/answer/1"},
+					VisibilityCondition: gcloud.VisibilityConditionStruct{
+						CombiningOperation: "AND",
+						Predicates:         []string{"/form/questionGroup/0/question/0/answer/1"},
 					},
 				},
 			},
@@ -387,17 +395,17 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 	defer os.RemoveAll(exportTestDir)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateEvaluationFormResource(formResourceName, &evaluationForm1),
+				Config: gcloud.GenerateEvaluationFormResource(formResourceName, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
 					validateEvaluationFormAttributes(formResourceName, evaluationForm1),
 				),
 			},
 			{
-				Config: generateEvaluationFormResource(formResourceName, &evaluationForm1) + generateTfExportByName(
+				Config: gcloud.GenerateEvaluationFormResource(formResourceName, &evaluationForm1) + generateTfExportByName(
 					formResourceName,
 					exportTestDir,
 					trueValue,
@@ -417,8 +425,8 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 	exportedContents = removeTfConfigBlock(exportedContents)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: exportedContents,
@@ -460,7 +468,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		emailScriptID = "153fcff5-597e-4f17-94e5-17eac456a0b2"
 	)
 
-	routingQueue := generateRoutingQueueResource(
+	routingQueue := gcloud.GenerateRoutingQueueResource(
 		queueID,
 		queueName,
 		description,
@@ -472,14 +480,14 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		nullValue,
 		"true",
 		"true",
-		generateMediaSettings("media_settings_call", alertTimeoutSec, slPercentage, slDurationMs),
-		generateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
-		generateDefaultScriptIDs(chatScriptID, emailScriptID),
+		gcloud.GenerateMediaSettings("media_settings_call", alertTimeoutSec, slPercentage, slDurationMs),
+		gcloud.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
+		gcloud.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: routingQueue,
@@ -513,8 +521,8 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 	exportContents = removeTfConfigBlock(exportContents)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: exportContents,
@@ -551,8 +559,8 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 
 	// Checking that the config file is created when the error is 403 & log_permission_errors = true
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateTfExportByName("test-export",
@@ -574,8 +582,8 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 	mockError = errors2
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateTfExportByName("test-export",
@@ -593,8 +601,8 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 
 	// Check that info about attr exists in error summary when 403 is found & log_permission_errors = false
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateTfExportByName("test-export",
@@ -621,8 +629,8 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		userPromptDescription       = "Test description"
 		userPromptResourceLanguage  = "en-us"
 		userPromptResourceText      = "This is a test greeting!"
-		userResourcePromptFilename1 = testrunner.GetTestDataPath("test-prompt-01.wav")
-		userResourcePromptFilename2 = testrunner.GetTestDataPath("test-prompt-02.wav")
+		userResourcePromptFilename1 = "../" + testrunner.GetTestDataPath("test-prompt-01.wav")
+		userResourcePromptFilename2 = "../" + testrunner.GetTestDataPath("test-prompt-02.wav")
 
 		userPromptResourceLanguage2 = "pt-br"
 		userPromptResourceText2     = "This is a test greeting!!!"
@@ -631,31 +639,31 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		exportTestDir    = "../.terraform" + uuid.NewString()
 	)
 
-	userPromptAsset := userPromptResourceStruct{
+	userPromptAsset := gcloud.UserPromptResourceStruct{
 		userPromptResourceLanguage,
 		nullValue,
 		strconv.Quote(userPromptResourceText),
 		strconv.Quote(userResourcePromptFilename1),
 	}
 
-	userPromptAsset2 := userPromptResourceStruct{
+	userPromptAsset2 := gcloud.UserPromptResourceStruct{
 		userPromptResourceLanguage2,
 		nullValue,
 		strconv.Quote(userPromptResourceText2),
 		strconv.Quote(userResourcePromptFilename2),
 	}
 
-	userPromptResources := []*userPromptResourceStruct{&userPromptAsset}
-	userPromptResources2 := []*userPromptResourceStruct{&userPromptAsset, &userPromptAsset2}
+	userPromptResources := []*gcloud.UserPromptResourceStruct{&userPromptAsset}
+	userPromptResources2 := []*gcloud.UserPromptResourceStruct{&userPromptAsset, &userPromptAsset2}
 
 	defer os.RemoveAll(exportTestDir)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateUserPromptResource(&userPromptStruct{
+				Config: gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
 					userPromptResourceId,
 					userPromptName,
 					strconv.Quote(userPromptDescription),
@@ -671,7 +679,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					"",
 					falseValue,
 					falseValue,
-				) + generateUserPromptResource(&userPromptStruct{
+				) + gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
 					userPromptResourceId,
 					userPromptName,
 					strconv.Quote(userPromptDescription),
@@ -688,7 +696,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 			},
 			// Update to two resources with separate audio files
 			{
-				Config: generateUserPromptResource(&userPromptStruct{
+				Config: gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
 					userPromptResourceId,
 					userPromptName,
 					strconv.Quote(userPromptDescription),
@@ -704,7 +712,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					"",
 					falseValue,
 					falseValue,
-				) + generateUserPromptResource(&userPromptStruct{
+				) + gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
 					userPromptResourceId,
 					userPromptName,
 					strconv.Quote(userPromptDescription),
@@ -873,7 +881,7 @@ func getResourceDefinition(filePath, resourceType string) (map[string]*json.RawM
 func TestForExportCycles(t *testing.T) {
 
 	// Assumes exporting all resource types
-	exporters := getResourceExporters(nil)
+	exporters := gcloud.GetResourceExporters(nil)
 
 	graph := simple.NewDirectedGraph()
 
@@ -892,7 +900,7 @@ func TestForExportCycles(t *testing.T) {
 				// (e.g. two users that are each other's manager)
 				continue
 			}
-			if exporters[resName].isAttributeExcluded(attrName) {
+			if exporters[resName].IsAttributeExcluded(attrName) {
 				// This reference attribute will be excluded from the export
 				continue
 			}
@@ -931,7 +939,7 @@ func isIgnoredReferenceCycle(cycle []string) bool {
 	}
 
 	for _, ignored := range ignoredCycles {
-		if strArrayEquals(ignored, cycle) {
+		if gcloud.StrArrayEquals(ignored, cycle) {
 			return true
 		}
 	}
@@ -1067,18 +1075,18 @@ func testVerifyExportsDestroyedFunc(exportTestDir string) resource.TestCheckFunc
 	}
 }
 
-func validateEvaluationFormAttributes(resourceName string, form evaluationFormStruct) resource.TestCheckFunc {
+func validateEvaluationFormAttributes(resourceName string, form gcloud.EvaluationFormStruct) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "name", resourceName),
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "published", falseValue),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.name", form.questionGroups[0].name),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.weight", fmt.Sprintf("%v", form.questionGroups[0].weight)),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.text", form.questionGroups[0].questions[1].text),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.1.questions.0.answer_options.0.text", form.questionGroups[1].questions[0].answerOptions[0].text),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.1.questions.0.answer_options.1.value", fmt.Sprintf("%v", form.questionGroups[1].questions[0].answerOptions[1].value)),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.combining_operation", form.questionGroups[0].questions[1].visibilityCondition.combiningOperation),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.0", form.questionGroups[0].questions[1].visibilityCondition.predicates[0]),
-		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.1", form.questionGroups[0].questions[1].visibilityCondition.predicates[1]),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.name", form.QuestionGroups[0].Name),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.weight", fmt.Sprintf("%v", form.QuestionGroups[0].Weight)),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.text", form.QuestionGroups[0].Questions[1].Text),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.1.questions.0.answer_options.0.text", form.QuestionGroups[1].Questions[0].AnswerOptions[0].Text),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.1.questions.0.answer_options.1.value", fmt.Sprintf("%v", form.QuestionGroups[1].Questions[0].AnswerOptions[1].Value)),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.combining_operation", form.QuestionGroups[0].Questions[1].VisibilityCondition.CombiningOperation),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.0", form.QuestionGroups[0].Questions[1].VisibilityCondition.Predicates[0]),
+		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceName, "question_groups.0.questions.1.visibility_condition.0.predicates.1", form.QuestionGroups[0].Questions[1].VisibilityCondition.Predicates[1]),
 	)
 }
 
@@ -1107,4 +1115,21 @@ func validateConfigFile(path string) resource.TestCheckFunc {
 		}
 		return nil
 	}
+}
+
+func validateMediaSettings(resourceName string, settingsAttr string, alertingTimeout string, slPercent string, slDurationMs string) resource.TestCheckFunc {
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.alerting_timeout_sec", alertingTimeout),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.service_level_percentage", slPercent),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.service_level_duration_ms", slDurationMs),
+	)
+}
+
+func validateRoutingRules(resourceName string, ringNum int, operator string, threshold string, waitSec string) resource.TestCheckFunc {
+	ringNumStr := strconv.Itoa(ringNum)
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "routing_rules."+ringNumStr+".operator", operator),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "routing_rules."+ringNumStr+".threshold", threshold),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "routing_rules."+ringNumStr+".wait_seconds", waitSec),
+	)
 }

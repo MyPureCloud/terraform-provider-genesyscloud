@@ -2,9 +2,10 @@ package genesyscloud
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceRoutingSettings(t *testing.T) {
@@ -16,8 +17,8 @@ func TestAccDataSourceRoutingSettings(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Search by contact center

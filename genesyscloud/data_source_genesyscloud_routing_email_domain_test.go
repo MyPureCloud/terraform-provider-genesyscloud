@@ -54,8 +54,8 @@ func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 	cleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateRoutingEmailDomainResource(

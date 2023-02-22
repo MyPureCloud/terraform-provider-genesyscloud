@@ -27,32 +27,32 @@ func TestAccDataSourceQualityFormsSurvey(t *testing.T) {
 					{
 						text:    "Was your problem solved?",
 						varType: "multipleChoiceQuestion",
-						answerOptions: []answerOptionStruct{
+						answerOptions: []AnswerOptionStruct{
 							{
-								text:  "Yes",
-								value: 1,
+								Text:  "Yes",
+								Value: 1,
 							},
 							{
-								text:  "No",
-								value: 0,
+								Text:  "No",
+								Value: 0,
 							},
 						},
 					},
 					{
 						text:    "Multiple Choice Question.",
 						varType: "multipleChoiceQuestion",
-						answerOptions: []answerOptionStruct{
+						answerOptions: []AnswerOptionStruct{
 							{
-								text:  "Option 1",
-								value: 1,
+								Text:  "Option 1",
+								Value: 1,
 							},
 							{
-								text:  "Option 2",
-								value: 2,
+								Text:  "Option 2",
+								Value: 2,
 							},
 							{
-								text:  "Option 3",
-								value: 3,
+								Text:  "Option 3",
+								Value: 3,
 							},
 						},
 					},
@@ -62,8 +62,8 @@ func TestAccDataSourceQualityFormsSurvey(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateSurveyFormResource(

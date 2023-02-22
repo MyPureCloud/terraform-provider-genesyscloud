@@ -2,10 +2,11 @@ package genesyscloud
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"strconv"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
@@ -20,8 +21,8 @@ func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundContactList(

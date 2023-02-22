@@ -6,11 +6,12 @@ import (
 	"log"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 func getAllFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -84,7 +85,7 @@ func createFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 	division := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	sdkflowmilestone := platformclientv2.Flowmilestone{}
@@ -116,7 +117,7 @@ func updateFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 	division := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	sdkflowmilestone := platformclientv2.Flowmilestone{}
@@ -142,7 +143,7 @@ func updateFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Flow Milestone %s", d.Id())
@@ -175,7 +176,7 @@ func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func deleteFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

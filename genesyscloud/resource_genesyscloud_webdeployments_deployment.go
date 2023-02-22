@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -135,14 +135,14 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	allowAllDomains := d.Get("allow_all_domains").(bool)
-	allowedDomains := interfaceListToStrings(d.Get("allowed_domains").([]interface{}))
+	allowedDomains := InterfaceListToStrings(d.Get("allowed_domains").([]interface{}))
 
 	err := validAllowedDomainsSettings(d)
 	if err != nil {
 		return diag.Errorf("Failed to create web deployment %s: %s", name, err)
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	log.Printf("Creating web deployment %s", name)
@@ -216,7 +216,7 @@ func waitForDeploymentToBeActive(ctx context.Context, api *platformclientv2.WebD
 }
 
 func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading web deployment %s", d.Id())
@@ -264,7 +264,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	allowAllDomains := d.Get("allow_all_domains").(bool)
-	allowedDomains := interfaceListToStrings(d.Get("allowed_domains").([]interface{}))
+	allowedDomains := InterfaceListToStrings(d.Get("allowed_domains").([]interface{}))
 	status := d.Get("status").(string)
 
 	err := validAllowedDomainsSettings(d)
@@ -272,7 +272,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to update web deployment %s: %s", name, err)
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	log.Printf("Updating web deployment %s", name)
@@ -328,7 +328,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting web deployment %s", name)

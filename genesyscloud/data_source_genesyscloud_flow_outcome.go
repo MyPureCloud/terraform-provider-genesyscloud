@@ -3,7 +3,6 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -27,7 +26,7 @@ func dataSourceFlowOutcome() *schema.Resource {
 }
 
 func dataSourceFlowOutcomeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)

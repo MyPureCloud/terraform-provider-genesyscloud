@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"log"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 func getOutboundWrapupCodeMappings(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -103,7 +104,7 @@ func createOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 }
 
 func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Updating Outbound Wrap-up Code Mappings")
@@ -133,7 +134,7 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 }
 
 func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound Wrap-up Code Mappings")
@@ -200,7 +201,7 @@ func flattenOutboundWrapupCodeMappings(d *schema.ResourceData, sdkWrapupcodemapp
 		if mMap, ok := m.(map[string]interface{}); ok {
 			var schemaFlags []string
 			if flags, ok := mMap["flags"].([]interface{}); ok {
-				schemaFlags = interfaceListToStrings(flags)
+				schemaFlags = InterfaceListToStrings(flags)
 			}
 			for sdkId, sdkFlags := range *sdkWrapupcodemapping.Mapping {
 				if mMap["wrapup_code_id"].(string) == sdkId {
@@ -225,7 +226,7 @@ func buildWrapupCodeMappings(d *schema.ResourceData) *map[string][]string {
 		for _, m := range mappings {
 			if mapping, ok := m.(map[string]interface{}); ok {
 				id := mapping["wrapup_code_id"].(string)
-				flags := interfaceListToStrings(mapping["flags"].([]interface{}))
+				flags := InterfaceListToStrings(mapping["flags"].([]interface{}))
 				wrapupCodeMappings[id] = flags
 			}
 		}

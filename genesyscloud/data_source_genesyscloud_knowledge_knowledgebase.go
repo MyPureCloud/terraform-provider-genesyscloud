@@ -33,7 +33,7 @@ func dataSourceKnowledgeKnowledgebase() *schema.Resource {
 }
 
 func dataSourceKnowledgeKnowledgebaseRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)

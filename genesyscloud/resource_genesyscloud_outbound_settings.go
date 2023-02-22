@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"log"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 var (
@@ -159,7 +160,7 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 	abandonSeconds := d.Get("abandon_seconds").(float64)
 	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Updating Outbound Settings %s", d.Id())
@@ -222,7 +223,7 @@ func buildOutboundSettingsAutomaticTimeZoneMapping(d *schema.ResourceData) *plat
 func buildSupportedCountries(d *schema.ResourceData) *[]string {
 	supportedCountries := []string{}
 	if countries, ok := d.GetOk("automatic_time_zone_mapping.0.supported_countries"); ok {
-		supportedCountries = interfaceListToStrings(countries.([]interface{}))
+		supportedCountries = InterfaceListToStrings(countries.([]interface{}))
 	}
 	return &supportedCountries
 }
@@ -297,7 +298,7 @@ func buildCallableWindowsUnmapped(unmappedWindows *schema.Set) *platformclientv2
 }
 
 func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)

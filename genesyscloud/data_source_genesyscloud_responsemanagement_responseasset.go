@@ -42,7 +42,7 @@ func dataSourceResponseManagamentResponseAssetRead(ctx context.Context, d *schem
 		}
 	)
 
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	respManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
