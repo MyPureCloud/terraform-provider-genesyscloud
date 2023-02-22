@@ -1225,9 +1225,9 @@ func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDat
 }
 
 func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
+
 	resourcesString := ``
 	for _, p := range userPrompt.Resources {
-
 		resourcesString += fmt.Sprintf(`resources {
             language = "%s"
             tts_string = %s
