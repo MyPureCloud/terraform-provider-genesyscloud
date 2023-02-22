@@ -44,7 +44,7 @@ type QueueExport struct {
 
 func TestAccResourceTfExport(t *testing.T) {
 	var (
-		exportTestDir   = "../.terraform" + uuid.NewString()
+		exportTestDir   = "../../.terraform" + uuid.NewString()
 		exportResource1 = "test-export1"
 		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
 		statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
