@@ -20,13 +20,13 @@ func dataSourceExtensionPool() *schema.Resource {
 				Description:      "Starting number of the Extension Pool range.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: validateExtensionPool,
 			},
 			"end_number": {
 				Description:      "Ending number of the Extension Pool range.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: validateExtensionPool,
 			},
 		},
 	}
