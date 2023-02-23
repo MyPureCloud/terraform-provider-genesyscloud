@@ -23,9 +23,9 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     }
   }
   cobrowse {
-    enabled = true
+    enabled             = true
     allow_agent_control = true
-    mask_selectors = [".my-class", "#my-id"]
+    mask_selectors      = [".my-class", "#my-id"]
   }
   journey_events {
     enabled                   = true
