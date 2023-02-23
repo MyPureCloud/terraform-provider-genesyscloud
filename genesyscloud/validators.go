@@ -31,6 +31,7 @@ func validatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Phone number %v is not a string", number)
 }
 
+// Validates a phone extension pool
 func validateExtensionPool(number interface{}, _ cty.Path) diag.Diagnostics {
 	if numberStr, ok := number.(string); ok {
 
