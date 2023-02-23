@@ -47,6 +47,11 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
       }
     }
   }
+  cobrowse {
+    enabled = true
+    allow_agent_control = true
+    mask_selectors = [".my-class", "#my-id"]
+  }
   journey_events {
     enabled                   = true
     excluded_query_parameters = ["marketingCampaign"]
@@ -123,6 +128,7 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
 - `journey_events` (Block List, Max: 1) Settings concerning journey events (see [below for nested schema](#nestedblock--journey_events))
 - `languages` (List of String) A list of languages supported on the configuration.
 - `messenger` (Block List, Max: 1) Settings concerning messenger (see [below for nested schema](#nestedblock--messenger))
+- `cobrowse` (Block List, Max: 1) Settings concerning cobrowse (see [below for nested schema](#nestedblock--cobrowse))
 - `status` (String) The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.
 - `version` (String) The version of the configuration.
 
@@ -239,3 +245,12 @@ Optional:
 
 - `primary_color` (String) The primary color of messenger in hexadecimal
 
+
+<a id="nestedblock--cobrowse"></a>
+### Nested Schema for `cobrowse`
+
+Optional:
+
+- `enabled` (Boolean) Whether or not cobrowse is enabled. Defaults to `true`.
+- `allow_agent_cntrol` (Boolean) Whether agent can take control over customer's screen or not. Defaults to `true`.
+- `mask_selectors` (List of String) List of CSS selectors which should be masked when screen sharing is active.
