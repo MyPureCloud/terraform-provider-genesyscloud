@@ -7,13 +7,15 @@ import (
 	"regexp"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 var (
@@ -132,7 +134,7 @@ func resourceJourneyOutcome() *schema.Resource {
 }
 
 func createJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	journeyOutcome := buildSdkJourneyOutcome(d)
 
@@ -149,7 +151,7 @@ func createJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func readJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Reading journey outcome %s", d.Id())
@@ -171,7 +173,7 @@ func readJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func updateJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	patchOutcome := buildSdkPatchOutcome(d)
 
@@ -201,7 +203,7 @@ func updateJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 func deleteJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	displayName := d.Get("display_name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting journey outcome with display name %s", displayName)

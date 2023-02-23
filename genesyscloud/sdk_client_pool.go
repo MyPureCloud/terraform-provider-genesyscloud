@@ -127,7 +127,7 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 		}
 
 		// Copy to a new providerMeta object and set the sdk config
-		newMeta := *meta.(*providerMeta)
+		newMeta := *meta.(*ProviderMeta)
 		newMeta.ClientConfig = clientConfig
 		return method(ctx, r, &newMeta)
 	}

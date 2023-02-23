@@ -52,8 +52,8 @@ func TestAccResourceOutboundCampaign(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -268,8 +268,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 
 	// Test campaign_status update
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -406,8 +406,8 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`data "genesyscloud_script" "%s" { name = "%s" }`, scriptDataSourceId, scriptName) +
@@ -700,7 +700,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 		dncList = generateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
 	}
 	if queueResourceId != "" {
-		queue = generateRoutingQueueResourceBasic(queueResourceId, "tf test queue "+uuid.NewString())
+		queue = GenerateRoutingQueueResourceBasic(queueResourceId, "tf test queue "+uuid.NewString())
 	}
 	if carResourceId != "" {
 		if outboundFlowFilePath != "" {

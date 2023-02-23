@@ -55,8 +55,8 @@ func TestAccResourceArchitectDatatableRow(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create datatable with a key and property of each type. Add 1 row with all defaults

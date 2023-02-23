@@ -6,12 +6,13 @@ import (
 	"log"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 var (
@@ -150,7 +151,7 @@ func createOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	resetPeriod := d.Get("reset_period").(string)
 	recallEntries := d.Get("recall_entries").([]interface{})
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkAttemptLimits := platformclientv2.Attemptlimits{}
@@ -194,7 +195,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	resetPeriod := d.Get("reset_period").(string)
 	recallEntries := d.Get("recall_entries").([]interface{})
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkAttemptLimits := platformclientv2.Attemptlimits{}
@@ -241,7 +242,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 }
 
 func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound Attempt Limit %s", d.Id())
@@ -283,7 +284,7 @@ func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func deleteOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

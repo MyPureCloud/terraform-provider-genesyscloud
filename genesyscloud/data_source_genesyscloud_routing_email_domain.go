@@ -28,7 +28,7 @@ func dataSourceRoutingEmailDomain() *schema.Resource {
 
 // Looks up the data for the Email Domain
 func dataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)

@@ -21,8 +21,8 @@ func TestAccResourceLocationBasic(t *testing.T) {
 		locName3         = "Terraform location" + uuid.NewString()
 		locNotes1        = "HQ1"
 		locNotes2        = "HQ2"
-		emergencyNum1    = "3173124756"
-		emergencyNum2    = "7654182735"
+		emergencyNum1    = "+1(317)3124756"
+		emergencyNum2    = "+1(765)4182735"
 		locNumberDefault = "default"
 		locNumberElin    = "elin"
 
@@ -38,8 +38,8 @@ func TestAccResourceLocationBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create

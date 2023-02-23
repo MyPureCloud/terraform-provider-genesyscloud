@@ -46,8 +46,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 	cleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create email domain and basic route
@@ -80,7 +80,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					domainId,
 					falseValue,
 					nullValue,
-				) + generateRoutingQueueResourceBasic(
+				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
 				) + generateRoutingLanguageResource(
@@ -135,7 +135,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					domainId,
 					falseValue,
 					nullValue,
-				) + generateRoutingQueueResourceBasic(
+				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
 				) + generateRoutingLanguageResource(
@@ -191,7 +191,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					domainId,
 					falseValue,
 					nullValue,
-				) + generateRoutingQueueResourceBasic(
+				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
 				) + generateRoutingLanguageResource(

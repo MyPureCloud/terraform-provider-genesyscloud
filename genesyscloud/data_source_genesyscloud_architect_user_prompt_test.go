@@ -16,11 +16,11 @@ func TestAccDataSourceUserPrompt(t *testing.T) {
 	userPromptDescription := "Test description"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateUserPromptResource(&userPromptStruct{
+				Config: GenerateUserPromptResource(&UserPromptStruct{
 					userPromptResource,
 					userPromptName,
 					strconv.Quote(userPromptDescription),

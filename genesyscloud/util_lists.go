@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func stringInSlice(a string, list []string) bool {
+func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
 			return true
@@ -90,11 +90,11 @@ func stringListToInterfaceList(list []string) []interface{} {
 
 func setToStringList(strSet *schema.Set) *[]string {
 	interfaceList := strSet.List()
-	strList := interfaceListToStrings(interfaceList)
+	strList := InterfaceListToStrings(interfaceList)
 	return &strList
 }
 
-func interfaceListToStrings(interfaceList []interface{}) []string {
+func InterfaceListToStrings(interfaceList []interface{}) []string {
 	strs := make([]string, len(interfaceList))
 	for i, val := range interfaceList {
 		strs[i] = val.(string)
@@ -113,7 +113,7 @@ func buildSdkStringListFromInterfaceArray(d *schema.ResourceData, attrName strin
 	var stringArray []string
 	if val, ok := d.GetOk(attrName); ok {
 		if valArray, ok := val.([]interface{}); ok {
-			stringArray = interfaceListToStrings(valArray)
+			stringArray = InterfaceListToStrings(valArray)
 		}
 	}
 	return &stringArray

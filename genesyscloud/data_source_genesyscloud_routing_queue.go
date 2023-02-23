@@ -26,7 +26,7 @@ func dataSourceRoutingQueue() *schema.Resource {
 }
 
 func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)

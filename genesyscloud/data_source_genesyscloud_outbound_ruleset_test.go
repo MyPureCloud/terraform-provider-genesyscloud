@@ -2,9 +2,10 @@ package genesyscloud
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"testing"
 )
 
 func TestAccDataSourceOutboundRuleset(t *testing.T) {
@@ -15,8 +16,8 @@ func TestAccDataSourceOutboundRuleset(t *testing.T) {
 		ruleSetName         = "Test Rule Set " + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {

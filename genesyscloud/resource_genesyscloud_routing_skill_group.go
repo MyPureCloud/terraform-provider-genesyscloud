@@ -11,10 +11,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 type SkillGroupsRequest struct {
@@ -171,7 +172,7 @@ func createOrUpdateSkillGroups(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("Failed to read the before skills groups request before: %s: %s", skillGroupsRequest.Name, err)
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	apiClient := &routingAPI.Configuration.APIClient
 	path := routingAPI.Configuration.BasePath + route
@@ -233,7 +234,7 @@ func postSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 	if memberDivisionIds == nil {
 		return readSkillGroups(ctx, d, meta)
 	}
-	schemaDivisionIds := interfaceListToStrings(memberDivisionIds)
+	schemaDivisionIds := InterfaceListToStrings(memberDivisionIds)
 
 	toAdd, toRemove, diagErr := createListsForSkillgroupsMembersDivisionsPost(schemaDivisionIds, apiSkillGroupMemberDivisionIds, create, meta)
 	if diagErr != nil {
@@ -272,7 +273,7 @@ func postSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 }
 
 func getAllAuthDivisionIds(meta interface{}) ([]string, diag.Diagnostics) {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	allIds := make([]string, 0)
 
 	divisionResourcesMap, err := getAllAuthDivisions(nil, sdkConfig)
@@ -346,7 +347,7 @@ func mergeSkillConditionsIntoSkillGroups(d *schema.ResourceData, skillGroupsRequ
 }
 
 func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
@@ -424,7 +425,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 
 		var schemaMemberDivisionIds []string
 		if divIds, ok := d.Get("member_division_ids").([]interface{}); ok {
-			schemaMemberDivisionIds = interfaceListToStrings(divIds)
+			schemaMemberDivisionIds = InterfaceListToStrings(divIds)
 		}
 
 		memberDivisionIds := organizeMemberDivisionIdsForRead(schemaMemberDivisionIds, apiMemberDivisionIds, divisionId.(string))
@@ -457,7 +458,7 @@ func updateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	// TODO: After public API endpoint is published and exposed to public, change to SDK method instead of direct invocation
@@ -527,7 +528,7 @@ func readSkillGroupMemberDivisionIds(d *schema.ResourceData, routingAPI *platfor
 }
 
 func allMemberDivisionsSpecified(schemaSkillGroupMemberDivisionIds []string) bool {
-	return stringInSlice("*", schemaSkillGroupMemberDivisionIds)
+	return StringInSlice("*", schemaSkillGroupMemberDivisionIds)
 }
 
 func organizeMemberDivisionIdsForUpdate(schemaIds, apiIds []string) ([]string, []string) {
@@ -535,13 +536,13 @@ func organizeMemberDivisionIdsForUpdate(schemaIds, apiIds []string) ([]string, [
 	toRemove := make([]string, 0)
 	// items that are in hcl and not in api-returned list - add
 	for _, id := range schemaIds {
-		if !stringInSlice(id, apiIds) {
+		if !StringInSlice(id, apiIds) {
 			toAdd = append(toAdd, id)
 		}
 	}
 	// items that are not in hcl and are in api-returned list - remove
 	for _, id := range apiIds {
-		if !stringInSlice(id, schemaIds) {
+		if !StringInSlice(id, schemaIds) {
 			toRemove = append(toRemove, id)
 		}
 	}
@@ -550,7 +551,7 @@ func organizeMemberDivisionIdsForUpdate(schemaIds, apiIds []string) ([]string, [
 
 // Prepare member_division_ids list to avoid an unnecessary plan not empty error
 func organizeMemberDivisionIdsForRead(schemaList, apiList []string, divisionId string) []string {
-	if !stringInSlice(divisionId, schemaList) {
+	if !StringInSlice(divisionId, schemaList) {
 		apiList = removeStringFromSlice(divisionId, apiList)
 	}
 	if len(schemaList) == 1 && schemaList[0] == "*" {
@@ -578,7 +579,7 @@ func removeSkillGroupDivisionID(d *schema.ResourceData, list []string) ([]string
 		}
 		divisionId = id
 	}
-	if stringInSlice(divisionId, list) {
+	if StringInSlice(divisionId, list) {
 		list = removeStringFromSlice(divisionId, list)
 	}
 	return list, nil

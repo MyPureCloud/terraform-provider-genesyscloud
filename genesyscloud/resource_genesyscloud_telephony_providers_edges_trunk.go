@@ -6,11 +6,12 @@ import (
 	"log"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 func resourceTrunk() *schema.Resource {
@@ -56,7 +57,7 @@ func resourceTrunk() *schema.Resource {
 func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	trunkBaseSettingsId := d.Get("trunk_base_settings_id").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	trunkBase, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingsId, true)
@@ -125,7 +126,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func getTrunkByTrunkBaseId(trunkBaseId string, meta interface{}) (*platformclientv2.Trunk, error) {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	time.Sleep(2 * time.Second)
@@ -156,7 +157,7 @@ func updateTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading trunk %s", d.Id())

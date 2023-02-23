@@ -26,7 +26,7 @@ func dataSourceScript() *schema.Resource {
 }
 
 func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	scriptsAPI := platformclientv2.NewScriptsApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)

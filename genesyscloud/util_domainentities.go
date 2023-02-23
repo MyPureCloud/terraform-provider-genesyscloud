@@ -26,7 +26,7 @@ func buildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platfo
 				return &domainEntityRefs
 			}
 		} else {
-			strList := interfaceListToStrings(ids.([]interface{}))
+			strList := InterfaceListToStrings(ids.([]interface{}))
 			if len(strList) > 0 {
 				domainEntityRefs := make([]platformclientv2.Domainentityref, len(strList))
 				for i, id := range strList {

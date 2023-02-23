@@ -31,7 +31,7 @@ func dataSourceWebDeploymentsConfiguration() *schema.Resource {
 }
 
 func dataSourceConfigurationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)

@@ -29,13 +29,13 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 role in default division
 				// Also add employee role reference as new user's automatically get this role
-				Config: generateBasicUserResource(
+				Config: GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -58,7 +58,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			},
 			{
 				// Create another role and division and add to the user
-				Config: generateBasicUserResource(
+				Config: GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -83,7 +83,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove a role from the user and modify division
-				Config: generateBasicUserResource(
+				Config: GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -102,7 +102,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove all roles from the user
-				Config: generateBasicUserResource(
+				Config: GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
