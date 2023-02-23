@@ -61,7 +61,7 @@ func resourceSite() *schema.Resource {
 				Description: "The ordered list of AWS regions through which media can stream. A full list of available media regions can be found at the GET /api/v2/telephony/mediaregions endpoint",
 				Type:        schema.TypeList, //This has to be a list because it must be ordered
 				Optional:    true,
-				Computed:    true,
+				Computed:    true, //This needs to be a computed field because the sites API automatically adds the home region to whatever regions you add add.
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"caller_id": {
