@@ -7,14 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 )
 
 var (
@@ -77,7 +76,7 @@ var (
 				Description: "Whether or not messenger is enabled",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     true,
+				Computed:    true,
 			},
 			"styles": {
 				Description: "The style settings for messenger",
@@ -109,13 +108,13 @@ var (
 				Description: "Whether or not cobrowse is enabled",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     true,
+				Computed:    true,
 			},
 			"allow_agent_control": {
 				Description: "Whether agent can take control over customer's screen or not",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     true,
+				Computed:    true,
 			},
 			"mask_selectors": {
 				Description: "List of CSS selectors which should be masked when screen sharing is active",
@@ -443,7 +442,6 @@ func readJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyevents
 	}
 
 	cfg := cfgs[0].(map[string]interface{})
-	log.Println("Processing journey events config: ", cfg)
 	enabled, _ := cfg["enabled"].(bool)
 	journeySettings := &platformclientv2.Journeyeventssettings{
 		Enabled: &enabled,
@@ -646,22 +644,16 @@ func readCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesett
 	}
 
 	cfg := cfgs[0].(map[string]interface{})
+
 	enabled, _ := cfg["enabled"].(bool)
-	cobrowseSettings := &platformclientv2.Cobrowsesettings{
-		Enabled: &enabled,
-	}
-
 	allowAgentControl, _ := cfg["allow_agent_control"].(bool)
-	cobrowseSettings = &platformclientv2.Cobrowsesettings{
-		AllowAgentControl: &allowAgentControl,
-	}
-
 	maskSelectors := interfaceListToStrings(cfg["mask_selectors"].([]interface{}))
-	cobrowseSettings = &platformclientv2.Cobrowsesettings{
-		MaskSelectors: &maskSelectors,
-	}
 
-	return cobrowseSettings
+	return &platformclientv2.Cobrowsesettings{
+		Enabled:           &enabled,
+		AllowAgentControl: &allowAgentControl,
+		MaskSelectors:     &maskSelectors,
+	}
 }
 
 func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
