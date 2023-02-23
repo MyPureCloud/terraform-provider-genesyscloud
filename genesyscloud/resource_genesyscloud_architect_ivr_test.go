@@ -62,8 +62,8 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -135,8 +135,8 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create

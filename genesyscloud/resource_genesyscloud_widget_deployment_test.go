@@ -100,8 +100,8 @@ func TestAccResourceWidgetDeploymentV2Widget(t *testing.T) {
 	deleteWidgetDeploymentWithName(name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 
 		Steps: []resource.TestStep{
 			{
@@ -169,8 +169,8 @@ func TestAccResourceWidgetDeploymentV1Widget(t *testing.T) {
 	deleteWidgetDeploymentWithName(name)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 
 		Steps: []resource.TestStep{
 			{

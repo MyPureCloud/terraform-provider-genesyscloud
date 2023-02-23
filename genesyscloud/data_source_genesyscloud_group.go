@@ -26,7 +26,7 @@ func dataSourceGroup() *schema.Resource {
 }
 
 func dataSourceGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(sdkConfig)
 
 	exactSearchType := "EXACT"

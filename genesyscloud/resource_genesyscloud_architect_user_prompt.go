@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -27,6 +27,20 @@ type PromptAudioData struct {
 	Language string
 	FileName string
 	MediaUri string
+}
+
+type UserPromptStruct struct {
+	ResourceID  string
+	Name        string
+	Description string
+	Resources   []*UserPromptResourceStruct
+}
+
+type UserPromptResourceStruct struct {
+	Language   string
+	Tts_string string
+	Text       string
+	Filename   string
 }
 
 var userPromptResource = &schema.Resource{
@@ -769,7 +783,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	prompt := platformclientv2.Prompt{
@@ -847,7 +861,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading User Prompt %s", d.Id())
@@ -913,7 +927,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	prompt := platformclientv2.Prompt{
@@ -943,7 +957,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user prompt %s", name)
@@ -1146,7 +1160,7 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 }
 
 func getArchitectPromptAudioData(promptId string, meta interface{}) ([]PromptAudioData, error) {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	apiInstance := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	data, _, err := apiInstance.GetArchitectPrompt(promptId)
@@ -1208,4 +1222,34 @@ func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDat
 			}
 		}
 	}
+}
+
+func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
+
+	resourcesString := ``
+	for _, p := range userPrompt.Resources {
+		resourcesString += fmt.Sprintf(`resources {
+            language = "%s"
+            tts_string = %s
+            text = %s
+            filename = %s
+        }
+        `,
+			p.Language,
+			p.Tts_string,
+			p.Text,
+			p.Filename,
+		)
+	}
+
+	return fmt.Sprintf(`resource "genesyscloud_architect_user_prompt" "%s" {
+		name = "%s"
+		description = %s
+		%s
+	}
+	`, userPrompt.ResourceID,
+		userPrompt.Name,
+		userPrompt.Description,
+		resourcesString,
+	)
 }

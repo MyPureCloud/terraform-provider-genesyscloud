@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -88,7 +88,7 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	endNumber := d.Get("end_number").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Creating Extension pool %s", startNumber)
@@ -108,7 +108,7 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Extension pool %s", d.Id())
@@ -146,7 +146,7 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	endNumber := d.Get("end_number").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	extensionPoolBody := platformclientv2.Extensionpool{
@@ -167,7 +167,7 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	startNumber := d.Get("start_number").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting Extension pool with starting number %s", startNumber)

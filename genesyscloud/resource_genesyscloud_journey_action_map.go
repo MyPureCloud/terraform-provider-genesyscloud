@@ -6,15 +6,18 @@ import (
 	"log"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
+
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"terraform-provider-genesyscloud/genesyscloud/util/typeconv"
+
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/typeconv"
 )
 
 var (
@@ -393,7 +396,7 @@ func resourceJourneyActionMap() *schema.Resource {
 }
 
 func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	actionMap := buildSdkActionMap(d)
 
@@ -411,7 +414,7 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Reading journey action map %s", d.Id())
@@ -433,7 +436,7 @@ func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	patchActionMap := buildSdkPatchActionMap(d)
 
@@ -464,7 +467,7 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	displayName := d.Get("display_name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting journey action map with display name %s", displayName)

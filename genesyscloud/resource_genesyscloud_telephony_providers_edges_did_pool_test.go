@@ -36,8 +36,8 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolProvider1 := "PURE_CLOUD"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create

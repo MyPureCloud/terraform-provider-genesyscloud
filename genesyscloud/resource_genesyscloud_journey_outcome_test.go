@@ -6,11 +6,12 @@ import (
 	"strings"
 	"testing"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
 func TestAccResourceJourneyOutcome(t *testing.T) {
@@ -22,8 +23,8 @@ func runResourceJourneyOutcomeTestCase(t *testing.T, testCaseName string) {
 	setupJourneyOutcome(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyOutcomesDestroyed,
 	})

@@ -3,14 +3,16 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"log"
-	"time"
 )
 
 var (
@@ -199,7 +201,7 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	messagesPerMinute := d.Get("messages_per_minute").(int)
 	campaignStatus := d.Get("campaign_status").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkmessagingcampaign := platformclientv2.Messagingcampaign{
@@ -240,7 +242,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	messagesPerMinute := d.Get("messages_per_minute").(int)
 	campaignStatus := d.Get("campaign_status").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkmessagingcampaign := platformclientv2.Messagingcampaign{
@@ -286,7 +288,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 }
 
 func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound Messagingcampaign %s", d.Id())
@@ -350,7 +352,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 }
 
 func deleteOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

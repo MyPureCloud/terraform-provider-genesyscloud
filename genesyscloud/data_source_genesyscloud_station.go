@@ -26,7 +26,7 @@ func dataSourceStation() *schema.Resource {
 }
 
 func dataSourceStationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	stationsAPI := platformclientv2.NewStationsApiWithConfig(sdkConfig)
 
 	stationName := d.Get("name").(string)

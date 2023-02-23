@@ -68,7 +68,7 @@ func dataSourceOrganizationsMe() *schema.Resource {
 }
 
 func dataSourceOrganizationsMeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*providerMeta).ClientConfig
+	sdkConfig := m.(*ProviderMeta).ClientConfig
 	orgAPI := platformclientv2.NewOrganizationApiWithConfig(sdkConfig)
 
 	orgMe, _, getErr := orgAPI.GetOrganizationsMe()

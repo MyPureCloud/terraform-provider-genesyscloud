@@ -47,7 +47,7 @@ func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 		return nil
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	// Retrieve defaults from the settings
@@ -74,7 +74,7 @@ func customizeTrunkBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 		return nil
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	// Retrieve defaults from the settings

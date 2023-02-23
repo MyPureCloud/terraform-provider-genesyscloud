@@ -3,15 +3,17 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
+	"time"
+
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"log"
-	"strings"
-	"time"
 )
 
 var (
@@ -183,7 +185,7 @@ func createOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.Resour
 	responses := d.Get("responses").([]interface{})
 	beepDetectionEnabled := d.Get("beep_detection_enabled").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkResponseSet := platformclientv2.Responseset{
@@ -214,7 +216,7 @@ func updateOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.Resour
 	responses := d.Get("responses").([]interface{})
 	beepDetectionEnabled := d.Get("beep_detection_enabled").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkResponseSet := platformclientv2.Responseset{
@@ -251,7 +253,7 @@ func updateOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.Resour
 }
 
 func readOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound Call Analysis Response Set %s", d.Id())
@@ -280,7 +282,7 @@ func readOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.Resource
 }
 
 func deleteOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

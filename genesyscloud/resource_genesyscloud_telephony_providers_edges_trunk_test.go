@@ -42,8 +42,8 @@ func TestAccResourceTrunk(t *testing.T) {
 		false)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create the trunk by creating trunk base settings and an edge group and assigning the trunk base settings to the edge group
 			{

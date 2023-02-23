@@ -6,8 +6,9 @@ import (
 	"log"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -89,7 +90,7 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	createCredential := platformclientv2.Credential{
@@ -113,7 +114,7 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading credential %s", d.Id())
@@ -141,7 +142,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	if d.HasChanges("name", "credential_type_name", "fields") {
@@ -165,7 +166,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	_, err := integrationAPI.DeleteIntegrationsCredential(d.Id())
