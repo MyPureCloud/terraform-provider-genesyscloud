@@ -80,7 +80,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 	var (
 		groupResource1 = "test-group-addr"
 		groupName      = "TF Group" + uuid.NewString()
-		addrPhone1     = "3174269078"
+		addrPhone1     = "+13174269078"
 		addrPhone2     = "+441434634996"
 		addrPhoneExt   = "4321"
 		typeGroupRing  = "GROUPRING"

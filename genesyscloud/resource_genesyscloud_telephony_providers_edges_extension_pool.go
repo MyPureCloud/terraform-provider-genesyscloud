@@ -65,14 +65,14 @@ func resourceTelephonyExtensionPool() *schema.Resource {
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: validateExtensionPool,
 			},
 			"end_number": {
 				Description:      "Ending phone number of the Extension Pool range. Changing the end_number attribute will cause the extension object to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: validateExtensionPool,
 			},
 			"description": {
 				Description: "Extension Pool description.",

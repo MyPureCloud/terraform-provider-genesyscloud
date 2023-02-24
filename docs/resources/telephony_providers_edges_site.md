@@ -88,8 +88,11 @@ resource "genesyscloud_telephony_providers_edges_site" "site" {
 
 ### Optional
 
+- `caller_id` (String) The caller ID value for the site. The callerID must be a valid E.164 formatted phone number
+- `caller_name` (String) The caller name for the site
 - `description` (String) The resource's description.
 - `edge_auto_update_config` (Block List, Max: 1) Recurrence rule, time zone, and start/end settings for automatic edge updates for this site (see [below for nested schema](#nestedblock--edge_auto_update_config))
+- `media_regions` (List of String) The ordered list of AWS regions through which media can stream. A full list of available media regions can be found at the GET /api/v2/telephony/mediaregions endpoint
 - `media_regions_use_latency_based` (Boolean) Latency based on media region Defaults to `false`.
 - `number_plans` (Block List) Number plans for the site. The order of the plans in the resource file determines the priority of the plans. Specifying number plans will not result in the default plans being overwritten. (see [below for nested schema](#nestedblock--number_plans))
 - `outbound_routes` (Block List) Outbound Routes for the site. The default outbound route will not be delete if routes are specified (see [below for nested schema](#nestedblock--outbound_routes))

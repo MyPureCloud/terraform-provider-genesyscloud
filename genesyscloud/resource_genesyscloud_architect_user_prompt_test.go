@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+
 	"strconv"
 	"strings"
 	"sync"

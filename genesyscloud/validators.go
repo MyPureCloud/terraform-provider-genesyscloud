@@ -17,13 +17,33 @@ import (
 
 func validatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 	if numberStr, ok := number.(string); ok {
-		_, err := phonenumbers.Parse(numberStr, "US")
+		phoneNumber, err := phonenumbers.Parse(numberStr, "US")
 		if err != nil {
 			return diag.Errorf("Failed to validate phone number %s: %s", numberStr, err)
+		}
+
+		formattedNum := phonenumbers.Format(phoneNumber, phonenumbers.E164)
+		if formattedNum != numberStr {
+			return diag.Errorf("Failed to parse number in an E164 format.  Passed %s and expected: %s", numberStr, formattedNum)
 		}
 		return nil
 	}
 	return diag.Errorf("Phone number %v is not a string", number)
+}
+
+// Validates a phone extension pool
+func validateExtensionPool(number interface{}, _ cty.Path) diag.Diagnostics {
+	if numberStr, ok := number.(string); ok {
+
+		re := regexp.MustCompile(`^\d{3,9}$`)
+		// check if the string matches the regular expression
+		if !re.MatchString(numberStr) {
+			return diag.Errorf("The extension provided %q must between 3-9 characters long and made up of all integer values\n", numberStr)
+		}
+
+		return nil
+	}
+	return diag.Errorf("Extension provided %v is not a string", number)
 }
 
 // Validates a date string is in the format yyyy-MM-dd

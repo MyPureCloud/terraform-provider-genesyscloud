@@ -20,7 +20,7 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	emergencyNumber := "3173124740"
+	emergencyNumber := "+13173124740"
 	err = deleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)

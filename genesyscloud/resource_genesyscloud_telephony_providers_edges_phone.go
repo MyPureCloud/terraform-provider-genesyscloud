@@ -188,11 +188,16 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		Id: &phoneMetaBaseId,
 	}
 
+	//Have to create a phonebasesettings object now as of version v90.  Used to be a domain ref but the engineering team changed the type in the swagger def
+	phoneSettings := &platformclientv2.Phonebasesettings{
+		Id: phoneBaseSettings.Id,
+	}
+
 	createPhone := &platformclientv2.Phone{
 		Name:              &name,
 		State:             &state,
 		Site:              site,
-		PhoneBaseSettings: phoneBaseSettings,
+		PhoneBaseSettings: phoneSettings,
 		LineBaseSettings:  lineBaseSettings,
 		PhoneMetaBase:     phoneMetaBase,
 		Lines:             lines,
@@ -341,10 +346,15 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
 	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
 
+	//Have to create a phonebasesettings object now as of version v90.  Used to be a domain ref but the engineering team changed the type in the swagger def
+	phoneSettings := &platformclientv2.Phonebasesettings{
+		Id: phoneBaseSettings.Id,
+	}
+
 	updatePhoneBody := &platformclientv2.Phone{
 		Name:              &name,
 		Site:              site,
-		PhoneBaseSettings: phoneBaseSettings,
+		PhoneBaseSettings: phoneSettings,
 		PhoneMetaBase:     phoneMetaBase,
 		Lines:             lines,
 	}

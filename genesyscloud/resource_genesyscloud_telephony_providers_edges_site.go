@@ -57,6 +57,24 @@ func resourceSite() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 			},
+			"media_regions": {
+				Description: "The ordered list of AWS regions through which media can stream. A full list of available media regions can be found at the GET /api/v2/telephony/mediaregions endpoint",
+				Type:        schema.TypeList, //This has to be a list because it must be ordered
+				Optional:    true,
+				Computed:    true, //This needs to be a computed field because the sites API automatically adds the home region to whatever regions you add add.
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"caller_id": {
+				Description:      "The caller ID value for the site. The callerID must be a valid E.164 formatted phone number",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateDiagFunc: validatePhoneNumber,
+			},
+			"caller_name": {
+				Description: "The caller name for the site",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 			"edge_auto_update_config": {
 				Description: "Recurrence rule, time zone, and start/end settings for automatic edge updates for this site",
 				Type:        schema.TypeList,
@@ -262,6 +280,31 @@ func siteExporter() *ResourceExporter {
 	}
 }
 
+func validateMediaRegions(regions *[]string, sdkConfig *platformclientv2.Configuration) error {
+
+	telephonyAPI := platformclientv2.NewTelephonyApiWithConfig(sdkConfig)
+	telephonyRegions, _, err := telephonyAPI.GetTelephonyMediaregions()
+
+	if err != nil {
+		return err
+	}
+
+	homeRegion := telephonyRegions.AwsHomeRegion
+	coreRegions := telephonyRegions.AwsCoreRegions
+	satRegions := telephonyRegions.AwsSatelliteRegions
+
+	for _, region := range *regions {
+		if region != *homeRegion &&
+			!StringInSlice(region, *coreRegions) &&
+			!StringInSlice(region, *satRegions) {
+			return fmt.Errorf("region %s is not a valid media region.  please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions.", regions)
+		}
+
+	}
+
+	return nil
+}
+
 func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	locationId := d.Get("location_id").(string)
@@ -273,6 +316,10 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.FromErr(err)
 	}
 
+	mediaRegions := buildSdkStringListFromInterfaceArray(d, "media_regions")
+	callerID := d.Get("caller_id").(string)
+	callerName := d.Get("caller_name").(string)
+
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	locationAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 	location, _, err := locationAPI.GetLocation(locationId, nil)
@@ -281,6 +328,11 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 	if location.EmergencyNumber == nil {
 		return diag.Errorf("Location with id %v does not have an emergency number", locationId)
+	}
+
+	err = validateMediaRegions(mediaRegions, sdkConfig)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	site := &platformclientv2.Site{
@@ -295,6 +347,18 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	if edgeAutoUpdateConfig != nil {
 		site.EdgeAutoUpdateConfig = edgeAutoUpdateConfig
+	}
+
+	if mediaRegions != nil {
+		site.MediaRegions = mediaRegions
+	}
+
+	if callerID != "" {
+		site.CallerId = &callerID
+	}
+
+	if callerName != "" {
+		site.CallerName = &callerName
 	}
 
 	if description != "" {
@@ -328,7 +392,6 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Created site %s", *site.Id)
-
 	return readSite(ctx, d, meta)
 }
 
@@ -364,6 +427,14 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			d.Set("edge_auto_update_config", flattenSdkEdgeAutoUpdateConfig(currentSite.EdgeAutoUpdateConfig))
 		}
 
+		d.Set("media_regions", nil)
+		if currentSite.MediaRegions != nil {
+			d.Set("media_regions", *currentSite.MediaRegions)
+		}
+
+		d.Set("caller_id", currentSite.CallerId)
+		d.Set("caller_name", currentSite.CallerName)
+
 		if retryErr := readSiteNumberPlans(d, edgesAPI); retryErr != nil {
 			return retryErr
 		}
@@ -388,6 +459,9 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.FromErr(err)
 	}
 
+	mediaRegions := buildSdkStringListFromInterfaceArray(d, "media_regions")
+	callerID := d.Get("caller_id").(string)
+	callerName := d.Get("caller_name").(string)
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	locationAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 	location, _, err := locationAPI.GetLocation(locationId, nil)
@@ -396,6 +470,11 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 	if location.EmergencyNumber == nil {
 		return diag.Errorf("Location with id %v does not have an emergency number", locationId)
+	}
+
+	err = validateMediaRegions(mediaRegions, sdkConfig)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	site := &platformclientv2.Site{
@@ -410,6 +489,18 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	if edgeAutoUpdateConfig != nil {
 		site.EdgeAutoUpdateConfig = edgeAutoUpdateConfig
+	}
+
+	if mediaRegions != nil {
+		site.MediaRegions = mediaRegions
+	}
+
+	if callerID != "" {
+		site.CallerId = &callerID
+	}
+
+	if callerName != "" {
+		site.CallerName = &callerName
 	}
 
 	if description != "" {
@@ -431,7 +522,6 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		if err != nil {
 			return resp, diag.Errorf("Failed to update site %s: %s", name, err)
 		}
-
 		return resp, nil
 	})
 	if diagErr != nil {
