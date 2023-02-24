@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"fmt"
 	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -31,6 +33,7 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
 					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
 				),
 			},
@@ -42,6 +45,7 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
 					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
 				),
 			},
@@ -69,14 +73,22 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: complexConfigurationResource(configName, configDescription),
+				Config: complexConfigurationResource(
+					configName,
+					configDescription,
+					generateWebDeploymentConfigCobrowseSettings(
+						trueValue,
+						trueValue,
+						[]string{strconv.Quote("selector-one")},
+					),
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceName, "name", configName),
 					resource.TestCheckResourceAttr(fullResourceName, "description", configDescription),
 					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
 					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", "true"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", trueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.launcher_button.0.visibility", "OnDemand"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.styles.0.primary_color", "#B0B0B0"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.#", "2"),
@@ -86,8 +98,13 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.0", "selector-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", "true"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", trueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.0", "excluded-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.pageview_config", "Auto"),
@@ -99,12 +116,81 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.selector", "form-selector-1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.form_name", "form-1"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_abandon", "true"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_submit", "false"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_abandon", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_submit", falseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.selector", "form-selector-2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.form_name", "form-3"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_abandon", "false"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_submit", "true"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_abandon", falseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_submit", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.event_name", "idle-event-1"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.idle_after_seconds", "88"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.1.event_name", "idle-event-2"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.1.idle_after_seconds", "30"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.in_viewport_event.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.in_viewport_event.0.selector", "in-viewport-selector-1"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.in_viewport_event.0.event_name", "in-viewport-event-1"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.in_viewport_event.1.selector", "in-viewport-selector-2"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.in_viewport_event.1.event_name", "in-viewport-event-2"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.scroll_depth_event.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.scroll_depth_event.0.event_name", "scroll-depth-event-1"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.scroll_depth_event.0.percentage", "33"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.scroll_depth_event.1.event_name", "scroll-depth-event-2"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.scroll_depth_event.1.percentage", "66"),
+				),
+			},
+			{
+				// Update cobrowse settings
+				Config: complexConfigurationResource(
+					configName,
+					configDescription,
+					generateWebDeploymentConfigCobrowseSettings(
+						falseValue,
+						falseValue,
+						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourceName, "name", configName),
+					resource.TestCheckResourceAttr(fullResourceName, "description", configDescription),
+					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
+					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.launcher_button.0.visibility", "OnDemand"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.styles.0.primary_color", "#B0B0B0"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.0.file_types.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.0.file_types.0", "image/png"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.0.max_file_size_kb", "100"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", falseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", falseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "2"),
+					validateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
+					validateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.0", "excluded-one"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.pageview_config", "Auto"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.click_event.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.click_event.0.selector", "first-selector"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.click_event.0.event_name", "first-click-event-name"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.click_event.1.selector", "second-selector"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.click_event.1.event_name", "second-click-event-name"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.selector", "form-selector-1"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.form_name", "form-1"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_abandon", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_submit", falseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.selector", "form-selector-2"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.form_name", "form-3"),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_abandon", falseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_submit", trueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.event_name", "idle-event-1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.idle_after_seconds", "88"),
@@ -142,7 +228,7 @@ func basicConfigurationResource(name, description string) string {
 	`, name, description)
 }
 
-func complexConfigurationResource(name, description string) string {
+func complexConfigurationResource(name, description string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`
 	resource "genesyscloud_webdeployments_configuration" "complex" {
 		name = "%s"
@@ -227,8 +313,19 @@ func complexConfigurationResource(name, description string) string {
 				percentage = 66
 			}
 		}
+		%s
 	}
-	`, name, description)
+	`, name, description, strings.Join(nestedBlocks, "\n"))
+}
+
+func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbMaskSelectors []string) string {
+	return fmt.Sprintf(`
+	cobrowse {
+		enabled = %s
+		allow_agent_control = %s
+		mask_selectors = [ %s ]
+	}
+`, cbEnabled, cbAllowAgentControl, strings.Join(cbMaskSelectors, ", "))
 }
 
 func verifyConfigurationDestroyed(state *terraform.State) error {

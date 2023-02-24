@@ -22,6 +22,11 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
       }
     }
   }
+  cobrowse {
+    enabled             = true
+    allow_agent_control = true
+    mask_selectors      = [".my-class", "#my-id"]
+  }
   journey_events {
     enabled                   = true
     excluded_query_parameters = ["marketingCampaign"]

@@ -77,7 +77,7 @@ var (
 				Description: "Whether or not messenger is enabled",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     true,
+				Computed:    true,
 			},
 			"styles": {
 				Description: "The style settings for messenger",
@@ -99,6 +99,29 @@ var (
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        fileUploadSettings,
+			},
+		},
+	}
+
+	cobrowseSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"enabled": {
+				Description: "Whether or not cobrowse is enabled",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"allow_agent_control": {
+				Description: "Whether agent can take control over customer's screen or not",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"mask_selectors": {
+				Description: "List of CSS selectors which should be masked when screen sharing is active",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -328,6 +351,13 @@ func resourceWebDeploymentConfiguration() *schema.Resource {
 				Optional:    true,
 				Elem:        messengerSettings,
 			},
+			"cobrowse": {
+				Description: "Settings concerning cobrowse",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        cobrowseSettings,
+			},
 			"journey_events": {
 				Description: "Settings concerning journey events",
 				Type:        schema.TypeList,
@@ -388,6 +418,11 @@ func readWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (str
 		inputCfg.Messenger = messengerSettings
 	}
 
+	cobrowseSettings := readCobrowseSettings(d)
+	if cobrowseSettings != nil {
+		inputCfg.Cobrowse = cobrowseSettings
+	}
+
 	journeySettings := readJourneySettings(d)
 	if journeySettings != nil {
 		inputCfg.JourneyEvents = journeySettings
@@ -408,7 +443,6 @@ func readJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyevents
 	}
 
 	cfg := cfgs[0].(map[string]interface{})
-	log.Println("Processing journey events config: ", cfg)
 	enabled, _ := cfg["enabled"].(bool)
 	journeySettings := &platformclientv2.Journeyeventssettings{
 		Enabled: &enabled,
@@ -599,6 +633,30 @@ func readMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengerse
 	return messengerSettings
 }
 
+func readCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesettings {
+	value, ok := d.GetOk("cobrowse")
+	if !ok {
+		return nil
+	}
+
+	cfgs := value.([]interface{})
+	if len(cfgs) < 1 {
+		return nil
+	}
+
+	cfg := cfgs[0].(map[string]interface{})
+
+	enabled, _ := cfg["enabled"].(bool)
+	allowAgentControl, _ := cfg["allow_agent_control"].(bool)
+	maskSelectors := InterfaceListToStrings(cfg["mask_selectors"].([]interface{}))
+
+	return &platformclientv2.Cobrowsesettings{
+		Enabled:           &enabled,
+		AllowAgentControl: &allowAgentControl,
+		MaskSelectors:     &maskSelectors,
+	}
+}
+
 func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name, inputCfg := readWebDeploymentConfigurationFromResourceData(d)
 
@@ -728,6 +786,9 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 		if configuration.Messenger != nil {
 			d.Set("messenger", flattenMessengerSettings(configuration.Messenger))
 		}
+		if configuration.Cobrowse != nil {
+			d.Set("cobrowse", flattenCobrowseSettings(configuration.Cobrowse))
+		}
 		if configuration.JourneyEvents != nil {
 			d.Set("journey_events", flattenJourneyEvents(configuration.JourneyEvents))
 		}
@@ -827,6 +888,18 @@ func flattenMessengerSettings(messengerSettings *platformclientv2.Messengersetti
 		"styles":          flattenStyles(messengerSettings.Styles),
 		"launcher_button": flattenLauncherButton(messengerSettings.LauncherButton),
 		"file_upload":     flattenFileUpload(messengerSettings.FileUpload),
+	}}
+}
+
+func flattenCobrowseSettings(cobrowseSettings *platformclientv2.Cobrowsesettings) []interface{} {
+	if cobrowseSettings == nil {
+		return nil
+	}
+
+	return []interface{}{map[string]interface{}{
+		"enabled":             cobrowseSettings.Enabled,
+		"allow_agent_control": cobrowseSettings.AllowAgentControl,
+		"mask_selectors":      cobrowseSettings.MaskSelectors,
 	}}
 }
 

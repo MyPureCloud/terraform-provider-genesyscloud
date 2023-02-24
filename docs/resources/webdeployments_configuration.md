@@ -47,6 +47,11 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
       }
     }
   }
+  cobrowse {
+    enabled             = true
+    allow_agent_control = true
+    mask_selectors      = [".my-class", "#my-id"]
+  }
   journey_events {
     enabled                   = true
     excluded_query_parameters = ["marketingCampaign"]
@@ -118,6 +123,7 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
 
 ### Optional
 
+- `cobrowse` (Block List, Max: 1) Settings concerning cobrowse (see [below for nested schema](#nestedblock--cobrowse))
 - `default_language` (String) The default language to use for the configuration.
 - `description` (String) Deployment description
 - `journey_events` (Block List, Max: 1) Settings concerning journey events (see [below for nested schema](#nestedblock--journey_events))
@@ -129,6 +135,16 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--cobrowse"></a>
+### Nested Schema for `cobrowse`
+
+Optional:
+
+- `allow_agent_control` (Boolean) Whether agent can take control over customer's screen or not
+- `enabled` (Boolean) Whether or not cobrowse is enabled
+- `mask_selectors` (List of String) List of CSS selectors which should be masked when screen sharing is active
+
 
 <a id="nestedblock--journey_events"></a>
 ### Nested Schema for `journey_events`
@@ -202,7 +218,7 @@ Required:
 
 Optional:
 
-- `enabled` (Boolean) Whether or not messenger is enabled Defaults to `true`.
+- `enabled` (Boolean) Whether or not messenger is enabled
 - `file_upload` (Block List, Max: 1) File upload settings for messenger (see [below for nested schema](#nestedblock--messenger--file_upload))
 - `launcher_button` (Block List, Max: 1) The settings for the launcher button (see [below for nested schema](#nestedblock--messenger--launcher_button))
 - `styles` (Block List, Max: 1) The style settings for messenger (see [below for nested schema](#nestedblock--messenger--styles))
