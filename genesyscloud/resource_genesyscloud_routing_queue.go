@@ -84,6 +84,66 @@ var (
 			},
 		},
 	}
+
+	directRoutingResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"backup_queue_id": {
+				Description: "Direct Routing default backup queue id.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"agent_wait_seconds": {
+				Description: "The queue default time a Direct Routing interaction will wait for an agent before it goes to configured backup.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     60,
+			},
+			"wait_for_agent": {
+				Description: "Boolean indicating if Direct Routing interactions should wait for the targeted agent by default.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"call_enabled": {
+				Description: "Boolean indicating if Direct Routing calls are enabled.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
+			"call_inbound_flow_id": {
+				Description: "Id of the Direct Routing inbound call flow IVR.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"voicemail_flow_id": {
+				Description: "Id of the in-queue call flow used for collecting voicemails and converting to ACD voicemail.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"email_enabled": {
+				Description: "Boolean indicating if Direct Routing emails are enabled.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
+			"email_inbound_flow_id": {
+				Description: "Id of the Direct Routing inbound email flow.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"message_enabled": {
+				Description: "Boolean indicating if Direct Routing messages are enabled.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
+			"message_inbound_flow_id": {
+				Description: "Id of the Direct Routing inbound message flow.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
 )
 
 func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -384,6 +444,13 @@ func resourceRoutingQueue() *schema.Resource {
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"direct_routing": {
+				Description: "Used by the System to set Direct Routing settings for a system Direct Routing queue.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        directRoutingResource,
+			},
 			"skill_groups": {
 				Description: "List of skill group ids assigned to the queue",
 				Type:        schema.TypeSet,
@@ -445,6 +512,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		OutboundEmailAddress:       buildSdkQueueEmailAddress(d),
 		EnableTranscription:        &enableTranscription,
 		EnableManualAssignment:     &enableManualAssignment,
+		DirectRouting:              buildSdkDirectRouting(d),
 		MemberGroups:               &memberGroups,
 	}
 
@@ -630,6 +698,12 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("outbound_email_address", nil)
 		}
 
+		if currentQueue.DirectRouting != nil {
+			d.Set("direct_routing", []interface{}{flattenDirectRouting(*currentQueue.DirectRouting)})
+		} else {
+			d.Set("direct_routing", nil)
+		}
+
 		members, err := flattenQueueMembers(d.Id(), routingAPI)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("%v", err))
@@ -696,6 +770,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		OutboundEmailAddress:       buildSdkQueueEmailAddress(d),
 		EnableTranscription:        &enableTranscription,
 		EnableManualAssignment:     &enableManualAssignment,
+		DirectRouting:              buildSdkDirectRouting(d),
 		MemberGroups:               &memberGroups,
 	})
 
@@ -1082,6 +1157,98 @@ func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 	if settings.Route != nil {
 		route := *settings.Route
 		settingsMap["route_id"] = *route.Id
+	}
+
+	return settingsMap
+}
+
+func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouting {
+	directRouting := d.Get("direct_routing").([]interface{})
+	if directRouting != nil && len(directRouting) > 0 {
+		settingsMap := directRouting[0].(map[string]interface{})
+
+		backupQueueID := settingsMap["backup_queue_id"].(string)
+		agentWaitSeconds := settingsMap["agent_wait_seconds"].(int)
+		waitForAgent := settingsMap["wait_for_agent"].(bool)
+
+		callEnabled := settingsMap["call_enabled"].(bool)
+
+		inboundCallFlowId := settingsMap["call_inbound_flow_id"].(string)
+		inboundCallFlowRef := &platformclientv2.Addressableentityref{
+			Id: &inboundCallFlowId,
+		}
+
+		voicemailFlowId := settingsMap["voicemail_flow_id"].(string)
+		voicemailFlowRef := &platformclientv2.Addressableentityref{
+			Id: &voicemailFlowId,
+		}
+
+		callSettings := &platformclientv2.Directroutingcallmediasettings{
+			Enabled:       &callEnabled,
+			InboundFlow:   inboundCallFlowRef,
+			VoicemailFlow: voicemailFlowRef,
+		}
+
+		emailEnabled := settingsMap["email_enabled"].(bool)
+		inboundEmailFlowId := settingsMap["email_inbound_flow_id"].(string)
+		inboundEmailFlowRef := &platformclientv2.Addressableentityref{
+			Id: &inboundEmailFlowId,
+		}
+
+		emailSettings := &platformclientv2.Directroutingmediasettings{
+			Enabled:     &emailEnabled,
+			InboundFlow: inboundEmailFlowRef,
+		}
+
+		messageEnabled := settingsMap["message_enabled"].(bool)
+		inboundMessageFlowId := settingsMap["message_inbound_flow_id"].(string)
+		inboundMessageFlowRef := &platformclientv2.Addressableentityref{
+			Id: &inboundMessageFlowId,
+		}
+
+		messageSettings := &platformclientv2.Directroutingmediasettings{
+			Enabled:     &messageEnabled,
+			InboundFlow: inboundMessageFlowRef,
+		}
+
+		return &platformclientv2.Directrouting{
+			CallMediaSettings:    callSettings,
+			EmailMediaSettings:   emailSettings,
+			MessageMediaSettings: messageSettings,
+			WaitForAgent:         &waitForAgent,
+			AgentWaitSeconds:     &agentWaitSeconds,
+			BackupQueueId:        &backupQueueID,
+		}
+	}
+	return nil
+}
+
+func flattenDirectRouting(settings platformclientv2.Directrouting) map[string]interface{} {
+	settingsMap := make(map[string]interface{})
+	if settings.BackupQueueId != nil {
+		settingsMap["backup_queue_id"] = *settings.BackupQueueId
+	}
+	if settings.AgentWaitSeconds != nil {
+		settingsMap["agent_wait_seconds"] = *settings.AgentWaitSeconds
+	}
+	if settings.WaitForAgent != nil {
+		settingsMap["wait_for_agent"] = *settings.WaitForAgent
+	}
+	if settings.CallMediaSettings != nil {
+		callSettings := *settings.CallMediaSettings
+		settingsMap["call_enabled"] = *callSettings.Enabled
+		settingsMap["call_inbound_flow_id"] = *callSettings.InboundFlow.Id
+		settingsMap["voicemail_flow_id"] = *callSettings.VoicemailFlow.Id
+	}
+	if settings.EmailMediaSettings != nil {
+		emailSettings := *settings.EmailMediaSettings
+		settingsMap["email_enabled"] = *emailSettings.Enabled
+		settingsMap["email_inbound_flow_id"] = *emailSettings.InboundFlow.Id
+	}
+	if settings.MessageMediaSettings != nil {
+		messageSettings := *settings.MessageMediaSettings
+		settingsMap["message_enabled"] = *messageSettings.Enabled
+		settingsMap["message_inbound_flow_id"] = *messageSettings.InboundFlow.Id
 	}
 
 	return settingsMap
