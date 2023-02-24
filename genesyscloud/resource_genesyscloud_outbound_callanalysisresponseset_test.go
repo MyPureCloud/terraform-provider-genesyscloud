@@ -123,7 +123,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 					"",
 					"",
 					generatePhoneColumnsBlock("Cell",
-						"cell",
+						"Cell",
 						"",
 					),
 				) + generateRoutingWrapupcodeResource(

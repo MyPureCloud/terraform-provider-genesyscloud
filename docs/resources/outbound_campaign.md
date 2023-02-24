@@ -32,7 +32,7 @@ resource "genesyscloud_outbound_campaign" "campaign" {
   call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.car.id
   phone_columns {
     column_name = "Cell"
-    type        = "cell"
+    type        = "Cell"
   }
 }
 ```

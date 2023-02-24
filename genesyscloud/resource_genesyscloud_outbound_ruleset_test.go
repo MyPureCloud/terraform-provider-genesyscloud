@@ -49,7 +49,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 					"",
 					generatePhoneColumnsBlock(
 						"Cell",
-						"cell",
+						"Cell",
 						"Cell",
 					),
 				) + GenerateRoutingQueueResourceBasic(
@@ -77,7 +77,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 					"",
 					generatePhoneColumnsBlock(
 						"Cell",
-						"cell",
+						"Cell",
 						"Cell",
 					),
 				) + GenerateRoutingQueueResourceBasic(
@@ -133,7 +133,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					"",
 					generatePhoneColumnsBlock(
 						"Cell",
-						"cell",
+						"Cell",
 						"Cell",
 					),
 				) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
@@ -178,7 +178,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					"",
 					generatePhoneColumnsBlock(
 						"Cell",
-						"cell",
+						"Cell",
 						"Cell",
 					),
 				) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
@@ -249,7 +249,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					"",
 					generatePhoneColumnsBlock(
 						"Cell",
-						"cell",
+						"Cell",
 						"Cell",
 					),
 				) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {

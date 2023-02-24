@@ -40,7 +40,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 			"",
 			generatePhoneColumnsBlock(
 				column1,
-				"cell",
+				"Cell",
 				column1,
 			),
 		)

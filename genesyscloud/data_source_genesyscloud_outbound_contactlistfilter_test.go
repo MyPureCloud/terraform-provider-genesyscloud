@@ -38,7 +38,7 @@ func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
 					"",
 					generatePhoneColumnsBlock(
 						column1,
-						"cell",
+						"Cell",
 						"",
 					),
 				) + generateOutboundContactListFilter(

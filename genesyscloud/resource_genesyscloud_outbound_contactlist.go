@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 )
 
@@ -23,9 +24,10 @@ var (
 				Type:        schema.TypeString,
 			},
 			`type`: {
-				Description: `Indicates the type of the phone column. For example, 'cell' or 'home'.`,
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:  `The type of the phone column. "For example, 'Cell','Daytime','Evening','Home','Work'".`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Cell", "Daytime", "Evening", "Home", "Work"}, false),
 			},
 			`callable_time_column`: {
 				Description: `A column that indicates the timezone to use for a given contact when checking callable times. Not allowed if 'automaticTimeZoneMapping' is set to true.`,
@@ -43,9 +45,10 @@ var (
 				Type:        schema.TypeString,
 			},
 			`type`: {
-				Description: `Indicates the type of the email column. For example, 'work' or 'personal'.`,
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:  `Indicates the type of the email column. For example, 'Work' or 'Personal'.`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Work", "Personal"}, false),
 			},
 			`contactable_time_column`: {
 				Description: `A column that indicates the timezone to use for a given contact when checking contactable times.`,

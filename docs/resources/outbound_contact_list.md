@@ -26,7 +26,7 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
   attempt_limit_id = genesyscloud_outbound_attempt_limit.attempt-limit.id
   phone_columns {
     column_name = "Cell"
-    type        = "cell"
+    type        = "Cell"
   }
   phone_columns {
     column_name = "Home"
@@ -64,7 +64,7 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
 Required:
 
 - `column_name` (String) The name of the email column.
-- `type` (String) Indicates the type of the email column. For example, 'work' or 'personal'.
+- `type` (String) Indicates the type of the email column. For example, 'Work' or 'Personal'.
 
 Optional:
 
@@ -77,7 +77,7 @@ Optional:
 Required:
 
 - `column_name` (String) The name of the phone column.
-- `type` (String) Indicates the type of the phone column. For example, 'cell' or 'home'.
+- `type` (String) The type of the phone column. "For example, 'Cell','Daytime','Evening','Home','Work'".
 
 Optional:
 

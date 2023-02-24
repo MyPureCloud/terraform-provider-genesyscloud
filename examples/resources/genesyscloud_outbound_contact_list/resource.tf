@@ -4,7 +4,7 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
   attempt_limit_id = genesyscloud_outbound_attempt_limit.attempt-limit.id
   phone_columns {
     column_name = "Cell"
-    type        = "cell"
+    type        = "Cell"
   }
   phone_columns {
     column_name = "Home"
