@@ -82,7 +82,7 @@ resource "genesyscloud_outbound_campaign" "campaign" {
 Required:
 
 - `column_name` (String) The name of the phone column.
-- `type` (String) The type of the phone column. For example, 'cell' or 'home'.
+- `type` (String) The type of the phone column. "For example, 'Cell','Daytime','Evening','Home','Work'".
 
 
 <a id="nestedblock--contact_sorts"></a>

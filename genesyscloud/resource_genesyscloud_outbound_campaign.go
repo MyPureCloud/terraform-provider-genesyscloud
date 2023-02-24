@@ -24,9 +24,10 @@ var (
 				Type:        schema.TypeString,
 			},
 			`type`: {
-				Description: `The type of the phone column. For example, 'cell' or 'home'.`,
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:  `The type of the phone column. "For example, 'Cell','Daytime','Evening','Home','Work'".`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Cell", "Daytime", "Evening", "Home", "Work"}, false),
 			},
 		},
 	}
