@@ -297,7 +297,7 @@ func validateMediaRegions(regions *[]string, sdkConfig *platformclientv2.Configu
 		if region != *homeRegion &&
 			!StringInSlice(region, *coreRegions) &&
 			!StringInSlice(region, *satRegions) {
-			fmt.Errorf("Region %s is not a valid media region.  Please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions.", regions)
+			return fmt.Errorf("region %s is not a valid media region.  please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions.", regions)
 		}
 
 	}
@@ -316,7 +316,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.FromErr(err)
 	}
 
-	mediaRegions := buildMediaRegionList(d)
+	mediaRegions := buildSdkStringListFromInterfaceArray(d, "media_regions")
 	callerID := d.Get("caller_id").(string)
 	callerName := d.Get("caller_name").(string)
 
@@ -459,7 +459,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.FromErr(err)
 	}
 
-	mediaRegions := buildMediaRegionList(d)
+	mediaRegions := buildSdkStringListFromInterfaceArray(d, "media_regions")
 	callerID := d.Get("caller_id").(string)
 	callerName := d.Get("caller_name").(string)
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
@@ -582,22 +582,6 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 		return resource.RetryableError(fmt.Errorf("Site %s still exists", d.Id()))
 	})
-}
-
-func buildMediaRegionList(d *schema.ResourceData) *[]string {
-	var mediaRegions []string
-
-	mrg := d.Get("media_regions")
-
-	if mrg != nil {
-		for _, mediaRegion := range mrg.([]interface{}) {
-			v := mediaRegion.(string)
-
-			mediaRegions = append(mediaRegions, v)
-		}
-	}
-
-	return &mediaRegions
 }
 
 func nameInPlans(name string, plans []platformclientv2.Numberplan) (*platformclientv2.Numberplan, bool) {
