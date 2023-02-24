@@ -31,6 +31,7 @@ jobs:
 
       - name: Generate
         run: |
+          go get github.com/mypurecloud/terraform-provider-genesyscloud/apidocs
           go generate
           if [[ -n $(git status -s) ]]; then
               echo "There are untracked documentation changes:\n"
