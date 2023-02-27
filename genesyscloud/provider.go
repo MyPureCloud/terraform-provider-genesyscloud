@@ -122,6 +122,7 @@ func registerResources() {
 	RegisterResource("genesyscloud_routing_settings", resourceRoutingSettings())
 	RegisterResource("genesyscloud_routing_utilization", resourceRoutingUtilization())
 	RegisterResource("genesyscloud_routing_wrapupcode", resourceRoutingWrapupCode())
+	RegisterResource("genesyscloud_script", resourceScript())
 	RegisterResource("genesyscloud_telephony_providers_edges_did_pool", resourceTelephonyDidPool())
 	RegisterResource("genesyscloud_telephony_providers_edges_edge_group", resourceEdgeGroup())
 	RegisterResource("genesyscloud_telephony_providers_edges_extension_pool", resourceTelephonyExtensionPool())
@@ -224,9 +225,6 @@ func New(version string) func() *schema.Provider {
 			copiedDataSources[k] = v
 		}
 
-		for k, _ := range copiedResources {
-			log.Printf("The following resources will be registered: %s", k)
-		}
 		return &schema.Provider{
 			Schema: map[string]*schema.Schema{
 				"access_token": {
