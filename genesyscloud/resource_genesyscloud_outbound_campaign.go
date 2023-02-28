@@ -23,11 +23,6 @@ var (
 				Required:    true,
 				Type:        schema.TypeString,
 			},
-			`type`: {
-				Description: `The type of the phone column. For example, 'cell' or 'home'.`,
-				Required:    true,
-				Type:        schema.TypeString,
-			},
 		},
 	}
 )
@@ -575,9 +570,6 @@ func buildSdkoutboundcampaignPhonecolumnSlice(phonecolumnList []interface{}) *[]
 		if columnName := phonecolumnMap["column_name"].(string); columnName != "" {
 			sdkPhonecolumn.ColumnName = &columnName
 		}
-		if varType := phonecolumnMap["type"].(string); varType != "" {
-			sdkPhonecolumn.VarType = &varType
-		}
 
 		sdkPhonecolumnSlice = append(sdkPhonecolumnSlice, sdkPhonecolumn)
 	}
@@ -615,9 +607,6 @@ func flattenSdkoutboundcampaignPhonecolumnSlice(phonecolumns []platformclientv2.
 
 		if phonecolumn.ColumnName != nil {
 			phonecolumnMap["column_name"] = *phonecolumn.ColumnName
-		}
-		if phonecolumn.VarType != nil {
-			phonecolumnMap["type"] = *phonecolumn.VarType
 		}
 
 		phonecolumnList = append(phonecolumnList, phonecolumnMap)

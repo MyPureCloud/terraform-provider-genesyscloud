@@ -12,6 +12,17 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 )
 
+// Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
+// we still need to pass in a phone column block to get the column name.
+func generatePhoneColumnNoTypeBlock(columnName string) string {
+
+	return fmt.Sprintf(`
+	phone_columns {
+		column_name = "%s"
+	}
+`, columnName)
+}
+
 func TestAccResourceOutboundCampaign(t *testing.T) {
 	t.Parallel()
 	var (
@@ -99,7 +110,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
 						[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
-						generatePhoneColumnsBlock("Cell", "cell", ""),
+						generatePhoneColumnNoTypeBlock("Cell"),
 						generateOutboundMessagingCampaignContactSort(
 							contactSortFieldName,
 							contactSortDirection,
@@ -119,7 +130,6 @@ data "genesyscloud_auth_division_home" "home" {}
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "no_answer_timeout", "40"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "priority", "4"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "phone_columns.0.column_name", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "phone_columns.0.type", "cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.field_name", contactSortFieldName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.direction", contactSortDirection),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.numeric", contactSortNumeric),
@@ -186,7 +196,7 @@ data "genesyscloud_auth_division_home" "home" {}
 					[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
-					generatePhoneColumnsBlock("Cell", "cell", ""),
+					generatePhoneColumnNoTypeBlock("Cell"),
 					generateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
@@ -205,7 +215,6 @@ data "genesyscloud_auth_division_home" "home" {}
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "no_answer_timeout", "30"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "priority", "3"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "phone_columns.0.column_name", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "phone_columns.0.type", "cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.field_name", contactSortFieldName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.direction", contactSortDirection),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.numeric", contactSortNumeric),
@@ -436,7 +445,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						[]string{},
 						[]string{},
 						[]string{},
-						generatePhoneColumnsBlock("Cell", "cell", ""),
+						generatePhoneColumnNoTypeBlock("Cell"),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
@@ -444,7 +453,6 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "caller_name", callerName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "caller_address", callerAddress),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "phone_columns.0.column_name", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "phone_columns.0.type", "cell"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "queue_id",
@@ -481,11 +489,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						[]string{"genesyscloud_outbound_dnclist." + dncListResourceId + ".id"},
 						[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
-						generatePhoneColumnsBlock(
-							"Cell",
-							"cell",
-							"",
-						),
+						generatePhoneColumnNoTypeBlock("Cell"),
 						generateOutboundMessagingCampaignContactSort(
 							contactSortFieldName,
 							contactSortDirection,
@@ -498,7 +502,6 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "caller_name", callerName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "caller_address", callerAddress),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "phone_columns.0.column_name", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "phone_columns.0.type", "cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "abandon_rate", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "outbound_line_count", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "skip_preview_disabled", falseValue),
@@ -582,7 +585,6 @@ resource "genesyscloud_outbound_campaign" "%s" {
 	call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.%s.id
 	phone_columns {
 		column_name = "Cell"
-		type        = "cell"
 	}
 }
 %s
@@ -685,16 +687,8 @@ func generateReferencedResourcesForOutboundCampaignTests(
 			falseValue,
 			"",
 			"",
-			generatePhoneColumnsBlock(
-				"Cell",
-				"cell",
-				"Cell",
-			),
-			generatePhoneColumnsBlock(
-				"Home",
-				"home",
-				"Home",
-			))
+			generatePhoneColumnsBlock("Cell", "cell", "Cell"),
+			generatePhoneColumnsBlock("Home", "home", "Home"))
 	}
 	if dncListResourceId != "" {
 		dncList = generateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
