@@ -7,7 +7,8 @@ import (
 	"testing"
 )
 
-func TestAccDataSourceSmsAddress(t *testing.T) {
+func TestAccDataSourceSmsAddressProdOrg(t *testing.T) {
+	t.Skip("Skip this test as it will only pass in a prod org")
 	var (
 		addressRes  = "addressRes"
 		addressData = "addressData"
@@ -16,8 +17,8 @@ func TestAccDataSourceSmsAddress(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateRoutingSmsAddressesResource(
@@ -29,6 +30,45 @@ func TestAccDataSourceSmsAddress(t *testing.T) {
 					"AA34HH",
 					"US",
 					falseValue,
+				) + generateSmsAddressDataSource(
+					addressData,
+					name,
+					"genesyscloud_routing_sms_address."+addressRes,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair(
+						"data.genesyscloud_routing_sms_address."+addressData, "id",
+						"genesyscloud_routing_sms_address."+addressRes, "id",
+					),
+				),
+			},
+		},
+	})
+}
+
+// If running in a prod org this test can be removed/skipped, it's only intended as a backup test for test orgs
+func TestAccDataSourceSmsAddressTestOrg(t *testing.T) {
+	var (
+		addressRes  = "addressRes"
+		addressData = "addressData"
+
+		name = "name-1"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: generateRoutingSmsAddressesResource(
+					addressRes,
+					name,
+					"street-1",
+					"city-1",
+					"region-1",
+					"postal-code-1",
+					"country-code-1",
+					trueValue,
 				) + generateSmsAddressDataSource(
 					addressData,
 					name,

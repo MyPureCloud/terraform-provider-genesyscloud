@@ -3,13 +3,15 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"log"
-	"time"
+	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 )
 
 func resourceRoutingSmsAddress() *schema.Resource {
@@ -108,7 +110,7 @@ func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 	countryCode := d.Get("country_code").(string)
 	autoCorrectAddress := d.Get("auto_correct_address").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	sdksmsaddressprovision := platformclientv2.Smsaddressprovision{
@@ -147,7 +149,7 @@ func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Routing Sms Address %s", d.Id())
@@ -188,8 +190,13 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	// AD-123 is the ID for a default address returned to all test orgs, it can't be deleted
+	if d.Id() == "AD-123" {
+		return nil
+	}
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Routing Sms Address")
