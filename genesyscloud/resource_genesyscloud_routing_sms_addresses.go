@@ -57,10 +57,11 @@ func resourceRoutingSmsAddress() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`country_code`: {
-				Description: `The ISO country code of this address`,
-				Required:    true,
-				ForceNew:    true,
-				Type:        schema.TypeString,
+				Description:      `The ISO country code of this address`,
+				Required:         true,
+				ForceNew:         true,
+				Type:             schema.TypeString,
+				ValidateDiagFunc: validateCountryCode,
 			},
 			`auto_correct_address`: {
 				Description: `This is used when the address is created. If the value is not set or true, then the system will, if necessary, auto-correct the address you provide. Set this value to false if the system should not auto-correct the address.`,
