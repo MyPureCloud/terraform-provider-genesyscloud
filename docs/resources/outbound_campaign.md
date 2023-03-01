@@ -32,7 +32,6 @@ resource "genesyscloud_outbound_campaign" "campaign" {
   call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.car.id
   phone_columns {
     column_name = "Cell"
-    type        = "cell"
   }
 }
 ```
@@ -82,7 +81,6 @@ resource "genesyscloud_outbound_campaign" "campaign" {
 Required:
 
 - `column_name` (String) The name of the phone column.
-- `type` (String) The type of the phone column. For example, 'cell' or 'home'.
 
 
 <a id="nestedblock--contact_sorts"></a>

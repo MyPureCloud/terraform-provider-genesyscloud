@@ -159,8 +159,8 @@ data "genesyscloud_auth_division_home" "home" {}
 			// Update
 			{
 				Config: fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) +
+			data "genesyscloud_auth_division_home" "home" {}
+			`) +
 					sequenceResource +
 					campaign1Resource +
 					campaign2Resource +
@@ -215,8 +215,8 @@ data "genesyscloud_auth_division_home" "home" {}
 			// Update (Setting 'enabled' back to false because we can't create or delete a rule with 'enabled' set to true)
 			{
 				Config: fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) +
+			data "genesyscloud_auth_division_home" "home" {}
+			`) +
 					sequenceResource +
 					campaign1Resource +
 					campaign2Resource +
