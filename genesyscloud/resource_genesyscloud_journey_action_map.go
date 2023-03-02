@@ -499,7 +499,7 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Actionmap) {
 	d.Set("is_active", *actionMap.IsActive)
 	d.Set("display_name", *actionMap.DisplayName)
-	resourcedata.SetNillableValue(d, "trigger_with_segments", stringListToSetOrNil(actionMap.TriggerWithSegments))
+	d.Set("trigger_with_segments", stringListToSetOrNil(actionMap.TriggerWithSegments))
 	resourcedata.SetNillableValue(d, "trigger_with_event_conditions", flattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
 	resourcedata.SetNillableValue(d, "trigger_with_outcome_probability_conditions", flattenList(actionMap.TriggerWithOutcomeProbabilityConditions, flattenOutcomeProbabilityCondition))
 	resourcedata.SetNillableValue(d, "page_url_conditions", flattenList(actionMap.PageUrlConditions, flattenUrlCondition))
@@ -693,6 +693,7 @@ func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformcl
 
 func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.Patchaction {
 	mediaType := patchAction["media_type"].(string)
+	isPacingEnabled := patchAction["is_pacing_enabled"].(bool)
 	actionMapActionTemplate := getActionMapActionTemplate(patchAction)
 	architectFlowFields := stringmap.BuildSdkListFirstElement(patchAction, "architect_flow_fields", buildSdkArchitectFlowFields, true)
 	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(patchAction, "web_messaging_offer_fields", buildSdkPatchWebMessagingOfferFields, true)
@@ -700,6 +701,7 @@ func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.P
 
 	sdkPatchAction := platformclientv2.Patchaction{}
 	sdkPatchAction.SetField("MediaType", &mediaType)
+	sdkPatchAction.SetField("IsPacingEnabled", &isPacingEnabled)
 	sdkPatchAction.SetField("ActionTemplate", actionMapActionTemplate)
 	sdkPatchAction.SetField("ArchitectFlowFields", architectFlowFields)
 	sdkPatchAction.SetField("WebMessagingOfferFields", webMessagingOfferFields)
