@@ -14,6 +14,172 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 )
 
+var (
+	phoneNumber = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"display": {
+				Description: "Display string of the phone number.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"extension": {
+				Description: "Phone extension.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"accepts_sms": {
+				Description: "If contact accept SMS.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"e164": {
+				Description: "Phone number in e164 format.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"country_code": {
+				Description: "Phone number country code.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
+
+	address = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"address1": {
+				Description: "Contact address 1.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"address2": {
+				Description: "Contact address 2.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"city": {
+				Description: "Contact address city.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"state": {
+				Description: "Contact address state.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"postal_code": {
+				Description: "Contact address postal code.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"country_code": {
+				Description: "Contact address country code.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+
+	twitterId = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "Contact twitter id.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"name": {
+				Description: "Contact twitter name.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"screen_name": {
+				Description: "Contact twitter screen name.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"verified": {
+				Description: "If contact twitter account is verified.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"profile_url": {
+				Description: "Contact twitter account url.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+
+	lineIds = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"user_id": {
+				Description: "Contact line id.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+
+	lineId = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"ids": {
+				Description: "Contact line id.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        lineIds,
+			},
+			"display_name": {
+				Description: "Contact line display name.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+
+	whatsappId = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"phone_number": {
+				Description: "Contact whatsapp phone number.",
+				Type:        schema.TypeList,
+				Required:    true,
+				Elem:        phoneNumber,
+			},
+			"display_name": {
+				Description: "Contact whatsapp display name.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
+
+	facebookIds = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"scoped_id": {
+				Description: "Contact facebook scoped id.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+
+	facebookId = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"ids": {
+				Description: "Contact facebook scoped id.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        facebookIds,
+			},
+			"display_name": {
+				Description: "Contact whatsapp display name.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+)
+
 func getAllAuthExternalContacts(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
 	externalAPI := platformclientv2.NewExternalContactsApiWithConfig(clientConfig)
@@ -41,7 +207,9 @@ func getAllAuthExternalContacts(_ context.Context, clientConfig *platformclientv
 func externalContactExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllAuthExternalContacts),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs: map[string]*RefAttrSettings{
+			"external_organization": {}, //Need to add this when we external orgs implemented
+		},
 	}
 }
 
@@ -58,18 +226,23 @@ func resourceExternalContact() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
-			"firstname": {
+			"first_name": {
 				Description: "The first name of the contact.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"middlename": {
+			"middle_name": {
 				Description: "The middle name of the contact.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"lastname": {
+			"last_name": {
 				Description: "The middle name of the contact.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"salutation": {
+				Description: "The salutation of the contact.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -78,33 +251,318 @@ func resourceExternalContact() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"work_phone": {
+				Description: "Contact work phone settings.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        phoneNumber,
+			},
+			"cell_phone": {
+				Description: "Contact call phone settings.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        phoneNumber,
+			},
+			"home_phone": {
+				Description: "Contact home phone settings.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        phoneNumber,
+			},
+			"other_phone": {
+				Description: "Contact other phone settings.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        phoneNumber,
+			},
+			"work_email": {
+				Description: "Contact work email.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"personnal_email": {
+				Description: "Contact personnal email.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"other_email": {
+				Description: "Contact other email.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"address": {
+				Description: "Contact address.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        address,
+			},
+			"twitter_id": {
+				Description: "Contact twitter account informations.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        twitterId,
+			},
+			"line_id": {
+				Description: "Contact line account informations.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        lineId,
+			},
+			"whatsapp_id": {
+				Description: "Contact whatsapp account informations.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        whatsappId,
+			},
+			"facebook_id": {
+				Description: "Contact facebook account informations.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        facebookId,
+			},
+			"external_organization": {
+				Description: "Contact survey opt out preference.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"survey_opt_out": {
+				Description: "Contact survey opt out preference.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"external_system_url": {
+				Description: "Contact external system url.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
 }
 
 func createExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	firstName := d.Get("firstname").(string)
-	middleName := d.Get("middlename").(string)
-	lastName := d.Get("lastname").(string)
-	title := d.Get("title").(string)
-
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	externalAPI := platformclientv2.NewExternalContactsApiWithConfig(sdkConfig)
 
-	log.Printf("Creating External Contact %s", title)
-	externalContact, _, err := externalAPI.PostExternalcontactsContacts(platformclientv2.Externalcontact{
-		FirstName:  &firstName,
-		MiddleName: &middleName,
-		LastName:   &lastName,
-		Title:      &title,
-	})
+	externalContact := getExternalContactFromResourceData(d)
+
+	contact, _, err := externalAPI.PostExternalcontactsContacts(externalContact)
 	if err != nil {
-		return diag.Errorf("Failed to create external contact %s: %s", title, err)
+		return diag.Errorf("Failed to create external contact: %s", err)
 	}
 
-	d.SetId(*externalContact.Id)
-	log.Printf("Created external contact %s %s", title, *externalContact.Id)
+	d.SetId(*contact.Id)
+	log.Printf("Created external contact %s", *contact.Id)
 	return readExternalContact(ctx, d, meta)
+}
+
+func getExternalContactFromResourceData(d *schema.ResourceData) platformclientv2.Externalcontact {
+	firstName := d.Get("first_name").(string)
+	middleName := d.Get("middle_name").(string)
+	lastName := d.Get("last_name").(string)
+	salutation := d.Get("salutation").(string)
+	title := d.Get("title").(string)
+	workEmail := d.Get("work_email").(string)
+	personnalEmail := d.Get("personnal_email").(string)
+	otherEmail := d.Get("other_email").(string)
+	surveyOptOut := d.Get("survey_opt_out").(bool)
+	externalSystemUrl := d.Get("external_system_url").(string)
+
+	return platformclientv2.Externalcontact{
+		FirstName:         &firstName,
+		MiddleName:        &middleName,
+		LastName:          &lastName,
+		Salutation:        &salutation,
+		Title:             &title,
+		WorkPhone:         buildSdkPhoneNumber(d, "work_phone"),
+		CellPhone:         buildSdkPhoneNumber(d, "cell_phone"),
+		HomePhone:         buildSdkPhoneNumber(d, "home_phone"),
+		OtherPhone:        buildSdkPhoneNumber(d, "other_phone"),
+		WorkEmail:         &workEmail,
+		PersonalEmail:     &personnalEmail,
+		OtherEmail:        &otherEmail,
+		Address:           buildSdkAddresse(d, "address"),
+		TwitterId:         buildSdkTwitterId(d, "twitter_id"),
+		LineId:            buildSdkLineId(d, "line_id"),
+		WhatsAppId:        buildSdkWhatsAppId(d, "whatsapp_id"),
+		FacebookId:        buildSdkFacebookId(d, "facebook_id"),
+		SurveyOptOut:      &surveyOptOut,
+		ExternalSystemUrl: &externalSystemUrl,
+	}
+}
+
+func buildPhonenumberFromData(phoneData []interface{}) *platformclientv2.Phonenumber {
+	phoneMap := phoneData[0].(map[string]interface{})
+
+	display := phoneMap["display"].(string)
+	extension := phoneMap["extension"].(int)
+	acceptSMS := phoneMap["accepts_sms"].(bool)
+	e164 := phoneMap["e164"].(string)
+	countryCode := phoneMap["country_code"].(string)
+
+	return &platformclientv2.Phonenumber{
+		Display:     &display,
+		Extension:   &extension,
+		AcceptsSMS:  &acceptSMS,
+		E164:        &e164,
+		CountryCode: &countryCode,
+	}
+}
+
+func buildSdkPhoneNumber(d *schema.ResourceData, key string) *platformclientv2.Phonenumber {
+	if d.Get(key) != nil {
+		phoneData := d.Get(key).([]interface{})
+
+		if len(phoneData) > 0 {
+			return buildPhonenumberFromData(phoneData)
+		}
+	}
+	return nil
+}
+
+func flattenPhoneNumber(phonenumber *platformclientv2.Phonenumber) []interface{} {
+	phonenumberInterface := make(map[string]interface{})
+	if phonenumber.Display != nil {
+		phonenumberInterface["display"] = *phonenumber.Display
+	}
+	if phonenumber.Extension != nil {
+		phonenumberInterface["extension"] = *phonenumber.Extension
+	}
+	if phonenumber.AcceptsSMS != nil {
+		phonenumberInterface["accepts_sms"] = *phonenumber.AcceptsSMS
+	}
+	if phonenumber.E164 != nil {
+		phonenumberInterface["e164"] = *phonenumber.E164
+	}
+	if phonenumber.CountryCode != nil {
+		phonenumberInterface["country_code"] = *phonenumber.CountryCode
+	}
+	return []interface{}{phonenumberInterface}
+}
+
+func buildSdkAddresse(d *schema.ResourceData, key string) *platformclientv2.Contactaddress {
+	if d.Get(key) != nil {
+		addressData := d.Get(key).([]interface{})
+		if len(addressData) > 0 {
+			addressMap := addressData[0].(map[string]interface{})
+
+			return &platformclientv2.Contactaddress{
+				Address1:    addressMap["address1"].(*string),
+				Address2:    addressMap["address2"].(*string),
+				City:        addressMap["city"].(*string),
+				State:       addressMap["state"].(*string),
+				PostalCode:  addressMap["postal_code"].(*string),
+				CountryCode: addressMap["country_code"].(*string),
+			}
+		}
+	}
+	return nil
+}
+
+func buildSdkTwitterId(d *schema.ResourceData, key string) *platformclientv2.Twitterid {
+	if d.Get(key) != nil {
+		twitterData := d.Get(key).([]interface{})
+		if len(twitterData) > 0 {
+			twitterMap := twitterData[0].(map[string]interface{})
+
+			return &platformclientv2.Twitterid{
+				Id:         twitterMap["id"].(*string),
+				Name:       twitterMap["name"].(*string),
+				ScreenName: twitterMap["screen_name"].(*string),
+				Verified:   twitterMap["verified"].(*bool),
+				ProfileUrl: twitterMap["profile_url"].(*string),
+			}
+		}
+	}
+	return nil
+}
+
+func buildSdkLineId(d *schema.ResourceData, key string) *platformclientv2.Lineid {
+	if d.Get(key) != nil {
+		lineData := d.Get(key).([]interface{})
+		if len(lineData) > 0 {
+			lineMap := lineData[0].(map[string]interface{})
+
+			lineId := platformclientv2.Lineid{
+				DisplayName: lineMap["display_name"].(*string),
+			}
+
+			if lineIds, ok := lineMap["ids"]; ok {
+				lineIdsList := lineIds.(*schema.Set).List()
+				if len(lineIdsList) > 0 {
+					lineIdsMap := lineIdsList[0].(map[string]interface{})
+					lineId.Ids = &[]platformclientv2.Lineuserid{
+						{
+							UserId: lineIdsMap["user_id"].(*string),
+						},
+					}
+				}
+			}
+			return &lineId
+		}
+	}
+	return nil
+}
+
+func buildSdkWhatsAppId(d *schema.ResourceData, key string) *platformclientv2.Whatsappid {
+	if d.Get(key) != nil {
+		whatsappData := d.Get(key).([]interface{})
+		if len(whatsappData) > 0 {
+			whatsappMap := whatsappData[0].(map[string]interface{})
+			displayName := whatsappMap["display_name"].(string)
+
+			return &platformclientv2.Whatsappid{
+				DisplayName: &displayName,
+				PhoneNumber: buildPhonenumberFromData(whatsappMap["phone_number"].([]interface{})),
+			}
+		}
+	}
+	return nil
+}
+
+func flattenSdkWhatsAppId(whatsappId platformclientv2.Whatsappid) []interface{} {
+	whatsappInterface := make(map[string]interface{})
+	flattenPhonenumber := flattenPhoneNumber(whatsappId.PhoneNumber)
+	whatsappInterface["display_name"] = *whatsappId.DisplayName
+	whatsappInterface["phone_number"] = &flattenPhonenumber
+	return []interface{}{whatsappInterface}
+}
+
+func buildSdkFacebookId(d *schema.ResourceData, key string) *platformclientv2.Facebookid {
+	if d.Get(key) != nil {
+		facebookData := d.Get(key).([]interface{})
+		if len(facebookData) > 0 {
+			facebookMap := facebookData[0].(map[string]interface{})
+
+			facebookId := platformclientv2.Facebookid{
+				DisplayName: facebookMap["display_name"].(*string),
+			}
+
+			if scopedIds, ok := facebookMap["ids"]; ok {
+				scopedIdsList := scopedIds.(*schema.Set).List()
+				if len(scopedIdsList) > 0 {
+					scopedIdsMap := scopedIdsList[0].(map[string]interface{})
+					facebookId.Ids = &[]platformclientv2.Facebookscopedid{
+						{
+							ScopedId: scopedIdsMap["scoped_id"].(*string),
+						},
+					}
+				}
+			}
+			return &facebookId
+		}
+	}
+	return nil
 }
 
 func readExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -122,24 +580,30 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 			return resource.NonRetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceAuthDivision())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceExternalContact())
 
 		if externalContact.FirstName != nil {
-			d.Set("firstname", *externalContact.FirstName)
+			d.Set("first_name", *externalContact.FirstName)
 		} else {
-			d.Set("firstname", nil)
+			d.Set("first_name", nil)
 		}
 
 		if externalContact.MiddleName != nil {
-			d.Set("middlename", *externalContact.MiddleName)
+			d.Set("middle_name", *externalContact.MiddleName)
 		} else {
-			d.Set("middlename", nil)
+			d.Set("middle_name", nil)
 		}
 
 		if externalContact.LastName != nil {
-			d.Set("lastname", *externalContact.LastName)
+			d.Set("last_name", *externalContact.LastName)
 		} else {
-			d.Set("lastname", nil)
+			d.Set("last_name", nil)
+		}
+
+		if externalContact.Salutation != nil {
+			d.Set("salutation", *externalContact.Salutation)
+		} else {
+			d.Set("salutation", nil)
 		}
 
 		if externalContact.Title != nil {
@@ -148,59 +612,131 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 			d.Set("title", nil)
 		}
 
+		if externalContact.WorkPhone != nil {
+			d.Set("work_phone", *externalContact.WorkPhone)
+		} else {
+			d.Set("work_phone", nil)
+		}
+
+		if externalContact.CellPhone != nil {
+			d.Set("cell_phone", *externalContact.CellPhone)
+		} else {
+			d.Set("cell_phone", nil)
+		}
+
+		if externalContact.HomePhone != nil {
+			d.Set("home_phone", *externalContact.HomePhone)
+		} else {
+			d.Set("home_phone", nil)
+		}
+
+		if externalContact.OtherPhone != nil {
+			d.Set("other_phone", *externalContact.OtherPhone)
+		} else {
+			d.Set("other_phone", nil)
+		}
+
+		if externalContact.WorkEmail != nil {
+			d.Set("work_email", *externalContact.WorkEmail)
+		} else {
+			d.Set("work_email", nil)
+		}
+
+		if externalContact.PersonalEmail != nil {
+			d.Set("personnal_email", *externalContact.PersonalEmail)
+		} else {
+			d.Set("personnal_email", nil)
+		}
+
+		if externalContact.OtherEmail != nil {
+			d.Set("other_email", *externalContact.OtherEmail)
+		} else {
+			d.Set("other_email", nil)
+		}
+
+		if externalContact.Address != nil {
+			d.Set("address", *externalContact.Address)
+		} else {
+			d.Set("address", nil)
+		}
+
+		if externalContact.TwitterId != nil {
+			d.Set("twitter_id", *externalContact.TwitterId)
+		} else {
+			d.Set("twitter_id", nil)
+		}
+
+		if externalContact.LineId != nil {
+			d.Set("line_id", *externalContact.LineId)
+		} else {
+			d.Set("line_id", nil)
+		}
+
+		if externalContact.WhatsAppId != nil {
+			d.Set("whatsapp_id", flattenSdkWhatsAppId(*externalContact.WhatsAppId))
+		} else {
+			d.Set("whatsapp_id", nil)
+		}
+
+		if externalContact.FacebookId != nil {
+			d.Set("facebook_id", *externalContact.FacebookId)
+		} else {
+			d.Set("facebook_id", nil)
+		}
+
+		if externalContact.SurveyOptOut != nil {
+			d.Set("survey_opt_out", *externalContact.SurveyOptOut)
+		} else {
+			d.Set("survey_opt_out", nil)
+		}
+
+		if externalContact.ExternalSystemUrl != nil {
+			d.Set("external_system_url", *externalContact.ExternalSystemUrl)
+		} else {
+			d.Set("external_system_url", nil)
+		}
+
 		log.Printf("Read external contact %s", d.Id())
 		return cc.CheckState()
 	})
 }
 
 func updateExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	firstName := d.Get("firstname").(string)
-	middleName := d.Get("middlename").(string)
-	lastName := d.Get("lastname").(string)
-	title := d.Get("title").(string)
-
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	externalAPI := platformclientv2.NewExternalContactsApiWithConfig(sdkConfig)
 
-	log.Printf("Updating external contact %s", title)
-	_, _, err := externalAPI.PutExternalcontactsContact(d.Id(), platformclientv2.Externalcontact{
-		FirstName:  &firstName,
-		MiddleName: &middleName,
-		LastName:   &lastName,
-		Title:      &title,
-	})
+	externalContact := getExternalContactFromResourceData(d)
+	_, _, err := externalAPI.PutExternalcontactsContact(d.Id(), externalContact)
 	if err != nil {
-		return diag.Errorf("Failed to update external contact %s: %s", title, err)
+		return diag.Errorf("Failed to update external contact: %s", err)
 	}
 
-	log.Printf("Updated external contact %s", title)
+	log.Printf("Updated external contact")
 
 	return readExternalContact(ctx, d, meta)
 }
 
 func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	title := d.Get("title").(string)
-
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	externalAPI := platformclientv2.NewExternalContactsApiWithConfig(sdkConfig)
 
 	_, _, err := externalAPI.DeleteExternalcontactsContact(d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete external contact %s: %s", title, err)
+		return diag.Errorf("Failed to delete external contact %s: %s", d.Id(), err)
 	}
 
 	return withRetries(ctx, 180*time.Second, func() *resource.RetryError {
-		_, resp, err := externalAPI.GetExternalcontactsContact(title, nil)
+		_, resp, err := externalAPI.GetExternalcontactsContact(d.Id(), nil)
 
 		if err == nil {
-			return resource.NonRetryableError(fmt.Errorf("Error deleting external contact %s: %s", title, err))
+			return resource.NonRetryableError(fmt.Errorf("Error deleting external contact %s: %s", d.Id(), err))
 		}
 		if isStatus404(resp) {
 			// Success  : External contact deleted
-			log.Printf("Deleted external contact %s", title)
+			log.Printf("Deleted external contact %s", d.Id())
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("External contact %s still exists", title))
+		return resource.RetryableError(fmt.Errorf("External contact %s still exists", d.Id()))
 	})
 }

@@ -7,16 +7,20 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceArchitectExternalContact(t *testing.T) {
+func TestAccExternalContact(t *testing.T) {
 	var (
 		externalContactData = "data-externalContact"
 		search              = "jean"
 
-		externalContactResource = "resource-externalContact"
-		title                   = "integrator staff"
-		firstname               = "jean"
-		middlename              = "jacques"
-		lastname                = "dupont"
+		externalContactResource  = "resource-externalContact"
+		title                    = "integrator staff"
+		firstname                = "jean"
+		middlename               = "jacques"
+		lastname                 = "dupont"
+		whatsappPhoneDisplay     = "+33 1 00 00 00 01"
+		whatsappPhoneE164        = "+33100000001"
+		whatsappPhoneCountryCode = "FR"
+		whatsappPhoneDisplayName = "whatsappName"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -25,12 +29,16 @@ func TestAccDataSourceArchitectExternalContact(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create external contact with an lastname and others property
-				Config: generateExternalContactResource(
+				Config: generateExternalContactResourceWithWhatsapp(
 					externalContactResource,
 					firstname,
 					middlename,
 					lastname,
 					title,
+					whatsappPhoneDisplay,
+					whatsappPhoneE164,
+					whatsappPhoneCountryCode,
+					whatsappPhoneDisplayName,
 				) + generateExternalContactDataSource(
 					externalContactData,
 					search,
