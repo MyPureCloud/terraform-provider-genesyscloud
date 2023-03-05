@@ -543,26 +543,51 @@ func buildSdkFacebookId(d *schema.ResourceData, key string) *platformclientv2.Fa
 		facebookData := d.Get(key).([]interface{})
 		if len(facebookData) > 0 {
 			facebookMap := facebookData[0].(map[string]interface{})
+			displayname := facebookMap["display_name"].(string)
+			scopedId := facebookMap["ids"].([]interface{})[0].(map[string]interface{})["scoped_id"].(string)
 
+			facebookIds := []platformclientv2.Facebookscopedid{
+				{
+					ScopedId: &scopedId,
+				},
+			}
 			facebookId := platformclientv2.Facebookid{
-				DisplayName: facebookMap["display_name"].(*string),
+				DisplayName: &displayname,
+				Ids:         &facebookIds,
 			}
 
-			if scopedIds, ok := facebookMap["ids"]; ok {
-				scopedIdsList := scopedIds.(*schema.Set).List()
-				if len(scopedIdsList) > 0 {
-					scopedIdsMap := scopedIdsList[0].(map[string]interface{})
-					facebookId.Ids = &[]platformclientv2.Facebookscopedid{
-						{
-							ScopedId: scopedIdsMap["scoped_id"].(*string),
-						},
-					}
-				}
-			}
+			// if scopedIds, ok := facebookMap["ids"]; ok {
+			// 	scopedIdsList := scopedIds.(*schema.Set).List()
+			// 	if len(scopedIdsList) > 0 {
+			// 		scopedIdsMap := scopedIdsList[0].(map[string]interface{})
+			// 		scopedId := scopedIdsMap["scoped_id"].(string)
+			// 		facebookId.Ids = &[]platformclientv2.Facebookscopedid{
+			// 			{
+			// 				ScopedId: &scopedId,
+			// 			},
+			// 		}
+			// 	}
+			// }
 			return &facebookId
 		}
 	}
 	return nil
+}
+
+func flattenSdkFacebookId(facebookid platformclientv2.Facebookid) []interface{} {
+	whatsappInterface := make(map[string]interface{})
+	flattenScopedid := flattenSdkFacebookScopedId(facebookid.Ids)
+	whatsappInterface["display_name"] = *facebookid.DisplayName
+	whatsappInterface["ids"] = &flattenScopedid
+	return []interface{}{whatsappInterface}
+}
+
+func flattenSdkFacebookScopedId(facebookScopedid *[]platformclientv2.Facebookscopedid) []interface{} {
+	facebookScopedidInterface := make(map[string]interface{})
+	if (*facebookScopedid)[0].ScopedId != nil {
+		facebookScopedidInterface["scoped_id"] = (*facebookScopedid)[0].ScopedId
+	}
+	return []interface{}{facebookScopedidInterface}
 }
 
 func readExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -679,7 +704,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		if externalContact.FacebookId != nil {
-			d.Set("facebook_id", *externalContact.FacebookId)
+			d.Set("facebook_id", flattenSdkFacebookId(*externalContact.FacebookId))
 		} else {
 			d.Set("facebook_id", nil)
 		}

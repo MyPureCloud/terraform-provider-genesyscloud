@@ -9,7 +9,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 )
 
-func TestAccExternalConctactsContact(t *testing.T) {
+func TestAccResourceExternalContacts(t *testing.T) {
 	var (
 		contactresource1 = "externalcontact-contact1"
 		title1           = "integration team"
@@ -23,6 +23,9 @@ func TestAccExternalConctactsContact(t *testing.T) {
 		whatsappPhoneE164        = "+33100000001"
 		whatsappPhoneCountryCode = "FR"
 		whatsappPhoneDisplayName = "whatsappName"
+
+		facebookScopedid    = "facebookScopedid"
+		facebookDisplayname = "facebookDisplayname"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
@@ -43,7 +46,7 @@ func TestAccExternalConctactsContact(t *testing.T) {
 			},
 			{
 				// Update with more attributes
-				Config: generateExternalContactResourceWithWhatsapp(
+				Config: generateFullExternalContactResource(
 					contactresource1,
 					firstname2,
 					middlename2,
@@ -53,6 +56,8 @@ func TestAccExternalConctactsContact(t *testing.T) {
 					whatsappPhoneE164,
 					whatsappPhoneCountryCode,
 					whatsappPhoneDisplayName,
+					facebookScopedid,
+					facebookDisplayname,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "title", title2),
@@ -63,6 +68,8 @@ func TestAccExternalConctactsContact(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "whatsapp_id.0.phone_number.0.e164", whatsappPhoneE164),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "whatsapp_id.0.phone_number.0.country_code", whatsappPhoneCountryCode),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "whatsapp_id.0.display_name", whatsappPhoneDisplayName),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "facebook_id.0.ids.0.scoped_id", facebookScopedid),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "facebook_id.0.display_name", facebookDisplayname),
 				),
 			},
 			{
@@ -82,16 +89,18 @@ func generateBasicExternalContactResource(resourceID string, title string) strin
 	}`, resourceID, title)
 }
 
-func generateExternalContactResourceWithWhatsapp(
+func generateFullExternalContactResource(
 	resourceID string,
 	firstname string,
 	middlename string,
 	lastname string,
 	title string,
-	display string,
-	e164 string,
-	countrycode string,
-	displayname string) string {
+	whatssappDisplay string,
+	whatssappE164 string,
+	whatssappCountrycode string,
+	whatssappDisplayname string,
+	facebookScopeid string,
+	facebookDisplayname string) string {
 	return fmt.Sprintf(`resource "genesyscloud_externalcontacts_contact" "%s" {
 		first_name = "%s"
 		middle_name = "%s"
@@ -105,8 +114,15 @@ func generateExternalContactResourceWithWhatsapp(
 			}
 			display_name = "%s"
 		}
+		facebook_id {
+			ids {
+			  scoped_id = "%s"
+			}
+			display_name = "%s"
+		  }
 	}
-	`, resourceID, firstname, middlename, lastname, title, display, e164, countrycode, displayname)
+	`, resourceID, firstname, middlename, lastname, title, whatssappDisplay, whatssappE164, whatssappCountrycode, whatssappDisplayname,
+		facebookScopeid, facebookDisplayname)
 }
 
 func testVerifyContactDestroyed(state *terraform.State) error {
