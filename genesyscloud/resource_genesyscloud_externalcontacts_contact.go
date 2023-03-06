@@ -683,25 +683,25 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		if externalContact.WorkPhone != nil {
-			d.Set("work_phone", *externalContact.WorkPhone)
+			d.Set("work_phone", flattenPhoneNumber(externalContact.WorkPhone))
 		} else {
 			d.Set("work_phone", nil)
 		}
 
 		if externalContact.CellPhone != nil {
-			d.Set("cell_phone", *externalContact.CellPhone)
+			d.Set("cell_phone", flattenPhoneNumber(externalContact.CellPhone))
 		} else {
 			d.Set("cell_phone", nil)
 		}
 
 		if externalContact.HomePhone != nil {
-			d.Set("home_phone", *externalContact.HomePhone)
+			d.Set("home_phone", flattenPhoneNumber(externalContact.HomePhone))
 		} else {
 			d.Set("home_phone", nil)
 		}
 
 		if externalContact.OtherPhone != nil {
-			d.Set("other_phone", *externalContact.OtherPhone)
+			d.Set("other_phone", flattenPhoneNumber(externalContact.OtherPhone))
 		} else {
 			d.Set("other_phone", nil)
 		}

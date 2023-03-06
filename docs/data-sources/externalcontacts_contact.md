@@ -3,12 +3,12 @@
 page_title: "genesyscloud_externalcontacts_contact Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud external contacts. Select an contact by any string search.
+  Data source for Genesys Cloud external contacts. Select a contact by any string search.
 ---
 
 # genesyscloud_externalcontacts_contact (Data Source)
 
-Data source for Genesys Cloud external contacts. Select an contact by any string search.
+Data source for Genesys Cloud external contacts. Select a contact by any string search.
 
 ## Example Usage
 

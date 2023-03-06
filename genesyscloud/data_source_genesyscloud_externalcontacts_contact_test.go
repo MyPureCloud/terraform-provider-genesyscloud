@@ -18,6 +18,12 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 		middlename              = "jacques"
 		lastname                = "dupont"
 
+		phoneDisplay     = "+33 1 00 00 00 01"
+		phoneExtension   = "2"
+		phoneAcceptssms  = "false"
+		phoneE164        = "+33100000001"
+		phoneCountrycode = "FR"
+
 		address1     = "1 rue de la paix"
 		address2     = "2 rue de la paix"
 		city         = "Paris"
@@ -39,6 +45,9 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 
 		facebookScopedid    = "facebookScopedid"
 		facebookDisplayname = "facebookDisplayname"
+
+		surveyoptout      = "false"
+		externalsystemurl = "https://externalsystemurl.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -53,6 +62,11 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 					middlename,
 					lastname,
 					title,
+					phoneDisplay,
+					phoneExtension,
+					phoneAcceptssms,
+					phoneE164,
+					phoneCountrycode,
 					address1,
 					address2,
 					city,
@@ -70,6 +84,8 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 					whatsappPhoneDisplayName,
 					facebookScopedid,
 					facebookDisplayname,
+					surveyoptout,
+					externalsystemurl,
 				) + generateExternalContactDataSource(
 					externalContactData,
 					search,
