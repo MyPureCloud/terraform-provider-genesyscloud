@@ -18,6 +18,10 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 		middlename              = "jacques"
 		lastname                = "dupont"
 
+		twitterId         = "twitterId"
+		twitterName       = "twitterName"
+		twitterScreenname = "twitterScreenname"
+
 		lineId          = "lineID12345"
 		lineDisplayname = "lineDisplayname"
 
@@ -42,6 +46,9 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 					middlename,
 					lastname,
 					title,
+					twitterId,
+					twitterName,
+					twitterScreenname,
 					lineId,
 					lineDisplayname,
 					whatsappPhoneDisplay,

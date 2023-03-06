@@ -98,15 +98,10 @@ var (
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"verified": {
-				Description: "If contact twitter account is verified.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
 			"profile_url": {
 				Description: "Contact twitter account url.",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}
@@ -474,17 +469,39 @@ func buildSdkTwitterId(d *schema.ResourceData, key string) *platformclientv2.Twi
 		twitterData := d.Get(key).([]interface{})
 		if len(twitterData) > 0 {
 			twitterMap := twitterData[0].(map[string]interface{})
+			id := twitterMap["id"].(string)
+			name := twitterMap["name"].(string)
+			screenname := twitterMap["screen_name"].(string)
+			profileurl := twitterMap["profile_url"].(string)
 
 			return &platformclientv2.Twitterid{
-				Id:         twitterMap["id"].(*string),
-				Name:       twitterMap["name"].(*string),
-				ScreenName: twitterMap["screen_name"].(*string),
-				Verified:   twitterMap["verified"].(*bool),
-				ProfileUrl: twitterMap["profile_url"].(*string),
+				Id:         &id,
+				Name:       &name,
+				ScreenName: &screenname,
+				ProfileUrl: &profileurl,
 			}
 		}
 	}
 	return nil
+}
+
+func flattenSdkTwitterId(twitterId platformclientv2.Twitterid) []interface{} {
+	twitterInterface := make(map[string]interface{})
+	if twitterId.Id != nil {
+		twitterInterface["id"] = twitterId.Id
+	}
+	if twitterId.Name != nil {
+		twitterInterface["name"] = twitterId.Name
+	}
+	if twitterId.ScreenName != nil {
+		url := "https://www.twitter.com/" + *twitterId.ScreenName
+		twitterInterface["screen_name"] = twitterId.ScreenName
+		twitterInterface["profile_url"] = &url
+	}
+	if twitterId.ProfileUrl != nil {
+		twitterInterface["profile_url"] = twitterId.ProfileUrl
+	}
+	return []interface{}{twitterInterface}
 }
 
 func buildSdkLineId(d *schema.ResourceData, key string) *platformclientv2.Lineid {
@@ -685,7 +702,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		if externalContact.TwitterId != nil {
-			d.Set("twitter_id", *externalContact.TwitterId)
+			d.Set("twitter_id", flattenSdkTwitterId(*externalContact.TwitterId))
 		} else {
 			d.Set("twitter_id", nil)
 		}

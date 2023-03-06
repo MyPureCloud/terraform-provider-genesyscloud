@@ -19,6 +19,10 @@ func TestAccResourceExternalContacts(t *testing.T) {
 		lastname2   = "dupont"
 		title2      = "integration team"
 
+		twitterId         = "twitterId"
+		twitterName       = "twitterName"
+		twitterScreenname = "twitterScreenname"
+
 		lineId          = "lineID12345"
 		lineDisplayname = "lineDisplayname"
 
@@ -55,6 +59,9 @@ func TestAccResourceExternalContacts(t *testing.T) {
 					middlename2,
 					lastname2,
 					title2,
+					twitterId,
+					twitterName,
+					twitterScreenname,
 					lineId,
 					lineDisplayname,
 					whatsappPhoneDisplay,
@@ -69,6 +76,9 @@ func TestAccResourceExternalContacts(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "first_name", firstname2),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "middle_name", middlename2),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "last_name", lastname2),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "twitter_id.0.id", twitterId),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "twitter_id.0.name", twitterName),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "twitter_id.0.screen_name", twitterScreenname),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "line_id.0.ids.0.user_id", lineId),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "line_id.0.display_name", lineDisplayname),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "whatsapp_id.0.phone_number.0.display", whatsappPhoneDisplay),
@@ -102,6 +112,9 @@ func generateFullExternalContactResource(
 	middlename string,
 	lastname string,
 	title string,
+	twitterId string,
+	twitterName string,
+	twitterScreenname string,
 	lineId string,
 	lineDisplayname string,
 	whatssappDisplay string,
@@ -115,6 +128,11 @@ func generateFullExternalContactResource(
 		middle_name = "%s"
 		last_name = "%s"
 		title = "%s"
+		twitter_id {
+		  id = "%s"
+		  name = "%s"
+		  screen_name = "%s"
+		}
 		line_id {
 		  ids {
 			user_id = "%s"
@@ -137,6 +155,7 @@ func generateFullExternalContactResource(
 		  }
 	}
 	`, resourceID, firstname, middlename, lastname, title,
+		twitterId, twitterName, twitterScreenname,
 		lineId, lineDisplayname,
 		whatssappDisplay, whatssappE164, whatssappCountrycode, whatssappDisplayname,
 		facebookScopeid, facebookDisplayname)
