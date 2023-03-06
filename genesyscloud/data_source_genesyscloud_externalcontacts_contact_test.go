@@ -18,6 +18,9 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 		middlename              = "jacques"
 		lastname                = "dupont"
 
+		lineId          = "lineID12345"
+		lineDisplayname = "lineDisplayname"
+
 		whatsappPhoneDisplay     = "+33 1 00 00 00 01"
 		whatsappPhoneE164        = "+33100000001"
 		whatsappPhoneCountryCode = "FR"
@@ -39,6 +42,8 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 					middlename,
 					lastname,
 					title,
+					lineId,
+					lineDisplayname,
 					whatsappPhoneDisplay,
 					whatsappPhoneE164,
 					whatsappPhoneCountryCode,

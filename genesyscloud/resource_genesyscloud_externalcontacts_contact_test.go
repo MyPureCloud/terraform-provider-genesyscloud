@@ -19,6 +19,9 @@ func TestAccResourceExternalContacts(t *testing.T) {
 		lastname2   = "dupont"
 		title2      = "integration team"
 
+		lineId          = "lineID12345"
+		lineDisplayname = "lineDisplayname"
+
 		whatsappPhoneDisplay     = "+33 1 00 00 00 01"
 		whatsappPhoneE164        = "+33100000001"
 		whatsappPhoneCountryCode = "FR"
@@ -52,6 +55,8 @@ func TestAccResourceExternalContacts(t *testing.T) {
 					middlename2,
 					lastname2,
 					title2,
+					lineId,
+					lineDisplayname,
 					whatsappPhoneDisplay,
 					whatsappPhoneE164,
 					whatsappPhoneCountryCode,
@@ -64,6 +69,8 @@ func TestAccResourceExternalContacts(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "first_name", firstname2),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "middle_name", middlename2),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "last_name", lastname2),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "line_id.0.ids.0.user_id", lineId),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "line_id.0.display_name", lineDisplayname),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "whatsapp_id.0.phone_number.0.display", whatsappPhoneDisplay),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "whatsapp_id.0.phone_number.0.e164", whatsappPhoneE164),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "whatsapp_id.0.phone_number.0.country_code", whatsappPhoneCountryCode),
@@ -95,6 +102,8 @@ func generateFullExternalContactResource(
 	middlename string,
 	lastname string,
 	title string,
+	lineId string,
+	lineDisplayname string,
 	whatssappDisplay string,
 	whatssappE164 string,
 	whatssappCountrycode string,
@@ -106,6 +115,12 @@ func generateFullExternalContactResource(
 		middle_name = "%s"
 		last_name = "%s"
 		title = "%s"
+		line_id {
+		  ids {
+			user_id = "%s"
+		  }
+		  display_name = "%s"
+		}
 		whatsapp_id {
 			phone_number {
 				display = "%s"
@@ -121,7 +136,9 @@ func generateFullExternalContactResource(
 			display_name = "%s"
 		  }
 	}
-	`, resourceID, firstname, middlename, lastname, title, whatssappDisplay, whatssappE164, whatssappCountrycode, whatssappDisplayname,
+	`, resourceID, firstname, middlename, lastname, title,
+		lineId, lineDisplayname,
+		whatssappDisplay, whatssappE164, whatssappCountrycode, whatssappDisplayname,
 		facebookScopeid, facebookDisplayname)
 }
 

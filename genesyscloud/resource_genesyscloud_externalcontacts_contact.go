@@ -492,26 +492,38 @@ func buildSdkLineId(d *schema.ResourceData, key string) *platformclientv2.Lineid
 		lineData := d.Get(key).([]interface{})
 		if len(lineData) > 0 {
 			lineMap := lineData[0].(map[string]interface{})
+			displayname := lineMap["display_name"].(string)
+			userId := lineMap["ids"].([]interface{})[0].(map[string]interface{})["user_id"].(string)
 
-			lineId := platformclientv2.Lineid{
-				DisplayName: lineMap["display_name"].(*string),
+			ids := []platformclientv2.Lineuserid{
+				{
+					UserId: &userId,
+				},
 			}
-
-			if lineIds, ok := lineMap["ids"]; ok {
-				lineIdsList := lineIds.(*schema.Set).List()
-				if len(lineIdsList) > 0 {
-					lineIdsMap := lineIdsList[0].(map[string]interface{})
-					lineId.Ids = &[]platformclientv2.Lineuserid{
-						{
-							UserId: lineIdsMap["user_id"].(*string),
-						},
-					}
-				}
+			lineId := platformclientv2.Lineid{
+				DisplayName: &displayname,
+				Ids:         &ids,
 			}
 			return &lineId
 		}
 	}
 	return nil
+}
+
+func flattenSdkLineId(lineId platformclientv2.Lineid) []interface{} {
+	lineInterface := make(map[string]interface{})
+	flattenUserid := flattenSdkLineUserId(lineId.Ids)
+	lineInterface["display_name"] = *lineId.DisplayName
+	lineInterface["ids"] = &flattenUserid
+	return []interface{}{lineInterface}
+}
+
+func flattenSdkLineUserId(lineUserdid *[]platformclientv2.Lineuserid) []interface{} {
+	lineUseridInterface := make(map[string]interface{})
+	if (*lineUserdid)[0].UserId != nil {
+		lineUseridInterface["user_id"] = (*lineUserdid)[0].UserId
+	}
+	return []interface{}{lineUseridInterface}
 }
 
 func buildSdkWhatsAppId(d *schema.ResourceData, key string) *platformclientv2.Whatsappid {
@@ -555,19 +567,6 @@ func buildSdkFacebookId(d *schema.ResourceData, key string) *platformclientv2.Fa
 				DisplayName: &displayname,
 				Ids:         &facebookIds,
 			}
-
-			// if scopedIds, ok := facebookMap["ids"]; ok {
-			// 	scopedIdsList := scopedIds.(*schema.Set).List()
-			// 	if len(scopedIdsList) > 0 {
-			// 		scopedIdsMap := scopedIdsList[0].(map[string]interface{})
-			// 		scopedId := scopedIdsMap["scoped_id"].(string)
-			// 		facebookId.Ids = &[]platformclientv2.Facebookscopedid{
-			// 			{
-			// 				ScopedId: &scopedId,
-			// 			},
-			// 		}
-			// 	}
-			// }
 			return &facebookId
 		}
 	}
@@ -692,7 +691,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		if externalContact.LineId != nil {
-			d.Set("line_id", *externalContact.LineId)
+			d.Set("line_id", flattenSdkLineId(*externalContact.LineId))
 		} else {
 			d.Set("line_id", nil)
 		}
