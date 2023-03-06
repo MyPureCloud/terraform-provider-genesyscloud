@@ -18,6 +18,13 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 		middlename              = "jacques"
 		lastname                = "dupont"
 
+		address1     = "1 rue de la paix"
+		address2     = "2 rue de la paix"
+		city         = "Paris"
+		state        = "île-de-France"
+		postal_code  = "75000"
+		country_code = "FR"
+
 		twitterId         = "twitterId"
 		twitterName       = "twitterName"
 		twitterScreenname = "twitterScreenname"
@@ -46,6 +53,12 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 					middlename,
 					lastname,
 					title,
+					address1,
+					address2,
+					city,
+					state,
+					postal_code,
+					country_code,
 					twitterId,
 					twitterName,
 					twitterScreenname,

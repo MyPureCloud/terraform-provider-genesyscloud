@@ -19,6 +19,13 @@ func TestAccResourceExternalContacts(t *testing.T) {
 		lastname2   = "dupont"
 		title2      = "integration team"
 
+		address1     = "1 rue de la paix"
+		address2     = "2 rue de la paix"
+		city         = "Paris"
+		state        = "île-de-France"
+		postal_code  = "75000"
+		country_code = "FR"
+
 		twitterId         = "twitterId"
 		twitterName       = "twitterName"
 		twitterScreenname = "twitterScreenname"
@@ -59,6 +66,12 @@ func TestAccResourceExternalContacts(t *testing.T) {
 					middlename2,
 					lastname2,
 					title2,
+					address1,
+					address2,
+					city,
+					state,
+					postal_code,
+					country_code,
 					twitterId,
 					twitterName,
 					twitterScreenname,
@@ -76,6 +89,12 @@ func TestAccResourceExternalContacts(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "first_name", firstname2),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "middle_name", middlename2),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "last_name", lastname2),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.address1", address1),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.address2", address2),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.city", city),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.state", state),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.postal_code", postal_code),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.country_code", country_code),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "twitter_id.0.id", twitterId),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "twitter_id.0.name", twitterName),
 					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "twitter_id.0.screen_name", twitterScreenname),
@@ -112,6 +131,12 @@ func generateFullExternalContactResource(
 	middlename string,
 	lastname string,
 	title string,
+	address1 string,
+	address2 string,
+	city string,
+	state string,
+	postal_code string,
+	country_code string,
 	twitterId string,
 	twitterName string,
 	twitterScreenname string,
@@ -128,6 +153,14 @@ func generateFullExternalContactResource(
 		middle_name = "%s"
 		last_name = "%s"
 		title = "%s"
+		address {
+		  address1 = "%s"
+		  address2 = "%s"
+		  city = "%s"
+		  state = "%s"
+		  postal_code = "%s"
+		  country_code = "%s"
+		} 
 		twitter_id {
 		  id = "%s"
 		  name = "%s"
@@ -155,6 +188,7 @@ func generateFullExternalContactResource(
 		  }
 	}
 	`, resourceID, firstname, middlename, lastname, title,
+		address1, address2, city, state, postal_code, country_code,
 		twitterId, twitterName, twitterScreenname,
 		lineId, lineDisplayname,
 		whatssappDisplay, whatssappE164, whatssappCountrycode, whatssappDisplayname,

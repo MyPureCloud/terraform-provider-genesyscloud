@@ -450,18 +450,47 @@ func buildSdkAddresse(d *schema.ResourceData, key string) *platformclientv2.Cont
 		addressData := d.Get(key).([]interface{})
 		if len(addressData) > 0 {
 			addressMap := addressData[0].(map[string]interface{})
+			address1 := addressMap["address1"].(string)
+			address2 := addressMap["address2"].(string)
+			city := addressMap["city"].(string)
+			state := addressMap["state"].(string)
+			postalcode := addressMap["postal_code"].(string)
+			countrycode := addressMap["country_code"].(string)
 
 			return &platformclientv2.Contactaddress{
-				Address1:    addressMap["address1"].(*string),
-				Address2:    addressMap["address2"].(*string),
-				City:        addressMap["city"].(*string),
-				State:       addressMap["state"].(*string),
-				PostalCode:  addressMap["postal_code"].(*string),
-				CountryCode: addressMap["country_code"].(*string),
+				Address1:    &address1,
+				Address2:    &address2,
+				City:        &city,
+				State:       &state,
+				PostalCode:  &postalcode,
+				CountryCode: &countrycode,
 			}
 		}
 	}
 	return nil
+}
+
+func flattenSdkAddress(address platformclientv2.Contactaddress) []interface{} {
+	addressInterface := make(map[string]interface{})
+	if address.Address1 != nil {
+		addressInterface["address1"] = address.Address1
+	}
+	if address.Address2 != nil {
+		addressInterface["address2"] = address.Address2
+	}
+	if address.City != nil {
+		addressInterface["city"] = address.City
+	}
+	if address.State != nil {
+		addressInterface["state"] = address.State
+	}
+	if address.PostalCode != nil {
+		addressInterface["postal_code"] = address.PostalCode
+	}
+	if address.CountryCode != nil {
+		addressInterface["country_code"] = address.CountryCode
+	}
+	return []interface{}{addressInterface}
 }
 
 func buildSdkTwitterId(d *schema.ResourceData, key string) *platformclientv2.Twitterid {
@@ -696,7 +725,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		if externalContact.Address != nil {
-			d.Set("address", *externalContact.Address)
+			d.Set("address", flattenSdkAddress(*externalContact.Address))
 		} else {
 			d.Set("address", nil)
 		}
