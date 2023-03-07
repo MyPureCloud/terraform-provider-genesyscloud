@@ -28,7 +28,7 @@ pipeline {
       }
 
       steps {
-        sh 'getgoreleaser.sh'
+        sh './getgoreleaser.sh'
       }
     }
   }
