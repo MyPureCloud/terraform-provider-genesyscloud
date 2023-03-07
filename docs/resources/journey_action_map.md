@@ -45,7 +45,6 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 - `activation` (Block Set, Min: 1, Max: 1) Type of activation. (see [below for nested schema](#nestedblock--activation))
 - `display_name` (String) Display name of the action map.
 - `start_date` (String) Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
-- `trigger_with_segments` (Set of String) Trigger action map if any segment in the list is assigned to a given customer.
 
 ### Optional
 
@@ -56,6 +55,7 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 - `page_url_conditions` (Block Set) URL conditions that a page must match for web actions to be displayable. (see [below for nested schema](#nestedblock--page_url_conditions))
 - `trigger_with_event_conditions` (Block Set) List of event conditions that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_event_conditions))
 - `trigger_with_outcome_probability_conditions` (Block Set) Probability conditions for outcomes that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_outcome_probability_conditions))
+- `trigger_with_segments` (Set of String) Trigger action map if any segment in the list is assigned to a given customer.
 - `weight` (Number) Weight of the action map with higher number denoting higher weight. Low=1, Medium=2, High=3. Defaults to `2`.
 
 ### Read-Only
@@ -73,6 +73,7 @@ Optional:
 
 - `action_template_id` (String) Action template associated with the action map. For media type contentOffer.
 - `architect_flow_fields` (Block Set, Max: 1) Architect Flow Id and input contract. For media type architectFlow. (see [below for nested schema](#nestedblock--action--architect_flow_fields))
+- `is_pacing_enabled` (Boolean) Whether this action should be throttled. Defaults to `true`.
 - `open_action_fields` (Block Set, Max: 1) Admin-configurable fields of an open action. For media type openAction. (see [below for nested schema](#nestedblock--action--open_action_fields))
 - `web_messaging_offer_fields` (Block Set, Max: 1) Admin-configurable fields of a web messaging offer action. For media type webMessagingOffer. (see [below for nested schema](#nestedblock--action--web_messaging_offer_fields))
 
