@@ -28,7 +28,8 @@ export TAR_FILE="$TMPDIR/${FILE_BASENAME}_$(uname -s)_$(uname -m).tar.gz"
 	echo "Downloading GoReleaser $VERSION..."
 	curl -sfLo "$TAR_FILE" \
 		"$RELEASES_URL/download/$VERSION/${FILE_BASENAME}_$(uname -s)_$(uname -m).tar.gz"
+
 )
 
 tar -xf "$TAR_FILE" -C "$TMPDIR"
-"${TMPDIR}/goreleaser" "$@" " --timeout 45m --parallelism 3"
+"${TMPDIR}/goreleaser" "$@ --parallelism 3"
