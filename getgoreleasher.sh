@@ -1,0 +1,48 @@
+#!/bin/sh
+set -e
+
+if test "$DISTRIBUTION" = "pro"; then
+	echo "Using Pro distribution..."
+	RELEASES_URL="https://github.com/goreleaser/goreleaser-pro/releases"
+	FILE_BASENAME="goreleaser-pro"
+	LATEST="$(curl -sf https://goreleaser.com/static/latest-pro)"
+else
+	echo "Using the OSS distribution..."
+	RELEASES_URL="https://github.com/goreleaser/goreleaser/releases"
+	FILE_BASENAME="goreleaser"
+	LATEST="$(curl -sf https://goreleaser.com/static/latest)"
+fi
+
+test -z "$VERSION" && VERSION="$LATEST"
+
+test -z "$VERSION" && {
+	echo "Unable to get goreleaser version." >&2
+	exit 1
+}
+
+test -z "$TMPDIR" && TMPDIR="$(mktemp -d)"
+export TAR_FILE="$TMPDIR/${FILE_BASENAME}_$(uname -s)_$(uname -m).tar.gz"
+
+(
+	cd "$TMPDIR"
+	echo "Downloading GoReleaser $VERSION..."
+	curl -sfLo "$TAR_FILE" \
+		"$RELEASES_URL/download/$VERSION/${FILE_BASENAME}_$(uname -s)_$(uname -m).tar.gz"
+	curl -sfLo "checksums.txt" "$RELEASES_URL/download/$VERSION/checksums.txt"
+	curl -sfLo "checksums.txt.sig" "$RELEASES_URL/download/$VERSION/checksums.txt.sig"
+	curl -sfLo "checksums.txt.pem" "$RELEASES_URL/download/$VERSION/checksums.txt.pem"
+	echo "Verifying checksums..."
+	sha256sum --quiet --check checksums.txt
+	if command -v cosign >/dev/null 2>&1; then
+		echo "Verifying signatures..."
+		cosign verify-blob \
+			--cert checksums.txt.pem \
+			--signature checksums.txt.sig \
+			checksums.txt
+	else
+		echo "Could not verify signatures, cosign is not installed."
+	fi
+)
+
+tar -xf "$TAR_FILE" -C "$TMPDIR"
+"${TMPDIR}/goreleaser" "$@"
