@@ -1,4 +1,10 @@
 pipeline {
+  agent {
+        node {
+            label 'dev_v2'
+        }
+  }
+    
   stages {
     // stage('Compile') {
     //   steps {
