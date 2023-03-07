@@ -28,7 +28,7 @@ pipeline {
       }
 
       steps {
-        sh './getgoreleaser.sh'
+        sh './getgoreleaser.sh release --clean --release-notes=CHANGELOG.md --timeout 45m --parallelism 3'
       }
     }
   }
