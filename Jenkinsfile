@@ -28,7 +28,7 @@ pipeline {
       }
 
       steps {
-        sh 'ls -al && ./getgoreleaser.sh'
+        sh 'chmod 755 goreleaser.sh && ./getgoreleaser.sh'
       }
     }
   }
