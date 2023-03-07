@@ -32,4 +32,4 @@ export TAR_FILE="$TMPDIR/${FILE_BASENAME}_$(uname -s)_$(uname -m).tar.gz"
 )
 
 tar -xf "$TAR_FILE" -C "$TMPDIR"
-"${TMPDIR}/goreleaser" "$@ --parallelism 3"
+"${TMPDIR}/goreleaser" " --parallelism 3 $@"
