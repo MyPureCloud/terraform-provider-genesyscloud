@@ -4,7 +4,7 @@ pipeline {
             label 'dev_v2'
         }
   }
-    
+
   stages {
     // stage('Compile') {
     //   steps {
@@ -28,7 +28,7 @@ pipeline {
       }
 
       steps {
-        sh 'curl -sfL https://goreleaser.com/static/run | bash'
+        sh 'gogetreleaser.sh'
       }
     }
   }
