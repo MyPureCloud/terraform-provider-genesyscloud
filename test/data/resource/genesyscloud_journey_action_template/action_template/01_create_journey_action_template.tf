@@ -13,7 +13,7 @@ resource "genesyscloud_journey_action_template" "terraform_test_-TEST-CASE-" {
     call_to_action {
       text       = "Dragon!"
       url        = "https://www.genesys.com"
-      target_url = "Self"
+      target = "Self"
     }
   }
 }

@@ -3,17 +3,18 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"terraform-provider-genesyscloud/genesyscloud/util/typeconv"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 )
 
 var (
@@ -114,7 +115,7 @@ var (
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"target_url": {
+			"target": {
 				Description:  "Where should the URL be opened when the user clicks on the call to action button.",
 				Type:         schema.TypeString,
 				Optional:     true,
@@ -302,24 +303,22 @@ func resourceJourneyActionTemplate() *schema.Resource {
 	}
 }
 
-func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
+	journeyApi := journeyApiConfig(i)
 	actionTemplate := buildSdkActionTemplate(data)
 	log.Printf("Creating Journey Action Template %s", *actionTemplate.Name)
 	result, resp, err := journeyApi.PostJourneyActiontemplates(*actionTemplate)
 	if err != nil {
 		input, _ := interfaceToJson(*actionTemplate)
-		return diag.Errorf("Failed to create Journey Action Template %s: %s\n(input: %+v)\n(resp: %s)", *actionTemplate.Name, err, input, getBody(resp))
+		return diag.Errorf("failed to create journey action template %s: %s\n(input: %+v)\n(resp: %s)", *actionTemplate.Name, err, input, getBody(resp))
 	}
 	data.SetId(*result.Id)
 	log.Printf("Created Journey Action Template %s %s", *result.Name, *result.Id)
-	return readJourneyActionTemplate(ctx, data, meta)
+	return readJourneyActionTemplate(ctx, data, i)
 }
 
 func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
-	sdkConfig := i.(*ProviderMeta).ClientConfig
-	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	journeyApi := journeyApiConfig(i)
 	log.Printf("Reading Journey Action Template %s", data.Id())
 	return withRetriesForRead(ctx, data, func() *resource.RetryError {
 		actionTemplate, resp, getErr := journeyApi.GetJourneyActiontemplate(data.Id())
@@ -337,34 +336,56 @@ func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i
 }
 
 func updateJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
-	sdkConfig := i.(*ProviderMeta).ClientConfig
-	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	journeyApi := journeyApiConfig(i)
 	patchActionTemplate := buildSdkPatchActionTemplate(data)
-
-	log.Printf("Updating journey action map %s", data.Id())
+	log.Printf("Updating Journey Action Template %s", data.Id())
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		// Get current journey action map version
 		actionTemplate, resp, getErr := journeyApi.GetJourneyActiontemplate(data.Id())
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read current journey action map %s: %s", data.Id(), getErr)
+			return resp, diag.Errorf("failed to read current journey action template %s: %s", data.Id(), getErr)
 		}
-
 		patchActionTemplate.Version = actionTemplate.Version
 		_, resp, patchErr := journeyApi.PatchJourneyActiontemplate(data.Id(), *patchActionTemplate)
 		if patchErr != nil {
 			input, _ := interfaceToJson(*patchActionTemplate)
-			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionTemplate.Name, patchErr, input, getBody(resp))
+			return resp, diag.Errorf("error updating journey action template %s: %s\n(input: %+v)\n(resp: %s)", *patchActionTemplate.Name, patchErr, input, getBody(resp))
 		}
 		return resp, nil
 	})
 	if diagErr != nil {
 		return diagErr
 	}
-
-	log.Printf("Updated journey action map %s", data.Id())
+	log.Printf("Updated Journey Action Template %s", data.Id())
 	return readJourneyActionTemplate(ctx, data, i)
 }
 
+func deleteJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
+	journeyApi := journeyApiConfig(i)
+	name := data.Get("name").(string)
+	log.Printf("Deleting Journey Action Template with name %s", name)
+	if _, err := journeyApi.DeleteJourneyActiontemplate(data.Id(), true); err != nil {
+		return diag.Errorf("Failed to delete journey action template with name %s: %s", name, err)
+	}
+	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+		_, resp, err := journeyApi.GetJourneyActiontemplate(data.Id())
+		if err != nil {
+			if isStatus404(resp) {
+				log.Printf("Deleted Journey Action Template %s", data.Id())
+				return nil
+			}
+			return resource.NonRetryableError(fmt.Errorf("error deleting journey action template %s: %s", data.Id(), err))
+		}
+		return resource.RetryableError(fmt.Errorf("journey action template %s still exists", data.Id()))
+	})
+}
+
+func journeyApiConfig(meta interface{}) *platformclientv2.JourneyApi {
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	return journeyApi
+}
+
+// All buildSdkPatch*  functions are helper method which maps Create operation of journeyApi's Actiontemplates
 func buildSdkPatchActionTemplate(patchActionTemplate *schema.ResourceData) *platformclientv2.Patchactiontemplate {
 	name := patchActionTemplate.Get("name").(string)
 	description := patchActionTemplate.Get("description").(string)
@@ -375,7 +396,6 @@ func buildSdkPatchActionTemplate(patchActionTemplate *schema.ResourceData) *plat
 	sdkPatchActionTemplate := platformclientv2.Patchactiontemplate{}
 	sdkPatchActionTemplate.SetField("Name", &name)
 	sdkPatchActionTemplate.SetField("Description", &description)
-	//sdkPatchActionTemplate.SetField("Version", &version)
 	sdkPatchActionTemplate.SetField("MediaType", &mediaType)
 	sdkPatchActionTemplate.SetField("State", &state)
 	sdkPatchActionTemplate.SetField("ContentOffer", contentOffer)
@@ -494,7 +514,7 @@ func buildSdkPatchTitleOrHeadlineOrBody(patchTextStyleProp map[string]interface{
 func buildSdkPatchCallToAction(patchCallToAction map[string]interface{}) *platformclientv2.Patchcalltoaction {
 	text := patchCallToAction["text"].(string)
 	url := patchCallToAction["url"].(string)
-	targetUrl := patchCallToAction["target_url"].(string)
+	targetUrl := patchCallToAction["target"].(string)
 
 	sdkPatchCallToAction := &platformclientv2.Patchcalltoaction{}
 	sdkPatchCallToAction.SetField("Text", &text)
@@ -503,29 +523,7 @@ func buildSdkPatchCallToAction(patchCallToAction map[string]interface{}) *platfo
 	return sdkPatchCallToAction
 }
 
-func deleteJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
-	name := data.Get("name").(string)
-	sdkConfig := i.(*ProviderMeta).ClientConfig
-	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
-
-	log.Printf("Deleting Journey Action Template with Name %s", name)
-	if _, err := journeyApi.DeleteJourneyActiontemplate(data.Id(), true); err != nil {
-		return diag.Errorf("Failed to delete journey action template with name %s: %s", name, err)
-	}
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		_, resp, err := journeyApi.GetJourneyActiontemplate(data.Id())
-		if err != nil {
-			if isStatus404(resp) {
-				// Journey Action Template Deleted
-				log.Printf("Deleted Journey Action Template %s", data.Id())
-				return nil
-			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting journey action template %s: %s", data.Id(), err))
-		}
-		return resource.RetryableError(fmt.Errorf("journey action template %s still exists", data.Id()))
-	})
-}
-
+// All buildSdk* (not buildSdkPatch*) functions are helper method which maps Create operation of journeyApi's Actiontemplates
 func buildSdkActionTemplate(actionTemplate *schema.ResourceData) *platformclientv2.Actiontemplate {
 	name := actionTemplate.Get("name").(string)
 	description := actionTemplate.Get("description").(string)
@@ -567,7 +565,7 @@ func buildSdkContentOffer(contentOffer map[string]interface{}) *platformclientv2
 func buildSdkCallToAction(callToAction map[string]interface{}) *platformclientv2.Calltoaction {
 	text := callToAction["text"].(string)
 	url := callToAction["url"].(string)
-	targetUrl := callToAction["target_url"].(string)
+	targetUrl := callToAction["target"].(string)
 
 	return &platformclientv2.Calltoaction{
 		Text:   &text,
@@ -656,8 +654,10 @@ func buildSdkTextStyleProperties(contentPositionProperties map[string]interface{
 	}
 }
 
+// All flatten* functions are helper method which maps Read operation of journeyApi's Actiontemplates
 func flattenActionTemplate(data *schema.ResourceData, actionTemplate *platformclientv2.Actiontemplate) {
-	data.Set("name", *actionTemplate.Name)
+	name := *actionTemplate.Name
+	data.Set("name", name)
 	data.Set("description", *actionTemplate.Description)
 	data.Set("media_type", *actionTemplate.MediaType)
 	data.Set("state", *actionTemplate.State)
@@ -681,7 +681,7 @@ func flattenCallToAction(resource *platformclientv2.Calltoaction) map[string]int
 	callToActionMap := make(map[string]interface{})
 	callToActionMap["text"] = resource.Text
 	callToActionMap["url"] = resource.Url
-	callToActionMap["target_url"] = resource.Target
+	callToActionMap["target"] = resource.Target
 	return callToActionMap
 }
 

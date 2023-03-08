@@ -14,7 +14,9 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
 )
 
-const resource_name = "genesyscloud_journey_action_template"
+const (
+	actionTemplateResourceName = "genesyscloud_journey_action_template"
+)
 
 func TestAccResourceJourneyActionTemplate(t *testing.T) {
 	runJourneyActionTemplateTestCase(t, "action_template")
@@ -26,7 +28,7 @@ func runJourneyActionTemplateTestCase(t *testing.T, testCaseName string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
 		ProviderFactories: ProviderFactories,
-		Steps:             testrunner.GenerateResourceTestSteps(resource_name, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(actionTemplateResourceName, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyActionTemplatesDestroyed,
 	})
 }
@@ -65,7 +67,7 @@ func cleanupJourneyActionTemplate(idPrefix string) {
 			if actionTemp.Name != nil && strings.HasPrefix(*actionTemp.Name, idPrefix) {
 				_, delErr := journeyApi.DeleteJourneyActiontemplate(*actionTemp.Id, true)
 				if delErr != nil {
-					diag.Errorf("Failed to Delete Journey Action Template %s (%s): %s", *actionTemp.Id, *actionTemp.Name, delErr)
+					diag.Errorf("failed to delete journey action template %s (%s): %s", *actionTemp.Id, *actionTemp.Name, delErr)
 					return
 				}
 				log.Printf("Deleted Journey Action Template %s (%s)", *actionTemp.Id, *actionTemp.Name)
@@ -79,13 +81,13 @@ func cleanupJourneyActionTemplate(idPrefix string) {
 func testVerifyJourneyActionTemplatesDestroyed(state *terraform.State) error {
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_journey_action_template" {
+		if rs.Type != actionTemplateResourceName {
 			continue
 		}
 
 		actionMap, resp, err := journeyApi.GetJourneyActiontemplate(rs.Primary.ID)
 		if actionMap != nil {
-			return fmt.Errorf("journey action map (%s) still exists", rs.Primary.ID)
+			return fmt.Errorf("journey action template (%s) still exists", rs.Primary.ID)
 		}
 
 		if isStatus404(resp) {
