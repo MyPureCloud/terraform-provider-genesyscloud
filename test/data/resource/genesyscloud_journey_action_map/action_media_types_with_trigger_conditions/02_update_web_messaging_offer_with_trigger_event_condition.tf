@@ -1,7 +1,7 @@
 resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   display_name = "terraform_test_-TEST-CASE-_updated"
   trigger_with_event_conditions {
-  key = "page.titleChanged"
+  key = "page.title"
   values = ["mytitle_updated"]
   operator = "equal"
   event_name = "page_viewed"
