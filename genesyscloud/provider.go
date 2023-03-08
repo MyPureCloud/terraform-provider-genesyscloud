@@ -85,6 +85,7 @@ func registerResources() {
 	RegisterResource("genesyscloud_integration_action", resourceIntegrationAction())
 	RegisterResource("genesyscloud_integration_credential", resourceCredential())
 	RegisterResource("genesyscloud_journey_action_map", resourceJourneyActionMap())
+	RegisterResource("genesyscloud_journey_action_template", resourceJourneyActionTemplate())
 	RegisterResource("genesyscloud_journey_outcome", resourceJourneyOutcome())
 	RegisterResource("genesyscloud_journey_segment", resourceJourneySegment())
 	RegisterResource("genesyscloud_knowledge_knowledgebase", resourceKnowledgeKnowledgebase())
