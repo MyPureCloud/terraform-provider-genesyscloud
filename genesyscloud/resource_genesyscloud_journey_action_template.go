@@ -35,11 +35,6 @@ var (
 			Required:     true,
 			ValidateFunc: validation.StringInSlice([]string{"webchat", "webMessagingOffer", "contentOffer", "architectFlow", "openAction"}, false),
 		},
-		"version": {
-			Description: "The version of the action template.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-		},
 		"state": {
 			Description:  "The state of the action template.",
 			Type:         schema.TypeString,
@@ -623,11 +618,13 @@ func buildSdkCtaButtonStyleProperties(contentPositionProperties map[string]inter
 	font := contentPositionProperties["font"].(string)
 	fontSize := contentPositionProperties["font_size"].(string)
 	textAlign := contentPositionProperties["text_align"].(string)
+	backgoundColor := contentPositionProperties["background_color"].(string)
 	return &platformclientv2.Ctabuttonstyleproperties{
-		Color:     &color,
-		Font:      &font,
-		FontSize:  &fontSize,
-		TextAlign: &textAlign,
+		Color:           &color,
+		Font:            &font,
+		FontSize:        &fontSize,
+		TextAlign:       &textAlign,
+		BackgroundColor: &backgoundColor,
 	}
 }
 
