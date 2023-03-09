@@ -13,7 +13,7 @@ import (
 
 func dataSourceJourneyActionTemplate() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Action Map. Select a journey action map by name",
+		Description: "Data source for Genesys Cloud Action Template. Select a journey action template by name",
 		ReadContext: readWithPooledClient(dataSourceJourneyActionTemplateRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
