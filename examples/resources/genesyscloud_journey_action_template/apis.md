@@ -1,0 +1,5 @@
+* [GET /api/v2/journey/actiontemplates](https://developer.genesys.cloud/commdigital/journey/journey-apis#get-api-v2-journey-actiontemplates)
+* [POST /api/v2/journey/actiontemplates](https://developer.genesys.cloud/commdigital/journey/journey-apis#post-api-v2-journey-actiontemplates)
+* [GET /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/commdigital/journey/journey-apis#get-api-v2-journey-actiontemplates--actionTemplateId-)
+* [PATCH /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/commdigital/journey/journey-apis#patch-api-v2-journey-actiontemplates--actionTemplateId-)
+* [DELETE /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/commdigital/journey/journey-apis#delete-api-v2-journey-actiontemplates--actionTemplateId-)

@@ -24,7 +24,7 @@ func runDataJourneyActionTemplateTestCase(t *testing.T, testCaseName string) {
 		Steps: testrunner.GenerateDataSourceTestSteps(resourceName, testCaseName, []resource.TestCheckFunc{
 			resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttrPair("data."+testObjectFullName, "id", testObjectFullName, "id"),
-				resource.TestCheckResourceAttr(testObjectFullName, "display_name", testObjectName+"_to_find"),
+				resource.TestCheckResourceAttr(testObjectFullName, "name", testObjectName),
 			),
 		}),
 	})

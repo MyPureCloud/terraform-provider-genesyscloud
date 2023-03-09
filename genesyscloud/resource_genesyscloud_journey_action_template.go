@@ -681,9 +681,8 @@ func buildSdkTextStyleProperties(contentPositionProperties map[string]interface{
 
 // All flatten* functions are helper method which maps Read operation of journeyApi's Actiontemplates
 func flattenActionTemplate(data *schema.ResourceData, actionTemplate *platformclientv2.Actiontemplate) {
-	name := *actionTemplate.Name
-	data.Set("name", name)
-	data.Set("description", *actionTemplate.Description)
+	data.Set("name", *actionTemplate.Name)
+	resourcedata.SetNillableValue(data, "description", actionTemplate.Description)
 	data.Set("media_type", *actionTemplate.MediaType)
 	data.Set("state", *actionTemplate.State)
 	resourcedata.SetNillableValue(data, "content_offer", flattenAsList(actionTemplate.ContentOffer, flattenActionTemplateContentOffer))

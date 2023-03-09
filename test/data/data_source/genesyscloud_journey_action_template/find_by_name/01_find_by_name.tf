@@ -1,6 +1,5 @@
 data "genesyscloud_journey_action_template" "terraform_test_-TEST-CASE-" {
-  name = "terraform_test_-TEST-CASE-_to_find"
-
+  name = "terraform_test_-TEST-CASE-"
   depends_on = [genesyscloud_journey_action_template.terraform_test_-TEST-CASE-]
 }
 
@@ -63,6 +62,5 @@ resource "genesyscloud_journey_action_template" "terraform_test_-TEST-CASE-" {
         text_align = "Center"
       }
     }
-
   }
 }
