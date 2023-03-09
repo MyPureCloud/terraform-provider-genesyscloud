@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -87,31 +88,19 @@ func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, me
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOrgauthorizationPairing())
 
-		schemaUserIds := InterfaceListToStrings(d.Get("user_ids").([]interface{}))
 		if sdktrustrequest.Users != nil {
 			ids := make([]string, 0)
 			for _, item := range *sdktrustrequest.Users {
 				ids = append(ids, *item.Id)
 			}
-			// if lists are the same: Set in original order to avoid plan not empty error
-			if listsAreEquivalent(schemaUserIds, ids) {
-				d.Set("user_ids", schemaUserIds)
-			} else {
-				d.Set("user_ids", ids)
-			}
+			d.Set("user_ids", ids)
 		}
-		schemaGroupIds := InterfaceListToStrings(d.Get("group_ids").([]interface{}))
 		if sdktrustrequest.Groups != nil {
 			ids := make([]string, 0)
 			for _, item := range *sdktrustrequest.Groups {
 				ids = append(ids, *item.Id)
 			}
-			// if lists are the same: Set in original order to avoid plan not empty error
-			if listsAreEquivalent(schemaGroupIds, ids) {
-				d.Set("group_ids", schemaGroupIds)
-			} else {
-				d.Set("group_ids", ids)
-			}
+			d.Set("group_ids", ids)
 		}
 
 		log.Printf("Read Orgauthorization Pairing %s", d.Id())

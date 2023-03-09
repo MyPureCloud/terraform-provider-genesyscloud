@@ -116,14 +116,6 @@ var (
 	}
 )
 
-/*
-	NOTE:
-	This resource currently does not use the Go SDk and instead makes API calls directly.
-	The Go SDK can not properly handle process automation triggers due the value and values
-	attributes in the matchCriteria object being listed as JsonNode in the swagger docs.
-	A JsonNode is a placeholder type with no nested values which creates problems in Go
-	because it can't properly determine a type for the value/values field.
-*/
 func resourceProcessAutomationTrigger() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Process Automation Trigger

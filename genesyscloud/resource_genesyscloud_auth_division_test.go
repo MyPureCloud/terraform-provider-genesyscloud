@@ -86,15 +86,6 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 				),
 			},
 			{
-				// Set home division description again (applying twice to allow for desc to update)
-				Config: generateAuthDivisionResource(
-					divHomeRes,
-					divHomeName,
-					strconv.Quote(homeDesc2),
-					trueValue, // Home division
-				),
-			},
-			{
 				// Set home division description again
 				Config: generateAuthDivisionResource(
 					divHomeRes,

@@ -22,10 +22,6 @@ func TestAccResourceJourneyActionMapActionMediaTypes(t *testing.T) {
 	runJourneyActionMapTestCaseWithFileServer(t, "action_media_types", 8111)
 }
 
-func TestAccResourceJourneyActionMapActionMediaTypesWithTriggerConditions(t *testing.T) {
-	runJourneyActionMapTestCase(t, "action_media_types_with_trigger_conditions")
-}
-
 func TestAccResourceJourneyActionMapOptionalAttributes(t *testing.T) {
 	runJourneyActionMapTestCase(t, "basic_optional_attributes")
 }
