@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"fmt"
-	"math/rand"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -911,7 +910,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 
 	var (
 		domainRes = "routing-domain1"
-		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainId  = fmt.Sprintf("terraform%v.com", time.Now().Unix())
 	)
 
 	err := authorizeSdk()
