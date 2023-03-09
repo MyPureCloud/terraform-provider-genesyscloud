@@ -226,9 +226,6 @@ func New(version string) func() *schema.Provider {
 			copiedDataSources[k] = v
 		}
 
-		for k, _ := range copiedResources {
-			log.Printf("The following resources will be registered: %s", k)
-		}
 		return &schema.Provider{
 			Schema: map[string]*schema.Schema{
 				"access_token": {

@@ -36,7 +36,7 @@ var (
 		"trigger_with_segments": {
 			Description: "Trigger action map if any segment in the list is assigned to a given customer.",
 			Type:        schema.TypeSet,
-			Required:    true,
+			Optional:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		"trigger_with_event_conditions": {
@@ -230,6 +230,12 @@ var (
 				Optional:    true,
 				MaxItems:    1,
 				Elem:        openActionFieldsResource,
+			},
+			"is_pacing_enabled": {
+				Description: "Whether this action should be throttled.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
 			},
 		},
 	}
@@ -494,7 +500,7 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Actionmap) {
 	d.Set("is_active", *actionMap.IsActive)
 	d.Set("display_name", *actionMap.DisplayName)
-	d.Set("trigger_with_segments", stringListToSet(*actionMap.TriggerWithSegments))
+	d.Set("trigger_with_segments", stringListToSetOrNil(actionMap.TriggerWithSegments))
 	resourcedata.SetNillableValue(d, "trigger_with_event_conditions", flattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
 	resourcedata.SetNillableValue(d, "trigger_with_outcome_probability_conditions", flattenList(actionMap.TriggerWithOutcomeProbabilityConditions, flattenOutcomeProbabilityCondition))
 	resourcedata.SetNillableValue(d, "page_url_conditions", flattenList(actionMap.PageUrlConditions, flattenUrlCondition))
@@ -658,6 +664,7 @@ func buildSdkActivation(activation map[string]interface{}) *platformclientv2.Act
 func flattenActionMapAction(actionMapAction *platformclientv2.Actionmapaction) map[string]interface{} {
 	actionMapActionMap := make(map[string]interface{})
 	actionMapActionMap["media_type"] = *actionMapAction.MediaType
+	actionMapActionMap["is_pacing_enabled"] = *actionMapAction.IsPacingEnabled
 	if actionMapAction.ActionTemplate != nil {
 		stringmap.SetValueIfNotNil(actionMapActionMap, "action_template_id", actionMapAction.ActionTemplate.Id)
 	}
@@ -669,6 +676,7 @@ func flattenActionMapAction(actionMapAction *platformclientv2.Actionmapaction) m
 
 func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformclientv2.Actionmapaction {
 	mediaType := actionMapAction["media_type"].(string)
+	isPacingEnabled := actionMapAction["is_pacing_enabled"].(bool)
 	actionMapActionTemplate := getActionMapActionTemplate(actionMapAction)
 	architectFlowFields := stringmap.BuildSdkListFirstElement(actionMapAction, "architect_flow_fields", buildSdkArchitectFlowFields, true)
 	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(actionMapAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields, true)
@@ -676,6 +684,7 @@ func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformcl
 
 	return &platformclientv2.Actionmapaction{
 		MediaType:               &mediaType,
+		IsPacingEnabled:         &isPacingEnabled,
 		ActionTemplate:          actionMapActionTemplate,
 		ArchitectFlowFields:     architectFlowFields,
 		WebMessagingOfferFields: webMessagingOfferFields,
@@ -685,6 +694,7 @@ func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformcl
 
 func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.Patchaction {
 	mediaType := patchAction["media_type"].(string)
+	isPacingEnabled := patchAction["is_pacing_enabled"].(bool)
 	actionMapActionTemplate := getActionMapActionTemplate(patchAction)
 	architectFlowFields := stringmap.BuildSdkListFirstElement(patchAction, "architect_flow_fields", buildSdkArchitectFlowFields, true)
 	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(patchAction, "web_messaging_offer_fields", buildSdkPatchWebMessagingOfferFields, true)
@@ -692,6 +702,7 @@ func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.P
 
 	sdkPatchAction := platformclientv2.Patchaction{}
 	sdkPatchAction.SetField("MediaType", &mediaType)
+	sdkPatchAction.SetField("IsPacingEnabled", &isPacingEnabled)
 	sdkPatchAction.SetField("ActionTemplate", actionMapActionTemplate)
 	sdkPatchAction.SetField("ArchitectFlowFields", architectFlowFields)
 	sdkPatchAction.SetField("WebMessagingOfferFields", webMessagingOfferFields)
