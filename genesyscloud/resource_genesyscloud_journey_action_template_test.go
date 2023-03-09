@@ -38,11 +38,6 @@ func setupJourneyActionTemplate(t *testing.T, testCaseName string) {
 	}
 
 	testCasePrefix := testrunner.TestObjectIdPrefix + testCaseName
-	cleanupJourneySegments(testCasePrefix)
-	cleanupArchitectScheduleGroups(testCasePrefix)
-	cleanupArchitectSchedules(testCasePrefix)
-	cleanupFlows(testCasePrefix)
-	cleanupJourneyActionMaps(testCasePrefix)
 	cleanupJourneyActionTemplate(testCasePrefix)
 }
 
