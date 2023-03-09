@@ -157,6 +157,7 @@ func registerDataSources() {
 	RegisterDataSource("genesyscloud_integration_action", dataSourceIntegrationAction())
 	RegisterDataSource("genesyscloud_integration_credential", dataSourceIntegrationCredential())
 	RegisterDataSource("genesyscloud_journey_action_map", dataSourceJourneyActionMap())
+	RegisterDataSource("genesyscloud_journey_action_template", dataSourceJourneyActionTemplate())
 	RegisterDataSource("genesyscloud_journey_outcome", dataSourceJourneyOutcome())
 	RegisterDataSource("genesyscloud_journey_segment", dataSourceJourneySegment())
 	RegisterDataSource("genesyscloud_knowledge_knowledgebase", dataSourceKnowledgeKnowledgebase())

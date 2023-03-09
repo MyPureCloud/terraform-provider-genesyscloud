@@ -1,5 +1,5 @@
 resource "genesyscloud_journey_action_template" "terraform_test_-TEST-CASE-" {
-  name        = "terraform_test_jay_-TEST-CASE-updated"
+  name        = "terraform_test_-TEST-CASE-updated"
   description = "Text and image content offer_updated"
   media_type  = "contentOffer"
   state       = "Active"

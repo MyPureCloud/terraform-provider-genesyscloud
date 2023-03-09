@@ -283,6 +283,34 @@ var (
 	}
 )
 
+func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	journeyApi := platformclientv2.NewJourneyApiWithConfig(clientConfig)
+	pageCount := 1 // Needed because of broken journey common paging
+	for pageNum := 1; pageNum <= pageCount; pageNum++ {
+		const pageSize = 100
+		actionTemplates, _, getErr := journeyApi.GetJourneyActiontemplates(pageNum, pageSize, "", "", "", nil, "")
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of journey action maps: %v", getErr)
+		}
+		if actionTemplates.Entities == nil || len(*actionTemplates.Entities) == 0 {
+			break
+		}
+		for _, actionTemplate := range *actionTemplates.Entities {
+			resources[*actionTemplate.Id] = &ResourceMeta{Name: *actionTemplate.Name}
+		}
+		pageCount = *actionTemplates.PageCount
+	}
+	return resources, nil
+}
+
+func journeyActionTemplateExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllJourneyActionTemplates),
+		RefAttrs:         map[string]*RefAttrSettings{}, // No Reference
+	}
+}
+
 func resourceJourneyActionTemplate() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Action Template",
