@@ -44,18 +44,6 @@ resource "genesyscloud_journey_action_template" "terraform_test_-TEST-CASE-" {
         font_size  = "18pt"
         text_align = "Center"
       }
-      headline {
-        color      = "#fdfdfd"
-        font       = "inherit"
-        font_size  = "14pt"
-        text_align = "Center"
-      }
-      body {
-        color      = "#fdfdfd"
-        font       = "inherit"
-        font_size  = "8pt"
-        text_align = "Center"
-      }
     }
   }
 }
