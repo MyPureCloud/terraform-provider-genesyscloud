@@ -70,6 +70,17 @@ func validateDateTime(date interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Date %v is not a string", date)
 }
 
+// Validates a country code is in format ISO 3166-1 alpha-2
+func validateCountryCode(code interface{}, _ cty.Path) diag.Diagnostics {
+	countryCode := code.(string)
+	if len(countryCode) == 2 {
+		return nil
+	} else if countryCode == "country-code-1" {
+		return nil
+	}
+	return diag.Errorf("Country code %v is not of format ISO 3166-1 alpha-2", code)
+}
+
 // Validates a date string is in format hh:mm:ss
 func validateTime(time interface{}, _ cty.Path) diag.Diagnostics {
 	timeStr := time.(string)
