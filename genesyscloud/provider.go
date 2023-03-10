@@ -120,6 +120,7 @@ func registerResources() {
 	RegisterResource("genesyscloud_routing_queue", resourceRoutingQueue())
 	RegisterResource("genesyscloud_routing_skill", resourceRoutingSkill())
 	RegisterResource("genesyscloud_routing_skill_group", resourceRoutingSkillGroup())
+	RegisterResource("genesyscloud_routing_sms_address", resourceRoutingSmsAddress())
 	RegisterResource("genesyscloud_routing_settings", resourceRoutingSettings())
 	RegisterResource("genesyscloud_routing_utilization", resourceRoutingUtilization())
 	RegisterResource("genesyscloud_routing_wrapupcode", resourceRoutingWrapupCode())
@@ -187,6 +188,7 @@ func registerDataSources() {
 	RegisterDataSource("genesyscloud_routing_settings", dataSourceRoutingSettings())
 	RegisterDataSource("genesyscloud_routing_skill", dataSourceRoutingSkill())
 	RegisterDataSource("genesyscloud_routing_skill_group", dataSourceRoutingSkillGroup())
+	RegisterDataSource("genesyscloud_routing_sms_address", dataSourceRoutingSmsAddress())
 	RegisterDataSource("genesyscloud_routing_email_domain", dataSourceRoutingEmailDomain())
 	RegisterDataSource("genesyscloud_routing_wrapupcode", dataSourceRoutingWrapupcode())
 	RegisterDataSource("genesyscloud_script", dataSourceScript())
@@ -226,9 +228,6 @@ func New(version string) func() *schema.Provider {
 			copiedDataSources[k] = v
 		}
 
-		for k, _ := range copiedResources {
-			log.Printf("The following resources will be registered: %s", k)
-		}
 		return &schema.Provider{
 			Schema: map[string]*schema.Schema{
 				"access_token": {
