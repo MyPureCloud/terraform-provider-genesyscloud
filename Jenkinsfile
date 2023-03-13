@@ -5,6 +5,10 @@ pipeline {
         }
   }
 
+   environment { 
+      GPG_FINGERPINT= sh (returnStdout: true, script: 'echo aoeu').trim()
+   }
+
   stages {
     // stage('Compile') {
     //   steps {
