@@ -382,6 +382,7 @@ func journeyActionMapExporter() *ResourceExporter {
 			"action.architect_flow_fields.architect_flow_id":                    {RefType: "genesyscloud_flow"},
 			"action_map_schedule_groups.action_map_schedule_group_id":           {RefType: "genesyscloud_architect_schedulegroups"},
 			"action_map_schedule_groups.emergency_action_map_schedule_group_id": {RefType: "genesyscloud_architect_schedulegroups"},
+			"action.action_template_id":                                         {RefType: "genesyscloud_journey_action_template"},
 		},
 	}
 }
