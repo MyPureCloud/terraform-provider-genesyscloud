@@ -6,7 +6,7 @@ pipeline {
         }
   }
 
-  tools { go '1.20.2' }
+  tools { Go '1.20.2' }
 
    environment { 
       GPG_FINGERPINT= sh (returnStdout: true, script: 'echo aoeu').trim()
