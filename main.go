@@ -7,6 +7,9 @@ import (
 
 	_ "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 
+	// Required so that 'go mod tidy' does not remove a package needed for the docs generation process
+	_ "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
