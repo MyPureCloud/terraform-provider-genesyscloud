@@ -1,9 +1,9 @@
 pipeline {
-  agent {
-        node {
-            label 'dev_v2'
-        }
-  }
+  //agent {
+        // node {
+        //     label 'dev_v2'
+        // }
+  //}
 
    environment { 
       GPG_FINGERPINT= sh (returnStdout: true, script: 'echo aoeu').trim()
