@@ -1,11 +1,13 @@
 pipeline {
-  
+
   agent {
         node {
             label 'dev_v2'
         }
   }
 
+  tools { go '1.19' }
+  
    environment { 
       GPG_FINGERPINT= sh (returnStdout: true, script: 'echo aoeu').trim()
    }
