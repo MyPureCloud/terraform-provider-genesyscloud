@@ -77,7 +77,7 @@ func resourceOutboundCampaign() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`campaign_status`: {
-				Description:  `The current status of the Campaign. A Campaign may be turned 'on' or 'off'. Required for updates. A Campaign must be turned 'off' when creating.`,
+				Description:  `The current status of the Campaign. A Campaign may be turned 'on' or 'off'. Required for updates. When creating, a campaign will be initially created in an "off" state regardless of this value. If the value of campaign_status is set to "on" at time of creation, a subsequent update will occur immediately after creation to turn the campaign on.`,
 				Optional:     true,
 				Type:         schema.TypeString,
 				Computed:     true,
@@ -295,9 +295,6 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	if dialingMode != "" {
 		sdkcampaign.DialingMode = &dialingMode
 	}
-	if campaignStatus != "" {
-		sdkcampaign.CampaignStatus = &campaignStatus
-	}
 	if abandonRate != 0 {
 		sdkcampaign.AbandonRate = &abandonRate
 	}
@@ -323,6 +320,10 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 		sdkcampaign.Priority = &priority
 	}
 
+	// All campaigns have to be created in an "off" state to start out with
+	defaultCampaignStatus := "off"
+	sdkcampaign.CampaignStatus = &defaultCampaignStatus
+
 	log.Printf("Creating Outbound Campaign %s", name)
 	outboundCampaign, _, err := outboundApi.PostOutboundCampaigns(sdkcampaign)
 	if err != nil {
@@ -332,7 +333,15 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	d.SetId(*outboundCampaign.Id)
 
 	log.Printf("Created Outbound Campaign %s %s", name, *outboundCampaign.Id)
-	return readOutboundCampaign(ctx, d, meta)
+	diag := readOutboundCampaign(ctx, d, meta)
+
+	// Campaigns can be enabled after creation
+	if campaignStatus != "" && campaignStatus == "on" {
+		d.Set("campaign_status", campaignStatus)
+		// updateOutboundCampaign() calls readOutboundCampaign() at the end of the function
+		diag = updateOutboundCampaign(ctx, d, meta)
+	}
+	return diag
 }
 
 func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

@@ -350,6 +350,107 @@ data "genesyscloud_auth_division_home" "home" {}
 	})
 }
 
+func TestAccResourceOutboundCampaignStatus(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceId            = "campaign3"
+		name                  = "Test Campaign " + uuid.NewString()
+		contactListResourceId = "contact_list"
+		carResourceId         = "car"
+		siteId                = "site"
+		outboundFlowFilePath  = "../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		flowName              = "test flow " + uuid.NewString()
+		flowResourceId        = "flow"
+		wrapupcodeResourceId  = "wrapupcode"
+		locationResourceId    = "location"
+	)
+
+	// necessary to avoid errors during site creation
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	emergencyNumber := "+13178793429"
+	err = deleteLocationWithNumber(emergencyNumber)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Test campaign_status update
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateOutboundCampaignBasic(
+					resourceId,
+					name,
+					contactListResourceId,
+					siteId,
+					emergencyNumber,
+					carResourceId,
+					strconv.Quote("on"),
+					outboundFlowFilePath,
+					flowResourceId,
+					flowName,
+					"${data.genesyscloud_auth_division_home.home.name}",
+					locationResourceId,
+					wrapupcodeResourceId,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
+					verifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_campaign."+resourceId, "campaign_status", []string{"on", "complete"}),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "site_id",
+						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "call_analysis_response_set_id",
+						"genesyscloud_outbound_callanalysisresponseset."+carResourceId, "id"),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateOutboundCampaignBasic(
+					resourceId,
+					name,
+					contactListResourceId,
+					siteId,
+					emergencyNumber,
+					carResourceId,
+					strconv.Quote("off"),
+					outboundFlowFilePath,
+					flowResourceId,
+					flowName,
+					"${data.genesyscloud_auth_division_home.home.name}",
+					locationResourceId,
+					wrapupcodeResourceId,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "site_id",
+						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "call_analysis_response_set_id",
+						"genesyscloud_outbound_callanalysisresponseset."+carResourceId, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "campaign_status", "off"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            "genesyscloud_outbound_campaign." + resourceId,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"campaign_status"},
+			},
+		},
+		CheckDestroy: testVerifyOutboundCampaignDestroyed,
+	})
+}
+
 func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 	t.Parallel()
 	var (
@@ -777,7 +878,7 @@ resource "genesyscloud_location" "%s" {
 		state    = "IN"
 		country  = "US"
 		zip_code = "46278"
-	}	
+	}
 }
 
 resource "genesyscloud_telephony_providers_edges_site" "%s" {
@@ -785,7 +886,7 @@ resource "genesyscloud_telephony_providers_edges_site" "%s" {
 	description                     = "TestAccResourceSite description 1"
 	location_id                     = genesyscloud_location.%s.id
 	media_model                     = "Cloud"
-	media_regions_use_latency_based = false	
+	media_regions_use_latency_based = false
 }
 `, locationResourceId, locationName, emergencyNumber, siteId, siteName, locationResourceId)
 	}
