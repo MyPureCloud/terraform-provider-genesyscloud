@@ -35,10 +35,10 @@ pipeline {
       }
 
       steps {
-        withCredentials([file(credentialsId: 'Terraform_GPG', variable: 'terraform_gpg'),
-                 file(credentialsId: 'Terraform_GPG', variable: 'terraform_gpg')]) {
-                    sh "cp \$terraform_gpg ."
-                    sh "ls -al "
+        withCredentials([file(credentialsId: 'Terraform_GPG', variable: 'terraform_gpg_private_key'),
+                 file(credentialsId: 'Terraform_GPG', variable: 'terraform_gpg_private_key')]) {
+                    sh "cp \$terraform_gpg_private_key ."
+                    sh "./addCredToConfig.sh "
         }
 
         //sh './getgoreleaser.sh release --clean --release-notes=CHANGELOG.md --timeout 45m --parallelism 3'
