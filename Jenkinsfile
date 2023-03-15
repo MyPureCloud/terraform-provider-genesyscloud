@@ -36,7 +36,7 @@ pipeline {
 
       steps {
         withCredentials([file(credentialsId: 'Terraform_GPG', variable: 'terraform-gpg'),
-                 file(credentialsId: 'Terraform-GPG', variable: 'terraform-gpg')]) {
+                 file(credentialsId: 'Terraform_GPG', variable: 'terraform-gpg')]) {
                     sh "cp \$terraform-gpg ."
                     sh "ls -al "
         }
