@@ -37,7 +37,7 @@ pipeline {
       steps {
         withCredentials([file(credentialsId: 'Terraform_GPG', variable: 'terraform_gpg_private_key'),
                  file(credentialsId: 'Terraform_GPG', variable: 'terraform_gpg_private_key')]) {
-                    sh "cp \$terraform_gpg_private_key ."
+                    sh "cp \$terraform_gpg_private_key . & chmod 755 secret.asc"
                     sh "./addCredToConfig.sh "
         }
 
