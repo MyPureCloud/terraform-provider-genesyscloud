@@ -35,7 +35,13 @@ pipeline {
       }
 
       steps {
-        sh './getgoreleaser.sh release --clean --release-notes=CHANGELOG.md --timeout 45m --parallelism 3'
+        withCredentials([file(credentialsId: 'Terraform_GPG', variable: 'terraform-gpg'),
+                 file(credentialsId: 'Terraform-GPG', variable: 'terraform-gpg')]) {
+                    sh "cp \$terraform-gpg ."
+                    sh "ls -al "
+        }
+
+        //sh './getgoreleaser.sh release --clean --release-notes=CHANGELOG.md --timeout 45m --parallelism 3'
       }
     }
   }
