@@ -1,4 +1,4 @@
-if gpg --list-secret-keys | grep 67C54A5E 
+if gpg --list-secret-keys | grep 3C1A4272
 then
     echo "secret exists"
 else
