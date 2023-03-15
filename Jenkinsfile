@@ -20,6 +20,7 @@ pipeline {
                  file(credentialsId: 'Terraform_GPG', variable: 'terraform_gpg_private_key')]) {
                     sh "cp \$terraform_gpg_private_key /tmp/terraform_gpg_secret.asc & chmod 755 /tmp/terraform_gpg_secret.asc"
                     sh "./addCredToConfig.sh"
+                    sh "rm /tmp/terraform_gpg_secret.asc && rm secret.asc"
         }
 
         sh './getgoreleaser.sh release --clean --release-notes=CHANGELOG.md --timeout 45m --parallelism 3'
