@@ -6,6 +6,8 @@ pipeline {
         }
   }
 
+  tools { go '1.19.5' }
+
   stages {
     stage ('Release') {
       environment {
