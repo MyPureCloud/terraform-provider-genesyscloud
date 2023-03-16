@@ -56,7 +56,7 @@ func TestAccResourceOutboundCampaign(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	emergencyNumber := "+13178793430"
+	emergencyNumber := "+13178793428"
 	err = deleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
@@ -275,7 +275,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Test campaign_status update
+	// Test campaign_status can be turned on in a second run after first run's initial creation in off state
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
 		ProviderFactories: ProviderFactories,
@@ -370,13 +370,13 @@ func TestAccResourceOutboundCampaignStatus(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	emergencyNumber := "+13178793429"
+	emergencyNumber := "+13178793430"
 	err = deleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Test campaign_status update
+	// Test campaign_status can be turned on at time of creation as well
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
 		ProviderFactories: ProviderFactories,
@@ -420,7 +420,7 @@ data "genesyscloud_auth_division_home" "home" {}
 					siteId,
 					emergencyNumber,
 					carResourceId,
-					strconv.Quote("off"),
+					nullValue, // campaign_status | TODO: "completed" == "off"; but cannot explicitly set "off" status for a "completed" campaign without the API complaining /shrug
 					outboundFlowFilePath,
 					flowResourceId,
 					flowName,
@@ -436,7 +436,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "call_analysis_response_set_id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceId, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "campaign_status", "off"),
+					verifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_campaign."+resourceId, "campaign_status", []string{"off", "complete"}),
 				),
 			},
 			{
