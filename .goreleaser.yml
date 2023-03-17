@@ -55,5 +55,12 @@ signs:
       - "${artifact}"
 release:
   draft: true
+# .goreleaser.yml
 changelog:
-  skip: true
+  # Defaults to false.
+  skip: '{{ .Env.CREATE_CHANGELOG }}'
+  use: github
+  sort: asc
+  abbrev: -1
+
+
