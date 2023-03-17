@@ -58,7 +58,7 @@ release:
 # .goreleaser.yml
 changelog:
   # Defaults to false.
-  skip: '{{ .Env.CREATE_CHANGELOG }}'
+  skip: 'false'
   use: github
   sort: asc
   abbrev: -1
