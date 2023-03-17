@@ -12,7 +12,7 @@ pipeline {
     stage ('Release') {
       environment {
         GITHUB_TOKEN = credentials('MYPURECLOUD_GITHUB_TOKEN')
-        GPG_FINGERPRINT="09AD081CB36489681F3C4136FC6E114B953764EE"
+        GPG_FINGERPRINT="25D753B7C560659B057B714C970A8360B4BF5075"
       }
 
       steps {
