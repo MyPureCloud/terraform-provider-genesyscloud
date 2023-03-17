@@ -21,7 +21,7 @@ pipeline {
                     sh "rm -f secret.asc"
         }
 
-        sh './getgoreleaser.sh release --clean --release-notes=CHANGELOG.md --timeout 45m --parallelism 3'
+        sh './getgoreleaser.sh release --clean --timeout 45m --parallelism 3'
       }
     }
   }
