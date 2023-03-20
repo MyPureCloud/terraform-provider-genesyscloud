@@ -1,6 +1,7 @@
 package genesyscloud
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -275,7 +276,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Test campaign_status can be turned on in a second run after first run's initial creation in off state
+	// Test campaign_status can be turned on in a second run after first run's initial creation in off state, and then back off again
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
 		ProviderFactories: ProviderFactories,
@@ -307,6 +308,8 @@ data "genesyscloud_auth_division_home" "home" {}
 						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "call_analysis_response_set_id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceId, "id"),
+					// Add contacts to the contact list (because we have access to the state and can pull out the contactlist ID to pass to the API)
+					addContactsToContactList,
 				),
 			},
 			{
@@ -339,6 +342,35 @@ data "genesyscloud_auth_division_home" "home" {}
 				),
 			},
 			{
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateOutboundCampaignBasic(
+					resourceId,
+					name,
+					contactListResourceId,
+					siteId,
+					emergencyNumber,
+					carResourceId,
+					strconv.Quote("off"),
+					outboundFlowFilePath,
+					flowResourceId,
+					flowName,
+					"${data.genesyscloud_auth_division_home.home.name}",
+					locationResourceId,
+					wrapupcodeResourceId,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
+					verifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_campaign."+resourceId, "campaign_status", []string{"off", "complete"}),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "site_id",
+						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "call_analysis_response_set_id",
+						"genesyscloud_outbound_callanalysisresponseset."+carResourceId, "id"),
+				),
+			},
+			{
 				// Import/Read
 				ResourceName:            "genesyscloud_outbound_campaign." + resourceId,
 				ImportState:             true,
@@ -350,7 +382,7 @@ data "genesyscloud_auth_division_home" "home" {}
 	})
 }
 
-func TestAccResourceOutboundCampaignStatus(t *testing.T) {
+func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 	t.Parallel()
 	var (
 		resourceId            = "campaign3"
@@ -381,6 +413,31 @@ func TestAccResourceOutboundCampaignStatus(t *testing.T) {
 		PreCheck:          func() { TestAccPreCheck(t) },
 		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
+			// Create resources for outbound campaign
+			{
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) + generateReferencedResourcesForOutboundCampaignTests(
+					contactListResourceId,
+					"",
+					"",
+					carResourceId,
+					outboundFlowFilePath,
+					flowResourceId,
+					flowName,
+					"",
+					siteId,
+					emergencyNumber,
+					"",
+					"",
+					"${data.genesyscloud_auth_division_home.home.name}",
+					locationResourceId,
+					wrapupcodeResourceId,
+				),
+				// Add contacts to the contact list (because we have access to the state and can pull out the contactlist ID to pass to the API)
+				Check: addContactsToContactList,
+			},
+			// Now, we create the outbound campaign and it should stay running because it has contacts to call
 			{
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
@@ -420,7 +477,7 @@ data "genesyscloud_auth_division_home" "home" {}
 					siteId,
 					emergencyNumber,
 					carResourceId,
-					nullValue, // campaign_status | TODO: "completed" == "off"; but cannot explicitly set "off" status for a "completed" campaign without the API complaining /shrug
+					strconv.Quote("off"),
 					outboundFlowFilePath,
 					flowResourceId,
 					flowName,
@@ -454,7 +511,7 @@ data "genesyscloud_auth_division_home" "home" {}
 func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId                = "campaign3"
+		resourceId                = "campaign4"
 		name                      = "Test Campaign " + uuid.NewString()
 		dialingMode               = "preview"
 		callerName                = "Test Name 123"
@@ -641,6 +698,62 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 		},
 		CheckDestroy: testVerifyOutboundCampaignDestroyed,
 	})
+}
+
+func addContactsToContactList(state *terraform.State) error {
+	outboundAPI := platformclientv2.NewOutboundApi()
+	resource := state.RootModule().Resources["genesyscloud_outbound_contact_list.contact_list"]
+	if resource == nil {
+		return fmt.Errorf("genesyscloud_outbound_contact_list.contact_list resource not found in state")
+	}
+
+	contactList, _, err := outboundAPI.GetOutboundContactlist(resource.Primary.ID, false, false)
+	if err != nil {
+		return fmt.Errorf("genesyscloud_outbound_contact_list (%s) not available", resource.Primary.ID)
+	}
+	contactsJSON := `[{
+			"data": {
+			  "FirstName": "Asa",
+			  "LastName": "Acosta",
+			  "Cell": "3335551234",
+			  "Home": "3335552345",
+			  "zipcode": "23849"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  },
+		  {
+			"data": {
+			  "FirstName": "Leonidas",
+			  "LastName": "Acosta",
+			  "Cell": "4445551234",
+			  "Home": "4445552345",
+			  "zipcode": "34567"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  },
+		  {
+			"data": {
+			  "FirstName": "Nolan",
+			  "LastName": "Adams",
+			  "Cell": "6665551234",
+			  "Home": "6665552345",
+			  "zipcode": "56789"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  }]`
+	var contacts []platformclientv2.Writabledialercontact
+	err = json.Unmarshal([]byte(contactsJSON), &contacts)
+	if err != nil {
+		return fmt.Errorf("could not unmarshall JSON contacts to add to contact list")
+	}
+	_, _, err = outboundAPI.PostOutboundContactlistContacts(*contactList.Id, contacts, false, false, false)
+	if err != nil {
+		return fmt.Errorf("could not post contacts to contact list")
+	}
+	return nil
 }
 
 func generateOutboundCampaignBasic(resourceId string,
