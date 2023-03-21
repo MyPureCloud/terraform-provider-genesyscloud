@@ -27,6 +27,7 @@ website/node_modules
 *.iml
 terraform-provider-genesyscloud
 .env
+.vscode
 
 website/vendor
 vendor/
