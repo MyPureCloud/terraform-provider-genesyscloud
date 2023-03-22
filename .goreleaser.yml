@@ -55,7 +55,6 @@ signs:
       - "${artifact}"
 release:
   draft: true
-# .goreleaser.yml
 changelog:
   # Defaults to false.
   skip: 'false'
