@@ -340,7 +340,7 @@ func resourceRoutingQueue() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     true, // Default may be set by server
-				ValidateFunc: validation.IntBetween(1000, 86400000),
+				ValidateFunc: validation.IntBetween(0, 86400000),
 			},
 			"skill_evaluation_method": {
 				Description:  "The skill evaluation method to use when routing conversations (NONE | BEST | ALL).",

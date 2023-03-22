@@ -235,6 +235,7 @@ func GetResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_integration_action":                              integrationActionExporter(),
 		"genesyscloud_integration_credential":                          credentialExporter(),
 		"genesyscloud_journey_action_map":                              journeyActionMapExporter(),
+		"genesyscloud_journey_action_template":                         journeyActionTemplateExporter(),
 		"genesyscloud_journey_outcome":                                 journeyOutcomeExporter(),
 		"genesyscloud_journey_segment":                                 journeySegmentExporter(),
 		"genesyscloud_knowledge_knowledgebase":                         knowledgeKnowledgebaseExporter(),
