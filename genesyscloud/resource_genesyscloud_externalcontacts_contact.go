@@ -33,9 +33,10 @@ var (
 				Optional:    true,
 			},
 			"e164": {
-				Description: "Phone number in e164 format.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:      "Phone number in e164 format.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateDiagFunc: validatePhoneNumber,
 			},
 			"country_code": {
 				Description: "Phone number country code.",
@@ -74,9 +75,10 @@ var (
 				Optional:    true,
 			},
 			"country_code": {
-				Description: "Contact address country code.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:      "Contact address country code.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateDiagFunc: validateCountryCode,
 			},
 		},
 	}
