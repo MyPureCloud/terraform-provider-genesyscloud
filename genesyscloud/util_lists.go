@@ -126,6 +126,20 @@ func buildSdkStringListFromInterfaceArray(d *schema.ResourceData, attrName strin
 	return &stringArray
 }
 
+// Breaks slice into n sized chunks
+func chunkSlice(slice []string, chunkSize int) [][]string {
+	var chunks [][]string
+	for i := 0; i < len(slice); i += chunkSize {
+		end := i + chunkSize
+		// check to avoid slicing beyond slice capacity
+		if end > len(slice) {
+			end = len(slice)
+		}
+		chunks = append(chunks, slice[i:end])
+	}
+	return chunks
+}
+
 func flattenList[T interface{}](resourceList *[]T, elementFlattener func(resource *T) map[string]interface{}) *[]map[string]interface{} {
 	if resourceList == nil {
 		return nil
