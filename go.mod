@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/terraform-plugin-docs v0.14.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.25.0
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
-	github.com/mypurecloud/platform-client-sdk-go/v92 v92.0.0
+	github.com/mypurecloud/platform-client-sdk-go/v94 v94.0.0
 	github.com/mypurecloud/terraform-provider-genesyscloud v1.11.1
 	github.com/nyaruka/phonenumbers v1.1.6
 	github.com/zclconf/go-cty v1.13.0
@@ -58,6 +58,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/mypurecloud/platform-client-sdk-go/v92 v92.0.0 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
