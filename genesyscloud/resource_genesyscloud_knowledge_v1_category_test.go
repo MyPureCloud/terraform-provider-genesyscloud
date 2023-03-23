@@ -11,7 +11,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
 )
 
-func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
+func TestAccResourceKnowledgeV1CategoryBasic(t *testing.T) {
 	var (
 		knowledgeBaseResource1     = "test-knowledgebase1"
 		knowledgeBaseName1         = "Terraform Knowledge Base" + uuid.NewString()
@@ -35,16 +35,18 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) +
-					generateKnowledgeCategory(
+					generateKnowledgeV1Category(
 						knowledgeCategoryResource1,
 						knowledgeBaseResource1,
+						knowledgeBaseCoreLanguage1,
 						categoryName,
 						categoryDescription,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.name", categoryName),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.description", categoryDescription),
+					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_v1_category."+knowledgeCategoryResource1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_v1_category."+knowledgeCategoryResource1, "language_code", knowledgeBaseCoreLanguage1),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_v1_category."+knowledgeCategoryResource1, "knowledge_category.0.name", categoryName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_v1_category."+knowledgeCategoryResource1, "knowledge_category.0.description", categoryDescription),
 				),
 			},
 			{
@@ -55,43 +57,47 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) +
-					generateKnowledgeCategory(
+					generateKnowledgeV1Category(
 						knowledgeCategoryResource1,
 						knowledgeBaseResource1,
+						knowledgeBaseCoreLanguage1,
 						categoryName,
 						categoryDescription2,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.name", categoryName),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_category."+knowledgeCategoryResource1, "knowledge_category.0.description", categoryDescription2),
+					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_v1_category."+knowledgeCategoryResource1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_v1_category."+knowledgeCategoryResource1, "language_code", knowledgeBaseCoreLanguage1),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_v1_category."+knowledgeCategoryResource1, "knowledge_category.0.name", categoryName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_v1_category."+knowledgeCategoryResource1, "knowledge_category.0.description", categoryDescription2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_knowledge_category." + knowledgeCategoryResource1,
+				ResourceName:      "genesyscloud_knowledge_v1_category." + knowledgeCategoryResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyKnowledgeCategoryDestroyed,
+		CheckDestroy: testVerifyKnowledgeV1CategoryDestroyed,
 	})
 }
 
-func generateKnowledgeCategory(resourceName string, knowledgeBaseResource string, categoryName string, categoryDescription string) string {
+func generateKnowledgeV1Category(resourceName string, knowledgeBaseResource string, languageCode string, categoryName string, categoryDescription string) string {
 	category := fmt.Sprintf(`
-        resource "genesyscloud_knowledge_category" "%s" {
+        resource "genesyscloud_knowledge_v1_category" "%s" {
             knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
+            language_code = "%s"
             %s
         }
         `, resourceName,
 		knowledgeBaseResource,
-		generateKnowledgeCategoryRequestBody(categoryName, categoryDescription),
+		languageCode,
+		generateKnowledgeV1CategoryRequestBody(categoryName, categoryDescription),
 	)
 	return category
 }
 
-func generateKnowledgeCategoryRequestBody(categoryName string, categoryDescription string) string {
+func generateKnowledgeV1CategoryRequestBody(categoryName string, categoryDescription string) string {
 
 	return fmt.Sprintf(`
         knowledge_category {
@@ -103,8 +109,9 @@ func generateKnowledgeCategoryRequestBody(categoryName string, categoryDescripti
 	)
 }
 
-func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
+func testVerifyKnowledgeV1CategoryDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
+	knowledgeBaseCoreLanguage1 := "en-US"
 	var knowledgeBaseId string
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_knowledge_knowledgebase" {
@@ -113,12 +120,12 @@ func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
 		}
 	}
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_knowledge_category" {
+		if rs.Type != "genesyscloud_knowledge_v1_category" {
 			continue
 		}
 		id := strings.Split(rs.Primary.ID, " ")
 		knowledgeCategoryId := id[0]
-		knowledgeCategory, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId)
+		knowledgeCategory, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, knowledgeBaseCoreLanguage1)
 		if knowledgeCategory != nil {
 			return fmt.Errorf("Knowledge category (%s) still exists", knowledgeCategoryId)
 		} else if isStatus404(resp) || isStatus400(resp) {

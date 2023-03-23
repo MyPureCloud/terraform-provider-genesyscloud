@@ -12,16 +12,17 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
 )
 
 var (
-	knowledgeCategory = &schema.Resource{
+	knowledgeCategoryV1 = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Knowledge base name. Changing the name attribute will cause the knowledge_category resource to be dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				ForceNew:    true,
 			},
 			"description": {
@@ -38,38 +39,29 @@ var (
 	}
 )
 
-func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeCategoriesV1(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	resources := make(ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		unpublishedKnowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", false, "", "")
+		knowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", false, "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
 		}
 
-		publishedKnowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", true, "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
+		if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
+			break
 		}
-
-		if unpublishedKnowledgeBases != nil && len(*unpublishedKnowledgeBases.Entities) > 0 {
-			for _, knowledgeBase := range *unpublishedKnowledgeBases.Entities {
-				knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
-			}
-		}
-		if publishedKnowledgeBases != nil && len(*publishedKnowledgeBases.Entities) > 0 {
-			for _, knowledgeBase := range *publishedKnowledgeBases.Entities {
-				knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
-			}
+		for _, knowledgeBase := range *knowledgeBases.Entities {
+			knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
 		}
 	}
 	for _, knowledgeBase := range knowledgeBaseList {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", false, "", "", "", false)
+			knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategories(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", "", "", fmt.Sprintf("%v", pageSize), "")
 			if getErr != nil {
 				return nil, diag.Errorf("Failed to get page of knowledge categories: %v", getErr)
 			}
@@ -79,7 +71,7 @@ func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2
 			}
 
 			for _, knowledgeCategory := range *knowledgeCategories.Entities {
-				id := fmt.Sprintf("%s %s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+				id := fmt.Sprintf("%s %s %s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id, *knowledgeCategory.LanguageCode)
 				resources[id] = &ResourceMeta{Name: *knowledgeCategory.Name}
 			}
 		}
@@ -88,14 +80,16 @@ func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2
 	return resources, nil
 }
 
-func knowledgeCategoryExporter() *ResourceExporter {
+func knowledgeCategoryExporterV1() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeCategories),
-		RefAttrs:         map[string]*RefAttrSettings{},
+		RefAttrs: map[string]*RefAttrSettings{
+			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
+		},
 	}
 }
 
-func resourceKnowledgeCategory() *schema.Resource {
+func resourceKnowledgeCategoryV1() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Category",
 
@@ -113,8 +107,14 @@ func resourceKnowledgeCategory() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"language_code": {
+				Description:  "language code of the category",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"en-US", "en-UK", "en-AU", "de-DE", "es-US", "es-ES", "fr-FR", "pt-BR", "nl-NL", "it-IT", "fr-CA"}, false),
+			},
 			"knowledge_category": {
-				Description: "Knowledge category id",
+				Description: "Knowledge category parent id",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Required:    true,
@@ -124,39 +124,41 @@ func resourceKnowledgeCategory() *schema.Resource {
 	}
 }
 
-func createKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	languageCode := d.Get("language_code").(string)
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	knowledgeCategory := d.Get("knowledge_category").([]interface{})[0].(map[string]interface{})
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
-	knowledgeCategoryRequest := buildKnowledgeCategory(knowledgeCategory)
+	knowledgeCategoryRequest := buildKnowledgeCategoryV1(knowledgeCategory)
 
 	log.Printf("Creating knowledge category %s", knowledgeCategory["name"].(string))
-	knowledgeCategoryResponse, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseCategories(knowledgeBaseId, *knowledgeCategoryRequest)
+	knowledgeCategoryResponse, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseLanguageCategories(knowledgeBaseId, languageCode, knowledgeCategoryRequest)
 	if err != nil {
 		return diag.Errorf("Failed to create knowledge category %s: %s", knowledgeBaseId, err)
 	}
 
-	id := fmt.Sprintf("%s,%s", *knowledgeCategoryResponse.Id, *knowledgeCategoryResponse.KnowledgeBase.Id)
+	id := fmt.Sprintf("%s %s %s", *knowledgeCategoryResponse.Id, *knowledgeCategoryResponse.KnowledgeBase.Id, *knowledgeCategoryResponse.LanguageCode)
 	d.SetId(id)
 
 	log.Printf("Created knowledge category %s", *knowledgeCategoryResponse.Id)
 	return readKnowledgeCategory(ctx, d, meta)
 }
 
-func readKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
+func readKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	id := strings.Split(d.Id(), " ")
 	knowledgeCategoryId := id[0]
 	knowledgeBaseId := id[1]
+	languageCode := id[2]
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge category %s", knowledgeCategoryId)
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
-		knowledgeCategory, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId)
+		knowledgeCategory, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 		if getErr != nil {
 			if isStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr))
@@ -167,19 +169,21 @@ func readKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta int
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceKnowledgeCategory())
 
-		newId := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+		newId := fmt.Sprintf("%s %s %s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id, *knowledgeCategory.LanguageCode)
 		d.SetId(newId)
 		d.Set("knowledge_base_id", *knowledgeCategory.KnowledgeBase.Id)
-		d.Set("knowledge_category", flattenKnowledgeCategory(*knowledgeCategory))
+		d.Set("language_code", *knowledgeCategory.LanguageCode)
+		d.Set("knowledge_category", flattenKnowledgeCategoryV1(knowledgeCategory))
 		log.Printf("Read knowledge category %s", knowledgeCategoryId)
 		return cc.CheckState()
 	})
 }
 
-func updateKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
+func updateKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	id := strings.Split(d.Id(), " ")
 	knowledgeCategoryId := id[0]
 	knowledgeBaseId := id[1]
+	languageCode := id[2]
 	knowledgeCategory := d.Get("knowledge_category").([]interface{})[0].(map[string]interface{})
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
@@ -188,15 +192,15 @@ func updateKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Updating knowledge category %s", knowledgeCategory["name"].(string))
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current knowledge category version
-		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId)
+		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr)
 		}
 
-		knowledgeCategoryUpdate := buildKnowledgeCategory(knowledgeCategory)
+		knowledgeCategoryUpdate := buildKnowledgeCategoryV1(knowledgeCategory)
 
 		log.Printf("Updating knowledge category %s", knowledgeCategory["name"].(string))
-		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId, *knowledgeCategoryUpdate)
+		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode, knowledgeCategoryUpdate)
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update knowledge category %s: %s", knowledgeCategoryId, putErr)
 		}
@@ -210,22 +214,23 @@ func updateKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	return readKnowledgeCategory(ctx, d, meta)
 }
 
-func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
+func deleteKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	id := strings.Split(d.Id(), " ")
 	knowledgeCategoryId := id[0]
 	knowledgeBaseId := id[1]
+	languageCode := id[2]
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting knowledge category %s", id)
-	_, _, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId)
+	_, _, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 	if err != nil {
 		return diag.Errorf("Failed to delete knowledge category %s: %s", id, err)
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId)
+		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 		if err != nil {
 			if isStatus404(resp) {
 				// Knowledge base deleted
@@ -239,24 +244,25 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func buildKnowledgeCategory(categoryIn map[string]interface{}) *platformclientv2.Categoryrequest {
-	name := categoryIn["name"].(string)
+func buildKnowledgeCategoryV1(categoryIn map[string]interface{}) platformclientv2.Knowledgecategoryrequest {
+	categoryOut := platformclientv2.Knowledgecategoryrequest{}
 
-	categoryOut := platformclientv2.Categoryrequest{
-		Name: &name,
+	if name, ok := categoryIn["name"].(string); ok && name != "" {
+		categoryOut.Name = &name
 	}
-
 	if description, ok := categoryIn["description"].(string); ok && description != "" {
 		categoryOut.Description = &description
 	}
 	if parentId, ok := categoryIn["parent_id"].(string); ok && parentId != "" {
-		categoryOut.ParentCategoryId = &parentId
+		categoryOut.Parent = &platformclientv2.Documentcategoryinput{
+			Id: &parentId,
+		}
 	}
 
-	return &categoryOut
+	return categoryOut
 }
 
-func flattenKnowledgeCategory(categoryIn platformclientv2.Categoryresponse) []interface{} {
+func flattenKnowledgeCategoryV1(categoryIn *platformclientv2.Knowledgeextendedcategory) []interface{} {
 	categoryOut := make(map[string]interface{})
 
 	if categoryIn.Name != nil {
@@ -265,8 +271,8 @@ func flattenKnowledgeCategory(categoryIn platformclientv2.Categoryresponse) []in
 	if categoryIn.Description != nil {
 		categoryOut["description"] = *categoryIn.Description
 	}
-	if categoryIn.ParentCategory != nil && (*categoryIn.ParentCategory).Id != nil {
-		categoryOut["parent_id"] = (*categoryIn.ParentCategory).Id
+	if categoryIn.Parent != nil && categoryIn.Parent.Id != nil {
+		categoryOut["parent_id"] = *categoryIn.Parent.Id
 	}
 
 	return []interface{}{categoryOut}

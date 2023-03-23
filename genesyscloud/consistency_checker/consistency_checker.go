@@ -261,6 +261,5 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 	}
 
 	DeleteConsistencyCheck(c.d.Id())
-
 	return nil
 }
