@@ -43,19 +43,19 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 					knowledgeBaseDescription1,
 					coreLanguage1,
 				) +
-					generateKnowledgeCategory(
+					generateKnowledgeCategoryResource(
 						categoryResource1,
 						knowledgeBaseResource1,
 						categoryName,
 						categoryDescription,
 					) +
-					generateKnowledgeLabel(
+					generateKnowledgeLabelResource(
 						labelResource1,
 						knowledgeBaseResource1,
 						labelName,
 						labelColor,
 					) +
-					generateKnowledgeDocument(
+					generateKnowledgeDocumentResource(
 						knowledgeDocumentResource1,
 						knowledgeBaseResource1,
 						categoryResource1,
@@ -85,19 +85,19 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 					knowledgeBaseDescription1,
 					coreLanguage1,
 				) +
-					generateKnowledgeCategory(
+					generateKnowledgeCategoryResource(
 						categoryResource1,
 						knowledgeBaseResource1,
 						categoryName,
 						categoryDescription,
 					) +
-					generateKnowledgeLabel(
+					generateKnowledgeLabelResource(
 						labelResource1,
 						knowledgeBaseResource1,
 						labelName,
 						labelColor,
 					) +
-					generateKnowledgeDocument(
+					generateKnowledgeDocumentResource(
 						knowledgeDocumentResource1,
 						knowledgeBaseResource1,
 						categoryResource1,
@@ -130,7 +130,7 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeDocument(resourceName string, knowledgeBaseResourceName string, knowledgeCategoryResourceName string, knowledgeLabelResourceName string, knowledgeCategoryName string, knowledgeLabelName string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
+func generateKnowledgeDocumentResource(resourceName string, knowledgeBaseResourceName string, knowledgeCategoryResourceName string, knowledgeLabelResourceName string, knowledgeCategoryName string, knowledgeLabelName string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
 	document := fmt.Sprintf(`
         resource "genesyscloud_knowledge_document" "%s" {
 			depends_on=[genesyscloud_knowledge_category.%s, genesyscloud_knowledge_label.%s]

@@ -35,7 +35,7 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) +
-					generateKnowledgeCategory(
+					generateKnowledgeCategoryResource(
 						knowledgeCategoryResource1,
 						knowledgeBaseResource1,
 						categoryName,
@@ -55,7 +55,7 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) +
-					generateKnowledgeCategory(
+					generateKnowledgeCategoryResource(
 						knowledgeCategoryResource1,
 						knowledgeBaseResource1,
 						categoryName,
@@ -78,7 +78,7 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeCategory(resourceName string, knowledgeBaseResource string, categoryName string, categoryDescription string) string {
+func generateKnowledgeCategoryResource(resourceName string, knowledgeBaseResource string, categoryName string, categoryDescription string) string {
 	category := fmt.Sprintf(`
         resource "genesyscloud_knowledge_category" "%s" {
             knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id

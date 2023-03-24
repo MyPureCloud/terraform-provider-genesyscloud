@@ -35,7 +35,7 @@ func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) +
-					generateKnowledgeLabel(
+					generateKnowledgeLabelResource(
 						knowledgeLabelResource1,
 						knowledgeBaseResource1,
 						labelName,
@@ -55,7 +55,7 @@ func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) +
-					generateKnowledgeLabel(
+					generateKnowledgeLabelResource(
 						knowledgeLabelResource1,
 						knowledgeBaseResource1,
 						labelName,
@@ -78,7 +78,7 @@ func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeLabel(resourceName string, knowledgeBaseResource string, labelName string, labelColor string) string {
+func generateKnowledgeLabelResource(resourceName string, knowledgeBaseResource string, labelName string, labelColor string) string {
 	label := fmt.Sprintf(`
         resource "genesyscloud_knowledge_label" "%s" {
             knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id

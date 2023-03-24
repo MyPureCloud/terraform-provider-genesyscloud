@@ -74,7 +74,7 @@ func getAllKnowledgeLabels(_ context.Context, clientConfig *platformclientv2.Con
 			}
 
 			for _, knowledgeLabel := range *knowledgeLabels.Entities {
-				id := fmt.Sprintf("%s %s", *knowledgeLabel.Id, *knowledgeBase.Id)
+				id := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, *knowledgeBase.Id)
 				resources[id] = &ResourceMeta{Name: *knowledgeLabel.Name}
 			}
 		}
@@ -134,7 +134,7 @@ func createKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Failed to create knowledge label %s: %s", knowledgeBaseId, err)
 	}
 
-	id := fmt.Sprintf("%s %s", *knowledgeLabelResponse.Id, knowledgeBaseId)
+	id := fmt.Sprintf("%s,%s", *knowledgeLabelResponse.Id, knowledgeBaseId)
 	d.SetId(id)
 
 	log.Printf("Created knowledge label %s", *knowledgeLabelResponse.Id)
@@ -142,7 +142,7 @@ func createKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), " ")
+	id := strings.Split(d.Id(), ",")
 	knowledgeLabelId := id[0]
 	knowledgeBaseId := id[1]
 
@@ -162,7 +162,7 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceKnowledgeLabel())
 
-		newId := fmt.Sprintf("%s %s", *knowledgeLabel.Id, knowledgeBaseId)
+		newId := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, knowledgeBaseId)
 		d.SetId(newId)
 		d.Set("knowledge_base_id", knowledgeBaseId)
 		d.Set("knowledge_label", flattenKnowledgeLabel(knowledgeLabel))
@@ -172,7 +172,7 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func updateKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), " ")
+	id := strings.Split(d.Id(), ",")
 	knowledgeLabelId := id[0]
 	knowledgeBaseId := id[1]
 	knowledgeLabel := d.Get("knowledge_label").([]interface{})[0].(map[string]interface{})
@@ -206,7 +206,7 @@ func updateKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), " ")
+	id := strings.Split(d.Id(), ",")
 	knowledgeLabelId := id[0]
 	knowledgeBaseId := id[1]
 

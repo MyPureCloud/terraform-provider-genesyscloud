@@ -294,12 +294,6 @@ func resourceKnowledgeDocumentVariation() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			// "published": {
-			// 	Description: "If true, the document will be published with the new variation. If false, the updated document will be in a draft state.",
-			// 	Type:        schema.TypeBool,
-			// 	Optional:    true,
-			// 	Computed:    true,
-			// },
 			"knowledge_document_variation": {
 				Description: "Knowledge document variation",
 				Type:        schema.TypeList,
@@ -316,10 +310,6 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	documentResourceId := d.Get("knowledge_document_id").(string)
 	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
 	knowledgeDocumentVariation := d.Get("knowledge_document_variation").([]interface{})[0].(map[string]interface{})
-	// published := false
-	// if publishedIn, ok := d.GetOk("published"); ok {
-	// 	published = publishedIn.(bool)
-	// }
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
@@ -332,19 +322,10 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Failed to create variation for knowledge document %s: %s", knowledgeDocumentId, err)
 	}
 
-	// if published == true {
-	// 	_, _, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
-
-	// 	if versionErr != nil {
-	// 		return diag.Errorf("Failed to publish knowledge document: %s", err)
-	// 	}
-	// }
-
 	id := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariationResponse.Id, knowledgeBaseId, documentResourceId)
 	d.SetId(id)
 
 	log.Printf("Created knowledge document variation %s", *knowledgeDocumentVariationResponse.Id)
-	fmt.Printf("Created knowledge document variation %s", *knowledgeDocumentVariationResponse.Id)
 
 	return readKnowledgeDocumentVariation(ctx, d, meta)
 }
@@ -356,54 +337,13 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 	documentResourceId := id[2]
 	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
 
-	// documentState := ""
-
-	// If the published flag is set, use it to set documentState param
-	// if published, ok := d.GetOk("published"); ok {
-	// 	if published == true {
-	// 		documentState = "Published"
-	// 	} else {
-	// 		documentState = "Draft"
-	// 	}
-	// }
-
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge document variation %s", documentVariationId)
-	// return withRetriesForRead(ctx, d, func() *resource.RetryError {
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
 		var knowledgeDocumentVariation *platformclientv2.Documentvariation
-		/*
-		 * If the published flag is set, only one call is needed.
-		 * If not, look for a published version first. If a published version is not found, look for the draft version.
-		 * This handling is required for the import context, where only the resource ID is supplied.
-		 */
-		// if documentState == "" {
-		// 	publishedVariation, resp, publishedErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published")
 
-		// 	if publishedErr != nil {
-		// 		if isStatus404(resp) {
-
-		// 			draftVariation, resp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
-
-		// 			if draftErr != nil {
-		// 				if isStatus404(resp) {
-		// 					return resource.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
-		// 				}
-		// 				log.Printf("%s", draftErr)
-		// 				return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
-		// 			}
-
-		// 			knowledgeDocumentVariation = draftVariation
-		// 		} else {
-		// 			log.Printf("%s", publishedErr)
-		// 			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr))
-		// 		}
-		// 	} else {
-		// 		knowledgeDocumentVariation = publishedVariation
-		// 	}
-		// } else {
 		publishedVariation, resp, publishedErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published")
 
 		if publishedErr != nil {
@@ -421,7 +361,6 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 					publishedVariation = retryVariation
 				}
 
-				// return resource.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr))
 			} else {
 				log.Printf("%s", publishedErr)
 				return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr))
@@ -442,7 +381,6 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 		} else {
 			knowledgeDocumentVariation = draftVariation
 		}
-		// }
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceKnowledgeDocumentVariation())
 
@@ -452,11 +390,6 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 		d.Set("knowledge_document_id", documentResourceId)
 		d.Set("knowledge_document_variation", flattenKnowledgeDocumentVariation(*knowledgeDocumentVariation))
 
-		// if knowledgeDocumentVariation.DocumentVersion != nil && knowledgeDocumentVariation.DocumentVersion.Id != nil && len(*knowledgeDocumentVariation.DocumentVersion.Id) > 0 {
-		// 	d.Set("published", true)
-		// } else {
-		// 	d.Set("published", false)
-		// }
 		log.Printf("Read knowledge document variation %s", documentVariationId)
 
 		return cc.CheckState()
@@ -470,10 +403,6 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	documentResourceId := id[2]
 	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
 	knowledgeDocumentVariation := d.Get("knowledge_document_variation").([]interface{})[0].(map[string]interface{})
-	// published := false
-	// if publishedIn, ok := d.GetOk("published"); ok {
-	// 	published = publishedIn.(bool)
-	// }
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
@@ -494,13 +423,6 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 			return resp, diag.Errorf("Failed to update knowledge document variation %s: %s", documentVariationId, putErr)
 		}
 
-		// if published == true {
-		// 	_, _, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
-
-		// 	if versionErr != nil {
-		// 		return resp, diag.Errorf("Failed to publish knowledge document: %s", versionErr)
-		// 	}
-		// }
 		return resp, nil
 	})
 	if diagErr != nil {
@@ -508,7 +430,6 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	}
 
 	log.Printf("Updated knowledge document variation %s", documentVariationId)
-	fmt.Printf("Updated knowledge document variation %s", documentVariationId)
 	return readKnowledgeDocumentVariation(ctx, d, meta)
 }
 
@@ -518,10 +439,6 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	knowledgeBaseId := id[1]
 	documentResourceId := id[2]
 	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
-	// published := false
-	// if publishedIn, ok := d.GetOk("published"); ok {
-	// 	published = publishedIn.(bool)
-	// }
 
 	sdkConfig := meta.(*providerMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
@@ -532,22 +449,7 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Failed to delete knowledge document variation %s: %s", id, err)
 	}
 
-	// if published == true {
-	// 	_, _, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
-
-	// 	if versionErr != nil {
-	// 		return diag.Errorf("Failed to publish knowledge document: %s", versionErr)
-	// 	}
-	// }
-
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		// documentState := ""
-		// if published == true {
-		// 	documentState = "Published"
-		// } else {
-		// 	documentState = "Draft"
-		// }
-
 		// The DELETE resource for knowledge document variations only removes draft variations. So set the documentState param to "Draft" for the check
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 		if err != nil {
@@ -699,22 +601,9 @@ func buildVariationBody(bodyIn map[string]interface{}) *platformclientv2.Documen
 	return nil
 }
 
-// func buildDocumentVersion(versionIn map[string]interface{}) *platformclientv2.Addressableentityref {
-// 	if versionList := versionIn["document_version"].([]interface{}); versionList != nil && len(versionList) > 0 {
-// 		documentVersion := versionList[0].(map[string]interface{})
-// 		id := documentVersion["id"].(string)
-// 		versionOut := platformclientv2.Addressableentityref{
-// 			Id: &id,
-// 		}
-// 		return &versionOut
-// 	}
-// 	return nil
-// }
-
 func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) *platformclientv2.Documentvariation {
 	variationOut := platformclientv2.Documentvariation{
 		Body: buildVariationBody(variationIn),
-		// DocumentVersion: buildDocumentVersion(variationIn),
 	}
 	return &variationOut
 }
@@ -722,7 +611,6 @@ func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) *platfo
 func buildKnowledgeDocumentVariationUpdate(variationIn map[string]interface{}) *platformclientv2.Documentvariation {
 	variationOut := platformclientv2.Documentvariation{
 		Body: buildVariationBody(variationIn),
-		// DocumentVersion: buildDocumentVersion(variationIn),
 	}
 
 	return &variationOut
