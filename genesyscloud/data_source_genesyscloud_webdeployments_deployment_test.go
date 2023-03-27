@@ -9,11 +9,10 @@ import (
 
 func TestAccDataSourceWebDeploymentsDeployment(t *testing.T) {
 	var (
-		deploymentName        = "Basic Deployment " + randString(8)
+		deploymentName        = "BasicDeployment" + randString(8)
 		deploymentDescription = "Basic Deployment description"
 		fullResourceName      = "genesyscloud_webdeployments_deployment.basic"
 		fullDataSourceName    = "data.genesyscloud_webdeployments_deployment.basic-data"
-		resourceNameReference = fullResourceName + ".name"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
@@ -21,8 +20,7 @@ func TestAccDataSourceWebDeploymentsDeployment(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Search by name
-				Config: basicDeploymentResource(deploymentName, deploymentDescription) +
-					basicDeploymentDataSource(resourceNameReference),
+				Config: basicDeploymentDataSource(deploymentName, deploymentDescription),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(fullResourceName, "id", fullDataSourceName, "id"),
 				),
@@ -31,10 +29,26 @@ func TestAccDataSourceWebDeploymentsDeployment(t *testing.T) {
 	})
 }
 
-func basicDeploymentDataSource(name string) string {
+func basicDeploymentDataSource(deploymentName string, deploymentDescr string) string {
 	return fmt.Sprintf(`
-	data "genesyscloud_webdeployments_deployment" "basic-data" {
-		name = %s
+
+	resource "genesyscloud_webdeployments_configuration" "minimal" {
+		name = "Minimal Config"
 	}
-	`, name)
+
+	resource "genesyscloud_webdeployments_deployment" "basic" {
+		name = "%s"
+		description = "%s"
+		allow_all_domains = true
+		configuration {
+			id = "${genesyscloud_webdeployments_configuration.minimal.id}"
+			version = "${genesyscloud_webdeployments_configuration.minimal.version}"
+		}
+	}
+	
+	data "genesyscloud_webdeployments_deployment" "basic-data" {
+		depends_on=[genesyscloud_webdeployments_deployment.basic]
+		name = "%s"
+	}
+	`, deploymentName, deploymentDescr, deploymentName)
 }

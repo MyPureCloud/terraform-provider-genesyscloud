@@ -426,52 +426,27 @@ func flattenGroupOwners(owners []platformclientv2.User) *schema.Set {
 func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.GroupsApi) diag.Diagnostics {
 	if d.HasChange("member_ids") {
 		if membersConfig := d.Get("member_ids"); membersConfig != nil {
-			// Get existing members
-			members, _, err := groupsAPI.GetGroupIndividuals(d.Id())
+			configMemberIds := *setToStringList(membersConfig.(*schema.Set))
+			existingMemberIds, err := getGroupMemberIds(d, groupsAPI)
 			if err != nil {
-				return diag.FromErr(err)
+				return err
 			}
 
-			var existingMembers []string
-			if members.Entities != nil {
-				for _, member := range *members.Entities {
-					existingMembers = append(existingMembers, *member.Id)
-				}
-			}
-			configMembers := *setToStringList(membersConfig.(*schema.Set))
-
-			membersToRemove := sliceDifference(existingMembers, configMembers)
-			if len(membersToRemove) > 0 {
-				if diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-					_, resp, err := groupsAPI.DeleteGroupMembers(d.Id(), strings.Join(membersToRemove, ","))
-					if err != nil {
-						return resp, diag.Errorf("Failed to remove members from group %s: %s", d.Id(), err)
-					}
-					return resp, nil
-				}); diagErr != nil {
-					return diagErr
-				}
+			membersToRemove := sliceDifference(existingMemberIds, configMemberIds)
+			if err := deleteGroupMembers(d, membersToRemove, groupsAPI); err != nil {
+				return err
 			}
 
-			membersToAdd := sliceDifference(configMembers, existingMembers)
-			if len(membersToAdd) > 0 {
-				if diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-					// Need the current group version to add members
-					groupInfo, _, getErr := groupsAPI.GetGroup(d.Id())
-					if getErr != nil {
-						return nil, diag.Errorf("Failed to read group %s: %s", d.Id(), getErr)
-					}
+			membersToAdd := sliceDifference(configMemberIds, existingMemberIds)
+			if len(membersToAdd) < 1 {
+				return nil
+			}
 
-					_, resp, postErr := groupsAPI.PostGroupMembers(d.Id(), platformclientv2.Groupmembersupdate{
-						MemberIds: &membersToAdd,
-						Version:   groupInfo.Version,
-					})
-					if err != nil {
-						return resp, diag.Errorf("Failed to add group members %s: %s", d.Id(), postErr)
-					}
-					return resp, nil
-				}); diagErr != nil {
-					return diagErr
+			maxMembersPerRequest := 50
+			chunkedMemberIds := chunkSlice(membersToAdd, maxMembersPerRequest)
+			for _, chunk := range chunkedMemberIds {
+				if err := addGroupMembers(d, chunk, groupsAPI); err != nil {
+					return err
 				}
 			}
 		}
@@ -493,4 +468,56 @@ func readGroupMembers(groupID string, groupsAPI *platformclientv2.GroupsApi) (*s
 		return schema.NewSet(schema.HashString, interfaceList), nil
 	}
 	return nil, nil
+}
+
+func getGroupMemberIds(d *schema.ResourceData, groupsAPI *platformclientv2.GroupsApi) ([]string, diag.Diagnostics) {
+	members, _, err := groupsAPI.GetGroupIndividuals(d.Id())
+	if err != nil {
+		return nil, diag.FromErr(err)
+	}
+
+	var existingMembers []string
+	if members.Entities != nil {
+		for _, member := range *members.Entities {
+			existingMembers = append(existingMembers, *member.Id)
+		}
+	}
+	return existingMembers, nil
+}
+
+func deleteGroupMembers(d *schema.ResourceData, membersToRemove []string, groupsAPI *platformclientv2.GroupsApi) diag.Diagnostics {
+	if len(membersToRemove) > 0 {
+		if diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			_, resp, err := groupsAPI.DeleteGroupMembers(d.Id(), strings.Join(membersToRemove, ","))
+			if err != nil {
+				return resp, diag.Errorf("Failed to remove members from group %s: %s", d.Id(), err)
+			}
+			return resp, nil
+		}); diagErr != nil {
+			return diagErr
+		}
+	}
+	return nil
+}
+
+func addGroupMembers(d *schema.ResourceData, membersToAdd []string, groupsAPI *platformclientv2.GroupsApi) diag.Diagnostics {
+	if diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Need the current group version to add members
+		groupInfo, _, getErr := groupsAPI.GetGroup(d.Id())
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to read group %s: %s", d.Id(), getErr)
+		}
+
+		_, resp, postErr := groupsAPI.PostGroupMembers(d.Id(), platformclientv2.Groupmembersupdate{
+			MemberIds: &membersToAdd,
+			Version:   groupInfo.Version,
+		})
+		if postErr != nil {
+			return resp, diag.Errorf("Failed to add group members %s: %s", d.Id(), postErr)
+		}
+		return resp, nil
+	}); diagErr != nil {
+		return diagErr
+	}
+	return nil
 }
