@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 var (
@@ -131,7 +131,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	intendedState := d.Get("intended_state").(string)
 	integrationType := d.Get("integration_type").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	createIntegration := platformclientv2.Createintegrationrequest{
@@ -174,7 +174,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading integration %s", d.Id())
@@ -216,7 +216,7 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	intendedState := d.Get("intended_state").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	diagErr, name := updateIntegrationConfig(d, integrationAPI)
@@ -243,7 +243,7 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 
 func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	_, _, err := integrationAPI.DeleteIntegration(d.Id())

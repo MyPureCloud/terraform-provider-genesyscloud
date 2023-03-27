@@ -2,11 +2,12 @@ package genesyscloud
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
-	"testing"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func TestAccResourceFlowMilestone(t *testing.T) {
@@ -22,8 +23,8 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create

@@ -11,11 +11,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 type ProcessAutomationTrigger struct {
@@ -115,6 +116,14 @@ var (
 	}
 )
 
+/*
+	NOTE:
+	This resource currently does not use the Go SDk and instead makes API calls directly.
+	The Go SDK can not properly handle process automation triggers due the value and values
+	attributes in the matchCriteria object being listed as JsonNode in the swagger docs.
+	A JsonNode is a placeholder type with no nested values which creates problems in Go
+	because it can't properly determine a type for the value/values field.
+*/
 func resourceProcessAutomationTrigger() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Process Automation Trigger
@@ -201,7 +210,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	delayBySeconds := d.Get("delay_by_seconds").(int)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	if eventTTLSeconds > 0 && delayBySeconds > 0 {
@@ -246,7 +255,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 }
 
 func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading process automation trigger %s", d.Id())
@@ -315,7 +324,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	topic_name := d.Get("topic_name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Updating process automation trigger %s", name)
@@ -367,7 +376,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting process automation trigger %s", name)

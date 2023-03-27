@@ -2,13 +2,15 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
-
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func TestAccResourceArchitectSchedules(t *testing.T) {
@@ -29,8 +31,8 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -120,6 +122,33 @@ func generateArchitectSchedulesResource(
 		rrule = "%s"
 	}
 	`, schedResource1, name, divisionId, description, start, end, rrule)
+}
+
+func cleanupArchitectSchedules(idPrefix string) {
+	architectApi := platformclientv2.NewArchitectApi()
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		architectSchedules, _, getErr := architectApi.GetArchitectSchedules(pageNum, pageSize, "", "", "", nil)
+		if getErr != nil {
+			return
+		}
+
+		if architectSchedules.Entities == nil || len(*architectSchedules.Entities) == 0 {
+			break
+		}
+
+		for _, schedule := range *architectSchedules.Entities {
+			if schedule.Name != nil && strings.HasPrefix(*schedule.Name, idPrefix) {
+				_, delErr := architectApi.DeleteArchitectSchedule(*schedule.Id)
+				if delErr != nil {
+					diag.Errorf("failed to delete architect schedule %s (%s): %s", *schedule.Id, *schedule.Name, delErr)
+					return
+				}
+				log.Printf("Deleted architect schedule %s (%s)", *schedule.Id, *schedule.Name)
+			}
+		}
+	}
 }
 
 func testVerifySchedulesDestroyed(state *terraform.State) error {

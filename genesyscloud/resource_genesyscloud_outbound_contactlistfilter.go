@@ -3,14 +3,16 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"log"
-	"time"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 var (
@@ -178,7 +180,7 @@ func createOutboundContactListFilter(ctx context.Context, d *schema.ResourceData
 	name := d.Get("name").(string)
 	filterType := d.Get("filter_type").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactListFilter := platformclientv2.Contactlistfilter{
@@ -209,7 +211,7 @@ func updateOutboundContactListFilter(ctx context.Context, d *schema.ResourceData
 	name := d.Get("name").(string)
 	filterType := d.Get("filter_type").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactListFilter := platformclientv2.Contactlistfilter{
@@ -247,7 +249,7 @@ func updateOutboundContactListFilter(ctx context.Context, d *schema.ResourceData
 }
 
 func readOutboundContactListFilter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound Contact List Filter %s", d.Id())
@@ -281,7 +283,7 @@ func readOutboundContactListFilter(ctx context.Context, d *schema.ResourceData, 
 }
 
 func deleteOutboundContactListFilter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

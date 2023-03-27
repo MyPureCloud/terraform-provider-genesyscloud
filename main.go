@@ -1,12 +1,13 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"log"
+
+	provider "terraform-provider-genesyscloud/genesyscloud"
+
+	_ "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	provider "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -17,9 +18,10 @@ import (
 
 // Run the docs generation tool, check its repository for more information on how it works and how docs
 // can be customized.
+//
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 //go:generate git restore docs/index.md
-//go:generate go run github.com/mypurecloud/terraform-provider-genesyscloud/apidocs
+//go:generate go run terraform-provider-genesyscloud/apidocs
 var (
 	// these will be set by the goreleaser configuration
 	// to appropriate values for the compiled binary
@@ -39,11 +41,8 @@ func main() {
 	opts := &plugin.ServeOpts{ProviderFunc: provider.New(version)}
 
 	if debugMode {
-		err := plugin.Debug(context.Background(), "registry.terraform.io/mypurecloud/genesyscloud", opts)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		return
+		opts.Debug = true
+		opts.ProviderAddr = "registry.terraform.io/mypurecloud/genesyscloud"
 	}
 
 	plugin.Serve(opts)

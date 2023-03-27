@@ -3,14 +3,16 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"log"
-	"time"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func resourceOutboundSequence() *schema.Resource {
@@ -95,7 +97,7 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	status := d.Get("status").(string)
 	repeat := d.Get("repeat").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkcampaignsequence := platformclientv2.Campaignsequence{
@@ -127,7 +129,7 @@ func updateOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	status := d.Get("status").(string)
 	repeat := d.Get("repeat").(bool)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkcampaignsequence := platformclientv2.Campaignsequence{
@@ -165,7 +167,7 @@ func updateOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound Sequence %s", d.Id())
@@ -201,7 +203,7 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

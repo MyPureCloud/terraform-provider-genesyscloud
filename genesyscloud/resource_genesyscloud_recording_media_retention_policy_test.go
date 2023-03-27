@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"fmt"
-	"math/rand"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -12,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 type Mediapolicies struct {
@@ -467,28 +466,28 @@ var (
 	roleActions              = make([]string, 0)
 	permissions              = make([]string, 0)
 
-	questionGroupBody1 = []evaluationFormQuestionGroupStruct{
+	questionGroupBody1 = []EvaluationFormQuestionGroupStruct{
 		{
-			name: questionGroupName,
-			questions: []evaluationFormQuestionStruct{
+			Name: questionGroupName,
+			Questions: []EvaluationFormQuestionStruct{
 				{
-					text: "question-1",
-					answerOptions: []answerOptionStruct{
+					Text: "question-1",
+					AnswerOptions: []AnswerOptionStruct{
 						{
-							text: "yes",
+							Text: "yes",
 						},
 						{
-							text: "yes",
+							Text: "yes",
 						},
 					},
 				},
 			},
 		},
 	}
-	evaluationFormResourceBody = evaluationFormStruct{
-		name:           evaluationFormName,
-		published:      true,
-		questionGroups: questionGroupBody1,
+	evaluationFormResourceBody = EvaluationFormStruct{
+		Name:           evaluationFormName,
+		Published:      true,
+		QuestionGroups: questionGroupBody1,
 	}
 
 	questionGroupBody2 = []surveyFormQuestionGroupStruct{
@@ -911,7 +910,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 
 	var (
 		domainRes = "routing-domain1"
-		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainId  = fmt.Sprintf("terraform%v.com", time.Now().Unix())
 	)
 
 	err := authorizeSdk()
@@ -921,8 +920,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 	cleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateRoutingEmailDomainResource(
@@ -930,7 +929,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					domainId,
 					falseValue, // Subdomain
 					nullValue,
-				) + generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				) + GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					generateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -945,7 +944,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
-					generateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
+					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
@@ -1037,7 +1036,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					domainId,
 					falseValue, // Subdomain
 					nullValue,
-				) + generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				) + GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					generateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -1052,7 +1051,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
-					generateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
+					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
@@ -1144,7 +1143,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					domainId,
 					falseValue, // Subdomain
 					nullValue,
-				) + generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				) + GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					generateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -1159,7 +1158,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
-					generateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
+					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
@@ -1251,7 +1250,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					domainId,
 					falseValue, // Subdomain
 					nullValue,
-				) + generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				) + GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					generateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -1266,7 +1265,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
-					generateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
+					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +

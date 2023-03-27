@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func withRetries(ctx context.Context, timeout time.Duration, method func() *resource.RetryError) diag.Diagnostics {
@@ -117,4 +118,11 @@ func isStatus400(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 		}
 	}
 	return false
+}
+
+func getBody(apiResponse *platformclientv2.APIResponse) string {
+	if apiResponse != nil {
+		return string(apiResponse.RawBody)
+	}
+	return ""
 }

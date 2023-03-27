@@ -14,9 +14,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 // lockFlow will search for a specific flow and then lock it.  This is to specifically test the force_unlock flag where I want to create a flow,  simulate some one locking it and then attempt to
@@ -71,8 +72,8 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -130,8 +131,8 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
@@ -169,8 +170,8 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 `, flowName1, homeDivisionName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -248,8 +249,8 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -357,8 +358,8 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	defer removeFile(destFile)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -499,6 +500,33 @@ func validateFlowUnlocked(flowResourceName string) resource.TestCheckFunc {
 		}
 
 		return nil
+	}
+}
+
+func cleanupFlows(idPrefix string) {
+	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 50
+		flows, _, getErr := architectApi.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
+		if getErr != nil {
+			return
+		}
+
+		if flows.Entities == nil || len(*flows.Entities) == 0 {
+			break
+		}
+
+		for _, flow := range *flows.Entities {
+			if flow.Name != nil && strings.HasPrefix(*flow.Name, idPrefix) {
+				_, delErr := architectApi.DeleteFlow(*flow.Id)
+				if delErr != nil {
+					diag.Errorf("failed to delete flow %s (%s): %s", *flow.Id, *flow.Name, delErr)
+					return
+				}
+				log.Printf("Deleted flow %s (%s)", *flow.Id, *flow.Name)
+			}
+		}
 	}
 }
 

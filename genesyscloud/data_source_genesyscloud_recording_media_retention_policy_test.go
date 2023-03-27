@@ -132,8 +132,8 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 	cleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateRoutingEmailDomainResource(
@@ -141,7 +141,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					domainId,
 					falseValue, // Subdomain
 					nullValue,
-				) + generateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				) + GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					generateAuthRoleResource(
 						roleResource1,
 						roleName1,
@@ -156,7 +156,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
-					generateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
+					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +

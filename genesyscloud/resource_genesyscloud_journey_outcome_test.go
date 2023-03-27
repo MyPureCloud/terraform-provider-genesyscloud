@@ -6,10 +6,12 @@ import (
 	"strings"
 	"testing"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func TestAccResourceJourneyOutcome(t *testing.T) {
@@ -17,27 +19,25 @@ func TestAccResourceJourneyOutcome(t *testing.T) {
 }
 
 func runResourceJourneyOutcomeTestCase(t *testing.T, testCaseName string) {
-	const testType = "resource"
-	const testSuitName = "journey_outcome"
 	const resourceName = "genesyscloud_journey_outcome"
-	const idPrefix = "terraform_test_"
-	setupJourneyOutcome(t, idPrefix, testCaseName)
+	setupJourneyOutcome(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		Steps:             generateTestSteps(testType, testSuitName, testCaseName, resourceName, idPrefix, nil),
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyOutcomesDestroyed,
 	})
 }
 
-func setupJourneyOutcome(t *testing.T, idPrefix string, testCaseName string) {
+func setupJourneyOutcome(t *testing.T, testCaseName string) {
 	err := authorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cleanupJourneyOutcomes(idPrefix + testCaseName)
+	testCasePrefix := testrunner.TestObjectIdPrefix + testCaseName
+	cleanupJourneyOutcomes(testCasePrefix)
 }
 
 func cleanupJourneyOutcomes(idPrefix string) {

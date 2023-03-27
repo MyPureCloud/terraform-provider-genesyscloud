@@ -6,46 +6,49 @@ import (
 	"strings"
 	"testing"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
-
-func TestAccResourceJourneySegmentSession(t *testing.T) {
-	runResourceJourneySegmentTestCase(t, "basic_session_attributes")
-}
 
 func TestAccResourceJourneySegmentCustomer(t *testing.T) {
 	runResourceJourneySegmentTestCase(t, "basic_customer_attributes")
+}
+
+func TestAccResourceJourneySegmentSession(t *testing.T) {
+	runResourceJourneySegmentTestCase(t, "basic_session_attributes")
 }
 
 func TestAccResourceJourneySegmentContextOnly(t *testing.T) {
 	runResourceJourneySegmentTestCase(t, "context_only_to_journey_only")
 }
 
+func TestAccResourceJourneySegmentOptionalAttributes(t *testing.T) {
+	runResourceJourneySegmentTestCase(t, "optional_attributes")
+}
+
 func runResourceJourneySegmentTestCase(t *testing.T, testCaseName string) {
-	const testType = "resource"
-	const testSuitName = "journey_segment"
 	const resourceName = "genesyscloud_journey_segment"
-	const idPrefix = "terraform_test_"
-	setupJourneySegment(t, idPrefix, testCaseName)
+	setupJourneySegment(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		Steps:             generateTestSteps(testType, testSuitName, testCaseName, resourceName, idPrefix, nil),
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneySegmentsDestroyed,
 	})
 }
 
-func setupJourneySegment(t *testing.T, idPrefix string, testCaseName string) {
+func setupJourneySegment(t *testing.T, testCaseName string) {
 	err := authorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cleanupJourneySegments(idPrefix + testCaseName)
+	cleanupJourneySegments(testrunner.TestObjectIdPrefix + testCaseName)
 }
 
 func cleanupJourneySegments(idPrefix string) {

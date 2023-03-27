@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func resourceOrgauthorizationPairing() *schema.Resource {
@@ -47,10 +47,10 @@ func deleteOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 }
 
 func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	userIds := interfaceListToStrings(d.Get("user_ids").([]interface{}))
-	groupIds := interfaceListToStrings(d.Get("group_ids").([]interface{}))
+	userIds := InterfaceListToStrings(d.Get("user_ids").([]interface{}))
+	groupIds := InterfaceListToStrings(d.Get("group_ids").([]interface{}))
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	organizationAuthorizationApi := platformclientv2.NewOrganizationAuthorizationApiWithConfig(sdkConfig)
 
 	sdktrustrequestcreate := platformclientv2.Trustrequestcreate{
@@ -71,7 +71,7 @@ func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 }
 
 func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	organizationAuthorizationApi := platformclientv2.NewOrganizationAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Orgauthorization Pairing %s", d.Id())
@@ -87,19 +87,31 @@ func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, me
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOrgauthorizationPairing())
 
+		schemaUserIds := InterfaceListToStrings(d.Get("user_ids").([]interface{}))
 		if sdktrustrequest.Users != nil {
 			ids := make([]string, 0)
 			for _, item := range *sdktrustrequest.Users {
 				ids = append(ids, *item.Id)
 			}
-			d.Set("user_ids", ids)
+			// if lists are the same: Set in original order to avoid plan not empty error
+			if listsAreEquivalent(schemaUserIds, ids) {
+				d.Set("user_ids", schemaUserIds)
+			} else {
+				d.Set("user_ids", ids)
+			}
 		}
+		schemaGroupIds := InterfaceListToStrings(d.Get("group_ids").([]interface{}))
 		if sdktrustrequest.Groups != nil {
 			ids := make([]string, 0)
 			for _, item := range *sdktrustrequest.Groups {
 				ids = append(ids, *item.Id)
 			}
-			d.Set("group_ids", ids)
+			// if lists are the same: Set in original order to avoid plan not empty error
+			if listsAreEquivalent(schemaGroupIds, ids) {
+				d.Set("group_ids", schemaGroupIds)
+			} else {
+				d.Set("group_ids", ids)
+			}
 		}
 
 		log.Printf("Read Orgauthorization Pairing %s", d.Id())

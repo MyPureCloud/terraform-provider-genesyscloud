@@ -2,12 +2,13 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strconv"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
-	"strconv"
-	"testing"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
@@ -32,8 +33,8 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 		ruleSetName2      = "Test Rule Set " + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundContactList(
@@ -51,7 +52,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 						"cell",
 						"Cell",
 					),
-				) + generateRoutingQueueResourceBasic(
+				) + GenerateRoutingQueueResourceBasic(
 					queueResource1,
 					queueName1) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
@@ -79,7 +80,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 						"cell",
 						"Cell",
 					),
-				) + generateRoutingQueueResourceBasic(
+				) + GenerateRoutingQueueResourceBasic(
 					queueResource2,
 					queueName2) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
@@ -116,8 +117,8 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundContactList(

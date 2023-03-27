@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func buildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{} {
@@ -47,7 +47,7 @@ func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 		return nil
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	// Retrieve defaults from the settings
@@ -74,7 +74,7 @@ func customizeTrunkBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 		return nil
 	}
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	// Retrieve defaults from the settings

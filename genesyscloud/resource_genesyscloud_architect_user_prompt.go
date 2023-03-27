@@ -9,17 +9,39 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"os"
+	"path"
 	"path/filepath"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
+
+type PromptAudioData struct {
+	Language string
+	FileName string
+	MediaUri string
+}
+
+type UserPromptStruct struct {
+	ResourceID  string
+	Name        string
+	Description string
+	Resources   []*UserPromptResourceStruct
+}
+
+type UserPromptResourceStruct struct {
+	Language   string
+	Tts_string string
+	Text       string
+	Filename   string
+}
 
 var userPromptResource = &schema.Resource{
 	Schema: map[string]*schema.Schema{
@@ -714,6 +736,10 @@ func architectUserPromptExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllUserPrompts),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		CustomFileWriter: CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
+			SubDirectory:              "audio_prompts",
+		},
 	}
 }
 
@@ -757,7 +783,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	prompt := platformclientv2.Prompt{
@@ -835,7 +861,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading User Prompt %s", d.Id())
@@ -901,7 +927,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	prompt := platformclientv2.Prompt{
@@ -931,7 +957,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user prompt %s", name)
@@ -1131,4 +1157,99 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 	}
 
 	return nil
+}
+
+func getArchitectPromptAudioData(promptId string, meta interface{}) ([]PromptAudioData, error) {
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	apiInstance := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	data, _, err := apiInstance.GetArchitectPrompt(promptId)
+	if err != nil {
+		return nil, err
+	}
+
+	promptResourceData := []PromptAudioData{}
+	for _, r := range *data.Resources {
+		var data PromptAudioData
+		if r.MediaUri != nil && *r.MediaUri != "" {
+			data.MediaUri = *r.MediaUri
+			data.Language = *r.Language
+			data.FileName = fmt.Sprintf("%s-%s.wav", *r.Language, promptId)
+			promptResourceData = append(promptResourceData, data)
+		}
+	}
+
+	return promptResourceData, nil
+}
+
+// Download audio file from mediaUri to directory/fileName
+func downloadAudioFile(directory string, fileName string, mediaUri string) error {
+	resp, err := http.Get(mediaUri)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	out, err := os.Create(fmt.Sprintf("%s/%s", directory, fileName))
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+// Replace (or create) the filenames key in configMap with the FileName fields in audioDataList
+// which point towards the downloaded audio files stored in the export folder.
+// Since a language can only appear once in a resources array, we can match resources[n]["language"] with audioDataList[n].Language
+func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDataList []PromptAudioData, subDir string) {
+	if resources, ok := configMap["resources"].([]interface{}); ok && len(resources) > 0 {
+		for _, resource := range resources {
+			if r, ok := resource.(map[string]interface{}); ok {
+				fileName := ""
+				languageStr := r["language"].(string)
+				for _, data := range audioDataList {
+					if data.Language == languageStr {
+						fileName = data.FileName
+						break
+					}
+				}
+				if fileName != "" {
+					r["filename"] = path.Join(subDir, fileName)
+				}
+			}
+		}
+	}
+}
+
+func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
+
+	resourcesString := ``
+	for _, p := range userPrompt.Resources {
+		resourcesString += fmt.Sprintf(`resources {
+            language = "%s"
+            tts_string = %s
+            text = %s
+            filename = %s
+        }
+        `,
+			p.Language,
+			p.Tts_string,
+			p.Text,
+			p.Filename,
+		)
+	}
+
+	return fmt.Sprintf(`resource "genesyscloud_architect_user_prompt" "%s" {
+		name = "%s"
+		description = %s
+		%s
+	}
+	`, userPrompt.ResourceID,
+		userPrompt.Name,
+		userPrompt.Description,
+		resourcesString,
+	)
 }

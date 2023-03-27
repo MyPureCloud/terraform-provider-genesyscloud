@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func TestAccResourceGroupBasic(t *testing.T) {
@@ -25,8 +25,8 @@ func TestAccResourceGroupBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create a basic group
@@ -80,7 +80,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 	var (
 		groupResource1 = "test-group-addr"
 		groupName      = "TF Group" + uuid.NewString()
-		addrPhone1     = "3174269078"
+		addrPhone1     = "+13174269078"
 		addrPhone2     = "+441434634996"
 		addrPhoneExt   = "4321"
 		typeGroupRing  = "GROUPRING"
@@ -88,8 +88,8 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -150,8 +150,8 @@ func TestAccResourceGroupMembers(t *testing.T) {
 		userName2     = "Ryan Terraform"
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create group with an owner and a member
@@ -160,11 +160,11 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					groupName,
 					generateGroupOwners("genesyscloud_user."+userResource1+".id"),
 					generateGroupMembers("genesyscloud_user."+userResource2+".id"),
-				) + generateBasicUserResource(
+				) + GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + generateBasicUserResource(
+				) + GenerateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
@@ -184,11 +184,11 @@ func TestAccResourceGroupMembers(t *testing.T) {
 						"genesyscloud_user."+userResource1+".id",
 						"genesyscloud_user."+userResource2+".id",
 					),
-				) + generateBasicUserResource(
+				) + GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + generateBasicUserResource(
+				) + GenerateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
@@ -208,11 +208,11 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					generateGroupMembers(
 						"genesyscloud_user."+userResource1+".id",
 					),
-				) + generateBasicUserResource(
+				) + GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + generateBasicUserResource(
+				) + GenerateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
@@ -229,7 +229,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					groupName,
 					generateGroupOwners("genesyscloud_user."+userResource2+".id"),
 					"member_ids = []",
-				) + generateBasicUserResource(
+				) + GenerateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,

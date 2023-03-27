@@ -90,6 +90,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
+- `direct_routing` (Block List, Max: 1) Used by the System to set Direct Routing settings for a system Direct Routing queue. (see [below for nested schema](#nestedblock--direct_routing))
 - `division_id` (String) The division to which this queue will belong. If not set, the home division will be used.
 - `email_in_queue_flow_id` (String) The in-queue flow ID to use for email conversations waiting in queue.
 - `enable_manual_assignment` (Boolean) Indicates whether manual assignment is enabled for this queue. Defaults to `false`.
@@ -136,6 +137,26 @@ Required:
 - `member_group_id` (String) ID (GUID) for Group, SkillGroup, Team
 - `member_group_type` (String) The type of the member group. Accepted values: TEAM, GROUP, SKILLGROUP
 
+
+
+<a id="nestedblock--direct_routing"></a>
+### Nested Schema for `direct_routing`
+
+Required:
+
+- `backup_queue_id` (String) Direct Routing default backup queue id.
+- `call_inbound_flow_id` (String) Id of the Direct Routing inbound call flow IVR.
+- `email_inbound_flow_id` (String) Id of the Direct Routing inbound email flow.
+- `message_inbound_flow_id` (String) Id of the Direct Routing inbound message flow.
+- `voicemail_flow_id` (String) Id of the in-queue call flow used for collecting voicemails and converting to ACD voicemail.
+
+Optional:
+
+- `agent_wait_seconds` (Number) The queue default time a Direct Routing interaction will wait for an agent before it goes to configured backup. Defaults to `60`.
+- `call_enabled` (Boolean) Boolean indicating if Direct Routing calls are enabled. Defaults to `true`.
+- `email_enabled` (Boolean) Boolean indicating if Direct Routing emails are enabled. Defaults to `true`.
+- `message_enabled` (Boolean) Boolean indicating if Direct Routing messages are enabled. Defaults to `true`.
+- `wait_for_agent` (Boolean) Boolean indicating if Direct Routing interactions should wait for the targeted agent by default. Defaults to `false`.
 
 
 <a id="nestedblock--media_settings_call"></a>

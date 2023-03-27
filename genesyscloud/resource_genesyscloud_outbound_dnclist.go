@@ -6,13 +6,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func getAllOutboundDncLists(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -142,10 +142,10 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	campaignId := d.Get("campaign_id").(string)
 	licenseId := d.Get("license_id").(string)
 	dncSourceType := d.Get("dnc_source_type").(string)
-	dncCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
+	dncCodes := InterfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 	entries := d.Get("entries").([]interface{})
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkDncListCreate := platformclientv2.Dnclistcreate{
@@ -202,12 +202,12 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	contactMethod := d.Get("contact_method").(string)
 	loginId := d.Get("login_id").(string)
 	campaignId := d.Get("campaign_id").(string)
-	dncCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
+	dncCodes := InterfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 	licenseId := d.Get("license_id").(string)
 	dncSourceType := d.Get("dnc_source_type").(string)
 	entries := d.Get("entries").([]interface{})
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkDncList := platformclientv2.Dnclist{
@@ -268,7 +268,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
@@ -297,7 +297,7 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			_ = d.Set("campaign_id", *sdkDncList.CampaignId)
 		}
 		if sdkDncList.DncCodes != nil {
-			schemaCodes := interfaceListToStrings(d.Get("dnc_codes").([]interface{}))
+			schemaCodes := InterfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 			// preserve ordering and avoid a plan not empty error
 			if listsAreEquivalent(schemaCodes, *sdkDncList.DncCodes) {
 				_ = d.Set("dnc_codes", schemaCodes)
@@ -320,7 +320,7 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {

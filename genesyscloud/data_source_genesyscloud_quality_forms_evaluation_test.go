@@ -17,40 +17,40 @@ func TestAccDataSourceQualityFormsEvaluations(t *testing.T) {
 	)
 
 	// Most basic evaluation form
-	evaluationForm1 := evaluationFormStruct{
-		name: formName,
-		questionGroups: []evaluationFormQuestionGroupStruct{
+	evaluationForm1 := EvaluationFormStruct{
+		Name: formName,
+		QuestionGroups: []EvaluationFormQuestionGroupStruct{
 			{
-				name:   "Test Question Group 1",
-				weight: 1,
-				questions: []evaluationFormQuestionStruct{
+				Name:   "Test Question Group 1",
+				Weight: 1,
+				Questions: []EvaluationFormQuestionStruct{
 					{
-						text: "Did the agent perform the opening spiel?",
-						answerOptions: []answerOptionStruct{
+						Text: "Did the agent perform the opening spiel?",
+						AnswerOptions: []AnswerOptionStruct{
 							{
-								text:  "Yes",
-								value: 1,
+								Text:  "Yes",
+								Value: 1,
 							},
 							{
-								text:  "No",
-								value: 0,
+								Text:  "No",
+								Value: 0,
 							},
 						},
 					},
 					{
-						text: "Multiple Choice Question.",
-						answerOptions: []answerOptionStruct{
+						Text: "Multiple Choice Question.",
+						AnswerOptions: []AnswerOptionStruct{
 							{
-								text:  "Option 1",
-								value: 1,
+								Text:  "Option 1",
+								Value: 1,
 							},
 							{
-								text:  "Option 2",
-								value: 2,
+								Text:  "Option 2",
+								Value: 2,
 							},
 							{
-								text:  "Option 3",
-								value: 3,
+								Text:  "Option 3",
+								Value: 3,
 							},
 						},
 					},
@@ -60,11 +60,11 @@ func TestAccDataSourceQualityFormsEvaluations(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateEvaluationFormResource(
+				Config: GenerateEvaluationFormResource(
 					formRes, &evaluationForm1,
 				) + generateQualityFormsEvaluationsDataSource(
 					formDataRes,

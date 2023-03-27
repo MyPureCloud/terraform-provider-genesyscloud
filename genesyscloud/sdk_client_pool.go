@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 // SDKClientPool holds a pool of client configs for the Genesys Cloud SDK. One should be
@@ -127,7 +127,7 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 		}
 
 		// Copy to a new providerMeta object and set the sdk config
-		newMeta := *meta.(*providerMeta)
+		newMeta := *meta.(*ProviderMeta)
 		newMeta.ClientConfig = clientConfig
 		return method(ctx, r, &newMeta)
 	}

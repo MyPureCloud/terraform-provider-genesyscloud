@@ -2,16 +2,17 @@ package genesyscloud
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 /*
@@ -118,8 +119,8 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 	}()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: dncListResource +
@@ -306,7 +307,7 @@ func createRoutingSmsPhoneNumber(inputSmsPhoneNumber string, api *platformclient
 		status          string
 		maxRetries      = 10
 	)
-	_, resp, err := api.GetRoutingSmsPhonenumber(inputSmsPhoneNumber)
+	_, resp, err := api.GetRoutingSmsPhonenumber(inputSmsPhoneNumber, "compliance")
 	if resp.StatusCode == 200 {
 		// Number already exists
 		return nil
@@ -325,7 +326,7 @@ func createRoutingSmsPhoneNumber(inputSmsPhoneNumber string, api *platformclient
 		for i := 0; i <= maxRetries; i++ {
 			time.Sleep(3 * time.Second)
 			// GET /api/v2/routing/sms/phonenumbers/{addressId}
-			sdkSmsPhoneNumber, _, err := api.GetRoutingSmsPhonenumber(*address.PhoneNumber)
+			sdkSmsPhoneNumber, _, err := api.GetRoutingSmsPhonenumber(*address.PhoneNumber, "compliance")
 			if err != nil {
 				return err
 			}

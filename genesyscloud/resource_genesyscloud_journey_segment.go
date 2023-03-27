@@ -7,12 +7,15 @@ import (
 	"regexp"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 var (
@@ -77,9 +80,10 @@ var (
 			Elem:        externalSegmentResource, // can only be used with Customer scope
 		},
 		"assignment_expiration_days": {
-			Description: "Time, in days, from when the segment is assigned until it is automatically unassigned.",
-			Type:        schema.TypeInt,
-			Optional:    true,
+			Description:  "Time, in days, from when the segment is assigned until it is automatically unassigned.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			ValidateFunc: validation.IntBetween(2, 60),
 		},
 	}
 
@@ -94,86 +98,18 @@ var (
 		},
 	}
 
-	journeyResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"patterns": {
-				Description: "A list of zero or more patterns to match.",
-				Type:        schema.TypeSet,
-				Required:    true,
-				Elem:        journeyPatternResource,
-			},
-		},
-	}
-
-	externalSegmentResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "Identifier for the external segment in the system where it originates from.  Changing the id attribute will cause the journey_segment resource to be dropped and recreated with a new ID.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"name": {
-				Description: "Name for the external segment in the system where it originates from.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"source": {
-				Description:  "The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom. Changing the source attribute will cause the journey_segment resource to be dropped and recreated with a new ID.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"AdobeExperiencePlatform", "Custom"}, false),
-			},
-		},
-	}
-
 	contextPatternResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"criteria": {
 				Description: "A list of one or more criteria to satisfy.",
 				Type:        schema.TypeSet,
 				Required:    true,
-				Elem:        contextCriteriaResource,
+				Elem:        entityTypeCriteriaResource,
 			},
 		},
 	}
 
-	journeyPatternResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"criteria": {
-				Description: "A list of one or more criteria to satisfy.",
-				Type:        schema.TypeSet,
-				Required:    true,
-				Elem:        journeyCriteriaResource,
-			},
-			"count": {
-				Description: "The number of times the pattern must match.",
-				Type:        schema.TypeInt,
-				Required:    true,
-			},
-			"stream_type": {
-				Description:  "The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Web" /*, "Custom", "Conversation"*/}, false), // Custom and Conversation seem not to be supported by the API despite the documentation
-			},
-			"session_type": {
-				Description:  "The session type for which this pattern can be matched on.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"web"}, false), // custom value seems not to be supported by the API despite the documentation
-			},
-			"event_name": {
-				Description: "The name of the event for which this pattern can be matched on.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     nil,
-			},
-		},
-	}
-
-	contextCriteriaResource = &schema.Resource{
+	entityTypeCriteriaResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"key": {
 				Description:  "The criteria key.",
@@ -193,9 +129,10 @@ var (
 				Required:    true,
 			},
 			"operator": {
-				Description:  "The comparison operator.Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.",
+				Description:  "The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.",
 				Type:         schema.TypeString,
 				Optional:     true,
+				Default:      "equal",
 				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
 			},
 			"entity_type": {
@@ -207,7 +144,52 @@ var (
 		},
 	}
 
-	journeyCriteriaResource = &schema.Resource{
+	journeyResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"patterns": {
+				Description: "A list of zero or more patterns to match.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        journeyPatternResource,
+			},
+		},
+	}
+
+	journeyPatternResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"criteria": {
+				Description: "A list of one or more criteria to satisfy.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        criteriaResource,
+			},
+			"count": {
+				Description: "The number of times the pattern must match.",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+			"stream_type": {
+				Description:  "The stream type for which this pattern can be matched on.Valid values: Web, Custom, Conversation.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Web" /*, "Custom", "Conversation"*/}, false), // Custom and Conversation seem not to be supported by the API despite the documentation
+			},
+			"session_type": {
+				Description:  "The session type for which this pattern can be matched on.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"web"}, false), // custom value seems not to be supported by the API despite the documentation
+			},
+			"event_name": {
+				Description: "The name of the event for which this pattern can be matched on.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     nil,
+			},
+		},
+	}
+
+	criteriaResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"key": {
 				Description: "The criteria key.",
@@ -236,7 +218,31 @@ var (
 				Description:  "The comparison operator.Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.",
 				Type:         schema.TypeString,
 				Optional:     true,
+				Default:      "equal",
 				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
+			},
+		},
+	}
+
+	externalSegmentResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "Identifier for the external segment in the system where it originates from. Changing the id attribute will cause the journey_segment resource to be dropped and recreated with a new ID.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+			},
+			"name": {
+				Description: "Name for the external segment in the system where it originates from.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"source": {
+				Description:  "The external system where the segment originates from.Valid values: AdobeExperiencePlatform, Custom. Changing the source attribute will cause the journey_segment resource to be dropped and recreated with a new ID.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringInSlice([]string{"AdobeExperiencePlatform", "Custom"}, false),
 			},
 		},
 	}
@@ -291,14 +297,15 @@ func resourceJourneySegment() *schema.Resource {
 }
 
 func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	journeySegment := buildSdkJourneySegment(d)
 
 	log.Printf("Creating journey segment %s", *journeySegment.DisplayName)
 	result, resp, err := journeyApi.PostJourneySegments(*journeySegment)
 	if err != nil {
-		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, *journeySegment, resp.RawBody)
+		input, _ := interfaceToJson(*journeySegment)
+		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, input, getBody(resp))
 	}
 
 	d.SetId(*result.Id)
@@ -308,7 +315,7 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Reading journey segment %s", d.Id())
@@ -330,7 +337,7 @@ func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	patchSegment := buildSdkPatchSegment(d)
 
@@ -345,7 +352,8 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 		patchSegment.Version = journeySegment.Version
 		_, resp, patchErr := journeyApi.PatchJourneySegment(d.Id(), *patchSegment)
 		if patchErr != nil {
-			return resp, diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *patchSegment.DisplayName, patchErr, *patchSegment, resp.RawBody)
+			input, _ := interfaceToJson(*patchSegment)
+			return resp, diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *patchSegment.DisplayName, patchErr, input, getBody(resp))
 		}
 		return resp, nil
 	})
@@ -360,7 +368,7 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	displayName := d.Get("display_name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting journey segment with display name %s", displayName)
@@ -386,34 +394,34 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclientv2.Journeysegment) {
 	d.Set("is_active", *journeySegment.IsActive)
 	d.Set("display_name", *journeySegment.DisplayName)
-	setNillableValue(d, "description", journeySegment.Description)
-	setNillableValue(d, "color", journeySegment.Color)
-	setNillableValue(d, "scope", journeySegment.Scope)
-	setNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
-	setNillableValue(d, "context", flattenGenericAsList(journeySegment.Context, flattenContext))
-	setNillableValue(d, "journey", flattenGenericAsList(journeySegment.Journey, flattenJourney))
-	setNillableValue(d, "external_segment", flattenGenericAsList(journeySegment.ExternalSegment, flattenExternalSegment))
-	setNillableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
+	resourcedata.SetNillableValue(d, "description", journeySegment.Description)
+	d.Set("color", *journeySegment.Color)
+	d.Set("scope", *journeySegment.Scope)
+	resourcedata.SetNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
+	resourcedata.SetNillableValue(d, "context", flattenAsList(journeySegment.Context, flattenContext))
+	resourcedata.SetNillableValue(d, "journey", flattenAsList(journeySegment.Journey, flattenJourney))
+	resourcedata.SetNillableValue(d, "external_segment", flattenAsList(journeySegment.ExternalSegment, flattenExternalSegment))
+	resourcedata.SetNillableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegment {
-	isActive := getNillableBool(journeySegment, "is_active")
-	displayName := getNillableValue[string](journeySegment, "display_name")
-	description := getNillableValue[string](journeySegment, "description")
-	color := getNillableValue[string](journeySegment, "color")
-	scope := getNillableValue[string](journeySegment, "scope")
-	shouldDisplayToAgent := getNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
-	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
-	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment)
-	assignmentExpirationDays := getNillableValue[int](journeySegment, "assignment_expiration_days")
+	isActive := journeySegment.Get("is_active").(bool)
+	displayName := journeySegment.Get("display_name").(string)
+	description := resourcedata.GetNillableValue[string](journeySegment, "description")
+	color := journeySegment.Get("color").(string)
+	scope := journeySegment.Get("scope").(string)
+	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney, false)
+	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkExternalSegment, true)
+	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Journeysegment{
-		IsActive:                 isActive,
-		DisplayName:              displayName,
+		IsActive:                 &isActive,
+		DisplayName:              &displayName,
 		Description:              description,
-		Color:                    color,
-		Scope:                    scope,
+		Color:                    &color,
+		Scope:                    &scope,
 		ShouldDisplayToAgent:     shouldDisplayToAgent,
 		Context:                  sdkContext,
 		Journey:                  journey,
@@ -423,27 +431,27 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 }
 
 func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2.Patchsegment {
-	isActive := getNillableBool(journeySegment, "is_active")
-	displayName := getNillableValue[string](journeySegment, "display_name")
-	description := getNillableValue[string](journeySegment, "description")
-	color := getNillableValue[string](journeySegment, "color")
-	shouldDisplayToAgent := getNillableBool(journeySegment, "should_display_to_agent")
-	sdkContext := buildSdkGenericListFirstElement(journeySegment, "context", buildSdkContext)
-	journey := buildSdkGenericListFirstElement(journeySegment, "journey", buildSdkJourney)
-	externalSegment := buildSdkGenericListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment)
-	assignmentExpirationDays := getNillableValue[int](journeySegment, "assignment_expiration_days")
+	isActive := journeySegment.Get("is_active").(bool)
+	displayName := journeySegment.Get("display_name").(string)
+	description := resourcedata.GetNillableValue[string](journeySegment, "description")
+	color := journeySegment.Get("color").(string)
+	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
+	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkContext, false)
+	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkJourney, false)
+	externalSegment := resourcedata.BuildSdkListFirstElement(journeySegment, "external_segment", buildSdkPatchExternalSegment, true)
+	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
-	return &platformclientv2.Patchsegment{
-		IsActive:                 isActive,
-		DisplayName:              displayName,
-		Description:              description,
-		Color:                    color,
-		ShouldDisplayToAgent:     shouldDisplayToAgent,
-		Context:                  sdkContext,
-		Journey:                  journey,
-		ExternalSegment:          externalSegment,
-		AssignmentExpirationDays: assignmentExpirationDays,
-	}
+	sdkPatchSegment := platformclientv2.Patchsegment{}
+	sdkPatchSegment.SetField("IsActive", &isActive)
+	sdkPatchSegment.SetField("DisplayName", &displayName)
+	sdkPatchSegment.SetField("Description", description)
+	sdkPatchSegment.SetField("Color", &color)
+	sdkPatchSegment.SetField("ShouldDisplayToAgent", shouldDisplayToAgent)
+	sdkPatchSegment.SetField("Context", sdkContext)
+	sdkPatchSegment.SetField("Journey", journey)
+	sdkPatchSegment.SetField("ExternalSegment", externalSegment)
+	sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	return &sdkPatchSegment
 }
 
 func flattenContext(context *platformclientv2.Context) map[string]interface{} {
@@ -451,14 +459,14 @@ func flattenContext(context *platformclientv2.Context) map[string]interface{} {
 		return nil
 	}
 	contextMap := make(map[string]interface{})
-	contextMap["patterns"] = flattenGenericList(context.Patterns, flattenContextPattern)
+	contextMap["patterns"] = *flattenList(context.Patterns, flattenContextPattern)
 	return contextMap
 }
 
 func buildSdkContext(context map[string]interface{}) *platformclientv2.Context {
 	patterns := &[]platformclientv2.Contextpattern{}
 	if context != nil {
-		patterns = buildSdkGenericList(context, "patterns", buildSdkContextPattern)
+		patterns = stringmap.BuildSdkList(context, "patterns", buildSdkContextPattern)
 	}
 	return &platformclientv2.Context{
 		Patterns: patterns,
@@ -467,31 +475,29 @@ func buildSdkContext(context map[string]interface{}) *platformclientv2.Context {
 
 func flattenContextPattern(contextPattern *platformclientv2.Contextpattern) map[string]interface{} {
 	contextPatternMap := make(map[string]interface{})
-	contextPatternMap["criteria"] = flattenGenericList(contextPattern.Criteria, flattenEntityTypeCriteria)
+	contextPatternMap["criteria"] = *flattenList(contextPattern.Criteria, flattenEntityTypeCriteria)
 	return contextPatternMap
 }
 
 func buildSdkContextPattern(contextPattern map[string]interface{}) *platformclientv2.Contextpattern {
 	return &platformclientv2.Contextpattern{
-		Criteria: buildSdkGenericList(contextPattern, "criteria", buildSdkEntityTypeCriteria),
+		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkEntityTypeCriteria),
 	}
 }
 
 func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecriteria) map[string]interface{} {
 	entityTypeCriteriaMap := make(map[string]interface{})
-	setMapValueIfNotNil(entityTypeCriteriaMap, "key", entityTypeCriteria.Key)
-	if entityTypeCriteria.Values != nil {
-		entityTypeCriteriaMap["values"] = stringListToSet(*entityTypeCriteria.Values)
-	}
-	setMapValueIfNotNil(entityTypeCriteriaMap, "should_ignore_case", entityTypeCriteria.ShouldIgnoreCase)
-	setMapValueIfNotNil(entityTypeCriteriaMap, "operator", entityTypeCriteria.Operator)
-	setMapValueIfNotNil(entityTypeCriteriaMap, "entity_type", entityTypeCriteria.EntityType)
+	entityTypeCriteriaMap["key"] = *entityTypeCriteria.Key
+	entityTypeCriteriaMap["values"] = stringListToSet(*entityTypeCriteria.Values)
+	entityTypeCriteriaMap["should_ignore_case"] = *entityTypeCriteria.ShouldIgnoreCase
+	entityTypeCriteriaMap["operator"] = *entityTypeCriteria.Operator
+	entityTypeCriteriaMap["entity_type"] = *entityTypeCriteria.EntityType
 	return entityTypeCriteriaMap
 }
 
 func buildSdkEntityTypeCriteria(entityTypeCriteria map[string]interface{}) *platformclientv2.Entitytypecriteria {
 	key := entityTypeCriteria["key"].(string)
-	values := buildSdkStringListFromMapEntry(entityTypeCriteria, "values")
+	values := stringmap.BuildSdkStringList(entityTypeCriteria, "values")
 	shouldIgnoreCase := entityTypeCriteria["should_ignore_case"].(bool)
 	operator := entityTypeCriteria["operator"].(string)
 	entityType := entityTypeCriteria["entity_type"].(string)
@@ -510,14 +516,14 @@ func flattenJourney(journey *platformclientv2.Journey) map[string]interface{} {
 		return nil
 	}
 	journeyMap := make(map[string]interface{})
-	journeyMap["patterns"] = flattenGenericList(journey.Patterns, flattenJourneyPattern)
+	journeyMap["patterns"] = *flattenList(journey.Patterns, flattenJourneyPattern)
 	return journeyMap
 }
 
 func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
 	patterns := &[]platformclientv2.Journeypattern{}
 	if journey != nil {
-		patterns = buildSdkGenericList(journey, "patterns", buildSdkJourneyPattern)
+		patterns = stringmap.BuildSdkList(journey, "patterns", buildSdkJourneyPattern)
 	}
 	return &platformclientv2.Journey{
 		Patterns: patterns,
@@ -526,20 +532,20 @@ func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
 
 func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[string]interface{} {
 	journeyPatternMap := make(map[string]interface{})
-	journeyPatternMap["criteria"] = flattenGenericList(journeyPattern.Criteria, flattenCriteria)
-	setMapValueIfNotNil(journeyPatternMap, "count", journeyPattern.Count)
-	setMapValueIfNotNil(journeyPatternMap, "stream_type", journeyPattern.StreamType)
-	setMapValueIfNotNil(journeyPatternMap, "session_type", journeyPattern.SessionType)
-	setMapValueIfNotNil(journeyPatternMap, "event_name", journeyPattern.EventName)
+	journeyPatternMap["criteria"] = *flattenList(journeyPattern.Criteria, flattenCriteria)
+	journeyPatternMap["count"] = *journeyPattern.Count
+	journeyPatternMap["stream_type"] = *journeyPattern.StreamType
+	journeyPatternMap["session_type"] = *journeyPattern.SessionType
+	stringmap.SetValueIfNotNil(journeyPatternMap, "event_name", journeyPattern.EventName)
 	return journeyPatternMap
 }
 
 func buildSdkJourneyPattern(journeyPattern map[string]interface{}) *platformclientv2.Journeypattern {
-	criteria := buildSdkGenericList(journeyPattern, "criteria", buildSdkCriteria)
+	criteria := stringmap.BuildSdkList(journeyPattern, "criteria", buildSdkCriteria)
 	count := journeyPattern["count"].(int)
 	streamType := journeyPattern["stream_type"].(string)
 	sessionType := journeyPattern["session_type"].(string)
-	eventName := getNonDefaultMapValue[string](journeyPattern, "event_name")
+	eventName := stringmap.GetNonDefaultValue[string](journeyPattern, "event_name")
 
 	return &platformclientv2.Journeypattern{
 		Criteria:    criteria,
@@ -552,18 +558,16 @@ func buildSdkJourneyPattern(journeyPattern map[string]interface{}) *platformclie
 
 func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{} {
 	criteriaMap := make(map[string]interface{})
-	setMapValueIfNotNil(criteriaMap, "key", criteria.Key)
-	if criteria.Values != nil {
-		criteriaMap["values"] = stringListToSet(*criteria.Values)
-	}
-	setMapValueIfNotNil(criteriaMap, "should_ignore_case", criteria.ShouldIgnoreCase)
-	setMapValueIfNotNil(criteriaMap, "operator", criteria.Operator)
+	criteriaMap["key"] = *criteria.Key
+	criteriaMap["values"] = stringListToSet(*criteria.Values)
+	criteriaMap["should_ignore_case"] = *criteria.ShouldIgnoreCase
+	criteriaMap["operator"] = *criteria.Operator
 	return criteriaMap
 }
 
 func buildSdkCriteria(criteria map[string]interface{}) *platformclientv2.Criteria {
 	key := criteria["key"].(string)
-	values := buildSdkStringListFromMapEntry(criteria, "values")
+	values := stringmap.BuildSdkStringList(criteria, "values")
 	shouldIgnoreCase := criteria["should_ignore_case"].(bool)
 	operator := criteria["operator"].(string)
 
@@ -577,17 +581,13 @@ func buildSdkCriteria(criteria map[string]interface{}) *platformclientv2.Criteri
 
 func flattenExternalSegment(externalSegment *platformclientv2.Externalsegment) map[string]interface{} {
 	externalSegmentMap := make(map[string]interface{})
-	setMapValueIfNotNil(externalSegmentMap, "id", externalSegment.Id)
-	setMapValueIfNotNil(externalSegmentMap, "name", externalSegment.Name)
-	setMapValueIfNotNil(externalSegmentMap, "source", externalSegment.Source)
+	externalSegmentMap["id"] = *externalSegment.Id
+	externalSegmentMap["name"] = *externalSegment.Name
+	externalSegmentMap["source"] = *externalSegment.Source
 	return externalSegmentMap
 }
 
 func buildSdkExternalSegment(externalSegment map[string]interface{}) *platformclientv2.Externalsegment {
-	if externalSegment == nil {
-		return nil
-	}
-
 	id := externalSegment["id"].(string)
 	name := externalSegment["name"].(string)
 	source := externalSegment["source"].(string)
@@ -600,10 +600,6 @@ func buildSdkExternalSegment(externalSegment map[string]interface{}) *platformcl
 }
 
 func buildSdkPatchExternalSegment(externalSegment map[string]interface{}) *platformclientv2.Patchexternalsegment {
-	if externalSegment == nil {
-		return nil
-	}
-
 	name := externalSegment["name"].(string)
 
 	return &platformclientv2.Patchexternalsegment{

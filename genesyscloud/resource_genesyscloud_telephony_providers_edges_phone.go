@@ -7,13 +7,14 @@ import (
 	"strconv"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 var (
@@ -163,7 +164,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	capabilities := buildSdkCapabilities(d)
 	webRtcUserId := d.Get("web_rtc_user_id")
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	var err error
@@ -187,11 +188,16 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		Id: &phoneMetaBaseId,
 	}
 
+	//Have to create a phonebasesettings object now as of version v90.  Used to be a domain ref but the engineering team changed the type in the swagger def
+	phoneSettings := &platformclientv2.Phonebasesettings{
+		Id: phoneBaseSettings.Id,
+	}
+
 	createPhone := &platformclientv2.Phone{
 		Name:              &name,
 		State:             &state,
 		Site:              site,
-		PhoneBaseSettings: phoneBaseSettings,
+		PhoneBaseSettings: phoneSettings,
 		LineBaseSettings:  lineBaseSettings,
 		PhoneMetaBase:     phoneMetaBase,
 		Lines:             lines,
@@ -239,7 +245,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading phone %s", d.Id())
@@ -326,7 +332,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
 	webRtcUserId := d.Get("web_rtc_user_id")
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	var err error
@@ -340,10 +346,15 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
 	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
 
+	//Have to create a phonebasesettings object now as of version v90.  Used to be a domain ref but the engineering team changed the type in the swagger def
+	phoneSettings := &platformclientv2.Phonebasesettings{
+		Id: phoneBaseSettings.Id,
+	}
+
 	updatePhoneBody := &platformclientv2.Phone{
 		Name:              &name,
 		Site:              site,
-		PhoneBaseSettings: phoneBaseSettings,
+		PhoneBaseSettings: phoneSettings,
 		PhoneMetaBase:     phoneMetaBase,
 		Lines:             lines,
 	}
@@ -383,7 +394,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting Phone")
@@ -542,7 +553,7 @@ func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Do
 	isStandAlone = false
 
 	lineAddresses, ok := d.GetOk("line_addresses")
-	lineStringList := interfaceListToStrings(lineAddresses.([]interface{}))
+	lineStringList := InterfaceListToStrings(lineAddresses.([]interface{}))
 
 	// If line_addresses is not provided, phone is not standalone
 	if !ok || len(lineStringList) == 0 {

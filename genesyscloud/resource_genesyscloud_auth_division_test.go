@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func TestAccResourceAuthDivisionBasic(t *testing.T) {
@@ -19,8 +19,8 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 		divDesc1     = "Terraform test division"
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -68,8 +68,8 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Set home division description
@@ -83,6 +83,15 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "name", divHomeName),
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "description", homeDesc),
 					validateHomeDivisionID("genesyscloud_auth_division."+divHomeRes),
+				),
+			},
+			{
+				// Set home division description again (applying twice to allow for desc to update)
+				Config: generateAuthDivisionResource(
+					divHomeRes,
+					divHomeName,
+					strconv.Quote(homeDesc2),
+					trueValue, // Home division
 				),
 			},
 			{

@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func stringInSlice(a string, list []string) bool {
+func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
 			return true
@@ -80,6 +80,13 @@ func stringListToSet(list []string) *schema.Set {
 	return schema.NewSet(schema.HashString, interfaceList)
 }
 
+func stringListToSetOrNil(list *[]string) *schema.Set {
+	if list == nil {
+		return nil
+	}
+	return stringListToSet(*list)
+}
+
 func stringListToInterfaceList(list []string) []interface{} {
 	interfaceList := make([]interface{}, len(list))
 	for i, v := range list {
@@ -90,11 +97,11 @@ func stringListToInterfaceList(list []string) []interface{} {
 
 func setToStringList(strSet *schema.Set) *[]string {
 	interfaceList := strSet.List()
-	strList := interfaceListToStrings(interfaceList)
+	strList := InterfaceListToStrings(interfaceList)
 	return &strList
 }
 
-func interfaceListToStrings(interfaceList []interface{}) []string {
+func InterfaceListToStrings(interfaceList []interface{}) []string {
 	strs := make([]string, len(interfaceList))
 	for i, val := range interfaceList {
 		strs[i] = val.(string)
@@ -113,42 +120,27 @@ func buildSdkStringListFromInterfaceArray(d *schema.ResourceData, attrName strin
 	var stringArray []string
 	if val, ok := d.GetOk(attrName); ok {
 		if valArray, ok := val.([]interface{}); ok {
-			stringArray = interfaceListToStrings(valArray)
+			stringArray = InterfaceListToStrings(valArray)
 		}
 	}
 	return &stringArray
 }
 
-func buildSdkStringListFromMapEntry(d map[string]interface{}, attrName string) *[]string {
-	child := d[attrName]
-	if child != nil {
-		return setToStringList(child.(*schema.Set))
-	}
-	return nil
-}
-
-func buildSdkGenericListFirstElement[T interface{}](d *schema.ResourceData, attrName string, elementBuilder func(map[string]interface{}) *T) *T {
-	child := d.Get(attrName).(*schema.Set).List()
-	if len(child) > 0 {
-		return elementBuilder(child[0].(map[string]interface{}))
-	}
-	return elementBuilder(nil)
-}
-
-func buildSdkGenericList[T interface{}](d map[string]interface{}, attrName string, elementBuilder func(map[string]interface{}) *T) *[]T {
-	child := d[attrName]
-	if child != nil {
-		list := child.(*schema.Set).List()
-		sdkList := make([]T, len(list))
-		for i, element := range list {
-			sdkList[i] = *elementBuilder(element.(map[string]interface{}))
+// Breaks slice into n sized chunks
+func chunkSlice(slice []string, chunkSize int) [][]string {
+	var chunks [][]string
+	for i := 0; i < len(slice); i += chunkSize {
+		end := i + chunkSize
+		// check to avoid slicing beyond slice capacity
+		if end > len(slice) {
+			end = len(slice)
 		}
-		return &sdkList
+		chunks = append(chunks, slice[i:end])
 	}
-	return nil
+	return chunks
 }
 
-func flattenGenericList[T interface{}](resourceList *[]T, elementFlattener func(resource *T) map[string]interface{}) []map[string]interface{} {
+func flattenList[T interface{}](resourceList *[]T, elementFlattener func(resource *T) map[string]interface{}) *[]map[string]interface{} {
 	if resourceList == nil {
 		return nil
 	}
@@ -158,10 +150,10 @@ func flattenGenericList[T interface{}](resourceList *[]T, elementFlattener func(
 	for _, resource := range *resourceList {
 		resultList = append(resultList, elementFlattener(&resource))
 	}
-	return resultList
+	return &resultList
 }
 
-func flattenGenericAsList[T interface{}](resource *T, elementFlattener func(resource *T) map[string]interface{}) *[]map[string]interface{} {
+func flattenAsList[T interface{}](resource *T, elementFlattener func(resource *T) map[string]interface{}) *[]map[string]interface{} {
 	if resource == nil {
 		return nil
 	}
@@ -172,4 +164,12 @@ func flattenGenericAsList[T interface{}](resource *T, elementFlattener func(reso
 	}
 
 	return nil
+}
+
+func nilToEmptyList[T interface{}](list *[]T) *[]T {
+	if list == nil {
+		emptyArray := []T{}
+		return &emptyArray
+	}
+	return list
 }

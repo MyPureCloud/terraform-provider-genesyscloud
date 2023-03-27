@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
@@ -89,8 +89,8 @@ func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create
 			{
@@ -159,8 +159,8 @@ data "genesyscloud_auth_division_home" "home" {}
 			// Update
 			{
 				Config: fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) +
+			data "genesyscloud_auth_division_home" "home" {}
+			`) +
 					sequenceResource +
 					campaign1Resource +
 					campaign2Resource +
@@ -215,8 +215,8 @@ data "genesyscloud_auth_division_home" "home" {}
 			// Update (Setting 'enabled' back to false because we can't create or delete a rule with 'enabled' set to true)
 			{
 				Config: fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) +
+			data "genesyscloud_auth_division_home" "home" {}
+			`) +
 					sequenceResource +
 					campaign1Resource +
 					campaign2Resource +

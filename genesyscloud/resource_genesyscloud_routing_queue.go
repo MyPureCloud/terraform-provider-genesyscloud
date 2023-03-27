@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 var (
@@ -81,6 +81,66 @@ var (
 				Optional:     true,
 				Default:      1,
 				ValidateFunc: validation.IntBetween(1, 6),
+			},
+		},
+	}
+
+	directRoutingResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"backup_queue_id": {
+				Description: "Direct Routing default backup queue id.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"agent_wait_seconds": {
+				Description: "The queue default time a Direct Routing interaction will wait for an agent before it goes to configured backup.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     60,
+			},
+			"wait_for_agent": {
+				Description: "Boolean indicating if Direct Routing interactions should wait for the targeted agent by default.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"call_enabled": {
+				Description: "Boolean indicating if Direct Routing calls are enabled.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
+			"call_inbound_flow_id": {
+				Description: "Id of the Direct Routing inbound call flow IVR.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"voicemail_flow_id": {
+				Description: "Id of the in-queue call flow used for collecting voicemails and converting to ACD voicemail.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"email_enabled": {
+				Description: "Boolean indicating if Direct Routing emails are enabled.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
+			"email_inbound_flow_id": {
+				Description: "Id of the Direct Routing inbound email flow.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"message_enabled": {
+				Description: "Boolean indicating if Direct Routing messages are enabled.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
+			"message_inbound_flow_id": {
+				Description: "Id of the Direct Routing inbound message flow.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
@@ -280,7 +340,7 @@ func resourceRoutingQueue() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     true, // Default may be set by server
-				ValidateFunc: validation.IntBetween(1000, 86400000),
+				ValidateFunc: validation.IntBetween(0, 86400000),
 			},
 			"skill_evaluation_method": {
 				Description:  "The skill evaluation method to use when routing conversations (NONE | BEST | ALL).",
@@ -384,6 +444,13 @@ func resourceRoutingQueue() *schema.Resource {
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"direct_routing": {
+				Description: "Used by the System to set Direct Routing settings for a system Direct Routing queue.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        directRoutingResource,
+			},
 			"skill_groups": {
 				Description: "List of skill group ids assigned to the queue",
 				Type:        schema.TypeSet,
@@ -416,7 +483,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	enableManualAssignment := d.Get("enable_manual_assignment").(bool)
 	callingPartyName := d.Get("calling_party_name").(string)
 	callingPartyNumber := d.Get("calling_party_number").(string)
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
@@ -445,6 +512,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		OutboundEmailAddress:       buildSdkQueueEmailAddress(d),
 		EnableTranscription:        &enableTranscription,
 		EnableManualAssignment:     &enableManualAssignment,
+		DirectRouting:              buildSdkDirectRouting(d),
 		MemberGroups:               &memberGroups,
 	}
 
@@ -473,7 +541,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
@@ -630,6 +698,12 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("outbound_email_address", nil)
 		}
 
+		if currentQueue.DirectRouting != nil {
+			d.Set("direct_routing", []interface{}{flattenDirectRouting(*currentQueue.DirectRouting)})
+		} else {
+			d.Set("direct_routing", nil)
+		}
+
 		members, err := flattenQueueMembers(d.Id(), routingAPI)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("%v", err))
@@ -665,7 +739,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	callingPartyName := d.Get("calling_party_name").(string)
 	callingPartyNumber := d.Get("calling_party_number").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
@@ -696,6 +770,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		OutboundEmailAddress:       buildSdkQueueEmailAddress(d),
 		EnableTranscription:        &enableTranscription,
 		EnableManualAssignment:     &enableManualAssignment,
+		DirectRouting:              buildSdkDirectRouting(d),
 		MemberGroups:               &memberGroups,
 	})
 
@@ -725,7 +800,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting queue %s", name)
@@ -1040,7 +1115,7 @@ func validateMapCommTypes(val interface{}, _ cty.Path) diag.Diagnostics {
 	commTypes := []string{"CALL", "CALLBACK", "CHAT", "COBROWSE", "EMAIL", "MESSAGE", "SOCIAL_EXPRESSION", "VIDEO", "SCREENSHARE"}
 	m := val.(map[string]interface{})
 	for k := range m {
-		if !stringInSlice(k, commTypes) {
+		if !StringInSlice(k, commTypes) {
 			return diag.Errorf("%s is an invalid communication type key.", k)
 		}
 	}
@@ -1082,6 +1157,98 @@ func flattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 	if settings.Route != nil {
 		route := *settings.Route
 		settingsMap["route_id"] = *route.Id
+	}
+
+	return settingsMap
+}
+
+func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouting {
+	directRouting := d.Get("direct_routing").([]interface{})
+	if directRouting != nil && len(directRouting) > 0 {
+		settingsMap := directRouting[0].(map[string]interface{})
+
+		backupQueueID := settingsMap["backup_queue_id"].(string)
+		agentWaitSeconds := settingsMap["agent_wait_seconds"].(int)
+		waitForAgent := settingsMap["wait_for_agent"].(bool)
+
+		callEnabled := settingsMap["call_enabled"].(bool)
+
+		inboundCallFlowId := settingsMap["call_inbound_flow_id"].(string)
+		inboundCallFlowRef := &platformclientv2.Addressableentityref{
+			Id: &inboundCallFlowId,
+		}
+
+		voicemailFlowId := settingsMap["voicemail_flow_id"].(string)
+		voicemailFlowRef := &platformclientv2.Addressableentityref{
+			Id: &voicemailFlowId,
+		}
+
+		callSettings := &platformclientv2.Directroutingcallmediasettings{
+			Enabled:       &callEnabled,
+			InboundFlow:   inboundCallFlowRef,
+			VoicemailFlow: voicemailFlowRef,
+		}
+
+		emailEnabled := settingsMap["email_enabled"].(bool)
+		inboundEmailFlowId := settingsMap["email_inbound_flow_id"].(string)
+		inboundEmailFlowRef := &platformclientv2.Addressableentityref{
+			Id: &inboundEmailFlowId,
+		}
+
+		emailSettings := &platformclientv2.Directroutingmediasettings{
+			Enabled:     &emailEnabled,
+			InboundFlow: inboundEmailFlowRef,
+		}
+
+		messageEnabled := settingsMap["message_enabled"].(bool)
+		inboundMessageFlowId := settingsMap["message_inbound_flow_id"].(string)
+		inboundMessageFlowRef := &platformclientv2.Addressableentityref{
+			Id: &inboundMessageFlowId,
+		}
+
+		messageSettings := &platformclientv2.Directroutingmediasettings{
+			Enabled:     &messageEnabled,
+			InboundFlow: inboundMessageFlowRef,
+		}
+
+		return &platformclientv2.Directrouting{
+			CallMediaSettings:    callSettings,
+			EmailMediaSettings:   emailSettings,
+			MessageMediaSettings: messageSettings,
+			WaitForAgent:         &waitForAgent,
+			AgentWaitSeconds:     &agentWaitSeconds,
+			BackupQueueId:        &backupQueueID,
+		}
+	}
+	return nil
+}
+
+func flattenDirectRouting(settings platformclientv2.Directrouting) map[string]interface{} {
+	settingsMap := make(map[string]interface{})
+	if settings.BackupQueueId != nil {
+		settingsMap["backup_queue_id"] = *settings.BackupQueueId
+	}
+	if settings.AgentWaitSeconds != nil {
+		settingsMap["agent_wait_seconds"] = *settings.AgentWaitSeconds
+	}
+	if settings.WaitForAgent != nil {
+		settingsMap["wait_for_agent"] = *settings.WaitForAgent
+	}
+	if settings.CallMediaSettings != nil {
+		callSettings := *settings.CallMediaSettings
+		settingsMap["call_enabled"] = *callSettings.Enabled
+		settingsMap["call_inbound_flow_id"] = *callSettings.InboundFlow.Id
+		settingsMap["voicemail_flow_id"] = *callSettings.VoicemailFlow.Id
+	}
+	if settings.EmailMediaSettings != nil {
+		emailSettings := *settings.EmailMediaSettings
+		settingsMap["email_enabled"] = *emailSettings.Enabled
+		settingsMap["email_inbound_flow_id"] = *emailSettings.InboundFlow.Id
+	}
+	if settings.MessageMediaSettings != nil {
+		messageSettings := *settings.MessageMediaSettings
+		settingsMap["message_enabled"] = *messageSettings.Enabled
+		settingsMap["message_inbound_flow_id"] = *messageSettings.InboundFlow.Id
 	}
 
 	return settingsMap
@@ -1387,4 +1554,121 @@ func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *stri
 	}
 
 	return nil
+}
+
+func GenerateRoutingQueueResource(
+	resourceID string,
+	name string,
+	desc string,
+	acwWrapupPrompt string,
+	acwTimeout string,
+	skillEvalMethod string,
+	autoAnswerOnly string,
+	callingPartyName string,
+	callingPartyNumber string,
+	enableTranscription string,
+	enableManualAssignment string,
+	nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
+		name = "%s"
+		description = "%s"
+		acw_wrapup_prompt = %s
+		acw_timeout_ms = %s
+		skill_evaluation_method = %s
+		auto_answer_only = %s
+		calling_party_name = %s
+		calling_party_number = %s
+		enable_transcription = %s
+  		enable_manual_assignment = %s
+		%s
+	}
+	`, resourceID,
+		name,
+		desc,
+		acwWrapupPrompt,
+		acwTimeout,
+		skillEvalMethod,
+		autoAnswerOnly,
+		callingPartyName,
+		callingPartyNumber,
+		enableTranscription,
+		enableManualAssignment,
+		strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateRoutingQueueResourceBasic(resourceID string, name string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
+		name = "%s"
+		%s
+	}
+	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
+}
+
+// Used when testing skills group dependencies.
+func GenerateRoutingQueueResourceBasicWithDepends(resourceID string, dependsOn string, name string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
+		depends_on = [%s]
+		name = "%s"
+		%s
+	}
+	`, resourceID, dependsOn, name, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateMediaSettings(attrName string, alertingTimeout string, slPercent string, slDurationMs string) string {
+	return fmt.Sprintf(`%s {
+		alerting_timeout_sec = %s
+		service_level_percentage = %s
+		service_level_duration_ms = %s
+	}
+	`, attrName, alertingTimeout, slPercent, slDurationMs)
+}
+
+func GenerateRoutingRules(operator string, threshold string, waitSeconds string) string {
+	return fmt.Sprintf(`routing_rules {
+		operator = "%s"
+		threshold = %s
+		wait_seconds = %s
+	}
+	`, operator, threshold, waitSeconds)
+}
+
+func GenerateDefaultScriptIDs(chat string, email string) string {
+	return fmt.Sprintf(`default_script_ids = {
+		CHAT  = "%s"
+		EMAIL = "%s"
+	}`, chat, email)
+}
+
+func GenerateBullseyeSettings(expTimeout string, skillsToRemove ...string) string {
+	return fmt.Sprintf(`bullseye_rings {
+		expansion_timeout_seconds = %s
+		skills_to_remove = [%s]
+	}
+	`, expTimeout, strings.Join(skillsToRemove, ", "))
+}
+
+func GenerateBullseyeSettingsWithMemberGroup(expTimeout string, memberGroupId string, memberGroupType string, skillsToRemove ...string) string {
+	return fmt.Sprintf(`bullseye_rings {
+		expansion_timeout_seconds = %s
+		skills_to_remove = [%s]
+		member_groups {
+			member_group_id = %s
+			member_group_type = "%s"
+		}
+	}
+	`, expTimeout, strings.Join(skillsToRemove, ", "), memberGroupId, memberGroupType)
+}
+
+func GenerateMemberBlock(userID string, ringNum string) string {
+	return fmt.Sprintf(`members {
+		user_id = %s
+		ring_num = %s
+	}
+	`, userID, ringNum)
+}
+
+func GenerateQueueWrapupCodes(wrapupCodes ...string) string {
+	return fmt.Sprintf(`
+		wrapup_codes = [%s]
+	`, strings.Join(wrapupCodes, ", "))
 }
