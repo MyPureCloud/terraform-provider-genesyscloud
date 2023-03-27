@@ -39,8 +39,6 @@ func dataSourceKnowledgeKnowledgebaseRead(ctx context.Context, d *schema.Resourc
 	name := d.Get("name").(string)
 	coreLanguage := d.Get("core_language").(string)
 
-	fmt.Printf("\n BASE DATA SOURCE KNOWLEDGE BASE NAME \n%s\n", name)
-
 	// Find first non-deleted knowledge base by name. Retry in case new knowledge base is not yet indexed by search
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {

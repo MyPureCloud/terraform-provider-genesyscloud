@@ -54,8 +54,8 @@ func generateKnowledgeKnowledgebaseDataSource(
 	dependsOn string,
 ) string {
 	return fmt.Sprintf(`data "genesyscloud_knowledge_knowledgebase" "%s" {
-		name = "%s"
-        core_language = "%s"
+		name = %s
+        core_language = %s
         depends_on=[%s]
 	}
 	`, resourceID, name, coreLanguage, dependsOn)
