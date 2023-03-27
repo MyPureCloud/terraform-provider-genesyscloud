@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 var (
@@ -340,7 +340,7 @@ func resourceRoutingQueue() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     true, // Default may be set by server
-				ValidateFunc: validation.IntBetween(1000, 86400000),
+				ValidateFunc: validation.IntBetween(0, 86400000),
 			},
 			"skill_evaluation_method": {
 				Description:  "The skill evaluation method to use when routing conversations (NONE | BEST | ALL).",

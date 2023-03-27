@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"fmt"
-	"math/rand"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -12,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 type Mediapolicies struct {
@@ -911,7 +910,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 
 	var (
 		domainRes = "routing-domain1"
-		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainId  = fmt.Sprintf("terraform%v.com", time.Now().Unix())
 	)
 
 	err := authorizeSdk()

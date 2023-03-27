@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 var providerResources map[string]*schema.Resource
@@ -85,6 +85,7 @@ func registerResources() {
 	RegisterResource("genesyscloud_integration_action", resourceIntegrationAction())
 	RegisterResource("genesyscloud_integration_credential", resourceCredential())
 	RegisterResource("genesyscloud_journey_action_map", resourceJourneyActionMap())
+	RegisterResource("genesyscloud_journey_action_template", resourceJourneyActionTemplate())
 	RegisterResource("genesyscloud_journey_outcome", resourceJourneyOutcome())
 	RegisterResource("genesyscloud_journey_segment", resourceJourneySegment())
 	RegisterResource("genesyscloud_knowledge_knowledgebase", resourceKnowledgeKnowledgebase())
@@ -119,6 +120,7 @@ func registerResources() {
 	RegisterResource("genesyscloud_routing_queue", resourceRoutingQueue())
 	RegisterResource("genesyscloud_routing_skill", resourceRoutingSkill())
 	RegisterResource("genesyscloud_routing_skill_group", resourceRoutingSkillGroup())
+	RegisterResource("genesyscloud_routing_sms_address", resourceRoutingSmsAddress())
 	RegisterResource("genesyscloud_routing_settings", resourceRoutingSettings())
 	RegisterResource("genesyscloud_routing_utilization", resourceRoutingUtilization())
 	RegisterResource("genesyscloud_routing_wrapupcode", resourceRoutingWrapupCode())
@@ -156,6 +158,7 @@ func registerDataSources() {
 	RegisterDataSource("genesyscloud_integration_action", dataSourceIntegrationAction())
 	RegisterDataSource("genesyscloud_integration_credential", dataSourceIntegrationCredential())
 	RegisterDataSource("genesyscloud_journey_action_map", dataSourceJourneyActionMap())
+	RegisterDataSource("genesyscloud_journey_action_template", dataSourceJourneyActionTemplate())
 	RegisterDataSource("genesyscloud_journey_outcome", dataSourceJourneyOutcome())
 	RegisterDataSource("genesyscloud_journey_segment", dataSourceJourneySegment())
 	RegisterDataSource("genesyscloud_knowledge_knowledgebase", dataSourceKnowledgeKnowledgebase())
@@ -185,6 +188,7 @@ func registerDataSources() {
 	RegisterDataSource("genesyscloud_routing_settings", dataSourceRoutingSettings())
 	RegisterDataSource("genesyscloud_routing_skill", dataSourceRoutingSkill())
 	RegisterDataSource("genesyscloud_routing_skill_group", dataSourceRoutingSkillGroup())
+	RegisterDataSource("genesyscloud_routing_sms_address", dataSourceRoutingSmsAddress())
 	RegisterDataSource("genesyscloud_routing_email_domain", dataSourceRoutingEmailDomain())
 	RegisterDataSource("genesyscloud_routing_wrapupcode", dataSourceRoutingWrapupcode())
 	RegisterDataSource("genesyscloud_script", dataSourceScript())

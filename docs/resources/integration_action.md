@@ -22,10 +22,11 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_integration_action" "example-action" {
-  name           = "Example Action"
-  category       = "Genesys Cloud Data Action"
-  integration_id = genesyscloud_integration.example_integ.id
-  secure         = true
+  name                   = "Example Action"
+  category               = "Genesys Cloud Data Action"
+  integration_id         = genesyscloud_integration.example_integ.id
+  secure                 = true
+  config_timeout_seconds = 20
   contract_input = jsonencode({
     "type" = "object",
     "required" = [
@@ -100,6 +101,7 @@ resource "genesyscloud_integration_action" "example-action" {
 
 - `config_request` (Block List, Max: 1) Configuration of outbound request. (see [below for nested schema](#nestedblock--config_request))
 - `config_response` (Block List, Max: 1) Configuration of response processing. (see [below for nested schema](#nestedblock--config_response))
+- `config_timeout_seconds` (Number) Optional 1-60 second timeout enforced on the execution or test of this action. This setting is invalid for Custom Authentication Actions.
 - `secure` (Boolean) Indication of whether or not the action is designed to accept sensitive data. Changing the secure attribute will cause the existing integration_action to be dropped and recreated with a new ID. Defaults to `false`.
 
 ### Read-Only
