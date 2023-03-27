@@ -13,6 +13,7 @@ import (
 )
 
 func TestAccResourceKnowledgeV1DocumentBasic(t *testing.T) {
+	t.Skip("Skipping v1 knowledge tests since the test org is using v2")
 	var (
 		knowledgeBaseResource1       = "test-knowledgebase1"
 		knowledgeCategoryResource1   = "test-category1"

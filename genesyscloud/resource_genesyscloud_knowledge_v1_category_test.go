@@ -12,6 +12,7 @@ import (
 )
 
 func TestAccResourceKnowledgeV1CategoryBasic(t *testing.T) {
+	t.Skip("Skipping v1 knowledge tests since the test org is using v2")
 	var (
 		knowledgeBaseResource1     = "test-knowledgebase1"
 		knowledgeBaseName1         = "Terraform Knowledge Base" + uuid.NewString()
