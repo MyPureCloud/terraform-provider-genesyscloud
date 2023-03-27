@@ -7,9 +7,6 @@ import (
 
 	_ "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 
-	// Required so that 'go mod tidy' does not remove a package needed for the docs generation process
-	_ "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
@@ -24,7 +21,7 @@ import (
 //
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 //go:generate git restore docs/index.md
-//go:generate go run github.com/mypurecloud/terraform-provider-genesyscloud/apidocs
+//go:generate go run terraform-provider-genesyscloud/apidocs
 var (
 	// these will be set by the goreleaser configuration
 	// to appropriate values for the compiled binary
