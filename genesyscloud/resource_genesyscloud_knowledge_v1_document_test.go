@@ -127,7 +127,7 @@ func TestAccResourceKnowledgeV1DocumentBasic(t *testing.T) {
 
 func generateKnowledgeV1Document(resourceName string, knowledgeCategoryResourceName string, knowledgeBaseResourceName string, languageCode string, varType string, externalUrl string, question string, answer string, faqAlternatives []string, title string, contentLocationUrl string, articleAlternatives []string) string {
 	document := fmt.Sprintf(`
-        resource "genesyscloud_knowledge_document" "%s" {
+        resource "genesyscloud_knowledge_v1_document" "%s" {
             knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
             language_code = "%s"
             %s
