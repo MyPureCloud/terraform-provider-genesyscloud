@@ -86,7 +86,9 @@ func getAllKnowledgeLabels(_ context.Context, clientConfig *platformclientv2.Con
 func knowledgeLabelExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeCategories),
-		RefAttrs:         map[string]*RefAttrSettings{},
+		RefAttrs: map[string]*RefAttrSettings{
+			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
+		},
 	}
 }
 
@@ -223,7 +225,7 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if err != nil {
 			if isStatus404(resp) {
-				// Knowledge base deleted
+				// Knowledge label deleted
 				log.Printf("Deleted knowledge label %s", knowledgeLabelId)
 				return nil
 			}

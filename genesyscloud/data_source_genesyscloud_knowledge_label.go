@@ -37,7 +37,6 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 	name := d.Get("name").(string)
 	knowledgeBaseName := d.Get("knowledge_base_name").(string)
 
-	// Find first non-deleted knowledge base by name. Retry in case new knowledge base is not yet indexed by search
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
@@ -63,7 +62,7 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 					knowledgeLabels, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), name, false)
 
 					if getErr != nil {
-						return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge category %s: %s", name, getErr))
+						return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge label %s: %s", name, getErr))
 					}
 
 					for _, knowledgeLabel := range *knowledgeLabels.Entities {
@@ -81,7 +80,7 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 					knowledgeLabels, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), name, false)
 
 					if getErr != nil {
-						return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge category %s: %s", name, getErr))
+						return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge label %s: %s", name, getErr))
 					}
 
 					for _, knowledgeLabel := range *knowledgeLabels.Entities {

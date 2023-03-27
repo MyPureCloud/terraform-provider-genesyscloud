@@ -91,7 +91,9 @@ func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2
 func knowledgeCategoryExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeCategories),
-		RefAttrs:         map[string]*RefAttrSettings{},
+		RefAttrs: map[string]*RefAttrSettings{
+			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
+		},
 	}
 }
 
@@ -228,7 +230,7 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId)
 		if err != nil {
 			if isStatus404(resp) {
-				// Knowledge base deleted
+				// Knowledge category deleted
 				log.Printf("Deleted knowledge category %s", knowledgeCategoryId)
 				return nil
 			}
