@@ -124,7 +124,7 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	}
 
 	// Step #7 Write the terraform state file along with either the HCL or JSON
-	//  TODO this function needs to be refactored becaus erit extremely large.
+	//  TODO this function needs to be refactored because it extremely large.
 	diagErr = g.generateOutputFiles()
 	if diagErr != nil {
 		return diagErr
