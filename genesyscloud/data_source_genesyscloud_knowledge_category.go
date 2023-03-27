@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
 )
 
@@ -27,12 +26,6 @@ func dataSourceKnowledgeCategory() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"core_language": {
-				Description:  "Core language for knowledge base in which initial content must be created, language codes [en-US, en-UK, en-AU, de-DE] are supported currently, however the new DX knowledge will support all these language codes",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"en-US", "en-UK", "en-AU", "de-DE", "es-US", "es-ES", "fr-FR", "pt-BR", "nl-NL", "it-IT", "fr-CA"}, false),
-			},
 		},
 	}
 }
@@ -43,14 +36,13 @@ func dataSourceKnowledgeCategoryRead(ctx context.Context, d *schema.ResourceData
 
 	name := d.Get("name").(string)
 	knowledgeBaseName := d.Get("knowledge_base_name").(string)
-	coreLanguage := d.Get("core_language").(string)
 
 	// Find first non-deleted knowledge base by name. Retry in case new knowledge base is not yet indexed by search
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, coreLanguage, true, "", "")
-			unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, coreLanguage, false, "", "")
+			publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", true, "", "")
+			unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", false, "", "")
 
 			if getPublishedErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getPublishedErr))
@@ -68,7 +60,7 @@ func dataSourceKnowledgeCategoryRead(ctx context.Context, d *schema.ResourceData
 
 			// prefer published knowledge base
 			for _, knowledgeBase := range *publishedKnowledgeBases.Entities {
-				if knowledgeBase.Name != nil && *knowledgeBase.Name == knowledgeBaseName && *knowledgeBase.CoreLanguage == coreLanguage {
+				if knowledgeBase.Name != nil && *knowledgeBase.Name == knowledgeBaseName {
 					knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", false, name, "", "", false)
 
 					if getErr != nil {
@@ -86,7 +78,7 @@ func dataSourceKnowledgeCategoryRead(ctx context.Context, d *schema.ResourceData
 			}
 			// use unpublished knowledge base if unpublished doesn't exist
 			for _, knowledgeBase := range *unpublishedKnowledgeBases.Entities {
-				if knowledgeBase.Name != nil && *knowledgeBase.Name == knowledgeBaseName && *knowledgeBase.CoreLanguage == coreLanguage {
+				if knowledgeBase.Name != nil && *knowledgeBase.Name == knowledgeBaseName {
 					knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", false, name, "", "", false)
 
 					if getErr != nil {

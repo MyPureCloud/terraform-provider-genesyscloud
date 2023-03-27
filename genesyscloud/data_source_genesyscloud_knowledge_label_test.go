@@ -41,7 +41,6 @@ func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
 					labelDataSource,
 					labelName,
 					knowledgeBaseName1,
-					knowledgeBaseCoreLanguage1,
 					"genesyscloud_knowledge_label."+labelResource1,
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -60,14 +59,12 @@ func generateKnowledgeLabelDataSource(
 	knowledgeBaseName string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
-	coreLanguage string,
 	dependsOn string,
 ) string {
 	return fmt.Sprintf(`data "genesyscloud_knowledge_label" "%s" {
 		name = "%s"
 		knowledge_base_name = "%s"
-        core_language = "%s"
         depends_on=[%s]
 	}
-	`, resourceID, name, knowledgeBaseName, coreLanguage, dependsOn)
+	`, resourceID, name, knowledgeBaseName, dependsOn)
 }

@@ -41,7 +41,6 @@ func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 					categoryDataSource,
 					categoryName,
 					knowledgeBaseName1,
-					knowledgeBaseCoreLanguage1,
 					"genesyscloud_knowledge_category."+categoryResource1+", genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1,
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -58,7 +57,6 @@ func generateKnowledgeCategoryDataSource(
 	resourceID string,
 	name string,
 	knowledgeBaseName string,
-	coreLanguage string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOn string,
@@ -66,8 +64,7 @@ func generateKnowledgeCategoryDataSource(
 	return fmt.Sprintf(`data "genesyscloud_knowledge_category" "%s" {
 		name = "%s"
         knowledge_base_name = "%s"
-        core_language = "%s"
         depends_on=[%s]
 	}
-	`, resourceID, name, knowledgeBaseName, coreLanguage, dependsOn)
+	`, resourceID, name, knowledgeBaseName, dependsOn)
 }
