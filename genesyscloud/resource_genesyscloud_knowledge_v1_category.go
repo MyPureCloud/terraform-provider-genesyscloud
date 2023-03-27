@@ -82,7 +82,7 @@ func getAllKnowledgeCategoriesV1(_ context.Context, clientConfig *platformclient
 
 func knowledgeCategoryExporterV1() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeCategories),
+		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeCategoriesV1),
 		RefAttrs: map[string]*RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
@@ -91,12 +91,12 @@ func knowledgeCategoryExporterV1() *ResourceExporter {
 
 func resourceKnowledgeCategoryV1() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Knowledge Category",
+		Description: "Genesys Cloud Knowledge v1 Category",
 
-		CreateContext: createWithPooledClient(createKnowledgeCategory),
-		ReadContext:   readWithPooledClient(readKnowledgeCategory),
-		UpdateContext: updateWithPooledClient(updateKnowledgeCategory),
-		DeleteContext: deleteWithPooledClient(deleteKnowledgeCategory),
+		CreateContext: createWithPooledClient(createKnowledgeCategoryV1),
+		ReadContext:   readWithPooledClient(readKnowledgeCategoryV1),
+		UpdateContext: updateWithPooledClient(updateKnowledgeCategoryV1),
+		DeleteContext: deleteWithPooledClient(deleteKnowledgeCategoryV1),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -144,7 +144,7 @@ func createKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 	d.SetId(id)
 
 	log.Printf("Created knowledge category %s", *knowledgeCategoryResponse.Id)
-	return readKnowledgeCategory(ctx, d, meta)
+	return readKnowledgeCategoryV1(ctx, d, meta)
 }
 
 func readKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -211,7 +211,7 @@ func updateKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	log.Printf("Updated knowledge category %s %s", knowledgeCategory["name"].(string), knowledgeCategoryId)
-	return readKnowledgeCategory(ctx, d, meta)
+	return readKnowledgeCategoryV1(ctx, d, meta)
 }
 
 func deleteKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -233,7 +233,7 @@ func deleteKnowledgeCategoryV1(ctx context.Context, d *schema.ResourceData, meta
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, languageCode)
 		if err != nil {
 			if isStatus404(resp) {
-				// Knowledge base deleted
+				// Knowledge category deleted
 				log.Printf("Deleted knowledge category %s", knowledgeCategoryId)
 				return nil
 			}

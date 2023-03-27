@@ -366,7 +366,7 @@ func createKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 	d.SetId(id)
 
 	log.Printf("Created knowledge document %s", *knowledgeDocument.Id)
-	return readKnowledgeDocument(ctx, d, meta)
+	return readKnowledgeDocumentV1(ctx, d, meta)
 }
 
 func readKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -449,7 +449,7 @@ func updateKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	log.Printf("Updated Knowledge document %s", knowledgeDocumentId)
-	return readKnowledgeDocument(ctx, d, meta)
+	return readKnowledgeDocumentV1(ctx, d, meta)
 }
 
 func deleteKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
