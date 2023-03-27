@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 var (
@@ -125,7 +126,7 @@ func createKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	knowledgeLabel := d.Get("knowledge_label").([]interface{})[0].(map[string]interface{})
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	knowledgeLabelRequest := buildKnowledgeLabel(knowledgeLabel)
@@ -148,7 +149,7 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 	knowledgeLabelId := id[0]
 	knowledgeBaseId := id[1]
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge label %s", knowledgeLabelId)
@@ -179,7 +180,7 @@ func updateKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	knowledgeBaseId := id[1]
 	knowledgeLabel := d.Get("knowledge_label").([]interface{})[0].(map[string]interface{})
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating knowledge label %s", knowledgeLabel["name"].(string))
@@ -212,7 +213,7 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	knowledgeLabelId := id[0]
 	knowledgeBaseId := id[1]
 
-	sdkConfig := meta.(*providerMeta).ClientConfig
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting knowledge label %s", id)

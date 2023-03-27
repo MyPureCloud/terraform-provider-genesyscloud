@@ -193,7 +193,7 @@ func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platfor
 		}
 	}
 	if labelNames, ok := requestIn["label_names"].([]interface{}); ok && labelNames != nil {
-		labelStringList := interfaceListToStrings(labelNames)
+		labelStringList := InterfaceListToStrings(labelNames)
 		pageSize := 1
 		labelIds := make([]string, 0)
 		for _, labelName := range labelStringList {
