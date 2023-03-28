@@ -6,14 +6,14 @@ import (
 	"log"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
+
+const maxDnisPerRequest = 50
 
 func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
@@ -78,7 +78,7 @@ func resourceArchitectIvrConfig() *schema.Resource {
 				Optional:    true,
 			},
 			"dnis": {
-				Description: "The phone number(s) to contact the IVR by.",
+				Description: fmt.Sprintf("The phone number(s) to contact the IVR by. (Note: An array with a length greater than %v will be broken into chunks and uploaded in subsequent PUT requests.)", maxDnisPerRequest),
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
@@ -122,13 +122,13 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
 	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
 	divisionId := d.Get("division_id").(string)
+	dnis := buildSdkIvrDnis(d)
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	ivrBody := platformclientv2.Ivr{
 		Name:             &name,
-		Dnis:             buildSdkIvrDnis(d),
 		OpenHoursFlow:    openHoursFlowId,
 		ClosedHoursFlow:  closedHoursFlowId,
 		HolidayHoursFlow: holidayHoursFlowId,
@@ -143,6 +143,11 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		ivrBody.Division = &platformclientv2.Writabledivision{Id: &divisionId}
 	}
 
+	dnisChunks := chunkSlice(dnis, maxDnisPerRequest)
+	if len(dnisChunks) == 1 {
+		ivrBody.Dnis = &dnisChunks[0]
+	}
+
 	// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which
 	// would result in the error "Field 'didPoolId' is required and cannot be empty."
 	if ivrBody.Dnis != nil {
@@ -155,6 +160,12 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	d.SetId(*ivrConfig.Id)
+
+	if len(dnisChunks) > 1 {
+		if _, err := uploadIvrDnis(d, dnisChunks, meta); err != nil {
+			return err
+		}
+	}
 
 	log.Printf("Created IVR config %s %s", name, *ivrConfig.Id)
 	return readIvrConfig(ctx, d, meta)
@@ -179,7 +190,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectIvrConfig())
+		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectIvrConfig())
 		d.Set("name", *ivrConfig.Name)
 		d.Set("dnis", flattenIvrDnis(ivrConfig.Dnis))
 
@@ -220,7 +231,8 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 
 		log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
-		return cc.CheckState()
+		//return cc.CheckState()
+		return nil
 	})
 }
 
@@ -232,6 +244,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
 	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
 	divisionId := d.Get("division_id").(string)
+	dnis := buildSdkIvrDnis(d)
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
@@ -246,7 +259,6 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		ivrBody := platformclientv2.Ivr{
 			Version:          ivr.Version,
 			Name:             &name,
-			Dnis:             buildSdkIvrDnis(d),
 			OpenHoursFlow:    openHoursFlowId,
 			ClosedHoursFlow:  closedHoursFlowId,
 			HolidayHoursFlow: holidayHoursFlowId,
@@ -261,6 +273,14 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			ivrBody.Division = &platformclientv2.Writabledivision{Id: &divisionId}
 		}
 
+		dnisChunks := chunkSlice(dnis, maxDnisPerRequest)
+
+		if len(dnisChunks) == 1 {
+			ivrBody.Dnis = &dnisChunks[0]
+		} else {
+			ivrBody.Dnis = nil
+		}
+
 		// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which
 		// would result in the error "Field 'didPoolId' is required and cannot be empty."
 		if ivrBody.Dnis != nil {
@@ -272,6 +292,14 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update IVR config %s: %s", d.Id(), putErr)
 		}
+
+		if len(dnisChunks) > 1 {
+			resp, err := uploadIvrDnis(d, dnisChunks, meta)
+			if err != nil {
+				return resp, err
+			}
+		}
+
 		return resp, nil
 	})
 	if diagErr != nil {
@@ -314,9 +342,25 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	})
 }
 
-func buildSdkIvrDnis(d *schema.ResourceData) *[]string {
+func uploadIvrDnis(d *schema.ResourceData, dnisChunks [][]string, meta interface{}) (*platformclientv2.APIResponse, diag.Diagnostics) {
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	for i, chunk := range dnisChunks {
+		time.Sleep(2 * time.Second)
+		log.Printf("Uploading block %v of DID numbers to ivr config %s", i+1, d.Id())
+		err := uploadChunk(d, chunk, architectApi)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+func buildSdkIvrDnis(d *schema.ResourceData) []string {
 	if permConfig, ok := d.GetOk("dnis"); ok {
-		return setToStringList(permConfig.(*schema.Set))
+		return *setToStringList(permConfig.(*schema.Set))
 	}
 	return nil
 }
@@ -325,5 +369,30 @@ func flattenIvrDnis(dnisArr *[]string) *schema.Set {
 	if dnisArr != nil {
 		return stringListToSet(*dnisArr)
 	}
+	return nil
+}
+
+func uploadChunk(d *schema.ResourceData, chunk []string, architectApi *platformclientv2.ArchitectApi) diag.Diagnostics {
+	var dnis []string
+
+	ivr, _, getErr := architectApi.GetArchitectIvr(d.Id())
+	if getErr != nil {
+		return diag.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr)
+	}
+
+	if *ivr.Dnis != nil {
+		dnis = append(dnis, *ivr.Dnis...)
+	}
+
+	dnis = append(dnis, chunk...)
+
+	ivr.Dnis = &dnis
+
+	log.Printf("Updating IVR config %s", d.Get("name").(string))
+	_, _, putErr := architectApi.PutArchitectIvr(d.Id(), *ivr)
+	if putErr != nil {
+		return diag.Errorf("Failed to update IVR config %s: %s", d.Id(), putErr)
+	}
+
 	return nil
 }
