@@ -181,7 +181,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 		d.SetId(*deployment.Id)
 
-		log.Printf("Created web deployment %s %s", name, *deployment.Id)
+		log.Printf("Created web deployment %s %s %s", name, *deployment.Id, resp.CorrelationID)
 
 		return nil
 	})
