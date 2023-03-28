@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v91/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
 )
 
 func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
@@ -36,8 +36,8 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -60,7 +60,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 						variationResource1,
 						knowledgeBaseResource1,
 						knowledgeDocumentResource1,
-						// published,
+						published,
 						bodyBlockType,
 						contentBlockType1,
 						imageUrl,
@@ -100,7 +100,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 						variationResource1,
 						knowledgeBaseResource1,
 						knowledgeDocumentResource1,
-						// published,
+						published,
 						bodyBlockType,
 						contentBlockType2,
 						imageUrl,
@@ -128,18 +128,20 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeDocumentVariation(resourceName string, knowledgeBaseResourceName string, knowledgeDocumentResourceName string, bodyBlockType string, contentBlockType string, imageUrl string, hyperlink string, videoUrl string, listType string, documentText string, marks []string) string {
+func generateKnowledgeDocumentVariation(resourceName string, knowledgeBaseResourceName string, knowledgeDocumentResourceName string, published bool, bodyBlockType string, contentBlockType string, imageUrl string, hyperlink string, videoUrl string, listType string, documentText string, marks []string) string {
 	variation := fmt.Sprintf(`
         resource "genesyscloud_knowledge_document_variation" "%s" {
 			depends_on=[genesyscloud_knowledge_document.%s]
 			knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
 			knowledge_document_id = genesyscloud_knowledge_document.%s.id
+			published = %v
 			%v
         }
         `, resourceName,
 		knowledgeDocumentResourceName,
 		knowledgeBaseResourceName,
 		knowledgeDocumentResourceName,
+		published,
 		generateKnowledgeDocumentVariationBody(bodyBlockType, contentBlockType, imageUrl, hyperlink, videoUrl, listType, documentText, marks),
 	)
 	return variation

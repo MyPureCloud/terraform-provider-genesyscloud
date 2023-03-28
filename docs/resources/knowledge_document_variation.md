@@ -23,6 +23,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 resource "genesyscloud_knowledge_document_variation" "example_document_variation" {
   knowledge_base_id     = genesyscloud_knowledge_knowledgebase.example_knowledgebase.id
   knowledge_document_id = genesyscloud_knowledge_document.examle_document.id
+  published             = true
   knowledge_document_variation {
     body {
       blocks {
@@ -86,6 +87,10 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
 - `knowledge_base_id` (String) Knowledge base id of the label
 - `knowledge_document_id` (String) Knowledge base id of the label
 - `knowledge_document_variation` (Block List, Min: 1, Max: 1) Knowledge document variation (see [below for nested schema](#nestedblock--knowledge_document_variation))
+
+### Optional
+
+- `published` (Boolean) If true, the document will be published with the new variation. If false, the updated document will be in a draft state.
 
 ### Read-Only
 
