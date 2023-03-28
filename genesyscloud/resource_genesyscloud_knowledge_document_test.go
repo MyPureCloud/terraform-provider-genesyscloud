@@ -26,7 +26,7 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 		knowledgeDocumentResource1 = "test-knowledge-document1"
 		title                      = "Terraform Knowledge Document"
 		visible                    = true
-		published                  = true
+		published                  = false
 		phrase                     = "Terraform Knowledge Document"
 		autocomplete               = true
 	)

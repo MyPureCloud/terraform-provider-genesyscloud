@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -299,7 +298,6 @@ func resourceKnowledgeDocumentVariation() *schema.Resource {
 				Description: "If true, the document will be published with the new variation. If false, the updated document will be in a draft state.",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				// Computed:    true,
 			},
 			"knowledge_document_variation": {
 				Description: "Knowledge document variation",
@@ -328,6 +326,7 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	knowledgeDocumentVariationRequest := buildKnowledgeDocumentVariation(knowledgeDocumentVariation)
 
 	log.Printf("Creating knowledge document variation for document %s", knowledgeDocumentId)
+
 	knowledgeDocumentVariationResponse, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, *knowledgeDocumentVariationRequest)
 	if err != nil {
 		return diag.Errorf("Failed to create variation for knowledge document %s: %s", knowledgeDocumentId, err)

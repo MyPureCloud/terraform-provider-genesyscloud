@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
-
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -309,7 +308,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 	id := strings.Split(d.Id(), ",")
 	knowledgeDocumentId := id[0]
 	knowledgeBaseId := id[1]
-	state := ""
+	state := "Draft"
 	if d.Get("published").(bool) == true {
 		state = "Published"
 	}
@@ -342,6 +341,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		log.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
+		fmt.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
 		checkState := cc.CheckState()
 		return checkState
 	})
@@ -395,7 +395,12 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeDocumentId, knowledgeBaseId, nil, "")
+		state := "Draft"
+		if d.Get("published").(bool) == true {
+			state = "Published"
+		}
+
+		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeDocumentId, knowledgeBaseId, nil, state)
 		if err != nil {
 			if isStatus404(resp) {
 				// Knowledge document deleted
