@@ -341,7 +341,6 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		log.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
-		fmt.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
 		checkState := cc.CheckState()
 		return checkState
 	})
