@@ -91,7 +91,10 @@ type resourceInfo struct {
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta)
 
-	gre.Export()
+	diagErr := gre.Export()
+	if diagErr != nil {
+		return diagErr
+	}
 
 	d.SetId(gre.exportFilePath)
 

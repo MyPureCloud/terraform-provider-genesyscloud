@@ -83,7 +83,6 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		ctx:                 ctx,
 		meta:                meta,
 	}
-
 	return *gre, nil
 }
 
