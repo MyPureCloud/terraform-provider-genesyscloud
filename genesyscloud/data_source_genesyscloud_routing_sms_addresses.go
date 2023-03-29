@@ -3,11 +3,12 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
-	"time"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 func dataSourceRoutingSmsAddress() *schema.Resource {
