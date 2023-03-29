@@ -53,12 +53,15 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
         }
       }
       blocks {
-        type = "List"
+        type = "UnorderedList"
         list {
           blocks {
-            type = "Text"
-            text {
-              text = "List item"
+            type = "ListItem"
+            blocks {
+              type = "Text"
+              text {
+                text = "List item"
+              }
             }
           }
         }
