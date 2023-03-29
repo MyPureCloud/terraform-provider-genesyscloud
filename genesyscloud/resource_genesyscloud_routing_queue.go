@@ -831,8 +831,6 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	})
 }
 
-// TODO - Stopped here
-// Need to convert the return type to QueueMediaSettings
 func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemediasettings {
 	queueMediaSettings := &platformclientv2.Queuemediasettings{}
 
