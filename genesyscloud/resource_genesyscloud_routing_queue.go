@@ -596,24 +596,27 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("media_settings_email", nil)
 		d.Set("media_settings_message", nil)
 
-		if currentQueue.MediaSettings != nil && currentQueue.MediaSettings.Call != nil {
-			d.Set("media_settings_call", flattenMediaSetting(*currentQueue.MediaSettings.Call))
-		}
+		if currentQueue.MediaSettings != nil {
+			if currentQueue.MediaSettings.Call != nil {
+				d.Set("media_settings_call", flattenMediaSetting(*currentQueue.MediaSettings.Call))
+			}
 
-		if currentQueue.MediaSettings != nil && currentQueue.MediaSettings.Callback != nil {
-			d.Set("media_settings_callback", flattenMediaSettingCallback(*currentQueue.MediaSettings.Callback))
-		}
+			if currentQueue.MediaSettings.Callback != nil {
+				d.Set("media_settings_callback", flattenMediaSettingCallback(*currentQueue.MediaSettings.Callback))
+			}
 
-		if currentQueue.MediaSettings != nil && currentQueue.MediaSettings.Chat != nil {
-			d.Set("media_settings_chat", flattenMediaSetting(*currentQueue.MediaSettings.Chat))
-		}
+			if currentQueue.MediaSettings.Chat != nil {
+				d.Set("media_settings_chat", flattenMediaSetting(*currentQueue.MediaSettings.Chat))
+			}
 
-		if currentQueue.MediaSettings != nil && currentQueue.MediaSettings.Email != nil {
-			d.Set("media_settings_email", flattenMediaSetting(*currentQueue.MediaSettings.Email))
-		}
+			if currentQueue.MediaSettings.Email != nil {
+				d.Set("media_settings_email", flattenMediaSetting(*currentQueue.MediaSettings.Email))
+			}
 
-		if currentQueue.MediaSettings != nil && currentQueue.MediaSettings.Message != nil {
-			d.Set("media_settings_message", flattenMediaSetting(*currentQueue.MediaSettings.Message))
+			if currentQueue.MediaSettings.Message != nil {
+				d.Set("media_settings_message", flattenMediaSetting(*currentQueue.MediaSettings.Message))
+			}
+
 		}
 
 		if currentQueue.RoutingRules != nil {
@@ -851,14 +854,14 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 	}
 
 	mediaSettingsEmail := d.Get("media_settings_email").([]interface{})
+	log.Printf("The media settings email #%v", mediaSettingsEmail)
 	if mediaSettingsEmail != nil && len(mediaSettingsEmail) > 0 {
-		queueMediaSettings.Email = buildSdkMediaSetting(mediaSettingsCall)
+		queueMediaSettings.Email = buildSdkMediaSetting(mediaSettingsEmail)
 	}
 
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
 	if mediaSettingsMessage != nil && len(mediaSettingsMessage) > 0 {
-		queueMediaSettings.Message = buildSdkMediaSetting(mediaSettingsCall)
-
+		queueMediaSettings.Message = buildSdkMediaSetting(mediaSettingsMessage)
 	}
 
 	return queueMediaSettings
