@@ -88,8 +88,7 @@ func TestAccResourceTfExport(t *testing.T) {
 	})
 }
 
-func TestAccResourceTfExportByName(t *testing.T) 
-{
+func TestAccResourceTfExportByName(t *testing.T) {
 	var (
 		exportTestDir   = "../.terraform" + uuid.NewString()
 		exportResource1 = "test-export1"
