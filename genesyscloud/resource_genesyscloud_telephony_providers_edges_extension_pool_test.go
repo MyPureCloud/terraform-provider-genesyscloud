@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 type extensionPoolStruct struct {
