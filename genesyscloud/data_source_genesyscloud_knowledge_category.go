@@ -47,7 +47,7 @@ func dataSourceKnowledgeCategoryRead(ctx context.Context, d *schema.ResourceData
 				return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getPublishedErr))
 			}
 			if getUnpublishedErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getPublishedErr))
+				return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getUnpublishedErr))
 			}
 
 			noPublishedEntities := publishedKnowledgeBases.Entities == nil || len(*publishedKnowledgeBases.Entities) == 0
