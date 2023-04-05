@@ -139,7 +139,7 @@ func resourceKnowledgeDocument() *schema.Resource {
 				Elem:        knowledgeDocument,
 			},
 			"published": {
-				Description: "If true, the knowledge document will be published. If false, it will be a draft",
+				Description: "If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.",
 				Type:        schema.TypeBool,
 				Required:    true,
 			},
@@ -293,7 +293,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	if published == true {
 		_, _, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, *knowledgeDocument.Id, platformclientv2.Knowledgedocumentversion{})
 		if versionErr != nil {
-			return diag.Errorf("Failed to publish knowledge document: %s", err)
+			return diag.Errorf("Failed to publish knowledge document: %s", versionErr)
 		}
 	}
 

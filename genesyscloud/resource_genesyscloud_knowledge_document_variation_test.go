@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
@@ -21,6 +21,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 		knowledgeDocumentResource1 = "test-knowledge-document1"
 		title                      = "Terraform Knowledge Document"
 		visible                    = true
+		docPublished               = false
 		published                  = true
 		phrase                     = "Terraform Knowledge Document"
 		autocomplete               = true
@@ -52,7 +53,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 						knowledgeBaseResource1,
 						title,
 						visible,
-						published,
+						docPublished,
 						phrase,
 						autocomplete,
 					) +
