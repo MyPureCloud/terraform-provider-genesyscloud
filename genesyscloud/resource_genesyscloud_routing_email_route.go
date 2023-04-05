@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 var (
@@ -39,7 +39,7 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		domains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false)
+		domains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false, "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get routing email domains: %v", getErr)
 		}

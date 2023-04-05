@@ -46,6 +46,7 @@ signs:
       # if you are using this in a GitHub action or some other automated pipeline, you 
       # need to pass the batch flag to indicate its not interactive.
       - "--batch"
+      - "--no-tty"
       - "--local-user"
       - "{{ .Env.GPG_FINGERPRINT }}"
       - "--output"
@@ -55,4 +56,10 @@ signs:
 release:
   draft: true
 changelog:
-  skip: true
+  # Defaults to false.
+  skip: 'false'
+  use: github
+  sort: asc
+  abbrev: -1
+
+

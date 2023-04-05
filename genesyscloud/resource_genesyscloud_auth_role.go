@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 var (
@@ -234,7 +234,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 	log.Printf("Reading role %s", d.Id())
 
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
-		role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), nil)
+		role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), false, nil)
 		if getErr != nil {
 			if isStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
@@ -328,7 +328,7 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
-		_, resp, err := authAPI.GetAuthorizationRole(d.Id(), nil)
+		_, resp, err := authAPI.GetAuthorizationRole(d.Id(), false, nil)
 		if err != nil {
 			if isStatus404(resp) {
 				// role deleted
