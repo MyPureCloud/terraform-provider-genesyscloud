@@ -44,7 +44,7 @@ resource "genesyscloud_knowledge_document" "example_document" {
 
 - `knowledge_base_id` (String) Knowledge base id
 - `knowledge_document` (Block List, Min: 1, Max: 1) Knowledge document request body (see [below for nested schema](#nestedblock--knowledge_document))
-- `published` (Boolean) If true, the knowledge document will be published. If false, it will be a draft
+- `published` (Boolean) If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.
 
 ### Read-Only
 
