@@ -18,12 +18,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/hcl/v2/hclwrite"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	zclconfCty "github.com/zclconf/go-cty/cty"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
@@ -317,93 +315,6 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 }
 
 /*****ADDED CODE HERE*****/
-func instanceStateToHCLBlock(resType, resName string, json gcloud.JsonMap) []byte {
-	f := hclwrite.NewEmptyFile()
-	rootBody := f.Body()
-
-	block := rootBody.AppendNewBlock("resource", []string{resType, resName})
-	body := block.Body()
-
-	addBody(body, json)
-
-	newCopy := strings.Replace(fmt.Sprintf("%s", f.Bytes()), "$${", "${", -1)
-	return []byte(newCopy)
-}
-
-func addBody(body *hclwrite.Body, json gcloud.JsonMap) {
-	for k, v := range json {
-		addValue(body, k, v)
-	}
-}
-
-func addValue(body *hclwrite.Body, k string, v interface{}) {
-	if vInter, ok := v.([]interface{}); ok {
-		handleInterfaceArray(body, k, vInter)
-	} else {
-		ctyVal := getCtyValue(v)
-		if ctyVal != zclconfCty.NilVal {
-			body.SetAttributeValue(k, ctyVal)
-		}
-	}
-}
-
-func getCtyValue(v interface{}) zclconfCty.Value {
-	var value zclconfCty.Value
-	if vStr, ok := v.(string); ok {
-		value = zclconfCty.StringVal(vStr)
-	} else if vBool, ok := v.(bool); ok {
-		value = zclconfCty.BoolVal(vBool)
-	} else if vInt, ok := v.(int); ok {
-		value = zclconfCty.NumberIntVal(int64(vInt))
-	} else if vInt32, ok := v.(int32); ok {
-		value = zclconfCty.NumberIntVal(int64(vInt32))
-	} else if vInt64, ok := v.(int64); ok {
-		value = zclconfCty.NumberIntVal(vInt64)
-	} else if vFloat32, ok := v.(float32); ok {
-		value = zclconfCty.NumberFloatVal(float64(vFloat32))
-	} else if vFloat64, ok := v.(float64); ok {
-		value = zclconfCty.NumberFloatVal(vFloat64)
-	} else if vMapInter, ok := v.(map[string]interface{}); ok {
-		value = createHCLObject(vMapInter)
-	} else {
-		value = zclconfCty.NilVal
-	}
-	return value
-}
-
-// Creates hcl objects in the format name = { item1 = "", item2 = "", ... }
-func createHCLObject(v map[string]interface{}) zclconfCty.Value {
-	obj := make(map[string]zclconfCty.Value)
-	for key, val := range v {
-		ctyVal := getCtyValue(val)
-		if ctyVal != zclconfCty.NilVal {
-			obj[key] = ctyVal
-		}
-	}
-	if len(obj) == 0 {
-		return zclconfCty.NilVal
-	}
-	return zclconfCty.ObjectVal(obj)
-}
-
-func handleInterfaceArray(body *hclwrite.Body, k string, v []interface{}) {
-	var listItems []zclconfCty.Value
-	for _, val := range v {
-		// k { ... }
-		if valMap, ok := val.(map[string]interface{}); ok {
-			block := body.AppendNewBlock(k, nil)
-			for key, value := range valMap {
-				addValue(block.Body(), key, value)
-			}
-			// k = [ ... ]
-		} else {
-			listItems = append(listItems, getCtyValue(val))
-		}
-	}
-	if len(listItems) > 0 {
-		body.SetAttributeValue(k, zclconfCty.ListVal(listItems))
-	}
-}
 
 func determineVarValue(s *schema.Schema) interface{} {
 	if s.Default != nil {
@@ -476,33 +387,6 @@ func determineVarType(s *schema.Schema) string {
 	}
 
 	return varType
-}
-
-func getDecodedData(jsonString string, currAttr string) (string, error) {
-	var jsonVar interface{}
-	err := json.Unmarshal([]byte(jsonString), &jsonVar)
-	if err != nil {
-		return "", err
-	}
-
-	formattedJson, err := json.MarshalIndent(jsonVar, "", "\t")
-	if err != nil {
-		return "", err
-	}
-
-	// replace : with = as is expected syntax in a jsonencode object
-	decodedJson := strings.Replace(string(formattedJson), "\": ", "\" = ", -1)
-	// fix indentation
-	numOfIndents := strings.Count(currAttr, ".") + 1
-	spaces := ""
-	for i := 0; i < numOfIndents; i++ {
-		spaces = spaces + "  "
-	}
-	decodedJson = strings.Replace(decodedJson, "\t", fmt.Sprintf("\t%v", spaces), -1)
-	// add extra space before the final character (either ']' or '}')
-	decodedJson = fmt.Sprintf("%v%v%v", decodedJson[:len(decodedJson)-1], spaces, decodedJson[len(decodedJson)-1:])
-	decodedJson = fmt.Sprintf("jsonencode(%v)", decodedJson)
-	return decodedJson, nil
 }
 
 func sourceForVersion(version string) string {
@@ -1065,37 +949,6 @@ func sanitizeConfigMap(
 	}
 
 	return unresolvableAttrs, true
-}
-
-func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *gcloud.ResourceExporter, exporters map[string]*gcloud.ResourceExporter, exportingState bool) (string, error) {
-	var jsonData interface{}
-	err := json.Unmarshal([]byte(currVal), &jsonData)
-	if err != nil {
-		return "", err
-	}
-
-	nestedAttrs, _ := exporter.ContainsNestedRefAttrs(currAttr)
-	for _, value := range nestedAttrs {
-		refSettings := exporter.GetNestedRefAttrSettings(value)
-		if data, ok := jsonData.(map[string]interface{}); ok {
-			switch data[value].(type) {
-			case string:
-				data[value] = resolveReference(refSettings, data[value].(string), exporters, exportingState)
-			case []interface{}:
-				array := data[value].([]interface{})
-				for k, v := range array {
-					array[k] = resolveReference(refSettings, v.(string), exporters, exportingState)
-				}
-				data[value] = array
-			}
-			jsonData = data
-		}
-	}
-	jsonDataMarshalled, err := json.Marshal(jsonData)
-	if err != nil {
-		return "", err
-	}
-	return string(jsonDataMarshalled), nil
 }
 
 func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema.Schema, bool) {

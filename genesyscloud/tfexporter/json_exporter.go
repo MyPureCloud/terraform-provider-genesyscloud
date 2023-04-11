@@ -1,7 +1,9 @@
 package tfexporter
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -54,4 +56,62 @@ func exportJSONConfig(
 	}
 
 	return writeConfig(rootJSONObject, filePath)
+}
+
+func getDecodedData(jsonString string, currAttr string) (string, error) {
+	var jsonVar interface{}
+	err := json.Unmarshal([]byte(jsonString), &jsonVar)
+	if err != nil {
+		return "", err
+	}
+
+	formattedJson, err := json.MarshalIndent(jsonVar, "", "\t")
+	if err != nil {
+		return "", err
+	}
+
+	// replace : with = as is expected syntax in a jsonencode object
+	decodedJson := strings.Replace(string(formattedJson), "\": ", "\" = ", -1)
+	// fix indentation
+	numOfIndents := strings.Count(currAttr, ".") + 1
+	spaces := ""
+	for i := 0; i < numOfIndents; i++ {
+		spaces = spaces + "  "
+	}
+	decodedJson = strings.Replace(decodedJson, "\t", fmt.Sprintf("\t%v", spaces), -1)
+	// add extra space before the final character (either ']' or '}')
+	decodedJson = fmt.Sprintf("%v%v%v", decodedJson[:len(decodedJson)-1], spaces, decodedJson[len(decodedJson)-1:])
+	decodedJson = fmt.Sprintf("jsonencode(%v)", decodedJson)
+	return decodedJson, nil
+}
+
+func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *gcloud.ResourceExporter, exporters map[string]*gcloud.ResourceExporter, exportingState bool) (string, error) {
+	var jsonData interface{}
+	err := json.Unmarshal([]byte(currVal), &jsonData)
+	if err != nil {
+		return "", err
+	}
+
+	nestedAttrs, _ := exporter.ContainsNestedRefAttrs(currAttr)
+	for _, value := range nestedAttrs {
+		refSettings := exporter.GetNestedRefAttrSettings(value)
+		if data, ok := jsonData.(map[string]interface{}); ok {
+			switch data[value].(type) {
+			case string:
+				data[value] = resolveReference(refSettings, data[value].(string), exporters, exportingState)
+			case []interface{}:
+				array := data[value].([]interface{})
+				for k, v := range array {
+					array[k] = resolveReference(refSettings, v.(string), exporters, exportingState)
+				}
+				data[value] = array
+			}
+			jsonData = data
+		}
+	}
+	jsonDataMarshalled, err := json.Marshal(jsonData)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonDataMarshalled), nil
 }
