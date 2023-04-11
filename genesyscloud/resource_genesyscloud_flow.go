@@ -159,7 +159,13 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	filePath := d.Get("filepath").(string)
 	substitutions := d.Get("substitutions").(map[string]interface{})
 
-	_, err = prepareAndUploadFile(filePath, substitutions, headers, presignedUrl)
+	reader, _, err := downloadOrOpenFile(filePath)
+	if err != nil {
+		return diag.Errorf(err.Error())
+	}
+
+	s3Uploader := NewS3Uploader(reader, substitutions, headers, presignedUrl)
+	_, err = s3Uploader.Upload()
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}

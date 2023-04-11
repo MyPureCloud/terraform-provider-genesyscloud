@@ -68,7 +68,13 @@ func createResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 
 	headers := *postResponseData.Headers
 	url := *postResponseData.Url
-	_, err = prepareAndUploadFile(fileName, nil, headers, url)
+	reader, _, err := downloadOrOpenFile(fileName)
+	if err != nil {
+		return diag.Errorf(err.Error())
+	}
+
+	s3Uploader := NewS3Uploader(reader, nil, headers, url)
+	_, err = s3Uploader.Upload()
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
