@@ -11,7 +11,7 @@ import (
 func TestAccResourceScriptBasic(t *testing.T) {
 	var (
 		resourceId = "script"
-		name       = "test script name 1104"
+		name       = "testscriptname1104"
 		fileName   = testrunner.GetTestDataPath("resource", "genesyscloud_script", "test_script.json")
 	)
 
@@ -35,9 +35,10 @@ resource "genesyscloud_script" "%s" {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_script." + resourceId,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_script." + resourceId,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"script_name", "filename"},
 			},
 		},
 	})

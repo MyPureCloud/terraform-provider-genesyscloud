@@ -60,6 +60,15 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 	fileName := d.Get("filename").(string)
 	scriptName := d.Get("script_name").(string)
 
+	duplicateName, err := scriptExistsWithName(scriptName, meta)
+	if err != nil {
+		return diag.Errorf("%v", err)
+	}
+
+	if duplicateName {
+		return diag.Errorf("Script with name %s already exists. Please provide a unique name.", scriptName)
+	}
+
 	if err := createScriptFormData(fileName, scriptName, &bodyBuf, w); err != nil {
 		return diag.Errorf("%v", err)
 	}
@@ -80,11 +89,6 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	// Need to get script ID back from POST request
 	d.SetId(uuid.NewString())
-
-	fmt.Println()
-	fmt.Printf("%v\n", resp)
-	fmt.Println()
-
 	return readScript(ctx, d, meta)
 }
 
@@ -134,4 +138,48 @@ func createScriptFormData(fileName, scriptName string, bodyBuf *bytes.Buffer, w 
 
 	w.Close()
 	return nil
+}
+
+func scriptExistsWithName(scriptName string, meta interface{}) (bool, error) {
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	scriptsApi := platformclientv2.NewScriptsApiWithConfig(sdkConfig)
+
+	pageSize := 50
+	pageNumber := 1
+	data, _, err := scriptsApi.GetScripts(pageSize, pageNumber, "", scriptName, "", "", "", "", "", "")
+	if err != nil {
+		return false, err
+	}
+
+	if data.Entities != nil && len(*data.Entities) > 0 {
+		for _, entity := range *data.Entities {
+			if *entity.Name == scriptName {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}
+
+func getScriptByName(scriptName string, meta interface{}) (platformclientv2.Script, error) {
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	scriptsApi := platformclientv2.NewScriptsApiWithConfig(sdkConfig)
+
+	var script platformclientv2.Script
+
+	pageSize := 50
+	pageNumber := 1
+	data, _, err := scriptsApi.GetScripts(pageSize, pageNumber, "", scriptName, "", "", "", "", "", "")
+	if err != nil {
+		return script, err
+	}
+
+	if data.Entities != nil && len(*data.Entities) > 0 {
+		script = (*data.Entities)[0]
+	} else {
+		return script, fmt.Errorf("Could not find script with name %s", scriptName)
+	}
+
+	return script, nil
 }
