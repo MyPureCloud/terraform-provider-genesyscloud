@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -10,8 +11,8 @@ import (
 func TestAccResourceScriptBasic(t *testing.T) {
 	var (
 		resourceId = "script"
-		name       = "test script name 0603"
-		fileName   = "./pathto/file.json"
+		name       = "test script name 1104"
+		fileName   = testrunner.GetTestDataPath("resource", "genesyscloud_script", "test_script.json")
 	)
 
 	scriptResource := fmt.Sprintf(`
