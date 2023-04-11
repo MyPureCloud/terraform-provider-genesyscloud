@@ -3,7 +3,6 @@ package genesyscloud
 import (
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -50,11 +49,6 @@ func runJourneyActionMapTestCaseWithFileServer(t *testing.T, testCaseName string
 }
 
 func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
-	tf := os.Getenv("TF_ACC")
-	if tf == "" {
-		return
-	}
-
 	setupJourneyActionMap(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
@@ -66,11 +60,6 @@ func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 }
 
 func setupJourneyActionMap(t *testing.T, testCaseName string) {
-	tf := os.Getenv("TF_ACC")
-	if tf == "" {
-		return
-	}
-
 	err := authorizeSdk()
 	if err != nil {
 		t.Fatal(err)
