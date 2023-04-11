@@ -81,7 +81,7 @@ func prepareAndUploadFile(filename string, substitutions map[string]interface{},
 
 	_, err = io.Copy(bodyBuf, reader)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to copy file content to the handler. Error: %s ", err)
+		return nil, fmt.Errorf("failed to copy file content to the handler. Error: %s ", err)
 	}
 
 	// Attribute specific to the flows resource
@@ -107,8 +107,12 @@ func prepareAndUploadFile(filename string, substitutions map[string]interface{},
 		defer resp.Body.Close()
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to upload file to S3 bucket %s with an HTTP status code of %d. ", filename, resp.StatusCode)
+	}
+
 	if err != nil || resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Failed to upload file to S3 bucket. Error: %s ", err)
+		return nil, fmt.Errorf("failed to upload file to S3 bucket with an error. Error: %s ", err)
 	}
 
 	response, err := ioutil.ReadAll(resp.Body)

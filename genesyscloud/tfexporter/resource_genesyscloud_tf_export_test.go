@@ -640,17 +640,17 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 	)
 
 	userPromptAsset := gcloud.UserPromptResourceStruct{
-		userPromptResourceLanguage,
-		nullValue,
-		strconv.Quote(userPromptResourceText),
-		strconv.Quote(userResourcePromptFilename1),
+		Language:   userPromptResourceLanguage,
+		Tts_string: nullValue,
+		Text:       strconv.Quote(userPromptResourceText),
+		Filename:   strconv.Quote(userResourcePromptFilename1),
 	}
 
 	userPromptAsset2 := gcloud.UserPromptResourceStruct{
-		userPromptResourceLanguage2,
-		nullValue,
-		strconv.Quote(userPromptResourceText2),
-		strconv.Quote(userResourcePromptFilename2),
+		Language:   userPromptResourceLanguage2,
+		Tts_string: nullValue,
+		Text:       strconv.Quote(userPromptResourceText2),
+		Filename:   strconv.Quote(userResourcePromptFilename2),
 	}
 
 	userPromptResources := []*gcloud.UserPromptResourceStruct{&userPromptAsset}
@@ -664,10 +664,10 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
-					userPromptResourceId,
-					userPromptName,
-					strconv.Quote(userPromptDescription),
-					userPromptResources,
+					ResourceID:  userPromptResourceId,
+					Name:        userPromptName,
+					Description: strconv.Quote(userPromptDescription),
+					Resources:   userPromptResources,
 				}),
 			},
 			{
@@ -680,10 +680,10 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					falseValue,
 					falseValue,
 				) + gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
-					userPromptResourceId,
-					userPromptName,
-					strconv.Quote(userPromptDescription),
-					userPromptResources,
+					ResourceID:  userPromptResourceId,
+					Name:        userPromptName,
+					Description: strconv.Quote(userPromptDescription),
+					Resources:   userPromptResources,
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "name", userPromptName),
@@ -697,10 +697,10 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 			// Update to two resources with separate audio files
 			{
 				Config: gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
-					userPromptResourceId,
-					userPromptName,
-					strconv.Quote(userPromptDescription),
-					userPromptResources2,
+					ResourceID:  userPromptResourceId,
+					Name:        userPromptName,
+					Description: strconv.Quote(userPromptDescription),
+					Resources:   userPromptResources2,
 				}),
 			},
 			{
@@ -713,10 +713,10 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					falseValue,
 					falseValue,
 				) + gcloud.GenerateUserPromptResource(&gcloud.UserPromptStruct{
-					userPromptResourceId,
-					userPromptName,
-					strconv.Quote(userPromptDescription),
-					userPromptResources2,
+					ResourceID:  userPromptResourceId,
+					Name:        userPromptName,
+					Description: strconv.Quote(userPromptDescription),
+					Resources:   userPromptResources2,
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "name", userPromptName),

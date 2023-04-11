@@ -18,7 +18,14 @@ copy-hooks:
 
 # Run acceptance tests
 testacc:
-	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m -parallel 20
+	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m -parallel 20  -coverprofile=coverage.out
+
+coverage:
+    go tool cover -func coverage.out | grep "total:" | \
+    awk '{print ((int($$3) > 80) != 1) }'
+
+report:
+    go tool cover -html=coverage.out -o cover.html	
 
 clean:
 	rm -f -r ${DIST_DIR}
