@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 var (
@@ -147,6 +147,12 @@ func resourceIntegrationAction() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 				ForceNew:    true,
+			},
+			"config_timeout_seconds": {
+				Description:  "Optional 1-60 second timeout enforced on the execution or test of this action. This setting is invalid for Custom Authentication Actions.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntBetween(1, 60),
 			},
 			"contract_input": {
 				Description:      "JSON Schema that defines the body of the request that the client (edge/architect/postman) is sending to the service, on the /execute path. Changing the contract_input attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
@@ -280,6 +286,12 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 			d.Set("secure", nil)
 		}
 
+		if action.Config.TimeoutSeconds != nil {
+			d.Set("config_timeout_seconds", *action.Config.TimeoutSeconds)
+		} else {
+			d.Set("config_timeout_seconds", nil)
+		}
+
 		if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
 			input, err := flattenActionContract(*action.Contract.Input.InputSchema)
 			if err != nil {
@@ -405,10 +417,17 @@ func buildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagn
 }
 
 func buildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig {
-	return &platformclientv2.Actionconfig{
+	ConfigTimeoutSeconds := d.Get("config_timeout_seconds").(int)
+	ActionConfig := &platformclientv2.Actionconfig{
 		Request:  buildSdkActionConfigRequest(d),
 		Response: buildSdkActionConfigResponse(d),
 	}
+
+	if ConfigTimeoutSeconds > 0 {
+		ActionConfig.TimeoutSeconds = &ConfigTimeoutSeconds
+	}
+
+	return ActionConfig
 }
 
 func buildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Requestconfig {

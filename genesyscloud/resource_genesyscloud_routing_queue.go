@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 var (
@@ -340,7 +340,7 @@ func resourceRoutingQueue() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     true, // Default may be set by server
-				ValidateFunc: validation.IntBetween(1000, 86400000),
+				ValidateFunc: validation.IntBetween(0, 86400000),
 			},
 			"skill_evaluation_method": {
 				Description:  "The skill evaluation method to use when routing conversations (NONE | BEST | ALL).",
@@ -595,22 +595,28 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("media_settings_chat", nil)
 		d.Set("media_settings_email", nil)
 		d.Set("media_settings_message", nil)
+
 		if currentQueue.MediaSettings != nil {
-			if callSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyCall]; ok {
-				d.Set("media_settings_call", flattenMediaSetting(callSettings))
+			if currentQueue.MediaSettings.Call != nil {
+				d.Set("media_settings_call", flattenMediaSetting(*currentQueue.MediaSettings.Call))
 			}
-			if callbackSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyCallback]; ok {
-				d.Set("media_settings_callback", flattenMediaSetting(callbackSettings))
+
+			if currentQueue.MediaSettings.Callback != nil {
+				d.Set("media_settings_callback", flattenMediaSettingCallback(*currentQueue.MediaSettings.Callback))
 			}
-			if chatSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyChat]; ok {
-				d.Set("media_settings_chat", flattenMediaSetting(chatSettings))
+
+			if currentQueue.MediaSettings.Chat != nil {
+				d.Set("media_settings_chat", flattenMediaSetting(*currentQueue.MediaSettings.Chat))
 			}
-			if emailSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyEmail]; ok {
-				d.Set("media_settings_email", flattenMediaSetting(emailSettings))
+
+			if currentQueue.MediaSettings.Email != nil {
+				d.Set("media_settings_email", flattenMediaSetting(*currentQueue.MediaSettings.Email))
 			}
-			if messageSettings, ok := (*currentQueue.MediaSettings)[mediaSettingsKeyMessage]; ok {
-				d.Set("media_settings_message", flattenMediaSetting(messageSettings))
+
+			if currentQueue.MediaSettings.Message != nil {
+				d.Set("media_settings_message", flattenMediaSetting(*currentQueue.MediaSettings.Message))
 			}
+
 		}
 
 		if currentQueue.RoutingRules != nil {
@@ -828,45 +834,47 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	})
 }
 
-func buildSdkMediaSettings(d *schema.ResourceData) *map[string]platformclientv2.Mediasetting {
-	settings := make(map[string]platformclientv2.Mediasetting)
+func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemediasettings {
+	queueMediaSettings := &platformclientv2.Queuemediasettings{}
 
 	mediaSettingsCall := d.Get("media_settings_call").([]interface{})
 	if mediaSettingsCall != nil && len(mediaSettingsCall) > 0 {
-		settings[mediaSettingsKeyCall] = buildSdkMediaSetting(mediaSettingsCall)
+		queueMediaSettings.Call = buildSdkMediaSetting(mediaSettingsCall)
+
 	}
 
 	mediaSettingsCallback := d.Get("media_settings_callback").([]interface{})
 	if mediaSettingsCallback != nil && len(mediaSettingsCallback) > 0 {
-		settings[mediaSettingsKeyCallback] = buildSdkMediaSetting(mediaSettingsCallback)
+		queueMediaSettings.Callback = buildSdkMediaSettingCallback(mediaSettingsCallback)
 	}
 
 	mediaSettingsChat := d.Get("media_settings_chat").([]interface{})
 	if mediaSettingsChat != nil && len(mediaSettingsChat) > 0 {
-		settings[mediaSettingsKeyChat] = buildSdkMediaSetting(mediaSettingsChat)
+		queueMediaSettings.Chat = buildSdkMediaSetting(mediaSettingsChat)
 	}
 
 	mediaSettingsEmail := d.Get("media_settings_email").([]interface{})
+	log.Printf("The media settings email #%v", mediaSettingsEmail)
 	if mediaSettingsEmail != nil && len(mediaSettingsEmail) > 0 {
-		settings[mediaSettingsKeyEmail] = buildSdkMediaSetting(mediaSettingsEmail)
+		queueMediaSettings.Email = buildSdkMediaSetting(mediaSettingsEmail)
 	}
 
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
 	if mediaSettingsMessage != nil && len(mediaSettingsMessage) > 0 {
-		settings[mediaSettingsKeyMessage] = buildSdkMediaSetting(mediaSettingsMessage)
+		queueMediaSettings.Message = buildSdkMediaSetting(mediaSettingsMessage)
 	}
 
-	return &settings
+	return queueMediaSettings
 }
 
-func buildSdkMediaSetting(settings []interface{}) platformclientv2.Mediasetting {
+func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasettings {
 	settingsMap := settings[0].(map[string]interface{})
 
 	alertingTimeout := settingsMap["alerting_timeout_sec"].(int)
 	serviceLevelPct := settingsMap["service_level_percentage"].(float64)
 	serviceLevelDur := settingsMap["service_level_duration_ms"].(int)
 
-	return platformclientv2.Mediasetting{
+	return &platformclientv2.Mediasettings{
 		AlertingTimeoutSeconds: &alertingTimeout,
 		ServiceLevel: &platformclientv2.Servicelevel{
 			Percentage: &serviceLevelPct,
@@ -875,8 +883,33 @@ func buildSdkMediaSetting(settings []interface{}) platformclientv2.Mediasetting 
 	}
 }
 
-func flattenMediaSetting(settings platformclientv2.Mediasetting) []interface{} {
+func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
+	settingsMap := settings[0].(map[string]interface{})
+
+	alertingTimeout := settingsMap["alerting_timeout_sec"].(int)
+	serviceLevelPct := settingsMap["service_level_percentage"].(float64)
+	serviceLevelDur := settingsMap["service_level_duration_ms"].(int)
+
+	return &platformclientv2.Callbackmediasettings{
+		AlertingTimeoutSeconds: &alertingTimeout,
+		ServiceLevel: &platformclientv2.Servicelevel{
+			Percentage: &serviceLevelPct,
+			DurationMs: &serviceLevelDur,
+		},
+	}
+}
+
+func flattenMediaSetting(settings platformclientv2.Mediasettings) []interface{} {
 	settingsMap := make(map[string]interface{})
+	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
+	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
+	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
+	return []interface{}{settingsMap}
+}
+
+func flattenMediaSettingCallback(settings platformclientv2.Callbackmediasettings) []interface{} {
+	settingsMap := make(map[string]interface{})
+
 	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs

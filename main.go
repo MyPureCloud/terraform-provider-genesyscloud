@@ -21,7 +21,7 @@ import (
 //
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 //go:generate git restore docs/index.md
-//go:generate go run github.com/mypurecloud/terraform-provider-genesyscloud/apidocs
+//go:generate go run terraform-provider-genesyscloud/apidocs
 var (
 	// these will be set by the goreleaser configuration
 	// to appropriate values for the compiled binary

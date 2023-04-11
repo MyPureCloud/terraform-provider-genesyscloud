@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 /*

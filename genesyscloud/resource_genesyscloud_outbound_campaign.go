@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 var (
@@ -20,11 +20,6 @@ var (
 		Schema: map[string]*schema.Schema{
 			`column_name`: {
 				Description: `The name of the phone column.`,
-				Required:    true,
-				Type:        schema.TypeString,
-			},
-			`type`: {
-				Description: `The type of the phone column. For example, 'cell' or 'home'.`,
 				Required:    true,
 				Type:        schema.TypeString,
 			},
@@ -82,13 +77,13 @@ func resourceOutboundCampaign() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`campaign_status`: {
-				Description:  `The current status of the Campaign. A Campaign may be turned 'on' or 'off'. Required for updates. A Campaign must be turned 'off' when creating.`,
+				Description:  `The current status of the Campaign. A Campaign may be turned 'on' or 'off' (default). If this value is changed alongside other changes to the resource, a subsequent update will occur immediately afterwards to set the campaign status. This is due to behavioral requirements in the Genesys Cloud API.`,
 				Optional:     true,
 				Type:         schema.TypeString,
 				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{`on`, `off`}, false),
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return (old == `complete` && new == `on`) || (old == `invalid` && new == `on`) || (old == `stopping` && new == `off`)
+					return (old == `complete` && new == `off`) || (old == `invalid` && new == `off`) || (old == `stopping` && new == `off`)
 				},
 			},
 			`phone_columns`: {
@@ -300,9 +295,6 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	if dialingMode != "" {
 		sdkcampaign.DialingMode = &dialingMode
 	}
-	if campaignStatus != "" {
-		sdkcampaign.CampaignStatus = &campaignStatus
-	}
 	if abandonRate != 0 {
 		sdkcampaign.AbandonRate = &abandonRate
 	}
@@ -328,6 +320,10 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 		sdkcampaign.Priority = &priority
 	}
 
+	// All campaigns have to be created in an "off" state to start out with
+	defaultCampaignStatus := "off"
+	sdkcampaign.CampaignStatus = &defaultCampaignStatus
+
 	log.Printf("Creating Outbound Campaign %s", name)
 	outboundCampaign, _, err := outboundApi.PostOutboundCampaigns(sdkcampaign)
 	if err != nil {
@@ -336,14 +332,51 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 
 	d.SetId(*outboundCampaign.Id)
 
+	// Campaigns can be enabled after creation
+	if campaignStatus != "" && campaignStatus == "on" {
+		d.Set("campaign_status", campaignStatus)
+		diag := updateOutboundCampaignStatus(d, outboundApi, *outboundCampaign)
+		if diag != nil {
+			return diag
+		}
+	}
+
 	log.Printf("Created Outbound Campaign %s %s", name, *outboundCampaign.Id)
+
 	return readOutboundCampaign(ctx, d, meta)
+}
+
+func updateOutboundCampaignStatus(d *schema.ResourceData, outboundApi *platformclientv2.OutboundApi, campaign platformclientv2.Campaign) diag.Diagnostics {
+	newCampaignStatus := d.Get("campaign_status").(string)
+	if newCampaignStatus != "" &&
+		// Campaign status can only go from ON -> OFF or OFF, COMPLETE, INVALID, ETC -> ON
+		((*campaign.CampaignStatus == "on" && newCampaignStatus == "off") ||
+			(*campaign.CampaignStatus != "on" && newCampaignStatus == "on")) {
+		campaign.CampaignStatus = &newCampaignStatus
+		log.Printf("Updating Outbound Campaign %s status to %s", *campaign.Name, newCampaignStatus)
+		diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			// Get current Outbound Campaign version
+			outboundCampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
+			if getErr != nil {
+				return resp, diag.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr)
+			}
+			campaign.Version = outboundCampaign.Version
+			_, _, updateErr := outboundApi.PutOutboundCampaign(d.Id(), campaign)
+			if updateErr != nil {
+				return resp, diag.Errorf("Failed to update Outbound Campaign %s: %s", *campaign.Name, updateErr)
+			}
+			return nil, nil
+		})
+		if diagErr != nil {
+			return diagErr
+		}
+	}
+	return nil
 }
 
 func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	dialingMode := d.Get("dialing_mode").(string)
-	campaignStatus := d.Get("campaign_status").(string)
 	abandonRate := d.Get("abandon_rate").(float64)
 	callerName := d.Get("caller_name").(string)
 	callerAddress := d.Get("caller_address").(string)
@@ -382,9 +415,6 @@ func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	if dialingMode != "" {
 		sdkcampaign.DialingMode = &dialingMode
 	}
-	if campaignStatus != "" {
-		sdkcampaign.CampaignStatus = &campaignStatus
-	}
 	if abandonRate != 0 {
 		sdkcampaign.AbandonRate = &abandonRate
 	}
@@ -418,12 +448,22 @@ func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 			return resp, diag.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr)
 		}
 		sdkcampaign.Version = outboundCampaign.Version
-		outboundCampaign, _, updateErr := outboundApi.PutOutboundCampaign(d.Id(), sdkcampaign)
+
+		// Campaign Status has to stay the same, and can only be updated independent of any other operations
+		sdkcampaign.CampaignStatus = outboundCampaign.CampaignStatus
+
+		_, _, updateErr := outboundApi.PutOutboundCampaign(d.Id(), sdkcampaign)
 		if updateErr != nil {
 			return resp, diag.Errorf("Failed to update Outbound Campaign %s: %s", name, updateErr)
 		}
 		return nil, nil
 	})
+	if diagErr != nil {
+		return diagErr
+	}
+
+	// Check if Campaign Status needs updated
+	diagErr = updateOutboundCampaignStatus(d, outboundApi, sdkcampaign)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -445,6 +485,9 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
+		}
+		if *sdkcampaign.CampaignStatus == "stopping" {
+			return resource.RetryableError(fmt.Errorf("Outbound Campaign still stopping %s", d.Id()))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCampaign())
@@ -575,9 +618,6 @@ func buildSdkoutboundcampaignPhonecolumnSlice(phonecolumnList []interface{}) *[]
 		if columnName := phonecolumnMap["column_name"].(string); columnName != "" {
 			sdkPhonecolumn.ColumnName = &columnName
 		}
-		if varType := phonecolumnMap["type"].(string); varType != "" {
-			sdkPhonecolumn.VarType = &varType
-		}
 
 		sdkPhonecolumnSlice = append(sdkPhonecolumnSlice, sdkPhonecolumn)
 	}
@@ -615,9 +655,6 @@ func flattenSdkoutboundcampaignPhonecolumnSlice(phonecolumns []platformclientv2.
 
 		if phonecolumn.ColumnName != nil {
 			phonecolumnMap["column_name"] = *phonecolumn.ColumnName
-		}
-		if phonecolumn.VarType != nil {
-			phonecolumnMap["type"] = *phonecolumn.VarType
 		}
 
 		phonecolumnList = append(phonecolumnList, phonecolumnMap)

@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 func TestAccResourceIntegrationAction(t *testing.T) {
@@ -22,6 +22,8 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 		actionName2     = "Terraform Action2-" + uuid.NewString()
 		actionCateg1    = "Genesys Cloud Data Actions"
 		actionCateg2    = "Genesys Cloud Data Actions 2"
+
+		timeout2 = "20"
 
 		inputAttr1  = "service"
 		outputAttr1 = "status"
@@ -58,6 +60,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionCateg1,
 					"genesyscloud_integration."+integResource1+".id",
 					nullValue,                             // Secure default (false)
+					nullValue,                             // Timeout default
 					generateJsonSchemaDocStr(inputAttr1),  // contract_input
 					generateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
@@ -72,6 +75,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "name", actionName1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "category", actionCateg1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_timeout_seconds", nullValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
 					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "type", "object"),
 					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "properties."+inputAttr1+".type", "string"),
@@ -84,7 +88,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 				),
 			},
 			{
-				// Update action name, category, and request/response config
+				// Update action name, category, timeout, and request/response config
 				Config: generateIntegrationResource(
 					integResource1,
 					nullValue,
@@ -94,7 +98,8 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionName2,
 					actionCateg2,
 					"genesyscloud_integration."+integResource1+".id",
-					nullValue,                             // Secure default (false)
+					nullValue, // Secure default (false)
+					timeout2,
 					generateJsonSchemaDocStr(inputAttr1),  // contract_input
 					generateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
@@ -122,6 +127,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "name", actionName2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "category", actionCateg2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_timeout_seconds", timeout2),
 					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_url_template", reqUrlTemplate2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_type", reqType2),
@@ -192,17 +198,18 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 	})
 }
 
-func generateIntegrationActionResource(resourceID, name, category, integId, secure, contractIn, contractOut string, blocks ...string) string {
+func generateIntegrationActionResource(resourceID, name, category, integId, secure, timeout, contractIn, contractOut string, blocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_integration_action" "%s" {
         name = "%s"
         category = "%s"
         integration_id = %s
         secure = %s
+		config_timeout_seconds = %s
         contract_input = %s
         contract_output = %s
         %s
 	}
-	`, resourceID, name, category, integId, secure, contractIn, contractOut, strings.Join(blocks, "\n"))
+	`, resourceID, name, category, integId, secure, timeout, contractIn, contractOut, strings.Join(blocks, "\n"))
 }
 
 func generateIntegrationActionConfigRequest(reqUrlTemplate, reqType, reqTemp, headers string) string {

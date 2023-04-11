@@ -13,13 +13,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v92/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 const resourceName = "genesyscloud_journey_action_map"
 
 func TestAccResourceJourneyActionMapActionMediaTypes(t *testing.T) {
 	runJourneyActionMapTestCaseWithFileServer(t, "action_media_types", 8111)
+}
+
+func TestAccResourceJourneyActionMapActionMediaTypesWithTriggerConditions(t *testing.T) {
+	runJourneyActionMapTestCase(t, "action_media_types_with_trigger_conditions")
 }
 
 func TestAccResourceJourneyActionMapOptionalAttributes(t *testing.T) {
