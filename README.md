@@ -53,9 +53,10 @@ For any issues, questions, or suggestions for the provider, visit the [Genesys C
 
 ### Proxy Configuration
 
-Using of a proxy is accomplished by setting the proxy settings for the provider
+Use of a proxy is accomplished by setting the proxy settings for the provider
 
 The `Proxy` has 3 properties that determine the URL for proxying.
+
 port - Port of the Proxy server
 host - Host Ip or DNS of the proxy server
 protocol - Protocol required to connect to the Proxy (http or https)
@@ -64,8 +65,9 @@ The 'proxy' has another section which is an optional section.
 If the proxy requires authentication to connect to
 'auth' needs to be mentioned under the 'Proxy'.
 
-The Provider Configuration with Proxy Looks like the below.
+An example of the provider configuration with the proxy: 
 
+```hcl
 provider "genesyscloud" {
   oauthclient_id = "<client-id>"
   oauthclient_secret = "<client-secret>"
@@ -82,6 +84,7 @@ provider "genesyscloud" {
     }
   }
 }
+```
 
 The following environment variables may be set to avoid hardcoding Proxy and Auth Client information into your Terraform files:
 
@@ -92,6 +95,7 @@ GENESYSCLOUD_PROXY_PROTOCOL
 GENESYSCLOUD_PROXY_AUTH_USERNAME
 GENESYSCLOUD_PROXY_AUTH_PASSWORD
 
+```
 
 ### Data Sources
 
