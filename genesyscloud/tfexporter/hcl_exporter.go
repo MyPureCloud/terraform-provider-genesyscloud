@@ -12,38 +12,58 @@ import (
 	zclconfCty "github.com/zclconf/go-cty/cty"
 )
 
-func exportHCLConfig(
-	resourceTypeHCLBlocksSlice [][]byte,
-	unresolvedAttrs []unresolvableAttributeInfo,
-	providerSource,
-	version,
-	filePath,
-	tfVarsFilePath string) diag.Diagnostics {
+/*
+   This file contains all of the functions used to export HCL functions.
+*/
+
+type HCLExporter struct {
+	resourceTypeHCLBlocksSlice [][]byte
+	unresolvedAttrs            []unresolvableAttributeInfo
+	providerSource             string
+	version                    string
+	filePath                   string
+	tfVarsFilePath             string
+}
+
+func NewHClExporter(resourceTypeHCLBlocksSlice [][]byte, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, filePath string, tfVarsFilePath string) *HCLExporter {
+	hclExporter := &HCLExporter{
+		resourceTypeHCLBlocksSlice: resourceTypeHCLBlocksSlice,
+		unresolvedAttrs:            unresolvedAttrs,
+		providerSource:             providerSource,
+		version:                    version,
+		filePath:                   filePath,
+		tfVarsFilePath:             tfVarsFilePath,
+	}
+	return hclExporter
+}
+
+func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
+
 	rootFile := hclwrite.NewEmptyFile()
 	rootBody := rootFile.Body()
 	tfBlock := rootBody.AppendNewBlock("terraform", nil)
 	requiredProvidersBlock := tfBlock.Body().AppendNewBlock("required_providers", nil)
 	requiredProvidersBlock.Body().SetAttributeValue("genesyscloud", zclconfCty.ObjectVal(map[string]zclconfCty.Value{
-		"source":  zclconfCty.StringVal(providerSource),
-		"version": zclconfCty.StringVal(version),
+		"source":  zclconfCty.StringVal(h.providerSource),
+		"version": zclconfCty.StringVal(h.version),
 	}))
 	terraformHCLBlock = fmt.Sprintf("%s", rootFile.Bytes())
 
-	if len(resourceTypeHCLBlocksSlice) > 0 {
+	if len(h.resourceTypeHCLBlocksSlice) > 0 {
 		// prepend terraform block
-		first := resourceTypeHCLBlocksSlice[0]
-		resourceTypeHCLBlocksSlice[0] = rootFile.Bytes()
-		resourceTypeHCLBlocksSlice = append(resourceTypeHCLBlocksSlice, first)
+		first := h.resourceTypeHCLBlocksSlice[0]
+		h.resourceTypeHCLBlocksSlice[0] = rootFile.Bytes()
+		h.resourceTypeHCLBlocksSlice = append(h.resourceTypeHCLBlocksSlice, first)
 	} else {
 		// no resources exist - prepend terraform block alone
-		resourceTypeHCLBlocksSlice = append(resourceTypeHCLBlocksSlice, rootFile.Bytes())
+		h.resourceTypeHCLBlocksSlice = append(h.resourceTypeHCLBlocksSlice, rootFile.Bytes())
 	}
 
-	if len(unresolvedAttrs) > 0 {
+	if len(h.unresolvedAttrs) > 0 {
 		mFile := hclwrite.NewEmptyFile()
 		tfVars := make(map[string]interface{})
 		keys := make(map[string]string)
-		for _, attr := range unresolvedAttrs {
+		for _, attr := range h.unresolvedAttrs {
 			mBody := mFile.Body()
 			key := fmt.Sprintf("%s_%s_%s", attr.ResourceType, attr.ResourceName, attr.Name)
 			if keys[key] != "" {
@@ -66,13 +86,13 @@ func exportHCLConfig(
 			tfVars[key] = determineVarValue(attr.Schema)
 		}
 
-		resourceTypeHCLBlocksSlice = append(resourceTypeHCLBlocksSlice, [][]byte{mFile.Bytes()}...)
-		if err := writeTfVars(tfVars, tfVarsFilePath); err != nil {
+		h.resourceTypeHCLBlocksSlice = append(h.resourceTypeHCLBlocksSlice, [][]byte{mFile.Bytes()}...)
+		if err := writeTfVars(tfVars, h.tfVarsFilePath); err != nil {
 			return err
 		}
 	}
 
-	return writeHCLToFile(resourceTypeHCLBlocksSlice, filePath)
+	return writeHCLToFile(h.resourceTypeHCLBlocksSlice, h.filePath)
 }
 
 func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {

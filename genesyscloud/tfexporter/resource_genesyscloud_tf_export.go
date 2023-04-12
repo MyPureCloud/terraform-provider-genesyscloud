@@ -3,6 +3,10 @@ package tfexporter
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
@@ -97,6 +101,51 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	d.SetId(gre.exportFilePath)
+
+	return nil
+}
+
+func readTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+	// If the output config file doesn't exist, mark the resource for creation.
+	path := d.Id()
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		d.SetId("")
+		return nil
+	}
+	return nil
+}
+
+func deleteTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+	configPath := d.Id()
+	if _, err := os.Stat(configPath); err == nil {
+		log.Printf("Deleting export config %s", configPath)
+		os.Remove(configPath)
+	}
+
+	stateFile, _ := getFilePath(d, defaultTfStateFile)
+	if _, err := os.Stat(stateFile); err == nil {
+		log.Printf("Deleting export state %s", stateFile)
+		os.Remove(stateFile)
+	}
+
+	tfVarsFile, _ := getFilePath(d, defaultTfVarsFile)
+	if _, err := os.Stat(tfVarsFile); err == nil {
+		log.Printf("Deleting export vars %s", tfVarsFile)
+		os.Remove(tfVarsFile)
+	}
+
+	// delete left over folders e.g. prompt audio data
+	dir, _ := getFilePath(d, "")
+	contents, err := ioutil.ReadDir(dir)
+	if err == nil {
+		for _, c := range contents {
+			if c.IsDir() {
+				pathToLeftoverDir := path.Join(dir, c.Name())
+				log.Printf("Deleting leftover directory %s", pathToLeftoverDir)
+				_ = os.RemoveAll(pathToLeftoverDir)
+			}
+		}
+	}
 
 	return nil
 }
