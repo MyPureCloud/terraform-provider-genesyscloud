@@ -51,6 +51,52 @@ GENESYSCLOUD_REGION
 
 For any issues, questions, or suggestions for the provider, visit the [Genesys Cloud Developer Forum](https://developer.mypurecloud.com/forum/)
 
+### Proxy Configuration
+
+Use of a proxy is accomplished by setting the proxy settings for the provider
+
+The `Proxy` has 3 properties that determine the URL for proxying.
+
+port - Port of the Proxy server
+host - Host Ip or DNS of the proxy server
+protocol - Protocol required to connect to the Proxy (http or https)
+
+The 'proxy' has another section which is an optional section. 
+If the proxy requires authentication to connect to
+'auth' needs to be mentioned under the 'Proxy'.
+
+An example of the provider configuration with the proxy: 
+
+```hcl
+provider "genesyscloud" {
+  oauthclient_id = "<client-id>"
+  oauthclient_secret = "<client-secret>"
+  aws_region = "<aws-region>"
+
+  proxy {
+    host     = "example.com"
+    port     = "8443"
+    protocol = "https"
+
+    auth {
+      username = "john"
+      password = "doe"
+    }
+  }
+}
+```
+
+The following environment variables may be set to avoid hardcoding Proxy and Auth Client information into your Terraform files:
+
+```
+GENESYSCLOUD_PROXY_PORT
+GENESYSCLOUD_PROXY_HOST
+GENESYSCLOUD_PROXY_PROTOCOL
+GENESYSCLOUD_PROXY_AUTH_USERNAME
+GENESYSCLOUD_PROXY_AUTH_PASSWORD
+
+```
+
 ### Data Sources
 
 There may be cases where you want to reference existing resources in a Terraform configuration file but do not want those resources to be managed by Terraform. This provider supports several data source types that can act as a read-only resource for existing objects in your org. To include one in your configuration, add a `data` block to your configuration file with one of the supported data source types:
