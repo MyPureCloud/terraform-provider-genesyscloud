@@ -14,16 +14,18 @@ func TestAccResourceScriptBasic(t *testing.T) {
 	var (
 		resourceId = "script"
 		name       = "testscriptname" + uuid.NewString()
-		fileName   = testrunner.GetTestDataPath("resource", "genesyscloud_script", "test_script.json")
+		filePath   = testrunner.GetTestDataPath("resource", "genesyscloud_script", "test_script.json")
 	)
-	fullyQualifiedPath, _ := filepath.Abs(fileName)
+
+	fullyQualifiedPath, _ := filepath.Abs(filePath)
+
 	scriptResource := fmt.Sprintf(`
 resource "genesyscloud_script" "%s" {
     script_name       = "%s"
-    filename          = "%s"
+    filepath          = "%s"
 	file_content_hash = filesha256("%s")
 }
-`, resourceId, name, fileName, fullyQualifiedPath)
+`, resourceId, name, filePath, fullyQualifiedPath)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
@@ -33,7 +35,7 @@ resource "genesyscloud_script" "%s" {
 				Config: scriptResource,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "script_name", name),
-					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "filename", fileName),
+					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "filepath", filePath),
 				),
 			},
 			{
@@ -42,8 +44,7 @@ resource "genesyscloud_script" "%s" {
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
-					//"script_name",
-					"filename",
+					"filepath",
 					"file_content_hash",
 				},
 			},

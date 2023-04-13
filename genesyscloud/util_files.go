@@ -7,11 +7,113 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 )
+
+type ScriptUploader struct {
+	FilePath    string
+	ScriptName  string
+	PostUrl     string
+	AccessToken string
+
+	BodyBuf *bytes.Buffer
+	Writer  *multipart.Writer
+
+	Client  *http.Client
+	Request *http.Request
+}
+
+func NewScriptUploaderObject(filePath, scriptName, apiBasePath, accessToken string) ScriptUploader {
+	var (
+		bodyBuf = bytes.Buffer{}
+		w       = multipart.NewWriter(&bodyBuf)
+		client  = &http.Client{}
+	)
+	return ScriptUploader{
+		FilePath:    filePath,
+		ScriptName:  scriptName,
+		PostUrl:     apiBasePath + "/uploads/v2/scripter",
+		AccessToken: accessToken,
+
+		BodyBuf: &bodyBuf,
+		Writer:  w,
+
+		Client: client,
+	}
+}
+
+func (s *ScriptUploader) Upload() ([]byte, error) {
+	if err := s.createScriptFormData(); err != nil {
+		return nil, err
+	}
+
+	s.buildHttpRequest()
+
+	resp, err := s.Client.Do(s.Request)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failure uploading script '%s': %v", s.ScriptName, resp.Status)
+	}
+
+	response, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body when uploading file. %s", err)
+	}
+
+	return response, nil
+}
+
+func (s *ScriptUploader) buildHttpRequest() {
+	r, _ := http.NewRequest(http.MethodPost, s.PostUrl, s.BodyBuf)
+	r.Header.Set("Authorization", "Bearer "+s.AccessToken)
+	r.Header.Set("Content-Type", s.Writer.FormDataContentType())
+	s.Request = r
+}
+
+func (s *ScriptUploader) createScriptFormData() error {
+	scriptFile, err := os.Open(s.FilePath)
+	if err != nil {
+		return err
+	}
+
+	readers := map[string]io.Reader{
+		"file":       scriptFile,
+		"scriptName": strings.NewReader(s.ScriptName),
+	}
+
+	for key, r := range readers {
+		var (
+			fw  io.Writer
+			err error
+		)
+		if x, ok := r.(io.Closer); ok {
+			defer x.Close()
+		}
+		// Add an image file
+		if x, ok := r.(*os.File); ok {
+			fw, err = s.Writer.CreateFormFile(key, x.Name())
+		} else {
+			// Add other fields
+			fw, err = s.Writer.CreateFormField(key)
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(fw, r); err != nil {
+			return err
+		}
+	}
+
+	s.Writer.Close()
+	return nil
+}
 
 func downloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 	var reader io.Reader
