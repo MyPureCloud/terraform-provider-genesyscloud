@@ -42,8 +42,14 @@ func resourceScript() *schema.Resource {
 				ForceNew:    true,
 			},
 			"script_name": {
-				Description: "Display name for the script. A reliably unique name is recommended. Default value contains unique identifier.",
+				Description: "Display name for the script. A reliably unique name is recommended.",
 				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+			},
+			"substitutions": {
+				Description: "A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.",
+				Type:        schema.TypeMap,
 				Optional:    true,
 				ForceNew:    true,
 			},
@@ -62,13 +68,14 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	filePath := d.Get("filepath").(string)
 	scriptName := d.Get("script_name").(string)
+	substitutions := d.Get("substitutions").(map[string]interface{})
 
 	// Check if a script with this name already exists
 	if err := scriptExistsWithName(scriptName, meta); err != nil {
 		return diag.Errorf("%v", err)
 	}
 
-	scriptUploader := NewScriptUploaderObject(filePath, scriptName, basePath, accessToken)
+	scriptUploader := NewScriptUploaderObject(filePath, scriptName, basePath, accessToken, substitutions)
 
 	log.Printf("Creating script '%s'", scriptName)
 	resp, err := scriptUploader.Upload()
@@ -149,6 +156,10 @@ func getScriptByName(scriptName string, meta interface{}) (platformclientv2.Scri
 
 	if data.Entities != nil && len(*data.Entities) > 0 {
 		script = (*data.Entities)[0]
+	}
+
+	if len(*data.Entities) > 1 {
+		return script, fmt.Errorf("more than one script was found with name '%s'. Please use a unique name.", scriptName)
 	}
 
 	return script, nil

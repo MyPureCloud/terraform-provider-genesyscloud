@@ -15,10 +15,11 @@ import (
 )
 
 type ScriptUploader struct {
-	FilePath    string
-	ScriptName  string
-	PostUrl     string
-	AccessToken string
+	FilePath      string
+	ScriptName    string
+	PostUrl       string
+	AccessToken   string
+	Substitutions map[string]interface{}
 
 	BodyBuf *bytes.Buffer
 	Writer  *multipart.Writer
@@ -27,17 +28,18 @@ type ScriptUploader struct {
 	Request *http.Request
 }
 
-func NewScriptUploaderObject(filePath, scriptName, apiBasePath, accessToken string) ScriptUploader {
+func NewScriptUploaderObject(filePath, scriptName, apiBasePath, accessToken string, substitutions map[string]interface{}) ScriptUploader {
 	var (
 		bodyBuf = bytes.Buffer{}
 		w       = multipart.NewWriter(&bodyBuf)
 		client  = &http.Client{}
 	)
 	return ScriptUploader{
-		FilePath:    filePath,
-		ScriptName:  scriptName,
-		PostUrl:     apiBasePath + "/uploads/v2/scripter",
-		AccessToken: accessToken,
+		FilePath:      filePath,
+		ScriptName:    scriptName,
+		PostUrl:       apiBasePath + "/uploads/v2/scripter",
+		AccessToken:   accessToken,
+		Substitutions: substitutions,
 
 		BodyBuf: &bodyBuf,
 		Writer:  w,
@@ -51,6 +53,7 @@ func (s *ScriptUploader) Upload() ([]byte, error) {
 		return nil, err
 	}
 
+	s.substituteValues()
 	s.buildHttpRequest()
 
 	resp, err := s.Client.Do(s.Request)
@@ -113,6 +116,19 @@ func (s *ScriptUploader) createScriptFormData() error {
 
 	s.Writer.Close()
 	return nil
+}
+
+func (s *ScriptUploader) substituteValues() {
+	// Attribute specific to the flows resource
+	if len(s.Substitutions) > 0 {
+		fileContents := s.BodyBuf.String()
+		for k, v := range s.Substitutions {
+			fileContents = strings.Replace(fileContents, fmt.Sprintf("{{%s}}", k), v.(string), -1)
+		}
+
+		s.BodyBuf.Reset()
+		s.BodyBuf.WriteString(fileContents)
+	}
 }
 
 func downloadOrOpenFile(path string) (io.Reader, *os.File, error) {
