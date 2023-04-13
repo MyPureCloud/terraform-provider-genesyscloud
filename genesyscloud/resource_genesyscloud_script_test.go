@@ -2,12 +2,16 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
 func TestAccResourceScriptBasic(t *testing.T) {
@@ -49,5 +53,29 @@ resource "genesyscloud_script" "%s" {
 				},
 			},
 		},
+		CheckDestroy: testVerifyScriptDestroyed,
 	})
+}
+
+func testVerifyScriptDestroyed(state *terraform.State) error {
+	scriptsAPI := platformclientv2.NewScriptsApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != "genesyscloud_script" {
+			continue
+		}
+
+		script, resp, err := scriptsAPI.GetScript(rs.Primary.ID)
+		if script != nil {
+			return fmt.Errorf("Script (%s) still exists", rs.Primary.ID)
+		} else if resp != nil && resp.StatusCode == http.StatusNotFound {
+			// Script not found, as expected.
+			log.Printf("Script (%s) successfully deleted", rs.Primary.ID)
+			continue
+		} else {
+			// Unexpected error
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+	}
+	// Success. All Scripts destroyed
+	return nil
 }

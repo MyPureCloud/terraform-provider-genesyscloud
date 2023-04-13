@@ -125,6 +125,27 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func deleteScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var (
+		sdkConfig  = meta.(*ProviderMeta).ClientConfig
+		scriptsApi = platformclientv2.NewScriptsApiWithConfig(sdkConfig)
+
+		fullPath = scriptsApi.Configuration.BasePath + "/api/v2/scripts/" + d.Id()
+	)
+
+	r, _ := http.NewRequest(http.MethodDelete, fullPath, nil)
+	r.Header.Set("Authorization", "Bearer "+scriptsApi.Configuration.AccessToken)
+	r.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(r)
+	if err != nil {
+		return diag.Errorf("failed to delete script %s: %s", d.Id(), err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return diag.Errorf("failed to delete script %s: %s", d.Id(), resp.Status)
+	}
+
 	return nil
 }
 
