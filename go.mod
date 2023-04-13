@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/terraform-plugin-docs v0.14.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.26.1
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
-	github.com/mypurecloud/platform-client-sdk-go/v95 v95.0.0
+	github.com/mypurecloud/platform-client-sdk-go/v98 v98.0.0
 	github.com/nyaruka/phonenumbers v1.1.6
 	github.com/zclconf/go-cty v1.13.1
 	gonum.org/v1/gonum v0.12.0

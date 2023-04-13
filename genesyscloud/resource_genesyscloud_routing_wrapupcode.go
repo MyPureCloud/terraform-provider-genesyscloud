@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v98/platformclientv2"
 )
 
 func getAllRoutingWrapupCodes(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -21,7 +21,7 @@ func getAllRoutingWrapupCodes(_ context.Context, clientConfig *platformclientv2.
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		wrapupcodes, _, getErr := routingAPI.GetRoutingWrapupcodes(pageSize, pageNum, "", "", "", []string{})
+		wrapupcodes, _, getErr := routingAPI.GetRoutingWrapupcodes(pageSize, pageNum, "", "", []string{}, "", []string{})
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of wrapupcodes: %v", getErr)
 		}
