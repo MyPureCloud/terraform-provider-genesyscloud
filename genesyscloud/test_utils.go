@@ -325,6 +325,15 @@ func generateMapAttr(name string, properties ...string) string {
 	`, name, strings.Join(properties, "\n"))
 }
 
+func generateSubstitutionsMap(substitutions map[string]string) string {
+	var substitutionsStr string
+	for k, v := range substitutions {
+		substitutionsStr += fmt.Sprintf("\t%s = \"%s\"\n", k, v)
+	}
+	return fmt.Sprintf(`substitutions = {
+%s}`, substitutionsStr)
+}
+
 func randString(length int) string {
 	rand.Seed(time.Now().UnixNano())
 

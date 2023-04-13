@@ -920,7 +920,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 				outboundFlowFilePath,
 				"",
 				false,
-				generateFlowSubstitutions(map[string]string{
+				generateSubstitutionsMap(map[string]string{
 					"flow_name":          flowName,
 					"home_division_name": divisionName,
 					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",

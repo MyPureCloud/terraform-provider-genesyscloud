@@ -259,7 +259,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					filePath1,
 					"",
 					false,
-					generateFlowSubstitutions(map[string]string{
+					generateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName1,
 						"default_language":     "en-us",
 						"greeting":             "Archy says hi!!!",
@@ -277,7 +277,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					filePath1,
 					"",
 					false,
-					generateFlowSubstitutions(map[string]string{
+					generateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName2,
 						"default_language":     "en-us",
 						"greeting":             "Archy says hi!!!",
@@ -368,7 +368,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					destFile,
 					"",
 					false,
-					generateFlowSubstitutions(map[string]string{
+					generateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName1,
 						"default_language":     "en-us",
 						"greeting":             "Archy says hi!!!",
@@ -386,7 +386,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					destFile,
 					"",
 					false,
-					generateFlowSubstitutions(map[string]string{
+					generateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName2,
 						"default_language":     "en-us",
 						"greeting":             "Archy says hi!!!",
@@ -400,15 +400,6 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
 	})
-}
-
-func generateFlowSubstitutions(substitutions map[string]string) string {
-	var substitutionsStr string
-	for k, v := range substitutions {
-		substitutionsStr += fmt.Sprintf("\t%s = \"%s\"\n", k, v)
-	}
-	return fmt.Sprintf(`substitutions = {
-%s}`, substitutionsStr)
 }
 
 func generateFlowResource(resourceID, srcFile, filecontent string, force_unlock bool, substitutions ...string) string {

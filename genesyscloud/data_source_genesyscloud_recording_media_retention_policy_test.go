@@ -166,7 +166,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						filePath1,
 						"",
 						false,
-						generateFlowSubstitutions(map[string]string{
+						generateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",

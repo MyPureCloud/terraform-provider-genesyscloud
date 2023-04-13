@@ -32,8 +32,8 @@ func resourceScript() *schema.Resource {
 				Description:  "Path to the script file to upload.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				ValidateFunc: validatePath,
+				ForceNew:     true,
 			},
 			"file_content_hash": {
 				Description: "Hash value of the script file content. Used to detect changes.",
@@ -44,7 +44,7 @@ func resourceScript() *schema.Resource {
 			"script_name": {
 				Description: "Display name for the script. A reliably unique name is recommended.",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 				ForceNew:    true,
 			},
 			"substitutions": {
@@ -70,6 +70,8 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 	scriptName := d.Get("script_name").(string)
 	substitutions := d.Get("substitutions").(map[string]interface{})
 
+	log.Printf("Creating script %s", scriptName)
+
 	// Check if a script with this name already exists
 	if err := scriptExistsWithName(scriptName, meta); err != nil {
 		return diag.Errorf("%v", err)
@@ -77,7 +79,6 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	scriptUploader := NewScriptUploaderObject(filePath, scriptName, basePath, accessToken, substitutions)
 
-	log.Printf("Creating script '%s'", scriptName)
 	resp, err := scriptUploader.Upload()
 	if err != nil {
 		return diag.Errorf("%v", err)
@@ -97,6 +98,8 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 	}
 
 	d.SetId(*sdkScript.Id)
+
+	log.Printf("Created script %s. ", d.Id())
 	return readScript(ctx, d, meta)
 }
 
@@ -136,6 +139,7 @@ func deleteScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 	r.Header.Set("Authorization", "Bearer "+scriptsApi.Configuration.AccessToken)
 	r.Header.Set("Content-Type", "application/json")
 
+	log.Printf("Deleting script %s", d.Id())
 	client := &http.Client{}
 	resp, err := client.Do(r)
 	if err != nil {
@@ -146,6 +150,7 @@ func deleteScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 		return diag.Errorf("failed to delete script %s: %s", d.Id(), resp.Status)
 	}
 
+	log.Printf("Successfully deleted script %s", d.Id())
 	return nil
 }
 
