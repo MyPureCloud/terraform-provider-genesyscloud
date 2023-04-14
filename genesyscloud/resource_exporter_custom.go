@@ -42,7 +42,7 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 	return nil
 }
 
-func ArchitectPromptAudioResolver(promptId string, exportDirectory string, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
 	fullPath := path.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
@@ -60,4 +60,32 @@ func ArchitectPromptAudioResolver(promptId string, exportDirectory string, subDi
 	}
 	updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory)
 	return nil
+}
+
+func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+	exportFileName := fmt.Sprintf("script-%s.json", scriptId)
+
+	fullPath := path.Join(exportDirectory, subDirectory)
+	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
+		return err
+	}
+
+	url, err := getScriptExportUrl(scriptId, meta)
+	if err != nil {
+		return err
+	}
+
+	if err := downloadAudioFile(fullPath, exportFileName, url); err != nil {
+		return err
+	}
+
+	filePath := path.Join(subDirectory, exportFileName)
+	// Update filepath field in configMap to point to exported script file
+	configMap["filepath"] = filePath
+
+	// TODO : Figure out if we can get the " to stop being dumped as \" in the export file
+	//fileContentHash := `${filesha256("` + filePath + `")}`
+	//configMap["file_content_hash"] = fileContentHash
+
+	return err
 }

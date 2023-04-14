@@ -41,8 +41,9 @@ func scriptExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllScripts),
 		RefAttrs:         map[string]*RefAttrSettings{},
-		UnResolvableAttributes: map[string]*schema.Schema{
-			"filepath": resourceScript().Schema["filepath"],
+		CustomFileWriter: CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: ScriptResolver,
+			SubDirectory:              "scripts",
 		},
 	}
 }
@@ -269,8 +270,27 @@ func scriptWasUploadedSuccessfully(uploadId string, meta interface{}) (bool, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return false, fmt.Errorf("error: %v", resp.Status)
+		return false, fmt.Errorf("error calling GetScriptsUploadStatus: %v", resp.Status)
 	}
 
 	return *data.Succeeded, nil
+}
+
+func getScriptExportUrl(scriptId string, meta interface{}) (string, error) {
+	var (
+		sdkConfig  = meta.(*ProviderMeta).ClientConfig
+		scriptsApi = platformclientv2.NewScriptsApiWithConfig(sdkConfig)
+		body       platformclientv2.Exportscriptrequest
+	)
+
+	data, resp, err := scriptsApi.PostScriptExport(scriptId, body)
+	if err != nil {
+		return "", fmt.Errorf("error calling PostScriptExport: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("error calling PostScriptExport: %v", resp.Status)
+	}
+
+	return *data.Url, nil
 }
