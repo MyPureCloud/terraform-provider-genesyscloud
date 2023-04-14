@@ -16,6 +16,37 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
 )
 
+func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(ResourceIDMetaMap)
+	scriptsAPI := platformclientv2.NewScriptsApiWithConfig(clientConfig)
+	pageSize := 50
+
+	for pageNum := 1; ; pageNum++ {
+		scripts, _, err := scriptsAPI.GetScripts(pageSize, pageNum, "", "", "", "", "", "", "", "")
+		if err != nil {
+			return resources, diag.Errorf("Failed to get page of scripts: %v", err)
+		}
+		if scripts.Entities == nil || len(*scripts.Entities) == 0 {
+			break
+		}
+		for _, script := range *scripts.Entities {
+			resources[*script.Id] = &ResourceMeta{Name: *script.Name}
+		}
+	}
+
+	return resources, nil
+}
+
+func scriptExporter() *ResourceExporter {
+	return &ResourceExporter{
+		GetResourcesFunc: getAllWithPooledClient(getAllScripts),
+		RefAttrs:         map[string]*RefAttrSettings{},
+		UnResolvableAttributes: map[string]*schema.Schema{
+			"filepath": resourceScript().Schema["filepath"],
+		},
+	}
+}
+
 func resourceScript() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Script",
@@ -28,6 +59,12 @@ func resourceScript() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
+			"script_name": {
+				Description: "Display name for the script. A reliably unique name is recommended.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+			},
 			"filepath": {
 				Description:  "Path to the script file to upload.",
 				Type:         schema.TypeString,
@@ -37,12 +74,6 @@ func resourceScript() *schema.Resource {
 			},
 			"file_content_hash": {
 				Description: "Hash value of the script file content. Used to detect changes.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-			"script_name": {
-				Description: "Display name for the script. A reliably unique name is recommended.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

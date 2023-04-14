@@ -271,6 +271,7 @@ func GetResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_routing_sms_address":                             routingSmsAddressExporter(),
 		"genesyscloud_routing_utilization":                             routingUtilizationExporter(),
 		"genesyscloud_routing_wrapupcode":                              routingWrapupCodeExporter(),
+		"genesyscloud_script":                                          scriptExporter(),
 		"genesyscloud_telephony_providers_edges_did_pool":              telephonyDidPoolExporter(),
 		"genesyscloud_telephony_providers_edges_edge_group":            edgeGroupExporter(),
 		"genesyscloud_telephony_providers_edges_extension_pool":        telephonyExtensionPoolExporter(),
