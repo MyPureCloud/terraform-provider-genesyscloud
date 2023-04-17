@@ -349,8 +349,7 @@ func uploadIvrDnis(d *schema.ResourceData, dnisChunks [][]string, meta interface
 	for i, chunk := range dnisChunks {
 		time.Sleep(2 * time.Second)
 		log.Printf("Uploading block %v of DID numbers to ivr config %s", i+1, d.Id())
-		err := uploadChunk(d, chunk, architectApi)
-		if err != nil {
+		if err := uploadChunk(d, chunk, architectApi); err != nil {
 			return nil, err
 		}
 	}
@@ -389,8 +388,7 @@ func uploadChunk(d *schema.ResourceData, chunk []string, architectApi *platformc
 	ivr.Dnis = &dnis
 
 	log.Printf("Updating IVR config %s", d.Get("name").(string))
-	_, _, putErr := architectApi.PutArchitectIvr(d.Id(), *ivr)
-	if putErr != nil {
+	if _, _, putErr := architectApi.PutArchitectIvr(d.Id(), *ivr); putErr != nil {
 		return diag.Errorf("Failed to update IVR config %s: %s", d.Id(), putErr)
 	}
 
