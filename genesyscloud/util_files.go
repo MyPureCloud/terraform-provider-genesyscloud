@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -86,6 +87,9 @@ func (s *ScriptUploader) createScriptFormData() error {
 		return err
 	}
 
+	defer scriptFile.Close()
+	defer s.Writer.Close()
+
 	readers := map[string]io.Reader{
 		"file":       scriptFile,
 		"scriptName": strings.NewReader(s.ScriptName),
@@ -99,11 +103,9 @@ func (s *ScriptUploader) createScriptFormData() error {
 		if x, ok := r.(io.Closer); ok {
 			defer x.Close()
 		}
-		// Add an image file
-		if x, ok := r.(*os.File); ok {
-			fw, err = s.Writer.CreateFormFile(key, x.Name())
+		if file, ok := r.(*os.File); ok {
+			fw, err = s.Writer.CreateFormFile(key, file.Name())
 		} else {
-			// Add other fields
 			fw, err = s.Writer.CreateFormField(key)
 		}
 		if err != nil {
@@ -114,7 +116,6 @@ func (s *ScriptUploader) createScriptFormData() error {
 		}
 	}
 
-	s.Writer.Close()
 	return nil
 }
 
@@ -159,6 +160,25 @@ func downloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 	}
 
 	return reader, file, nil
+}
+
+// Download file from uri to directory/fileName
+func downloadExportFile(directory, fileName, uri string) error {
+	resp, err := http.Get(uri)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	out, err := os.Create(path.Join(directory, fileName))
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
 }
 
 // Hash file content, used in stateFunc for "filepath" type attributes

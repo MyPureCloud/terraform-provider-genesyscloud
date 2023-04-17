@@ -54,7 +54,7 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 	}
 
 	for _, data := range audioDataList {
-		if err := downloadAudioFile(fullPath, data.FileName, data.MediaUri); err != nil {
+		if err := downloadExportFile(fullPath, data.FileName, data.MediaUri); err != nil {
 			return err
 		}
 	}
@@ -75,17 +75,12 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 		return err
 	}
 
-	if err := downloadAudioFile(fullPath, exportFileName, url); err != nil {
+	if err := downloadExportFile(fullPath, exportFileName, url); err != nil {
 		return err
 	}
 
-	filePath := path.Join(subDirectory, exportFileName)
 	// Update filepath field in configMap to point to exported script file
-	configMap["filepath"] = filePath
-
-	// TODO : Figure out if we can get the " to stop being dumped as \" in the export file
-	//fileContentHash := `${filesha256("` + filePath + `")}`
-	//configMap["file_content_hash"] = fileContentHash
+	configMap["filepath"] = path.Join(subDirectory, exportFileName)
 
 	return err
 }
