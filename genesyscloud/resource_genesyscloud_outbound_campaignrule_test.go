@@ -2,14 +2,15 @@ package genesyscloud
 
 import (
 	"fmt"
-	"strconv"
+	"math/rand"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v96/platformclientv2"
 )
 
 func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
@@ -22,39 +23,49 @@ func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
 		campaign1Name        = "TF Test Campaign " + uuid.NewString()
 		outboundFlowFilePath = "../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 		campaign1FlowName    = "test flow " + uuid.NewString()
-		campaign1Resource    = generateOutboundCampaignBasic(
+		campaign1Resource    = generateCampaignResourceForCampaignRuleTests(
 			campaign1ResourceId,
 			campaign1Name,
+			"off",
 			"contact-list",
+			"test contact list"+uuid.NewString(),
+			"location",
+			"test location "+uuid.NewString(),
+			fmt.Sprintf("+131783%v", 10000+rand.Intn(99999-10000)), // append random 5 digit number
 			"site",
-			"+13178783419",
-			"car",
-			strconv.Quote("off"),
-			outboundFlowFilePath,
+			"test site "+uuid.NewString(),
+			"wrapupcode",
+			"test wrapup code "+uuid.NewString(),
 			"campaignrule-test-flow",
+			outboundFlowFilePath,
 			campaign1FlowName,
 			"${data.genesyscloud_auth_division_home.home.name}",
-			"campaignrule-test-location",
-			"campaignrule-test-wrapupcode",
+			"car",
+			"test car"+uuid.NewString(),
 		)
 
 		campaign2ResourceId = "campaign2"
 		campaign2Name       = "TF Test Campaign " + uuid.NewString()
 		campaign2FlowName   = "test flow " + uuid.NewString()
-		campaign2Resource   = generateOutboundCampaignBasic(
+		campaign2Resource   = generateCampaignResourceForCampaignRuleTests(
 			campaign2ResourceId,
 			campaign2Name,
+			"off",
 			"contact-list-2",
+			"test contact list"+uuid.NewString(),
+			"location-2",
+			"test location "+uuid.NewString(),
+			fmt.Sprintf("+131782%v", 10000+rand.Intn(99999-10000)), // append random 5 digit number
 			"site-2",
-			"+13178781119",
-			"car-1",
-			strconv.Quote("off"),
-			outboundFlowFilePath,
+			"test site "+uuid.NewString(),
+			"wrapupcode-2",
+			"test wrapup code "+uuid.NewString(),
 			"campaignrule-test-flow-2",
+			outboundFlowFilePath,
 			campaign2FlowName,
 			"${data.genesyscloud_auth_division_home.home.name}",
-			"campaignrule-test-location-2",
-			"campaignrule-test-wrapupcode-2",
+			"car-2",
+			"test car"+uuid.NewString(),
 		)
 
 		sequenceResourceId = "sequence"
@@ -355,4 +366,142 @@ func testVerifyCampaignRuleDestroyed(state *terraform.State) error {
 	}
 	// Success. All campaign rules destroyed.
 	return nil
+}
+
+func generateCampaignResourceForCampaignRuleTests(
+	campaignResourceId,
+	campaignName,
+	campaignStatus,
+	contactListResourceId,
+	contactListName,
+	locationResourceId,
+	locationName,
+	locationEmergencyNumber,
+	siteResourceId,
+	siteName,
+	wrapupCodeResourceId,
+	wrapupCodeName,
+	flowResourceId,
+	flowFilePath,
+	flowName,
+	flowDivisionName,
+	carResourceId,
+	carName string) string {
+
+	fullyQualifiedPath, _ := filepath.Abs(flowFilePath)
+
+	return fmt.Sprintf(`
+resource "genesyscloud_outbound_campaign" "%s" {
+	name                          = "%s"
+	dialing_mode                  = "agentless"
+	caller_name                   = "Test Name"
+	caller_address                = "+353371111111"
+	outbound_line_count           = 2
+	campaign_status               = "%s"
+	contact_list_id               = genesyscloud_outbound_contact_list.%s.id
+	site_id                       = genesyscloud_telephony_providers_edges_site.%s.id
+	call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.%s.id
+	phone_columns {
+		column_name = "Cell"
+	}
+}
+
+resource "genesyscloud_outbound_contact_list" "%s" {
+	name 						 = "%s"
+	preview_mode_column_name     = "Cell"
+	preview_mode_accepted_values = ["Cell"]
+	column_names                 = ["Cell", "Home", "zipcode"] 
+	automatic_time_zone_mapping  = false
+	phone_columns {
+		column_name = "Cell"
+		type        = "cell"
+		callable_time_column = "Cell"
+	}
+	phone_columns {
+		column_name = "Home"
+		type        = "home"
+		callable_time_column = "Home"
+	}
+}
+
+resource "genesyscloud_location" "%s" {
+    name  = "%s"
+	notes = "HQ1"
+	path  = []
+	emergency_number {
+		number = "%s"
+		type   = null
+	}
+	address {
+		street1  = "7601 Interactive Way"
+		city     = "Indianapolis"
+		state    = "IN"
+		country  = "US"
+		zip_code = "46278"
+	}
+}
+
+resource "genesyscloud_telephony_providers_edges_site" "%s" {
+	name                            = "%s"
+	description                     = "TestAccResourceSite description 1"
+	location_id                     = genesyscloud_location.%s.id
+	media_model                     = "Cloud"
+	media_regions_use_latency_based = false
+}
+
+resource "genesyscloud_routing_wrapupcode" "%s" {
+	name = "%s"
+}
+
+resource "genesyscloud_flow" "%s" {
+        filepath          = "%s"
+        file_content_hash =  filesha256("%s")
+        force_unlock      = false
+        substitutions = {
+			flow_name          = "%s"
+			home_division_name = "%s"
+			contact_list_name  = "${genesyscloud_outbound_contact_list.%s.name}"
+			wrapup_code_name   = "${genesyscloud_routing_wrapupcode.%s.name}"
+		}
+}
+
+resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
+	name                   = "%s"
+	beep_detection_enabled = false
+	responses {
+		callable_person {
+			reaction_type = "transfer_flow"
+			name = "%s"
+			data = "${genesyscloud_flow.%s.id}"
+		}
+	}
+}	
+	`, campaignResourceId,
+		campaignName,
+		campaignStatus,
+		contactListResourceId, // genesyscloud_outbound_campaign.contact_list_id
+		siteResourceId,        // genesyscloud_outbound_campaign.site_id
+		carResourceId,         // genesyscloud_outbound_campaign.call_analysis_response_set_id
+		contactListResourceId,
+		contactListName,
+		locationResourceId,
+		locationName,
+		locationEmergencyNumber,
+		siteResourceId,
+		siteName,
+		locationResourceId, // genesyscloud_telephony_providers_edges_site.location_id
+		wrapupCodeResourceId,
+		wrapupCodeName,
+		flowResourceId,
+		flowFilePath,
+		fullyQualifiedPath,
+		flowName,
+		flowDivisionName,
+		contactListResourceId, // genesyscloud_flow
+		wrapupCodeResourceId,  // genesyscloud_flow
+		carResourceId,
+		carName,
+		flowName,       // genesyscloud_outbound_callanalysisresponseset.responses.callable_person.name
+		flowResourceId, // genesyscloud_outbound_callanalysisresponseset.responses.callable_person.data
+	)
 }

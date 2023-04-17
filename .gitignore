@@ -44,3 +44,7 @@ CHANGELOG.md
 
 # Don't include debug bin
 __debug_bin
+
+# Ignore coverage reports
+coverage.out
+cover.html

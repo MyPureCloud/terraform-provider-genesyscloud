@@ -10,9 +10,22 @@ PLUGINS_DIR=~/.terraform.d/plugins
 PLUGIN_PATH=genesys.com/mypurecloud/genesyscloud
 DEV_VERSION=0.1.0
 
+setup: copy-hooks
+
+copy-hooks:
+	chmod +x scripts/hooks/
+	cp -r scripts/hooks .git/.
+
 # Run acceptance tests
 testacc:
-	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m -parallel 20
+	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m -parallel 20  -coverprofile=coverage.out
+
+coverage:
+    go tool cover -func coverage.out | grep "total:" | \
+    awk '{print ((int($$3) > 80) != 1) }'
+
+report:
+    go tool cover -html=coverage.out -o cover.html	
 
 clean:
 	rm -f -r ${DIST_DIR}

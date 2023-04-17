@@ -3,12 +3,13 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v94/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v96/platformclientv2"
 )
 
 func dataSourceWebDeploymentsDeployment() *schema.Resource {
@@ -32,10 +33,14 @@ func dataSourceDeploymentRead(ctx context.Context, d *schema.ResourceData, m int
 	name := d.Get("name").(string)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		deployments, _, err := api.GetWebdeploymentsDeployments([]string{})
+		deployments, resp, err := api.GetWebdeploymentsDeployments([]string{})
 
-		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error retrieving web deployment %s: %s", name, err))
+		if err != nil && resp.StatusCode == http.StatusNotFound {
+			return resource.RetryableError(fmt.Errorf("No web deployment record found %s: %s. Correlation id: %s", name, err, resp.CorrelationID))
+		}
+
+		if err != nil && resp.StatusCode != http.StatusNotFound {
+			return resource.NonRetryableError(fmt.Errorf("Error retrieving web deployment %s: %s. Correlation id: %s", name, err, resp.CorrelationID))
 		}
 
 		for _, deployment := range *deployments.Entities {

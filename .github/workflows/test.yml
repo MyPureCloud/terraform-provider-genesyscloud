@@ -18,7 +18,7 @@ jobs:
     steps:
 
     - name: Set up Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v4
       with:
         go-version: '1.18'
       id: go
@@ -50,7 +50,7 @@ jobs:
     steps:
 
     - name: Set up Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v4
       with:
         go-version: '1.18'
       id: go
@@ -85,7 +85,8 @@ jobs:
           if [ "$TF_ACC_TERRAFORM_VERSION" == "0.14.7" ]; then
             sleep 300 # This avoids conflicts with the API and other related issues e.g. too many routing email domains
           fi
-        go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20
+        go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out
+        go tool cover -html coverage.out cover.html
 
     - name: 'Upload Export Result'
       if: ${{ always() }}
