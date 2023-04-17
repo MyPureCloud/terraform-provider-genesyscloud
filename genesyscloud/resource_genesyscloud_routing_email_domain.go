@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v96/platformclientv2"
 )
 
 func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -36,8 +36,6 @@ func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2
 			resources[*domain.Id] = &ResourceMeta{Name: *domain.Id}
 		}
 	}
-
-	return resources, nil
 }
 
 func routingEmailDomainExporter() *ResourceExporter {

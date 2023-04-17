@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v96/platformclientv2"
 )
 
 func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -159,7 +159,13 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	filePath := d.Get("filepath").(string)
 	substitutions := d.Get("substitutions").(map[string]interface{})
 
-	_, err = prepareAndUploadFile(filePath, substitutions, headers, presignedUrl)
+	reader, _, err := downloadOrOpenFile(filePath)
+	if err != nil {
+		return diag.Errorf(err.Error())
+	}
+
+	s3Uploader := NewS3Uploader(reader, substitutions, headers, presignedUrl)
+	_, err = s3Uploader.Upload()
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
