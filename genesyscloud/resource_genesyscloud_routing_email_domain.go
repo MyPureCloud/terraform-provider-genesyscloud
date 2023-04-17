@@ -36,8 +36,6 @@ func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2
 			resources[*domain.Id] = &ResourceMeta{Name: *domain.Id}
 		}
 	}
-
-	return resources, nil
 }
 
 func routingEmailDomainExporter() *ResourceExporter {

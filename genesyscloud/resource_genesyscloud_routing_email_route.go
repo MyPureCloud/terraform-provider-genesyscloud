@@ -73,8 +73,6 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 			}
 		}
 	}
-
-	return resources, nil
 }
 
 func routingEmailRouteExporter() *ResourceExporter {
