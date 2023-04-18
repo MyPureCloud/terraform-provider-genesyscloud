@@ -1825,7 +1825,10 @@ func buildCallMediaPolicyConditions(callMediaPolicyConditions []interface{}) *pl
 		return nil
 	}
 
-	conditionsMap := callMediaPolicyConditions[0].(map[string]interface{})
+	conditionsMap, ok := callMediaPolicyConditions[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 	directions := make([]string, 0)
 	for _, v := range conditionsMap["directions"].([]interface{}) {
 		direction := fmt.Sprintf("%v", v)
