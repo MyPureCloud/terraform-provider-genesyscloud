@@ -123,3 +123,60 @@ func TestSubstitutions(t *testing.T) {
 	assert.Equal(t, string(expcYamlFile), original.String())
 
 }
+
+func TestScriptUploadSuccess(t *testing.T) {
+	var (
+		urlPath     = "/uploads/v2/scripter"
+		fileName    = "file.json"
+		scriptName  = "testScript"
+		accessToken = "1234abcd"
+		scriptFile  = `
+		{
+			"id": "123",
+			"name": "test"
+		}
+		`
+		reader = strings.NewReader(scriptFile)
+	)
+
+	// Create a mock HTTP server
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify that the request method and URL path match
+		if r.Method != "POST" || r.URL.Path != urlPath {
+			http.Error(w, "invalid request", http.StatusBadRequest)
+			return
+		}
+
+		if _, ok := r.Header["Content-Type"]; !ok {
+			t.Errorf("Expected Content-Type header to be set in http request")
+		}
+		if !strings.Contains(r.Header["Content-Type"][0], "multipart/form-data") {
+			http.Error(w, "unsupported media type", http.StatusUnsupportedMediaType)
+		}
+
+		if _, ok := r.Header["Authorization"]; !ok {
+			t.Errorf("Expected Authorization header to be set in http request")
+		}
+		if !strings.Contains(r.Header["Authorization"][0], accessToken) {
+			http.Error(w, "unauthorizied", http.StatusUnauthorized)
+		}
+
+		// Return a mock JSON response
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(scriptFile))
+	}))
+
+	defer mockServer.Close()
+	scriptUploader := NewScriptUploaderObject(fileName, scriptName, mockServer.URL, accessToken, reader, nil)
+
+	results, err := scriptUploader.Upload()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resultsStr := string(results)
+	if resultsStr != scriptFile {
+		t.Errorf(`expected %s got %s`, scriptFile, resultsStr)
+	}
+}

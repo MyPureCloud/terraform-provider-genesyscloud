@@ -26,11 +26,13 @@ type ScriptUploader struct {
 	BodyBuf *bytes.Buffer
 	Writer  *multipart.Writer
 
+	reader io.Reader
+
 	Client  *http.Client
 	Request *http.Request
 }
 
-func NewScriptUploaderObject(filePath, scriptName, apiBasePath, accessToken string, substitutions map[string]interface{}) ScriptUploader {
+func NewScriptUploaderObject(filePath, scriptName, apiBasePath, accessToken string, reader io.Reader, substitutions map[string]interface{}) ScriptUploader {
 	var (
 		bodyBuf = bytes.Buffer{}
 		w       = multipart.NewWriter(&bodyBuf)
@@ -45,6 +47,8 @@ func NewScriptUploaderObject(filePath, scriptName, apiBasePath, accessToken stri
 
 		BodyBuf: &bodyBuf,
 		Writer:  w,
+
+		reader: reader,
 
 		Client: client,
 	}
@@ -82,16 +86,8 @@ func (s *ScriptUploader) buildHttpRequest() {
 }
 
 func (s *ScriptUploader) createScriptFormData() error {
-	scriptFile, err := os.Open(s.FilePath)
-	if err != nil {
-		return err
-	}
-
-	defer scriptFile.Close()
-	defer s.Writer.Close()
-
 	readers := map[string]io.Reader{
-		"file":       scriptFile,
+		"file":       s.reader,
 		"scriptName": strings.NewReader(s.ScriptName),
 	}
 
@@ -115,7 +111,7 @@ func (s *ScriptUploader) createScriptFormData() error {
 			return err
 		}
 	}
-
+	s.Writer.Close()
 	return nil
 }
 

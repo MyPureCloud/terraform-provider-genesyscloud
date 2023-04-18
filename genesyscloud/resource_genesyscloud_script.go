@@ -109,7 +109,12 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 		return diag.Errorf("%v", err)
 	}
 
-	scriptUploader := NewScriptUploaderObject(filePath, scriptName, basePath, accessToken, substitutions)
+	reader, _, err := downloadOrOpenFile(filePath)
+	if err != nil {
+		return diag.Errorf(err.Error())
+	}
+
+	scriptUploader := NewScriptUploaderObject(filePath, scriptName, basePath, accessToken, reader, substitutions)
 
 	resp, err := scriptUploader.Upload()
 	if err != nil {
