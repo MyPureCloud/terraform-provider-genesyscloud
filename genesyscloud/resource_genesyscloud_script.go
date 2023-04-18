@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -109,14 +110,16 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 		return diag.Errorf("%v", err)
 	}
 
-	reader, _, err := downloadOrOpenFile(filePath)
+	formData, err := createScriptFormData(filePath, scriptName)
 	if err != nil {
-		return diag.Errorf(err.Error())
+		return diag.Errorf("failed to create form data for script: %v", err)
 	}
 
-	scriptUploader := NewScriptUploaderObject(filePath, scriptName, basePath, accessToken, reader, substitutions)
+	headers := make(map[string]string, 0)
+	headers["Authorization"] = "Bearer " + accessToken
 
-	resp, err := scriptUploader.Upload()
+	s3Uploader := NewS3Uploader(nil, formData, substitutions, headers, "POST", basePath+"/uploads/v2/scripter")
+	resp, err := s3Uploader.Upload()
 	if err != nil {
 		return diag.Errorf("%v", err)
 	}
@@ -298,4 +301,15 @@ func getScriptExportUrl(scriptId string, meta interface{}) (string, error) {
 	}
 
 	return *data.Url, nil
+}
+
+func createScriptFormData(filePath, scriptName string) (map[string]io.Reader, error) {
+	fileReader, _, err := downloadOrOpenFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+	formData := make(map[string]io.Reader, 0)
+	formData["file"] = fileReader
+	formData["scriptName"] = strings.NewReader(scriptName)
+	return formData, nil
 }

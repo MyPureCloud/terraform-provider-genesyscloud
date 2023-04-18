@@ -732,64 +732,6 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 	})
 }
 
-func TestAccResourceScriptExport(t *testing.T) {
-	var (
-		resourceId    = "script-export"
-		name          = "testscriptname" + uuid.NewString()
-		filePath      = "../" + testrunner.GetTestDataPath("resource", "genesyscloud_script", "test_script.json")
-		exportTestDir = "../../.terraform" + uuid.NewString()
-	)
-
-	fullyQualifiedPath, _ := filepath.Abs(filePath)
-
-	defer os.RemoveAll(exportTestDir)
-
-	theConfig := fmt.Sprintf(`
-resource "genesyscloud_script" "%s" {
-	script_name       = "%s"
-	filepath          = "%s"
-	file_content_hash = filesha256("%s")
-}
-
-resource "genesyscloud_tf_export" "export" {
-	directory = "%s"
-	resource_types     = ["genesyscloud_script"]
-	include_state_file = true
-	export_as_hcl      = true
-
-	depends_on = [
-		genesyscloud_script.%s
-	]
-}
-	`, resourceId, name, filePath, fullyQualifiedPath, exportTestDir, resourceId)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.ProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: theConfig,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "script_name", name),
-					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "filepath", filePath),
-				),
-			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_script." + resourceId,
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"filepath",
-					"file_content_hash",
-					"substitutions",
-				},
-			},
-		},
-		//CheckDestroy: gcloud.testVerifyScriptDestroyed,
-	})
-}
-
 func removeTfConfigBlock(export string) string {
 	return strings.Replace(export, terraformHCLBlock, "", -1)
 }

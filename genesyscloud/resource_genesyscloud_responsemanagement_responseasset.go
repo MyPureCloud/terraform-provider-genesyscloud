@@ -73,7 +73,7 @@ func createResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 		return diag.Errorf(err.Error())
 	}
 
-	s3Uploader := NewS3Uploader(reader, nil, headers, url)
+	s3Uploader := NewS3Uploader(reader, nil, nil, headers, "PUT", url)
 	_, err = s3Uploader.Upload()
 	if err != nil {
 		return diag.Errorf(err.Error())

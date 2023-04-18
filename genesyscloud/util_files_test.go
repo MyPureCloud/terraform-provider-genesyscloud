@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -48,7 +49,7 @@ func TestS3UploadSuccess(t *testing.T) {
 	defer mockServer.Close()
 
 	// Replace the client's transport with the mock server's transport
-	s3Uploader := NewS3Uploader(fileReader, substitutions, headers, fmt.Sprintf("%s%s", mockServer.URL, presignedURL))
+	s3Uploader := NewS3Uploader(fileReader, nil, substitutions, headers, "PUT", fmt.Sprintf("%s%s", mockServer.URL, presignedURL))
 	results, err := s3Uploader.Upload()
 
 	if err != nil {
@@ -92,7 +93,7 @@ func TestS3UploadBadRequest(t *testing.T) {
 	defer mockServer.Close()
 
 	// Replace the client's transport with the mock server's transport
-	s3Uploader := NewS3Uploader(fileReader, substitutions, headers, fmt.Sprintf("%s%s", mockServer.URL, presignedURL))
+	s3Uploader := NewS3Uploader(fileReader, nil, substitutions, headers, "PUT", fmt.Sprintf("%s%s", mockServer.URL, presignedURL))
 	_, err := s3Uploader.Upload()
 
 	expectedResult := fmt.Sprintf("failed to upload file to S3 bucket with an HTTP status code of %d", http.StatusBadRequest)
@@ -114,11 +115,12 @@ func TestSubstitutions(t *testing.T) {
 						name: SimpleFinancialIvr`
 	fileReader := strings.NewReader(origYamlFile)
 
-	s3Uploader := NewS3Uploader(fileReader, substitutions, headers, fmt.Sprintf("%s%s", "", presignedURL))
+	s3Uploader := NewS3Uploader(fileReader, nil, substitutions, headers, "PUT", fmt.Sprintf("%s%s", "", presignedURL))
 
 	var original bytes.Buffer
 	fmt.Fprintf(&original, origYamlFile)
-	s3Uploader.substituteValues(&original)
+	s3Uploader.bodyBuf = &original
+	s3Uploader.substituteValues()
 
 	assert.Equal(t, string(expcYamlFile), original.String())
 
@@ -127,7 +129,6 @@ func TestSubstitutions(t *testing.T) {
 func TestScriptUploadSuccess(t *testing.T) {
 	var (
 		urlPath     = "/uploads/v2/scripter"
-		fileName    = "file.json"
 		scriptName  = "testScript"
 		accessToken = "1234abcd"
 		scriptFile  = `
@@ -136,7 +137,6 @@ func TestScriptUploadSuccess(t *testing.T) {
 			"name": "test"
 		}
 		`
-		reader = strings.NewReader(scriptFile)
 	)
 
 	// Create a mock HTTP server
@@ -161,6 +161,19 @@ func TestScriptUploadSuccess(t *testing.T) {
 			http.Error(w, "unauthorizied", http.StatusUnauthorized)
 		}
 
+		buf := new(strings.Builder)
+		_, err := io.Copy(buf, r.Body)
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+
+		requestBodyItems := []string{scriptName, "form-data"}
+		for _, v := range requestBodyItems {
+			if !strings.Contains(buf.String(), v) {
+				t.Errorf("Expected to find %s in request body", v)
+			}
+		}
+
 		// Return a mock JSON response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -168,9 +181,17 @@ func TestScriptUploadSuccess(t *testing.T) {
 	}))
 
 	defer mockServer.Close()
-	scriptUploader := NewScriptUploaderObject(fileName, scriptName, mockServer.URL, accessToken, reader, nil)
 
-	results, err := scriptUploader.Upload()
+	formData := make(map[string]io.Reader, 0)
+	formData["file"] = strings.NewReader("test.json")
+	formData["scriptName"] = strings.NewReader(scriptName)
+
+	headers := make(map[string]string, 0)
+	headers["Authorization"] = "Bearer " + accessToken
+
+	s3Uploader := NewS3Uploader(nil, formData, nil, headers, "POST", mockServer.URL+urlPath)
+
+	results, err := s3Uploader.Upload()
 	if err != nil {
 		t.Fatal(err)
 	}

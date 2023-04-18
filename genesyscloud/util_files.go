@@ -16,132 +16,30 @@ import (
 	"strings"
 )
 
-type ScriptUploader struct {
-	FilePath      string
-	ScriptName    string
-	PostUrl       string
-	AccessToken   string
-	Substitutions map[string]interface{}
-
-	BodyBuf *bytes.Buffer
-	Writer  *multipart.Writer
-
-	reader io.Reader
-
-	Client  *http.Client
-	Request *http.Request
-}
-
-func NewScriptUploaderObject(filePath, scriptName, apiBasePath, accessToken string, reader io.Reader, substitutions map[string]interface{}) ScriptUploader {
-	var (
-		bodyBuf = bytes.Buffer{}
-		w       = multipart.NewWriter(&bodyBuf)
-		client  = &http.Client{}
-	)
-	return ScriptUploader{
-		FilePath:      filePath,
-		ScriptName:    scriptName,
-		PostUrl:       apiBasePath + "/uploads/v2/scripter",
-		AccessToken:   accessToken,
-		Substitutions: substitutions,
-
-		BodyBuf: &bodyBuf,
-		Writer:  w,
-
-		reader: reader,
-
-		Client: client,
-	}
-}
-
-func (s *ScriptUploader) Upload() ([]byte, error) {
-	if err := s.createScriptFormData(); err != nil {
-		return nil, err
-	}
-
-	s.substituteValues()
-	s.buildHttpRequest()
-
-	resp, err := s.Client.Do(s.Request)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failure uploading script '%s': %v", s.ScriptName, resp.Status)
-	}
-	response, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body when uploading file. %s", err)
-	}
-
-	return response, nil
-}
-
-func (s *ScriptUploader) buildHttpRequest() {
-	r, _ := http.NewRequest(http.MethodPost, s.PostUrl, s.BodyBuf)
-	r.Header.Set("Authorization", "Bearer "+s.AccessToken)
-	r.Header.Set("Content-Type", s.Writer.FormDataContentType())
-	s.Request = r
-}
-
-func (s *ScriptUploader) createScriptFormData() error {
-	readers := map[string]io.Reader{
-		"file":       s.reader,
-		"scriptName": strings.NewReader(s.ScriptName),
-	}
-
-	for key, r := range readers {
-		var (
-			fw  io.Writer
-			err error
-		)
-		if x, ok := r.(io.Closer); ok {
-			defer x.Close()
-		}
-		if file, ok := r.(*os.File); ok {
-			fw, err = s.Writer.CreateFormFile(key, file.Name())
-		} else {
-			fw, err = s.Writer.CreateFormField(key)
-		}
-		if err != nil {
-			return err
-		}
-		if _, err := io.Copy(fw, r); err != nil {
-			return err
-		}
-	}
-	s.Writer.Close()
-	return nil
-}
-
-func (s *ScriptUploader) substituteValues() {
-	// Attribute specific to the flows resource
-	if len(s.Substitutions) > 0 {
-		fileContents := s.BodyBuf.String()
-		for k, v := range s.Substitutions {
-			fileContents = strings.Replace(fileContents, fmt.Sprintf("{{%s}}", k), v.(string), -1)
-		}
-
-		s.BodyBuf.Reset()
-		s.BodyBuf.WriteString(fileContents)
-	}
-}
-
 type S3Uploader struct {
 	reader        io.Reader
+	formData      map[string]io.Reader
+	bodyBuf       *bytes.Buffer
+	writer        *multipart.Writer
 	substitutions map[string]interface{}
 	headers       map[string]string
+	httpMethod    string
 	presignedUrl  string
 	client        http.Client
 }
 
-func NewS3Uploader(reader io.Reader, substitutions map[string]interface{}, headers map[string]string, presignedUrl string) *S3Uploader {
+func NewS3Uploader(reader io.Reader, formData map[string]io.Reader, substitutions map[string]interface{}, headers map[string]string, method, presignedUrl string) *S3Uploader {
 	c := &http.Client{}
+	var bodyBuf bytes.Buffer
+	writer := multipart.NewWriter(&bodyBuf)
 	s3Uploader := &S3Uploader{
 		reader:        reader,
+		formData:      formData,
+		bodyBuf:       &bodyBuf,
+		writer:        writer,
 		substitutions: substitutions,
 		headers:       headers,
+		httpMethod:    method,
 		presignedUrl:  presignedUrl,
 		client:        *c,
 	}
@@ -150,30 +48,35 @@ func NewS3Uploader(reader io.Reader, substitutions map[string]interface{}, heade
 	return s3Uploader
 }
 
-func (s *S3Uploader) substituteValues(bodyBuf *bytes.Buffer) {
+func (s *S3Uploader) substituteValues() {
 	// Attribute specific to the flows resource
-	if len(s.substitutions) > 0 {
-		fileContents := bodyBuf.String()
+	if s.substitutions != nil && len(s.substitutions) > 0 {
+		fileContents := s.bodyBuf.String()
 		for k, v := range s.substitutions {
 			fileContents = strings.Replace(fileContents, fmt.Sprintf("{{%s}}", k), v.(string), -1)
 		}
 
-		bodyBuf.Reset()
-		bodyBuf.WriteString(fileContents)
+		s.bodyBuf.Reset()
+		s.bodyBuf.WriteString(fileContents)
 	}
 }
 
 func (s *S3Uploader) Upload() ([]byte, error) {
-	bodyBuf := &bytes.Buffer{}
-
-	_, err := io.Copy(bodyBuf, s.reader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to copy file content to the handler. Error: %s ", err)
+	if s.formData != nil && len(s.formData) > 0 {
+		if err := s.createFormData(); err != nil {
+			return nil, err
+		}
+		s.headers["Content-Type"] = s.writer.FormDataContentType()
+	} else {
+		_, err := io.Copy(s.bodyBuf, s.reader)
+		if err != nil {
+			return nil, fmt.Errorf("failed to copy file content to the handler. Error: %s ", err)
+		}
 	}
 
-	s.substituteValues(bodyBuf)
+	s.substituteValues()
 
-	req, _ := http.NewRequest("PUT", s.presignedUrl, bodyBuf)
+	req, _ := http.NewRequest(s.httpMethod, s.presignedUrl, s.bodyBuf)
 	for key, value := range s.headers {
 		req.Header.Set(key, value)
 	}
@@ -197,6 +100,34 @@ func (s *S3Uploader) Upload() ([]byte, error) {
 	}
 
 	return response, nil
+}
+
+func (s *S3Uploader) createFormData() error {
+	defer s.writer.Close()
+	for key, r := range s.formData {
+		var (
+			fw  io.Writer
+			err error
+		)
+		if r == nil {
+			continue
+		}
+		if x, ok := r.(io.Closer); ok {
+			defer x.Close()
+		}
+		if file, ok := r.(*os.File); ok {
+			fw, err = s.writer.CreateFormFile(key, file.Name())
+		} else {
+			fw, err = s.writer.CreateFormField(key)
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(fw, r); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func downloadOrOpenFile(path string) (io.Reader, *os.File, error) {
