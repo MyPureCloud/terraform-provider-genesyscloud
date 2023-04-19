@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v96/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 func TestAccResourceScriptBasic(t *testing.T) {
@@ -23,8 +23,6 @@ func TestAccResourceScriptBasic(t *testing.T) {
 		filePath      = testrunner.GetTestDataPath("resource", "genesyscloud_script", "test_script.json")
 		substitutions = make(map[string]string, 0)
 	)
-
-	substitutions["test"] = "subbed text"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },

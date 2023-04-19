@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v96/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -105,7 +105,6 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Creating script %s", scriptName)
 
-	// Check if a script with this name already exists
 	if err := scriptExistsWithName(scriptName, meta); err != nil {
 		return diag.Errorf("%v", err)
 	}

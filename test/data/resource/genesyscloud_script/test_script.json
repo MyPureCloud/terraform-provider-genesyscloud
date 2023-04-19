@@ -1,6 +1,6 @@
 {
     "id": "dc42cc0b-2d8a-433e-b658-35af7cca8f7e",
-    "name": "testscriptname1104",
+    "name": "TestScriptName",
     "organizationId": "8d6f6281-c096-4dab-b194-a6f1667d7dd4",
     "versionId": "4737c409-f9c5-4b24-9b34-a60646fead4e",
     "startPageId": "7c56c521-4f7b-4ea4-9940-be10fe172035",
@@ -104,7 +104,7 @@
                             },
                             "text": {
                                 "typeName": "interpolatedText",
-                                "value": "echo \"This is a bash script because I don't understand what scripts do yet0603.\""
+                                "value": "Hello, world."
                             },
                             "bold": {
                                 "typeName": "boolean",
