@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -223,13 +225,27 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 		resourceID = "ivr"
 		name       = "TF Test IVR " + uuid.NewString()
 
+		didRangeLength    = 200 // Should be atleast 50 to avoid index out of bounds errors below
 		didPoolResourceId = "did_pool"
 		countryCode       = "+353"
 		startNumber       = 75550120
-		endNumber         = startNumber + 200 // Should be atleast 50 to avoid index out of bounds errors below
+		endNumber         = startNumber + didRangeLength
 		startNumberStr    = fmt.Sprintf("%s%v", countryCode, startNumber)
 		endNumberStr      = fmt.Sprintf("%s%v", countryCode, endNumber)
 	)
+
+	lastNumber, err := getLastDidNumberAsInteger()
+	if err != nil {
+		fmt.Println("3.0")
+		log.Printf("Failed to get last did number for ivr tests: %v", err)
+	} else {
+		startNumber = lastNumber + 5
+		endNumber = startNumber + didRangeLength
+		startNumberStr = fmt.Sprintf("+%v", startNumber)
+		endNumberStr = fmt.Sprintf("+%v", endNumber)
+
+		fmt.Printf("Using this method \nstartNumberStr:%s \nendNumberStr:%s\n", startNumberStr, endNumberStr)
+	}
 
 	allNumbers := createStringArrayOfPhoneNumbers(startNumber, endNumber, countryCode)
 
@@ -403,4 +419,65 @@ func createStringArrayOfPhoneNumbers(from, to int, countryCode string) []string 
 		slice = append(slice, fmt.Sprintf("%s%v", countryCode, from+i))
 	}
 	return slice
+}
+
+func getLastDidNumberAsInteger() (int, error) {
+	config := platformclientv2.GetDefaultConfiguration()
+	api := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(config)
+	if err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET")); err != nil {
+		return 0, err
+	}
+
+	// Get the page count
+	fmt.Println("2.0.0")
+	result, err := getDidNumbers(api, 1)
+	if err != nil {
+		fmt.Println("2.0.1")
+		return 0, err
+	}
+	fmt.Println("2.0.2")
+
+	// Get last page
+	lastPage, err := getDidNumbers(api, *result.PageCount)
+	if err != nil {
+		return 0, err
+	}
+
+	var lastNumberString string
+	if lastPage.Entities != nil && len(*lastPage.Entities) > 0 {
+		lastItem := (*lastPage.Entities)[len(*lastPage.Entities)-1]
+		lastNumberString = *lastItem.Number
+	}
+
+	if lastNumberString == "" {
+		return 0, fmt.Errorf("Failed to retrieve last did number")
+	}
+
+	lastNumberString = strings.Replace(lastNumberString, "+", "", -1)
+
+	lastNumberInt, err := strconv.Atoi(lastNumberString)
+	if err != nil {
+		return lastNumberInt, err
+	}
+
+	return lastNumberInt, nil
+}
+
+func getDidNumbers(api *platformclientv2.TelephonyProvidersEdgeApi, pageNumber int) (*platformclientv2.Didnumberentitylisting, error) {
+	var (
+		varType  = "ASSIGNED_AND_UNASSIGNED"
+		pageSize = 100
+		result   *platformclientv2.Didnumberentitylisting
+	)
+	fmt.Println("1.1")
+	result, response, err := api.GetTelephonyProvidersEdgesDidpoolsDids(varType, []string{}, "", pageSize, pageNumber, "")
+	if err != nil {
+		fmt.Println("1.1.1")
+		return result, err
+	}
+	fmt.Println("1.2")
+	if response.Error != nil {
+		return result, fmt.Errorf("Response error: %v", response.Error)
+	}
+	return result, nil
 }
