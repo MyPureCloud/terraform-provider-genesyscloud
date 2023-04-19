@@ -227,27 +227,27 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 
 		didRangeLength    = 200 // Should be atleast 50 to avoid index out of bounds errors below
 		didPoolResourceId = "did_pool"
-		countryCode       = "+353"
-		startNumber       = 75550120
+		startNumber       = 35375550120
 		endNumber         = startNumber + didRangeLength
-		startNumberStr    = fmt.Sprintf("%s%v", countryCode, startNumber)
-		endNumberStr      = fmt.Sprintf("%s%v", countryCode, endNumber)
+		startNumberStr    = fmt.Sprintf("+%v", startNumber)
+		endNumberStr      = fmt.Sprintf("+%v", endNumber)
 	)
 
+	/*
+		To avoid clashes, try to get final existing did number and create a pool outside of that range
+		If err is not nil, use the hardcoded phone number variables
+	*/
 	lastNumber, err := getLastDidNumberAsInteger()
-	if err != nil {
-		fmt.Println("3.0")
-		log.Printf("Failed to get last did number for ivr tests: %v", err)
-	} else {
+	if err == nil {
 		startNumber = lastNumber + 5
 		endNumber = startNumber + didRangeLength
 		startNumberStr = fmt.Sprintf("+%v", startNumber)
 		endNumberStr = fmt.Sprintf("+%v", endNumber)
-
-		fmt.Printf("Using this method \nstartNumberStr:%s \nendNumberStr:%s\n", startNumberStr, endNumberStr)
+	} else {
+		log.Printf("Failed to get last did number for ivr tests: %v", err)
 	}
 
-	allNumbers := createStringArrayOfPhoneNumbers(startNumber, endNumber, countryCode)
+	allNumbers := createStringArrayOfPhoneNumbers(startNumber, endNumber)
 
 	didPoolResource := generateDidPoolResource(&didPoolStruct{
 		didPoolResourceId,
@@ -267,7 +267,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					resourceID:  resourceID,
 					name:        name,
 					description: "",
-					dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+20, countryCode),
+					dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+20),
 					depends_on:  "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
 					divisionId:  "",
 				}),
@@ -281,7 +281,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					resourceID:  resourceID,
 					name:        name,
 					description: "",
-					dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+48, countryCode),
+					dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+48),
 					depends_on:  "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
 					divisionId:  "",
 				}),
@@ -295,7 +295,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					resourceID:  resourceID,
 					name:        name,
 					description: "",
-					dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+12, countryCode),
+					dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+12),
 					depends_on:  "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
 					divisionId:  "",
 				}),
@@ -309,7 +309,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					resourceID:  resourceID,
 					name:        name,
 					description: "",
-					dnis:        createStringArrayOfPhoneNumbers(startNumber, endNumber, countryCode),
+					dnis:        createStringArrayOfPhoneNumbers(startNumber, endNumber),
 					depends_on:  "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
 					divisionId:  "",
 				}),
@@ -413,10 +413,10 @@ func hasEmptyDnis(ivrResourceName string) resource.TestCheckFunc {
 	}
 }
 
-func createStringArrayOfPhoneNumbers(from, to int, countryCode string) []string {
+func createStringArrayOfPhoneNumbers(from, to int) []string {
 	var slice []string
-	for i := 0; i < from+to; i++ {
-		slice = append(slice, fmt.Sprintf("%s%v", countryCode, from+i))
+	for i := 0; i < to-from; i++ {
+		slice = append(slice, fmt.Sprintf("+%v", from+i))
 	}
 	return slice
 }
@@ -429,13 +429,10 @@ func getLastDidNumberAsInteger() (int, error) {
 	}
 
 	// Get the page count
-	fmt.Println("2.0.0")
 	result, err := getDidNumbers(api, 1)
 	if err != nil {
-		fmt.Println("2.0.1")
 		return 0, err
 	}
-	fmt.Println("2.0.2")
 
 	// Get last page
 	lastPage, err := getDidNumbers(api, *result.PageCount)
@@ -469,13 +466,10 @@ func getDidNumbers(api *platformclientv2.TelephonyProvidersEdgeApi, pageNumber i
 		pageSize = 100
 		result   *platformclientv2.Didnumberentitylisting
 	)
-	fmt.Println("1.1")
 	result, response, err := api.GetTelephonyProvidersEdgesDidpoolsDids(varType, []string{}, "", pageSize, pageNumber, "")
 	if err != nil {
-		fmt.Println("1.1.1")
 		return result, err
 	}
-	fmt.Println("1.2")
 	if response.Error != nil {
 		return result, fmt.Errorf("Response error: %v", response.Error)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -190,7 +191,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return nil
 		}
 
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectIvrConfig())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectIvrConfig())
 		d.Set("name", *ivrConfig.Name)
 		d.Set("dnis", flattenIvrDnis(ivrConfig.Dnis))
 
@@ -231,8 +232,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 
 		log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
-		//return cc.CheckState()
-		return nil
+		return cc.CheckState()
 	})
 }
 
