@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v96/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 var (

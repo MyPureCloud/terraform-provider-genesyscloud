@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v96/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 type EvaluationFormQuestionGroupStruct struct {
@@ -1825,7 +1825,10 @@ func buildCallMediaPolicyConditions(callMediaPolicyConditions []interface{}) *pl
 		return nil
 	}
 
-	conditionsMap := callMediaPolicyConditions[0].(map[string]interface{})
+	conditionsMap, ok := callMediaPolicyConditions[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 	directions := make([]string, 0)
 	for _, v := range conditionsMap["directions"].([]interface{}) {
 		direction := fmt.Sprintf("%v", v)
