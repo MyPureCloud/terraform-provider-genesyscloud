@@ -43,6 +43,11 @@ type RefAttrCustomResolver struct {
 	ResolverFunc func(map[string]interface{}, map[string]*ResourceExporter) error
 }
 
+// Allows the definition of a custom resolver for an exporter.
+type CustomFlowResolver struct {
+	ResolverFunc func(map[string]interface{}, string) error
+}
+
 type CustomFileWriterSettings struct {
 	// Custom function for dumping data/media stored in an object in a sub directory along
 	// with the exported config. For example: prompt audio files, csv data, jps/pngs
@@ -105,6 +110,8 @@ type ResourceExporter struct {
 	EncodedRefAttrs map[*JsonEncodeRefAttr]*RefAttrSettings
 
 	CustomFileWriter CustomFileWriterSettings
+
+	CustomFlowResolver map[string]*CustomFlowResolver
 }
 
 func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {

@@ -44,7 +44,7 @@ func flowExporter() *ResourceExporter {
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"filepath": resourceFlow().Schema["filepath"],
 		},
-		CustomAttributeResolver: map[string]*RefAttrCustomResolver{
+		CustomFlowResolver: map[string]*CustomFlowResolver{
 			"file_content_hash": {ResolverFunc: FileContentHashResolver},
 		},
 	}

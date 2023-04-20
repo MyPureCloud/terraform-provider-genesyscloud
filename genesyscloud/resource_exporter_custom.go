@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path"
 )
@@ -43,22 +42,8 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 	return nil
 }
 
-func FileContentHashResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
-	filepath := configMap["filepath"]
-	flowId := configMap["id"]
-	exporter := exporters["genesyscloud_flow"]
-	
-	writeToFile("***Writing***", "/Users/dginty/genesys_src/repos/bug-replication/exporter.txt")
-	writeToFile(fmt.Sprintf("Config file: %v", configMap), "/Users/dginty/genesys_src/repos/bug-replication/exporter.txt")
-	if filepath == nil && flowId != nil {
-		flow := flowId.(string)
-		writeToFile(fmt.Sprintf("Exporter flow: %v", (*exporter.SanitizedResourceMap[flow]).Name), "/Users/dginty/genesys_src/repos/bug-replication/exporter.txt")
-	}
-	writeToFile(fmt.Sprintf("Filepath: %v", filepath), "/Users/dginty/genesys_src/repos/bug-replication/exporter.txt")
-	writeToFile("***Done***\n", "/Users/dginty/genesys_src/repos/bug-replication/exporter.txt")
-
-	configMap["file_content_hash"] = fmt.Sprintf("filesha256(%s)", filepath)
-
+func FileContentHashResolver(configMap map[string]interface{}, filepath string) error {
+	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256(var.%s)}`, filepath)
 	return nil
 }
 
@@ -80,14 +65,4 @@ func ArchitectPromptAudioResolver(promptId string, exportDirectory string, subDi
 	}
 	updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory)
 	return nil
-}
-
-// Function to write to file - Go
-func writeToFile(input string, destination string) {
-	f, err := os.OpenFile(destination,
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	f.WriteString(input + "\n")
 }

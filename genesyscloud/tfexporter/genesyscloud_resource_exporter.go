@@ -1044,6 +1044,17 @@ func sanitizeConfigMap(
 			}
 		}
 
+		//If the exporter as has customer resolver for an attribute, invoke it.
+		if refAttrCustomFlowResolver, ok := exporter.CustomFlowResolver[currAttr]; ok {
+			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
+			varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceName, "filepath")
+			err := refAttrCustomFlowResolver.ResolverFunc(configMap, varReference)
+
+			if err != nil {
+				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s", currAttr)
+			}
+		}
+
 		if exportingAsHCL && exporter.IsJsonEncodable(currAttr) {
 			if vStr, ok := configMap[key].(string); ok {
 				decodedData, err := getDecodedData(vStr, currAttr)
