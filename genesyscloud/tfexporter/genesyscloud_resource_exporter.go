@@ -1044,7 +1044,7 @@ func sanitizeConfigMap(
 			}
 		}
 
-		//If the exporter as has customer resolver for an attribute, invoke it.
+		// Check if the exporter has custom flow resolver (Only applicable for flow resource)
 		if refAttrCustomFlowResolver, ok := exporter.CustomFlowResolver[currAttr]; ok {
 			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
 			varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceName, "filepath")
