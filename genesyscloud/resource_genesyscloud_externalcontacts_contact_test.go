@@ -152,7 +152,7 @@ func TestAccResourceExternalContacts(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyDivisionsDestroyed,
+		CheckDestroy: testVerifyContactDestroyed,
 	})
 }
 

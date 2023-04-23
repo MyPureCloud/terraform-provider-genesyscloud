@@ -32,9 +32,9 @@ resource "genesyscloud_externalcontacts_contact" "contact" {
     e164         = "+330000000003"
     country_code = "FR"
   }
-  work_email      = "workEmail@example.com"
-  personnal_email = "personnalEmail@example.com"
-  other_email     = "otherEmail@example.com"
+  work_email     = "workEmail@example.com"
+  personal_email = "personalEmail@example.com"
+  other_email    = "otherEmail@example.com"
   address {
     address1     = "1 rue de la paix"
     address2     = "2 rue de la paix"

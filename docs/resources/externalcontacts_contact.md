@@ -54,9 +54,9 @@ resource "genesyscloud_externalcontacts_contact" "contact" {
     e164         = "+330000000003"
     country_code = "FR"
   }
-  work_email      = "workEmail@example.com"
-  personnal_email = "personnalEmail@example.com"
-  other_email     = "otherEmail@example.com"
+  work_email     = "workEmail@example.com"
+  personal_email = "personalEmail@example.com"
+  other_email    = "otherEmail@example.com"
   address {
     address1     = "1 rue de la paix"
     address2     = "2 rue de la paix"
@@ -104,17 +104,16 @@ resource "genesyscloud_externalcontacts_contact" "contact" {
 
 - `address` (Block List, Max: 1) Contact address. (see [below for nested schema](#nestedblock--address))
 - `cell_phone` (Block List, Max: 1) Contact call phone settings. (see [below for nested schema](#nestedblock--cell_phone))
-- `external_organization` (String) Contact survey opt out preference.
 - `external_system_url` (String) Contact external system url.
 - `facebook_id` (Block List, Max: 1) Contact facebook account informations. (see [below for nested schema](#nestedblock--facebook_id))
 - `first_name` (String) The first name of the contact.
 - `home_phone` (Block List, Max: 1) Contact home phone settings. (see [below for nested schema](#nestedblock--home_phone))
-- `last_name` (String) The middle name of the contact.
+- `last_name` (String) The last name of the contact.
 - `line_id` (Block List, Max: 1) Contact line account informations. (see [below for nested schema](#nestedblock--line_id))
 - `middle_name` (String) The middle name of the contact.
 - `other_email` (String) Contact other email.
 - `other_phone` (Block List, Max: 1) Contact other phone settings. (see [below for nested schema](#nestedblock--other_phone))
-- `personnal_email` (String) Contact personnal email.
+- `personal_email` (String) Contact personal email.
 - `salutation` (String) The salutation of the contact.
 - `survey_opt_out` (Boolean) Contact survey opt out preference.
 - `title` (String) The title of the contact.

@@ -234,7 +234,7 @@ func resourceExternalContact() *schema.Resource {
 				Optional:    true,
 			},
 			"last_name": {
-				Description: "The middle name of the contact.",
+				Description: "The last name of the contact.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -282,8 +282,8 @@ func resourceExternalContact() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"personnal_email": {
-				Description: "Contact personnal email.",
+			"personal_email": {
+				Description: "Contact personal email.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -328,11 +328,6 @@ func resourceExternalContact() *schema.Resource {
 				Optional:    true,
 				Elem:        facebookId,
 			},
-			"external_organization": {
-				Description: "Contact survey opt out preference.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
 			"survey_opt_out": {
 				Description: "Contact survey opt out preference.",
 				Type:        schema.TypeBool,
@@ -370,7 +365,7 @@ func getExternalContactFromResourceData(d *schema.ResourceData) platformclientv2
 	salutation := d.Get("salutation").(string)
 	title := d.Get("title").(string)
 	workEmail := d.Get("work_email").(string)
-	personnalEmail := d.Get("personnal_email").(string)
+	personalEmail := d.Get("personal_email").(string)
 	otherEmail := d.Get("other_email").(string)
 	surveyOptOut := d.Get("survey_opt_out").(bool)
 	externalSystemUrl := d.Get("external_system_url").(string)
@@ -386,7 +381,7 @@ func getExternalContactFromResourceData(d *schema.ResourceData) platformclientv2
 		HomePhone:         buildSdkPhoneNumber(d, "home_phone"),
 		OtherPhone:        buildSdkPhoneNumber(d, "other_phone"),
 		WorkEmail:         &workEmail,
-		PersonalEmail:     &personnalEmail,
+		PersonalEmail:     &personalEmail,
 		OtherEmail:        &otherEmail,
 		Address:           buildSdkAddresse(d, "address"),
 		TwitterId:         buildSdkTwitterId(d, "twitter_id"),
@@ -715,9 +710,9 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		if externalContact.PersonalEmail != nil {
-			d.Set("personnal_email", *externalContact.PersonalEmail)
+			d.Set("personal_email", *externalContact.PersonalEmail)
 		} else {
-			d.Set("personnal_email", nil)
+			d.Set("personal_email", nil)
 		}
 
 		if externalContact.OtherEmail != nil {
