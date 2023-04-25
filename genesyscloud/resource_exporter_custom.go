@@ -82,5 +82,7 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 	// Update filepath field in configMap to point to exported script file
 	configMap["filepath"] = path.Join(subDirectory, exportFileName)
 
+	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDirectory, exportFileName))
+
 	return err
 }

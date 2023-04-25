@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -786,15 +787,20 @@ func instanceStateToJSONMap(state *terraform.InstanceState, ctyType cty.Type) (g
 	return jsonMap, nil
 }
 
-func replaceDecodableStrings(resource []byte) []byte {
+func postProcessHclBytes(resource []byte) []byte {
 	resourceStr := string(resource)
-	for key, val := range attributesDecoded {
-		placeholderId := key
-		if strings.Contains(resourceStr, placeholderId) {
-			// replace placeholderId with the unquoted jsonencode object
-			resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
-		}
+	for placeholderId, val := range attributesDecoded {
+		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
 	}
+
+	// find & replace filesha256(\"...\") with filesha256("...")
+	re := regexp.MustCompile(`\$\{filesha256\(\\"[^\}]*\}`)
+	matches := re.FindAllString(resourceStr, -1)
+	for _, m := range matches {
+		corrected := strings.Replace(m, `\"`, `"`, -1)
+		resourceStr = strings.Replace(resourceStr, m, corrected, -1)
+	}
+
 	return []byte(resourceStr)
 }
 
