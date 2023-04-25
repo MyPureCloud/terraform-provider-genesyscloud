@@ -792,15 +792,21 @@ func postProcessHclBytes(resource []byte) []byte {
 		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
 	}
 
-	// find & replace filesha256(\"...\") with filesha256("...")
-	re := regexp.MustCompile(`\$\{filesha256\(\\"[^\}]*\}`)
-	matches := re.FindAllString(resourceStr, -1)
-	for _, m := range matches {
-		corrected := strings.Replace(m, `\"`, `"`, -1)
-		resourceStr = strings.Replace(resourceStr, m, corrected, -1)
-	}
+	resourceStr = correctInterpolatedFileShaFunctions(resourceStr)
 
 	return []byte(resourceStr)
+}
+
+// find & replace ${filesha256(\"...\")} with ${filesha256("...")}
+func correctInterpolatedFileShaFunctions(config string) string {
+	correctedConfig := config
+	re := regexp.MustCompile(`\$\{filesha256\(\\"[^\}]*\}`)
+	matches := re.FindAllString(config, -1)
+	for _, match := range matches {
+		correctedMatch := strings.Replace(match, `\"`, `"`, -1)
+		correctedConfig = strings.Replace(correctedConfig, match, correctedMatch, -1)
+	}
+	return correctedConfig
 }
 
 func writeToFile(bytes []byte, path string) diag.Diagnostics {
