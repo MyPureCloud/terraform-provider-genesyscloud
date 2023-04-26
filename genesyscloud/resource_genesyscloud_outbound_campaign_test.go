@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -517,7 +518,6 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 		callerName                = "Test Name 123"
 		callerAddress             = "+353371111111"
 		contactListResourceId     = "contact_list"
-		scriptDataSourceId        = "data_script"
 		queueResourceId           = "queue"
 		dncListResourceId         = "dnc_list"
 		carResourceId             = "car"
@@ -530,10 +530,9 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 		contactSortNumeric   = falseValue
 	)
 
-	// To test this function in your own org, pass the name of an existing script into the variable below.
-	scriptName := ""
-	if scriptName == "" {
-		t.Skip("Skipping test until script resource is defined")
+	scriptId, err := getPublishedScriptId()
+	if err != nil || scriptId == "" {
+		t.Skip("Skipping as a published script ID is needed to run this test")
 	}
 
 	referencedResources := generateReferencedResourcesForOutboundCampaignTests(
@@ -577,8 +576,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(`data "genesyscloud_script" "%s" { name = "%s" }`, scriptDataSourceId, scriptName) +
-					referencedResources +
+				Config: referencedResources +
 					generateOutboundCampaign(
 						resourceId,
 						name,
@@ -588,7 +586,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 						nullValue,
 						nullValue,
-						"data.genesyscloud_script."+scriptDataSourceId+".id",
+						strconv.Quote(scriptId),
 						"genesyscloud_routing_queue."+queueResourceId+".id",
 						nullValue,
 						nullValue,
@@ -611,18 +609,16 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "caller_name", callerName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "caller_address", callerAddress),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "phone_columns.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "script_id", scriptId),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "queue_id",
 						"genesyscloud_routing_queue."+queueResourceId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "script_id",
-						"data.genesyscloud_script."+scriptDataSourceId, "id"),
 				),
 			},
 			{
 				// Update
-				Config: fmt.Sprintf(`data "genesyscloud_script" "%s" { name = "%s" }`, scriptDataSourceId, scriptName) +
-					referencedResourcesUpdate +
+				Config: referencedResourcesUpdate +
 					generateOutboundCampaign(
 						resourceId,
 						name,
@@ -632,7 +628,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 						nullValue,
 						nullValue,
-						"data.genesyscloud_script."+scriptDataSourceId+".id",
+						strconv.Quote(scriptId),
 						"genesyscloud_routing_queue."+queueResourceId+".id",
 						nullValue,
 						"1",
@@ -670,8 +666,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.numeric", contactSortNumeric),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "no_answer_timeout", "3"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "priority", "2"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "script_id",
-						"data.genesyscloud_script."+scriptDataSourceId, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "script_id", scriptId),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "dnc_list_ids.0",
@@ -1038,6 +1033,21 @@ resource "genesyscloud_outbound_callabletimeset" "%s"{
 %s
 %s
 `, contactList, dncList, queue, callAnalysisResponseSet, contactListFilter, site, ruleSet, callableTimeSet)
+}
+
+func getPublishedScriptId() (string, error) {
+	config := platformclientv2.GetDefaultConfiguration()
+	if err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET")); err != nil {
+		return "", err
+	}
+	api := platformclientv2.NewScriptsApiWithConfig(config)
+	// Get the published scripts.
+	data, _, err := api.GetScriptsPublished(50, 1, "", "", "", "", "", "")
+	if err != nil {
+		return "", err
+	}
+	script := (*data.Entities)[0]
+	return *script.Id, nil
 }
 
 func testVerifyOutboundCampaignDestroyed(state *terraform.State) error {
