@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/terraform-plugin-docs v0.14.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.26.1
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
-	github.com/mypurecloud/platform-client-sdk-go/v95 v95.0.0
+	github.com/mypurecloud/platform-client-sdk-go/v99 v99.0.0
 	github.com/nyaruka/phonenumbers v1.1.6
 	github.com/zclconf/go-cty v1.13.1
 	gonum.org/v1/gonum v0.12.0
@@ -39,6 +39,9 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 	google.golang.org/api v0.34.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
@@ -97,6 +100,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/spf13/viper v1.7.1 // indirect
+	github.com/stretchr/testify v1.8.2
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect

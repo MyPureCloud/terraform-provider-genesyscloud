@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 var providerResources map[string]*schema.Resource
@@ -214,9 +214,9 @@ func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
 
 		/*
-		  The next two lines are important.  We have to make sure the Terraform provider has their own deep copies of the resource
-		  and data source maps.  If you do not do a deep copy and try to pass in the original maps, you open yourself up to race conditions
-		  because they map are being read and written to concurrently.
+		   The next two lines are important.  We have to make sure the Terraform provider has their own deep copies of the resource
+		   and data source maps.  If you do not do a deep copy and try to pass in the original maps, you open yourself up to race conditions
+		   because they map are being read and written to concurrently.
 		*/
 		copiedResources := make(map[string]*schema.Resource)
 		for k, v := range providerResources {
@@ -268,6 +268,54 @@ func New(version string) func() *schema.Provider {
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_POOL_SIZE", 10),
 					Description:  "Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
 					ValidateFunc: validation.IntBetween(1, 20),
+				},
+				"proxy": {
+					Type:     schema.TypeSet,
+					Optional: true,
+					MaxItems: 1,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"port": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_PORT", nil),
+								Description: "Port for the proxy can be set with the `GENESYSCLOUD_PROXY_PORT` environment variable.",
+							},
+							"host": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_HOST", nil),
+								Description: "Host for the proxy can be set with the `GENESYSCLOUD_PROXY_HOST` environment variable.",
+							},
+							"protocol": {
+								Type:        schema.TypeString,
+								Optional:    true,
+								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_PROTOCOL", nil),
+								Description: "Protocol for the proxy can be set with the `GENESYSCLOUD_PROXY_PROTOCOL` environment variable.",
+							},
+							"auth": {
+								Type:     schema.TypeSet,
+								Optional: true,
+								MaxItems: 1,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"username": {
+											Type:        schema.TypeString,
+											Optional:    true,
+											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_AUTH_USERNAME", nil),
+											Description: "UserName for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_USERNAME` environment variable.",
+										},
+										"password": {
+											Type:        schema.TypeString,
+											Optional:    true,
+											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_AUTH_PASSWORD", nil),
+											Description: "Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.",
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 			ResourcesMap:         copiedResources,
@@ -365,6 +413,37 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		config.LoggingConfiguration.SetLogFormat(platformclientv2.Text)
 		config.LoggingConfiguration.SetLogFilePath("sdk_debug.log")
 	}
+
+	proxySet := data.Get("proxy").(*schema.Set)
+	for _, proxyObj := range proxySet.List() {
+		proxy := proxyObj.(map[string]interface{})
+
+		// Retrieve the values of the `host`, `port`, and `protocol` attributes
+		host := proxy["host"].(string)
+		port := proxy["port"].(string)
+		protocol := proxy["protocol"].(string)
+
+		config.ProxyConfiguration = &platformclientv2.ProxyConfiguration{}
+
+		config.ProxyConfiguration.Host = host
+		config.ProxyConfiguration.Port = port
+		config.ProxyConfiguration.Protocol = protocol
+
+		authSet := proxy["auth"].(*schema.Set)
+		authList := authSet.List()
+
+		for _, authElement := range authList {
+			auth := authElement.(map[string]interface{})
+			username := auth["username"].(string)
+			password := auth["password"].(string)
+			config.ProxyConfiguration.Auth = &platformclientv2.Auth{}
+
+			config.ProxyConfiguration.Auth.UserName = username
+			config.ProxyConfiguration.Auth.Password = password
+		}
+
+	}
+
 	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+version)
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
 		RetryWaitMin: time.Second * 1,

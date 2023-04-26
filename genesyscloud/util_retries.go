@@ -13,13 +13,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 func withRetries(ctx context.Context, timeout time.Duration, method func() *resource.RetryError) diag.Diagnostics {
 	err := diag.FromErr(resource.RetryContext(ctx, timeout, method))
 	if err != nil && strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
-		ctx, _ := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
 		return withRetries(ctx, timeout, method)
 	}
 	return err
@@ -39,7 +40,8 @@ func withRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration,
 		errStringLower := strings.ToLower(fmt.Sprintf("%v", err))
 		if strings.Contains(errStringLower, "timeout while waiting for state to become") ||
 			strings.Contains(errStringLower, "context deadline exceeded") {
-			ctx, _ := context.WithTimeout(context.Background(), timeout)
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
 			return withRetriesForRead(ctx, d, method)
 		}
 		if d.Id() != "" {
