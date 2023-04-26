@@ -413,74 +413,12 @@ func hasEmptyDnis(ivrResourceName string) resource.TestCheckFunc {
 	}
 }
 
-func TestUploadIvrDnisChunksSuccess(t *testing.T) {
-	var (
-		chunks [][]string
-		ivrId  = uuid.NewString()
-		api    = platformclientv2.NewArchitectApi()
-	)
-	chunks = append(chunks, []string{"1", "2", "3", "4"})
-	chunks = append(chunks, []string{"5", "6", "7", "8"})
-	chunks = append(chunks, []string{"9", "10"})
-
-	var chunksCombinedLength int
-	for _, c := range chunks {
-		chunksCombinedLength += len(c)
-	}
-
-	dcu := newDnisChunkUploader(
-		api,
-		chunks,
-		ivrId,
-		createMockGetArchitectIvrFunc([]string{}, nil),
-		createMockPutArchitectIvrFunc(),
-	)
-
-	ivr, _, err := dcu.uploadIvrDnis()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	if len(*ivr.Dnis) != chunksCombinedLength {
-		t.Errorf("Expected length of returned Ivr.Dnis field to be %v, got %v", chunksCombinedLength, len(*ivr.Dnis))
-	}
-}
-
-func createMockGetArchitectIvrFunc(dnisToReturn []string, err error) getArchitectIvrFunc {
-	return func(api *platformclientv2.ArchitectApi, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
-		if err != nil {
-			return nil, nil, err
-		}
-		ivr := &platformclientv2.Ivr{
-			Id:   &id,
-			Dnis: &dnisToReturn,
-		}
-		return ivr, nil, nil
-	}
-}
-
-func createMockPutArchitectIvrFunc() putArchitectIvrFunc {
-	return func(api *platformclientv2.ArchitectApi, putId string, ivr *platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
-		var err error
-		if putId == "" {
-			err = fmt.Errorf("ID field cannot be an empty string")
-		}
-		return ivr, nil, err
-	}
-}
-
 func createStringArrayOfPhoneNumbers(from, to int) []string {
 	var slice []string
 	for i := 0; i < to-from; i++ {
 		slice = append(slice, fmt.Sprintf("+%v", from+i))
 	}
 	return slice
-}
-
-type SdkArchitectIvrResponseObject struct {
-	ivr      *platformclientv2.Ivr
-	response *platformclientv2.APIResponse
-	err      error
 }
 
 func getLastDidNumberAsInteger() (int, error) {

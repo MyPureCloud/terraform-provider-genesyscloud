@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/proxies/architect_api"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -16,13 +17,19 @@ import (
 
 const maxDnisPerRequest = 50
 
+var architectIvrProxy *architect_api.ArchitectIvrProxy
+
+func init() {
+	architectIvrProxy = architect_api.NewArchitectIvrProxy()
+}
+
 func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
-	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+	architectIvrProxy.ConfigureProxyApiInstance(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		ivrConfigs, _, getErr := architectAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "", "", "")
+		ivrConfigs, _, getErr := architectIvrProxy.GetArchitectIvrs(architectIvrProxy.Api, pageNum, pageSize, "", "", "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of IVR configs: %v", getErr)
 		}
@@ -126,7 +133,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	dnis := buildSdkStringList(d, "dnis")
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	ivrBody := platformclientv2.Ivr{
 		Name:             &name,
@@ -158,7 +165,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		time.Sleep(3 * time.Second)
 	}
 	log.Printf("Creating IVR config %s", name)
-	ivrConfig, _, err := architectApi.PostArchitectIvrs(ivrBody)
+	ivrConfig, _, err := architectIvrProxy.PostArchitectIvr(architectIvrProxy.Api, &ivrBody)
 	if err != nil {
 		return diag.Errorf("Failed to create IVR config %s: %s", name, err)
 	}
@@ -166,8 +173,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	d.SetId(*ivrConfig.Id)
 
 	if len(dnisChunks) > 1 {
-		dcu := newDnisChunkUploader(architectApi, dnisChunks, d.Id(), sdkGetArchitectIvr, sdkPutArchitectIvr)
-		if _, _, err := dcu.uploadIvrDnis(); err != nil {
+		if _, _, err := architectIvrProxy.UploadIvrDnisChunks(architectIvrProxy, dnisChunks, d.Id()); err != nil {
 			return diag.Errorf("%v", err)
 		}
 	}
@@ -178,11 +184,11 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	log.Printf("Reading IVR config %s", d.Id())
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
-		ivrConfig, resp, getErr := architectApi.GetArchitectIvr(d.Id())
+		ivrConfig, resp, getErr := architectIvrProxy.GetArchitectIvr(architectIvrProxy.Api, d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
@@ -251,11 +257,11 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	dnis := buildSdkStringList(d, "dnis")
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current version
-		ivr, resp, getErr := architectApi.GetArchitectIvr(d.Id())
+		ivr, resp, getErr := architectIvrProxy.GetArchitectIvr(architectIvrProxy.Api, d.Id())
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr)
 		}
@@ -293,15 +299,14 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			time.Sleep(3 * time.Second)
 		}
 		log.Printf("Updating IVR config %s", name)
-		_, resp, putErr := architectApi.PutArchitectIvr(d.Id(), ivrBody)
+		_, resp, putErr := architectIvrProxy.PutArchitectIvr(architectIvrProxy.Api, d.Id(), &ivrBody)
 
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update IVR config %s: %s", d.Id(), putErr)
 		}
 
 		if len(dnisChunks) > 1 {
-			dcu := newDnisChunkUploader(architectApi, dnisChunks, d.Id(), sdkGetArchitectIvr, sdkPutArchitectIvr)
-			_, resp, err := dcu.uploadIvrDnis()
+			_, resp, err := architectIvrProxy.UploadIvrDnisChunks(architectIvrProxy, dnisChunks, d.Id())
 			if err != nil {
 				return resp, diag.Errorf("%v", err)
 			}
@@ -321,15 +326,15 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	log.Printf("Deleting IVR config %s", name)
-	if _, err := architectApi.DeleteArchitectIvr(d.Id()); err != nil {
+	if _, err := architectIvrProxy.DeleteArchitectIvr(architectIvrProxy.Api, d.Id()); err != nil {
 		return diag.Errorf("Failed to delete IVR config %s: %s", name, err)
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		ivr, resp, err := architectApi.GetArchitectIvr(d.Id())
+		ivr, resp, err := architectIvrProxy.GetArchitectIvr(architectIvrProxy.Api, d.Id())
 		if err != nil {
 			if isStatus404(resp) {
 				// IVR config deleted
@@ -347,81 +352,4 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 		return resource.RetryableError(fmt.Errorf("IVR config %s still exists", d.Id()))
 	})
-}
-
-func (d *DnisChunkUploader) uploadIvrDnis() (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
-	ivr, resp, getErr := d.getArchitectIvr(d.api, d.ivrId)
-	if getErr != nil {
-		return ivr, resp, fmt.Errorf("Failed to read IVR config %s: %s", d.ivrId, getErr)
-	}
-
-	for i, chunk := range d.dnisChunks {
-		time.Sleep(2 * time.Second)
-		log.Printf("Uploading block %v of DID numbers to ivr config %s", i+1, d.ivrId)
-		putIvr, resp, err := d.uploadDnisChunk(ivr, chunk)
-		if err != nil {
-			return putIvr, resp, err
-		}
-		ivr = putIvr
-	}
-
-	return ivr, nil, nil
-}
-
-func sdkGetArchitectIvr(api *platformclientv2.ArchitectApi, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
-	return api.GetArchitectIvr(id)
-}
-
-func sdkPutArchitectIvr(api *platformclientv2.ArchitectApi, id string, ivr *platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
-	return api.PutArchitectIvr(id, *ivr)
-}
-
-func (d *DnisChunkUploader) uploadDnisChunk(ivr *platformclientv2.Ivr, chunk []string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
-	var dnis []string
-
-	if *ivr.Dnis != nil {
-		dnis = append(dnis, *ivr.Dnis...)
-	}
-
-	dnis = append(dnis, chunk...)
-
-	ivr.Dnis = &dnis
-
-	log.Printf("Updating IVR config %s", d.ivrId)
-	putIvr, resp, putErr := d.putArchitectIvr(d.api, d.ivrId, ivr)
-	if putErr != nil {
-		return putIvr, resp, fmt.Errorf("Failed to update IVR config %s: %s", d.ivrId, putErr)
-	}
-
-	return putIvr, resp, nil
-}
-
-type getArchitectIvrFunc func(*platformclientv2.ArchitectApi, string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error)
-
-type putArchitectIvrFunc func(*platformclientv2.ArchitectApi, string, *platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error)
-
-type uploadDnisChunkMethod func(*DnisChunkUploader, *platformclientv2.Ivr, []string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error)
-
-type DnisChunkUploader struct {
-	api             *platformclientv2.ArchitectApi
-	dnisChunks      [][]string
-	ivrId           string
-	getArchitectIvr getArchitectIvrFunc
-	putArchitectIvr putArchitectIvrFunc
-}
-
-func newDnisChunkUploader(
-	api *platformclientv2.ArchitectApi,
-	dnisChunks [][]string,
-	ivrId string,
-	getIvrFunc getArchitectIvrFunc,
-	putIvrFunc putArchitectIvrFunc,
-) *DnisChunkUploader {
-	return &DnisChunkUploader{
-		api:             api,
-		dnisChunks:      dnisChunks,
-		ivrId:           ivrId,
-		getArchitectIvr: getIvrFunc,
-		putArchitectIvr: putIvrFunc,
-	}
 }
