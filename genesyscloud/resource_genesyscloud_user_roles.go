@@ -77,6 +77,36 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceUserRoles())
 		d.Set("roles", roles)
+		usersApi := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+
+		domainRoleIds, _, err := getDomainIdRoles(d.Id(), usersApi)
+
+		if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("%v", err))
+		}
+
+		roleSlice := roles.List()
+
+		missingroleIDs := []string{}
+
+		for _, id := range domainRoleIds {
+				// search for the id in the set of maps
+				found := false
+				for _, roleElem := range roleSlice {
+						role := roleElem.(map[string]interface{})
+						if role["role_id"].(string) == id {
+								found = true
+								break
+						}
+				}
+				if !found {
+						missingroleIDs = append(missingroleIDs, id)
+				}
+		}
+
+		if len(missingroleIDs) > 0 {
+				return resource.RetryableError(fmt.Errorf("The following roles (Ids) are not attached for user id %s: %s", d.Id(), missingroleIDs))
+		}
 
 		log.Printf("Read roles for user %s", d.Id())
 		return cc.CheckState()

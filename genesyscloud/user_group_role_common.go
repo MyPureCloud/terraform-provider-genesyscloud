@@ -77,6 +77,33 @@ func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationA
 	return roleSet, resp, nil
 }
 
+func getDomainIdRoles(subjectID string, userAPI *platformclientv2.UsersApi) ([]string, *platformclientv2.APIResponse, diag.Diagnostics) {
+	var roles []string
+
+	data, response, err := userAPI.GetUserRoles(subjectID)
+	if err != nil {
+			return nil, response, diag.Errorf("Failed to get Roles for subject %s: %s", subjectID, err)
+	}
+
+	if data != nil && data.Roles != nil {
+			for _, role := range *data.Roles {
+					if role.Id != nil {
+							roles = append(roles, *role.Id)
+					}
+			}
+	}
+
+	if data != nil && data.UnusedRoles != nil {
+			for _, role := range *data.UnusedRoles {
+					if role.Id != nil {
+							roles = append(roles, *role.Id)
+					}
+			}
+	}
+
+	return roles, response, nil
+}
+
 func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {
 	if d.HasChange("roles") {
 		rolesConfig := d.Get("roles")
