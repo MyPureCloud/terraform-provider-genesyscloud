@@ -75,6 +75,10 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("%v", err))
 		}
+		error := fetchRoleIds(ctx,d,meta,roles)
+		if error != nil {
+			return error
+		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceUserRoles())
 		d.Set("roles", roles)
 

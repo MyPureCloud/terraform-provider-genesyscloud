@@ -247,3 +247,63 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceID, roleID)
 	}
 }
+func fetchRoleIds(ctx context.Context, d *schema.ResourceData, meta interface{}, roles *schema.Set) *resource.RetryError {
+
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	usersApi := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+	domainRoleIds, _, err := getDomainIdRoles(d.Id(), usersApi)
+
+	if err != nil {
+			return err
+	}
+
+	roleSlice := roles.List()
+	missingroleIDs := []string{}
+
+	for _, id := range domainRoleIds {
+			// search for the id in the set of maps
+			found := false
+			for _, roleElem := range roleSlice {
+					role := roleElem.(map[string]interface{})
+					if role["role_id"].(string) == id {
+							found = true
+							break
+					}
+			}
+			if !found {
+					missingroleIDs = append(missingroleIDs, id)
+			}
+	}
+
+	if len(missingroleIDs) > 0 {
+			return resource.RetryableError(fmt.Errorf("The following roles (Ids) are not attached for user id %s: %s", d.Id(), missingroleIDs))
+	}
+
+	return nil
+}
+
+func getDomainIdRoles(subjectID string, userAPI *platformclientv2.UsersApi) ([]string, *platformclientv2.APIResponse, *resource.RetryError) {
+	var roles []string
+
+	data, response, err := userAPI.GetUserRoles(subjectID)
+	if err != nil {
+			if isStatus404(response) {
+					return nil, response, resource.RetryableError(fmt.Errorf("Failed to get Roles for User %s: %s", subjectID, err))
+			}
+			return nil, response, resource.NonRetryableError(fmt.Errorf("Failed to get Roles for User %s: %s", subjectID, err))
+	}
+
+	if data.Roles != nil {
+			for _, role := range *data.Roles {
+					roles = append(roles, *role.Id)
+			}
+	}
+
+	if data.UnusedRoles != nil {
+			for _, role := range *data.UnusedRoles {
+					roles = append(roles, *role.Id)
+			}
+	}
+
+	return roles, response, nil
+}
