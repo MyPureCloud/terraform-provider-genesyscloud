@@ -134,7 +134,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 					outboundFlowFilePath,
 					"",
 					false,
-					generateFlowSubstitutions(map[string]string{
+					generateSubstitutionsMap(map[string]string{
 						"flow_name":          outboundFlowName,
 						"home_division_name": "${data.genesyscloud_auth_division_home.home.name}",
 						"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",

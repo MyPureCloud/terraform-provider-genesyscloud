@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -490,19 +491,18 @@ func getDecodedData(jsonString string, currAttr string) (string, error) {
 		return "", err
 	}
 
-	// replace : with = as is expected syntax in a jsonencode object
-	decodedJson := strings.Replace(string(formattedJson), "\": ", "\" = ", -1)
+	formattedJsonStr := string(formattedJson)
 	// fix indentation
 	numOfIndents := strings.Count(currAttr, ".") + 1
 	spaces := ""
 	for i := 0; i < numOfIndents; i++ {
 		spaces = spaces + "  "
 	}
-	decodedJson = strings.Replace(decodedJson, "\t", fmt.Sprintf("\t%v", spaces), -1)
+	formattedJsonStr = strings.Replace(formattedJsonStr, "\t", fmt.Sprintf("\t%v", spaces), -1)
 	// add extra space before the final character (either ']' or '}')
-	decodedJson = fmt.Sprintf("%v%v%v", decodedJson[:len(decodedJson)-1], spaces, decodedJson[len(decodedJson)-1:])
-	decodedJson = fmt.Sprintf("jsonencode(%v)", decodedJson)
-	return decodedJson, nil
+	formattedJsonStr = fmt.Sprintf("%v%v%v", formattedJsonStr[:len(formattedJsonStr)-1], spaces, formattedJsonStr[len(formattedJsonStr)-1:])
+	formattedJsonStr = fmt.Sprintf("jsonencode(%v)", formattedJsonStr)
+	return formattedJsonStr, nil
 }
 
 func sourceForVersion(version string) string {
@@ -786,16 +786,27 @@ func instanceStateToJSONMap(state *terraform.InstanceState, ctyType cty.Type) (g
 	return jsonMap, nil
 }
 
-func replaceDecodableStrings(resource []byte) []byte {
+func postProcessHclBytes(resource []byte) []byte {
 	resourceStr := string(resource)
-	for key, val := range attributesDecoded {
-		placeholderId := key
-		if strings.Contains(resourceStr, placeholderId) {
-			// replace placeholderId with the unquoted jsonencode object
-			resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
-		}
+	for placeholderId, val := range attributesDecoded {
+		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
 	}
+
+	resourceStr = correctInterpolatedFileShaFunctions(resourceStr)
+
 	return []byte(resourceStr)
+}
+
+// find & replace ${filesha256(\"...\")} with ${filesha256("...")}
+func correctInterpolatedFileShaFunctions(config string) string {
+	correctedConfig := config
+	re := regexp.MustCompile(`\$\{filesha256\(\\"[^\}]*\}`)
+	matches := re.FindAllString(config, -1)
+	for _, match := range matches {
+		correctedMatch := strings.Replace(match, `\"`, `"`, -1)
+		correctedConfig = strings.Replace(correctedConfig, match, correctedMatch, -1)
+	}
+	return correctedConfig
 }
 
 func writeToFile(bytes []byte, path string) diag.Diagnostics {
