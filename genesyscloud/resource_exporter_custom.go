@@ -42,6 +42,11 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 	return nil
 }
 
+func FileContentHashResolver(configMap map[string]interface{}, filepath string) error {
+	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256(var.%s)}`, filepath)
+	return nil
+}
+
 func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
 	fullPath := path.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
