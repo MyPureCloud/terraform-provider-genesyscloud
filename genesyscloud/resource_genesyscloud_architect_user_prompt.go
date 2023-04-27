@@ -9,7 +9,6 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"path"
 	"path/filepath"
 	"time"
@@ -20,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 type PromptAudioData struct {
@@ -1180,25 +1179,6 @@ func getArchitectPromptAudioData(promptId string, meta interface{}) ([]PromptAud
 	}
 
 	return promptResourceData, nil
-}
-
-// Download audio file from mediaUri to directory/fileName
-func downloadAudioFile(directory string, fileName string, mediaUri string) error {
-	resp, err := http.Get(mediaUri)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	out, err := os.Create(fmt.Sprintf("%s/%s", directory, fileName))
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	return err
 }
 
 // Replace (or create) the filenames key in configMap with the FileName fields in audioDataList
