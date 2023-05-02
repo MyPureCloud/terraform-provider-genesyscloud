@@ -22,7 +22,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 
 	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
 	if err != nil {
-		return nil, diag.Errorf("%v", err)
+		return nil, err
 	}
 
 	for _, knowledgeBase := range *publishedEntities {
@@ -31,7 +31,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 
 	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
 	if err != nil {
-		return nil, diag.Errorf("%v", err)
+		return nil, err
 	}
 
 	for _, knowledgeBase := range *unpublishedEntities {
@@ -41,7 +41,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	return resources, nil
 }
 
-func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, published bool) (*[]platformclientv2.Knowledgebase, error) {
+func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, published bool) (*[]platformclientv2.Knowledgebase, diag.Diagnostics) {
 	var (
 		after    string
 		entities []platformclientv2.Knowledgebase
@@ -51,7 +51,7 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 	for i := 0; ; i++ {
 		knowledgeBases, _, getErr := knowledgeApi.GetKnowledgeKnowledgebases("", after, "", fmt.Sprintf("%v", pageSize), "", "", published, "", "")
 		if getErr != nil {
-			return nil, fmt.Errorf("Failed to get page of knowledge bases: %v", getErr)
+			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
 		}
 
 		if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
@@ -66,7 +66,7 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 
 		u, err := url.Parse(*knowledgeBases.NextUri)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to parse after cursor from knowledge base nextUri: %v", err)
+			return nil, diag.Errorf("Failed to parse after cursor from knowledge base nextUri: %v", err)
 		}
 		m, _ := url.ParseQuery(u.RawQuery)
 		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
