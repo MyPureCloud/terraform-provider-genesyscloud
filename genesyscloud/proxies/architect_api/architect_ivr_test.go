@@ -11,74 +11,134 @@ import (
 
 func TestUploadIvrDnisChunksSuccess(t *testing.T) {
 	var (
-		chunksCombinedLength int
-		chunks               [][]string
+		maxDnisPerRequest = 4
+		dnis              = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
+		ivrId             = uuid.NewString()
 	)
-	chunks = append(chunks, []string{"1", "2", "3", "4"})
-	chunks = append(chunks, []string{"5", "6", "7", "8"})
-	chunks = append(chunks, []string{"9", "10"})
-	for _, c := range chunks {
-		chunksCombinedLength += len(c)
+
+	ivr := &platformclientv2.Ivr{
+		Dnis: &dnis,
 	}
 
-	ivrId := uuid.NewString()
-
 	architectIvrProxy := NewArchitectIvrProxy()
+	architectIvrProxy.maxDnisPerRequest = maxDnisPerRequest
 
 	architectIvrProxy.GetArchitectIvr = createMockGetIvrFunc(ivrId, nil, nil)
+	architectIvrProxy.putArchitectIvrBasic = createMockPutIvrFunc(nil)
+	architectIvrProxy.postArchitectIvrBasic = createMockPostIvrFunc(ivrId, nil)
 
-	architectIvrProxy.PutArchitectIvr = createMockPutIvrFunc(nil)
-
-	ivr, _, err := architectIvrProxy.UploadIvrDnisChunks(architectIvrProxy, chunks, ivrId)
+	t.Log("Testing Post Ivr function")
+	ivr, _, err := architectIvrProxy.PostArchitectIvr(architectIvrProxy, *ivr)
 	if err != nil {
 		t.Errorf("Expected error to be nil, got '%v'", err)
 	}
 
-	if len(*ivr.Dnis) != chunksCombinedLength {
-		t.Errorf("Expected length of returned Ivr.Dnis field to be %v, got %v", chunksCombinedLength, len(*ivr.Dnis))
+	if ivr.Dnis == nil {
+		t.Errorf("Dnis array returned on ivr is nil")
+	} else if len(*ivr.Dnis) != len(dnis) {
+		t.Errorf("Expected length of returned Ivr.Dnis field to be %v, got %v", len(dnis), len(*ivr.Dnis))
 	}
+
+	ivr = &platformclientv2.Ivr{
+		Dnis: &dnis,
+		Id:   &ivrId,
+	}
+
+	t.Log("Testing Put Ivr function")
+	ivr, _, err = architectIvrProxy.PutArchitectIvr(architectIvrProxy, ivrId, *ivr)
+	if err != nil {
+		t.Errorf("Expected error to be nil, got '%v'", err)
+	}
+
+	if ivr.Dnis == nil {
+		t.Errorf("Dnis array on returned ivr is nil")
+	} else if len(*ivr.Dnis) != len(dnis) {
+		t.Errorf("Expected length of returned Ivr.Dnis field to be %v, got %v", len(dnis), len(*ivr.Dnis))
+	}
+
+}
+
+type architectIvrUploadErrorTestData struct {
+	mockGetFunction  getArchitectIvrFunc
+	mockPutFunction  putArchitectIvrFunc
+	mockPostFunction postArchitectIvrFunc
+	mockError        error
 }
 
 func TestUploadIvrDnisChunksError(t *testing.T) {
 	var (
-		ivrId               = "1234"
-		mockGetError        error
-		mockPutError        error
-		dnisReturnedFromGet []string
-		chunks              = [][]string{[]string{"123", "abc"}, []string{"iii", "zzz"}}
+		ivrId             = uuid.NewString()
+		mockGetError      = fmt.Errorf("error on proxy.GetArchitectIvr")
+		mockPostError     = fmt.Errorf("error on proxy.PostArchitectIvr")
+		mockPutError      = fmt.Errorf("error on proxy.PutArchitectIvr")
+		dnis              = []string{"123", "abc", "iii", "zzz"}
+		maxDnisPerRequest = 2
 	)
 
-	/* Handling errors on GET arch ivr */
-	mockGetError = fmt.Errorf("error on proxy.GetArchitectIvr")
+	ivr := platformclientv2.Ivr{
+		Dnis: &dnis,
+	}
+
 	architectProxy := NewArchitectIvrProxy()
-	architectProxy.GetArchitectIvr = createMockGetIvrFunc(ivrId, dnisReturnedFromGet, mockGetError)
-	architectProxy.PutArchitectIvr = createMockPutIvrFunc(nil)
+	architectProxy.maxDnisPerRequest = maxDnisPerRequest
 
-	_, _, err := architectProxy.UploadIvrDnisChunks(architectProxy, chunks, ivrId)
-	if err == nil {
-		t.Errorf("Expected non nil error")
-	}
-	if !strings.Contains(fmt.Sprintf("%v", err), fmt.Sprintf("%v", mockGetError)) {
-		t.Errorf("Expected to receive error containing '%v', got '%v'", mockGetError, err)
+	testCases := []architectIvrUploadErrorTestData{
+		architectIvrUploadErrorTestData{
+			mockGetFunction:  createMockGetIvrFunc(ivrId, nil, mockGetError),
+			mockPostFunction: createMockPostIvrFunc(ivrId, nil),
+			mockPutFunction:  createMockPutIvrFunc(nil),
+			mockError:        mockGetError,
+		},
+		architectIvrUploadErrorTestData{
+			mockGetFunction:  createMockGetIvrFunc(ivrId, nil, nil),
+			mockPostFunction: createMockPostIvrFunc(ivrId, mockPostError),
+			mockPutFunction:  createMockPutIvrFunc(nil),
+			mockError:        mockPostError,
+		},
+		architectIvrUploadErrorTestData{
+			mockGetFunction:  createMockGetIvrFunc(ivrId, nil, nil),
+			mockPostFunction: createMockPostIvrFunc(ivrId, nil),
+			mockPutFunction:  createMockPutIvrFunc(mockPutError),
+			mockError:        mockPutError,
+		},
 	}
 
-	/* Handling errors on PUT arch ivr */
-	mockPutError = fmt.Errorf("error on proxy.PutArchitectIvr")
-	mockGetError = nil
-	architectProxy.GetArchitectIvr = createMockGetIvrFunc(ivrId, dnisReturnedFromGet, mockGetError)
-	architectProxy.PutArchitectIvr = createMockPutIvrFunc(mockPutError)
+	t.Log("Testing error handling on proxy.PostArchitectIvr")
+	for _, test := range testCases {
+		architectProxy.GetArchitectIvr = test.mockGetFunction
+		architectProxy.postArchitectIvrBasic = test.mockPostFunction
+		architectProxy.putArchitectIvrBasic = test.mockPutFunction
 
-	_, _, err = architectProxy.UploadIvrDnisChunks(architectProxy, chunks, ivrId)
-	if err == nil {
-		t.Errorf("Expected non nil error")
+		_, _, err := architectProxy.PostArchitectIvr(architectProxy, ivr)
+		if err == nil {
+			t.Errorf("Expected non nil error")
+		}
+		if !strings.Contains(fmt.Sprintf("%v", err), fmt.Sprintf("%v", test.mockError)) {
+			t.Errorf("Expected to receive error containing '%v', got '%v'", test.mockError, err)
+		}
 	}
-	if !strings.Contains(fmt.Sprintf("%v", err), fmt.Sprintf("%v", mockPutError)) {
-		t.Errorf("Expected to receive error containing '%v', got '%v'", mockPutError, err)
+
+	t.Log("Testing error handling on proxy.PutArchitectIvr")
+	for _, test := range testCases {
+		if test.mockError == mockPostError {
+			continue
+		}
+		architectProxy.GetArchitectIvr = test.mockGetFunction
+		architectProxy.postArchitectIvrBasic = test.mockPostFunction
+		architectProxy.putArchitectIvrBasic = test.mockPutFunction
+
+		_, _, err := architectProxy.PutArchitectIvr(architectProxy, ivrId, ivr)
+		if err == nil {
+			t.Errorf("Expected non nil error")
+		}
+		if !strings.Contains(fmt.Sprintf("%v", err), fmt.Sprintf("%v", test.mockError)) {
+			t.Errorf("Expected to receive error containing '%v', got '%v'", test.mockError, err)
+		}
 	}
 }
 
 func createMockGetIvrFunc(ivrId string, dnis []string, err error) getArchitectIvrFunc {
-	return func(*platformclientv2.ArchitectApi, string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	return func(*ArchitectIvrProxy, string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		if err != nil {
 			return nil, nil, err
 		}
@@ -90,11 +150,22 @@ func createMockGetIvrFunc(ivrId string, dnis []string, err error) getArchitectIv
 	}
 }
 
-func createMockPutIvrFunc(err error) putArchitectIvrFunc {
-	return func(api *platformclientv2.ArchitectApi, id string, ivr *platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+func createMockPostIvrFunc(ivrId string, err error) postArchitectIvrFunc {
+	return func(a *ArchitectIvrProxy, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		return ivr, nil, nil
+		ivr.Id = &ivrId
+		return &ivr, nil, err
+	}
+}
+
+func createMockPutIvrFunc(err error) putArchitectIvrFunc {
+	return func(a *ArchitectIvrProxy, id string, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+		if err != nil {
+			return nil, nil, err
+		}
+		ivr.Id = &id
+		return &ivr, nil, err
 	}
 }
