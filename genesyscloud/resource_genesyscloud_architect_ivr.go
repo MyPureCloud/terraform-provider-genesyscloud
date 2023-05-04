@@ -29,7 +29,7 @@ func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configur
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		ivrConfigs, _, getErr := architectIvrProxy.GetArchitectIvrs(architectIvrProxy.Api, pageNum, pageSize, "", "", "", "", "")
+		ivrConfigs, _, getErr := architectIvrProxy.GetArchitectIvrs(architectIvrProxy, pageNum, pageSize, "", "", "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of IVR configs: %v", getErr)
 		}
@@ -141,6 +141,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		ClosedHoursFlow:  closedHoursFlowId,
 		HolidayHoursFlow: holidayHoursFlowId,
 		ScheduleGroup:    scheduleGroupId,
+		Dnis:             dnis,
 	}
 
 	if description != "" {
@@ -151,32 +152,18 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		ivrBody.Division = &platformclientv2.Writabledivision{Id: &divisionId}
 	}
 
-	var dnisChunks [][]string
-	if dnis != nil {
-		dnisChunks = chunkSlice(*dnis, maxDnisPerRequest)
-		if len(dnisChunks) == 1 {
-			ivrBody.Dnis = &dnisChunks[0]
-		}
-	}
-
 	// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which
 	// would result in the error "Field 'didPoolId' is required and cannot be empty."
 	if ivrBody.Dnis != nil {
 		time.Sleep(3 * time.Second)
 	}
 	log.Printf("Creating IVR config %s", name)
-	ivrConfig, _, err := architectIvrProxy.PostArchitectIvr(architectIvrProxy.Api, &ivrBody)
+	ivrConfig, _, err := architectIvrProxy.PostArchitectIvr(architectIvrProxy, ivrBody)
 	if err != nil {
 		return diag.Errorf("Failed to create IVR config %s: %s", name, err)
 	}
 
 	d.SetId(*ivrConfig.Id)
-
-	if len(dnisChunks) > 1 {
-		if _, _, err := architectIvrProxy.UploadIvrDnisChunks(architectIvrProxy, dnisChunks, d.Id()); err != nil {
-			return diag.Errorf("%v", err)
-		}
-	}
 
 	log.Printf("Created IVR config %s %s", name, *ivrConfig.Id)
 	return readIvrConfig(ctx, d, meta)
@@ -188,7 +175,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Reading IVR config %s", d.Id())
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
-		ivrConfig, resp, getErr := architectIvrProxy.GetArchitectIvr(architectIvrProxy.Api, d.Id())
+		ivrConfig, resp, getErr := architectIvrProxy.GetArchitectIvr(architectIvrProxy, d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
@@ -261,7 +248,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current version
-		ivr, resp, getErr := architectIvrProxy.GetArchitectIvr(architectIvrProxy.Api, d.Id())
+		ivr, resp, getErr := architectIvrProxy.GetArchitectIvr(architectIvrProxy, d.Id())
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr)
 		}
@@ -273,6 +260,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			ClosedHoursFlow:  closedHoursFlowId,
 			HolidayHoursFlow: holidayHoursFlowId,
 			ScheduleGroup:    scheduleGroupId,
+			Dnis:             dnis,
 		}
 
 		if description != "" {
@@ -283,33 +271,16 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			ivrBody.Division = &platformclientv2.Writabledivision{Id: &divisionId}
 		}
 
-		var dnisChunks [][]string
-		if dnis != nil {
-			dnisChunks = chunkSlice(*dnis, maxDnisPerRequest)
-			if len(dnisChunks) == 1 {
-				ivrBody.Dnis = &dnisChunks[0]
-			} else {
-				ivrBody.Dnis = nil
-			}
-		}
-
 		// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which
 		// would result in the error "Field 'didPoolId' is required and cannot be empty."
 		if ivrBody.Dnis != nil {
 			time.Sleep(3 * time.Second)
 		}
 		log.Printf("Updating IVR config %s", name)
-		_, resp, putErr := architectIvrProxy.PutArchitectIvr(architectIvrProxy.Api, d.Id(), &ivrBody)
+		_, resp, putErr := architectIvrProxy.PutArchitectIvr(architectIvrProxy, d.Id(), ivrBody)
 
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update IVR config %s: %s", d.Id(), putErr)
-		}
-
-		if len(dnisChunks) > 1 {
-			_, resp, err := architectIvrProxy.UploadIvrDnisChunks(architectIvrProxy, dnisChunks, d.Id())
-			if err != nil {
-				return resp, diag.Errorf("%v", err)
-			}
 		}
 
 		return resp, nil
@@ -329,12 +300,12 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	log.Printf("Deleting IVR config %s", name)
-	if _, err := architectIvrProxy.DeleteArchitectIvr(architectIvrProxy.Api, d.Id()); err != nil {
+	if _, err := architectIvrProxy.DeleteArchitectIvr(architectIvrProxy, d.Id()); err != nil {
 		return diag.Errorf("Failed to delete IVR config %s: %s", name, err)
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		ivr, resp, err := architectIvrProxy.GetArchitectIvr(architectIvrProxy.Api, d.Id())
+		ivr, resp, err := architectIvrProxy.GetArchitectIvr(architectIvrProxy, d.Id())
 		if err != nil {
 			if isStatus404(resp) {
 				// IVR config deleted
