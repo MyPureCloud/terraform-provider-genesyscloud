@@ -43,6 +43,11 @@ type RefAttrCustomResolver struct {
 	ResolverFunc func(map[string]interface{}, map[string]*ResourceExporter) error
 }
 
+// Allows the definition of a custom resolver for an exporter.
+type CustomFlowResolver struct {
+	ResolverFunc func(map[string]interface{}, string) error
+}
+
 type CustomFileWriterSettings struct {
 	// Custom function for dumping data/media stored in an object in a sub directory along
 	// with the exported config. For example: prompt audio files, csv data, jps/pngs
@@ -105,6 +110,8 @@ type ResourceExporter struct {
 	EncodedRefAttrs map[*JsonEncodeRefAttr]*RefAttrSettings
 
 	CustomFileWriter CustomFileWriterSettings
+
+	CustomFlowResolver map[string]*CustomFlowResolver
 }
 
 func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
@@ -218,6 +225,7 @@ func GetResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_auth_division":                                   authDivisionExporter(),
 		"genesyscloud_auth_role":                                       authRoleExporter(),
 		"genesyscloud_employeeperformance_externalmetrics_definitions": employeeperformanceExternalmetricsDefinitionExporter(),
+		"genesyscloud_externalcontacts_contact":                        externalContactExporter(),
 		"genesyscloud_flow":                                            flowExporter(),
 		"genesyscloud_flow_milestone":                                  flowMilestoneExporter(),
 		"genesyscloud_flow_outcome":                                    flowOutcomeExporter(),
@@ -271,6 +279,7 @@ func GetResourceExporters(filter []string) map[string]*ResourceExporter {
 		"genesyscloud_routing_sms_address":                             routingSmsAddressExporter(),
 		"genesyscloud_routing_utilization":                             routingUtilizationExporter(),
 		"genesyscloud_routing_wrapupcode":                              routingWrapupCodeExporter(),
+		"genesyscloud_script":                                          scriptExporter(),
 		"genesyscloud_telephony_providers_edges_did_pool":              telephonyDidPoolExporter(),
 		"genesyscloud_telephony_providers_edges_edge_group":            edgeGroupExporter(),
 		"genesyscloud_telephony_providers_edges_extension_pool":        telephonyExtensionPoolExporter(),

@@ -82,7 +82,7 @@ func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {
 			return diag.Errorf("Error opening/creating file %s: %v", path, err)
 		}
 
-		v = replaceDecodableStrings(v)
+		v = postProcessHclBytes(v)
 
 		if _, err := f.Write(v); err != nil {
 			return diag.Errorf("Error writing file %s: %v", path, err)

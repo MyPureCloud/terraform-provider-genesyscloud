@@ -8,12 +8,13 @@ import (
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -443,7 +444,7 @@ func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.Grou
 			}
 
 			maxMembersPerRequest := 50
-			chunkedMemberIds := chunkSlice(membersToAdd, maxMembersPerRequest)
+			chunkedMemberIds := utillists.ChunkStringSlice(membersToAdd, maxMembersPerRequest)
 			for _, chunk := range chunkedMemberIds {
 				if err := addGroupMembers(d, chunk, groupsAPI); err != nil {
 					return err

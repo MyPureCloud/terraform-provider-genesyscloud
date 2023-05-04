@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 var (
@@ -73,8 +73,6 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 			}
 		}
 	}
-
-	return resources, nil
 }
 
 func routingEmailRouteExporter() *ResourceExporter {

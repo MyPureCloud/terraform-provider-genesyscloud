@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"testing"
 
@@ -24,7 +25,7 @@ func TestAccDataSourceCampaignRule(t *testing.T) {
 			campaign1Name,
 			"contact-list",
 			"site",
-			"+13178783419",
+			fmt.Sprintf("+131784%v", 10000+rand.Intn(99999-10000)), // append random 5 digit number
 			"car",
 			strconv.Quote("off"),
 			outboundFlowFilePath,
@@ -43,7 +44,7 @@ func TestAccDataSourceCampaignRule(t *testing.T) {
 			campaign2Name,
 			"contact-list-2",
 			"site-2",
-			"+13178781119",
+			fmt.Sprintf("+131785%v", 10000+rand.Intn(99999-10000)), // append random 5 digit number
 			"car-1",
 			strconv.Quote("off"),
 			outboundFlowFilePath,

@@ -2,6 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -10,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 type ivrConfigStruct struct {
@@ -218,6 +220,118 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 	})
 }
 
+func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
+	var (
+		resourceID = "ivr"
+		name       = "TF Test IVR " + uuid.NewString()
+
+		didRangeLength    = 200 // Should be atleast 50 to avoid index out of bounds errors below
+		didPoolResourceId = "did_pool"
+		startNumber       = 35375550120
+		endNumber         = startNumber + didRangeLength
+		startNumberStr    = fmt.Sprintf("+%v", startNumber)
+		endNumberStr      = fmt.Sprintf("+%v", endNumber)
+	)
+
+	/*
+		To avoid clashes, try to get final existing did number and create a pool outside of that range
+		If err is not nil, use the hardcoded phone number variables
+	*/
+	lastNumber, err := getLastDidNumberAsInteger()
+	if err == nil {
+		startNumber = lastNumber + 5
+		endNumber = startNumber + didRangeLength
+		startNumberStr = fmt.Sprintf("+%v", startNumber)
+		endNumberStr = fmt.Sprintf("+%v", endNumber)
+	} else {
+		log.Printf("Failed to get last did number for ivr tests: %v", err)
+	}
+
+	allNumbers := createStringArrayOfPhoneNumbers(startNumber, endNumber)
+
+	didPoolResource := generateDidPoolResource(&didPoolStruct{
+		didPoolResourceId,
+		startNumberStr,
+		endNumberStr,
+		nullValue, // No description
+		nullValue, // No comments
+		nullValue, // No provider
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: didPoolResource + generateIvrConfigResource(&ivrConfigStruct{
+					resourceID:  resourceID,
+					name:        name,
+					description: "",
+					dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+20),
+					depends_on:  "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
+					divisionId:  "",
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+resourceID, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+resourceID, "dnis.#", "20"),
+				),
+			},
+			{
+				Config: didPoolResource + generateIvrConfigResource(&ivrConfigStruct{
+					resourceID:  resourceID,
+					name:        name,
+					description: "",
+					dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+48),
+					depends_on:  "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
+					divisionId:  "",
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+resourceID, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+resourceID, "dnis.#", "48"),
+				),
+			},
+			{
+				Config: didPoolResource + generateIvrConfigResource(&ivrConfigStruct{
+					resourceID:  resourceID,
+					name:        name,
+					description: "",
+					dnis:        createStringArrayOfPhoneNumbers(startNumber, startNumber+12),
+					depends_on:  "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
+					divisionId:  "",
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+resourceID, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+resourceID, "dnis.#", "12"),
+				),
+			},
+			{
+				Config: didPoolResource + generateIvrConfigResource(&ivrConfigStruct{
+					resourceID:  resourceID,
+					name:        name,
+					description: "",
+					dnis:        createStringArrayOfPhoneNumbers(startNumber, endNumber),
+					depends_on:  "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceId,
+					divisionId:  "",
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+resourceID, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+resourceID, "dnis.#", fmt.Sprintf("%v", len(allNumbers))),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_architect_ivr." + resourceID,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: didPoolResource, // Extra step to ensure take-down is done correctly
+			},
+		},
+		CheckDestroy: testVerifyIvrConfigsDestroyed,
+	})
+}
+
 func generateIvrConfigResource(ivrConfig *ivrConfigStruct) string {
 	dnisStrs := make([]string, len(ivrConfig.dnis))
 	for i, val := range ivrConfig.dnis {
@@ -230,10 +344,10 @@ func generateIvrConfigResource(ivrConfig *ivrConfigStruct) string {
 	}
 
 	return fmt.Sprintf(`resource "genesyscloud_architect_ivr" "%s" {
-		name = "%s"
+		name        = "%s"
 		description = "%s"
-		dnis = [%s]
-		depends_on=[%s]
+		dnis        = [%s]
+		depends_on  = [%s]
 		%s
 	}
 	`, ivrConfig.resourceID,
@@ -297,4 +411,67 @@ func hasEmptyDnis(ivrResourceName string) resource.TestCheckFunc {
 
 		return nil
 	}
+}
+
+func createStringArrayOfPhoneNumbers(from, to int) []string {
+	var slice []string
+	for i := 0; i < to-from; i++ {
+		slice = append(slice, fmt.Sprintf("+%v", from+i))
+	}
+	return slice
+}
+
+func getLastDidNumberAsInteger() (int, error) {
+	config := platformclientv2.GetDefaultConfiguration()
+	api := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(config)
+	if err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET")); err != nil {
+		return 0, err
+	}
+
+	// Get the page count
+	result, err := getDidNumbers(api, 1)
+	if err != nil {
+		return 0, err
+	}
+
+	// Get last page
+	lastPage, err := getDidNumbers(api, *result.PageCount)
+	if err != nil {
+		return 0, err
+	}
+
+	var lastNumberString string
+	if lastPage.Entities != nil && len(*lastPage.Entities) > 0 {
+		lastItem := (*lastPage.Entities)[len(*lastPage.Entities)-1]
+		lastNumberString = *lastItem.Number
+	}
+
+	if lastNumberString == "" {
+		return 0, fmt.Errorf("Failed to retrieve last did number")
+	}
+
+	lastNumberString = strings.Replace(lastNumberString, "+", "", -1)
+
+	lastNumberInt, err := strconv.Atoi(lastNumberString)
+	if err != nil {
+		return lastNumberInt, err
+	}
+
+	return lastNumberInt, nil
+}
+
+func getDidNumbers(api *platformclientv2.TelephonyProvidersEdgeApi, pageNumber int) (*platformclientv2.Didnumberentitylisting, error) {
+	var (
+		varType  = "ASSIGNED_AND_UNASSIGNED"
+		pageSize = 100
+		result   *platformclientv2.Didnumberentitylisting
+	)
+	result, response, err := api.GetTelephonyProvidersEdgesDidpoolsDids(varType, []string{}, "", pageSize, pageNumber, "")
+	if err != nil {
+		return result, err
+	}
+	if response.Error != nil {
+		return result, fmt.Errorf("Response error: %v", response.Error)
+	}
+	return result, nil
 }

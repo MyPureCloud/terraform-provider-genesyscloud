@@ -2,14 +2,13 @@ package genesyscloud
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 func TestAccResourceKnowledgeV1DocumentBasic(t *testing.T) {
@@ -27,12 +26,12 @@ func TestAccResourceKnowledgeV1DocumentBasic(t *testing.T) {
 		externalUrl                  = "http://example.com"
 		question                     = "What should I ask?"
 		answer                       = "I don't know"
-		faqAlternatives              = []string{"faq-alt-1", "faq-alt-2"}
-		faqAlternatives2             = []string{"faq-alt-3", "faq-alt-4"}
+		faqAlternatives              = []string{"\"faq-alt-1\"", "\"faq-alt-2\""}
+		faqAlternatives2             = []string{"\"faq-alt-3\"", "\"faq-alt-4\""}
 		title                        = "test-document-title1"
 		title2                       = "test-document-title2"
 		contentLocationUrl           = "http://example.com"
-		articleAlternatives          = []string{"alt1, alt2"}
+		articleAlternatives          = []string{"\"alt1\"", "\"alt2\""}
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -170,13 +169,6 @@ func generateKnowledgeV1DocumentRequestBodyArticle(varType string, externalUrl s
 }
 
 func generateFaq(question string, answer string, alternatives []string) string {
-	formattedAlternatives := ""
-	for i, alternative := range alternatives {
-		if i > 0 {
-			formattedAlternatives += ", "
-		}
-		formattedAlternatives += strconv.Quote(alternative)
-	}
 
 	return fmt.Sprintf(`
         faq {
@@ -186,17 +178,10 @@ func generateFaq(question string, answer string, alternatives []string) string {
         }
         `, question,
 		answer,
-		formattedAlternatives)
+		alternatives)
 }
 
 func generateArticle(title string, contentLocationUrl string, alternatives []string) string {
-	formattedAlternatives := ""
-	for i, alternative := range alternatives {
-		if i > 0 {
-			formattedAlternatives += ", "
-		}
-		formattedAlternatives += strconv.Quote(alternative)
-	}
 
 	return fmt.Sprintf(`
         article {
@@ -206,7 +191,7 @@ func generateArticle(title string, contentLocationUrl string, alternatives []str
         }
         `, title,
 		contentLocationUrl,
-		formattedAlternatives)
+		alternatives)
 }
 
 func testVerifyKnowledgeV1DocumentDestroyed(state *terraform.State) error {

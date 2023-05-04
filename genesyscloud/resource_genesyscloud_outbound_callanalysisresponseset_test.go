@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v95/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
@@ -134,7 +134,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 					outboundFlowFilePath,
 					"",
 					false,
-					generateFlowSubstitutions(map[string]string{
+					generateSubstitutionsMap(map[string]string{
 						"flow_name":          outboundFlowName,
 						"home_division_name": "${data.genesyscloud_auth_division_home.home.name}",
 						"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
