@@ -124,8 +124,18 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 
 func generateUserRoles(resourceID string, userResource string, roles ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user_roles" "%s" {
+		provisioner "local-exec" {
+			command = "sleep 30"
+		  }
 		user_id = genesyscloud_user.%s.id
 		%s
 	}
 	`, resourceID, userResource, strings.Join(roles, "\n"))
+}
+
+func generateSleepTask() string {
+	return fmt.Sprintf(`resource "time_sleep" "%s" {
+		create_duration = "15s"	
+	}
+	`, "sleep_before_role_association")
 }

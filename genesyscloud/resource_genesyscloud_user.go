@@ -489,6 +489,8 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	d.SetId(*user.Id)
 
+	fmt.Println("User Created" + *user.Id)
+
 	// Set attributes that can only be modified in a patch
 	if d.HasChanges(
 		"manager",
