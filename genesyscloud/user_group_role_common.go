@@ -247,6 +247,33 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceID, roleID)
 	}
 }
+
+func validateResourceRoleEmpty(resourceName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		
+		resourceState, ok := state.RootModule().Resources[resourceName]
+		fmt.Println("resourceName " + resourceName)
+
+		if !ok {
+			return fmt.Errorf("Failed to find %s in state", resourceName)
+		}
+		resourceID := resourceState.Primary.ID
+        fmt.Println("resourceID " + resourceID)
+		resourceAttrs := resourceState.Primary.Attributes
+		numRolesAttr, _ := resourceAttrs["roles.#"]
+		numRoles, _ := strconv.Atoi(numRolesAttr)
+
+		fmt.Println(resourceAttrs)
+		fmt.Println(numRolesAttr)
+		fmt.Println(numRoles)
+
+		if numRoles > 0 {
+			return fmt.Errorf("Unexpected Roles found for role %s in state: %v", resourceID, numRolesAttr)
+		}
+		return nil
+	}
+}
+
 func fetchRoleIds(ctx context.Context, d *schema.ResourceData, meta interface{}, roles *schema.Set) *resource.RetryError {
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
@@ -254,6 +281,8 @@ func fetchRoleIds(ctx context.Context, d *schema.ResourceData, meta interface{},
 	domainRoleIds, _, err := getDomainIdRoles(d.Id(), usersApi)
 
 	if err != nil {
+		fmt.Println(err)
+		fmt.Println("user error "+ d.Id())
 			return err
 	}
 
@@ -275,6 +304,8 @@ func fetchRoleIds(ctx context.Context, d *schema.ResourceData, meta interface{},
 			}
 	}
 
+	fmt.Println("user processed "+ d.Id())
+
 	if len(missingroleIDs) > 0 {
 			return resource.RetryableError(fmt.Errorf("The following roles (Ids) are not attached for user id %s: %s", d.Id(), missingroleIDs))
 	}
@@ -288,10 +319,13 @@ func getDomainIdRoles(subjectID string, userAPI *platformclientv2.UsersApi) ([]s
 	data, response, err := userAPI.GetUserRoles(subjectID)
 	if err != nil {
 			if isStatus404(response) {
+					fmt.Println("user not found " + subjectID)
 					return nil, response, resource.NonRetryableError(fmt.Errorf("Failed to get Roles for User %s: %s", subjectID, err))
 			}
 			return nil, response, resource.NonRetryableError(fmt.Errorf("Failed to get Roles for User %s: %s", subjectID, err))
 	}
+
+	fmt.Println("user found " + subjectID)
 
 	if data.Roles != nil {
 			for _, role := range *data.Roles {
@@ -304,6 +338,9 @@ func getDomainIdRoles(subjectID string, userAPI *platformclientv2.UsersApi) ([]s
 					roles = append(roles, *role.Id)
 			}
 	}
+
+	fmt.Println(roles)
+	fmt.Println("data retrieved found " + subjectID)
 
 	return roles, response, nil
 }

@@ -691,6 +691,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user %s", email)
+	fmt.Println("Deleting user " + d.Id())
 	err := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		_, resp, err := usersAPI.DeleteUser(d.Id())
@@ -699,6 +700,8 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return resp, diag.Errorf("Failed to delete user %s: %s", email, err)
 		}
 		log.Printf("Deleted user %s", email)
+		fmt.Println("Deleted user " + d.Id())
+		fmt.Println("Deleted email user " + email)
 		return nil, nil
 	})
 	if err != nil {
