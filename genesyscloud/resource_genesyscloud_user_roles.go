@@ -72,14 +72,15 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 	fmt.Println("Reading roles for user" + d.Id())
 	d.Set("user_id", d.Id())
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+		fmt.Println("Reading roles for user-retry" + d.Id())
 		roles, _, err := readSubjectRoles(d.Id(), authAPI)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("%v", err))
 		}
-		// error := fetchRoleIds(ctx,d,meta,roles)
-		// if error != nil {
-		// 	return error
-		// }
+		error := fetchRoleIds(ctx,d,meta,roles)
+		if error != nil {
+			return error
+		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceUserRoles())
 		d.Set("roles", roles)
 

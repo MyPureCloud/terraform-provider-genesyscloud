@@ -57,7 +57,7 @@ func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationA
 	if err != nil {
 		return nil, resp, err
 	}
-
+	fmt.Println("Grants received for user" + subjectID)
 	roleDivsMap := make(map[string]*schema.Set)
 	for _, grant := range grants {
 		if currentDivs, ok := roleDivsMap[*grant.Role.Id]; ok {
@@ -288,7 +288,7 @@ func getDomainIdRoles(subjectID string, userAPI *platformclientv2.UsersApi) ([]s
 	data, response, err := userAPI.GetUserRoles(subjectID)
 	if err != nil {
 			if isStatus404(response) {
-					return nil, response, resource.RetryableError(fmt.Errorf("Failed to get Roles for User %s: %s", subjectID, err))
+					return nil, response, resource.NonRetryableError(fmt.Errorf("Failed to get Roles for User %s: %s", subjectID, err))
 			}
 			return nil, response, resource.NonRetryableError(fmt.Errorf("Failed to get Roles for User %s: %s", subjectID, err))
 	}
