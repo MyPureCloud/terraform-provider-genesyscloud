@@ -479,7 +479,6 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update knowledge document variation %s: %s", documentVariationId, putErr)
 		}
-
 		if published == true {
 			_, _, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
 
@@ -520,10 +519,24 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	}
 
 	if published == true {
-		_, _, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
+		/*
+		 * If the published flag is set, attempt to publish a new document version without the variation.
+		 * However a document cannot be published if it has no variations, so first check that the document has other variations
+		 * A new document version can only be published if there are other variations than the one being removed
+		 */
+		pageSize := 3
+		variations, _, variationErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, "", "", fmt.Sprintf("%v", pageSize), "Published")
 
-		if versionErr != nil {
-			return diag.Errorf("Failed to publish knowledge document: %s", versionErr)
+		if variationErr != nil {
+			return diag.Errorf("Failed to retrieve knowledge document variations: %s", variationErr)
+		}
+
+		if len(*variations.Entities) > 1 {
+			_, _, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
+
+			if versionErr != nil {
+				return diag.Errorf("Failed to publish knowledge document: %s", versionErr)
+			}
 		}
 	}
 

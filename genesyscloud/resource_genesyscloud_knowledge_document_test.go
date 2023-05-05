@@ -26,6 +26,7 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 		knowledgeDocumentResource1 = "test-knowledge-document1"
 		title                      = "Terraform Knowledge Document"
 		visible                    = true
+		visible2                   = false
 		published                  = false
 		phrase                     = "Terraform Knowledge Document"
 		autocomplete               = true
@@ -105,14 +106,14 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 						categoryName,
 						labelName,
 						title,
-						visible,
+						visible2,
 						published,
 						phrase,
 						autocomplete,
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.title", title),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.visible", fmt.Sprintf("%v", visible)),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.visible", fmt.Sprintf("%v", visible2)),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.alternatives.0.phrase", phrase),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.alternatives.0.autocomplete", fmt.Sprintf("%v", autocomplete)),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.category_name", categoryName),

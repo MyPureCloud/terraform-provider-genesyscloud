@@ -350,6 +350,10 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	id := strings.Split(d.Id(), ",")
 	knowledgeDocumentId := id[0]
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
+	state := "Draft"
+	if d.Get("published").(bool) == true {
+		state = "Published"
+	}
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
@@ -357,7 +361,7 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Updating Knowledge document %s", knowledgeDocumentId)
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Knowledge document version
-		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, "")
+		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read Knowledge document %s: %s", knowledgeDocumentId, getErr)
 		}
