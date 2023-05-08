@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
+    "time"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -48,24 +48,25 @@ func getAssignedGrants(subjectID string, authAPI *platformclientv2.Authorization
 			}
 		}
 	}
-
+    fmt.Printf("Fetched grants for user id: %s, grants: %v, timestamp: %s, CorrelationID: %s\n",subjectID, grants, time.Now().Format("2006-01-02 15:04:05"),resp.CorrelationID )
+	
 	return grants, resp, nil
 }
 
 func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationApi) (*schema.Set, *platformclientv2.APIResponse, diag.Diagnostics) {
-	grants, resp, err := getAssignedGrants(subjectID, authAPI)
-	if err != nil {
-		return nil, resp, err
-	}
-	fmt.Println("Grants received for user" + subjectID)
+    grants, resp, err := getAssignedGrants(subjectID, authAPI)
+    if err != nil {
+        return nil, resp, err
+    }
+    fmt.Println("Grants received for user" + subjectID)
 	roleDivsMap := make(map[string]*schema.Set)
-	for _, grant := range grants {
+    for _, grant := range grants {
 		if currentDivs, ok := roleDivsMap[*grant.Role.Id]; ok {
 			currentDivs.Add(*grant.Division.Id)
-		} else {
+        } else {
 			roleDivsMap[*grant.Role.Id] = schema.NewSet(schema.HashString, []interface{}{*grant.Division.Id})
-		}
-	}
+        }
+    }
 
 	roleSet := schema.NewSet(schema.HashResource(roleAssignmentResource), []interface{}{})
 	for roleID, divs := range roleDivsMap {
@@ -123,15 +124,27 @@ func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *pl
 				// It's possible for a role or division to be removed before this update is processed,
 				// and the bulk remove API returns failure if any roles/divisions no longer exist.
 				// Work around by removing all grants individually and ignore 404s.
+				fmt.Println("grants To Remove " + d.Id())
 				sdkGrantsToRemove := roleDivPairsToGrants(grantsToRemove)
 				for _, grant := range *sdkGrantsToRemove.Grants {
 					resp, err := authAPI.DeleteAuthorizationSubjectDivisionRole(d.Id(), *grant.DivisionId, *grant.RoleId)
 					if err != nil {
+						fmt.Println(d.Id() + " " + *grant.RoleId + " removal failed")
+						fmt.Println(err)
 						if resp == nil || resp.StatusCode != 404 {
+							fmt.Println(err)
+							fmt.Println( d.Id())
+							fmt.Println(resp)
+							fmt.Println(resp.StatusCode)
 							return diag.Errorf("Failed to remove role grants for subject %s: %s", d.Id(), err)
 						}
+					} else {
+						fmt.Println(d.Id() + " " + *grant.RoleId + "removal sucess")
+						fmt.Printf("roles removal call for user id: %s, timestamp: %s, CorrelationID: %s\n", d.Id(),time.Now().Format("2006-01-02 15:04:05"),resp.CorrelationID )
+	
 					}
 				}
+				fmt.Printf("grant roles removed for user id %s , %v\n", d.Id(), sdkGrantsToRemove)
 			}
 
 			grantsToAdd := sliceDifference(configGrants, existingGrants)
@@ -142,13 +155,18 @@ func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *pl
 					if err != nil {
 						return resp, diag.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err)
 					}
+					fmt.Printf("grant roles added for user id %s , %v\n", d.Id(), grantsToAdd)
+					fmt.Printf("roles add call for user id: %s, timestamp: %s, CorrelationID: %s\n", d.Id(),time.Now().Format("2006-01-02 15:04:05"),resp.CorrelationID )
 					return nil, nil
 				})
 				if diagErr != nil {
 					return diagErr
 				}
 			}
+		} else {
+			fmt.Println(d.Id() + " did not eneter rolesconsfig")
 		}
+		
 	}
 	return nil
 }
@@ -278,12 +296,11 @@ func fetchRoleIds(ctx context.Context, d *schema.ResourceData, meta interface{},
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	usersApi := platformclientv2.NewUsersApiWithConfig(sdkConfig)
-	domainRoleIds, _, err := getDomainIdRoles(d.Id(), usersApi)
+	domainRoleIds, resp, err := getDomainIdRoles(d.Id(), usersApi)
 
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println("user error "+ d.Id())
-			return err
+		fmt.Printf("error fetching for domainRoles : %s, err: %v\n", d.Id(), err)
+		return err
 	}
 
 	roleSlice := roles.List()
@@ -292,6 +309,8 @@ func fetchRoleIds(ctx context.Context, d *schema.ResourceData, meta interface{},
 	for _, id := range domainRoleIds {
 			// search for the id in the set of maps
 			found := false
+			fmt.Printf("roles from grants getAssignedGrants webapicall for user id: %s, roles: %v\n", d.Id(), roleSlice)
+			fmt.Printf("roles from domain GetUserRoles webapicall for user id: %s, roles: %v\n", d.Id(), domainRoleIds)
 			for _, roleElem := range roleSlice {
 					role := roleElem.(map[string]interface{})
 					if role["role_id"].(string) == id {
@@ -304,8 +323,7 @@ func fetchRoleIds(ctx context.Context, d *schema.ResourceData, meta interface{},
 			}
 	}
 
-	fmt.Println("user processed "+ d.Id())
-
+    fmt.Printf("Domainroles call for user id: %s, missedroles: %v, timestamp: %s, CorrelationID: %s\n", d.Id(), missingroleIDs,time.Now().Format("2006-01-02 15:04:05"),resp.CorrelationID )
 	if len(missingroleIDs) > 0 {
 			return resource.RetryableError(fmt.Errorf("The following roles (Ids) are not attached for user id %s: %s", d.Id(), missingroleIDs))
 	}
@@ -319,28 +337,30 @@ func getDomainIdRoles(subjectID string, userAPI *platformclientv2.UsersApi) ([]s
 	data, response, err := userAPI.GetUserRoles(subjectID)
 	if err != nil {
 			if isStatus404(response) {
-					fmt.Println("user not found " + subjectID)
-					return nil, response, resource.NonRetryableError(fmt.Errorf("Failed to get Roles for User %s: %s", subjectID, err))
+					fmt.Println("user not found " + subjectID  + "CorrelationID" + response.CorrelationID + time.Now().Format("2006-01-02 15:04:05.000"))
+					return nil, response, resource.RetryableError(fmt.Errorf("Failed to get Roles for User %s: %s", subjectID, err))
 			}
+			fmt.Println("error calling GetUserRoles " + subjectID  + time.Now().Format("2006-01-02 15:04:05.000"))
 			return nil, response, resource.NonRetryableError(fmt.Errorf("Failed to get Roles for User %s: %s", subjectID, err))
 	}
-
-	fmt.Println("user found " + subjectID)
-
-	if data.Roles != nil {
-			for _, role := range *data.Roles {
+	
+	if data != nil && data.Roles != nil {
+		for _, role := range *data.Roles {
+				if role.Id != nil {
 					roles = append(roles, *role.Id)
 			}
+		}
 	}
 
-	if data.UnusedRoles != nil {
+	if data != nil && data.UnusedRoles != nil {
 			for _, role := range *data.UnusedRoles {
+				if role.Id != nil {
 					roles = append(roles, *role.Id)
 			}
+		}
 	}
 
-	fmt.Println(roles)
-	fmt.Println("data retrieved found " + subjectID)
+
 
 	return roles, response, nil
 }

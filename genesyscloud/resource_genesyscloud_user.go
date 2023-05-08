@@ -690,8 +690,8 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
-	log.Printf("Deleting user %s", email)
-	fmt.Println("Deleting user " + d.Id())
+	log.Printf("Deleting user %s", email +  time.Now().Format("2006-01-02 15:04:05"))
+	fmt.Println("Deleting user " + d.Id() + time.Now().Format("2006-01-02 15:04:05.000"))
 	err := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		_, resp, err := usersAPI.DeleteUser(d.Id())
@@ -700,8 +700,9 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return resp, diag.Errorf("Failed to delete user %s: %s", email, err)
 		}
 		log.Printf("Deleted user %s", email)
-		fmt.Println("Deleted user " + d.Id())
-		fmt.Println("Deleted email user " + email)
+		fmt.Println("Deleted user " + d.Id() +  time.Now().Format("2006-01-02 15:04:05.000"))
+		fmt.Printf("Deleted user: %s, timestamp: %s, CorrelationID: %s\n",d.Id(), time.Now().Format("2006-01-02 15:04:05"),resp.CorrelationID)
+	
 		return nil, nil
 	})
 	if err != nil {
