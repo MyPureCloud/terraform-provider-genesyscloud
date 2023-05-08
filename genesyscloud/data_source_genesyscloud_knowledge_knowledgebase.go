@@ -50,7 +50,7 @@ func dataSourceKnowledgeKnowledgebaseRead(ctx context.Context, d *schema.Resourc
 				return resource.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getPublishedErr))
 			}
 			if getUnpublishedErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getPublishedErr))
+				return resource.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getUnpublishedErr))
 			}
 
 			noPublishedEntities := publishedKnowledgeBases.Entities == nil || len(*publishedKnowledgeBases.Entities) == 0

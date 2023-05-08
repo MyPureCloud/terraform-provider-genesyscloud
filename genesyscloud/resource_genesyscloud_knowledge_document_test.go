@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -14,24 +13,23 @@ import (
 
 func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 	var (
-		knowledgeBaseResource1       = "test-knowledgebase1"
-		knowledgeCategoryResource1   = "test-category1"
-		knowledgeCategoryName        = "Terraform Knowledge Category " + uuid.NewString()
-		knowledgeCategoryDescription = "test-knowledge-category-description1"
-		knowledgeBaseName1           = "Terraform Knowledge Base " + uuid.NewString()
-		knowledgeBaseDescription1    = "test-knowledgebase-description1"
-		knowledgeBaseCoreLanguage1   = "en-US"
-		knowledgeDocumentResource1   = "test-knowledge-document1"
-		varType1                     = "Faq"
-		externalUrl                  = "http://example.com"
-		question                     = "What should I ask?"
-		answer                       = "I don't know"
-		faqAlternatives              = []string{"faq-alt-1", "faq-alt-2"}
-		faqAlternatives2             = []string{"faq-alt-3", "faq-alt-4"}
-		title                        = "test-document-title1"
-		title2                       = "test-document-title2"
-		contentLocationUrl           = "http://example.com"
-		articleAlternatives          = []string{"alt1, alt2"}
+		knowledgeBaseResource1     = "test-knowledgebase1"
+		categoryResource1          = "test-category1"
+		categoryName               = "Terraform Knowledge Category " + uuid.NewString()
+		categoryDescription        = "test-knowledge-category-description1"
+		labelResource1             = "test-label1"
+		labelName                  = "Terraform Knowledge Label " + uuid.NewString()
+		labelColor                 = "#0F0F0F"
+		knowledgeBaseName1         = "Terraform Knowledge Base " + uuid.NewString()
+		knowledgeBaseDescription1  = "test-knowledgebase-description1"
+		coreLanguage1              = "en-US"
+		knowledgeDocumentResource1 = "test-knowledge-document1"
+		title                      = "Terraform Knowledge Document"
+		visible                    = true
+		visible2                   = false
+		published                  = false
+		phrase                     = "Terraform Knowledge Document"
+		autocomplete               = true
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -44,36 +42,40 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
-					knowledgeBaseCoreLanguage1,
+					coreLanguage1,
 				) +
-					generateKnowledgeCategory(
-						knowledgeCategoryResource1,
+					generateKnowledgeCategoryResource(
+						categoryResource1,
 						knowledgeBaseResource1,
-						knowledgeBaseCoreLanguage1,
-						knowledgeCategoryName,
-						knowledgeCategoryDescription,
+						categoryName,
+						categoryDescription,
 					) +
-					generateKnowledgeDocument(
-						knowledgeDocumentResource1,
-						knowledgeCategoryResource1,
+					generateKnowledgeLabelResource(
+						labelResource1,
 						knowledgeBaseResource1,
-						knowledgeBaseCoreLanguage1,
-						varType1,
-						externalUrl,
-						question,
-						answer,
-						faqAlternatives,
+						labelName,
+						labelColor,
+					) +
+					generateKnowledgeDocumentResource(
+						knowledgeDocumentResource1,
+						knowledgeBaseResource1,
+						categoryResource1,
+						labelResource1,
+						categoryName,
+						labelName,
 						title,
-						contentLocationUrl,
-						articleAlternatives,
+						visible,
+						published,
+						phrase,
+						autocomplete,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.type", varType1),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.external_url", externalUrl),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.faq.0.question", question),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.faq.0.answer", answer),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.faq.0.alternatives.0", faqAlternatives[0]),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.categories.0", knowledgeCategoryName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.title", title),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.visible", fmt.Sprintf("%v", visible)),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.alternatives.0.phrase", phrase),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.alternatives.0.autocomplete", fmt.Sprintf("%v", autocomplete)),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.label_names.0", labelName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.category_name", categoryName),
 				),
 			},
 			{
@@ -82,36 +84,40 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
-					knowledgeBaseCoreLanguage1,
+					coreLanguage1,
 				) +
-					generateKnowledgeCategory(
-						knowledgeCategoryResource1,
+					generateKnowledgeCategoryResource(
+						categoryResource1,
 						knowledgeBaseResource1,
-						knowledgeBaseCoreLanguage1,
-						knowledgeCategoryName,
-						knowledgeCategoryDescription,
+						categoryName,
+						categoryDescription,
 					) +
-					generateKnowledgeDocument(
-						knowledgeDocumentResource1,
-						knowledgeCategoryResource1,
+					generateKnowledgeLabelResource(
+						labelResource1,
 						knowledgeBaseResource1,
-						knowledgeBaseCoreLanguage1,
-						varType1,
-						externalUrl,
-						question,
-						answer,
-						faqAlternatives2,
-						title2,
-						contentLocationUrl,
-						articleAlternatives,
+						labelName,
+						labelColor,
+					) +
+					generateKnowledgeDocumentResource(
+						knowledgeDocumentResource1,
+						knowledgeBaseResource1,
+						categoryResource1,
+						labelResource1,
+						categoryName,
+						labelName,
+						title,
+						visible2,
+						published,
+						phrase,
+						autocomplete,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.type", varType1),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.external_url", externalUrl),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.faq.0.question", question),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.faq.0.answer", answer),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.faq.0.alternatives.0", faqAlternatives2[0]),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.categories.0", knowledgeCategoryName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.title", title),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.visible", fmt.Sprintf("%v", visible2)),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.alternatives.0.phrase", phrase),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.alternatives.0.autocomplete", fmt.Sprintf("%v", autocomplete)),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.category_name", categoryName),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResource1, "knowledge_document.0.label_names.0", labelName),
 				),
 			},
 			{
@@ -125,92 +131,87 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeDocument(resourceName string, knowledgeCategoryResourceName string, knowledgeBaseResourceName string, languageCode string, varType string, externalUrl string, question string, answer string, faqAlternatives []string, title string, contentLocationUrl string, articleAlternatives []string) string {
+func generateKnowledgeDocumentResource(resourceName string, knowledgeBaseResourceName string, knowledgeCategoryResourceName string, knowledgeLabelResourceName string, knowledgeCategoryName string, knowledgeLabelName string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
 	document := fmt.Sprintf(`
         resource "genesyscloud_knowledge_document" "%s" {
+			depends_on=[genesyscloud_knowledge_category.%s, genesyscloud_knowledge_label.%s]
             knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
-            language_code = "%s"
+            published = %v
             %s
         }
         `, resourceName,
+		knowledgeCategoryResourceName,
+		knowledgeLabelResourceName,
 		knowledgeBaseResourceName,
-		languageCode,
-		generateKnowledgeDocumentRequestBodyFaq(varType, externalUrl, question, answer, faqAlternatives, knowledgeCategoryResourceName),
+		published,
+		generateKnowledgeDocumentRequestBody(knowledgeCategoryName, knowledgeLabelName, title, visible, phrase, autocomplete),
 	)
 	return document
 }
 
-func generateKnowledgeDocumentRequestBodyFaq(varType string, externalUrl string, question string, answer string, faqAlternatives []string, knowledgeCategoryResourceName string) string {
-	return fmt.Sprintf(`
-        knowledge_document {
-            type = "%s"
-            external_url = "%s"
+func generateKnowledgeDocumentBasic(resourceName string, knowledgeBaseResourceName string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
+	document := fmt.Sprintf(`
+        resource "genesyscloud_knowledge_document" "%s" {
+            knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
+            published = %v
             %s
-            categories = [genesyscloud_knowledge_category.%s.knowledge_category.0.name]
         }
-        `, varType,
-		externalUrl,
-		generateFaq(question, answer, faqAlternatives),
-		knowledgeCategoryResourceName)
+        `, resourceName,
+		knowledgeBaseResourceName,
+		published,
+		generateKnowledgeDocumentRequestBodyBasic(title, visible, phrase, autocomplete),
+	)
+	return document
 }
 
-func generateKnowledgeDocumentRequestBodyArticle(varType string, externalUrl string, title string, contentLocationUrl string, alternatives []string, knowledgeCategoryResourceName []string) string {
-	return fmt.Sprintf(`
+func generateKnowledgeDocumentRequestBodyBasic(title string, visible bool, phrase string, autocomplete bool) string {
+
+	documentRequestBody := fmt.Sprintf(`
         knowledge_document {
-            type = "%s"
-            external_url = "%s"
-            %s
-            categories = [genesyscloud_knowledge_category.%s.knowledge_category.0.name]
-        }
-        `, varType,
-		externalUrl,
-		generateArticle(title, contentLocationUrl, alternatives),
-		knowledgeCategoryResourceName)
-}
-
-func generateFaq(question string, answer string, alternatives []string) string {
-	formattedAlternatives := ""
-	for i, alternative := range alternatives {
-		if i > 0 {
-			formattedAlternatives += ", "
+			title = "%s"
+			visible = %v
+			%s
 		}
-		formattedAlternatives += strconv.Quote(alternative)
-	}
-
-	return fmt.Sprintf(`
-        faq {
-            question = "%s"
-            answer = "%s"
-            alternatives = [%s]
-        }
-        `, question,
-		answer,
-		formattedAlternatives)
-}
-
-func generateArticle(title string, contentLocationUrl string, alternatives []string) string {
-	formattedAlternatives := ""
-	for i, alternative := range alternatives {
-		if i > 0 {
-			formattedAlternatives += ", "
-		}
-		formattedAlternatives += strconv.Quote(alternative)
-	}
-
-	return fmt.Sprintf(`
-        article {
-            title = "%s"
-            content_location_url = "%s"
-            alternatives = [%s]
-        }
         `, title,
-		contentLocationUrl,
-		formattedAlternatives)
+		visible,
+		generateKnowledgeDocumentAlternatives(phrase, autocomplete),
+	)
+	return documentRequestBody
+}
+
+func generateKnowledgeDocumentRequestBody(knowledgeCategoryName string, knowledgeLabelName string, title string, visible bool, phrase string, autocomplete bool) string {
+
+	documentRequestBody := fmt.Sprintf(`
+        knowledge_document {
+			title = "%s"
+			visible = %v
+			%s
+			category_name = "%s"
+			label_names = ["%s"]
+		}
+        `, title,
+		visible,
+		generateKnowledgeDocumentAlternatives(phrase, autocomplete),
+		knowledgeCategoryName,
+		knowledgeLabelName,
+	)
+	return documentRequestBody
+}
+
+func generateKnowledgeDocumentAlternatives(phrase string, autocomplete bool) string {
+	alternatives := fmt.Sprintf(`
+        alternatives {
+			phrase = "%s"
+			autocomplete = %v
+		}
+        `, phrase,
+		autocomplete,
+	)
+	return alternatives
 }
 
 func testVerifyKnowledgeDocumentDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
-	knowledgeBaseCoreLanguage1 := "en-US"
 	var knowledgeBaseId string
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_knowledge_knowledgebase" {
@@ -224,7 +225,7 @@ func testVerifyKnowledgeDocumentDestroyed(state *terraform.State) error {
 		}
 		id := strings.Split(rs.Primary.ID, " ")
 		knowledgeDocumentId := id[0]
-		knowledgeDocument, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, knowledgeBaseCoreLanguage1)
+		knowledgeDocument, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, "")
 		if knowledgeDocument != nil {
 			return fmt.Errorf("Knowledge document (%s) still exists", knowledgeDocumentId)
 		} else if isStatus404(resp) || isStatus400(resp) {

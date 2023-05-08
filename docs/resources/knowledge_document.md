@@ -11,31 +11,28 @@ Genesys Cloud Knowledge document
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/languages/{languageCode}/documents](https://developer.genesys.cloud/api/rest/v2/knowledge/#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--languages--languageCode--documents)
-* [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/languages/{languageCode}/documents](https://developer.genesys.cloud/api/rest/v2/knowledge/#post-api-v2-knowledge-knowledgebases--knowledgeBaseId--languages--languageCode--documents)
-* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/languages/{languageCode}/documents/{documentId}](https://developer.mypurecloud.com/api/rest/v2/knowledge/#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--languages--languageCode--documents--documentId-)
-* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/languages/{languageCode}/documents](https://developer.mypurecloud.com/api/rest/v2/knowledge/#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId--languages--languageCode--documents)
-* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/languages/{languageCode}/documents/{documentId}](https://developer.mypurecloud.com/api/rest/v2/knowledge/#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId--languages--languageCode--documents--documentId-)
-* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/languages/{languageCode}/categories](https://developer.genesys.cloud/api/rest/v2/knowledge/#post-api-v2-knowledge-knowledgebases--knowledgeBaseId--languages--languageCode--categories)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents)
+* [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
+* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
+* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
+* [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--versions)
 
 ## Example Usage
 
 ```terraform
 resource "genesyscloud_knowledge_document" "example_document" {
   knowledge_base_id = genesyscloud_knowledge.example_knowledgebase.id
-  language_code     = "en-US"
+  published         = true
   knowledge_document {
-    type         = "Faq"
-    external_url = "https://www.example.com/"
-    faq {
-      question = "What are the 4 pillars of OOP?"
-      alternatives = [
-        "What are the pillars of OOP",
-        "What are the four pillars of object oriented programming?",
-        "What are the principles of object oriented programming?",
-      ]
-      answer = "Abstraction, Encapsulation, Inheritance, Polymorphism"
+    title   = "Document Title"
+    visible = true
+    alternatives {
+      phrase       = "document phrase"
+      autocomplete = true
     }
+    category_name = "ExampleCategory"
+    label_names   = ["ExampleLabel"]
   }
 }
 ```
@@ -47,7 +44,7 @@ resource "genesyscloud_knowledge_document" "example_document" {
 
 - `knowledge_base_id` (String) Knowledge base id
 - `knowledge_document` (Block List, Min: 1, Max: 1) Knowledge document request body (see [below for nested schema](#nestedblock--knowledge_document))
-- `language_code` (String) Language code
+- `published` (Boolean) If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.
 
 ### Read-Only
 
@@ -56,30 +53,25 @@ resource "genesyscloud_knowledge_document" "example_document" {
 <a id="nestedblock--knowledge_document"></a>
 ### Nested Schema for `knowledge_document`
 
-Optional:
+Required:
 
-- `article` (Block List, Max: 1) Article details (see [below for nested schema](#nestedblock--knowledge_document--article))
-- `categories` (Set of String) List of knowledge base category names for the document
-- `external_url` (String) External Url to the document
-- `faq` (Block List, Max: 1) Faq document details (see [below for nested schema](#nestedblock--knowledge_document--faq))
-- `type` (String) Document type according to assigned template
-
-<a id="nestedblock--knowledge_document--article"></a>
-### Nested Schema for `knowledge_document.article`
+- `title` (String) Document title
+- `visible` (Boolean) Indicates if the knowledge document should be included in search results.
 
 Optional:
 
-- `alternatives` (Set of String) List of Alternative questions related to the title which helps in improving the likelihood of a match to user query.
-- `content_location_url` (String) Presigned URL to retrieve the document content.
-- `title` (String) The title of the Article.
+- `alternatives` (Block List) List of alternate phrases related to the title which improves search results. (see [below for nested schema](#nestedblock--knowledge_document--alternatives))
+- `category_name` (String) The name of the category associated with the document.
+- `label_names` (List of String) The names of labels associated with the document.
 
+<a id="nestedblock--knowledge_document--alternatives"></a>
+### Nested Schema for `knowledge_document.alternatives`
 
-<a id="nestedblock--knowledge_document--faq"></a>
-### Nested Schema for `knowledge_document.faq`
+Required:
+
+- `phrase` (String) Alternate phrasing to the document title.
 
 Optional:
 
-- `alternatives` (Set of String) List of Alternative questions related to the answer which helps in improving the likelihood of a match to user query
-- `answer` (String) The answer for this FAQ
-- `question` (String) The question for this FAQ
+- `autocomplete` (Boolean) Autocomplete enabled for the alternate phrase.
 

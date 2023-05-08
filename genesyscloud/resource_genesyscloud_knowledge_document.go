@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -20,76 +18,47 @@ import (
 var (
 	knowledgeDocument = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"type": {
-				Description:  "Document type according to assigned template",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Faq", "Article"}, false),
-			},
-			"external_url": {
-				Description: "External Url to the document",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"faq": {
-				Description: "Faq document details",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        documentFaq,
-			},
-			"categories": {
-				Description: "List of knowledge base category names for the document",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"article": {
-				Description: "Article details",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        documentArticle,
-			},
-		},
-	}
-	documentFaq = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"question": {
-				Description: "The question for this FAQ",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"answer": {
-				Description: "The answer for this FAQ",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"alternatives": {
-				Description: "List of Alternative questions related to the answer which helps in improving the likelihood of a match to user query",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-		},
-	}
-	documentArticle = &schema.Resource{
-		Schema: map[string]*schema.Schema{
 			"title": {
-				Description: "The title of the Article.",
+				Description: "Document title",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
-			"content_location_url": {
-				Description: "Presigned URL to retrieve the document content.",
-				Type:        schema.TypeString,
-				Optional:    true,
+			"visible": {
+				Description: "Indicates if the knowledge document should be included in search results.",
+				Type:        schema.TypeBool,
+				Required:    true,
 			},
 			"alternatives": {
-				Description: "List of Alternative questions related to the title which helps in improving the likelihood of a match to user query.",
-				Type:        schema.TypeSet,
+				Description: "List of alternate phrases related to the title which improves search results.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        documentAlternative,
+			},
+			"category_name": {
+				Description: "The name of the category associated with the document.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"label_names": {
+				Description: "The names of labels associated with the document.",
+				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+		},
+	}
+
+	documentAlternative = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"phrase": {
+				Description: "Alternate phrasing to the document title.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"autocomplete": {
+				Description: "Autocomplete enabled for the alternate phrase.",
+				Type:        schema.TypeBool,
+				Optional:    true,
 			},
 		},
 	}
@@ -117,7 +86,7 @@ func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.
 	for _, knowledgeBase := range knowledgeBaseList {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocuments(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", "", "", fmt.Sprintf("%v", pageSize), "", "", "", "", nil)
+			knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil)
 			if getErr != nil {
 				return nil, diag.Errorf("Failed to get page of Knowledge documents: %v", getErr)
 			}
@@ -126,8 +95,8 @@ func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.
 				break
 			}
 			for _, knowledgeDocument := range *knowledgeDocuments.Entities {
-				id := fmt.Sprintf("%s %s %s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.LanguageCode)
-				resources[id] = &ResourceMeta{Name: *knowledgeDocument.Name}
+				id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
+				resources[id] = &ResourceMeta{Name: *knowledgeDocument.Title}
 			}
 		}
 	}
@@ -162,12 +131,6 @@ func resourceKnowledgeDocument() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"language_code": {
-				Description:  "Language code",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"en-US", "en-UK", "en-AU", "de-DE", "es-US", "es-ES", "fr-FR", "pt-BR", "nl-NL", "it-IT", "fr-CA"}, false),
-			},
 			"knowledge_document": {
 				Description: "Knowledge document request body",
 				Type:        schema.TypeList,
@@ -175,178 +138,141 @@ func resourceKnowledgeDocument() *schema.Resource {
 				Required:    true,
 				Elem:        knowledgeDocument,
 			},
+			"published": {
+				Description: "If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.",
+				Type:        schema.TypeBool,
+				Required:    true,
+			},
 		},
 	}
 }
 
-func buildFaq(requestBody map[string]interface{}) *platformclientv2.Documentfaq {
-	faqIn := requestBody["faq"]
+func buildDocumentAlternatives(requestIn map[string]interface{}, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string) *[]platformclientv2.Knowledgedocumentalternative {
+	if alternativesIn, ok := requestIn["alternatives"].([]interface{}); ok {
+		alternativesOut := make([]platformclientv2.Knowledgedocumentalternative, 0)
 
-	if faqIn == nil || len(faqIn.([]interface{})) <= 0 {
-		return nil
-	}
+		for _, alternative := range alternativesIn {
+			alternativeMap := alternative.(map[string]interface{})
+			phrase := alternativeMap["phrase"].(string)
+			autocomplete := alternativeMap["autocomplete"].(bool)
 
-	faqOut := platformclientv2.Documentfaq{}
-	temp := faqIn.([]interface{})[0].(map[string]interface{})
-	if question, ok := temp["question"].(string); ok && question != "" {
-		faqOut.Question = &question
+			alternativeOut := platformclientv2.Knowledgedocumentalternative{
+				Phrase:       &phrase,
+				Autocomplete: &autocomplete,
+			}
+
+			alternativesOut = append(alternativesOut, alternativeOut)
+		}
+
+		return &alternativesOut
 	}
-	if answer, ok := temp["answer"].(string); ok && answer != "" {
-		faqOut.Answer = &answer
-	}
-	if alternatives, ok := temp["alternatives"].(*schema.Set); ok {
-		faqOut.Alternatives = setToStringList(alternatives)
-	}
-	return &faqOut
+	return nil
 }
 
-func buildCategories(requestBody map[string]interface{}, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string, languageCode string) (*[]platformclientv2.Documentcategoryinput, diag.Diagnostics) {
-	if requestBody["categories"] == nil {
-		return nil, nil
+func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string) platformclientv2.Knowledgedocumentreq {
+	requestIn := d.Get("knowledge_document").([]interface{})[0].(map[string]interface{})
+	title := requestIn["title"].(string)
+	visible := requestIn["visible"].(bool)
+
+	requestOut := platformclientv2.Knowledgedocumentreq{
+		Title:        &title,
+		Visible:      &visible,
+		Alternatives: buildDocumentAlternatives(requestIn, knowledgeAPI, knowledgeBaseId),
 	}
 
-	categories := make([]platformclientv2.Documentcategoryinput, 0)
-
-	categoryList := setToStringList(requestBody["categories"].(*schema.Set))
-	for _, categoryName := range *categoryList {
-		pageSize := 100
-		knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategories(knowledgeBaseId, languageCode, "", "", "", fmt.Sprintf("%v", pageSize), categoryName)
+	if categoryName, ok := requestIn["category_name"].(string); ok && categoryName != "" {
+		pageSize := 1
+		knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), "", false, categoryName, "", "", false)
 
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge categories: %v", getErr)
+			fmt.Errorf("Failed to get page of knowledge categories: %v", getErr)
+		} else if len(*knowledgeCategories.Entities) > 0 {
+			matchingCategory := (*knowledgeCategories.Entities)[0]
+			requestOut.CategoryId = matchingCategory.Id
 		}
+	}
+	if labelNames, ok := requestIn["label_names"].([]interface{}); ok && labelNames != nil {
+		labelStringList := InterfaceListToStrings(labelNames)
+		pageSize := 1
+		labelIds := make([]string, 0)
+		for _, labelName := range labelStringList {
+			knowledgeLabels, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), labelName, false)
 
-		matchingCategory := (*knowledgeCategories.Entities)[0]
-		category := platformclientv2.Documentcategoryinput{
-			Id: matchingCategory.Id,
+			if getErr != nil {
+				fmt.Errorf("Failed to get page of knowledge labels: %v", getErr)
+			} else if len(*knowledgeLabels.Entities) > 0 {
+				matchingLabel := (*knowledgeLabels.Entities)[0]
+				labelIds = append(labelIds, *matchingLabel.Id)
+			}
 		}
-
-		categories = append(categories, category)
-	}
-
-	return &categories, nil
-}
-
-func buildArticle(requestBody map[string]interface{}) *platformclientv2.Documentarticle {
-	articleIn := requestBody["article"]
-	if articleIn == nil || len(articleIn.([]interface{})) <= 0 {
-		return nil
-	}
-
-	articleOut := platformclientv2.Documentarticle{}
-
-	temp := articleIn.([]interface{})[0].(map[string]interface{})
-	if title, ok := temp["title"].(string); ok && title != "" {
-		articleOut.Title = &title
-	}
-	if contentLocationUrl, ok := temp["content_location_url"].(string); ok {
-		articleContentBody := platformclientv2.Articlecontentbody{
-			LocationUrl: &contentLocationUrl,
-		}
-		articleContent := platformclientv2.Articlecontent{
-			Body: &articleContentBody,
-		}
-		articleOut.Content = &articleContent
-	}
-	if alternatives, ok := temp["alternatives"].(*schema.Set); ok {
-		articleOut.Alternatives = setToStringList(alternatives)
-	}
-
-	return &articleOut
-}
-
-func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string, languageCode string) platformclientv2.Knowledgedocumentrequest {
-	requestIn := d.Get("knowledge_document").([]interface{})[0].(map[string]interface{})
-	categories, _ := buildCategories(requestIn, knowledgeAPI, knowledgeBaseId, languageCode)
-	requestOut := platformclientv2.Knowledgedocumentrequest{
-		Faq:        buildFaq(requestIn),
-		Categories: categories,
-		Article:    buildArticle(requestIn),
-	}
-
-	if externalUrl, ok := requestIn["external_url"].(string); ok && externalUrl != "" {
-		requestOut.ExternalUrl = &externalUrl
-	}
-	if varType, ok := requestIn["type"].(string); ok && varType != "" {
-		requestOut.VarType = &varType
+		requestOut.LabelIds = &labelIds
 	}
 
 	return requestOut
 }
 
-func flattenKnowledgeDocument(document *platformclientv2.Knowledgedocument) []interface{} {
-	if document == nil {
+func flattenDocumentAlternatives(alternativesIn *[]platformclientv2.Knowledgedocumentalternative) []interface{} {
+	if alternativesIn == nil || len(*alternativesIn) == 0 {
 		return nil
 	}
 
-	documentMap := make(map[string]interface{})
+	alternativesOut := make([]interface{}, 0)
 
-	documentMap["categories"] = flattenCategories(document.Categories)
-	documentMap["faq"] = flattenFaq(document.Faq)
-	documentMap["article"] = flattenArticle(document.Article)
+	for _, alternativeIn := range *alternativesIn {
+		alternativeOut := make(map[string]interface{})
 
-	if document.VarType != nil {
-		documentMap["type"] = *document.VarType
+		if alternativeIn.Phrase != nil {
+			alternativeOut["phrase"] = *alternativeIn.Phrase
+		}
+		if alternativeIn.Autocomplete != nil {
+			alternativeOut["autocomplete"] = *alternativeIn.Autocomplete
+		}
+		alternativesOut = append(alternativesOut, alternativeOut)
 	}
-	if document.ExternalUrl != nil {
-		documentMap["external_url"] = *document.ExternalUrl
-	}
 
-	return []interface{}{documentMap}
+	return alternativesOut
 }
 
-func flattenFaq(faq *platformclientv2.Documentfaq) []interface{} {
-	if faq == nil {
+func flattenKnowledgeDocument(documentIn *platformclientv2.Knowledgedocumentresponse, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string) []interface{} {
+	if documentIn == nil {
 		return nil
 	}
 
-	faqMap := make(map[string]interface{})
-	if faq.Question != nil {
-		faqMap["question"] = faq.Question
-	}
-	if faq.Answer != nil {
-		faqMap["answer"] = faq.Answer
-	}
-	if faq.Alternatives != nil {
-		faqMap["alternatives"] = stringListToSet(*faq.Alternatives)
-	}
+	documentOut := make(map[string]interface{})
 
-	return []interface{}{faqMap}
-}
+	documentOut["alternatives"] = flattenDocumentAlternatives(documentIn.Alternatives)
 
-func flattenArticle(article *platformclientv2.Documentarticle) []interface{} {
-	if article == nil {
-		return nil
+	if documentIn.Title != nil {
+		documentOut["title"] = *documentIn.Title
 	}
-
-	articleMap := make(map[string]interface{})
-	if article.Title != nil {
-		articleMap["title"] = article.Title
+	if documentIn.Visible != nil {
+		documentOut["visible"] = *documentIn.Visible
 	}
-	if article.Content != nil && article.Content.Body != nil && article.Content.Body.LocationUrl != nil {
-		articleMap["content_location_url"] = article.Content.Body.LocationUrl
-	}
-	if article.Alternatives != nil {
-		articleMap["alternatives"] = stringListToSet(*article.Alternatives)
-	}
+	if documentIn.Category != nil {
+		// use the id to retrieve the category name
+		knowledgeCategory, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, *documentIn.Category.Id)
 
-	return []interface{}{articleMap}
-}
-
-func flattenCategories(categories *[]platformclientv2.Knowledgecategory) *schema.Set {
-	if categories == nil {
-		return nil
-	}
-
-	categoryList := make([]string, 0)
-
-	for _, category := range *categories {
-		if category.Id != nil {
-			categoryList = append(categoryList, *category.Name)
+		if getErr != nil {
+			fmt.Errorf("Failed to get knowledge category: %v", getErr)
+		} else if knowledgeCategory.Name != nil {
+			documentOut["category_name"] = knowledgeCategory.Name
 		}
 	}
+	if documentIn.Labels != nil && len(*documentIn.Labels) > 0 {
+		labelNames := make([]string, 0)
+		for _, label := range *documentIn.Labels {
+			knowledgeLabel, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, *label.Id)
 
-	return stringListToSet(categoryList)
+			if getErr != nil {
+				fmt.Errorf("Failed to get knowledge label: %v", getErr)
+			} else if knowledgeLabel.Name != nil {
+				labelNames = append(labelNames, *knowledgeLabel.Name)
+			}
+		}
+		documentOut["label_names"] = labelNames
+	}
+
+	return []interface{}{documentOut}
 }
 
 func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -354,16 +280,24 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
-	languageCode := d.Get("language_code").(string)
-	body := buildKnowledgeDocumentRequest(d, knowledgeAPI, knowledgeBaseId, languageCode)
+	published := d.Get("published").(bool)
+	body := buildKnowledgeDocumentRequest(d, knowledgeAPI, knowledgeBaseId)
 
 	log.Printf("Creating knowledge document")
-	knowledgeDocument, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseLanguageDocuments(knowledgeBaseId, languageCode, body)
+	knowledgeDocument, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseDocuments(knowledgeBaseId, body)
+
 	if err != nil {
 		return diag.Errorf("Failed to create knowledge document: %s", err)
 	}
 
-	id := fmt.Sprintf("%s %s %s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.LanguageCode)
+	if published == true {
+		_, _, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, *knowledgeDocument.Id, platformclientv2.Knowledgedocumentversion{})
+		if versionErr != nil {
+			return diag.Errorf("Failed to publish knowledge document: %s", versionErr)
+		}
+	}
+
+	id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, knowledgeBaseId)
 	d.SetId(id)
 
 	log.Printf("Created knowledge document %s", *knowledgeDocument.Id)
@@ -371,20 +305,23 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), " ")
+	id := strings.Split(d.Id(), ",")
 	knowledgeDocumentId := id[0]
 	knowledgeBaseId := id[1]
-	languageCode := id[2]
+	state := "Draft"
+	if d.Get("published").(bool) == true {
+		state = "Published"
+	}
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
-		knowledgeDocument, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode)
+		knowledgeDocument, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
 			if isStatus404(resp) {
-				return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
+				return resource.RetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
 		}
@@ -392,11 +329,16 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceKnowledgeDocument())
 
 		// required
-		newId := fmt.Sprintf("%s %s %s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.LanguageCode)
-		d.SetId(newId)
+		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, knowledgeBaseId)
+		d.SetId(id)
 		d.Set("knowledge_base_id", *knowledgeDocument.KnowledgeBase.Id)
-		d.Set("language_code", *knowledgeDocument.LanguageCode)
-		d.Set("knowledge_document", flattenKnowledgeDocument(knowledgeDocument))
+		d.Set("knowledge_document", flattenKnowledgeDocument(knowledgeDocument, knowledgeAPI, knowledgeBaseId))
+
+		if *knowledgeDocument.State == "Published" {
+			d.Set("published", true)
+		} else {
+			d.Set("published", false)
+		}
 
 		log.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
 		checkState := cc.CheckState()
@@ -405,41 +347,29 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), " ")
+	id := strings.Split(d.Id(), ",")
 	knowledgeDocumentId := id[0]
-	knowledgeBaseId := id[1]
-	languageCode := id[2]
+	knowledgeBaseId := d.Get("knowledge_base_id").(string)
+	state := "Draft"
+	if d.Get("published").(bool) == true {
+		state = "Published"
+	}
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
-	log.Printf("Updating Knowledge document %s", d.Id())
+	log.Printf("Updating Knowledge document %s", knowledgeDocumentId)
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Knowledge document version
-		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode)
+		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read Knowledge document %s: %s", knowledgeDocumentId, getErr)
 		}
 
-		body := d.Get("knowledge_document").([]interface{})[0].(map[string]interface{})
-		update := platformclientv2.Knowledgedocumentrequest{
-			Faq:     buildFaq(body),
-			Article: buildArticle(body),
-		}
-
-		categories, _ := buildCategories(body, knowledgeAPI, knowledgeBaseId, languageCode)
-		if categories != nil {
-			update.Categories = categories
-		}
-		if varType, ok := body["type"].(string); ok {
-			update.VarType = &varType
-		}
-		if externalUrl, ok := body["external_url"].(string); ok {
-			update.ExternalUrl = &externalUrl
-		}
+		update := buildKnowledgeDocumentRequest(d, knowledgeAPI, knowledgeBaseId)
 
 		log.Printf("Updating knowledge document %s", knowledgeDocumentId)
-		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode, update)
+		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, update)
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update knowledge document %s: %s", knowledgeDocumentId, putErr)
 		}
@@ -454,31 +384,35 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), " ")
-	knowledgeCategoryId := id[0]
+	id := strings.Split(d.Id(), ",")
+	knowledgeDocumentId := id[0]
 	knowledgeBaseId := id[1]
-	languageCode := id[2]
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
-	log.Printf("Deleting Knowledge document %s", knowledgeCategoryId)
-	_, _, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseLanguageDocument(knowledgeCategoryId, knowledgeBaseId, languageCode)
+	log.Printf("Deleting Knowledge document %s", knowledgeDocumentId)
+	_, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId)
 	if err != nil {
-		return diag.Errorf("Failed to delete Knowledge document %s: %s", knowledgeCategoryId, err)
+		return diag.Errorf("Failed to delete Knowledge document %s: %s", knowledgeDocumentId, err)
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeCategoryId, knowledgeBaseId, languageCode)
+		state := "Draft"
+		if d.Get("published").(bool) == true {
+			state = "Published"
+		}
+
+		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeDocumentId, knowledgeBaseId, nil, state)
 		if err != nil {
 			if isStatus404(resp) {
 				// Knowledge document deleted
-				log.Printf("Deleted Knowledge document %s", knowledgeCategoryId)
+				log.Printf("Deleted Knowledge document %s", knowledgeDocumentId)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Knowledge document %s: %s", knowledgeCategoryId, err))
+			return resource.NonRetryableError(fmt.Errorf("Error deleting Knowledge document %s: %s", knowledgeDocumentId, err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Knowledge document %s still exists", knowledgeCategoryId))
+		return resource.RetryableError(fmt.Errorf("Knowledge document %s still exists", knowledgeDocumentId))
 	})
 }
