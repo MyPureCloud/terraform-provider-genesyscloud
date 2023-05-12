@@ -23,6 +23,10 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
+/*
+   This file contains all of the logic associated wite the process of exporting a file.
+*/
+
 // Used to store the TF config block as a string so that it can be ignored when testing the exported HCL config file.
 var (
 	terraformHCLBlock string

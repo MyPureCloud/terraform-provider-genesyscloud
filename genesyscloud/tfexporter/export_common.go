@@ -23,7 +23,7 @@ const (
 type Exporter func() diag.Diagnostics
 
 /*
-This file is used to hold common methods that are used across the exporter.  They do not have strong affinity to any one particular code base.
+This file is used to hold common methods that are used across the exporter.  They do not have strong affinity to any one particular export process (e.g. HCL or JSON).
 */
 func determineVarValue(s *schema.Schema) interface{} {
 	if s.Default != nil {
