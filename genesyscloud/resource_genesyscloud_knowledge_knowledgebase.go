@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
-
+	"net/url"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -20,9 +20,36 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	resources := make(ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		knowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", false, "", "")
+	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, knowledgeBase := range *publishedEntities {
+		resources[*knowledgeBase.Id] = &ResourceMeta{Name: *knowledgeBase.Name}
+	}
+
+	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, knowledgeBase := range *unpublishedEntities {
+		resources[*knowledgeBase.Id] = &ResourceMeta{Name: *knowledgeBase.Name}
+	}
+
+	return resources, nil
+}
+
+func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, published bool) (*[]platformclientv2.Knowledgebase, diag.Diagnostics) {
+	var (
+		after    string
+		entities []platformclientv2.Knowledgebase
+	)
+
+	const pageSize = 100
+	for i := 0; ; i++ {
+		knowledgeBases, _, getErr := knowledgeApi.GetKnowledgeKnowledgebases("", after, "", fmt.Sprintf("%v", pageSize), "", "", published, "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
 		}
@@ -31,12 +58,26 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 			break
 		}
 
-		for _, knowledgeBase := range *knowledgeBases.Entities {
-			resources[*knowledgeBase.Id] = &ResourceMeta{Name: *knowledgeBase.Name}
+		entities = append(entities, *knowledgeBases.Entities...)
+
+		if knowledgeBases.NextUri == nil || *knowledgeBases.NextUri == "" {
+			break
+		}
+
+		u, err := url.Parse(*knowledgeBases.NextUri)
+		if err != nil {
+			return nil, diag.Errorf("Failed to parse after cursor from knowledge base nextUri: %v", err)
+		}
+		m, _ := url.ParseQuery(u.RawQuery)
+		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
+			after = afterSlice[0]
+		}
+		if after == "" {
+			break
 		}
 	}
 
-	return resources, nil
+	return &entities, nil
 }
 
 func knowledgeKnowledgebaseExporter() *ResourceExporter {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
-
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/proxies/architect_api"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -15,13 +15,21 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
+const maxDnisPerRequest = 50
+
+var architectIvrProxy *architect_api.ArchitectIvrProxy
+
+func init() {
+	architectIvrProxy = architect_api.NewArchitectIvrProxy()
+}
+
 func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(ResourceIDMetaMap)
-	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+	architectIvrProxy.ConfigureProxyApiInstance(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		ivrConfigs, _, getErr := architectAPI.GetArchitectIvrs(pageNum, pageSize, "", "", "", "", "")
+		ivrConfigs, _, getErr := architectIvrProxy.GetArchitectIvrs(architectIvrProxy, pageNum, pageSize, "", "", "", "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of IVR configs: %v", getErr)
 		}
@@ -78,7 +86,7 @@ func resourceArchitectIvrConfig() *schema.Resource {
 				Optional:    true,
 			},
 			"dnis": {
-				Description: "The phone number(s) to contact the IVR by.",
+				Description: fmt.Sprintf("The phone number(s) to contact the IVR by. (Note: An array with a length greater than %v will be broken into chunks and uploaded in subsequent PUT requests.)", maxDnisPerRequest),
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
@@ -122,17 +130,18 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
 	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
 	divisionId := d.Get("division_id").(string)
+	dnis := buildSdkStringList(d, "dnis")
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	ivrBody := platformclientv2.Ivr{
 		Name:             &name,
-		Dnis:             buildSdkIvrDnis(d),
 		OpenHoursFlow:    openHoursFlowId,
 		ClosedHoursFlow:  closedHoursFlowId,
 		HolidayHoursFlow: holidayHoursFlowId,
 		ScheduleGroup:    scheduleGroupId,
+		Dnis:             dnis,
 	}
 
 	if description != "" {
@@ -149,7 +158,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		time.Sleep(3 * time.Second)
 	}
 	log.Printf("Creating IVR config %s", name)
-	ivrConfig, _, err := architectApi.PostArchitectIvrs(ivrBody)
+	ivrConfig, _, err := architectIvrProxy.PostArchitectIvr(architectIvrProxy, ivrBody)
 	if err != nil {
 		return diag.Errorf("Failed to create IVR config %s: %s", name, err)
 	}
@@ -162,11 +171,11 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	log.Printf("Reading IVR config %s", d.Id())
 	return withRetriesForRead(ctx, d, func() *resource.RetryError {
-		ivrConfig, resp, getErr := architectApi.GetArchitectIvr(d.Id())
+		ivrConfig, resp, getErr := architectIvrProxy.GetArchitectIvr(architectIvrProxy, d.Id())
 		if getErr != nil {
 			if isStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
@@ -181,7 +190,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectIvrConfig())
 		d.Set("name", *ivrConfig.Name)
-		d.Set("dnis", flattenIvrDnis(ivrConfig.Dnis))
+		d.Set("dnis", stringListToSetOrNil(ivrConfig.Dnis))
 
 		if ivrConfig.Description != nil {
 			d.Set("description", *ivrConfig.Description)
@@ -232,13 +241,14 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
 	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
 	divisionId := d.Get("division_id").(string)
+	dnis := buildSdkStringList(d, "dnis")
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current version
-		ivr, resp, getErr := architectApi.GetArchitectIvr(d.Id())
+		ivr, resp, getErr := architectIvrProxy.GetArchitectIvr(architectIvrProxy, d.Id())
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr)
 		}
@@ -246,11 +256,11 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		ivrBody := platformclientv2.Ivr{
 			Version:          ivr.Version,
 			Name:             &name,
-			Dnis:             buildSdkIvrDnis(d),
 			OpenHoursFlow:    openHoursFlowId,
 			ClosedHoursFlow:  closedHoursFlowId,
 			HolidayHoursFlow: holidayHoursFlowId,
 			ScheduleGroup:    scheduleGroupId,
+			Dnis:             dnis,
 		}
 
 		if description != "" {
@@ -267,11 +277,12 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			time.Sleep(3 * time.Second)
 		}
 		log.Printf("Updating IVR config %s", name)
-		_, resp, putErr := architectApi.PutArchitectIvr(d.Id(), ivrBody)
+		_, resp, putErr := architectIvrProxy.PutArchitectIvr(architectIvrProxy, d.Id(), ivrBody)
 
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update IVR config %s: %s", d.Id(), putErr)
 		}
+
 		return resp, nil
 	})
 	if diagErr != nil {
@@ -286,15 +297,15 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	log.Printf("Deleting IVR config %s", name)
-	if _, err := architectApi.DeleteArchitectIvr(d.Id()); err != nil {
+	if _, err := architectIvrProxy.DeleteArchitectIvr(architectIvrProxy, d.Id()); err != nil {
 		return diag.Errorf("Failed to delete IVR config %s: %s", name, err)
 	}
 
 	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		ivr, resp, err := architectApi.GetArchitectIvr(d.Id())
+		ivr, resp, err := architectIvrProxy.GetArchitectIvr(architectIvrProxy, d.Id())
 		if err != nil {
 			if isStatus404(resp) {
 				// IVR config deleted
@@ -312,18 +323,4 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 		return resource.RetryableError(fmt.Errorf("IVR config %s still exists", d.Id()))
 	})
-}
-
-func buildSdkIvrDnis(d *schema.ResourceData) *[]string {
-	if permConfig, ok := d.GetOk("dnis"); ok {
-		return setToStringList(permConfig.(*schema.Set))
-	}
-	return nil
-}
-
-func flattenIvrDnis(dnisArr *[]string) *schema.Set {
-	if dnisArr != nil {
-		return stringListToSet(*dnisArr)
-	}
-	return nil
 }

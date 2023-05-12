@@ -95,6 +95,17 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 	return writeHCLToFile(h.resourceTypeHCLBlocksSlice, h.filePath)
 }
 
+func postProcessHclBytes(resource []byte) []byte {
+	resourceStr := string(resource)
+	for placeholderId, val := range attributesDecoded {
+		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
+	}
+
+	resourceStr = correctInterpolatedFileShaFunctions(resourceStr)
+
+	return []byte(resourceStr)
+}
+
 func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {
 	// clear contents
 	_ = ioutil.WriteFile(path, nil, os.ModePerm)
@@ -104,7 +115,7 @@ func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {
 			return diag.Errorf("Error opening/creating file %s: %v", path, err)
 		}
 
-		v = replaceDecodableStrings(v)
+		v = postProcessHclBytes(v)
 
 		if _, err := f.Write(v); err != nil {
 			return diag.Errorf("Error writing file %s: %v", path, err)

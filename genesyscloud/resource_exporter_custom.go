@@ -42,7 +42,12 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 	return nil
 }
 
-func ArchitectPromptAudioResolver(promptId string, exportDirectory string, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+func FileContentHashResolver(configMap map[string]interface{}, filepath string) error {
+	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256(var.%s)}`, filepath)
+	return nil
+}
+
+func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
 	fullPath := path.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
@@ -54,10 +59,35 @@ func ArchitectPromptAudioResolver(promptId string, exportDirectory string, subDi
 	}
 
 	for _, data := range audioDataList {
-		if err := downloadAudioFile(fullPath, data.FileName, data.MediaUri); err != nil {
+		if err := downloadExportFile(fullPath, data.FileName, data.MediaUri); err != nil {
 			return err
 		}
 	}
 	updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory)
 	return nil
+}
+
+func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+	exportFileName := fmt.Sprintf("script-%s.json", scriptId)
+
+	fullPath := path.Join(exportDirectory, subDirectory)
+	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
+		return err
+	}
+
+	url, err := getScriptExportUrl(scriptId, meta)
+	if err != nil {
+		return err
+	}
+
+	if err := downloadExportFile(fullPath, exportFileName, url); err != nil {
+		return err
+	}
+
+	// Update filepath field in configMap to point to exported script file
+	configMap["filepath"] = path.Join(subDirectory, exportFileName)
+
+	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDirectory, exportFileName))
+
+	return err
 }

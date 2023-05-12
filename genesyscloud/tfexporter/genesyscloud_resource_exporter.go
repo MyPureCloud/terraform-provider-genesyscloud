@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -240,7 +241,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 	g.unresolvedAttrs = make([]unresolvableAttributeInfo, 0)
 
 	for _, resource := range g.resources {
-		jsonResult, diagErr := instanceStateToMap(resource.State, resource.CtyType)
+		jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
 		if diagErr != nil {
 			return diagErr
 		}
@@ -281,7 +282,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 	return nil
 }
 
-func instanceStateToMap(state *terraform.InstanceState, ctyType cty.Type) (gcloud.JsonMap, diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.InstanceState, ctyType cty.Type) (gcloud.JsonMap, diag.Diagnostics) {
 	stateVal, err := schema.StateValueFromInstanceState(state, ctyType)
 	if err != nil {
 		return nil, diag.FromErr(err)
@@ -296,7 +297,7 @@ func instanceStateToMap(state *terraform.InstanceState, ctyType cty.Type) (gclou
 
 // generateOutputFiles is used to generate the tfStateFile and either the tf export or the json based export
 func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
-	providerSource := g.sourceForVersion()
+	providerSource := g.sourceForVersion(g.version)
 	if g.includeStateFile {
 		t := NewTFStateWriter(g.ctx, g.resources, g.d, providerSource)
 		if err := t.writeTfState(); err != nil {
@@ -319,7 +320,18 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) sourceForVersion() string {
+func (g *GenesysCloudResourceExporter) postProcessHclBytes(resource []byte) []byte {
+	resourceStr := string(resource)
+	for placeholderId, val := range attributesDecoded {
+		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
+	}
+
+	resourceStr = correctInterpolatedFileShaFunctions(resourceStr)
+
+	return []byte(resourceStr)
+}
+
+func (g *GenesysCloudResourceExporter) sourceForVersion(version string) string {
 	providerSource := "registry.terraform.io/mypurecloud/genesyscloud"
 	if g.version == "0.1.0" {
 		// Force using local dev version by providing a unique repo URL
@@ -522,16 +534,16 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 	return state, nil
 }
 
-func replaceDecodableStrings(resource []byte) []byte {
-	resourceStr := string(resource)
-	for key, val := range attributesDecoded {
-		placeholderId := key
-		if strings.Contains(resourceStr, placeholderId) {
-			// replace placeholderId with the unquoted jsonencode object
-			resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
-		}
+// find & replace ${filesha256(\"...\")} with ${filesha256("...")}
+func correctInterpolatedFileShaFunctions(config string) string {
+	correctedConfig := config
+	re := regexp.MustCompile(`\$\{filesha256\(\\"[^\}]*\}`)
+	matches := re.FindAllString(config, -1)
+	for _, match := range matches {
+		correctedMatch := strings.Replace(match, `\"`, `"`, -1)
+		correctedConfig = strings.Replace(correctedConfig, match, correctedMatch, -1)
 	}
-	return []byte(resourceStr)
+	return correctedConfig
 }
 
 func writeToFile(bytes []byte, path string) diag.Diagnostics {
@@ -653,6 +665,17 @@ func sanitizeConfigMap(
 		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
 			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
 			err := refAttrCustomResolver.ResolverFunc(configMap, exporters)
+
+			if err != nil {
+				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s", currAttr)
+			}
+		}
+
+		// Check if the exporter has custom flow resolver (Only applicable for flow resource)
+		if refAttrCustomFlowResolver, ok := exporter.CustomFlowResolver[currAttr]; ok {
+			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
+			varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceName, "filepath")
+			err := refAttrCustomFlowResolver.ResolverFunc(configMap, varReference)
 
 			if err != nil {
 				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s", currAttr)

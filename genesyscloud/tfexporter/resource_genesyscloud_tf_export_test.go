@@ -1009,7 +1009,8 @@ func generateTfExportResource(
 			"genesyscloud_telephony_providers_edges_trunk",
 			"genesyscloud_user_roles",
 			"genesyscloud_webdeployments_configuration",
-			"genesyscloud_webdeployments_deployment"
+			"genesyscloud_webdeployments_deployment",
+			"genesyscloud_knowledge_knowledgebase"
 		]
 		exclude_attributes = [%s]
 	}

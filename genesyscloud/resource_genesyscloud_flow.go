@@ -44,6 +44,9 @@ func flowExporter() *ResourceExporter {
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"filepath": resourceFlow().Schema["filepath"],
 		},
+		CustomFlowResolver: map[string]*CustomFlowResolver{
+			"file_content_hash": {ResolverFunc: FileContentHashResolver},
+		},
 	}
 }
 
@@ -164,7 +167,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.Errorf(err.Error())
 	}
 
-	s3Uploader := NewS3Uploader(reader, substitutions, headers, presignedUrl)
+	s3Uploader := NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
 	_, err = s3Uploader.Upload()
 	if err != nil {
 		return diag.Errorf(err.Error())
