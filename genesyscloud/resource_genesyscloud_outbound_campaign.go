@@ -83,7 +83,7 @@ func resourceOutboundCampaign() *schema.Resource {
 				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{`on`, `off`}, false),
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return (old == `complete` && new == `off`) || (old == `invalid` && new == `off`) || (old == `stopping` && new == `off`)
+					return (old == `complete` && new == `off`) || (old == `invalid` && new == `off`) || (old == `stopping` && new == `off` || old == `complete` && new == `on`)
 				},
 			},
 			`phone_columns`: {
