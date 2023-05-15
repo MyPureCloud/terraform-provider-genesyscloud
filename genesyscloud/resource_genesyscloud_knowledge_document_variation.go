@@ -525,13 +525,13 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		 * A new document version can only be published if there are other variations than the one being removed
 		 */
 		pageSize := 3
-		variations, _, variationErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, "", "", fmt.Sprintf("%v", pageSize), "Published")
+		variations, _, variationErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, "", "", fmt.Sprintf("%v", pageSize), "Draft")
 
 		if variationErr != nil {
 			return diag.Errorf("Failed to retrieve knowledge document variations: %s", variationErr)
 		}
 
-		if len(*variations.Entities) > 1 {
+		if len(*variations.Entities) > 0 {
 			_, _, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
 
 			if versionErr != nil {
