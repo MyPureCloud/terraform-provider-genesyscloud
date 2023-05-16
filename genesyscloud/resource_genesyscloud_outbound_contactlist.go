@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
@@ -51,6 +52,38 @@ var (
 				Description: `A column that indicates the timezone to use for a given contact when checking contactable times.`,
 				Optional:    true,
 				Type:        schema.TypeString,
+			},
+		},
+	}
+
+	outboundContactListColumnDataTypeSpecification = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`column_name`: {
+				Description: `The column name of a column selected for dynamic queueing.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`column_data_type`: {
+				Description:  `The data type of the column selected for dynamic queueing (TEXT, NUMERIC or TIMESTAMP)`,
+				Optional:     true,
+				Computed:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"TEXT", "NUMERIC", "TIMESTAMP"}, false),
+			},
+			`min`: {
+				Description: `The minimum length of the numeric column selected for dynamic queueing.`,
+				Optional:    true,
+				Type:        schema.TypeInt,
+			},
+			`max`: {
+				Description: `The maximum length of the numeric column selected for dynamic queueing.`,
+				Optional:    true,
+				Type:        schema.TypeInt,
+			},
+			`max_length`: {
+				Description: `The maximum length of the text column selected for dynamic queueing.`,
+				Required:    true,
+				Type:        schema.TypeInt,
 			},
 		},
 	}
@@ -162,6 +195,13 @@ func resourceOutboundContactList() *schema.Resource {
 				ForceNew:    true,
 				Type:        schema.TypeString,
 			},
+			`column_data_type_specifications`: {
+				Description: `The settings of the columns selected for dynamic queueing. If updated, the contact list is dropped and recreated with a new ID`,
+				Optional:    true,
+				ForceNew:    true,
+				Type:        schema.TypeList,
+				Elem:        outboundContactListColumnDataTypeSpecification,
+			},
 		},
 	}
 }
@@ -178,13 +218,14 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
-		Division:                  buildSdkDomainEntityRef(d, "division_id"),
-		ColumnNames:               &columnNames,
-		PhoneColumns:              buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
-		EmailColumns:              buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
-		PreviewModeAcceptedValues: &previewModeAcceptedValues,
-		AttemptLimits:             buildSdkDomainEntityRef(d, "attempt_limit_id"),
-		AutomaticTimeZoneMapping:  &automaticTimeZoneMapping,
+		Division:                     buildSdkDomainEntityRef(d, "division_id"),
+		ColumnNames:                  &columnNames,
+		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
+		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
+		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
+		AttemptLimits:                buildSdkDomainEntityRef(d, "attempt_limit_id"),
+		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
+		ColumnDataTypeSpecifications: buildSdkOutboundContactListColumnDataTypeSpecifications(d.Get("column_data_type_specifications").([]interface{})),
 	}
 
 	if name != "" {
@@ -221,13 +262,14 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
-		Division:                  buildSdkDomainEntityRef(d, "division_id"),
-		ColumnNames:               &columnNames,
-		PhoneColumns:              buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
-		EmailColumns:              buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
-		PreviewModeAcceptedValues: &previewModeAcceptedValues,
-		AttemptLimits:             buildSdkDomainEntityRef(d, "attempt_limit_id"),
-		AutomaticTimeZoneMapping:  &automaticTimeZoneMapping,
+		Division:                     buildSdkDomainEntityRef(d, "division_id"),
+		ColumnNames:                  &columnNames,
+		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
+		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
+		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
+		AttemptLimits:                buildSdkDomainEntityRef(d, "attempt_limit_id"),
+		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
+		ColumnDataTypeSpecifications: buildSdkOutboundContactListColumnDataTypeSpecifications(d.Get("column_data_type_specifications").([]interface{})),
 	}
 
 	if name != "" {
@@ -450,4 +492,66 @@ func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAdd
 	}
 
 	return contactEmailAddressColumnSet
+}
+
+func buildSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpecifications []interface{}) *[]platformclientv2.Columndatatypespecification {
+	if columnDataTypeSpecifications == nil || len(columnDataTypeSpecifications) < 1 {
+		return nil
+	}
+
+	sdkColumnDataTypeSpecificationsSlice := make([]platformclientv2.Columndatatypespecification, 0)
+
+	for _, spec := range columnDataTypeSpecifications {
+		if specMap, ok := spec.(map[string]interface{}); ok {
+			var sdkColumnDataTypeSpecification platformclientv2.Columndatatypespecification
+			if columnNameStr, ok := specMap["column_name"].(string); ok {
+				sdkColumnDataTypeSpecification.ColumnName = &columnNameStr
+			}
+			if columnDataTypeStr, ok := specMap["column_data_type"].(string); ok && columnDataTypeStr != "" {
+				sdkColumnDataTypeSpecification.ColumnDataType = &columnDataTypeStr
+			}
+			if minInt, ok := specMap["min"].(int); ok {
+				sdkColumnDataTypeSpecification.Min = &minInt
+			}
+			if maxInt, ok := specMap["max"].(int); ok {
+				sdkColumnDataTypeSpecification.Max = &maxInt
+			}
+			if maxLengthInt, ok := specMap["max_length"].(int); ok {
+				sdkColumnDataTypeSpecification.MaxLength = &maxLengthInt
+			}
+			sdkColumnDataTypeSpecificationsSlice = append(sdkColumnDataTypeSpecificationsSlice, sdkColumnDataTypeSpecification)
+		}
+	}
+
+	return &sdkColumnDataTypeSpecificationsSlice
+}
+
+func flattenSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpecifications []platformclientv2.Columndatatypespecification) []interface{} {
+	if columnDataTypeSpecifications == nil || len(columnDataTypeSpecifications) == 0 {
+		return nil
+	}
+
+	columnDataTypeSpecificationsSlice := make([]interface{}, 0)
+
+	for _, s := range columnDataTypeSpecifications {
+		columnDataTypeSpecification := make(map[string]interface{})
+		columnDataTypeSpecification["column_name"] = *s.ColumnName
+
+		if s.ColumnDataType != nil {
+			columnDataTypeSpecification["column_data_type"] = *s.ColumnDataType
+		}
+		if s.Min != nil {
+			columnDataTypeSpecification["min"] = *s.Min
+		}
+		if s.Max != nil {
+			columnDataTypeSpecification["max"] = *s.Max
+		}
+		if s.MaxLength != nil {
+			columnDataTypeSpecification["max_length"] = *s.MaxLength
+		}
+
+		columnDataTypeSpecificationsSlice = append(columnDataTypeSpecificationsSlice, columnDataTypeSpecification)
+	}
+
+	return columnDataTypeSpecificationsSlice
 }

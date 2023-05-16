@@ -12,7 +12,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
-func TestAccResourceOutboundContactList(t *testing.T) {
+func TestAccResourceOutboundContactListBasic(t *testing.T) {
 	t.Parallel()
 	var (
 		resourceId                = "contact-list"
@@ -71,6 +71,7 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.#", "0"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.0", "Cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.1", "Home"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.2", "Work"),
@@ -125,6 +126,20 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 						"personal",
 						"Personal",
 					),
+					generatePhoneColumnsDataTypeSpecBlock(
+						strconv.Quote("Cell"), // columnName
+						strconv.Quote("TEXT"), // columnDataType
+						"1",                   // min
+						"11",                  // max
+						"10",                  // maxLength
+					),
+					generatePhoneColumnsDataTypeSpecBlock(
+						strconv.Quote("Home"), // columnName
+						strconv.Quote("TEXT"), // columnDataType
+						nullValue,             // min
+						nullValue,             // max
+						"5",                   // maxLength
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", nameUpdated),
@@ -144,6 +159,19 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.column_name", "Personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.type", "personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.contactable_time_column", "Personal"),
+
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.#", "2"),
+
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.0.column_data_type", "TEXT"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.0.min", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.0.max", "11"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.0.max_length", "10"),
+
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.1.column_name", "Home"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.1.column_data_type", "TEXT"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.1.max_length", "5"),
+
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_column_name", previewModeColumnNameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.1", previewModeColumnNameUpdated),
@@ -193,6 +221,13 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 						"personal",
 						"",
 					),
+					generatePhoneColumnsDataTypeSpecBlock(
+						strconv.Quote("Cell"), // columnName
+						strconv.Quote("TEXT"), // columnDataType
+						"2",                   // min
+						"12",                  // max
+						"11",                  // maxLength
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", nameUpdated),
@@ -204,12 +239,21 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "zip_code_column_name", zipCodeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.type", "cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.column_name", "Personal"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.type", "personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.column_name", "Home"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.type", "home"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.1.column_name", "Work"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.1.type", "work"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.column_name", "Personal"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.type", "personal"),
+
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.#", "1"),
+
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.0.column_data_type", "TEXT"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.0.min", "2"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.0.max", "12"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.0.max_length", "11"),
+
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_column_name", previewModeColumnNameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.1", previewModeColumnNameUpdated),
@@ -220,9 +264,10 @@ func TestAccResourceOutboundContactList(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      "genesyscloud_outbound_contact_list." + resourceId,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_outbound_contact_list." + resourceId,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"column_data_type_specifications"},
 			},
 		},
 		CheckDestroy: testVerifyContactListDestroyed,
@@ -295,6 +340,18 @@ func generateEmailColumnsBlock(columnName string, columnType string, contactable
 		%s
 	}
 `, columnName, columnType, contactableTimeColumn)
+}
+
+func generatePhoneColumnsDataTypeSpecBlock(columnName, columnDataType, min, max, maxLength string) string {
+	return fmt.Sprintf(`
+	column_data_type_specifications {
+		column_name      = %s
+		column_data_type = %s
+		min              = %s
+		max              = %s
+		max_length       = %s
+	}
+	`, columnName, columnDataType, min, max, maxLength)
 }
 
 func testVerifyContactListDestroyed(state *terraform.State) error {
