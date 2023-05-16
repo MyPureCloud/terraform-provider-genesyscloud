@@ -48,18 +48,17 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 	contactListResource := generateOutboundContactList(
 		contactListResourceId,
 		contactListName,
-		"",
-		"",
+		nullValue,
+		nullValue,
 		[]string{},
 		[]string{strconv.Quote(column), strconv.Quote(columnUpdated)},
-		"",
-		"",
-		"",
-		"",
+		nullValue,
+		nullValue,
+		nullValue,
 		generatePhoneColumnsBlock(
 			column,
 			"cell",
-			"",
+			nullValue,
 		),
 	)
 

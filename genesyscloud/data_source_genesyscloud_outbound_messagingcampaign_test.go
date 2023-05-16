@@ -45,18 +45,17 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		contactListResource = generateOutboundContactList(
 			contactListResourceId,
 			contactListName,
-			"",
-			"",
+			nullValue,
+			nullValue,
 			[]string{},
 			[]string{strconv.Quote(column1), strconv.Quote(column2)},
-			"",
-			"",
-			"",
-			"",
+			falseValue,
+			nullValue,
+			nullValue,
 			generatePhoneColumnsBlock(
 				column1,
 				"cell",
-				column1,
+				strconv.Quote(column1),
 			),
 		)
 

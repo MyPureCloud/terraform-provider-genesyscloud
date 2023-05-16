@@ -41,32 +41,32 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				Config: generateOutboundContactList(
 					resourceId,
 					name,
-					"",
-					previewModeColumnName,
+					nullValue,
+					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					"",
-					"",
+					nullValue,
+					nullValue,
 					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						"Cell",
+						strconv.Quote("Cell"),
 					),
 					generatePhoneColumnsBlock(
 						"Home",
 						"home",
-						"Home",
+						strconv.Quote("Home"),
 					),
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						"Work",
+						strconv.Quote("Work"),
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						"Personal",
+						strconv.Quote("Personal"),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -99,32 +99,32 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				Config: generateOutboundContactList(
 					resourceId,
 					nameUpdated,
-					"",
-					previewModeColumnNameUpdated,
+					nullValue,
+					strconv.Quote(previewModeColumnNameUpdated),
 					previewModeAcceptedValuesUpdated,
 					columnNames,
 					automaticTimeZoneMapping,
-					"",
-					"",
+					nullValue,
+					nullValue,
 					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						"Cell",
+						strconv.Quote("Cell"),
 					),
 					generatePhoneColumnsBlock(
 						"Home",
 						"home",
-						"Home",
+						strconv.Quote("Home"),
 					),
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						"Work",
+						strconv.Quote("Work"),
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						"Personal",
+						strconv.Quote("Personal"),
 					),
 					generatePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Cell"), // columnName
@@ -195,31 +195,31 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					resourceId,
 					nameUpdated,
 					"data.genesyscloud_auth_division_home.home.id",
-					previewModeColumnNameUpdated,
+					strconv.Quote(previewModeColumnNameUpdated),
 					previewModeAcceptedValuesUpdated,
 					columnNamesUpdated,
 					automaticTimeZoneMappingUpdated,
-					zipCodeColumnName,
+					strconv.Quote(zipCodeColumnName),
 					"genesyscloud_outbound_attempt_limit."+attemptLimitResourceID+".id",
 					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						"",
+						nullValue,
 					),
 					generatePhoneColumnsBlock(
 						"Home",
 						"home",
-						"",
+						nullValue,
 					),
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						"",
+						nullValue,
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						"",
+						nullValue,
 					),
 					generatePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Cell"), // columnName
@@ -285,31 +285,16 @@ func generateOutboundContactList(
 	zipCodeColumnName string,
 	attemptLimitId string,
 	nestedBlocks ...string) string {
-	if divisionId != "" {
-		divisionId = fmt.Sprintf(`division_id = %s`, divisionId)
-	}
-	if previewModeColumnName != "" {
-		previewModeColumnName = fmt.Sprintf(`preview_mode_column_name = "%s"`, previewModeColumnName)
-	}
-	if automaticTimeZoneMapping != "" {
-		automaticTimeZoneMapping = fmt.Sprintf(`automatic_time_zone_mapping = %s`, automaticTimeZoneMapping)
-	}
-	if zipCodeColumnName != "" {
-		zipCodeColumnName = fmt.Sprintf(`zip_code_column_name = "%s"`, zipCodeColumnName)
-	}
-	if attemptLimitId != "" {
-		attemptLimitId = fmt.Sprintf(`attempt_limit_id = %s`, attemptLimitId)
-	}
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_contact_list" "%s" {
-	name = "%s"
-	%s
-	%s
+	name                         = "%s"
+	division_id                  = %s
+	preview_mode_column_name     = %s
 	preview_mode_accepted_values = [%s]
-	column_names = [%s] 
-	%s
-	%s
-	%s
+	column_names                 = [%s] 
+	automatic_time_zone_mapping  = %s
+	zip_code_column_name         = %s
+	attempt_limit_id             = %s
 	%s
 }
 `, resourceId, name, divisionId, previewModeColumnName, strings.Join(previewModeAcceptedValues, ", "),
@@ -317,27 +302,21 @@ resource "genesyscloud_outbound_contact_list" "%s" {
 }
 
 func generatePhoneColumnsBlock(columnName string, columnType string, callableTimeColumn string) string {
-	if callableTimeColumn != "" {
-		callableTimeColumn = fmt.Sprintf(`callable_time_column = "%s"`, callableTimeColumn)
-	}
 	return fmt.Sprintf(`
 	phone_columns {
-		column_name = "%s"
-		type        = "%s"
-		%s
+		column_name          = "%s"
+		type                 = "%s"
+		callable_time_column = %s
 	}
 `, columnName, columnType, callableTimeColumn)
 }
 
 func generateEmailColumnsBlock(columnName string, columnType string, contactableTimeColumn string) string {
-	if contactableTimeColumn != "" {
-		contactableTimeColumn = fmt.Sprintf(`contactable_time_column = "%s"`, contactableTimeColumn)
-	}
 	return fmt.Sprintf(`
 	email_columns {
-		column_name = "%s"
-		type        = "%s"
-		%s
+		column_name          = "%s"
+		type                 = "%s"
+		callable_time_column = %s
 	}
 `, columnName, columnType, contactableTimeColumn)
 }
