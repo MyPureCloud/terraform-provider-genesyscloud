@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"
@@ -62,8 +63,8 @@ func TestAccDataSourceSite(t *testing.T) {
 					mediaModel,
 					false,
 					"[\"us-west-2\"]",
-					"+19205551212",
-					"Wilco plumbing") + location + generateSiteDataSource(
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing")) + location + generateSiteDataSource(
 					siteDataRes,
 					name,
 					"genesyscloud_telephony_providers_edges_site."+siteRes),
