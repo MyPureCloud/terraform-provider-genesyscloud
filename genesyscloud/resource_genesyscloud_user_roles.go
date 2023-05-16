@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-
+	"time"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -94,6 +94,7 @@ func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Updated user roles for %s", d.Id())
+	time.Sleep(4 * time.Second)
 	return readUserRoles(ctx, d, meta)
 }
 
