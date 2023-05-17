@@ -25,7 +25,7 @@ func generatePhoneColumnNoTypeBlock(columnName string) string {
 `, columnName)
 }
 
-func TestAccResourceOutboundCampaign(t *testing.T) {
+func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	t.Parallel()
 	var (
 		resourceId            = "campaign1"
@@ -212,6 +212,7 @@ func TestAccResourceOutboundCampaign(t *testing.T) {
 						contactSortDirection,
 						contactSortNumeric,
 					),
+					generateDynamicContactQueueingSettingsBlock(falseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
@@ -229,6 +230,7 @@ func TestAccResourceOutboundCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.field_name", contactSortFieldName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.direction", contactSortDirection),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.numeric", contactSortNumeric),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "dynamic_contact_queueing_settings.0.sort", "false"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "callable_time_set_id",
@@ -280,6 +282,7 @@ func TestAccResourceOutboundCampaign(t *testing.T) {
 						contactSortDirection,
 						contactSortNumeric,
 					),
+					generateDynamicContactQueueingSettingsBlock(falseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", nameUpdated),
@@ -296,6 +299,7 @@ func TestAccResourceOutboundCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.field_name", contactSortFieldName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.direction", contactSortDirection),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "contact_sorts.0.numeric", contactSortNumeric),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "dynamic_contact_queueing_settings.0.sort", "false"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "callable_time_set_id",
@@ -327,7 +331,7 @@ func TestAccResourceOutboundCampaign(t *testing.T) {
 	})
 }
 
-func TestAccResourceOutboundCampaignBasic(t *testing.T) {
+func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 	t.Parallel()
 	var (
 		resourceId            = "campaign2"
@@ -1004,6 +1008,14 @@ resource "genesyscloud_outbound_campaign" "%s" {
 		callAnalysisResponseSetId, outboundLineCount, skipPreviewDisabled, previewTimeOutSeconds, alwaysRunning, noAnswerTimeout,
 		priority, strings.Join(dncListIds, ", "), strings.Join(ruleSetIds, ", "), strings.Join(contactListFilterIds, ", "),
 		strings.Join(nestedBlocks, "\n"))
+}
+
+func generateDynamicContactQueueingSettingsBlock(sort string) string {
+	return fmt.Sprintf(`
+	dynamic_contact_queueing_settings {
+		sort = %s
+	}
+	`, sort)
 }
 
 func generateReferencedResourcesForOutboundCampaignTests(
