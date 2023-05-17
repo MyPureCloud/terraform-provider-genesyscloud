@@ -19,11 +19,16 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 		name                      = "Test Contact List " + uuid.NewString()
 		previewModeColumnName     = "Cell"
 		previewModeAcceptedValues = []string{strconv.Quote(previewModeColumnName)}
-		columnNames               = []string{strconv.Quote("Cell"), strconv.Quote("Home"), strconv.Quote("Work"), strconv.Quote("Personal")}
-		automaticTimeZoneMapping  = falseValue
-		attemptLimitResourceID    = "attempt-limit"
-		attemptLimitDataSourceID  = "attempt-limit-data"
-		attemptLimitName          = "Test Attempt Limit " + uuid.NewString()
+		columnNames               = []string{
+			strconv.Quote("Cell"),
+			strconv.Quote("Home"),
+			strconv.Quote("Work"),
+			strconv.Quote("Personal"),
+		}
+		automaticTimeZoneMapping = falseValue
+		attemptLimitResourceID   = "attempt-limit"
+		attemptLimitDataSourceID = "attempt-limit-data"
+		attemptLimitName         = "Test Attempt Limit " + uuid.NewString()
 
 		nameUpdated                      = "Test Contact List " + uuid.NewString()
 		automaticTimeZoneMappingUpdated  = trueValue
@@ -61,21 +66,22 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						strconv.Quote("Work"),
+						nullValue,
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						strconv.Quote("Personal"),
+						nullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.#", "0"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.0", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.1", "Home"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.2", "Work"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.3", "Personal"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.#", "4"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Cell"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Home"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Work"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.type", "cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.callable_time_column", "Cell"),
@@ -84,10 +90,8 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.callable_time_column", "Home"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.1.column_name", "Work"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.1.type", "work"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.1.contactable_time_column", "Work"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.column_name", "Personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.type", "personal"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.contactable_time_column", "Personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_column_name", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "automatic_time_zone_mapping", automaticTimeZoneMapping),
@@ -119,12 +123,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						strconv.Quote("Work"),
+						nullValue,
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						strconv.Quote("Personal"),
+						nullValue,
 					),
 					generatePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Cell"), // columnName
@@ -143,10 +147,11 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", nameUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.0", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.1", "Home"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.2", "Work"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.3", "Personal"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.#", "4"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Cell"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Home"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Work"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.type", "cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.callable_time_column", "Cell"),
@@ -155,10 +160,8 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.callable_time_column", "Home"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.1.column_name", "Work"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.1.type", "work"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.1.contactable_time_column", "Work"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.column_name", "Personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.type", "personal"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.contactable_time_column", "Personal"),
 
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.#", "2"),
 
@@ -214,12 +217,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						nullValue,
+						strconv.Quote(zipCodeColumnName),
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						nullValue,
+						strconv.Quote(zipCodeColumnName),
 					),
 					generatePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Cell"), // columnName
@@ -231,20 +234,24 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "name", nameUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.0", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.1", "Home"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.2", "Work"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.3", "Personal"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.4", zipCodeColumnName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_names.#", "5"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Cell"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Home"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Work"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", "Personal"),
+					validateStringInArray("genesyscloud_outbound_contact_list."+resourceId, "column_names", zipCodeColumnName),
+
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "zip_code_column_name", zipCodeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.0.type", "cell"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.column_name", "Personal"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.type", "personal"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.0.contactable_time_column", zipCodeColumnName),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.column_name", "Home"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "phone_columns.1.type", "home"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.1.column_name", "Work"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.1.type", "work"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "email_columns.1.contactable_time_column", zipCodeColumnName),
 
 					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+resourceId, "column_data_type_specifications.#", "1"),
 
@@ -301,7 +308,7 @@ resource "genesyscloud_outbound_contact_list" "%s" {
 		strings.Join(columnNames, ", "), automaticTimeZoneMapping, zipCodeColumnName, attemptLimitId, strings.Join(nestedBlocks, "\n"))
 }
 
-func generatePhoneColumnsBlock(columnName string, columnType string, callableTimeColumn string) string {
+func generatePhoneColumnsBlock(columnName, columnType, callableTimeColumn string) string {
 	return fmt.Sprintf(`
 	phone_columns {
 		column_name          = "%s"
@@ -311,12 +318,12 @@ func generatePhoneColumnsBlock(columnName string, columnType string, callableTim
 `, columnName, columnType, callableTimeColumn)
 }
 
-func generateEmailColumnsBlock(columnName string, columnType string, contactableTimeColumn string) string {
+func generateEmailColumnsBlock(columnName, columnType, contactableTimeColumn string) string {
 	return fmt.Sprintf(`
 	email_columns {
-		column_name          = "%s"
-		type                 = "%s"
-		callable_time_column = %s
+		column_name             = "%s"
+		type                    = "%s"
+		contactable_time_column = %s
 	}
 `, columnName, columnType, contactableTimeColumn)
 }
