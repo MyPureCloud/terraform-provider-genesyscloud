@@ -76,8 +76,8 @@ func TestAccResourceSite(t *testing.T) {
 					mediaModel,
 					false,
 					"[\"us-west-2\"]",
-					"+19205551212",
-					"Wilco plumbing") + location,
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing")) + location,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "description", description1),
@@ -96,8 +96,8 @@ func TestAccResourceSite(t *testing.T) {
 					mediaModel,
 					true,
 					"[\"us-west-2\"]",
-					"+19205551212",
-					"Wilco plumbing") + location,
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing")) + location,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "description", description2),
@@ -116,8 +116,8 @@ func TestAccResourceSite(t *testing.T) {
 					mediaModel,
 					true,
 					"[\"us-west-2\"]",
-					"+19205551212",
-					"Wilco plumbing",
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing"),
 					generateSiteEdgeAutoUpdateConfig(
 						timeZone,
 						rrule,
@@ -140,8 +140,8 @@ func TestAccResourceSite(t *testing.T) {
 					mediaModel,
 					true,
 					"[\"us-west-2\"]",
-					"+19205551212",
-					"Wilco plumbing",
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing"),
 					generateSiteEdgeAutoUpdateConfig(
 						timeZone,
 						rrule,
@@ -212,8 +212,8 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 					mediaModel,
 					false,
 					"[\"us-west-2\"]",
-					"+19205551212",
-					"Wilco plumbing",
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing"),
 					generateSiteNumberPlansWithCustomAttrs(
 						"numberList name",
 						"numberList classification",
@@ -270,8 +270,8 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 					mediaModel,
 					false,
 					"[\"us-west-2\"]",
-					"+19205551212",
-					"Wilco plumbing",
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing"),
 					generateSiteNumberPlansWithCustomAttrs(
 						"numberList name",
 						"numberList classification",
@@ -313,8 +313,8 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 					mediaModel,
 					false,
 					"[\"us-west-2\"]",
-					"+19205551212",
-					"Wilco plumbing",
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing"),
 					generateSiteNumberPlansWithCustomAttrs(
 						"numberList name",
 						"numberList classification",
@@ -437,8 +437,8 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 					mediaModel,
 					false,
 					"[\"us-west-2\"]",
-					"+19205551212",
-					"Wilco plumbing",
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing"),
 					generateSiteOutboundRoutesWithCustomAttrs(
 						"outboundRoute name 1",
 						"outboundRoute description",
@@ -479,8 +479,8 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 					mediaModel,
 					false,
 					"[\"us-west-2\"]",
-					"+19205551212",
-					"Wilco plumbing",
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing"),
 					generateSiteOutboundRoutesWithCustomAttrs(
 						"outboundRoute name 1",
 						"outboundRoute description updated",
@@ -612,8 +612,8 @@ func generateSiteResourceWithCustomAttrs(
 		media_model = "%s"
 		media_regions_use_latency_based = %v
 		media_regions= %s
-		caller_id = "%s"
-		caller_name = "%s"
+		caller_id = %s
+		caller_name = %s
 		%s
 	}
 	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
