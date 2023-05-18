@@ -78,7 +78,7 @@ resource "genesyscloud_outbound_campaignrule" "campaign_rule" {
 
 Required:
 
-- `action_type` (String) The action to take on the campaignRuleActionEntities 
+- `action_type` (String) The action to take on the campaignRuleActionEntities
 (turnOnCampaign | turnOffCampaign | turnOnSequence | turnOffSequence | setCampaignPriority | recycleCampaign | setCampaignDialingMode).
 - `campaign_rule_action_entities` (Block Set, Min: 1) The list of entities that this action will apply to. (see [below for nested schema](#nestedblock--campaign_rule_actions--campaign_rule_action_entities))
 
@@ -100,15 +100,12 @@ Optional:
 <a id="nestedblock--campaign_rule_actions--parameters"></a>
 ### Nested Schema for `campaign_rule_actions.parameters`
 
-Required:
-
-- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
-- `value` (String) The value for comparison. Required for a CampaignRuleCondition.
-
 Optional:
 
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
-- `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5).
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
+- `value` (String) The value for comparison. Required for a CampaignRuleCondition.
 
 
 
@@ -127,15 +124,12 @@ Optional:
 <a id="nestedblock--campaign_rule_conditions--parameters"></a>
 ### Nested Schema for `campaign_rule_conditions.parameters`
 
-Required:
-
-- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
-- `value` (String) The value for comparison. Required for a CampaignRuleCondition.
-
 Optional:
 
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
-- `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5).
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
+- `value` (String) The value for comparison. Required for a CampaignRuleCondition.
 
 
 
