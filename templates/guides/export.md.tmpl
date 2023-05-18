@@ -9,15 +9,9 @@ description: |-
 
 For existing orgs, it may be desirable to have Terraform begin managing your configuration. If there are only a handful of users, queues, etc. to manage, Terraform has an option to [import individual resources](https://www.terraform.io/docs/cli/import/index.html) into a Terraform module.
 
-However, if there are a lot of existing resources it can be painful to manually import all of them into a Terraform state file. To make this easier, a special resource has been defined to export that configuration into a local Terraform [JSON configuration file](https://www.terraform.io/docs/language/syntax/json.html) or [TF configuration file](https://www.terraform.io/language/syntax/configuration). Ensure you have the Terraform CLI installed and create a `.tf` file that requires the genesyscloud provider as shown below. Add a `genesyscloud_tf_export` resource to that same file:
+However, if there are a lot of existing resources it can be painful to manually import all of them into a Terraform state file. To make this easier, a special resource has been defined to export that configuration into a local Terraform [JSON configuration file](https://www.terraform.io/docs/language/syntax/json.html) or [TF configuration file](https://www.terraform.io/language/syntax/configuration). Ensure you have the Terraform CLI installed and create a `.tf` file that requires the genesyscloud provider (click the Use Provider drop down to learn how to use the latest version of the required provider). Add a `provider` block and a `genesyscloud_tf_export` resource to that same file:
 ```hcl
-terraform {
-  required_providers {
-    genesyscloud = {
-      source  = "mypurecloud/genesyscloud"
-      version = "~> 1.0.0"
-    }
-  }
+provider "genesyscloud" {
 }
 
 resource "genesyscloud_tf_export" "export" {
