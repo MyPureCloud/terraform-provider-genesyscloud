@@ -71,22 +71,22 @@ func TestAccResourceOutboundCampaign(t *testing.T) {
 		`) + generateOutboundContactList(
 		contactListResourceId,
 		"contact list "+uuid.NewString(),
-		"",
-		"Cell",
+		nullValue,
+		strconv.Quote("Cell"),
 		[]string{strconv.Quote("Cell")},
 		[]string{strconv.Quote("Cell"), strconv.Quote("Home"), strconv.Quote("zipcode")},
 		falseValue,
-		"",
-		"",
+		nullValue,
+		nullValue,
 		generatePhoneColumnsBlock(
 			"Cell",
 			"cell",
-			"Cell",
+			strconv.Quote("Cell"),
 		),
 		generatePhoneColumnsBlock(
 			"Home",
 			"home",
-			"Home",
+			strconv.Quote("Home"),
 		),
 	) + generateOutboundDncListBasic(
 		dncListResourceId,
@@ -357,22 +357,22 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	referencedResources := generateOutboundContactList(
 		contactListResourceId,
 		"contact list "+uuid.NewString(),
-		"",
-		"Cell",
+		nullValue,
+		strconv.Quote("Cell"),
 		[]string{strconv.Quote("Cell")},
 		[]string{strconv.Quote("Cell"), strconv.Quote("Home"), strconv.Quote("zipcode")},
 		falseValue,
-		"",
-		"",
+		nullValue,
+		nullValue,
 		generatePhoneColumnsBlock(
 			"Cell",
 			"cell",
-			"Cell",
+			strconv.Quote("Cell"),
 		),
 		generatePhoneColumnsBlock(
 			"Home",
 			"home",
-			"Home",
+			strconv.Quote("Home"),
 		),
 	) + generateRoutingWrapupcodeResource(
 		wrapupcodeResourceId,
@@ -1037,15 +1037,15 @@ func generateReferencedResourcesForOutboundCampaignTests(
 		contactList = generateOutboundContactList(
 			contactListResourceId,
 			"terraform contact list "+uuid.NewString(),
-			"",
-			"Cell",
+			nullValue,
+			strconv.Quote("Cell"),
 			[]string{strconv.Quote("Cell")},
 			[]string{strconv.Quote("Cell"), strconv.Quote("Home"), strconv.Quote("zipcode")},
 			falseValue,
-			"",
-			"",
-			generatePhoneColumnsBlock("Cell", "cell", "Cell"),
-			generatePhoneColumnsBlock("Home", "home", "Home"))
+			nullValue,
+			nullValue,
+			generatePhoneColumnsBlock("Cell", "cell", strconv.Quote("Cell")),
+			generatePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
 	}
 	if dncListResourceId != "" {
 		dncList = generateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
