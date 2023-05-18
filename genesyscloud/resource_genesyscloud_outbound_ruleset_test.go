@@ -40,17 +40,17 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 				Config: generateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					"",
-					previewModeColumnName,
+					nullValue,
+					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					"",
-					"",
+					nullValue,
+					nullValue,
 					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						"Cell",
+						strconv.Quote("Cell"),
 					),
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource1,
@@ -68,17 +68,17 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 				Config: generateOutboundContactList(
 					contactListResourceId2,
 					contactListName2,
-					"",
-					previewModeColumnName,
+					nullValue,
+					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					"",
-					"",
+					nullValue,
+					nullValue,
 					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						"Cell",
+						strconv.Quote("Cell"),
 					),
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource2,
@@ -124,17 +124,17 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				Config: generateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					"",
-					previewModeColumnName,
+					nullValue,
+					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					"",
-					"",
+					nullValue,
+					nullValue,
 					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						"Cell",
+						strconv.Quote("Cell"),
 					),
 				) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name = "%s"
@@ -169,17 +169,17 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				Config: generateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					"",
-					previewModeColumnName,
+					nullValue,
+					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					"",
-					"",
+					nullValue,
+					nullValue,
 					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						"Cell",
+						strconv.Quote("Cell"),
 					),
 				) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
@@ -240,19 +240,20 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				Config: generateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					"",
-					previewModeColumnName,
+					nullValue,
+					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					"",
-					"",
+					nullValue,
+					nullValue,
 					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						"Cell",
+						strconv.Quote("Cell"),
 					),
-				) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
+				) + fmt.Sprintf(`
+resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
   contact_list_id = genesyscloud_outbound_contact_list.%s.id
   rules {

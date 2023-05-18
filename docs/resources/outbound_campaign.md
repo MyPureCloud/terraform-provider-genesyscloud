@@ -60,6 +60,7 @@ resource "genesyscloud_outbound_campaign" "campaign" {
 - `contact_sorts` (Block List) The order in which to sort contacts for dialing, based on up to four columns. (see [below for nested schema](#nestedblock--contact_sorts))
 - `division_id` (String) The division this campaign belongs to.
 - `dnc_list_ids` (List of String) DncLists for this Campaign to check before placing a call.
+- `dynamic_contact_queueing_settings` (Block List, Max: 1) Settings for dynamic queueing of contacts. (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
 - `edge_group_id` (String) The EdgeGroup that will place the calls. Required for all dialing modes except preview.
 - `no_answer_timeout` (Number) How long to wait before dispositioning a call as 'no-answer'. Default 30 seconds. Only applicable to non-preview campaigns.
 - `outbound_line_count` (Number) The number of outbound lines to be concurrently dialed. Only applicable to non-preview campaigns; only required for agentless.
@@ -94,4 +95,12 @@ Optional:
 
 - `direction` (String) The direction in which to sort contacts. Defaults to `ASC`.
 - `numeric` (Boolean) Whether or not the column contains numeric data. Defaults to `false`.
+
+
+<a id="nestedblock--dynamic_contact_queueing_settings"></a>
+### Nested Schema for `dynamic_contact_queueing_settings`
+
+Required:
+
+- `sort` (Boolean) Whether to sort contacts dynamically.
 

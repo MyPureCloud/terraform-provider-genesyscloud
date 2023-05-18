@@ -23,16 +23,17 @@ func TestAccDataSourceOutboundContactList(t *testing.T) {
 				Config: generateOutboundContactList(
 					resourceId,
 					contactListName,
-					"",
-					"",
-					[]string{},
+					nullValue,  // divisionId
+					nullValue,  // previewModeColumnName
+					[]string{}, // previewModeAcceptedValues
 					[]string{strconv.Quote("Cell")},
-					falseValue,
-					"",
-					"",
-					generatePhoneColumnsBlock("Cell",
+					falseValue, // automaticTimeZoneMapping
+					nullValue,  // zipCodeColumnName
+					nullValue,  // attemptLimitId
+					generatePhoneColumnsBlock(
+						"Cell",
 						"cell",
-						"",
+						nullValue,
 					),
 				) + generateOutboundContactListDataSource(
 					dataSourceId,

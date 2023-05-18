@@ -486,8 +486,11 @@ resource "genesyscloud_routing_skill_group" "%s" {
 			"operation" : "And"
 		}]
 	)
+
+	depends_on = [genesyscloud_user.%s, genesyscloud_user.%s, genesyscloud_user.%s ]
 }	
-`, skillGroupResourceId, skillGroupName, strings.Join(memberDivisionIds, ", "), skillGroupDescription, routingSkillName)
+`, skillGroupResourceId, skillGroupName, strings.Join(memberDivisionIds, ", "),
+		skillGroupDescription, routingSkillName, user1ResourceId, user2ResourceId, user3ResourceId)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },

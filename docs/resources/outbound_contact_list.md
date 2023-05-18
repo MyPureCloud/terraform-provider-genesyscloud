@@ -47,6 +47,7 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
 
 - `attempt_limit_id` (String) Attempt Limit for this ContactList.
 - `automatic_time_zone_mapping` (Boolean) Indicates if automatic time zone mapping is to be used for this ContactList. Changing the automatic_time_zone_mappings attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID
+- `column_data_type_specifications` (Block List) The settings of the columns selected for dynamic queueing. If updated, the contact list is dropped and recreated with a new ID (see [below for nested schema](#nestedblock--column_data_type_specifications))
 - `division_id` (String) The division this entity belongs to.
 - `email_columns` (Block Set) Indicates which columns are email addresses. Changing the email_columns attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID. Required if phone_columns is empty (see [below for nested schema](#nestedblock--email_columns))
 - `phone_columns` (Block Set) Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID. Required if email_columns is empty (see [below for nested schema](#nestedblock--phone_columns))
@@ -57,6 +58,21 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--column_data_type_specifications"></a>
+### Nested Schema for `column_data_type_specifications`
+
+Required:
+
+- `column_name` (String) The column name of a column selected for dynamic queueing.
+- `max_length` (Number) The maximum length of the text column selected for dynamic queueing.
+
+Optional:
+
+- `column_data_type` (String) The data type of the column selected for dynamic queueing (TEXT, NUMERIC or TIMESTAMP)
+- `max` (Number) The maximum length of the numeric column selected for dynamic queueing.
+- `min` (Number) The minimum length of the numeric column selected for dynamic queueing.
+
 
 <a id="nestedblock--email_columns"></a>
 ### Nested Schema for `email_columns`
