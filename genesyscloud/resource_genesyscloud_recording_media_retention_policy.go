@@ -991,7 +991,10 @@ func buildEvaluationAssignments(evaluations []interface{}) *[]platformclientv2.E
 	assignEvaluations := make([]platformclientv2.Evaluationassignment, 0)
 
 	for _, assignEvaluation := range evaluations {
-		assignEvaluationMap := assignEvaluation.(map[string]interface{})
+		assignEvaluationMap, ok := assignEvaluation.(map[string]interface{})
+		if !ok {
+			continue
+		}
 		evaluationFormId := assignEvaluationMap["evaluation_form_id"].(string)
 		userId := assignEvaluationMap["user_id"].(string)
 		assignment := platformclientv2.Evaluationassignment{}
@@ -1051,7 +1054,10 @@ func buildTimeInterval(timeInterval []interface{}) *platformclientv2.Timeinterva
 		return nil
 	}
 
-	timeIntervalMap := timeInterval[0].(map[string]interface{})
+	timeIntervalMap, ok := timeInterval[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	months := timeIntervalMap["months"].(int)
 	weeks := timeIntervalMap["weeks"].(int)
@@ -1092,7 +1098,10 @@ func buildAssignMeteredEvaluations(assignments []interface{}) *[]platformclientv
 	meteredAssignments := make([]platformclientv2.Meteredevaluationassignment, 0)
 
 	for _, assignment := range assignments {
-		assignmentMap := assignment.(map[string]interface{})
+		assignmentMap, ok := assignment.(map[string]interface{})
+		if !ok {
+			continue
+		}
 		maxNumberEvaluations := assignmentMap["max_number_evaluations"].(int)
 		assignToActiveUser := assignmentMap["assign_to_active_user"].(bool)
 		evaluationFormId := assignmentMap["evaluation_form_id"].(string)
@@ -1178,7 +1187,10 @@ func flattenAssignMeteredEvaluations(assignments *[]platformclientv2.Meteredeval
 func buildAssignMeteredAssignmentByAgent(assignments []interface{}) *[]platformclientv2.Meteredassignmentbyagent {
 	meteredAssignments := make([]platformclientv2.Meteredassignmentbyagent, 0)
 	for _, assignment := range assignments {
-		assignmentMap := assignment.(map[string]interface{})
+		assignmentMap, ok := assignment.(map[string]interface{})
+		if !ok {
+			continue
+		}
 		maxNumberEvaluations := assignmentMap["max_number_evaluations"].(int)
 		timeZone := assignmentMap["time_zone"].(string)
 		evaluationFormId := assignmentMap["evaluation_form_id"].(string)
@@ -1266,7 +1278,10 @@ func buildAssignCalibrations(assignments []interface{}) *[]platformclientv2.Cali
 	calibrationAssignments := make([]platformclientv2.Calibrationassignment, 0)
 
 	for _, assignment := range assignments {
-		assignmentMap := assignment.(map[string]interface{})
+		assignmentMap, ok := assignment.(map[string]interface{})
+		if !ok {
+			continue
+		}
 		evaluationFormId := assignmentMap["evaluation_form_id"].(string)
 		calibratorId := assignmentMap["calibrator_id"].(string)
 		expertEvaluatorId := assignmentMap["expert_evaluator_id"].(string)
@@ -1365,7 +1380,10 @@ func buildAssignSurveys(assignments []interface{}) *[]platformclientv2.Surveyass
 	surveyAssignments := make([]platformclientv2.Surveyassignment, 0)
 
 	for _, assignment := range assignments {
-		assignmentMap := assignment.(map[string]interface{})
+		assignmentMap, ok := assignment.(map[string]interface{})
+		if !ok {
+			continue
+		}
 		sendingUser := assignmentMap["sending_user"].(string)
 		sendingDomain := assignmentMap["sending_domain"].(string)
 		inviteTimeInterval := assignmentMap["invite_time_interval"].(string)
@@ -1434,7 +1452,10 @@ func buildArchiveRetention(archiveRetention []interface{}) *platformclientv2.Arc
 		return nil
 	}
 
-	archiveRetentionMap := archiveRetention[0].(map[string]interface{})
+	archiveRetentionMap, ok := archiveRetention[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	days := archiveRetentionMap["days"].(int)
 	storageMedium := archiveRetentionMap["storage_medium"].(string)
@@ -1466,7 +1487,10 @@ func buildDeleteRetention(deleteRetention []interface{}) *platformclientv2.Delet
 		return nil
 	}
 
-	deleteRetentionMap := deleteRetention[0].(map[string]interface{})
+	deleteRetentionMap, ok := deleteRetention[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	days := deleteRetentionMap["days"].(int)
 
@@ -1493,7 +1517,10 @@ func buildRetentionDuration(retentionDuration []interface{}) *platformclientv2.R
 		return nil
 	}
 
-	retentionDurationMap := retentionDuration[0].(map[string]interface{})
+	retentionDurationMap, ok := retentionDuration[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	return &platformclientv2.Retentionduration{
 		ArchiveRetention: buildArchiveRetention(retentionDurationMap["archive_retention"].([]interface{})),
@@ -1522,7 +1549,10 @@ func buildInitiateScreenRecording(initiateScreenRecording []interface{}) *platfo
 		return nil
 	}
 
-	initiateScreenRecordingMap := initiateScreenRecording[0].(map[string]interface{})
+	initiateScreenRecordingMap, ok := initiateScreenRecording[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 	recordACW := initiateScreenRecordingMap["record_acw"].(bool)
 
 	return &platformclientv2.Initiatescreenrecording{
@@ -1555,7 +1585,10 @@ func buildMediaTranscriptions(transcriptions []interface{}) *[]platformclientv2.
 	mediaTranscriptions := make([]platformclientv2.Mediatranscription, 0)
 
 	for _, transcription := range transcriptions {
-		transcriptionMap := transcription.(map[string]interface{})
+		transcriptionMap, ok := transcription.(map[string]interface{})
+		if !ok {
+			continue
+		}
 		displayName := transcriptionMap["display_name"].(string)
 		transcriptionProvider := transcriptionMap["transcription_provider"].(string)
 		integrationId := transcriptionMap["integration_id"].(string)
@@ -1600,7 +1633,10 @@ func buildIntegrationExport(integrationExport []interface{}) *platformclientv2.I
 		return nil
 	}
 
-	integrationExportMap := integrationExport[0].(map[string]interface{})
+	integrationExportMap, ok := integrationExport[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 	shouldExportScreenRecordings := integrationExportMap["should_export_screen_recordings"].(bool)
 
 	return &platformclientv2.Integrationexport{
@@ -1630,7 +1666,10 @@ func buildPolicyActions(actions []interface{}) *platformclientv2.Policyactions {
 		return nil
 	}
 
-	actionsMap := actions[0].(map[string]interface{})
+	actionsMap, ok := actions[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	retainRecording := actionsMap["retain_recording"].(bool)
 	deleteRecording := actionsMap["delete_recording"].(bool)
@@ -1702,7 +1741,10 @@ func buildTimeSlots(slots []interface{}) *[]platformclientv2.Timeslot {
 	timeSlots := make([]platformclientv2.Timeslot, 0)
 
 	for _, slot := range slots {
-		slotMap := slot.(map[string]interface{})
+		slotMap, ok := slot.(map[string]interface{})
+		if !ok {
+			continue
+		}
 		startTime := slotMap["start_time"].(string)
 		stopTime := slotMap["stop_time"].(string)
 		day := slotMap["day"].(int)
@@ -1747,7 +1789,10 @@ func buildTimeAllowed(timeAllowed []interface{}) *platformclientv2.Timeallowed {
 		return nil
 	}
 
-	timeAllowedMap := timeAllowed[0].(map[string]interface{})
+	timeAllowedMap, ok := timeAllowed[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	timeZoneId := timeAllowedMap["time_zone_id"].(string)
 	empty := timeAllowedMap["empty"].(bool)
@@ -1783,7 +1828,10 @@ func buildDurationCondition(durationCondition []interface{}) *platformclientv2.D
 		return nil
 	}
 
-	durationConditionMap := durationCondition[0].(map[string]interface{})
+	durationConditionMap, ok := durationCondition[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	durationTarget := durationConditionMap["duration_target"].(string)
 	durationOperator := durationConditionMap["duration_operator"].(string)
@@ -1902,7 +1950,10 @@ func buildChatMediaPolicyConditions(chatMediaPolicyConditions []interface{}) *pl
 		return nil
 	}
 
-	conditionsMap := chatMediaPolicyConditions[0].(map[string]interface{})
+	conditionsMap, ok := chatMediaPolicyConditions[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 	dateRanges := make([]string, 0)
 	for _, v := range conditionsMap["date_ranges"].([]interface{}) {
 		dateRange := fmt.Sprintf("%v", v)
@@ -2016,7 +2067,10 @@ func buildEmailMediaPolicyConditions(emailMediaPolicyConditions []interface{}) *
 		return nil
 	}
 
-	conditionsMap := emailMediaPolicyConditions[0].(map[string]interface{})
+	conditionsMap, ok := emailMediaPolicyConditions[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	dateRanges := make([]string, 0)
 	for _, v := range conditionsMap["date_ranges"].([]interface{}) {
@@ -2127,7 +2181,10 @@ func buildMessageMediaPolicyConditions(messageMediaPolicyConditions []interface{
 		return nil
 	}
 
-	conditionsMap := messageMediaPolicyConditions[0].(map[string]interface{})
+	conditionsMap, ok := messageMediaPolicyConditions[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	dateRanges := make([]string, 0)
 	for _, v := range conditionsMap["date_ranges"].([]interface{}) {
@@ -2285,7 +2342,10 @@ func buildCallMediaPolicy(callMediaPolicy []interface{}) *platformclientv2.Callm
 		return nil
 	}
 
-	policyMap := callMediaPolicy[0].(map[string]interface{})
+	policyMap, ok := callMediaPolicy[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 	return &platformclientv2.Callmediapolicy{
 		Actions:    buildPolicyActions(policyMap["actions"].([]interface{})),
 		Conditions: buildCallMediaPolicyConditions(policyMap["conditions"].([]interface{})),
@@ -2313,7 +2373,10 @@ func buildChatMediaPolicy(chatMediaPolicy []interface{}) *platformclientv2.Chatm
 		return nil
 	}
 
-	policyMap := chatMediaPolicy[0].(map[string]interface{})
+	policyMap, ok := chatMediaPolicy[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	return &platformclientv2.Chatmediapolicy{
 		Actions:    buildPolicyActions(policyMap["actions"].([]interface{})),
@@ -2342,7 +2405,10 @@ func buildEmailMediaPolicy(emailMediaPolicy []interface{}) *platformclientv2.Ema
 		return nil
 	}
 
-	policyMap := emailMediaPolicy[0].(map[string]interface{})
+	policyMap, ok := emailMediaPolicy[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	return &platformclientv2.Emailmediapolicy{
 		Actions:    buildPolicyActions(policyMap["actions"].([]interface{})),
@@ -2371,7 +2437,10 @@ func buildMessageMediaPolicy(messageMediaPolicy []interface{}) *platformclientv2
 		return nil
 	}
 
-	policyMap := messageMediaPolicy[0].(map[string]interface{})
+	policyMap, ok := messageMediaPolicy[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	return &platformclientv2.Messagemediapolicy{
 		Actions:    buildPolicyActions(policyMap["actions"].([]interface{})),
@@ -2396,30 +2465,31 @@ func flattenMessageMediaPolicy(messageMediaPolicy *platformclientv2.Messagemedia
 }
 
 func buildMediaPolicies(d *schema.ResourceData) *platformclientv2.Mediapolicies {
-	mediaPolicies := platformclientv2.Mediapolicies{}
-	if len(d.Get("media_policies").([]interface{})) <= 0 {
-		return nil
+	sdkMediaPolicies := platformclientv2.Mediapolicies{}
+
+	if mediaPolicies, ok := d.Get("media_policies").([]interface{}); ok && len(mediaPolicies) > 0 {
+		mediaPoliciesMap, ok := mediaPolicies[0].(map[string]interface{})
+		if !ok {
+			return nil
+		}
+		if callPolicy := mediaPoliciesMap["call_policy"]; callPolicy != nil {
+			sdkMediaPolicies.CallPolicy = buildCallMediaPolicy(callPolicy.([]interface{}))
+		}
+
+		if chatPolicy := mediaPoliciesMap["chat_policy"]; chatPolicy != nil {
+			sdkMediaPolicies.ChatPolicy = buildChatMediaPolicy(chatPolicy.([]interface{}))
+		}
+
+		if emailPolicy := mediaPoliciesMap["email_policy"]; emailPolicy != nil {
+			sdkMediaPolicies.EmailPolicy = buildEmailMediaPolicy(emailPolicy.([]interface{}))
+		}
+
+		if messagePolicy := mediaPoliciesMap["message_policy"]; messagePolicy != nil {
+			sdkMediaPolicies.MessagePolicy = buildMessageMediaPolicy(messagePolicy.([]interface{}))
+		}
 	}
 
-	temp := d.Get("media_policies").([]interface{})[0].(map[string]interface{})
-	if callPolicy := temp["call_policy"]; callPolicy != nil {
-		mediaPolicies.CallPolicy = buildCallMediaPolicy(callPolicy.([]interface{}))
-	}
-
-	if chatPolicy := temp["chat_policy"]; chatPolicy != nil {
-		mediaPolicies.ChatPolicy = buildChatMediaPolicy(chatPolicy.([]interface{}))
-	}
-
-	if emailPolicy := temp["email_policy"]; emailPolicy != nil {
-		mediaPolicies.EmailPolicy = buildEmailMediaPolicy(emailPolicy.([]interface{}))
-	}
-
-	if messagePolicy := temp["message_policy"]; messagePolicy != nil {
-		mediaPolicies.MessagePolicy = buildMessageMediaPolicy(messagePolicy.([]interface{}))
-	}
-
-	return &mediaPolicies
-
+	return &sdkMediaPolicies
 }
 
 func flattenMediaPolicies(mediaPolicies *platformclientv2.Mediapolicies) []interface{} {
@@ -2445,8 +2515,11 @@ func flattenMediaPolicies(mediaPolicies *platformclientv2.Mediapolicies) []inter
 }
 
 func buildConditions(d *schema.ResourceData) *platformclientv2.Policyconditions {
-	if conditions, ok := d.GetOk("conditions"); ok && len(conditions.([]interface{})) > 0 {
-		conditionsMap := conditions.([]interface{})[0].(map[string]interface{})
+	if conditions, ok := d.Get("conditions").([]interface{}); ok && len(conditions) > 0 {
+		conditionsMap, ok := conditions[0].(map[string]interface{})
+		if !ok {
+			return nil
+		}
 
 		directions := make([]string, 0)
 		for _, v := range conditionsMap["directions"].([]interface{}) {
@@ -2562,8 +2635,11 @@ func flattenConditions(conditions *platformclientv2.Policyconditions) []interfac
 
 func buildPolicyActions2(d *schema.ResourceData) *platformclientv2.Policyactions {
 
-	if actions, ok := d.GetOk("actions"); ok {
-		actionsMap := actions.([]interface{})[0].(map[string]interface{})
+	if actions, ok := d.Get("actions").([]interface{}); ok && len(actions) > 0 {
+		actionsMap, ok := actions[0].(map[string]interface{})
+		if !ok {
+			return nil
+		}
 		retainRecording := actionsMap["retain_recording"].(bool)
 		deleteRecording := actionsMap["delete_recording"].(bool)
 		alwaysDelete := actionsMap["always_delete"].(bool)
@@ -2591,7 +2667,10 @@ func buildUserParams(params []interface{}) *[]platformclientv2.Userparam {
 	userParams := make([]platformclientv2.Userparam, 0)
 
 	for _, param := range params {
-		paramMap := param.(map[string]interface{})
+		paramMap, ok := param.(map[string]interface{})
+		if !ok {
+			continue
+		}
 		key := paramMap["key"].(string)
 		value := paramMap["value"].(string)
 
@@ -2630,7 +2709,10 @@ func buildPolicyErrorMessages(messages []interface{}) *[]platformclientv2.Policy
 	policyErrorMessages := make([]platformclientv2.Policyerrormessage, 0)
 
 	for _, message := range messages {
-		messageMap := message.(map[string]interface{})
+		messageMap, ok := message.(map[string]interface{})
+		if !ok {
+			continue
+		}
 		statusCode := messageMap["status_code"].(int)
 		userMessage := messageMap["user_message"]
 		userParamsMessage := messageMap["user_params_message"].(string)
@@ -2698,9 +2780,14 @@ func flattenPolicyErrorMessages(errorMessages *[]platformclientv2.Policyerrormes
 
 func buildPolicyErrors(d *schema.ResourceData) *platformclientv2.Policyerrors {
 	if errors, ok := d.GetOk("policy_errors"); ok {
-		errorsMap := errors.([]interface{})[0].(map[string]interface{})
-		return &platformclientv2.Policyerrors{
-			PolicyErrorMessages: buildPolicyErrorMessages(errorsMap["policy_error_messages"].([]interface{})),
+		if errorsList, ok := errors.([]interface{}); ok || len(errorsList) > 0 {
+			errorsMap, ok := errorsList[0].(map[string]interface{})
+			if !ok {
+				return nil
+			}
+			return &platformclientv2.Policyerrors{
+				PolicyErrorMessages: buildPolicyErrorMessages(errorsMap["policy_error_messages"].([]interface{})),
+			}
 		}
 	}
 
