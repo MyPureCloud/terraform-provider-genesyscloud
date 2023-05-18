@@ -271,10 +271,9 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            "genesyscloud_outbound_contact_list." + resourceId,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"column_data_type_specifications"},
+				ResourceName:      "genesyscloud_outbound_contact_list." + resourceId,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyContactListDestroyed,

@@ -359,6 +359,9 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 		if sdkContactList.ZipCodeColumnName != nil {
 			_ = d.Set("zip_code_column_name", *sdkContactList.ZipCodeColumnName)
 		}
+		if sdkContactList.ColumnDataTypeSpecifications != nil {
+			_ = d.Set("column_data_type_specifications", flattenSdkOutboundContactListColumnDataTypeSpecifications(*sdkContactList.ColumnDataTypeSpecifications))
+		}
 
 		log.Printf("Read Outbound Contact List %s %s", d.Id(), *sdkContactList.Name)
 		return cc.CheckState()
