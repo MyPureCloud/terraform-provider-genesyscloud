@@ -56,17 +56,17 @@ var (
 		Schema: map[string]*schema.Schema{
 			`operator`: {
 				Description:  `The operator for comparison. Required for a CampaignRuleCondition.`,
-				Required:     true,
+				Optional:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{"equals", "greaterThan", "greaterThanEqualTo", "lessThan", "lessThanEqualTo"}, true),
 			},
 			`value`: {
 				Description: `The value for comparison. Required for a CampaignRuleCondition.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`priority`: {
-				Description:  `The priority to set a campaign to (1 | 2 | 3 | 4 | 5).`,
+				Description:  `The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.`,
 				Optional:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{"1", "2", "3", "4", "5"}, true),
@@ -116,7 +116,7 @@ var (
 				Elem:        campaignRuleParameters,
 			},
 			`action_type`: {
-				Description: `The action to take on the campaignRuleActionEntities 
+				Description: `The action to take on the campaignRuleActionEntities
 (turnOnCampaign | turnOffCampaign | turnOnSequence | turnOffSequence | setCampaignPriority | recycleCampaign | setCampaignDialingMode).`,
 				Required:     true,
 				Type:         schema.TypeString,
