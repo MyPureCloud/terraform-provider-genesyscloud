@@ -71,6 +71,7 @@ func routingUtilizationExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllRoutingUtilization),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		AllowZeroValues:  []string{"maximum_capacity"},
 	}
 }
 
