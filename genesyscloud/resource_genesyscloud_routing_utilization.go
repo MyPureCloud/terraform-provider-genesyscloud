@@ -30,10 +30,10 @@ var (
 	utilizationSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"maximum_capacity": {
-				Description:  "Maximum capacity of conversations of this media type. Value must be between 1 and 25.",
+				Description:  "Maximum capacity of conversations of this media type. Value must be between 0 and 25.",
 				Type:         schema.TypeInt,
 				Required:     true,
-				ValidateFunc: validation.IntBetween(1, 25),
+				ValidateFunc: validation.IntBetween(0, 25),
 			},
 			"interruptible_media_types": {
 				Description: fmt.Sprintf("Set of other media types that can interrupt this media type (%s).", strings.Join(getSdkUtilizationTypes(), " | ")),
@@ -71,6 +71,7 @@ func routingUtilizationExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllRoutingUtilization),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		AllowZeroValues:  []string{"maximum_capacity"},
 	}
 }
 

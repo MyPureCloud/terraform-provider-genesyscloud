@@ -67,7 +67,7 @@ resource "genesyscloud_routing_utilization" "org-utililzation" {
 
 Required:
 
-- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
+- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 0 and 25.
 
 Optional:
 
@@ -80,7 +80,7 @@ Optional:
 
 Required:
 
-- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
+- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 0 and 25.
 
 Optional:
 
@@ -93,7 +93,7 @@ Optional:
 
 Required:
 
-- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
+- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 0 and 25.
 
 Optional:
 
@@ -106,7 +106,7 @@ Optional:
 
 Required:
 
-- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
+- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 0 and 25.
 
 Optional:
 
@@ -119,7 +119,7 @@ Optional:
 
 Required:
 
-- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 1 and 25.
+- `maximum_capacity` (Number) Maximum capacity of conversations of this media type. Value must be between 0 and 25.
 
 Optional:
 
