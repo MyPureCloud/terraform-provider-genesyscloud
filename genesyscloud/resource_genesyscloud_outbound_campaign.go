@@ -184,6 +184,23 @@ func resourceOutboundCampaign() *schema.Resource {
 				Computed:    true,
 				Type:        schema.TypeString,
 			},
+			`dynamic_contact_queueing_settings`: {
+				Description: `Settings for dynamic queueing of contacts.`,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"sort": {
+							Description: "Whether to sort contacts dynamically.",
+							Type:        schema.TypeBool,
+							Required:    true,
+							ForceNew:    true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -272,21 +289,22 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkcampaign := platformclientv2.Campaign{
-		ContactList:             buildSdkDomainEntityRef(d, "contact_list_id"),
-		Queue:                   buildSdkDomainEntityRef(d, "queue_id"),
-		Script:                  buildSdkDomainEntityRef(d, "script_id"),
-		EdgeGroup:               buildSdkDomainEntityRef(d, "edge_group_id"),
-		Site:                    buildSdkDomainEntityRef(d, "site_id"),
-		PhoneColumns:            buildSdkoutboundcampaignPhonecolumnSlice(d.Get("phone_columns").([]interface{})),
-		DncLists:                buildSdkDomainEntityRefArr(d, "dnc_list_ids"),
-		CallableTimeSet:         buildSdkDomainEntityRef(d, "callable_time_set_id"),
-		CallAnalysisResponseSet: buildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
-		RuleSets:                buildSdkDomainEntityRefArr(d, "rule_set_ids"),
-		SkipPreviewDisabled:     &skipPreviewDisabled,
-		AlwaysRunning:           &alwaysRunning,
-		ContactSorts:            buildSdkoutboundcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
-		ContactListFilters:      buildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
-		Division:                buildSdkDomainEntityRef(d, "division_id"),
+		ContactList:                    buildSdkDomainEntityRef(d, "contact_list_id"),
+		Queue:                          buildSdkDomainEntityRef(d, "queue_id"),
+		Script:                         buildSdkDomainEntityRef(d, "script_id"),
+		EdgeGroup:                      buildSdkDomainEntityRef(d, "edge_group_id"),
+		Site:                           buildSdkDomainEntityRef(d, "site_id"),
+		PhoneColumns:                   buildSdkoutboundcampaignPhonecolumnSlice(d.Get("phone_columns").([]interface{})),
+		DncLists:                       buildSdkDomainEntityRefArr(d, "dnc_list_ids"),
+		CallableTimeSet:                buildSdkDomainEntityRef(d, "callable_time_set_id"),
+		CallAnalysisResponseSet:        buildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
+		RuleSets:                       buildSdkDomainEntityRefArr(d, "rule_set_ids"),
+		SkipPreviewDisabled:            &skipPreviewDisabled,
+		AlwaysRunning:                  &alwaysRunning,
+		ContactSorts:                   buildSdkoutboundcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
+		ContactListFilters:             buildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
+		Division:                       buildSdkDomainEntityRef(d, "division_id"),
+		DynamicContactQueueingSettings: buildSdkDynamicContactQueueingSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 	}
 
 	if name != "" {
@@ -392,21 +410,22 @@ func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkcampaign := platformclientv2.Campaign{
-		ContactList:             buildSdkDomainEntityRef(d, "contact_list_id"),
-		Queue:                   buildSdkDomainEntityRef(d, "queue_id"),
-		Script:                  buildSdkDomainEntityRef(d, "script_id"),
-		EdgeGroup:               buildSdkDomainEntityRef(d, "edge_group_id"),
-		Site:                    buildSdkDomainEntityRef(d, "site_id"),
-		PhoneColumns:            buildSdkoutboundcampaignPhonecolumnSlice(d.Get("phone_columns").([]interface{})),
-		DncLists:                buildSdkDomainEntityRefArr(d, "dnc_list_ids"),
-		CallableTimeSet:         buildSdkDomainEntityRef(d, "callable_time_set_id"),
-		CallAnalysisResponseSet: buildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
-		RuleSets:                buildSdkDomainEntityRefArr(d, "rule_set_ids"),
-		SkipPreviewDisabled:     &skipPreviewDisabled,
-		AlwaysRunning:           &alwaysRunning,
-		ContactSorts:            buildSdkoutboundcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
-		ContactListFilters:      buildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
-		Division:                buildSdkDomainEntityRef(d, "division_id"),
+		ContactList:                    buildSdkDomainEntityRef(d, "contact_list_id"),
+		Queue:                          buildSdkDomainEntityRef(d, "queue_id"),
+		Script:                         buildSdkDomainEntityRef(d, "script_id"),
+		EdgeGroup:                      buildSdkDomainEntityRef(d, "edge_group_id"),
+		Site:                           buildSdkDomainEntityRef(d, "site_id"),
+		PhoneColumns:                   buildSdkoutboundcampaignPhonecolumnSlice(d.Get("phone_columns").([]interface{})),
+		DncLists:                       buildSdkDomainEntityRefArr(d, "dnc_list_ids"),
+		CallableTimeSet:                buildSdkDomainEntityRef(d, "callable_time_set_id"),
+		CallAnalysisResponseSet:        buildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
+		RuleSets:                       buildSdkDomainEntityRefArr(d, "rule_set_ids"),
+		SkipPreviewDisabled:            &skipPreviewDisabled,
+		AlwaysRunning:                  &alwaysRunning,
+		ContactSorts:                   buildSdkoutboundcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
+		ContactListFilters:             buildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
+		Division:                       buildSdkDomainEntityRef(d, "division_id"),
+		DynamicContactQueueingSettings: buildSdkDynamicContactQueueingSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 	}
 
 	if name != "" {
@@ -570,6 +589,9 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		if sdkcampaign.Division != nil && sdkcampaign.Division.Id != nil {
 			d.Set("division_id", *sdkcampaign.Division.Id)
 		}
+		if sdkcampaign.DynamicContactQueueingSettings != nil {
+			d.Set("dynamic_contact_queueing_settings", flattenSdkDynamicContactQueueingSettings(*sdkcampaign.DynamicContactQueueingSettings))
+		}
 
 		log.Printf("Read Outbound Campaign %s %s", d.Id(), *sdkcampaign.Name)
 		return cc.CheckState()
@@ -622,6 +644,27 @@ func buildSdkoutboundcampaignPhonecolumnSlice(phonecolumnList []interface{}) *[]
 		sdkPhonecolumnSlice = append(sdkPhonecolumnSlice, sdkPhonecolumn)
 	}
 	return &sdkPhonecolumnSlice
+}
+
+func buildSdkDynamicContactQueueingSettings(settings []interface{}) *platformclientv2.Dynamiccontactqueueingsettings {
+	if settings == nil || len(settings) < 1 {
+		return nil
+	}
+	var sdkDcqSettings platformclientv2.Dynamiccontactqueueingsettings
+	dcqSetting, ok := settings[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	if sort, ok := dcqSetting["sort"].(bool); ok {
+		sdkDcqSettings.Sort = &sort
+	}
+	return &sdkDcqSettings
+}
+
+func flattenSdkDynamicContactQueueingSettings(settings platformclientv2.Dynamiccontactqueueingsettings) []interface{} {
+	settingsMap := make(map[string]interface{}, 0)
+	settingsMap["sort"] = *settings.Sort
+	return []interface{}{settingsMap}
 }
 
 func buildSdkoutboundcampaignContactsortSlice(contactSortList []interface{}) *[]platformclientv2.Contactsort {
