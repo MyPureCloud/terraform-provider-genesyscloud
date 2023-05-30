@@ -105,8 +105,12 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Creating script %s", scriptName)
 
-	if err := scriptExistsWithName(scriptName, meta); err != nil {
+	exists, err := scriptExistsWithName(scriptName, meta)
+	if err != nil {
 		return diag.Errorf("%v", err)
+	}
+	if exists {
+		return diag.Errorf("Script with name '%s' already exists. Please provide a unique name.", scriptName)
 	}
 
 	formData, err := createScriptFormData(filePath, scriptName)
@@ -131,12 +135,18 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 	}
 
 	// Retrieve script ID using getAll function
-	sdkScript, err := getScriptByName(scriptName, meta)
+	sdkScripts, err := getScriptsWithName(scriptName, meta)
 	if err != nil {
 		return diag.Errorf("%v", err)
 	}
+	if len(sdkScripts) > 1 {
+		return diag.Errorf("More than one script found with name %s", scriptName)
+	}
+	if len(sdkScripts) == 0 {
+		return diag.Errorf("Script %s not found after creation.", scriptName)
+	}
 
-	d.SetId(*sdkScript.Id)
+	d.SetId(*sdkScripts[0].Id)
 
 	log.Printf("Created script %s. ", d.Id())
 	return readScript(ctx, d, meta)
@@ -193,41 +203,45 @@ func deleteScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 	return nil
 }
 
-func scriptExistsWithName(scriptName string, meta interface{}) error {
-	sdkScript, err := getScriptByName(scriptName, meta)
+func scriptExistsWithName(scriptName string, meta interface{}) (bool, error) {
+	sdkScripts, err := getScriptsWithName(scriptName, meta)
 	if err != nil {
-		return err
+		return true, err
 	}
-	if sdkScript.Id != nil {
-		return fmt.Errorf("Script with name '%s' already exists. Please provide a unique name.", scriptName)
+	if len(sdkScripts) < 1 {
+		return false, nil
 	}
-	return nil
+	return true, nil
 }
 
-func getScriptByName(scriptName string, meta interface{}) (platformclientv2.Script, error) {
+func getScriptsWithName(scriptName string, meta interface{}) ([]platformclientv2.Script, error) {
 	var (
-		script platformclientv2.Script
+		scripts []platformclientv2.Script
 
 		sdkConfig  = meta.(*ProviderMeta).ClientConfig
 		scriptsApi = platformclientv2.NewScriptsApiWithConfig(sdkConfig)
 	)
-	log.Printf("Retrieving script by name '%s'", scriptName)
+	log.Printf("Retrieving scripts with name '%s'", scriptName)
 	pageSize := 50
-	pageNumber := 1
-	data, _, err := scriptsApi.GetScripts(pageSize, pageNumber, "", scriptName, "", "", "", "", "", "")
-	if err != nil {
-		return script, err
+	for i := 0; ; i++ {
+		pageNumber := i + 1
+		data, _, err := scriptsApi.GetScripts(pageSize, pageNumber, "", scriptName, "", "", "", "", "", "")
+		if err != nil {
+			return scripts, err
+		}
+
+		if data.Entities == nil || len(*data.Entities) == 0 {
+			break
+		}
+
+		for _, script := range *data.Entities {
+			if *script.Name == scriptName {
+				scripts = append(scripts, script)
+			}
+		}
 	}
 
-	if data.Entities != nil && len(*data.Entities) > 0 {
-		script = (*data.Entities)[0]
-	}
-
-	if len(*data.Entities) > 1 {
-		return script, fmt.Errorf("more than one script was found with name '%s'. Please use a unique name.", scriptName)
-	}
-
-	return script, nil
+	return scripts, nil
 }
 
 func verifyScriptUploadSuccess(body []byte, meta interface{}) (bool, error) {
