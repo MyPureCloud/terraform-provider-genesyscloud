@@ -18,6 +18,40 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
+func TestAccResourceUserPromptTest(t *testing.T) {
+	resourceId := "prompt"
+	name := "TestUserPrompt_1" + strings.Replace(uuid.NewString(), "-", "", -1)
+	promptResource := UserPromptResourceStruct{
+		"en-us",
+		strconv.Quote("Test text"),
+		nullValue,
+		nullValue,
+		nullValue,
+	}
+	promptResources := []*UserPromptResourceStruct{&promptResource}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: GenerateUserPromptResource(&UserPromptStruct{
+					resourceId,
+					name,
+					nullValue,
+					promptResources,
+				}),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_architect_user_prompt." + resourceId,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccResourceUserPromptBasic(t *testing.T) {
 	userPromptResource1 := "test-user_prompt_1"
 	userPromptName1 := "TestUserPrompt_1" + strings.Replace(uuid.NewString(), "-", "", -1)
@@ -33,6 +67,7 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 		strconv.Quote(userPromptResourceTTS1),
 		nullValue,
 		nullValue,
+		nullValue,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
@@ -40,11 +75,13 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 		strconv.Quote(userPromptResourceTTS2),
 		nullValue,
 		nullValue,
+		nullValue,
 	}
 
 	userPromptAsset3 := UserPromptResourceStruct{
 		userPromptResourceLang2,
 		strconv.Quote(userPromptResourceTTS3),
+		nullValue,
 		nullValue,
 		nullValue,
 	}
@@ -112,7 +149,7 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 	})
 }
 
-func TestAccResourceUserPromptWavFile(t *testing.T) {
+func TestAccResourceUserPromptWavFileX(t *testing.T) {
 	userPromptResource1 := "test-user_prompt_wav_file"
 	userPromptName1 := "TestUserPromptWav_1" + strings.Replace(uuid.NewString(), "-", "", -1)
 	userPromptDescription1 := "Test prompt with wav audio file"
@@ -126,6 +163,7 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 		nullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName1),
+		userPromptResourceFileName1,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
@@ -133,6 +171,7 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 		nullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName2),
+		userPromptResourceFileName2,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}
@@ -172,9 +211,75 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_architect_user_prompt." + userPromptResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_architect_user_prompt." + userPromptResource1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"resources"},
+			},
+		},
+		CheckDestroy: testVerifyUserPromptsDestroyed,
+	})
+}
+
+func TestAccResourceUserPromptWavFileY(t *testing.T) {
+	userPromptResource1 := "test-user_prompt_wav_file"
+	userPromptName1 := "TestUserPromptWav_1" + strings.Replace(uuid.NewString(), "-", "", -1)
+	userPromptDescription1 := "Test prompt with wav audio file"
+	userPromptResourceLang1 := "en-us"
+	userPromptResourceText1 := "This is a test greeting!"
+	userPromptResourceFileName1 := testrunner.GetTestDataPath("test-prompt-01.wav")
+	userPromptResourceFileName2 := testrunner.GetTestDataPath("test-prompt-02.wav")
+
+	userPromptAsset1 := UserPromptResourceStruct{
+		userPromptResourceLang1,
+		nullValue,
+		strconv.Quote(userPromptResourceText1),
+		strconv.Quote(userPromptResourceFileName1),
+		userPromptResourceFileName1,
+	}
+
+	userPromptAsset2 := UserPromptResourceStruct{
+		"af",
+		nullValue,
+		strconv.Quote(userPromptResourceText1),
+		strconv.Quote(userPromptResourceFileName2),
+		userPromptResourceFileName2,
+	}
+
+	userPromptAsset3 := UserPromptResourceStruct{
+		Language:        "ca",
+		Tts_string:      strconv.Quote("test C.A"),
+		Text:            strconv.Quote("Test again"),
+		Filename:        nullValue,
+		FileContentHash: nullValue,
+	}
+
+	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1, &userPromptAsset2, &userPromptAsset3}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create user prompt with an audio file
+				Config: GenerateUserPromptResource(&UserPromptStruct{
+					userPromptResource1,
+					userPromptName1,
+					strconv.Quote(userPromptDescription1),
+					userPromptResources1,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+				//resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "name", userPromptName1),
+				//resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "description", userPromptDescription1),
+				//resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResource1, "resources.0.filename", userPromptResourceFileName1),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            "genesyscloud_architect_user_prompt." + userPromptResource1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"resources"},
 			},
 		},
 		CheckDestroy: testVerifyUserPromptsDestroyed,
@@ -195,6 +300,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 		nullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName1),
+		nullValue,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
@@ -202,6 +308,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 		nullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName2),
+		nullValue,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}

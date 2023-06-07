@@ -36,10 +36,11 @@ type UserPromptStruct struct {
 }
 
 type UserPromptResourceStruct struct {
-	Language   string
-	Tts_string string
-	Text       string
-	Filename   string
+	Language        string
+	Tts_string      string
+	Text            string
+	Filename        string
+	FileContentHash string
 }
 
 var userPromptResource = &schema.Resource{
@@ -705,6 +706,11 @@ var userPromptResource = &schema.Resource{
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
+		"file_content_hash": {
+			Description: "File content hash. Used to detect changes.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
 	},
 }
 
@@ -915,7 +921,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 			}
 		}
 
-		d.Set("resources", flattenPromptResources(userPrompt.Resources))
+		d.Set("resources", flattenPromptResources(d, userPrompt.Resources))
 
 		log.Printf("Read Audio Prompt %s %s", d.Id(), *userPrompt.Id)
 		return cc.CheckState()
@@ -1027,7 +1033,7 @@ func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclient
 	return nil
 }
 
-func flattenPromptResources(promptResources *[]platformclientv2.Promptasset) *schema.Set {
+func flattenPromptResources(d *schema.ResourceData, promptResources *[]platformclientv2.Promptasset) *schema.Set {
 	if promptResources == nil || len(*promptResources) == 0 {
 		return nil
 	}
@@ -1048,6 +1054,20 @@ func flattenPromptResources(promptResources *[]platformclientv2.Promptasset) *sc
 		if sdkPromptAsset.Tags != nil && len(*sdkPromptAsset.Tags) > 0 {
 			t := *sdkPromptAsset.Tags
 			promptResource["filename"] = t["filename"][0]
+		}
+
+		if schemaResources, ok := d.Get("resources").(*schema.Set); ok {
+			schemaResourcesList := schemaResources.List()
+			for _, r := range schemaResourcesList {
+				if rMap, ok := r.(map[string]interface{}); ok {
+					if fmt.Sprintf("%v", rMap["language"]) != *sdkPromptAsset.Language {
+						continue
+					}
+					if hash, ok := rMap["file_content_hash"].(string); ok && hash != "" {
+						promptResource["file_content_hash"] = hash
+					}
+				}
+			}
 		}
 
 		resourceSet.Add(promptResource)
@@ -1205,20 +1225,28 @@ func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDat
 }
 
 func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
-
 	resourcesString := ``
 	for _, p := range userPrompt.Resources {
+		var fileContentHash string
+		if p.FileContentHash != nullValue {
+			fullyQualifiedPath, _ := filepath.Abs(p.FileContentHash)
+			fileContentHash = fmt.Sprintf(`filesha256("%s")`, fullyQualifiedPath)
+		} else {
+			fileContentHash = nullValue
+		}
 		resourcesString += fmt.Sprintf(`resources {
-            language = "%s"
-            tts_string = %s
-            text = %s
-            filename = %s
+            language          = "%s"
+            tts_string        = %s
+            text              = %s
+            filename          = %s
+			file_content_hash = %s
         }
         `,
 			p.Language,
 			p.Tts_string,
 			p.Text,
 			p.Filename,
+			fileContentHash,
 		)
 	}
 
