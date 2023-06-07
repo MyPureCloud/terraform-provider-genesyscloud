@@ -707,7 +707,7 @@ var userPromptResource = &schema.Resource{
 			Optional:    true,
 		},
 		"file_content_hash": {
-			Description: "File content hash. Used to detect changes.",
+			Description: "Hash value of the audio file content. Used to detect changes. Only required when uploading a local audio file.",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
@@ -1236,12 +1236,12 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 			fileContentHash = nullValue
 		}
 		resourcesString += fmt.Sprintf(`resources {
-            language          = "%s"
-            tts_string        = %s
-            text              = %s
-            filename          = %s
+			language          = "%s"
+			tts_string        = %s
+			text              = %s
+			filename          = %s
 			file_content_hash = %s
-        }
+		}
         `,
 			p.Language,
 			p.Tts_string,
