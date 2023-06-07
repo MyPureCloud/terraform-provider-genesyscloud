@@ -40,7 +40,7 @@ resource "genesyscloud_outbound_sequence" "example_outbound_sequence" {
 ### Optional
 
 - `repeat` (Boolean) Indicates if a sequence should repeat from the beginning after the last campaign completes. Default is false.
-- `status` (String) The current status of the CampaignSequence. A CampaignSequence can be turned 'on' or 'off'.
+- `status` (String) The current status of the CampaignSequence. A CampaignSequence can be turned 'on' or 'off' (default).
 
 ### Read-Only
 

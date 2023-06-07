@@ -66,7 +66,7 @@ resource "genesyscloud_outbound_campaignrule" "campaign_rule" {
 
 ### Optional
 
-- `enabled` (Boolean) Whether or not this campaign rule is currently enabled. Required on updates. Defaults to `false`.
+- `enabled` (Boolean) Whether or not this campaign rule is currently enabled. Defaults to `false`.
 - `match_any_conditions` (Boolean) Whether actions are executed if any condition is met, or only when all conditions are met. Defaults to `false`.
 
 ### Read-Only

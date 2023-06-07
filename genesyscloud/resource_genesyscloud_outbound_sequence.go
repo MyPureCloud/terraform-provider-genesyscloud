@@ -125,7 +125,7 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	d.SetId(*outboundSequence.Id)
 
 	// Campaigns sequences can be enabled after creation
-	if status != "" && status == "on" {
+	if status == "on" {
 		d.Set("status", status)
 		diag := updateOutboundSequence(ctx, d, meta)
 		if diag != nil {
