@@ -1218,6 +1218,7 @@ func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDat
 				}
 				if fileName != "" {
 					r["filename"] = path.Join(subDir, fileName)
+					r["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDir, fileName))
 				}
 			}
 		}
