@@ -28,5 +28,3 @@ data "genesyscloud_quality_forms_evaluation" "quality-form" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

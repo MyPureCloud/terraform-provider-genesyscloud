@@ -29,5 +29,3 @@ data "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
 
 - `id` (String) The ID of this resource.
 - `version` (String) The version of the configuration.
-
-

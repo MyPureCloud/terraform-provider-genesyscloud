@@ -28,5 +28,3 @@ data "genesyscloud_widget_deployment" "mywidget" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

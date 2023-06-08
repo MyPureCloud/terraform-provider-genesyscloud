@@ -28,5 +28,3 @@ data "genesyscloud_outbound_callanalysisresponseset" "data-cars" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

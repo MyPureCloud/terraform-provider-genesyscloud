@@ -28,5 +28,3 @@ data "genesyscloud_flow_outcome" "outcome" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

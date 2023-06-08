@@ -28,5 +28,3 @@ data "genesyscloud_flow_milestone" "milestone" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

@@ -22,5 +22,3 @@ Data source for Genesys Cloud survey form. Select a form by name
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

@@ -28,5 +28,3 @@ data "genesyscloud_architect_emergencygroup" "emergency_group" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

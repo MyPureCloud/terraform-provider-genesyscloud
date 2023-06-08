@@ -28,5 +28,3 @@ data "genesyscloud_auth_role" "employee" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

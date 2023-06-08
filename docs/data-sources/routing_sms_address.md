@@ -28,5 +28,3 @@ data "genesyscloud_routing_sms_address" "example_routing_sms_address" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

@@ -28,5 +28,3 @@ data "genesyscloud_routing_skill_group" "skill_group" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

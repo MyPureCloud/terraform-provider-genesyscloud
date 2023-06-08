@@ -28,5 +28,3 @@ data "genesyscloud_employeeperformance_externalmetrics_definition" "example_exte
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

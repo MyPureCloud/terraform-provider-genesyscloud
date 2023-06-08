@@ -28,5 +28,3 @@ data "genesyscloud_oauth_client" "oauth_client" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

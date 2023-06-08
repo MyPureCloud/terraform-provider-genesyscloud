@@ -28,5 +28,3 @@ data "genesyscloud_flow" "example-flow" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

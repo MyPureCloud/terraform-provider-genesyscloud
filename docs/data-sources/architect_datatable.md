@@ -28,5 +28,3 @@ data "genesyscloud_architect_datatable" "arch-table" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

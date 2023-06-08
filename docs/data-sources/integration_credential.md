@@ -28,5 +28,3 @@ data "genesyscloud_integration_credential" "integrationCredential" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

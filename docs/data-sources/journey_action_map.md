@@ -28,5 +28,3 @@ data "genesyscloud_journey_action_map" "example_journey_action_map_data" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

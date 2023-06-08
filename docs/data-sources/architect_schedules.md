@@ -28,5 +28,3 @@ data "genesyscloud_architect_schedules" "schedule" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

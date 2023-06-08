@@ -28,5 +28,3 @@ data "genesyscloud_architect_user_prompt" "welcome_greeting" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

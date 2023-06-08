@@ -28,5 +28,3 @@ data "genesyscloud_processautomation_trigger" "example-trigger" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

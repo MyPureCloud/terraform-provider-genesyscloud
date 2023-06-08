@@ -28,5 +28,3 @@ data "genesyscloud_architect_schedulegroups" "arch-sched-group" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

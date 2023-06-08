@@ -38,5 +38,3 @@ output "genesys_cloud_org_id" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

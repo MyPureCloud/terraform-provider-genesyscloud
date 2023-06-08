@@ -28,5 +28,3 @@ data "genesyscloud_outbound_contact_list" "contact_list" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-
