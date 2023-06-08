@@ -28,5 +28,3 @@ data "genesyscloud_routing_skill" "marketing" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

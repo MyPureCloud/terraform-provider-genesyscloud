@@ -28,5 +28,3 @@ data "genesyscloud_telephony_providers_edges_phonebasesettings" "phoneBaseSettin
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

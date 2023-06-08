@@ -28,5 +28,3 @@ data "genesyscloud_outbound_sequence" "example_outbound_sequence" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

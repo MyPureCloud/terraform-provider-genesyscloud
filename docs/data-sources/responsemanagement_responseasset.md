@@ -28,5 +28,3 @@ data "genesyscloud_responsemanagement_responseasset" "asset" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

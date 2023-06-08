@@ -28,5 +28,3 @@ data "genesyscloud_journey_outcome" "example_journey_outcome_data" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

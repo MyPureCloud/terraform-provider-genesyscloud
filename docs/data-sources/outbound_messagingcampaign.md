@@ -28,5 +28,3 @@ data "genesyscloud_outbound_messagingcampaign" "example_outbound_messagingcampai
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

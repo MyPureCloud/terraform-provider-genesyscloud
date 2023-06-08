@@ -28,5 +28,3 @@ data "genesyscloud_responsemanagement_library" "example_responsemanagement_libra
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

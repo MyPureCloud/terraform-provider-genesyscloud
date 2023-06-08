@@ -30,5 +30,3 @@ data "genesyscloud_telephony_providers_edges_extension_pool" "extensionPool" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

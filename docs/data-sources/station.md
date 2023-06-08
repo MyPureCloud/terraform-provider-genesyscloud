@@ -28,5 +28,3 @@ data "genesyscloud_station" "example-station" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

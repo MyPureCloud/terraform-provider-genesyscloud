@@ -22,5 +22,3 @@ Data source for Genesys Cloud media retention policy. Select a policy by name
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

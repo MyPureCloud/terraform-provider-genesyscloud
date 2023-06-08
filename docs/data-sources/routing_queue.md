@@ -28,5 +28,3 @@ data "genesyscloud_routing_queue" "sales-queue" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

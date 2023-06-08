@@ -28,5 +28,3 @@ data "genesyscloud_outbound_attempt_limit" "attempt_limit" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

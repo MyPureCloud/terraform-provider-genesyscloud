@@ -28,5 +28,3 @@ data "genesyscloud_outbound_callabletimeset" "callable_timeset" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

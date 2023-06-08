@@ -28,5 +28,3 @@ data "genesyscloud_outbound_dnclist" "dnc_list" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

@@ -23,5 +23,3 @@ Data source for Genesys Cloud Knowledge Base Label. Select a label by name.
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

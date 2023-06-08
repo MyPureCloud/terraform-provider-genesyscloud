@@ -23,5 +23,3 @@ Data source for Genesys Cloud Knowledge Base Category. Select a category by name
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

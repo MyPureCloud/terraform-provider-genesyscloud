@@ -28,5 +28,3 @@ data "genesyscloud_outbound_ruleset" "example_outbound_ruleset" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

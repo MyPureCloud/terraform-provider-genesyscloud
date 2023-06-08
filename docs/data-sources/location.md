@@ -28,5 +28,3 @@ data "genesyscloud_location" "location" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

@@ -29,5 +29,3 @@ data "genesyscloud_routing_email_domain" "email_domain" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-
