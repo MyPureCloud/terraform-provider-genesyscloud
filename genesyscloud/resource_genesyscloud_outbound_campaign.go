@@ -266,6 +266,9 @@ func outboundCampaignExporter() *ResourceExporter {
 			`callable_time_set_id`: {
 				RefType: "genesyscloud_outbound_callabletimeset",
 			},
+			`script_id`: {
+				RefType: "genesyscloud_script",
+			},
 		},
 	}
 }
@@ -602,6 +605,28 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
+	campaignStatus := d.Get("campaign_status").(string)
+
+	// Campaigns have to be turned off before they can be deleted
+	if campaignStatus != "off" {
+		diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			log.Printf("Turning off Outbound Campaign before deletion")
+			d.Set("campaign_status", "off")
+			outboundCampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
+			if getErr != nil {
+				return resp, diag.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr)
+			}
+			// Handles updating the campaign based on what is set in ResourceData.campaign_status
+			diagErr := updateOutboundCampaignStatus(d, outboundApi, *outboundCampaign)
+			if diagErr != nil {
+				return resp, diagErr
+			}
+			return resp, nil
+		})
+		if diagErr != nil {
+			return diagErr
+		}
+	}
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Campaign")
 		_, resp, err := outboundApi.DeleteOutboundCampaign(d.Id())

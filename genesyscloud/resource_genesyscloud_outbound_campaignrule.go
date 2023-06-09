@@ -354,6 +354,17 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
+	ruleEnabled := d.Get("enabled").(bool)
+	if ruleEnabled {
+		// Have to disable rule before we can delete
+		log.Printf("Disabling Outbound Campaign Rule")
+		d.Set("enabled", false)
+		diagErr := updateOutboundCampaignRule(ctx, d, meta)
+		if diagErr != nil {
+			return diagErr
+		}
+	}
+
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Campaign Rule")
 		resp, err := outboundApi.DeleteOutboundCampaignrule(d.Id())
