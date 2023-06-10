@@ -45,15 +45,15 @@ var (
 		},
 	}
 
-	ConditionalGroupRoutingQueueResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"queue_id": {
-				Description: "ID (GUID) for Queue",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
+	// ConditionalGroupRoutingQueueResource = &schema.Resource{
+	// 	Schema: map[string]*schema.Schema{
+	// 		"queue_id": {
+	// 			Description: "ID (GUID) for Queue",
+	// 			Type:        schema.TypeString,
+	// 			Required:    true,
+	// 		},
+	// 	},
+	// }
 
 	conditionalGroupRoutingGroupResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -361,10 +361,23 @@ func resourceRoutingQueue() *schema.Resource {
 				MaxItems:    5,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"queue_id": {
+						// "queue": {
+						// 	Type:     schema.TypeSet,
+						// 	Optional: true,
+						// 	Elem:     ConditionalGroupRoutingQueueResource,
+						// },
+						"queue": {
 							Type:     schema.TypeSet,
 							Optional: true,
-							Elem:     ConditionalGroupRoutingQueueResource,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"id": {
+										Description: "The ID of the queue.",
+										Type:        schema.TypeString,
+										Required:    true,
+									},
+								},
+							},
 						},
 						"operator": {
 							Description:  "Matching operator (GreaterThanOrEqualTo | LessThanOrEqualTo). MEETS_THRESHOLD matches any agent with a score at or above the rule's threshold. ANY matches all specified agents, regardless of score.",
@@ -380,7 +393,7 @@ func resourceRoutingQueue() *schema.Resource {
 							Default:      "EstimatedWaitTime",
 							ValidateFunc: validation.StringInSlice([]string{"EstimatedWaitTime"}, false),
 						},
-						"conditionValue": {
+						"condition_value": {
 							Description:  "Seconds to wait in this ring before moving to the next.",
 							Type:         schema.TypeFloat,
 							Required:     true,
@@ -571,6 +584,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		MediaSettings:              buildSdkMediaSettings(d),
 		RoutingRules:               buildSdkRoutingRules(d),
 		Bullseye:                   buildSdkBullseyeSettings(d),
+		Conditionalgrouprouting:    buildSdkConditionalGroupRouting(d),
 		AcwSettings:                buildSdkAcwSettings(d),
 		SkillEvaluationMethod:      &skillEvaluationMethod,
 		QueueFlow:                  buildSdkDomainEntityRef(d, "queue_flow_id"),
@@ -1184,7 +1198,7 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) *platformclientv2.C
 				sdkCGRRule.Operator = &operator
 			}
 
-			if conditionValue, ok := ruleSettings["conditionValue"].(float64); ok {
+			if conditionValue, ok := ruleSettings["condition_value"].(float64); ok {
 				sdkCGRRule.ConditionValue = &conditionValue
 			}
 
@@ -1192,9 +1206,15 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) *platformclientv2.C
 				sdkCGRRule.Metric = &metric
 			}
 
-			if queue_id, ok := ruleSettings["queue_id"].(string); ok {
-				var queue *platformclientv2.Domainentityref
-				queue = &platformclientv2.Domainentityref{Id: &queue_id}
+			// if queue, ok := ruleSettings["queue"].(string); ok {
+			// 	// var queue *platformclientv2.Domainentityref
+			// 	var Queue = &platformclientv2.Domainentityref{Id: &queue}
+			// 	sdkCGRRule.Queue = Queue
+			// }
+
+			if queueSettings, ok := ruleSettings["queue"].(map[string]interface{}); ok {
+				queueID := queueSettings["queue_id"].(string)
+				queue := &platformclientv2.Domainentityref{Id: &queueID}
 				sdkCGRRule.Queue = queue
 			}
 
@@ -1261,7 +1281,7 @@ func flattenConditionalGroupRoutingRules(rules *[]platformclientv2.Conditionalgr
 		}
 
 		if rule.Queue != nil && rule.Queue.Id != nil {
-			ruleSettings["queue_id"] = *rule.Queue.Id
+			ruleSettings["queue"] = *rule.Queue.Id
 		}
 
 		if rule.Groups != nil {
@@ -1867,6 +1887,23 @@ func GenerateBullseyeSettings(expTimeout string, skillsToRemove ...string) strin
 		skills_to_remove = [%s]
 	}
 	`, expTimeout, strings.Join(skillsToRemove, ", "))
+}
+
+func GenerateConditionalGroupRoutingRules(queueId string, operator string, metric string, conditionValue string, waitSeconds string, group_id string, group_type string) string {
+	return fmt.Sprintf(`conditional_group_routing_rules {
+		queue {
+			id = "%s"
+		}
+		operator = "%s"
+		metric = "%s"
+		condition_Value = "%s"
+		wait_seconds = %s
+		groups {
+			group_id = "%s"
+			group_type = "%s" 
+		}
+	}
+	`, queueId, operator, metric, conditionValue, waitSeconds, group_id, group_type)
 }
 
 func GenerateBullseyeSettingsWithMemberGroup(expTimeout string, memberGroupId string, memberGroupType string, skillsToRemove ...string) string {
