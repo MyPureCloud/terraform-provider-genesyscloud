@@ -45,15 +45,15 @@ var (
 		},
 	}
 
-	// ConditionalGroupRoutingQueueResource = &schema.Resource{
-	// 	Schema: map[string]*schema.Schema{
-	// 		"queue_id": {
-	// 			Description: "ID (GUID) for Queue",
-	// 			Type:        schema.TypeString,
-	// 			Required:    true,
-	// 		},
-	// 	},
-	// }
+	ConditionalGroupRoutingQueueResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "ID (GUID) for Queue",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
 
 	conditionalGroupRoutingGroupResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -361,24 +361,24 @@ func resourceRoutingQueue() *schema.Resource {
 				MaxItems:    5,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						// "queue": {
-						// 	Type:     schema.TypeSet,
-						// 	Optional: true,
-						// 	Elem:     ConditionalGroupRoutingQueueResource,
-						// },
 						"queue": {
 							Type:     schema.TypeSet,
 							Optional: true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"id": {
-										Description: "The ID of the queue.",
-										Type:        schema.TypeString,
-										Required:    true,
-									},
-								},
-							},
+							Elem:     ConditionalGroupRoutingQueueResource,
 						},
+						// "queue": {
+						// 	Type:     schema.TypeSet,
+						// 	Optional: true,
+						// 	Elem: &schema.Resource{
+						// 		Schema: map[string]*schema.Schema{
+						// 			"id": {
+						// 				Description: "The ID of the queue.",
+						// 				Type:        schema.TypeString,
+						// 				Required:    true,
+						// 			},
+						// 		},
+						// 	},
+						// },
 						"operator": {
 							Description:  "Matching operator (GreaterThanOrEqualTo | LessThanOrEqualTo). MEETS_THRESHOLD matches any agent with a score at or above the rule's threshold. ANY matches all specified agents, regardless of score.",
 							Type:         schema.TypeString,
@@ -1211,11 +1211,25 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) *platformclientv2.C
 			// 	var Queue = &platformclientv2.Domainentityref{Id: &queue}
 			// 	sdkCGRRule.Queue = Queue
 			// }
+			//panic: interface conversion: interface {} is *schema.Set, not map[string]interface {}
 
-			if queueSettings, ok := ruleSettings["queue"].(map[string]interface{}); ok {
-				queueID := queueSettings["queue_id"].(string)
-				queue := &platformclientv2.Domainentityref{Id: &queueID}
-				sdkCGRRule.Queue = queue
+			// if queueSettings, ok := ruleSettings["queue"]; ok {
+
+			// 	settingsMap := queueSettings.(map[string]interface{})
+			// 	queueID := settingsMap["id"].(string)
+			// 	queue := &platformclientv2.Domainentityref{Id: &queueID}
+			// 	sdkCGRRule.Queue = queue
+			// }
+
+			if queueSettings, ok := ruleSettings["queue"]; ok {
+				settingsSet := queueSettings.(*schema.Set)
+
+				for _, queueSetting := range settingsSet.List() {
+					settingsMap := queueSetting.(map[string]interface{})
+					queueID := settingsMap["id"].(string)
+					queue := &platformclientv2.Domainentityref{Id: &queueID}
+					sdkCGRRule.Queue = queue
+				}
 			}
 
 			if memberGroups, ok := ruleSettings["groups"]; ok {
