@@ -849,6 +849,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		MediaSettings:              buildSdkMediaSettings(d),
 		RoutingRules:               buildSdkRoutingRules(d),
 		Bullseye:                   buildSdkBullseyeSettings(d),
+		Conditionalgrouprouting:    buildSdkConditionalGroupRouting(d),
 		AcwSettings:                buildSdkAcwSettings(d),
 		SkillEvaluationMethod:      &skillEvaluationMethod,
 		QueueFlow:                  buildSdkDomainEntityRef(d, "queue_flow_id"),
