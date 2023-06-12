@@ -220,7 +220,7 @@ func resourceOutboundCampaignRule() *schema.Resource {
 				Type:        schema.TypeBool,
 			},
 			`enabled`: {
-				Description: `Whether or not this campaign rule is currently enabled.`,
+				Description: `Whether or not this campaign rule is currently enabled. Required on updates.`,
 				Optional:    true,
 				Default:     false,
 				Type:        schema.TypeBool,
@@ -246,15 +246,12 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		CampaignRuleConditions: buildOutboundCampaignRuleConditionSlice(campaignRuleConditions),
 		CampaignRuleActions:    buildOutboundCampaignRuleActionSlice(campaignRuleActions),
 		MatchAnyConditions:     &matchAnyConditions,
+		Enabled:                &enabled,
 	}
 
 	if name != "" {
 		sdkCampaignRule.Name = &name
 	}
-
-	// All campaign rules have to be created in an "off" state to start out with
-	defaultStatus := false
-	sdkCampaignRule.Enabled = &defaultStatus
 
 	log.Printf("Creating Outbound Campaign Rule %s", name)
 	outboundCampaignRule, _, err := outboundApi.PostOutboundCampaignrules(sdkCampaignRule)
@@ -263,15 +260,6 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	d.SetId(*outboundCampaignRule.Id)
-
-	// Campaign rules can be enabled _after_ creation
-	if enabled {
-		d.Set("enabled", enabled)
-		diag := updateOutboundCampaignRule(ctx, d, meta)
-		if diag != nil {
-			return diag
-		}
-	}
 
 	log.Printf("Created Outbound Campaign Rule %s %s", name, *outboundCampaignRule.Id)
 	return readOutboundCampaignRule(ctx, d, meta)
