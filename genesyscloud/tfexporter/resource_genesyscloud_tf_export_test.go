@@ -640,17 +640,19 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 	)
 
 	userPromptAsset := gcloud.UserPromptResourceStruct{
-		Language:   userPromptResourceLanguage,
-		Tts_string: nullValue,
-		Text:       strconv.Quote(userPromptResourceText),
-		Filename:   strconv.Quote(userResourcePromptFilename1),
+		Language:        userPromptResourceLanguage,
+		Tts_string:      nullValue,
+		Text:            strconv.Quote(userPromptResourceText),
+		Filename:        strconv.Quote(userResourcePromptFilename1),
+		FileContentHash: userResourcePromptFilename1,
 	}
 
 	userPromptAsset2 := gcloud.UserPromptResourceStruct{
-		Language:   userPromptResourceLanguage2,
-		Tts_string: nullValue,
-		Text:       strconv.Quote(userPromptResourceText2),
-		Filename:   strconv.Quote(userResourcePromptFilename2),
+		Language:        userPromptResourceLanguage2,
+		Tts_string:      nullValue,
+		Text:            strconv.Quote(userPromptResourceText2),
+		Filename:        strconv.Quote(userResourcePromptFilename2),
+		FileContentHash: userResourcePromptFilename2,
 	}
 
 	userPromptResources := []*gcloud.UserPromptResourceStruct{&userPromptAsset}
@@ -726,6 +728,12 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceId, "resources.0.filename", userResourcePromptFilename1),
 					testUserPromptAudioFileExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_architect_user_prompt", userPromptResourceId, exportTestDir, userPromptName),
 				),
+			},
+			{
+				ResourceName:            "genesyscloud_architect_user_prompt." + userPromptResourceId,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"resources"},
 			},
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),

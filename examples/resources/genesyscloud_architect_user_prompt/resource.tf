@@ -7,8 +7,9 @@ resource "genesyscloud_architect_user_prompt" "welcome_greeting" {
     tts_string = "Good day. Thank you for calling."
   }
   resources {
-    language = "ja-jp"
-    text     = "良い一日。お電話ありがとうございます。"
-    filename = "jp-welcome-greeting.wav"
+    language          = "ja-jp"
+    text              = "良い一日。お電話ありがとうございます。"
+    filename          = "jp-welcome-greeting.wav"
+    file_content_hash = filesha256("jp-welcome-greeting.wav")
   }
 }
