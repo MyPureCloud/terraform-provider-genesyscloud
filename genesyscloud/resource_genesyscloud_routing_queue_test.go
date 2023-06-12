@@ -38,6 +38,13 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 
 		bullseyeMemberGroupName = "test_membergroup_series6"
 		bullseyeMemberGroupType = "GROUP"
+
+		conditionalGroupRoutingOperator       = "LessThanOrEqualTo"
+		conditionalGroupRoutingMetric         = "EstimatedWaitTime"
+		conditionalGroupRoutingConditionValue = "0"
+		conditionalGroupRoutingWaitSeconds    = "20"
+		conditionalGroupRoutingGroup          = "test_membergroup_series6"
+		conditionalGroupRoutingGroupType      = "SKOLLGROUP"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -75,6 +82,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateBullseyeSettings(alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource+".id"),
 					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupName+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResource+".id"),
 					GenerateRoutingRules(routingRuleOpAny, "50", nullValue),
+					GenerateConditionalGroupRoutingRules("genesyscloud_routing_queue."+queueResource1+".id", conditionalGroupRoutingOperator,
+						conditionalGroupRoutingMetric, conditionalGroupRoutingConditionValue, conditionalGroupRoutingWaitSeconds,
+						"genesyscloud_group."+conditionalGroupRoutingGroup+".id", conditionalGroupRoutingGroupType),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "name", queueName1),
@@ -119,6 +129,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateBullseyeSettings(alertTimeout2),
 					GenerateRoutingRules(routingRuleOpMeetsThresh, "90", "30"),
 					GenerateRoutingRules(routingRuleOpAny, "45", "15"),
+					GenerateConditionalGroupRoutingRules("genesyscloud_routing_queue."+queueResource1+".id", conditionalGroupRoutingOperator,
+						conditionalGroupRoutingMetric, conditionalGroupRoutingConditionValue, conditionalGroupRoutingWaitSeconds,
+						"genesyscloud_group."+conditionalGroupRoutingGroup+".id", conditionalGroupRoutingGroupType),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "name", queueName2),
@@ -703,6 +716,23 @@ func generateBullseyeSettingsWithMemberGroup(expTimeout string, memberGroupId st
 		}
 	}
 	`, expTimeout, strings.Join(skillsToRemove, ", "), memberGroupId, memberGroupType)
+}
+
+func generateConditionalGroupRoutingRules(queueId string, operator string, metric string, conditionValue string, waitSeconds string, group_id string, group_type string) string {
+	return fmt.Sprintf(`conditional_group_routing_rules {
+		queue {
+			id = "%s"
+		}
+		operator = "%s"
+		metric = "%s"
+		condition_Value = "%s"
+		wait_seconds = %s
+		groups {
+			group_id = "%s"
+			group_type = "%s" 
+		}
+	}
+	`, queueId, operator, metric, conditionValue, waitSeconds, group_id, group_type)
 }
 
 func generateMemberBlock(userID string, ringNum string) string {

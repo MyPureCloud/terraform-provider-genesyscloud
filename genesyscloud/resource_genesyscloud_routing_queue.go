@@ -366,41 +366,28 @@ func resourceRoutingQueue() *schema.Resource {
 							Optional: true,
 							Elem:     ConditionalGroupRoutingQueueResource,
 						},
-						// "queue": {
-						// 	Type:     schema.TypeSet,
-						// 	Optional: true,
-						// 	Elem: &schema.Resource{
-						// 		Schema: map[string]*schema.Schema{
-						// 			"id": {
-						// 				Description: "The ID of the queue.",
-						// 				Type:        schema.TypeString,
-						// 				Required:    true,
-						// 			},
-						// 		},
-						// 	},
-						// },
 						"operator": {
-							Description:  "Matching operator (GreaterThanOrEqualTo | LessThanOrEqualTo). MEETS_THRESHOLD matches any agent with a score at or above the rule's threshold. ANY matches all specified agents, regardless of score.",
+							Description:  "Matching operator (GreaterThan| LessThan | GreaterThanOrEqualTo | LessThanOrEqualTo). The operator that compares the actual value against the condition value",
 							Type:         schema.TypeString,
 							Optional:     true,
 							Default:      "MEETS_THRESHOLD",
-							ValidateFunc: validation.StringInSlice([]string{"GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
 						},
 						"metric": {
-							Description:  "Matching operator (EstimatedWaitTime). MEETS_THRESHOLD matches any agent with a score at or above the rule's threshold. ANY matches all specified agents, regardless of score.",
+							Description:  "Metric (EstimatedWaitTime). The queue metric being evaluated",
 							Type:         schema.TypeString,
 							Optional:     true,
 							Default:      "EstimatedWaitTime",
 							ValidateFunc: validation.StringInSlice([]string{"EstimatedWaitTime"}, false),
 						},
 						"condition_value": {
-							Description:  "Seconds to wait in this ring before moving to the next.",
+							Description:  "Condition value of this ConditionalGroupRoutingRule. The limit value, beyond which a rule evaluates as true.",
 							Type:         schema.TypeFloat,
 							Required:     true,
 							ValidateFunc: validation.FloatBetween(0, 259200),
 						},
 						"wait_seconds": {
-							Description:  "Seconds to wait in this rule before moving to the next.",
+							Description:  "The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule.",
 							Type:         schema.TypeInt,
 							Optional:     true,
 							Default:      5,
@@ -1206,21 +1193,6 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) *platformclientv2.C
 			if metric, ok := ruleSettings["metric"].(string); ok {
 				sdkCGRRule.Metric = &metric
 			}
-
-			// if queue, ok := ruleSettings["queue"].(string); ok {
-			// 	// var queue *platformclientv2.Domainentityref
-			// 	var Queue = &platformclientv2.Domainentityref{Id: &queue}
-			// 	sdkCGRRule.Queue = Queue
-			// }
-			//panic: interface conversion: interface {} is *schema.Set, not map[string]interface {}
-
-			// if queueSettings, ok := ruleSettings["queue"]; ok {
-
-			// 	settingsMap := queueSettings.(map[string]interface{})
-			// 	queueID := settingsMap["id"].(string)
-			// 	queue := &platformclientv2.Domainentityref{Id: &queueID}
-			// 	sdkCGRRule.Queue = queue
-			// }
 
 			if queueSettings, ok := ruleSettings["queue"]; ok {
 				settingsSet := queueSettings.(*schema.Set)
