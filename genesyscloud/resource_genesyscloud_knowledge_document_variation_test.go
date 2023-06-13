@@ -353,7 +353,6 @@ func testVerifyKnowledgeDocumentVariationDestroyed(state *terraform.State) error
 				// Unexpected error
 				return fmt.Errorf("Unexpected error: %s", draftErr)
 			}
-			continue
 		} else {
 			// Unexpected error
 			return fmt.Errorf("Unexpected error: %s", publishedErr)
