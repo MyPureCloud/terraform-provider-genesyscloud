@@ -38,61 +38,62 @@ func dataSourceKnowledgeCategoryRead(ctx context.Context, d *schema.ResourceData
 	knowledgeBaseName := d.Get("knowledge_base_name").(string)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", true, "", "")
-			unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", false, "", "")
+		// for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", true, "", "")
+		unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", false, "", "")
 
-			if getPublishedErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getPublishedErr))
-			}
-			if getUnpublishedErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getUnpublishedErr))
-			}
+		if getPublishedErr != nil {
+			return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getPublishedErr))
+		}
+		if getUnpublishedErr != nil {
+			return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getUnpublishedErr))
+		}
 
-			noPublishedEntities := publishedKnowledgeBases.Entities == nil || len(*publishedKnowledgeBases.Entities) == 0
-			noUnpublishedEntities := unpublishedKnowledgeBases.Entities == nil || len(*unpublishedKnowledgeBases.Entities) == 0
-			if noPublishedEntities && noUnpublishedEntities {
+		noPublishedEntities := publishedKnowledgeBases.Entities == nil || len(*publishedKnowledgeBases.Entities) == 0
+		noUnpublishedEntities := unpublishedKnowledgeBases.Entities == nil || len(*unpublishedKnowledgeBases.Entities) == 0
+		if noPublishedEntities && noUnpublishedEntities {
 
-				return resource.RetryableError(fmt.Errorf("no knowledge bases found with name %s", knowledgeBaseName))
-			}
+			return resource.RetryableError(fmt.Errorf("no knowledge bases found with name %s", knowledgeBaseName))
+		}
 
-			// prefer published knowledge base
-			for _, knowledgeBase := range *publishedKnowledgeBases.Entities {
-				if knowledgeBase.Name != nil && *knowledgeBase.Name == knowledgeBaseName {
-					knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", false, name, "", "", false)
+		// prefer published knowledge base
+		for _, knowledgeBase := range *publishedKnowledgeBases.Entities {
+			if knowledgeBase.Name != nil && *knowledgeBase.Name == knowledgeBaseName {
+				knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", false, name, "", "", false)
 
-					if getErr != nil {
-						return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge category %s: %s", name, getErr))
-					}
-
-					for _, knowledgeCategory := range *knowledgeCategories.Entities {
-						if *knowledgeCategory.Name == name {
-							id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
-							d.SetId(id)
-							return nil
-						}
-					}
+				if getErr != nil {
+					return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge category %s: %s", name, getErr))
 				}
-			}
-			// use unpublished knowledge base if unpublished doesn't exist
-			for _, knowledgeBase := range *unpublishedKnowledgeBases.Entities {
-				if knowledgeBase.Name != nil && *knowledgeBase.Name == knowledgeBaseName {
-					knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", false, name, "", "", false)
 
-					if getErr != nil {
-						return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge category %s: %s", name, getErr))
-					}
-
-					for _, knowledgeCategory := range *knowledgeCategories.Entities {
-						if *knowledgeCategory.Name == name {
-							id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
-							d.SetId(id)
-							return nil
-						}
+				for _, knowledgeCategory := range *knowledgeCategories.Entities {
+					if *knowledgeCategory.Name == name {
+						id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+						d.SetId(id)
+						return nil
 					}
 				}
 			}
 		}
+		// use unpublished knowledge base if unpublished doesn't exist
+		for _, knowledgeBase := range *unpublishedKnowledgeBases.Entities {
+			if knowledgeBase.Name != nil && *knowledgeBase.Name == knowledgeBaseName {
+				knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", false, name, "", "", false)
+
+				if getErr != nil {
+					return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge category %s: %s", name, getErr))
+				}
+
+				for _, knowledgeCategory := range *knowledgeCategories.Entities {
+					if *knowledgeCategory.Name == name {
+						id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+						d.SetId(id)
+						return nil
+					}
+				}
+			}
+		}
+		// }
+		return nil
 	})
 }

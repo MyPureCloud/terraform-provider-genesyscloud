@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
@@ -66,42 +67,77 @@ var (
 
 func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
+	documentEntities := make([]platformclientv2.Knowledgedocumentresponse, 0)
 	resources := make(ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		knowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", false, "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
-		}
-
-		if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
-			break
-		}
-		for _, knowledgeBase := range *knowledgeBases.Entities {
-			knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
-		}
+	// get published knowledge bases
+	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	if err != nil {
+		return nil, err
 	}
-	for _, knowledgeBase := range knowledgeBaseList {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil)
-			if getErr != nil {
-				return nil, diag.Errorf("Failed to get page of Knowledge documents: %v", getErr)
-			}
+	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
 
-			if knowledgeDocuments.Entities == nil || len(*knowledgeDocuments.Entities) == 0 {
-				break
-			}
-			for _, knowledgeDocument := range *knowledgeDocuments.Entities {
-				id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
-				resources[id] = &ResourceMeta{Name: *knowledgeDocument.Title}
-			}
+	// get unpublished knowledge bases
+	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	if err != nil {
+		return nil, err
+	}
+	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+
+	for _, knowledgeBase := range knowledgeBaseList {
+		partialEntities, err := getAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase)
+		if err != nil {
+			return nil, err
 		}
+		documentEntities = append(documentEntities, *partialEntities...)
+	}
+
+	for _, knowledgeDocument := range documentEntities {
+		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
+		resources[id] = &ResourceMeta{Name: *knowledgeDocument.Title}
 	}
 
 	return resources, nil
+}
+
+func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, diag.Diagnostics) {
+	var (
+		after    string
+		entities []platformclientv2.Knowledgedocumentresponse
+	)
+
+	const pageSize = 100
+	for i := 0; ; i++ {
+		knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil)
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of knowledge documents: %v", getErr)
+		}
+
+		if knowledgeDocuments.Entities == nil || len(*knowledgeDocuments.Entities) == 0 {
+			break
+		}
+
+		entities = append(entities, *knowledgeDocuments.Entities...)
+
+		if knowledgeDocuments.NextUri == nil || *knowledgeDocuments.NextUri == "" {
+			break
+		}
+
+		u, err := url.Parse(*knowledgeDocuments.NextUri)
+		if err != nil {
+			return nil, diag.Errorf("Failed to parse after cursor from knowledge document nextUri: %v", err)
+		}
+		m, _ := url.ParseQuery(u.RawQuery)
+		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
+			after = afterSlice[0]
+			if after == "" {
+				break
+			}
+		}
+	}
+
+	return &entities, nil
 }
 
 func knowledgeDocumentExporter() *ResourceExporter {
