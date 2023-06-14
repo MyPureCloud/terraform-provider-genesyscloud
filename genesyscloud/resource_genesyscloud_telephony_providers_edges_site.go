@@ -223,12 +223,14 @@ func resourceSite() *schema.Resource {
 			"primary_sites": {
 				Description: `Used for primary phone edge assignment on physical edges only.  List of primary sites the phones can be assigned to. If no primary_sites are defined, the site id for this site will be used as the primary site id.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"secondary_sites": {
 				Description: `Used for secondary phone edge assignment on physical edges only.  List of secondary sites the phones can be assigned to.  If no primary_sites or secondary_sites are defined then the current site will defined as primary and secondary. `,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
