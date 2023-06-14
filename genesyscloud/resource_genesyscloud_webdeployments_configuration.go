@@ -286,6 +286,7 @@ func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platfo
 func webDeploymentConfigurationExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllWebDeploymentConfigurations),
+		ExcludedAttributes: []string{"version"},
 	}
 }
 
@@ -342,7 +343,7 @@ func resourceWebDeploymentConfiguration() *schema.Resource {
 				Description: "The version of the configuration.",
 				Type:        schema.TypeString,
 				Computed:    true,
-				Optional:    true,
+				MaxItems:    0,
 			},
 			"messenger": {
 				Description: "Settings concerning messenger",
