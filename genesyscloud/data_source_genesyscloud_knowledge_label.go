@@ -38,7 +38,6 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 	knowledgeBaseName := d.Get("knowledge_base_name").(string)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		// for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", true, "", "")
 		unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", false, "", "")
@@ -92,7 +91,6 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 				}
 			}
 		}
-		// }
 		return nil
 	})
 }
