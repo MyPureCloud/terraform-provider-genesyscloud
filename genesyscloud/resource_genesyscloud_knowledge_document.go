@@ -112,8 +112,6 @@ func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 	// prepare base url
 	resourcePath := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s/documents", url.PathEscape(*knowledgeBase.Id))
 	listDocumentsBaseUrl := fmt.Sprintf("%s%s", knowledgeAPI.Configuration.BasePath, resourcePath)
-	// prepare http client
-	// documentClient := &http.Client{Timeout: time.Duration(clientConfig.Timeout)}
 
 	for i := 0; ; i++ {
 		// prepare query params
