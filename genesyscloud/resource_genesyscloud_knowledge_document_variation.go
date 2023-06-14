@@ -230,14 +230,24 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
-		variationEntities, err := getAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase)
+		variationEntities, err := getAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase, clientConfig)
 		if err != nil {
 			return nil, err
 		}
 
+		// retrieve the documents for each knowledge base
 		for _, knowledgeDocument := range *variationEntities {
 			const pageSize = 100
-			knowledgeDocumentVariations, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), "")
+
+			// parse document state
+			var documentState string
+			isValidState := strings.EqualFold(*knowledgeDocument.State, "Published") || strings.EqualFold(*knowledgeDocument.State, "Draft")
+			if isValidState {
+				documentState = *knowledgeDocument.State
+			}
+
+			// get the variations for each document
+			knowledgeDocumentVariations, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), documentState)
 			if getErr != nil {
 				return nil, diag.Errorf("Failed to get page of Knowledge document variations: %v", getErr)
 			}
@@ -248,7 +258,7 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 
 			for _, knowledgeDocumentVariation := range *knowledgeDocumentVariations.Entities {
 				id := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.Id)
-				resources[id] = &ResourceMeta{Name: "variation" + uuid.NewString()}
+				resources[id] = &ResourceMeta{Name: "variation " + uuid.NewString()}
 			}
 		}
 	}

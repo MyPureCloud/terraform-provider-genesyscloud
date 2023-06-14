@@ -10,6 +10,7 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
@@ -126,7 +127,13 @@ func getAllKnowledgeDocumentsV1(_ context.Context, clientConfig *platformclientv
 
 	for _, knowledgeDocument := range documentEntities {
 		id := fmt.Sprintf("%s %s %s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.LanguageCode)
-		resources[id] = &ResourceMeta{Name: *knowledgeDocument.Name}
+		var name string
+		if knowledgeDocument.Name != nil {
+			name = *knowledgeDocument.Name
+		} else {
+			name = fmt.Sprintf("document " + uuid.NewString())
+		}
+		resources[id] = &ResourceMeta{Name: name}
 	}
 
 	return resources, nil
@@ -173,7 +180,7 @@ func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeAp
 
 func knowledgeDocumentExporterV1() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeDocuments),
+		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeDocumentsV1),
 		RefAttrs: map[string]*RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},

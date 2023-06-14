@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
@@ -86,7 +87,7 @@ func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
-		partialEntities, err := getAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase)
+		partialEntities, err := getAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase, clientConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -101,18 +102,52 @@ func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.
 	return resources, nil
 }
 
-func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, diag.Diagnostics) {
+func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase, clientConfig *platformclientv2.Configuration) (*[]platformclientv2.Knowledgedocumentresponse, diag.Diagnostics) {
 	var (
 		after    string
 		entities []platformclientv2.Knowledgedocumentresponse
 	)
 
 	const pageSize = 100
+	// prepare base url
+	resourcePath := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s/documents", url.PathEscape(*knowledgeBase.Id))
+	listDocumentsBaseUrl := fmt.Sprintf("%s%s", knowledgeAPI.Configuration.BasePath, resourcePath)
+	// prepare http client
+	// documentClient := &http.Client{Timeout: time.Duration(clientConfig.Timeout)}
+
 	for i := 0; ; i++ {
-		knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil)
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge documents: %v", getErr)
+		// prepare query params
+		queryParams := make(map[string]string, 0)
+		queryParams["after"] = after
+		queryParams["pageSize"] = fmt.Sprintf("%v", pageSize)
+		queryParams["includeDrafts"] = "true"
+
+		// prepare headers
+		headers := make(map[string]string)
+		headers["Authorization"] = fmt.Sprintf("Bearer %s", clientConfig.AccessToken)
+		headers["Content-Type"] = "application/json"
+		headers["Accept"] = "application/json"
+
+		// execute request
+		response, err := clientConfig.APIClient.CallAPI(listDocumentsBaseUrl, "GET", nil, headers, queryParams, nil, "", nil)
+		if err != nil {
+			return nil, diag.Errorf("Failed to read knowledge document list response %v", err)
 		}
+
+		// process response
+		var knowledgeDocuments platformclientv2.Knowledgedocumentresponselisting
+		unmarshalErr := json.Unmarshal(response.RawBody, &knowledgeDocuments)
+		if unmarshalErr != nil {
+			return nil, diag.Errorf("Failed to unmarshal knowledge document list response %v", unmarshalErr)
+		}
+
+		/**
+		 * Todo: restore direct SDK invocation and remove workaround once the SDK supports optional boolean args.
+		 */
+		// knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil)
+		// if getErr != nil {
+		// 	return nil, diag.Errorf("Failed to get page of knowledge documents: %v", getErr)
+		// }
 
 		if knowledgeDocuments.Entities == nil || len(*knowledgeDocuments.Entities) == 0 {
 			break
