@@ -47,7 +47,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		userDepartment = "Development"
 	)
 
-	config := generateOrganizationMe() + generateUserResource(
+	user1 := generateUserResource(
 		userRes1,
 		userEmail1,
 		userName1,
@@ -58,12 +58,30 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		nullValue, // Default acdAutoAnswer
 		"",        // No profile skills
 		"",        // No certs
-	) + generatePhoneBaseSettingsResourceWithCustomAttrs(
-		phoneBaseSettingsRes,
-		phoneBaseSettingsName,
-		"phoneBaseSettings description",
-		"inin_webrtc_softphone.json",
-	) + generatePhoneResourceWithCustomAttrs(&phoneConfig{
+	)
+
+	user2 := generateUserResource(
+		userRes2,
+		userEmail2,
+		userName2,
+		nullValue, // Defaults to active
+		strconv.Quote(userTitle),
+		strconv.Quote(userDepartment),
+		nullValue, // No manager
+		nullValue, // Default acdAutoAnswer
+		"",        // No profile skills
+		"",        // No certs
+	)
+
+	config1 := generateOrganizationMe() +
+		user1 +
+		user2 +
+		generatePhoneBaseSettingsResourceWithCustomAttrs(
+			phoneBaseSettingsRes,
+			phoneBaseSettingsName,
+			"phoneBaseSettings description",
+			"inin_webrtc_softphone.json",
+		) + generatePhoneResourceWithCustomAttrs(&phoneConfig{
 		phoneRes,
 		name1,
 		stateActive,
@@ -86,12 +104,44 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		),
 	)
 
+	// Update phone with new user and name
+	config2 := generateOrganizationMe() +
+		user1 +
+		user2 +
+		generatePhoneBaseSettingsResourceWithCustomAttrs(
+			phoneBaseSettingsRes,
+			phoneBaseSettingsName,
+			"phoneBaseSettings description",
+			"inin_webrtc_softphone.json",
+		) + generatePhoneResourceWithCustomAttrs(&phoneConfig{
+		phoneRes,
+		name2,
+		stateActive,
+		"data.genesyscloud_organizations_me.me.default_site_id",
+		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
+		nil, // no line addresses
+		"genesyscloud_user." + userRes2 + ".id",
+		"", // no depends_on
+	},
+		generatePhoneCapabilities(
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			true,
+			"mac",
+			[]string{strconv.Quote("audio/opus")},
+		),
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
 		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: config,
+				Config: config1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "state", stateActive),
@@ -111,45 +161,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 				),
 			},
 			{
-				// Update phone with new user and name
-				Config: generateOrganizationMe() + generateUserResource(
-					userRes2,
-					userEmail2,
-					userName2,
-					nullValue, // Defaults to active
-					strconv.Quote(userTitle),
-					strconv.Quote(userDepartment),
-					nullValue, // No manager
-					nullValue, // Default acdAutoAnswer
-					"",        // No profile skills
-					"",        // No certs
-				) + generatePhoneBaseSettingsResourceWithCustomAttrs(
-					phoneBaseSettingsRes,
-					phoneBaseSettingsName,
-					"phoneBaseSettings description",
-					"inin_webrtc_softphone.json",
-				) + generatePhoneResourceWithCustomAttrs(&phoneConfig{
-					phoneRes,
-					name2,
-					stateActive,
-					"data.genesyscloud_organizations_me.me.default_site_id",
-					"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-					nil, // no line addresses
-					"genesyscloud_user." + userRes2 + ".id",
-					"", // no depends_on
-				},
-					generatePhoneCapabilities(
-						false,
-						false,
-						false,
-						false,
-						false,
-						false,
-						true,
-						"mac",
-						[]string{strconv.Quote("audio/opus")},
-					),
-				),
+				Config: config2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "state", stateActive),
@@ -170,14 +182,29 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 	})
 }
 
-func deleteDidPoolWithNumber(number string) {
+func generateQuickUser(resourceId, email, name, title, dep string) string {
+	return generateUserResource(
+		resourceId,
+		email,
+		name,
+		nullValue, // Defaults to active
+		strconv.Quote(title),
+		strconv.Quote(dep),
+		nullValue, // No manager
+		nullValue, // Default acdAutoAnswer
+		"",        // No profile skills
+		"",        // No certs
+	)
+}
+
+func deleteDidPoolWithNumber(number string) error {
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		didPools, _, getErr := edgesAPI.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
 		if getErr != nil {
-			return
+			return getErr
 		}
 
 		if didPools.Entities == nil || len(*didPools.Entities) == 0 {
@@ -187,22 +214,26 @@ func deleteDidPoolWithNumber(number string) {
 		for _, didPool := range *didPools.Entities {
 			if (didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == number) ||
 				(didPool.EndPhoneNumber != nil && *didPool.EndPhoneNumber == number) {
-				edgesAPI.DeleteTelephonyProvidersEdgesDidpool(*didPool.Id)
+				if _, err := edgesAPI.DeleteTelephonyProvidersEdgesDidpool(*didPool.Id); err != nil {
+					return err
+				}
 				time.Sleep(5 * time.Second)
 			}
 		}
 	}
+	return nil
 }
 
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	t.Parallel()
 	didPoolResource1 := "test-didpool1"
-	number := "+14175538013"
-	err := authorizeSdk()
-	if err != nil {
+	number := "+14175538114"
+	if err := authorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
-	deleteDidPoolWithNumber(number)
+	if err := deleteDidPoolWithNumber(number); err != nil {
+		t.Fatal(err)
+	}
 	lineAddresses := []string{number}
 	phoneRes := "phone_standalone1234"
 	name1 := "test-phone-standalone_" + uuid.NewString()
@@ -210,14 +241,52 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 	phoneBaseSettingsRes := "phoneBaseSettings1234"
 	phoneBaseSettingsName := "phoneBaseSettings " + uuid.NewString()
 
+	locationRes := "test-location"
+
+	emergencyNumber := "+13173114121"
+	if err := deleteLocationWithNumber(emergencyNumber); err != nil {
+		t.Fatal(err)
+	}
+
+	locationConfig := generateLocationResource(
+		locationRes,
+		"Terraform location"+uuid.NewString(),
+		"HQ1",
+		[]string{},
+		generateLocationEmergencyNum(
+			emergencyNumber,
+			nullValue, // Default number type
+		), generateLocationAddress(
+			"0176 Interactive Way",
+			"Indianapolis",
+			"IN",
+			"US",
+			"46279",
+		))
+
+	siteRes := "test-site"
+	siteConfig := generateSiteResourceWithCustomAttrs(
+		siteRes,
+		"tf site "+uuid.NewString(),
+		"test site description",
+		"genesyscloud_location."+locationRes+".id",
+		"Premises",
+		false,
+		`["us-east-1"]`,
+		nullValue,
+		nullValue,
+		"primary_sites   = []",
+		"secondary_sites = []",
+	)
+
 	capabilities := generatePhoneCapabilities(
 		false,
 		true,
+		true,
+		true,
+		true,
 		false,
-		true,
-		true,
 		false,
-		true,
 		"mac",
 		[]string{},
 	)
@@ -240,7 +309,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		phoneRes,
 		name1,
 		stateActive,
-		"data.genesyscloud_organizations_me.me.default_site_id",
+		"genesyscloud_telephony_providers_edges_site." + siteRes + ".id",
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
 		lineAddresses,
 		"", // no web rtc user
@@ -252,21 +321,21 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateOrganizationMe() + config,
+				Config: locationConfig + siteConfig + config,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "state", stateActive),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "site_id", "data.genesyscloud_organizations_me.me", "default_site_id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "site_id", "genesyscloud_telephony_providers_edges_site."+siteRes, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "line_base_settings_id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "phone_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_addresses.0", lineAddresses[0]),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.provisions", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.registers", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.dual_registers", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.dual_registers", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.allow_reboot", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.no_rebalance", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.no_cloud_provisioning", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.cdm", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.cdm", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.hardware_id_type", "mac"),
 				),
 			},
