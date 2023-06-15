@@ -14,7 +14,7 @@ import (
 func dataSourceEdgeGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Edge Group. Select an edge group by name",
-		ReadContext: readWithPooledClient(dataSourceEdgeGroupRead),
+		ReadContext: ReadWithPooledClient(dataSourceEdgeGroupRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Edge Group name.",
@@ -31,7 +31,7 @@ func dataSourceEdgeGroupRead(ctx context.Context, d *schema.ResourceData, m inte
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			edgeGroup, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, name, "", false)

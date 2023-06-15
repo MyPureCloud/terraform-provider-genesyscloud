@@ -20,7 +20,7 @@ func getOutboundWrapupCodeMappings(_ context.Context, clientConfig *platformclie
 
 	_, resp, getErr := outboundApi.GetOutboundWrapupcodemappings()
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -33,7 +33,7 @@ func getOutboundWrapupCodeMappings(_ context.Context, clientConfig *platformclie
 
 func outboundWrapupCodeMappingsExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getOutboundWrapupCodeMappings),
+		GetResourcesFunc: GetAllWithPooledClient(getOutboundWrapupCodeMappings),
 		RefAttrs: map[string]*RefAttrSettings{
 			`mappings.wrapup_code_id`: {
 				RefType: `genesyscloud_routing_wrapupcode`,
@@ -45,10 +45,10 @@ func outboundWrapupCodeMappingsExporter() *ResourceExporter {
 func resourceOutboundWrapUpCodeMappings() *schema.Resource {
 	return &schema.Resource{
 		Description:   `Genesys Cloud Outbound Wrap-up Code Mappings`,
-		CreateContext: createWithPooledClient(createOutboundWrapUpCodeMappings),
-		ReadContext:   readWithPooledClient(readOutboundWrapUpCodeMappings),
-		UpdateContext: updateWithPooledClient(updateOutboundWrapUpCodeMappings),
-		DeleteContext: deleteWithPooledClient(deleteOutboundWrapUpCodeMappings),
+		CreateContext: CreateWithPooledClient(createOutboundWrapUpCodeMappings),
+		ReadContext:   ReadWithPooledClient(readOutboundWrapUpCodeMappings),
+		UpdateContext: UpdateWithPooledClient(updateOutboundWrapUpCodeMappings),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundWrapUpCodeMappings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -108,7 +108,7 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	log.Printf("Updating Outbound Wrap-up Code Mappings")
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		wrapupCodeMappings, resp, err := outboundApi.GetOutboundWrapupcodemappings()
 		if err != nil {
 			return resp, diag.Errorf("failed to read wrap-up code mappings: %s", err)
@@ -139,10 +139,10 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Reading Outbound Wrap-up Code Mappings")
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkWrapupCodeMappings, resp, err := outboundApi.GetOutboundWrapupcodemappings()
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Wrap-up Code Mappings: %s", err))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Wrap-up Code Mappings: %s", err))

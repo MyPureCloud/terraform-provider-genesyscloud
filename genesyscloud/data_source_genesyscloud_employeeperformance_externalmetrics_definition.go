@@ -15,7 +15,7 @@ func dataSourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Employeeperformance Externalmetrics Definition. Select a Employeeperformance Externalmetrics Definition by name.`,
 
-		ReadContext: readWithPooledClient(dataSourceEmployeeperformanceExternalmetricsDefinitionRead),
+		ReadContext: ReadWithPooledClient(dataSourceEmployeeperformanceExternalmetricsDefinitionRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -36,7 +36,7 @@ func dataSourceEmployeeperformanceExternalmetricsDefinitionRead(ctx context.Cont
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			sdkexternalmetricdefinitionlisting, _, getErr := gamificationApi.GetEmployeeperformanceExternalmetricsDefinitions(pageSize, pageNum)

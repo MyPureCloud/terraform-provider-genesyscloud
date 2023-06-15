@@ -901,10 +901,10 @@ var (
 func resourceMediaRetentionPolicy() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Media Retention Policies",
-		CreateContext: createWithPooledClient(createMediaRetentionPolicy),
-		ReadContext:   readWithPooledClient(readMediaRetentionPolicy),
-		UpdateContext: updateWithPooledClient(updateMediaRetentionPolicy),
-		DeleteContext: deleteWithPooledClient(deleteMediaRetentionPolicy),
+		CreateContext: CreateWithPooledClient(createMediaRetentionPolicy),
+		ReadContext:   ReadWithPooledClient(readMediaRetentionPolicy),
+		UpdateContext: UpdateWithPooledClient(updateMediaRetentionPolicy),
+		DeleteContext: DeleteWithPooledClient(deleteMediaRetentionPolicy),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -2813,10 +2813,10 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Reading media retention policy %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		retentionPolicy, resp, getErr := recordingAPI.GetRecordingMediaretentionpolicy(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("failed to read media retention policy %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("failed to read media retention policy %s: %s", d.Id(), getErr))
@@ -2927,7 +2927,7 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 
 func mediaRetentionPolicyExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllMediaRetentionPolicies),
+		GetResourcesFunc: GetAllWithPooledClient(getAllMediaRetentionPolicies),
 		RefAttrs: map[string]*RefAttrSettings{
 			"media_policies.chat_policy.conditions.for_queue_ids":                                         {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
 			"media_policies.call_policy.conditions.for_queue_ids":                                         {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
@@ -3032,10 +3032,10 @@ func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 		return diag.Errorf("Failed to delete media retention policy %s: %s", name, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := recordingAPI.GetRecordingMediaretentionpolicy(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// media retention policy deleted
 				log.Printf("Deleted media retention policy %s", d.Id())
 				return nil

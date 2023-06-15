@@ -82,7 +82,7 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 
 func knowledgeKnowledgebaseExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeKnowledgebases),
+		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeKnowledgebases),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }
@@ -91,10 +91,10 @@ func resourceKnowledgeKnowledgebase() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Base",
 
-		CreateContext: createWithPooledClient(createKnowledgeKnowledgebase),
-		ReadContext:   readWithPooledClient(readKnowledgeKnowledgebase),
-		UpdateContext: updateWithPooledClient(updateKnowledgeKnowledgebase),
-		DeleteContext: deleteWithPooledClient(deleteKnowledgeKnowledgebase),
+		CreateContext: CreateWithPooledClient(createKnowledgeKnowledgebase),
+		ReadContext:   ReadWithPooledClient(readKnowledgeKnowledgebase),
+		UpdateContext: UpdateWithPooledClient(updateKnowledgeKnowledgebase),
+		DeleteContext: DeleteWithPooledClient(deleteKnowledgeKnowledgebase),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -156,10 +156,10 @@ func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, met
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge base %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		knowledgeBase, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebase(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr))
@@ -185,7 +185,7 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating knowledge base %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current knowledge base version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebase(d.Id())
 		if getErr != nil {
@@ -225,10 +225,10 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("Failed to delete knowledge base %s: %s", name, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebase(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Knowledge base deleted
 				log.Printf("Deleted Knowledge base %s", d.Id())
 				return nil

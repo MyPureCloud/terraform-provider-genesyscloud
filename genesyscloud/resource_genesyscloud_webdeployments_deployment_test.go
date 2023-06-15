@@ -207,7 +207,7 @@ func verifyDeploymentDestroyed(state *terraform.State) error {
 
 		_, response, err := api.GetWebdeploymentsDeployment(rs.Primary.ID)
 
-		if isStatus404(response) {
+		if IsStatus404(response) {
 			continue
 		}
 

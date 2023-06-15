@@ -169,7 +169,7 @@ func testVerifyAttemptLimitDestroyed(state *terraform.State) error {
 		attemptLimit, resp, err := outboundAPI.GetOutboundAttemptlimit(rs.Primary.ID)
 		if attemptLimit != nil {
 			return fmt.Errorf("attempt limit (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Attempt limit not found as expected
 			continue
 		} else {

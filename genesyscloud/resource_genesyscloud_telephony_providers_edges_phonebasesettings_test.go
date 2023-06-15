@@ -101,7 +101,7 @@ func testVerifyPhoneBaseSettingsDestroyed(state *terraform.State) error {
 		phoneBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(rs.Primary.ID)
 		if phoneBaseSettings != nil {
 			return fmt.Errorf("PhoneBaseSettings (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// PhoneBaseSettings not found as expected
 			continue
 		} else {

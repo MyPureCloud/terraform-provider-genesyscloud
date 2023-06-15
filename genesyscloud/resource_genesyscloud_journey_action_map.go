@@ -375,7 +375,7 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 
 func journeyActionMapExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllJourneyActionMaps),
+		GetResourcesFunc: GetAllWithPooledClient(getAllJourneyActionMaps),
 		RefAttrs: map[string]*RefAttrSettings{
 			"trigger_with_segments":                                             {RefType: "genesyscloud_journey_segment"},
 			"trigger_with_outcome_probability_conditions.outcome_id":            {RefType: "genesyscloud_journey_outcome"},
@@ -390,10 +390,10 @@ func journeyActionMapExporter() *ResourceExporter {
 func resourceJourneyActionMap() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Action Map",
-		CreateContext: createWithPooledClient(createJourneyActionMap),
-		ReadContext:   readWithPooledClient(readJourneyActionMap),
-		UpdateContext: updateWithPooledClient(updateJourneyActionMap),
-		DeleteContext: deleteWithPooledClient(deleteJourneyActionMap),
+		CreateContext: CreateWithPooledClient(createJourneyActionMap),
+		ReadContext:   ReadWithPooledClient(readJourneyActionMap),
+		UpdateContext: UpdateWithPooledClient(updateJourneyActionMap),
+		DeleteContext: DeleteWithPooledClient(deleteJourneyActionMap),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -411,7 +411,7 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	result, resp, err := journeyApi.PostJourneyActionmaps(*actionMap)
 	if err != nil {
 		input, _ := interfaceToJson(*actionMap)
-		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, input, getBody(resp))
+		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, input, GetBody(resp))
 	}
 
 	d.SetId(*result.Id)
@@ -425,10 +425,10 @@ func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta inte
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Reading journey action map %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		actionMap, resp, getErr := journeyApi.GetJourneyActionmap(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("failed to read journey action map %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("failed to read journey action map %s: %s", d.Id(), getErr))
@@ -448,7 +448,7 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	patchActionMap := buildSdkPatchActionMap(d)
 
 	log.Printf("Updating journey action map %s", d.Id())
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current journey action map version
 		actionMap, resp, getErr := journeyApi.GetJourneyActionmap(d.Id())
 		if getErr != nil {
@@ -459,7 +459,7 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		_, resp, patchErr := journeyApi.PatchJourneyActionmap(d.Id(), *patchActionMap)
 		if patchErr != nil {
 			input, _ := interfaceToJson(*patchActionMap)
-			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, input, getBody(resp))
+			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, input, GetBody(resp))
 		}
 		return resp, nil
 	})
@@ -482,10 +482,10 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.Errorf("Failed to delete journey action map with display name %s: %s", displayName, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := journeyApi.GetJourneyActionmap(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// journey action map deleted
 				log.Printf("Deleted journey action map %s", d.Id())
 				return nil

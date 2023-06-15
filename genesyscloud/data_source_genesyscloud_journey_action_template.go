@@ -14,7 +14,7 @@ import (
 func dataSourceJourneyActionTemplate() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Action Template. Select a journey action template by name",
-		ReadContext: readWithPooledClient(dataSourceJourneyActionTemplateRead),
+		ReadContext: ReadWithPooledClient(dataSourceJourneyActionTemplateRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Journey Action Template name.",
@@ -31,7 +31,7 @@ func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.Resource
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		pageCount := 1 // Needed because of broken journey common paging
 		for pageNum := 1; pageNum <= pageCount; pageNum++ {
 			const pageSize = 100

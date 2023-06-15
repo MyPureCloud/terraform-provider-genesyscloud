@@ -949,7 +949,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
 					generateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					generateFlowResource(
+					GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
@@ -1056,7 +1056,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
 					generateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					generateFlowResource(
+					GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
@@ -1163,7 +1163,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
 					generateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					generateFlowResource(
+					GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
@@ -1270,7 +1270,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
 					generateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					generateFlowResource(
+					GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
@@ -1378,7 +1378,7 @@ func testVerifyMediaRetentionPolicyDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Policy (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Policy not found as expected
 			continue
 		}

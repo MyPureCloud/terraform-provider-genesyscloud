@@ -291,7 +291,7 @@ func testVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 		phone, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhone(rs.Primary.ID)
 		if phone != nil {
 			return fmt.Errorf("Phone (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Phone not found as expected
 			continue
 		} else {

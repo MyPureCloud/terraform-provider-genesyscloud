@@ -11,7 +11,7 @@ import (
 func dataSourceOrganizationsMe() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud current organization",
-		ReadContext: readWithPooledClient(dataSourceOrganizationsMeRead),
+		ReadContext: ReadWithPooledClient(dataSourceOrganizationsMeRead),
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:     schema.TypeString,

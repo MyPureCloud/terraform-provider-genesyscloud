@@ -15,7 +15,7 @@ import (
 func dataSourceWebDeploymentsDeployment() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Web Deployments. Select a deployment by name.",
-		ReadContext: readWithPooledClient(dataSourceDeploymentRead),
+		ReadContext: ReadWithPooledClient(dataSourceDeploymentRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the deployment",
@@ -32,7 +32,7 @@ func dataSourceDeploymentRead(ctx context.Context, d *schema.ResourceData, m int
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		deployments, resp, err := api.GetWebdeploymentsDeployments([]string{})
 
 		if err != nil && resp.StatusCode == http.StatusNotFound {

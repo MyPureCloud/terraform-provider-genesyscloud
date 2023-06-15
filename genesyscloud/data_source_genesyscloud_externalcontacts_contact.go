@@ -14,7 +14,7 @@ import (
 func dataSourceExternalContactsContact() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud external contacts. Select a contact by any string search.",
-		ReadContext: readWithPooledClient(dataSourceExternalContactsContactRead),
+		ReadContext: ReadWithPooledClient(dataSourceExternalContactsContactRead),
 		Schema: map[string]*schema.Schema{
 			"search": {
 				Description: "The search string for the contact.",
@@ -32,7 +32,7 @@ func dataSourceExternalContactsContactRead(ctx context.Context, d *schema.Resour
 	search := d.Get("search").(string)
 
 	// Query architect datatable by name. Retry in case search has not yet indexed the architect datatable.
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		contacts, _, getErr := archAPI.GetExternalcontactsContacts(pageSize, pageNum, search, "", nil)

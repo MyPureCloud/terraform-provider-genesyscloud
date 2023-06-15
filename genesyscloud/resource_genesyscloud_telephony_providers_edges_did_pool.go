@@ -43,7 +43,7 @@ func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configurat
 
 func telephonyDidPoolExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllDidPools),
+		GetResourcesFunc: GetAllWithPooledClient(getAllDidPools),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }
@@ -52,10 +52,10 @@ func resourceTelephonyDidPool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud DID Pool",
 
-		CreateContext: createWithPooledClient(createDidPool),
-		ReadContext:   readWithPooledClient(readDidPool),
-		UpdateContext: updateWithPooledClient(updateDidPool),
-		DeleteContext: deleteWithPooledClient(deleteDidPool),
+		CreateContext: CreateWithPooledClient(createDidPool),
+		ReadContext:   ReadWithPooledClient(readDidPool),
+		UpdateContext: UpdateWithPooledClient(updateDidPool),
+		DeleteContext: DeleteWithPooledClient(deleteDidPool),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -129,10 +129,10 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading DID pool %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		didPool, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read DID pool %s: %s", d.Id(), getErr))
@@ -208,10 +208,10 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 		return diag.Errorf("Failed to delete DID pool with starting number %s: %s", startPhoneNumber, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		didPool, resp, err := telephonyApi.GetTelephonyProvidersEdgesDidpool(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// DID pool deleted
 				log.Printf("Deleted DID pool %s", d.Id())
 				return nil

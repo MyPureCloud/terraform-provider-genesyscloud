@@ -115,7 +115,7 @@ func testVerifyJourneyActionMapsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("journey action map (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Journey action map not found as expected
 			continue
 		}

@@ -14,7 +14,7 @@ import (
 func dataSourceAuthRole() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Roles. Select a role by name.",
-		ReadContext: readWithPooledClient(dataSourceAuthRoleRead),
+		ReadContext: ReadWithPooledClient(dataSourceAuthRoleRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Role name.",
@@ -32,7 +32,7 @@ func dataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m inter
 	name := d.Get("name").(string)
 
 	// Query role by name. Retry in case search has not yet indexed the role.
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		roles, _, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", name, nil, nil, false, nil)

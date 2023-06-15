@@ -120,7 +120,7 @@ func testVerifyEmployeePerformanceExternalMetricsDefinitionsDestroyed(state *ter
 		definition, resp, err := gamificationAPI.GetEmployeeperformanceExternalmetricsDefinition(rs.Primary.ID)
 		if definition != nil {
 			return fmt.Errorf("Definition (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Definition not found as expected
 			continue
 		} else {

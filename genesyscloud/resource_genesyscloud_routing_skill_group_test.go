@@ -716,7 +716,7 @@ func testVerifySkillGroupDestroyed(state *terraform.State) error {
 		skillGroupPayload := make(map[string]interface{})
 
 		if err != nil {
-			if isStatus404(response) {
+			if IsStatus404(response) {
 				break
 			}
 

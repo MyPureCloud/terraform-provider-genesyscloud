@@ -155,7 +155,7 @@ func testVerifyCallabletimesetDestroyed(state *terraform.State) error {
 		timeSet, resp, err := outboutAPI.GetOutboundCallabletimeset(rs.Primary.ID)
 		if timeSet != nil {
 			return fmt.Errorf("Callable time set (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Callable time set not found as expected
 			continue
 		} else {

@@ -14,7 +14,7 @@ import (
 func dataSourceOutboundContactList() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Outbound Contact Lists. Select a contact list by name.",
-		ReadContext: readWithPooledClient(dataSourceOutboundContactListRead),
+		ReadContext: ReadWithPooledClient(dataSourceOutboundContactListRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Contact List name.",
@@ -30,7 +30,7 @@ func dataSourceOutboundContactListRead(ctx context.Context, d *schema.ResourceDa
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		contactLists, _, getErr := outboundAPI.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", name, []string{""}, []string{""}, "", "")

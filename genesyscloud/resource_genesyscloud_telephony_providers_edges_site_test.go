@@ -582,7 +582,7 @@ func testVerifySitesDestroyed(state *terraform.State) error {
 				continue
 			}
 			return fmt.Errorf("site (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// site not found as expected
 			continue
 		} else {

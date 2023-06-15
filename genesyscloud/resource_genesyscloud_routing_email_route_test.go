@@ -327,7 +327,7 @@ func testVerifyRoutingEmailRouteDestroyed(state *terraform.State) error {
 		for pageNum := 1; ; pageNum++ {
 			routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(rs.Primary.Attributes["domain_id"], 100, pageNum, "")
 			if getErr != nil {
-				if isStatus404(resp) {
+				if IsStatus404(resp) {
 					// Domain not found
 					continue
 				}

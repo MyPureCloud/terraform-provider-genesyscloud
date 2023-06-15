@@ -14,7 +14,7 @@ import (
 func dataSourceLocation() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Location. Select a location by name.",
-		ReadContext: readWithPooledClient(dataSourceLocationRead),
+		ReadContext: ReadWithPooledClient(dataSourceLocationRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Location name.",
@@ -39,7 +39,7 @@ func dataSourceLocationRead(ctx context.Context, d *schema.ResourceData, m inter
 		Fields:  &[]string{nameField},
 	}
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		locations, _, getErr := locationsAPI.PostLocationsSearch(platformclientv2.Locationsearchrequest{
 			Query: &[]platformclientv2.Locationsearchcriteria{searchCriteria},
 		})

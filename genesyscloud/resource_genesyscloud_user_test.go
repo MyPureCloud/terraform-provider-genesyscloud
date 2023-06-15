@@ -884,7 +884,7 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 		user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
 		if user != nil {
 			return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// User not found as expected
 			continue
 		} else {

@@ -341,7 +341,7 @@ func testVerifyDncListDestroyed(state *terraform.State) error {
 		dncList, resp, err := outboundAPI.GetOutboundDnclist(rs.Primary.ID, false, false)
 		if dncList != nil {
 			return fmt.Errorf("dnc list (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// dnc list not found as expected
 			continue
 		} else {

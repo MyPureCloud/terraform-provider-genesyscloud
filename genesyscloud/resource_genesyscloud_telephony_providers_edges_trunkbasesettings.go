@@ -22,10 +22,10 @@ func resourceTrunkBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Trunk Base Settings",
 
-		CreateContext: createWithPooledClient(createTrunkBaseSettings),
-		ReadContext:   readWithPooledClient(readTrunkBaseSettings),
-		UpdateContext: updateWithPooledClient(updateTrunkBaseSettings),
-		DeleteContext: deleteWithPooledClient(deleteTrunkBaseSettings),
+		CreateContext: CreateWithPooledClient(createTrunkBaseSettings),
+		ReadContext:   ReadWithPooledClient(readTrunkBaseSettings),
+		UpdateContext: UpdateWithPooledClient(updateTrunkBaseSettings),
+		DeleteContext: DeleteWithPooledClient(deleteTrunkBaseSettings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -137,11 +137,11 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest version of the setting
 		trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resp, diag.Errorf("The trunk base settings does not exist %s: %s", d.Id(), getErr)
 			}
 			return resp, diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
@@ -166,7 +166,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	// Get the latest version of the setting
 	trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			return nil
 		}
 		return diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
@@ -193,10 +193,10 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading trunk base settings %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		trunkBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr))
@@ -235,7 +235,7 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting trunk base settings")
 		resp, err := edgesAPI.DeleteTelephonyProvidersEdgesTrunkbasesetting(d.Id())
 		if err != nil {
@@ -247,10 +247,10 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		trunkBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(d.Id(), true)
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// trunk base settings deleted
 				log.Printf("Deleted trunk base settings %s", d.Id())
 				return nil
@@ -344,7 +344,7 @@ func getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig *platformclientv2.Con
 
 func trunkBaseSettingsExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc:     getAllWithPooledClient(getAllTrunkBaseSettings),
+		GetResourcesFunc:     GetAllWithPooledClient(getAllTrunkBaseSettings),
 		RefAttrs:             map[string]*RefAttrSettings{},
 		JsonEncodeAttributes: []string{"properties"},
 	}

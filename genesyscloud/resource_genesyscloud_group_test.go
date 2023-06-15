@@ -259,7 +259,7 @@ func testVerifyGroupsDestroyed(state *terraform.State) error {
 		group, resp, err := groupsAPI.GetGroup(rs.Primary.ID)
 		if group != nil {
 			return fmt.Errorf("Group (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Group not found as expected
 			continue
 		} else {

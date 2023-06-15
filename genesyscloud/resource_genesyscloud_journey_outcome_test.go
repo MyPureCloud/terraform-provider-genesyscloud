@@ -82,7 +82,7 @@ func testVerifyJourneyOutcomesDestroyed(state *terraform.State) error {
 			return fmt.Errorf("journey outcome (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Journey outcome not found as expected
 			continue
 		}

@@ -364,7 +364,7 @@ func testVerifySurveyFormDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Survey form (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Survey form not found as expected
 			continue
 		}

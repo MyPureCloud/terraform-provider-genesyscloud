@@ -20,10 +20,10 @@ func resourceSite() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Site",
 
-		CreateContext: createWithPooledClient(createSite),
-		ReadContext:   readWithPooledClient(readSite),
-		UpdateContext: updateWithPooledClient(updateSite),
-		DeleteContext: deleteWithPooledClient(deleteSite),
+		CreateContext: CreateWithPooledClient(createSite),
+		ReadContext:   ReadWithPooledClient(readSite),
+		UpdateContext: UpdateWithPooledClient(updateSite),
+		DeleteContext: DeleteWithPooledClient(deleteSite),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -272,7 +272,7 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (Res
 
 func siteExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getSites),
+		GetResourcesFunc: GetAllWithPooledClient(getSites),
 		RefAttrs: map[string]*RefAttrSettings{
 			"location_id": {RefType: "genesyscloud_location"},
 			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
@@ -380,7 +380,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	diagErr = withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	diagErr = WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		diagErr = updateSiteOutboundRoutes(d, edgesAPI)
 		if diagErr != nil {
 			return resource.RetryableError(fmt.Errorf(fmt.Sprintf("%v", diagErr), d.Id()))
@@ -400,10 +400,10 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading site %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentSite, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
@@ -509,7 +509,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current site version
 		currentSite, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
 		if getErr != nil {
@@ -550,17 +550,17 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Deleting site")
 	resp, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(d.Id())
 	if err != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			log.Printf("Site already deleted %s", d.Id())
 			return nil
 		}
 		return diag.Errorf("Failed to delete site: %s %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		site, resp, err := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Site deleted
 				log.Printf("Deleted site %s", d.Id())
 				// Need to sleep here because if terraform deletes the dependent location straight away
@@ -696,7 +696,7 @@ func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Te
 				}
 			}
 
-			diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				log.Printf("Updating number plans for site %s", d.Id())
 				_, resp, err := edgesAPI.PutTelephonyProvidersEdgesSiteNumberplans(d.Id(), updatedNumberPlans)
 				if err != nil {
@@ -800,7 +800,7 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 				if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, outboundRoutesFromTf); !ok {
 					resp, err := edgesAPI.DeleteTelephonyProvidersEdgesSiteOutboundroute(d.Id(), *outboundRouteFromAPI.Id)
 					if err != nil {
-						if isStatus404(resp) {
+						if IsStatus404(resp) {
 							return nil
 						}
 						return diag.Errorf("Failed to delete outbound route from site %s: %s", d.Id(), err)
@@ -828,7 +828,7 @@ func isDefaultPlan(name string) bool {
 func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) *resource.RetryError {
 	numberPlans, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(d.Id())
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			d.SetId("") // Site doesn't exist
 			return nil
 		}

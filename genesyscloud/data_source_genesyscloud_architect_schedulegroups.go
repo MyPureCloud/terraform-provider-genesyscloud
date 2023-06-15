@@ -14,7 +14,7 @@ import (
 func dataSourceArchitectScheduleGroups() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Schedule Groups. Select a schedule group by name.",
-		ReadContext: readWithPooledClient(dataSourceScheduleGroupRead),
+		ReadContext: ReadWithPooledClient(dataSourceScheduleGroupRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Schedule Group name.",
@@ -32,7 +32,7 @@ func dataSourceScheduleGroupRead(ctx context.Context, d *schema.ResourceData, m 
 	name := d.Get("name").(string)
 
 	// Query schedule group by name. Retry in case search has not yet indexed the schedule group.
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		scheduleGroups, _, getErr := archAPI.GetArchitectSchedulegroups(pageNum, pageSize, "", "", name, "", nil)

@@ -341,12 +341,12 @@ func testVerifyKnowledgeDocumentVariationDestroyed(state *terraform.State) error
 		// check both published and draft variations
 		if publishedKnowledgeDocumentVariation != nil {
 			return fmt.Errorf("Knowledge document variation (%s) still exists", knowledgeDocumentVariationId)
-		} else if isStatus404(publishedResp) || isStatus400(publishedResp) {
+		} else if IsStatus404(publishedResp) || IsStatus400(publishedResp) {
 			draftKnowledgeDocumentVariation, draftResp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(knowledgeDocumentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 
 			if draftKnowledgeDocumentVariation != nil {
 				return fmt.Errorf("Knowledge document variation (%s) still exists", knowledgeDocumentVariationId)
-			} else if isStatus404(draftResp) || isStatus400(draftResp) {
+			} else if IsStatus404(draftResp) || IsStatus400(draftResp) {
 				// Knowledge base document not found as expected
 				continue
 			} else {

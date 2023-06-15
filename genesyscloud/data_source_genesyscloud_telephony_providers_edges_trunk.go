@@ -14,7 +14,7 @@ import (
 func dataSourceTrunk() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Trunk. Select a trunk by name",
-		ReadContext: readWithPooledClient(dataSourceTrunkRead),
+		ReadContext: ReadWithPooledClient(dataSourceTrunkRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Trunk name.",
@@ -31,7 +31,7 @@ func dataSourceTrunkRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			trunks, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")

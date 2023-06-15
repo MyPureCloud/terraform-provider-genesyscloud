@@ -84,7 +84,7 @@ func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Confi
 
 func resourceSkillGroupExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllSkillGroups),
+		GetResourcesFunc: GetAllWithPooledClient(getAllSkillGroups),
 		RefAttrs: map[string]*RefAttrSettings{
 			"division_id":         {RefType: "genesyscloud_auth_division"},
 			"member_division_ids": {RefType: "genesyscloud_auth_division"},
@@ -100,10 +100,10 @@ func resourceRoutingSkillGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Skill Group`,
 
-		CreateContext: createWithPooledClient(createSkillGroups),
-		ReadContext:   readWithPooledClient(readSkillGroups),
-		UpdateContext: updateWithPooledClient(updateSkillGroups),
-		DeleteContext: deleteWithPooledClient(deleteSkillGroups),
+		CreateContext: CreateWithPooledClient(createSkillGroups),
+		ReadContext:   ReadWithPooledClient(readSkillGroups),
+		UpdateContext: UpdateWithPooledClient(updateSkillGroups),
+		DeleteContext: DeleteWithPooledClient(deleteSkillGroups),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -359,7 +359,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading skills group %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 
 		skillGroupPayload := make(map[string]interface{})
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
@@ -377,7 +377,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 			return resource.NonRetryableError(fmt.Errorf("Failed to unmarshal skill groups. %s", err))
 		}
 
-		if err == nil && isStatus404(response) {
+		if err == nil && IsStatus404(response) {
 			return resource.RetryableError(fmt.Errorf("Failed to read skill groups %s: %s", d.Id(), err))
 		}
 
@@ -472,7 +472,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 	response, err := apiClient.CallAPI(path, "DELETE", nil, headerParams, nil, nil, "", nil)
 
 	if err != nil {
-		if isStatus404(response) {
+		if IsStatus404(response) {
 			//Skills Group already deleted
 			log.Printf("Skills Group was already deleted %s", d.Id())
 			return nil
@@ -480,12 +480,12 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diag.Errorf("Failed to delete skills group %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		log.Printf("Deleting skills group %s", name)
 		response, err := apiClient.CallAPI(path, "DELETE", nil, headerParams, nil, nil, "", nil)
 
 		if err != nil {
-			if isStatus404(response) {
+			if IsStatus404(response) {
 				// Skills Group Deleted
 				log.Printf("Deleted skills group %s", d.Id())
 				return nil

@@ -14,7 +14,7 @@ import (
 func dataSourceIntegrationAction() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud integration action. Select an integration action by name",
-		ReadContext: readWithPooledClient(dataSourceIntegrationActionRead),
+		ReadContext: ReadWithPooledClient(dataSourceIntegrationActionRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the integration action",
@@ -31,7 +31,7 @@ func dataSourceIntegrationActionRead(ctx context.Context, d *schema.ResourceData
 
 	actionName := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			integrationAction, _, getErr := integrationAPI.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", actionName, "", "", "")

@@ -14,7 +14,7 @@ import (
 func dataSourceRoutingSkill() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Routing Skills. Select a skill by name.",
-		ReadContext: readWithPooledClient(dataSourceRoutingSkillRead),
+		ReadContext: ReadWithPooledClient(dataSourceRoutingSkillRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Skill name.",
@@ -32,7 +32,7 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 	name := d.Get("name").(string)
 
 	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			skills, _, getErr := routingAPI.GetRoutingSkills(pageSize, pageNum, name, nil)

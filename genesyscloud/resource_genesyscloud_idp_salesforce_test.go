@@ -134,7 +134,7 @@ func testVerifyIdpSalesforceDestroyed(state *terraform.State) error {
 		salesforce, resp, err := idpAPI.GetIdentityprovidersSalesforce()
 		if salesforce != nil {
 			return fmt.Errorf("Salesforce still exists")
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Salesforce not found as expected
 			continue
 		} else {

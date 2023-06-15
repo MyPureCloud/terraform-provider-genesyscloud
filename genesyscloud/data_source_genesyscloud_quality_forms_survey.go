@@ -14,7 +14,7 @@ import (
 func dataSourceQualityFormsSurvey() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud survey form. Select a form by name",
-		ReadContext: readWithPooledClient(dataSourceQualityFormsSurveyRead),
+		ReadContext: ReadWithPooledClient(dataSourceQualityFormsSurveyRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Survey form name.",
@@ -31,7 +31,7 @@ func dataSourceQualityFormsSurveyRead(ctx context.Context, d *schema.ResourceDat
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			forms, _, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", name, "desc")

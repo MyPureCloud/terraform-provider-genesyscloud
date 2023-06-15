@@ -175,7 +175,7 @@ func testVerifyDatatableRowsDestroyed(state *terraform.State) error {
 		row, resp, err := archAPI.GetFlowsDatatableRow(tableID, keyStr, false)
 		if row != nil {
 			return fmt.Errorf("Datatable Row (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Datatable Row not found as expected
 			continue
 		} else {

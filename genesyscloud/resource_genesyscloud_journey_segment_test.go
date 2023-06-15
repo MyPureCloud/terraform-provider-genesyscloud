@@ -93,7 +93,7 @@ func testVerifyJourneySegmentsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("journey segment (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Journey segment not found as expected
 			continue
 		}

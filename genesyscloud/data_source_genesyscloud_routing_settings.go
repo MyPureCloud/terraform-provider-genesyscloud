@@ -11,7 +11,7 @@ import (
 func dataSourceRoutingSettings() *schema.Resource {
 	return &schema.Resource{
 		Description:   "An organization's routing settings",
-		ReadContext:   readWithPooledClient(dataSourceRoutingSettingsRead),
+		ReadContext:   ReadWithPooledClient(dataSourceRoutingSettingsRead),
 		SchemaVersion: 1,
 		Schema:        resourceRoutingSettings().Schema,
 	}

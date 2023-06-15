@@ -14,7 +14,7 @@ import (
 func dataSourceAuthDivisionHome() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Divisions. Get the Home division",
-		ReadContext: readWithPooledClient(dataSourceAuthDivisionHomeRead),
+		ReadContext: ReadWithPooledClient(dataSourceAuthDivisionHomeRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Home division name.",
@@ -37,7 +37,7 @@ func dataSourceAuthDivisionHomeRead(ctx context.Context, d *schema.ResourceData,
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	// Query home division
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		division, _, getErr := authAPI.GetAuthorizationDivisionsHome()
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting division: %s", getErr))

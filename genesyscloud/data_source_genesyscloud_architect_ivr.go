@@ -14,7 +14,7 @@ import (
 func dataSourceArchitectIvr() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud IVRs. Select an IVR by name.",
-		ReadContext: readWithPooledClient(dataSourceIvrRead),
+		ReadContext: ReadWithPooledClient(dataSourceIvrRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "IVR name.",
@@ -32,7 +32,7 @@ func dataSourceIvrRead(ctx context.Context, d *schema.ResourceData, m interface{
 	name := d.Get("name").(string)
 
 	// Query ivr by name. Retry in case search has not yet indexed the ivr.
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		ivrs, _, getErr := archAPI.GetArchitectIvrs(pageNum, pageSize, "", "", name, "", "")

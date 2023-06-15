@@ -121,7 +121,7 @@ func testVerifyKnowledgeLabelDestroyed(state *terraform.State) error {
 		knowledgeLabel, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if knowledgeLabel != nil {
 			return fmt.Errorf("Knowledge label (%s) still exists", knowledgeLabelId)
-		} else if isStatus404(resp) || isStatus400(resp) {
+		} else if IsStatus404(resp) || IsStatus400(resp) {
 			// Knowledge base label not found as expected
 			continue
 		} else {

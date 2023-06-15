@@ -1,9 +1,11 @@
-package genesyscloud
+package process_automation_trigger
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -43,13 +45,13 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
 				Check: resource.ComposeTestCheckFunc(
-					getHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
+					gcloud.GetHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
 				),
 			},
 		},
@@ -88,12 +90,12 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
                noValue: true`, flowName1, homeDivisionName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create flow and trigger
-				Config: generateFlowResource(
+				Config: gcloud.GenerateFlowResource(
 					flowResource1,
 					filePath1,
 					workflowConfig1,
@@ -130,7 +132,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 			},
 			{
 				// Update trigger name, enabled, eventTTLSeconds and match criteria
-				Config: generateFlowResource(
+				Config: gcloud.GenerateFlowResource(
 					flowResource1,
 					filePath1,
 					workflowConfig1,
@@ -176,12 +178,12 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create flow and trigger
-				Config: generateFlowResource(
+				Config: gcloud.GenerateFlowResource(
 					flowResource1,
 					filePath1,
 					workflowConfig1,
@@ -218,7 +220,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 			},
 			{
 				// Update trigger name, enabled, eventTTLSeconds and match criteria
-				Config: generateFlowResource(
+				Config: gcloud.GenerateFlowResource(
 					flowResource1,
 					filePath1,
 					workflowConfig1,
@@ -300,7 +302,7 @@ func testVerifyProcessAutomationTriggerDestroyed(state *terraform.State) error {
 		trigger, resp, err := getProcessAutomationTrigger(rs.Primary.ID, integrationAPI)
 		if trigger != nil {
 			return fmt.Errorf("Process automation trigger (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// Trigger not found as expected
 			continue
 		} else {

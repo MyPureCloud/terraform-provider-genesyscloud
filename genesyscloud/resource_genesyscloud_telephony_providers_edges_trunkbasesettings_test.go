@@ -106,7 +106,7 @@ func testVerifyTrunkBaseSettingsDestroyed(state *terraform.State) error {
 		trunkBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(rs.Primary.ID, true)
 		if trunkBaseSettings != nil {
 			return fmt.Errorf("TrunkBaseSettings (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// TrunkBaseSettings not found as expected
 			continue
 		} else {

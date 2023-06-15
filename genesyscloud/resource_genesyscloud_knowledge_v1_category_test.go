@@ -129,7 +129,7 @@ func testVerifyKnowledgeV1CategoryDestroyed(state *terraform.State) error {
 		knowledgeCategory, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategory(knowledgeCategoryId, knowledgeBaseId, knowledgeBaseCoreLanguage1)
 		if knowledgeCategory != nil {
 			return fmt.Errorf("Knowledge category (%s) still exists", knowledgeCategoryId)
-		} else if isStatus404(resp) || isStatus400(resp) {
+		} else if IsStatus404(resp) || IsStatus400(resp) {
 			// Knowledge base category not found as expected
 			continue
 		} else {

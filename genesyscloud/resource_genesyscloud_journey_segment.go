@@ -276,7 +276,7 @@ func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Con
 
 func journeySegmentExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllJourneySegments),
+		GetResourcesFunc: GetAllWithPooledClient(getAllJourneySegments),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }
@@ -284,10 +284,10 @@ func journeySegmentExporter() *ResourceExporter {
 func resourceJourneySegment() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Segment",
-		CreateContext: createWithPooledClient(createJourneySegment),
-		ReadContext:   readWithPooledClient(readJourneySegment),
-		UpdateContext: updateWithPooledClient(updateJourneySegment),
-		DeleteContext: deleteWithPooledClient(deleteJourneySegment),
+		CreateContext: CreateWithPooledClient(createJourneySegment),
+		ReadContext:   ReadWithPooledClient(readJourneySegment),
+		UpdateContext: UpdateWithPooledClient(updateJourneySegment),
+		DeleteContext: DeleteWithPooledClient(deleteJourneySegment),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -305,7 +305,7 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	result, resp, err := journeyApi.PostJourneySegments(*journeySegment)
 	if err != nil {
 		input, _ := interfaceToJson(*journeySegment)
-		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, input, getBody(resp))
+		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, input, GetBody(resp))
 	}
 
 	d.SetId(*result.Id)
@@ -319,10 +319,10 @@ func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interf
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Reading journey segment %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		journeySegment, resp, getErr := journeyApi.GetJourneySegment(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("failed to read journey segment %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("failed to read journey segment %s: %s", d.Id(), getErr))
@@ -342,7 +342,7 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	patchSegment := buildSdkPatchSegment(d)
 
 	log.Printf("Updating journey segment %s", d.Id())
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current journey segment version
 		journeySegment, resp, getErr := journeyApi.GetJourneySegment(d.Id())
 		if getErr != nil {
@@ -353,7 +353,7 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 		_, resp, patchErr := journeyApi.PatchJourneySegment(d.Id(), *patchSegment)
 		if patchErr != nil {
 			input, _ := interfaceToJson(*patchSegment)
-			return resp, diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *patchSegment.DisplayName, patchErr, input, getBody(resp))
+			return resp, diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *patchSegment.DisplayName, patchErr, input, GetBody(resp))
 		}
 		return resp, nil
 	})
@@ -376,10 +376,10 @@ func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Failed to delete journey segment with display name %s: %s", displayName, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := journeyApi.GetJourneySegment(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// journey segment deleted
 				log.Printf("Deleted journey segment %s", d.Id())
 				return nil

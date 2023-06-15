@@ -40,7 +40,7 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 
 func scriptExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllScripts),
+		GetResourcesFunc: GetAllWithPooledClient(getAllScripts),
 		RefAttrs:         map[string]*RefAttrSettings{},
 		CustomFileWriter: CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ScriptResolver,
@@ -53,9 +53,9 @@ func resourceScript() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Script",
 
-		CreateContext: createWithPooledClient(createScript),
-		ReadContext:   readWithPooledClient(readScript),
-		DeleteContext: deleteWithPooledClient(deleteScript),
+		CreateContext: CreateWithPooledClient(createScript),
+		ReadContext:   ReadWithPooledClient(readScript),
+		DeleteContext: DeleteWithPooledClient(deleteScript),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -156,10 +156,10 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	scriptsApi := platformclientv2.NewScriptsApiWithConfig(sdkConfig)
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		script, resp, err := scriptsApi.GetScript(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))

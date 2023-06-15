@@ -137,7 +137,7 @@ func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *pl
 			grantsToAdd := sliceDifference(configGrants, existingGrants)
 			if len(grantsToAdd) > 0 {
 				// In some cases new roles or divisions have not yet been added to the auth service cache causing 404s that should be retried.
-				diagErr = retryWhen(isStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+				diagErr = RetryWhen(IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 					resp, err := authAPI.PostAuthorizationSubjectBulkadd(d.Id(), roleDivPairsToGrants(grantsToAdd), subjectType)
 					if err != nil {
 						return resp, diag.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err)

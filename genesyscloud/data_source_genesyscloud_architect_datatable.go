@@ -14,7 +14,7 @@ import (
 func dataSourceArchitectDatatable() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Architect Datatables. Select an architect datatable by name.",
-		ReadContext: readWithPooledClient(dataSourceArchitectDatatableRead),
+		ReadContext: ReadWithPooledClient(dataSourceArchitectDatatableRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Datatable name.",
@@ -32,7 +32,7 @@ func dataSourceArchitectDatatableRead(ctx context.Context, d *schema.ResourceDat
 	name := d.Get("name").(string)
 
 	// Query architect datatable by name. Retry in case search has not yet indexed the architect datatable.
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		datatables, _, getErr := archAPI.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, name)

@@ -62,14 +62,14 @@ func generateResponseManagementLibraryResource(
 func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error {
 	responseAPI := platformclientv2.NewResponseManagementApi()
 
-	diagErr := withRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "genesyscloud_responsemanagement_library" {
 				continue
 			}
 			_, resp, err := responseAPI.GetResponsemanagementLibrary(rs.Primary.ID)
 			if err != nil {
-				if isStatus404(resp) {
+				if IsStatus404(resp) {
 					continue
 				}
 				return resource.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))

@@ -137,7 +137,7 @@ func getAllCallAnalysisResponseSets(_ context.Context, clientConfig *platformcli
 
 func outboundCallAnalysisResponseSetExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllCallAnalysisResponseSets),
+		GetResourcesFunc: GetAllWithPooledClient(getAllCallAnalysisResponseSets),
 		RefAttrs: map[string]*RefAttrSettings{
 			"responses.callable_person.data":  {RefType: "genesyscloud_flow"},
 			"responses.callable_machine.data": {RefType: "genesyscloud_flow"},
@@ -149,10 +149,10 @@ func resourceOutboundCallAnalysisResponseSet() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound Call Analysis Response Set`,
 
-		CreateContext: createWithPooledClient(createOutboundCallAnalysisResponseSet),
-		ReadContext:   readWithPooledClient(readOutboundCallAnalysisResponseSet),
-		UpdateContext: updateWithPooledClient(updateOutboundCallAnalysisResponseSet),
-		DeleteContext: deleteWithPooledClient(deleteOutboundCallAnalysisResponseSet),
+		CreateContext: CreateWithPooledClient(createOutboundCallAnalysisResponseSet),
+		ReadContext:   ReadWithPooledClient(readOutboundCallAnalysisResponseSet),
+		UpdateContext: UpdateWithPooledClient(updateOutboundCallAnalysisResponseSet),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundCallAnalysisResponseSet),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -231,7 +231,7 @@ func updateOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.Resour
 	}
 
 	log.Printf("Updating Outbound Call Analysis Response Set %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Callanalysisresponseset version
 		outboundCallanalysisresponseset, resp, getErr := outboundApi.GetOutboundCallanalysisresponseset(d.Id())
 		if getErr != nil {
@@ -258,10 +258,10 @@ func readOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.Resource
 
 	log.Printf("Reading Outbound Call Analysis Response Set %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkResponseSet, resp, getErr := outboundApi.GetOutboundCallanalysisresponseset(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
@@ -285,7 +285,7 @@ func deleteOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.Resour
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Call Analysis Response Set")
 		resp, err := outboundApi.DeleteOutboundCallanalysisresponseset(d.Id())
 		if err != nil {
@@ -297,10 +297,10 @@ func deleteOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.Resour
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := outboundApi.GetOutboundCallanalysisresponseset(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Outbound Call Analysis Response Set deleted
 				log.Printf("Deleted Outbound Call Analysis Response Set %s", d.Id())
 				return nil

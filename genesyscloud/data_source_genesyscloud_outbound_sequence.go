@@ -15,7 +15,7 @@ func dataSourceOutboundSequence() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Outbound Sequence. Select a Outbound Sequence by name.`,
 
-		ReadContext: readWithPooledClient(dataSourceOutboundSequenceRead),
+		ReadContext: ReadWithPooledClient(dataSourceOutboundSequenceRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -36,7 +36,7 @@ func dataSourceOutboundSequenceRead(ctx context.Context, d *schema.ResourceData,
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			sdkcampaignsequenceentitylisting, _, getErr := outboundApi.GetOutboundSequences(pageSize, pageNum, true, "", "", "", "")

@@ -234,7 +234,7 @@ func testVerifyWidgetDeploymentDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Widget deployment (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Widget deployment does not exits keep going
 			continue
 		}

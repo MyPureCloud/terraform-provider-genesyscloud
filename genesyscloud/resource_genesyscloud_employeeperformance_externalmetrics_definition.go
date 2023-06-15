@@ -19,10 +19,10 @@ func resourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud employeeperformance externalmetrics definition`,
 
-		CreateContext: createWithPooledClient(createEmployeeperformanceExternalmetricsDefinition),
-		ReadContext:   readWithPooledClient(readEmployeeperformanceExternalmetricsDefinition),
-		UpdateContext: updateWithPooledClient(updateEmployeeperformanceExternalmetricsDefinition),
-		DeleteContext: deleteWithPooledClient(deleteEmployeeperformanceExternalmetricsDefinition),
+		CreateContext: CreateWithPooledClient(createEmployeeperformanceExternalmetricsDefinition),
+		ReadContext:   ReadWithPooledClient(readEmployeeperformanceExternalmetricsDefinition),
+		UpdateContext: UpdateWithPooledClient(updateEmployeeperformanceExternalmetricsDefinition),
+		DeleteContext: DeleteWithPooledClient(deleteEmployeeperformanceExternalmetricsDefinition),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -92,7 +92,7 @@ func getAllEmployeeperformanceExternalmetricsDefinition(_ context.Context, clien
 
 func employeeperformanceExternalmetricsDefinitionExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllEmployeeperformanceExternalmetricsDefinition),
+		GetResourcesFunc: GetAllWithPooledClient(getAllEmployeeperformanceExternalmetricsDefinition),
 		AllowZeroValues:  []string{"precision"},
 	}
 }
@@ -177,10 +177,10 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 
 	log.Printf("Reading Employeeperformance Externalmetrics Definition %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkexternalmetricdefinition, resp, getErr := gamificationApi.GetEmployeeperformanceExternalmetricsDefinition(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
@@ -216,7 +216,7 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	gamificationApi := platformclientv2.NewGamificationApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Employeeperformance Externalmetrics Definition")
 		resp, err := gamificationApi.DeleteEmployeeperformanceExternalmetricsDefinition(d.Id())
 		if err != nil {
@@ -228,10 +228,10 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := gamificationApi.GetEmployeeperformanceExternalmetricsDefinition(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Employeeperformance Externalmetrics Definition deleted
 				log.Printf("Deleted Employeeperformance Externalmetrics Definition %s", d.Id())
 				return nil

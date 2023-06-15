@@ -18,9 +18,9 @@ func resourceRoutingSmsAddress() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud routing sms address`,
 
-		CreateContext: createWithPooledClient(createRoutingSmsAddress),
-		ReadContext:   readWithPooledClient(readRoutingSmsAddress),
-		DeleteContext: deleteWithPooledClient(deleteRoutingSmsAddress),
+		CreateContext: CreateWithPooledClient(createRoutingSmsAddress),
+		ReadContext:   ReadWithPooledClient(readRoutingSmsAddress),
+		DeleteContext: DeleteWithPooledClient(deleteRoutingSmsAddress),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -98,7 +98,7 @@ func getAllRoutingSmsAddress(_ context.Context, clientConfig *platformclientv2.C
 
 func routingSmsAddressExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllRoutingSmsAddress),
+		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingSmsAddress),
 	}
 }
 
@@ -155,10 +155,10 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading Routing Sms Address %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdksmsaddress, resp, getErr := routingApi.GetRoutingSmsAddress(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Routing Sms Address %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Sms Address %s: %s", d.Id(), getErr))
@@ -199,7 +199,7 @@ func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 		return nil
 	}
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Routing Sms Address")
 		resp, err := routingApi.DeleteRoutingSmsAddress(d.Id())
 		if err != nil {
@@ -211,10 +211,10 @@ func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := routingApi.GetRoutingSmsAddress(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Routing Sms Address deleted
 				log.Printf("Deleted Routing Sms Address %s", d.Id())
 				return nil

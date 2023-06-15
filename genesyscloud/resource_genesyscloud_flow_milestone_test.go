@@ -103,7 +103,7 @@ func testVerifyFlowMilestoneDestroyed(state *terraform.State) error {
 		milestone, resp, err := archAPi.GetFlowsMilestone(rs.Primary.ID)
 		if milestone != nil {
 			return fmt.Errorf("Milestone (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Milestone not found as expected
 			continue
 		} else {

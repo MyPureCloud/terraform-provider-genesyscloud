@@ -16,7 +16,7 @@ import (
 func dataSourceRoutingSkillGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Routing Skills Groups. Select a skill group by name.",
-		ReadContext: readWithPooledClient(dataSourceRoutingSkillGroupRead),
+		ReadContext: ReadWithPooledClient(dataSourceRoutingSkillGroupRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Skill group name.",
@@ -35,7 +35,7 @@ func dataSourceRoutingSkillGroupRead(ctx context.Context, d *schema.ResourceData
 	name := d.Get("name").(string)
 
 	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 

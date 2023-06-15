@@ -14,7 +14,7 @@ import (
 func dataSourceIntegrationCredential() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud integration credential. Select an integration credential by name",
-		ReadContext: readWithPooledClient(dataSourceIntegrationCredentialRead),
+		ReadContext: ReadWithPooledClient(dataSourceIntegrationCredentialRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the integration credential",
@@ -31,7 +31,7 @@ func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.Resource
 
 	credName := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			integrationCredentials, _, getErr := integrationAPI.GetIntegrationsCredentials(pageNum, pageSize)

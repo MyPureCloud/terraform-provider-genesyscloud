@@ -14,7 +14,7 @@ import (
 func dataSourcePhoneBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Phone Base Settings. Select a phone base settings by name",
-		ReadContext: readWithPooledClient(dataSourcePhoneBaseSettingsRead),
+		ReadContext: ReadWithPooledClient(dataSourcePhoneBaseSettingsRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Phone Base Settings name.",
@@ -31,7 +31,7 @@ func dataSourcePhoneBaseSettingsRead(ctx context.Context, d *schema.ResourceData
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 50
 			phoneBaseSettings, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, name)

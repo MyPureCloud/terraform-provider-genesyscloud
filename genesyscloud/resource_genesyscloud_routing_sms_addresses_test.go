@@ -122,7 +122,7 @@ func testVerifySmsAddressDestroyed(state *terraform.State) error {
 		address, resp, err := routingAPI.GetRoutingSmsAddress(rs.Primary.ID)
 		if address != nil {
 			return fmt.Errorf("address (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Address not found as expected
 			continue
 		} else {

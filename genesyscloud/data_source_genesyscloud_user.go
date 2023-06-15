@@ -14,7 +14,7 @@ import (
 func dataSourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Users. Select a user by email or name.",
-		ReadContext: readWithPooledClient(dataSourceUserRead),
+		ReadContext: ReadWithPooledClient(dataSourceUserRead),
 		Schema: map[string]*schema.Schema{
 			"email": {
 				Description: "User email.",
@@ -55,7 +55,7 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 	}
 
 	// Retry in case user is not yet indexed
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		users, _, getErr := usersAPI.PostUsersSearch(platformclientv2.Usersearchrequest{
 			SortBy:    &emailField,
 			SortOrder: &sortOrderAsc,

@@ -42,7 +42,7 @@ func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Co
 
 func routingLanguageExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllRoutingLanguages),
+		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingLanguages),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }
@@ -51,9 +51,9 @@ func resourceRoutingLanguage() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Language",
 
-		CreateContext: createWithPooledClient(createRoutingLanguage),
-		ReadContext:   readWithPooledClient(readRoutingLanguage),
-		DeleteContext: deleteWithPooledClient(deleteRoutingLanguage),
+		CreateContext: CreateWithPooledClient(createRoutingLanguage),
+		ReadContext:   ReadWithPooledClient(readRoutingLanguage),
+		DeleteContext: DeleteWithPooledClient(deleteRoutingLanguage),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -94,10 +94,10 @@ func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta inter
 	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading language %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		language, resp, getErr := routingApi.GetRoutingLanguage(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
@@ -128,10 +128,10 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.Errorf("Failed to delete language %s: %s", name, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		routingLanguage, resp, err := routingApi.GetRoutingLanguage(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Routing language deleted
 				log.Printf("Deleted Routing language %s", d.Id())
 				return nil

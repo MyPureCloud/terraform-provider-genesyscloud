@@ -77,10 +77,10 @@ func resourcePhone() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Phone",
 
-		CreateContext: createWithPooledClient(createPhone),
-		ReadContext:   readWithPooledClient(readPhone),
-		UpdateContext: updateWithPooledClient(updatePhone),
-		DeleteContext: deleteWithPooledClient(deletePhone),
+		CreateContext: CreateWithPooledClient(createPhone),
+		ReadContext:   ReadWithPooledClient(readPhone),
+		UpdateContext: UpdateWithPooledClient(updatePhone),
+		DeleteContext: DeleteWithPooledClient(deletePhone),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -219,7 +219,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Creating phone %s", name)
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		phone, resp, err := edgesAPI.PostTelephonyProvidersEdgesPhones(*createPhone)
 		if err != nil {
 			return resp, diag.Errorf("Failed to create phone %s: %s", name, err)
@@ -249,10 +249,10 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading phone %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentPhone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
@@ -289,7 +289,7 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 	stationsAPI := platformclientv2.NewStationsApiWithConfig(sdkConfig)
 	stationId := ""
 
-	retryErr := withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	retryErr := WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		stations, _, getErr := stationsAPI.GetStations(pageSize, pageNum, "", "", "", userId, "", "")
@@ -311,7 +311,7 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		resp, putErr := usersAPI.PutUserStationDefaultstationStationId(userId, stationId)
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr)
@@ -410,10 +410,10 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("Failed to delete phone: %s", err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		phone, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhone(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Phone deleted
 				log.Printf("Deleted Phone %s", d.Id())
 				return nil
@@ -539,7 +539,7 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 
 func phoneExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllPhones),
+		GetResourcesFunc: GetAllWithPooledClient(getAllPhones),
 		RefAttrs: map[string]*RefAttrSettings{
 			"web_rtc_user_id":        {RefType: "genesyscloud_user"},
 			"site_id":                {RefType: "genesyscloud_telephony_providers_edges_site"},

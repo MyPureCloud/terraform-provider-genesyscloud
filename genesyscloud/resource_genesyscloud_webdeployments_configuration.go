@@ -285,7 +285,7 @@ func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platfo
 
 func webDeploymentConfigurationExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllWebDeploymentConfigurations),
+		GetResourcesFunc: GetAllWithPooledClient(getAllWebDeploymentConfigurations),
 	}
 }
 
@@ -293,10 +293,10 @@ func resourceWebDeploymentConfiguration() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Web Deployment Configuration",
 
-		CreateContext: createWithPooledClient(createWebDeploymentConfiguration),
-		ReadContext:   readWithPooledClient(readWebDeploymentConfiguration),
-		UpdateContext: updateWithPooledClient(updateWebDeploymentConfiguration),
-		DeleteContext: deleteWithPooledClient(deleteWebDeploymentConfiguration),
+		CreateContext: CreateWithPooledClient(createWebDeploymentConfiguration),
+		ReadContext:   ReadWithPooledClient(readWebDeploymentConfiguration),
+		UpdateContext: UpdateWithPooledClient(updateWebDeploymentConfiguration),
+		DeleteContext: DeleteWithPooledClient(deleteWebDeploymentConfiguration),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -380,10 +380,10 @@ func customizeConfigurationDiff(ctx context.Context, diff *schema.ResourceDiff, 
 }
 
 func waitForConfigurationDraftToBeActive(ctx context.Context, api *platformclientv2.WebDeploymentsApi, id string) diag.Diagnostics {
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		configuration, resp, err := api.GetWebdeploymentsConfigurationVersionsDraft(id)
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Error verifying active status for new web deployment configuration %s: %s", id, err))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment configuration %s: %s", id, err))
@@ -665,10 +665,10 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
-	diagErr := withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		configuration, resp, err := api.PostWebdeploymentsConfigurations(*inputCfg)
 		if err != nil {
-			if isStatus400(resp) {
+			if IsStatus400(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to create web deployment configuration %s: %s", name, err))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to create web deployment configuration %s: %s", name, err))
@@ -687,10 +687,10 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Web deployment configuration %s did not become active and could not be published", name)
 	}
 
-	diagErr = withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	diagErr = WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		configuration, resp, err := api.PostWebdeploymentsConfigurationVersionsDraftPublish(d.Id())
 		if err != nil {
-			if isStatus400(resp) {
+			if IsStatus400(resp) {
 				return resource.RetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
@@ -710,10 +710,10 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 func determineLatestVersion(ctx context.Context, api *platformclientv2.WebDeploymentsApi, configurationId string) string {
 	version := ""
-	_ = withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	_ = WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		versions, resp, getErr := api.GetWebdeploymentsConfigurationVersions(configurationId)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to determine latest version %s", getErr))
 			}
 			log.Printf("Failed to determine latest version. Defaulting to DRAFT. Details: %s", getErr)
@@ -754,13 +754,13 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 
 	version := d.Get("version").(string)
 	log.Printf("Reading web deployment configuration %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		if version == "" {
 			version = determineLatestVersion(ctx, api, d.Id())
 		}
 		configuration, resp, getErr := api.GetWebdeploymentsConfigurationVersion(d.Id(), version)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read web deployment configuration %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read web deployment configuration %s: %s", d.Id(), getErr))
@@ -806,10 +806,10 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
-	diagErr := withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := api.PutWebdeploymentsConfigurationVersionsDraft(d.Id(), *inputCfg)
 		if err != nil {
-			if isStatus400(resp) {
+			if IsStatus400(resp) {
 				return resource.RetryableError(fmt.Errorf("Error updating web deployment configuration %s: %s", name, err))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Error updating web deployment configuration %s: %s", name, err))
@@ -825,10 +825,10 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Web deployment configuration %s did not become active and could not be published", name)
 	}
 
-	diagErr = withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	diagErr = WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		configuration, resp, err := api.PostWebdeploymentsConfigurationVersionsDraftPublish(d.Id())
 		if err != nil {
-			if isStatus400(resp) {
+			if IsStatus400(resp) {
 				return resource.RetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
@@ -858,10 +858,10 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		return diag.Errorf("Failed to delete web deployment configuration %s: %s", name, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := api.GetWebdeploymentsConfigurationVersionsDraft(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				log.Printf("Deleted web deployment configuration %s", d.Id())
 				return nil
 			}

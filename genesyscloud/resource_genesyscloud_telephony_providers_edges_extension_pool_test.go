@@ -128,7 +128,7 @@ func testVerifyExtensionPoolsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Extension Pool (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Extension pool not found as expected
 			continue
 		}
