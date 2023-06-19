@@ -130,11 +130,11 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
 - `languages` (List of String) A list of languages supported on the configuration.
 - `messenger` (Block List, Max: 1) Settings concerning messenger (see [below for nested schema](#nestedblock--messenger))
 - `status` (String) The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.
-- `version` (String) The version of the configuration.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `version` (String) The version of the configuration.
 
 <a id="nestedblock--cobrowse"></a>
 ### Nested Schema for `cobrowse`
