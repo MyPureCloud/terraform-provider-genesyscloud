@@ -302,9 +302,7 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 		}
 
 		stationId = *(*stations.Entities)[0].Id
-		if *(*stations.Entities)[0].Status == "ASSOCIATED" {
-			stationIsAssociated = true
-		}
+		stationIsAssociated = *(*stations.Entities)[0].Status == "ASSOCIATED"
 
 		return nil
 	})
@@ -317,9 +315,8 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		if stationIsAssociated {
 			log.Printf("Disassociating user from phone station %s", stationId)
-			_, err := stationsAPI.DeleteStationAssociateduser(stationId)
-			if err != nil {
-				log.Printf("error unassigning user from station %s", stationId)
+			if resp, err := stationsAPI.DeleteStationAssociateduser(stationId); err != nil {
+				return resp, diag.Errorf("Error unassigning user from station %s: %v", stationId, err)
 			}
 		}
 
@@ -386,9 +383,10 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		updatePhoneBody.WebRtcUser = buildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 
+	log.Printf("Updating phone %s", name)
+
 	phone, _, err := edgesAPI.PutTelephonyProvidersEdgesPhone(d.Id(), *updatePhoneBody)
 	if err != nil {
-		fmt.Println("failing in here")
 		return diag.Errorf("Failed to update phone %s: %s", name, err)
 	}
 
@@ -578,7 +576,7 @@ func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Do
 
 		lineId, err := getLineIdByPhoneId(d.Id(), api)
 		if err != nil {
-			log.Print(err)
+			log.Printf("Failed to retrieve ID for phone %s: %v", d.Id(), err)
 		} else {
 			line.Id = &lineId
 		}
@@ -619,7 +617,7 @@ func getLineIdByPhoneId(phoneId string, api *platformclientv2.TelephonyProviders
 	if phone.Lines != nil && len(*phone.Lines) > 0 {
 		return *(*phone.Lines)[0].Id, nil
 	}
-	return "", fmt.Errorf("Failed to retrieve ID for phone %s", phoneId)
+	return "", fmt.Errorf("Could not access line ID for phone %s", phoneId)
 }
 
 func buildSdkCapabilities(d *schema.ResourceData) *platformclientv2.Phonecapabilities {
