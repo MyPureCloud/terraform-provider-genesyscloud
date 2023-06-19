@@ -182,21 +182,6 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 	})
 }
 
-func generateQuickUser(resourceId, email, name, title, dep string) string {
-	return generateUserResource(
-		resourceId,
-		email,
-		name,
-		nullValue, // Defaults to active
-		strconv.Quote(title),
-		strconv.Quote(dep),
-		nullValue, // No manager
-		nullValue, // Default acdAutoAnswer
-		"",        // No profile skills
-		"",        // No certs
-	)
-}
-
 func deleteDidPoolWithNumber(number string) error {
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
