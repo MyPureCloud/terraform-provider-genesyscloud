@@ -24,12 +24,15 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
 	didPoolStartPhoneNumber1 := "+14175540014"
 	didPoolEndPhoneNumber1 := "+14175540015"
-	err := authorizeSdk()
-	if err != nil {
+	if err := authorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
-	deleteDidPoolWithNumber(didPoolStartPhoneNumber1)
-	deleteDidPoolWithNumber(didPoolEndPhoneNumber1)
+	if err := deleteDidPoolWithNumber(didPoolStartPhoneNumber1); err != nil {
+		t.Fatalf("error deleting did pool start number: %v", err)
+	}
+	if err := deleteDidPoolWithNumber(didPoolEndPhoneNumber1); err != nil {
+		t.Fatalf("error deleting did pool end number: %v", err)
+	}
 
 	didPoolDescription1 := "Test description"
 	didPoolComments1 := "Test comments"

@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"time"
-
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 

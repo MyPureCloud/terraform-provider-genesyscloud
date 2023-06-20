@@ -383,51 +383,6 @@ func buildTarget(d *schema.ResourceData) *Target {
 	return &Target{}
 }
 
-func buildMatchCriteria(d *schema.ResourceData) *[]MatchCriteria {
-	if matchCriteriaVal := d.Get("match_criteria"); matchCriteriaVal != nil {
-		if matchCriteriaList := matchCriteriaVal.(*schema.Set).List(); len(matchCriteriaList) > 0 {
-
-			var matchCriteriaObjectList []MatchCriteria = []MatchCriteria{}
-
-			for item := 0; item < len(matchCriteriaList); item++ {
-				matchCriteriaMap := matchCriteriaList[item].(map[string]interface{})
-
-				jsonPath := matchCriteriaMap["json_path"].(string)
-				operator := matchCriteriaMap["operator"].(string)
-				value := matchCriteriaMap["value"].(string)
-				valuesInt := matchCriteriaMap["values"].([]interface{})
-
-				values := make([]string, len(valuesInt))
-				for i, v := range valuesInt {
-					values[i] = fmt.Sprint(v)
-				}
-
-				if len(values) < 1 {
-					criteria := MatchCriteria{
-						JsonPath: &jsonPath,
-						Operator: &operator,
-						Value:    &value,
-					}
-
-					matchCriteriaObjectList = append(matchCriteriaObjectList, criteria)
-				} else {
-					criteria := MatchCriteria{
-						JsonPath: &jsonPath,
-						Operator: &operator,
-						Values:   &values,
-					}
-
-					matchCriteriaObjectList = append(matchCriteriaObjectList, criteria)
-				}
-
-			}
-
-			return &matchCriteriaObjectList
-		}
-	}
-	return &[]MatchCriteria{}
-}
-
 func flattenTarget(inputTarget *Target) *schema.Set {
 	if inputTarget == nil {
 		return nil
@@ -441,33 +396,4 @@ func flattenTarget(inputTarget *Target) *schema.Set {
 	targetSet.Add(flattendedTarget)
 
 	return targetSet
-}
-
-func flattenMatchCriteria(inputMatchCriteria *[]MatchCriteria) *schema.Set {
-	if inputMatchCriteria == nil {
-		return nil
-	}
-
-	matchCriteriaSet := schema.NewSet(schema.HashResource(matchCriteria), []interface{}{})
-	for _, sdkMatchCriteria := range *inputMatchCriteria {
-		flattendedMatchCriteria := make(map[string]interface{})
-		flattendedMatchCriteria["json_path"] = *sdkMatchCriteria.JsonPath
-		flattendedMatchCriteria["operator"] = *sdkMatchCriteria.Operator
-
-		if sdkMatchCriteria.Value != nil {
-			flattendedMatchCriteria["value"] = *sdkMatchCriteria.Value
-		}
-
-		if sdkMatchCriteria.Values != nil {
-
-			t := *sdkMatchCriteria.Values
-			s := make([]interface{}, len(t))
-			for i, v := range t {
-				s[i] = v
-			}
-			flattendedMatchCriteria["values"] = s
-		}
-		matchCriteriaSet.Add(flattendedMatchCriteria)
-	}
-	return matchCriteriaSet
 }

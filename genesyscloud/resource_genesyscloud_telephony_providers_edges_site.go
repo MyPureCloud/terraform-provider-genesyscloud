@@ -220,6 +220,20 @@ func resourceSite() *schema.Resource {
 					},
 				},
 			},
+			"primary_sites": {
+				Description: `Used for primary phone edge assignment on physical edges only.  List of primary sites the phones can be assigned to. If no primary_sites are defined, the site id for this site will be used as the primary site id.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"secondary_sites": {
+				Description: `Used for secondary phone edge assignment on physical edges only.  List of secondary sites the phones can be assigned to.  If no primary_sites or secondary_sites are defined then the current site will defined as primary and secondary. `,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -276,6 +290,8 @@ func siteExporter() *ResourceExporter {
 		RefAttrs: map[string]*RefAttrSettings{
 			"location_id": {RefType: "genesyscloud_location"},
 			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
+			"primary_sites":   {RefType: "genesyscloud_telephony_providers_edges_site"},
+			"secondary_sites": {RefType: "genesyscloud_telephony_providers_edges_site"},
 		},
 	}
 }
@@ -312,6 +328,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	description := d.Get("description").(string)
 	mediaRegionsUseLatencyBased := d.Get("media_regions_use_latency_based").(bool)
 	edgeAutoUpdateConfig, err := buildSdkEdgeAutoUpdateConfig(d)
+
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -375,7 +392,13 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	d.SetId(*site.Id)
 
-	diagErr := updateSiteNumberPlans(d, edgesAPI)
+	log.Printf("Creating updating site with primary/secondary:  %s", *site.Id)
+	diagErr := updatePrimarySecondarySites(d, *site.Id, edgesAPI)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = updateSiteNumberPlans(d, edgesAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -435,6 +458,14 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("caller_id", currentSite.CallerId)
 		d.Set("caller_name", currentSite.CallerName)
 
+		if currentSite.PrimarySites != nil {
+			d.Set("primary_sites", sdkDomainEntityRefArrToList(*currentSite.PrimarySites))
+		}
+
+		if currentSite.SecondarySites != nil {
+			d.Set("secondary_sites", sdkDomainEntityRefArrToList(*currentSite.SecondarySites))
+		}
+
 		if retryErr := readSiteNumberPlans(d, edgesAPI); retryErr != nil {
 			return retryErr
 		}
@@ -455,6 +486,9 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	description := d.Get("description").(string)
 	mediaRegionsUseLatencyBased := d.Get("media_regions_use_latency_based").(bool)
 	edgeAutoUpdateConfig, err := buildSdkEdgeAutoUpdateConfig(d)
+	primarySites := InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
+	secondarySites := InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
+
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -505,6 +539,14 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	if description != "" {
 		site.Description = &description
+	}
+
+	if len(primarySites) > 0 {
+		site.PrimarySites = buildSdkDomainEntityRefArr(d, "primary_sites")
+	}
+
+	if len(secondarySites) > 0 {
+		site.SecondarySites = buildSdkDomainEntityRefArr(d, "secondary_sites")
 	}
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
@@ -602,6 +644,49 @@ func nameInOutboundRoutes(name string, outboundRoutes []platformclientv2.Outboun
 	}
 
 	return nil, false
+}
+
+// Contains the logic to determine if a primary or secondary site need to be updated.
+func updatePrimarySecondarySites(d *schema.ResourceData, siteId string, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) diag.Diagnostics {
+	primarySites := InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
+	secondarySites := InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
+
+	site, resp, err := edgesAPI.GetTelephonyProvidersEdgesSite(siteId)
+
+	if resp.StatusCode != 200 {
+		return diag.Errorf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site.  Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody)
+	}
+
+	if err != nil {
+		return diag.Errorf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site.  Err: %s", siteId, err)
+	}
+
+	if len(primarySites) == 0 && len(secondarySites) > 0 {
+		der := platformclientv2.Domainentityref{Id: &siteId}
+		derArr := make([]platformclientv2.Domainentityref, 1)
+		derArr[0] = der
+		site.PrimarySites = &derArr
+	}
+
+	if len(primarySites) > 0 {
+		site.PrimarySites = buildSdkDomainEntityRefArr(d, "primary_sites")
+	}
+
+	if len(secondarySites) > 0 {
+		site.SecondarySites = buildSdkDomainEntityRefArr(d, "secondary_sites")
+	}
+
+	_, resp, err = edgesAPI.PutTelephonyProvidersEdgesSite(siteId, *site)
+
+	if resp.StatusCode != 200 {
+		return diag.Errorf("Site %s was created, but unable to update the primary or secondary site.  Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody)
+	}
+
+	if err != nil {
+		return diag.Errorf("[Site %s was created, but unable to update the primary or secondary site.  Err: %s", siteId, err)
+	}
+
+	return nil
 }
 
 func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) diag.Diagnostics {

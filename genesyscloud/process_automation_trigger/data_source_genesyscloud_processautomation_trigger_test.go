@@ -15,18 +15,15 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 		triggerResource1 = "test-trigger1"
 		triggerResource2 = "test-trigger2"
 
-		triggerName1             = "Terraform trigger1-" + uuid.NewString()
-		topicName1               = "v2.detail.events.conversation.{id}.customer.end"
-		enabled1                 = "true"
-		targetType1              = "Workflow"
-		match_criteria_json_path = "mediaType"
-		match_criteria_operator  = "Equal"
-		match_criteria_value     = "CHAT"
-		eventTtlSeconds1         = "60"
-		description1             = "description 1"
+		triggerName1     = "Terraform trigger1-" + uuid.NewString()
+		topicName1       = "v2.detail.events.conversation.{id}.customer.end"
+		enabled1         = "true"
+		targetType1      = "Workflow"
+		eventTtlSeconds1 = "60"
+		description1     = "description 1"
 
 		flowResource1 = "test_flow1"
-		filePath1     = "../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
+		filePath1     = "../../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
 		flowName1     = "terraform-provider-test-" + uuid.NewString()
 	)
 
@@ -76,6 +73,40 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
              exitReason:
                noValue: true`, flowName1, homeDivisionName)
 
+	//Need to have a JSON encoded path
+	matchCriteria := `([
+        {
+          "jsonPath": "direction",
+          "operator": "Equal",
+          "value": "INBOUND"
+        },
+        {
+          "jsonPath": "mediaType",
+          "operator": "Equal",
+          "value": "VOICE"
+        },
+        {
+          "jsonPath": "interactingDurationMs",
+          "operator": "LessThanOrEqual",
+          "value": 20000
+        }
+     ])`
+
+	fmt.Println(generateProcessAutomationTriggerResourceEventTTL(
+		triggerResource1,
+		triggerName1,
+		topicName1,
+		enabled1,
+		fmt.Sprintf(`target {
+			id = %s
+			type = "%s"
+		}
+		`, "genesyscloud_flow."+flowResource1+".id", targetType1),
+		matchCriteria,
+		eventTtlSeconds1,
+		description1,
+	))
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.ProviderFactories,
@@ -97,12 +128,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
                         type = "%s"
                     }
                     `, "genesyscloud_flow."+flowResource1+".id", targetType1),
-					fmt.Sprintf(`match_criteria {
-                        json_path = "%s"
-                        operator = "%s"
-                        value = "%s"
-                    }
-                    `, match_criteria_json_path, match_criteria_operator, match_criteria_value),
+					matchCriteria,
 					eventTtlSeconds1,
 					description1,
 				) + generateProcessAutomationTriggerDataSource(

@@ -33,6 +33,7 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 		strconv.Quote(userPromptResourceTTS1),
 		nullValue,
 		nullValue,
+		nullValue,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
@@ -40,11 +41,13 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 		strconv.Quote(userPromptResourceTTS2),
 		nullValue,
 		nullValue,
+		nullValue,
 	}
 
 	userPromptAsset3 := UserPromptResourceStruct{
 		userPromptResourceLang2,
 		strconv.Quote(userPromptResourceTTS3),
+		nullValue,
 		nullValue,
 		nullValue,
 	}
@@ -126,6 +129,7 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 		nullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName1),
+		userPromptResourceFileName1,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
@@ -133,6 +137,7 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 		nullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName2),
+		userPromptResourceFileName2,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}
@@ -172,9 +177,10 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_architect_user_prompt." + userPromptResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_architect_user_prompt." + userPromptResource1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"resources"},
 			},
 		},
 		CheckDestroy: testVerifyUserPromptsDestroyed,
@@ -195,6 +201,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 		nullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName1),
+		nullValue,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
@@ -202,6 +209,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 		nullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName2),
+		nullValue,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}

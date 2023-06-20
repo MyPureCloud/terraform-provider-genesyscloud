@@ -19,25 +19,6 @@ type ProcessAutomationTrigger struct {
 	Description     *string `json:"description,omitempty"`
 }
 
-// type UpdateTriggerInput struct {
-// 	TopicName       *string `json:"topicName,omitempty"`
-// 	Name            *string `json:"name,omitempty"`
-// 	Target          *Target `json:"target,omitempty"`
-// 	MatchCriteria   *string `json:"-"`
-// 	Enabled         *bool   `json:"enabled,omitempty"`
-// 	EventTTLSeconds *int    `json:"eventTTLSeconds,omitempty"`
-// 	DelayBySeconds  *int    `json:"delayBySeconds,omitempty"`
-// 	Version         *int    `json:"version,omitempty"`
-// 	Description     *string `json:"description,omitempty"`
-// }
-
-type MatchCriteria struct {
-	JsonPath *string   `json:"jsonPath,omitempty"`
-	Operator *string   `json:"operator,omitempty"`
-	Value    *string   `json:"value,omitempty"`
-	Values   *[]string `json:"values,omitempty"`
-}
-
 type Target struct {
 	Type *string `json:"type,omitempty"`
 	Id   *string `json:"id,omitempty"`
