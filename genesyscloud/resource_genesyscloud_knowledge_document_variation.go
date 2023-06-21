@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
 )
 
 var (
@@ -561,6 +561,24 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	})
 }
 
+func buildDocumentContentListBlocks(blocksIn map[string]interface{}) *[]platformclientv2.Documentlistcontentblock {
+	if documentContentBlocks := blocksIn["blocks"].([]interface{}); documentContentBlocks != nil && len(documentContentBlocks) > 0 {
+		blocksOut := make([]platformclientv2.Documentlistcontentblock, 0)
+		for _, block := range documentContentBlocks {
+			blockMap := block.(map[string]interface{})
+			varType := blockMap["type"].(string)
+			blockOut := platformclientv2.Documentlistcontentblock{
+				VarType: &varType,
+				Text:    buildDocumentText(blockMap),
+				Image:   buildDocumentImage(blockMap),
+			}
+			blocksOut = append(blocksOut, blockOut)
+		}
+		return &blocksOut
+	}
+	return nil
+}
+
 func buildDocumentContentBlocks(blocksIn map[string]interface{}) *[]platformclientv2.Documentcontentblock {
 	if documentContentBlocks := blocksIn["blocks"].([]interface{}); documentContentBlocks != nil && len(documentContentBlocks) > 0 {
 		blocksOut := make([]platformclientv2.Documentcontentblock, 0)
@@ -587,7 +605,7 @@ func buildDocumentListBlocks(blocksIn map[string]interface{}) *[]platformclientv
 			varType := blockMap["type"].(string)
 			blockOut := platformclientv2.Documentbodylistblock{
 				VarType: &varType,
-				Blocks:  buildDocumentContentBlocks(blockMap),
+				Blocks:  buildDocumentContentListBlocks(blockMap),
 			}
 			blocksOut = append(blocksOut, blockOut)
 		}
@@ -729,6 +747,31 @@ func flattenDocumentText(textIn platformclientv2.Documenttext) []interface{} {
 	return []interface{}{textOut}
 }
 
+func flattenDocumentContentListBlocks(blocksIn []platformclientv2.Documentlistcontentblock) []interface{} {
+	if len(blocksIn) == 0 {
+		return nil
+	}
+
+	blocksOut := make([]interface{}, 0)
+	for _, block := range blocksIn {
+		blockOutMap := make(map[string]interface{})
+
+		if block.VarType != nil {
+			blockOutMap["type"] = *block.VarType
+		}
+		if block.Text != nil {
+			blockOutMap["text"] = flattenDocumentText(*block.Text)
+		}
+		if block.Image != nil {
+			blockOutMap["image"] = flattenDocumentImage(*block.Image)
+		}
+
+		blocksOut = append(blocksOut, blockOutMap)
+	}
+
+	return blocksOut
+}
+
 func flattenDocumentContentBlocks(blocksIn []platformclientv2.Documentcontentblock) []interface{} {
 	if len(blocksIn) == 0 {
 		return nil
@@ -767,7 +810,7 @@ func flattenDocumentListBlocks(blocksIn []platformclientv2.Documentbodylistblock
 			blockOutMap["type"] = *block.VarType
 		}
 		if block.Blocks != nil {
-			blockOutMap["blocks"] = flattenDocumentContentBlocks(*block.Blocks)
+			blockOutMap["blocks"] = flattenDocumentContentListBlocks(*block.Blocks)
 		}
 		blocksOut = append(blocksOut, blockOutMap)
 	}

@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
 )
 
 func resourceOutboundSequence() *schema.Resource {
@@ -40,7 +40,7 @@ func resourceOutboundSequence() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`status`: {
-				Description:  `The current status of the CampaignSequence. A CampaignSequence can be turned 'on' or 'off'.`,
+				Description:  `The current status of the CampaignSequence. A CampaignSequence can be turned 'on' or 'off' (default). Changing from "on" to "off" will cause the current sequence to drop and be recreated with a new ID.`,
 				Optional:     true,
 				Computed:     true,
 				Type:         schema.TypeString,
@@ -55,6 +55,9 @@ func resourceOutboundSequence() *schema.Resource {
 				Type:        schema.TypeBool,
 			},
 		},
+		CustomizeDiff: customdiff.ForceNewIfChange("status", func(ctx context.Context, old, new, meta any) bool {
+			return new.(string) == "off" && (old.(string) == "on" || old.(string) == "complete")
+		}),
 	}
 }
 
@@ -74,6 +77,9 @@ func getAllOutboundSequence(_ context.Context, clientConfig *platformclientv2.Co
 		}
 
 		for _, entity := range *sdkcampaignsequenceentitylisting.Entities {
+			if *entity.Status != "off" && *entity.Status != "on" {
+				*entity.Status = "off"
+			}
 			resources[*entity.Id] = &ResourceMeta{Name: *entity.Name}
 		}
 	}
@@ -108,9 +114,10 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	if name != "" {
 		sdkcampaignsequence.Name = &name
 	}
-	if status != "" {
-		sdkcampaignsequence.Status = &status
-	}
+
+	// All campaigns sequences have to be created in an "off" state to start out with
+	defaultStatus := "off"
+	sdkcampaignsequence.Status = &defaultStatus
 
 	log.Printf("Creating Outbound Sequence %s", name)
 	outboundSequence, _, err := outboundApi.PostOutboundSequences(sdkcampaignsequence)
@@ -119,8 +126,17 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	d.SetId(*outboundSequence.Id)
-
 	log.Printf("Created Outbound Sequence %s %s", name, *outboundSequence.Id)
+
+	// Campaigns sequences can be enabled after creation
+	if status == "on" {
+		d.Set("status", status)
+		diag := updateOutboundSequence(ctx, d, meta)
+		if diag != nil {
+			return diag
+		}
+	}
+
 	return readOutboundSequence(ctx, d, meta)
 }
 

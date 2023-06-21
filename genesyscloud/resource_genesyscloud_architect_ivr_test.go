@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
 )
 
 type ivrConfigStruct struct {
@@ -53,13 +53,16 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 	ivrConfigDescription := "Terraform IVR config"
 	number1 := "+14175550011"
 	number2 := "+14175550012"
-	err := authorizeSdk()
-	if err != nil {
+	if err := authorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	deleteIvrStartingWith("terraform-ivrconfig-")
-	deleteDidPoolWithNumber(number1)
-	deleteDidPoolWithNumber(number2)
+	if err := deleteDidPoolWithNumber(number1); err != nil {
+		t.Fatalf("error deleting did pool start number: %v", err)
+	}
+	if err := deleteDidPoolWithNumber(number2); err != nil {
+		t.Fatalf("error deleting did pool end number: %v", err)
+	}
 	ivrConfigDnis := []string{number1, number2}
 	didPoolResource1 := "test-didpool1"
 
@@ -126,13 +129,16 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 	divResource2 := "auth-division2"
 	divName1 := "TerraformDiv-" + uuid.NewString()
 	divName2 := "TerraformDiv-" + uuid.NewString()
-	err := authorizeSdk()
-	if err != nil {
+	if err := authorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	deleteIvrStartingWith("terraform-ivrconfig-")
-	deleteDidPoolWithNumber(number1)
-	deleteDidPoolWithNumber(number2)
+	if err := deleteDidPoolWithNumber(number1); err != nil {
+		t.Fatalf("error deleting did pool start number: %v", err)
+	}
+	if err := deleteDidPoolWithNumber(number2); err != nil {
+		t.Fatalf("error deleting did pool end number: %v", err)
+	}
 	ivrConfigDnis := []string{number1, number2}
 	didPoolResource1 := "test-didpool1"
 

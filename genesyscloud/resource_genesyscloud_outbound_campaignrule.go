@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
 )
 
 var (
@@ -220,7 +220,7 @@ func resourceOutboundCampaignRule() *schema.Resource {
 				Type:        schema.TypeBool,
 			},
 			`enabled`: {
-				Description: `Whether or not this campaign rule is currently enabled. Required on updates.`,
+				Description: `Whether or not this campaign rule is currently enabled.`,
 				Optional:    true,
 				Default:     false,
 				Type:        schema.TypeBool,
@@ -246,12 +246,15 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		CampaignRuleConditions: buildOutboundCampaignRuleConditionSlice(campaignRuleConditions),
 		CampaignRuleActions:    buildOutboundCampaignRuleActionSlice(campaignRuleActions),
 		MatchAnyConditions:     &matchAnyConditions,
-		Enabled:                &enabled,
 	}
 
 	if name != "" {
 		sdkCampaignRule.Name = &name
 	}
+
+	// All campaign rules have to be created in an "off" state to start out with
+	defaultStatus := false
+	sdkCampaignRule.Enabled = &defaultStatus
 
 	log.Printf("Creating Outbound Campaign Rule %s", name)
 	outboundCampaignRule, _, err := outboundApi.PostOutboundCampaignrules(sdkCampaignRule)
@@ -260,8 +263,17 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	d.SetId(*outboundCampaignRule.Id)
-
 	log.Printf("Created Outbound Campaign Rule %s %s", name, *outboundCampaignRule.Id)
+
+	// Campaign rules can be enabled after creation
+	if enabled {
+		d.Set("enabled", enabled)
+		diag := updateOutboundCampaignRule(ctx, d, meta)
+		if diag != nil {
+			return diag
+		}
+	}
+
 	return readOutboundCampaignRule(ctx, d, meta)
 }
 
@@ -353,6 +365,17 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+
+	ruleEnabled := d.Get("enabled").(bool)
+	if ruleEnabled {
+		// Have to disable rule before we can delete
+		log.Printf("Disabling Outbound Campaign Rule")
+		d.Set("enabled", false)
+		diagErr := updateOutboundCampaignRule(ctx, d, meta)
+		if diagErr != nil {
+			return diagErr
+		}
+	}
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Campaign Rule")
