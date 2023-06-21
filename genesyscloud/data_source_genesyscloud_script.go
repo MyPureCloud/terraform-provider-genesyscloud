@@ -21,6 +21,12 @@ func dataSourceScript() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"published": {
+				Description: "Filter by published scripts. Use this for querying default scripts.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 		},
 	}
 }
@@ -30,13 +36,21 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 	scriptsAPI := platformclientv2.NewScriptsApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
+	published := d.Get("published").(bool)
 
 	// Query for scripts by name. Retry in case new script is not yet indexed by search.
 	// As script names are non-unique, fail in case of multiple results.
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		const pageNum = 1
-		scripts, _, getErr := scriptsAPI.GetScripts(pageSize, pageNum, "", name, "", "", "", "", "", "")
+		var scripts *platformclientv2.Scriptentitylisting
+		var getErr error
+
+		if published {
+			scripts, _, getErr = scriptsAPI.GetScriptsPublished(pageSize, pageNum, "", name, "", "", "", "")
+		} else {
+			scripts, _, getErr = scriptsAPI.GetScripts(pageSize, pageNum, "", name, "", "", "", "", "", "")
+		}
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting script %s: %s", name, getErr))
 		}
