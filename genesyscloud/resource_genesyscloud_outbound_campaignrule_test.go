@@ -114,8 +114,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						resourceId,
 						ruleName,
-						falseValue,
-						falseValue,
+						falseValue, // enabled
+						falseValue, // matchAnyConditions
 						generateCampaignRuleEntity(campaignRuleEntityCampaignIds, campaignRuleEntitySequenceIds),
 						generateCampaignRuleConditions(
 							"",
@@ -178,8 +178,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						resourceId,
 						ruleNameUpdated,
-						trueValue,
-						trueValue,
+						trueValue, // enabled
+						trueValue, // matchAnyConditions
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
@@ -223,7 +223,7 @@ data "genesyscloud_auth_division_home" "home" {}
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_actions.0.parameters.0.priority", paramRulesPriorityUpdated),
 				),
 			},
-			// Update (Setting 'enabled' back to false to test that it can be disabled again)
+			// Update (Setting 'enabled' back to false because we can't create or delete a rule with 'enabled' set to true)
 			{
 				Config: fmt.Sprintf(`
 			data "genesyscloud_auth_division_home" "home" {}
@@ -276,8 +276,9 @@ data "genesyscloud_auth_division_home" "home" {}
 
 func TestAccResourceOutboundCampaignRuleEnabledAtCreation(t *testing.T) {
 	var (
-		resourceId = "campaign_rule"
-		ruleName   = "Terraform test rule " + uuid.NewString()
+		resourceId      = "campaign_rule"
+		ruleName        = "Terraform test rule " + uuid.NewString()
+		ruleNameUpdated = "Terraform test rule " + uuid.NewString()
 
 		campaign1ResourceId  = "campaign1"
 		campaign1Name        = "TF Test Campaign " + uuid.NewString()
@@ -341,7 +342,7 @@ func TestAccResourceOutboundCampaignRuleEnabledAtCreation(t *testing.T) {
 		campaignRuleEntityCampaignIds = []string{"genesyscloud_outbound_campaign." + campaign1ResourceId + ".id"}
 		campaignRuleEntitySequenceIds = []string{"genesyscloud_outbound_sequence." + sequenceResourceId + ".id"}
 
-		campaignRuleActionType                = "turnOnCampaign"
+		campaignRuleActionType                = "turnOffCampaign"
 		campaignRuleActionCampaignIds         = []string{"genesyscloud_outbound_campaign." + campaign2ResourceId + ".id"}
 		campaignRuleActionSequenceIds         = []string{"genesyscloud_outbound_sequence." + sequenceResourceId + ".id"}
 		campaignRuleActionUseTriggeringEntity = falseValue
@@ -351,6 +352,12 @@ func TestAccResourceOutboundCampaignRuleEnabledAtCreation(t *testing.T) {
 		paramRulesValue            = "0.4"
 		paramRulesDialingMode      = "preview"
 		paramRulesPriority         = "2"
+
+		campaignRuleCondition1TypeUpdate = "campaignAgents"
+		paramRulesOperatorUpdated        = "greaterThan"
+		paramRulesValueUpdated           = "50"
+		paramRulesDialingModeUpdated     = ""
+		paramRulesPriorityUpdated        = ""
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -421,7 +428,46 @@ data "genesyscloud_auth_division_home" "home" {}
 						"genesyscloud_outbound_sequence."+sequenceResourceId, "id"),
 				),
 			},
-			// Not setting enabled back to false to test that the destroy function handles disabling the rule before destroying
+			// Update (Setting 'enabled' back to false because we can't create or delete a rule with 'enabled' set to true)
+			{
+				Config: fmt.Sprintf(`
+			data "genesyscloud_auth_division_home" "home" {}
+			`) +
+					sequenceResource +
+					campaign1Resource +
+					campaign2Resource +
+					generateOutboundCampaignRule(
+						resourceId,
+						ruleNameUpdated,
+						falseValue, // enabled
+						trueValue,  // matchAnyConditions
+						generateCampaignRuleEntity(
+							campaignRuleEntityCampaignIds,
+							campaignRuleEntitySequenceIds,
+						),
+						generateCampaignRuleConditions(
+							"",
+							campaignRuleCondition1TypeUpdate,
+							generateCampaignRuleParameters(
+								paramRulesOperatorUpdated,
+								paramRulesValueUpdated,
+								paramRulesDialingModeUpdated,
+								paramRulesPriorityUpdated,
+							),
+						),
+						generateCampaignRuleActions(
+							"",
+							campaignRuleActionType,
+							campaignRuleActionCampaignIds,
+							campaignRuleActionSequenceIds,
+							campaignRuleActionUseTriggeringEntity,
+							"",
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", falseValue),
+				),
+			},
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_outbound_campaignrule." + resourceId,
