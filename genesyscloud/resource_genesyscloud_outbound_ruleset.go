@@ -306,6 +306,7 @@ func getAllOutboundRuleset(_ context.Context, clientConfig *platformclientv2.Con
 func outboundRulesetExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: getAllWithPooledClient(getAllOutboundRuleset),
+		
 		RefAttrs: map[string]*RefAttrSettings{
 			"contact_list_id": {
 				RefType: "genesyscloud_outbound_contact_list",
@@ -323,6 +324,12 @@ func outboundRulesetExporter() *ResourceExporter {
 				RefType: "genesyscloud_integration_action",
 			},
 		},
+
+
+	 	JsonEncodeAttributes: []string{"rules.actions.properties.skills"},
+	 	CustomAttributeResolver: map[string]*RefAttrCustomResolver{
+	 		"rules.actions.properties.skills": {ResolverFunc: RuleSetPropertyResolver},
+	    },
 	}
 }
 

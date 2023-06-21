@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
+	"encoding/json"
 )
 
 /*
@@ -41,6 +43,36 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 
 	return nil
 }
+
+func RuleSetPropertyResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
+
+	skillIDs := configMap["skills"].(string)
+	sanitisedSkillIds := []string{}
+
+	if exporter, ok := exporters["genesyscloud_routing_skill"]; ok {
+		skillIDs = skillIDs[1 : len(skillIDs)-1]
+		skillIdList := strings.Split(skillIDs, ",")
+
+		// Trim the double quotes from each element in the array
+		for i := 0; i < len(skillIdList); i++ {
+			skillIdList[i] = strings.Trim(skillIdList[i], "\"")
+		}
+		
+		exportId := ""
+		for _, skillId := range skillIdList {
+			exportId = (*exporter.SanitizedResourceMap[skillId]).Name
+			sanitisedSkillIds = append(sanitisedSkillIds, fmt.Sprintf("${genesyscloud_routing_skill.%s.id}", exportId))
+		}
+		
+		jsonData, _ := json.Marshal(sanitisedSkillIds)
+		configMap["skills"] = string(jsonData)
+
+	} else {
+		return fmt.Errorf("unable to locate genesyscloud_routing_skill in the exporters array. Unable to resolve the ID for the member group resource")
+	}
+	return nil
+}
+
 
 func FileContentHashResolver(configMap map[string]interface{}, filepath string) error {
 	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256(var.%s)}`, filepath)
