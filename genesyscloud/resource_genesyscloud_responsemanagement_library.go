@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
 )
 
 func resourceResponsemanagementLibrary() *schema.Resource {
@@ -42,7 +42,7 @@ func getAllResponsemanagementLibrary(_ context.Context, clientConfig *platformcl
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		sdklibraryentitylisting, _, getErr := responseManagementApi.GetResponsemanagementLibraries(pageNum, pageSize, "")
+		sdklibraryentitylisting, _, getErr := responseManagementApi.GetResponsemanagementLibraries(pageNum, pageSize, "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Error requesting page of Responsemanagement Library: %s", getErr)
 		}

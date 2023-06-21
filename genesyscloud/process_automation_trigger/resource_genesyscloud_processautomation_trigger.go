@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
 )
 
 // Registering our resource provider for export
