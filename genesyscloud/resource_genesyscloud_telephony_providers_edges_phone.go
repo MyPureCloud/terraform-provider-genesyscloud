@@ -176,7 +176,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
-	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
+	lines, isStandalone := buildSdkLines(d, lineBaseSettings, edgesAPI)
 
 	phoneMetaBaseId, err := getPhoneMetaBaseId(edgesAPI, *phoneBaseSettings.Id)
 	if err != nil {
@@ -287,6 +287,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Configuration, userId string) diag.Diagnostics {
 	stationsAPI := platformclientv2.NewStationsApiWithConfig(sdkConfig)
 	stationId := ""
+	stationIsAssociated := false
 
 	retryErr := withRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		const pageSize = 100
@@ -301,6 +302,7 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 		}
 
 		stationId = *(*stations.Entities)[0].Id
+		stationIsAssociated = *(*stations.Entities)[0].Status == "ASSOCIATED"
 
 		return nil
 	})
@@ -311,7 +313,14 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		resp, putErr := usersAPI.PutUserStationDefaultstationStationId(userId, stationId)
+		if stationIsAssociated {
+			log.Printf("Disassociating user from phone station %s", stationId)
+			if resp, err := stationsAPI.DeleteStationAssociateduser(stationId); err != nil {
+				return resp, diag.Errorf("Error unassigning user from station %s: %v", stationId, err)
+			}
+		}
+
+		resp, putErr := usersAPI.PutUserStationAssociatedstationStationId(userId, stationId)
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr)
 		}
@@ -342,8 +351,9 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return diag.Errorf("Failed to get line base settings for %s: %s", name, err)
 		}
 	}
+
 	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
-	lines, isStandalone := buildSdkLines(d, lineBaseSettings)
+	lines, isStandalone := buildSdkLines(d, lineBaseSettings, edgesAPI)
 
 	//Have to create a phonebasesettings object now as of version v90.  Used to be a domain ref but the engineering team changed the type in the swagger def
 	phoneSettings := &platformclientv2.Phonebasesettings{
@@ -355,6 +365,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		Site:              site,
 		PhoneBaseSettings: phoneSettings,
 		PhoneMetaBase:     phoneMetaBase,
+		LineBaseSettings:  lineBaseSettings,
 		Lines:             lines,
 	}
 
@@ -373,6 +384,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Updating phone %s", name)
+
 	phone, _, err := edgesAPI.PutTelephonyProvidersEdgesPhone(d.Id(), *updatePhoneBody)
 	if err != nil {
 		return diag.Errorf("Failed to update phone %s: %s", name, err)
@@ -547,7 +559,7 @@ func phoneExporter() *ResourceExporter {
 	}
 }
 
-func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Domainentityref) (linesPtr *[]platformclientv2.Line, isStandAlone bool) {
+func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Domainentityref, api *platformclientv2.TelephonyProvidersEdgeApi) (linesPtr *[]platformclientv2.Line, isStandAlone bool) {
 	lines := []platformclientv2.Line{}
 	isStandAlone = false
 
@@ -557,10 +569,19 @@ func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Do
 	// If line_addresses is not provided, phone is not standalone
 	if !ok || len(lineStringList) == 0 {
 		lineName := "line_" + *lineBaseSettings.Id
-		lines = append(lines, platformclientv2.Line{
+		line := platformclientv2.Line{
 			Name:             &lineName,
 			LineBaseSettings: lineBaseSettings,
-		})
+		}
+
+		lineId, err := getLineIdByPhoneId(d.Id(), api)
+		if err != nil {
+			log.Printf("Failed to retrieve ID for phone %s: %v", d.Id(), err)
+		} else {
+			line.Id = &lineId
+		}
+
+		lines = append(lines, line)
 
 		linesPtr = &lines
 		return
@@ -586,6 +607,17 @@ func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Do
 	isStandAlone = true
 
 	return
+}
+
+func getLineIdByPhoneId(phoneId string, api *platformclientv2.TelephonyProvidersEdgeApi) (string, error) {
+	phone, _, err := api.GetTelephonyProvidersEdgesPhone(phoneId)
+	if err != nil {
+		return "", err
+	}
+	if phone.Lines != nil && len(*phone.Lines) > 0 {
+		return *(*phone.Lines)[0].Id, nil
+	}
+	return "", fmt.Errorf("Could not access line ID for phone %s", phoneId)
 }
 
 func buildSdkCapabilities(d *schema.ResourceData) *platformclientv2.Phonecapabilities {
