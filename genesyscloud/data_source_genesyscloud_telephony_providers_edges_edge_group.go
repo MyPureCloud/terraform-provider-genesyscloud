@@ -21,6 +21,12 @@ func dataSourceEdgeGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"managed": {
+				Description: "Return entities that are managed by Genesys Cloud.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 		},
 	}
 }
@@ -30,11 +36,12 @@ func dataSourceEdgeGroupRead(ctx context.Context, d *schema.ResourceData, m inte
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
+	managed := d.Get("managed").(bool)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			edgeGroup, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, name, "", false)
+			edgeGroup, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, name, "", managed)
 
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting edge group %s: %s", name, getErr))
