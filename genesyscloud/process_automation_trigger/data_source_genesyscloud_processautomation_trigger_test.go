@@ -92,21 +92,6 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
         }
      ])`
 
-	fmt.Println(generateProcessAutomationTriggerResourceEventTTL(
-		triggerResource1,
-		triggerName1,
-		topicName1,
-		enabled1,
-		fmt.Sprintf(`target {
-			id = %s
-			type = "%s"
-		}
-		`, "genesyscloud_flow."+flowResource1+".id", targetType1),
-		matchCriteria,
-		eventTtlSeconds1,
-		description1,
-	))
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.ProviderFactories,
