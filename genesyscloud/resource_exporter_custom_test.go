@@ -103,7 +103,7 @@ func TestRuleSetPropertyGroup(t *testing.T) {
 
 		//Create an exporter
 		skillSanitizedResourceMap := make(map[string]*ResourceMeta)
-		skillSanitizedResourceMap[testResult.Skills] = &ResourceMeta{Name: testResult.SkillName}
+		skillSanitizedResourceMap[uuid] = &ResourceMeta{Name: testResult.SkillName}
 
 		firstResourceExport := &ResourceExporter{
 			SanitizedResourceMap: skillSanitizedResourceMap,
