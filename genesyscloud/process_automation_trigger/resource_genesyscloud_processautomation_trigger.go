@@ -45,46 +45,6 @@ var (
 			},
 		},
 	}
-
-	matchCriteria = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"json_path": {
-				Description: "The json path of the topic event to be compared to match criteria value",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"operator": {
-				Description: "The operator used to compare the json path against the value of the match criteria",
-				Type:        schema.TypeString,
-				Required:    true,
-				ValidateFunc: validation.StringInSlice([]string{
-					"GreaterThanOrEqual",
-					"LessThanOrEqual",
-					"Equal",
-					"NotEqual",
-					"LessThan",
-					"GreaterThan",
-					"NotIn",
-					"In",
-					"Contains",
-					"All",
-					"Exists",
-					"Size",
-				}, false),
-			},
-			"value": {
-				Description: "Value the jsonPath is compared against",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"values": {
-				Description: "Values the jsonPath are compared against",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-		},
-	}
 )
 
 /*
@@ -135,7 +95,7 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 				Elem:        target,
 			},
 			"match_criteria": {
-				Description: "Match criteria that controls when the trigger will fire.",
+				Description: "Match criteria that controls when the trigger will fire. NOTE: The match_criteria field type has changed from a complex object to a string. This was done to allow for complex JSON object definitions.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},

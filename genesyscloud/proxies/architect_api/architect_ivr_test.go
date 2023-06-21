@@ -1,3 +1,6 @@
+//go:build unit
+// +build unit
+
 package architect_api
 
 import (
