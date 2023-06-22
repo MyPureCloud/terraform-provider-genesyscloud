@@ -25,6 +25,10 @@ data "genesyscloud_script" "example-script" {
 
 - `name` (String) Script name.
 
+### Optional
+
+- `published` (Boolean) Filter by published scripts. Use this for querying default scripts. Defaults to `false`.
+
 ### Read-Only
 
 - `id` (String) The ID of this resource.
