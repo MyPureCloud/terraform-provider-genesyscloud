@@ -20,9 +20,6 @@ var resourceExporterMapMutex = sync.RWMutex{}
 
 func init() {
 	resourceExporters = make(map[string]*ResourceExporter)
-
-	// registerResources()
-	// registerDataSources()
 }
 
 func RegisterExporter(exporterName string, resourceExporter *ResourceExporter) {
