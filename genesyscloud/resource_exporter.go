@@ -15,7 +15,7 @@ import (
 )
 
 type ResourceMeta struct {
-	// Name of the resoruce to be used in exports
+	// Name of the resource to be used in exports
 	Name string
 
 	// Prefix to add to the ID when reading state

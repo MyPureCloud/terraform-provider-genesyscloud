@@ -31,6 +31,7 @@ func TestAccDataSourceScript(t *testing.T) {
 					scriptDataSource,
 					name,
 					resourceId,
+					false, // published
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_script."+scriptDataSource, "id",
@@ -41,10 +42,80 @@ func TestAccDataSourceScript(t *testing.T) {
 	})
 }
 
-func generateScriptDataSource(dataSourceID, name, resourceId string) string {
-	return fmt.Sprintf(`data "genesyscloud_script" "%s" {
+// Test that published scripts can also return hard-coded default scripts
+func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
+	var (
+		callbackDataSource = "callback-script-data"
+		callbackName       = "Default Callback Script"
+		callbackId         = "ffde0662-8395-9b04-7dcb-b90172109065"
+		inboundDataSource  = "inbound-script-data"
+		inboundName        = "Default Inbound Script"
+		inboundId          = "766f1221-047a-11e5-bba2-db8c0964d007"
+		outboundDataSource = "outbound-script-data"
+		outboundName       = "Default Outbound Script"
+		outboundId         = "476c2b71-7429-11e4-9a5b-3f91746bffa3"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: generateScriptDataSource(
+					callbackDataSource,
+					callbackName,
+					"",
+					true, // published
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.genesyscloud_script."+callbackDataSource, "id",
+						callbackId,
+					),
+				),
+			},
+			{
+				Config: generateScriptDataSource(
+					inboundDataSource,
+					inboundName,
+					"",
+					true, // published
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.genesyscloud_script."+inboundDataSource, "id",
+						inboundId,
+					),
+				),
+			},
+			{
+				Config: generateScriptDataSource(
+					outboundDataSource,
+					outboundName,
+					"",
+					true, // published
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.genesyscloud_script."+outboundDataSource, "id",
+						outboundId,
+					),
+				),
+			},
+		},
+	})
+}
+
+func generateScriptDataSource(dataSourceID, name, resourceId string, published bool) string {
+	if resourceId != "" {
+		return fmt.Sprintf(`data "genesyscloud_script" "%s" {
 		name = "%s"
 		depends_on = [genesyscloud_script.%s]
+		published = %t
 	}
-	`, dataSourceID, name, resourceId)
+	`, dataSourceID, name, resourceId, published)
+	} else {
+		return fmt.Sprintf(`data "genesyscloud_script" "%s" {
+		name = "%s"
+		published = %t
+	}
+	`, dataSourceID, name, published)
+	}
 }
