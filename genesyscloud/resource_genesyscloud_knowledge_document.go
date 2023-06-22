@@ -106,7 +106,7 @@ func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.
 
 func knowledgeDocumentExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeDocuments),
+		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeDocuments),
 		RefAttrs: map[string]*RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
@@ -117,10 +117,10 @@ func resourceKnowledgeDocument() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge document",
 
-		CreateContext: createWithPooledClient(createKnowledgeDocument),
-		ReadContext:   readWithPooledClient(readKnowledgeDocument),
-		UpdateContext: updateWithPooledClient(updateKnowledgeDocument),
-		DeleteContext: deleteWithPooledClient(deleteKnowledgeDocument),
+		CreateContext: CreateWithPooledClient(createKnowledgeDocument),
+		ReadContext:   ReadWithPooledClient(readKnowledgeDocument),
+		UpdateContext: UpdateWithPooledClient(updateKnowledgeDocument),
+		DeleteContext: DeleteWithPooledClient(deleteKnowledgeDocument),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -317,10 +317,10 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		knowledgeDocument, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
@@ -359,7 +359,7 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating Knowledge document %s", knowledgeDocumentId)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Knowledge document version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
@@ -397,7 +397,7 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete Knowledge document %s: %s", knowledgeDocumentId, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		state := "Draft"
 		if d.Get("published").(bool) == true {
 			state = "Published"
@@ -405,7 +405,7 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeDocumentId, knowledgeBaseId, nil, state)
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Knowledge document deleted
 				log.Printf("Deleted Knowledge document %s", knowledgeDocumentId)
 				return nil

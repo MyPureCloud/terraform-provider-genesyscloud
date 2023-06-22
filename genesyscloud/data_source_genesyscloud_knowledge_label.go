@@ -14,7 +14,7 @@ import (
 func dataSourceKnowledgeLabel() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Knowledge Base Label. Select a label by name.",
-		ReadContext: readWithPooledClient(dataSourceKnowledgeLabelRead),
+		ReadContext: ReadWithPooledClient(dataSourceKnowledgeLabelRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Knowledge base label name",
@@ -37,7 +37,7 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 	name := d.Get("name").(string)
 	knowledgeBaseName := d.Get("knowledge_base_name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", true, "", "")

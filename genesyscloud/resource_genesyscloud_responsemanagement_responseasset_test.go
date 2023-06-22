@@ -130,7 +130,7 @@ func testVerifyResponseAssetDestroyed(state *terraform.State) error {
 		responseAsset, resp, err := responseManagementAPI.GetResponsemanagementResponseasset(rs.Primary.ID)
 		if responseAsset != nil {
 			return fmt.Errorf("response asset (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// response asset not found as expected
 			continue
 		} else {

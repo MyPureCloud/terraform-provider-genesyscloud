@@ -68,7 +68,7 @@ func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuratio
 
 func groupExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllGroups),
+		GetResourcesFunc: GetAllWithPooledClient(getAllGroups),
 		RefAttrs: map[string]*RefAttrSettings{
 			"owner_ids":  {RefType: "genesyscloud_user"},
 			"member_ids": {RefType: "genesyscloud_user"},
@@ -80,10 +80,10 @@ func resourceGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Directory Group",
 
-		CreateContext: createWithPooledClient(createGroup),
-		ReadContext:   readWithPooledClient(readGroup),
-		UpdateContext: updateWithPooledClient(updateGroup),
-		DeleteContext: deleteWithPooledClient(deleteGroup),
+		CreateContext: CreateWithPooledClient(createGroup),
+		ReadContext:   ReadWithPooledClient(readGroup),
+		UpdateContext: UpdateWithPooledClient(updateGroup),
+		DeleteContext: DeleteWithPooledClient(deleteGroup),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -192,10 +192,10 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 	log.Printf("Reading group %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		group, resp, getErr := groupsAPI.GetGroup(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
@@ -264,7 +264,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current group version
 		group, resp, getErr := groupsAPI.GetGroup(d.Id())
 		if getErr != nil {
@@ -305,7 +305,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(sdkConfig)
 
-	retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		log.Printf("Deleting group %s", name)
 		resp, err := groupsAPI.DeleteGroup(d.Id())
@@ -315,10 +315,10 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return nil, nil
 	})
 
-	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		group, resp, err := groupsAPI.GetGroup(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				log.Printf("Group %s deleted", name)
 				return nil
 			}
@@ -488,7 +488,7 @@ func getGroupMemberIds(d *schema.ResourceData, groupsAPI *platformclientv2.Group
 
 func deleteGroupMembers(d *schema.ResourceData, membersToRemove []string, groupsAPI *platformclientv2.GroupsApi) diag.Diagnostics {
 	if len(membersToRemove) > 0 {
-		if diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		if diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			_, resp, err := groupsAPI.DeleteGroupMembers(d.Id(), strings.Join(membersToRemove, ","))
 			if err != nil {
 				return resp, diag.Errorf("Failed to remove members from group %s: %s", d.Id(), err)
@@ -502,7 +502,7 @@ func deleteGroupMembers(d *schema.ResourceData, membersToRemove []string, groups
 }
 
 func addGroupMembers(d *schema.ResourceData, membersToAdd []string, groupsAPI *platformclientv2.GroupsApi) diag.Diagnostics {
-	if diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	if diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Need the current group version to add members
 		groupInfo, _, getErr := groupsAPI.GetGroup(d.Id())
 		if getErr != nil {

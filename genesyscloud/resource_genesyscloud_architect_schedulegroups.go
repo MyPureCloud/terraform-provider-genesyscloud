@@ -41,7 +41,7 @@ func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclie
 
 func architectScheduleGroupsExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllArchitectScheduleGroups),
+		GetResourcesFunc: GetAllWithPooledClient(getAllArchitectScheduleGroups),
 		RefAttrs: map[string]*RefAttrSettings{
 			"division_id":          {RefType: "genesyscloud_auth_division"},
 			"open_schedules_id":    {RefType: "genesyscloud_architect_schedules"},
@@ -55,10 +55,10 @@ func resourceArchitectScheduleGroups() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Schedule Groups",
 
-		CreateContext: createWithPooledClient(createArchitectScheduleGroups),
-		ReadContext:   readWithPooledClient(readArchitectScheduleGroups),
-		UpdateContext: updateWithPooledClient(updateArchitectScheduleGroups),
-		DeleteContext: deleteWithPooledClient(deleteArchitectScheduleGroups),
+		CreateContext: CreateWithPooledClient(createArchitectScheduleGroups),
+		ReadContext:   ReadWithPooledClient(readArchitectScheduleGroups),
+		UpdateContext: UpdateWithPooledClient(updateArchitectScheduleGroups),
+		DeleteContext: DeleteWithPooledClient(deleteArchitectScheduleGroups),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -158,10 +158,10 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading schedule group %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		scheduleGroup, resp, getErr := archAPI.GetArchitectSchedulegroup(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
@@ -212,7 +212,7 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current schedule group version
 		scheduleGroup, resp, getErr := archAPI.GetArchitectSchedulegroup(d.Id())
 		if getErr != nil {
@@ -257,10 +257,10 @@ func deleteArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("Failed to delete schedule group %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		scheduleGroup, resp, err := archAPI.GetArchitectSchedulegroup(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// schedule group deleted
 				log.Printf("Deleted schedule group %s", d.Id())
 				return nil

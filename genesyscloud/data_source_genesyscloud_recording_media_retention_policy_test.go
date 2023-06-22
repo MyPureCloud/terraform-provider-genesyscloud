@@ -161,7 +161,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
 					generateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					generateFlowResource(
+					GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",

@@ -264,7 +264,7 @@ func testVerifyContactDestroyed(state *terraform.State) error {
 		externalContact, resp, err := externalAPI.GetExternalcontactsContact(rs.Primary.ID, nil)
 		if externalContact != nil {
 			return fmt.Errorf("External contact (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// External Contact not found as expected
 			continue
 		} else {

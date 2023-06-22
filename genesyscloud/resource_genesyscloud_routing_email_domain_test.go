@@ -119,14 +119,14 @@ func generateRoutingEmailDomainResource(
 func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
 
-	diagErr := withRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "genesyscloud_routing_email_domain" {
 				continue
 			}
 			_, resp, err := routingAPI.GetRoutingEmailDomain(rs.Primary.ID)
 			if err != nil {
-				if isStatus404(resp) {
+				if IsStatus404(resp) {
 					continue
 				}
 				return resource.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))

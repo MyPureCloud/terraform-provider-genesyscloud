@@ -194,7 +194,7 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 
 func userExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllUsers),
+		GetResourcesFunc: GetAllWithPooledClient(getAllUsers),
 		RefAttrs: map[string]*RefAttrSettings{
 			"manager":                       {RefType: "genesyscloud_user"},
 			"division_id":                   {RefType: "genesyscloud_auth_division"},
@@ -215,10 +215,10 @@ func resourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud User",
 
-		CreateContext: createWithPooledClient(createUser),
-		ReadContext:   readWithPooledClient(readUser),
-		UpdateContext: updateWithPooledClient(updateUser),
-		DeleteContext: deleteWithPooledClient(deleteUser),
+		CreateContext: CreateWithPooledClient(createUser),
+		ReadContext:   ReadWithPooledClient(readUser),
+		UpdateContext: UpdateWithPooledClient(updateUser),
+		DeleteContext: DeleteWithPooledClient(deleteUser),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -540,7 +540,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Reading user %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{
 			// Expands
 			"skills",
@@ -552,7 +552,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}, "", "")
 
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
@@ -689,7 +689,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user %s", email)
-	err := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	err := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		_, resp, err := usersAPI.DeleteUser(d.Id())
 		if err != nil {
@@ -704,7 +704,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	// Verify user in deleted state and search index has been updated
-	return withRetries(ctx, 180*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
 		id, err := getDeletedUserId(email, usersAPI)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error searching for deleted user %s: %v", email, err))
@@ -721,7 +721,7 @@ func patchUser(id string, update platformclientv2.Updateuser, usersAPI *platform
 }
 
 func patchUserWithState(id string, state string, update platformclientv2.Updateuser, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
-	return retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	return RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		currentUser, _, getErr := usersAPI.GetUser(id, nil, "", state)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to read user %s: %s", id, getErr)
@@ -1043,7 +1043,7 @@ func flattenUserEmployerInfo(empInfo *platformclientv2.Employerinfo) []interface
 func readUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	settings, resp, getErr := usersAPI.GetRoutingUserUtilization(d.Id())
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			d.SetId("") // User doesn't exist
 			return nil
 		}
@@ -1087,7 +1087,7 @@ func updateUserSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersAp
 				})
 			}
 
-			return retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			return RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				_, resp, err := usersAPI.PutUserRoutingskillsBulk(d.Id(), sdkSkills)
 				if err != nil {
 					return resp, diag.Errorf("Failed to update skills for user %s: %s", d.Id(), err)
@@ -1127,7 +1127,7 @@ func updateUserLanguages(d *schema.ResourceData, usersAPI *platformclientv2.User
 			if len(oldLangIds) > 0 {
 				langsToRemove := sliceDifference(oldLangIds, newLangIds)
 				for _, langID := range langsToRemove {
-					diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+					diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 						resp, err := usersAPI.DeleteUserRoutinglanguage(d.Id(), langID)
 						if err != nil {
 							return resp, diag.Errorf("Failed to remove language from user %s: %s", d.Id(), err)
@@ -1203,7 +1203,7 @@ func updateUserRoutingLanguages(
 		}
 
 		if len(updateChunk) > 0 {
-			diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				_, resp, err := api.PatchUserRoutinglanguagesBulk(userID, updateChunk)
 				if err != nil {
 					return resp, diag.Errorf("Failed to update languages for user %s: %s", userID, err)
@@ -1222,7 +1222,7 @@ func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.
 	if d.HasChange("profile_skills") {
 		if profileSkills := d.Get("profile_skills"); profileSkills != nil {
 			profileSkills := setToStringList(profileSkills.(*schema.Set))
-			diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				_, resp, err := usersAPI.PutUserProfileskills(d.Id(), *profileSkills)
 				if err != nil {
 					return resp, diag.Errorf("Failed to update profile skills for user %s: %s", d.Id(), err)

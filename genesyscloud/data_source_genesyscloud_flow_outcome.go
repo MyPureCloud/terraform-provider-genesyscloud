@@ -14,7 +14,7 @@ import (
 func dataSourceFlowOutcome() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Flow Outcome. Select an outcome by name.",
-		ReadContext: readWithPooledClient(dataSourceFlowOutcomeRead),
+		ReadContext: ReadWithPooledClient(dataSourceFlowOutcomeRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Outcome name.",
@@ -31,7 +31,7 @@ func dataSourceFlowOutcomeRead(ctx context.Context, d *schema.ResourceData, m in
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			outcomes, _, getErr := archAPI.GetFlowsOutcomes(pageNum, pageSize, "", "", nil, name, "", "", nil)

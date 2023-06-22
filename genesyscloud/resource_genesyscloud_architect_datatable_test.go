@@ -141,7 +141,7 @@ func testVerifyDatatablesDestroyed(state *terraform.State) error {
 		datatable, resp, err := sdkGetArchitectDatatable(rs.Primary.ID, "", archAPI)
 		if datatable != nil {
 			return fmt.Errorf("Datatable (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Datatable not found as expected
 			continue
 		} else {

@@ -290,7 +290,7 @@ func testVerifyResponseManagementResponseDestroyed(state *terraform.State) error
 		responses, resp, err := managementAPI.GetResponsemanagementResponse(rs.Primary.ID, "")
 		if responses != nil {
 			return fmt.Errorf("response (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// response not found as expected
 			continue
 		} else {

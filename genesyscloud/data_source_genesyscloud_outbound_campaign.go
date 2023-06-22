@@ -15,7 +15,7 @@ func dataSourceOutboundCampaign() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Outbound Campaign. Select a Outbound Campaign by name.`,
 
-		ReadContext: readWithPooledClient(dataSourceOutboundCampaignRead),
+		ReadContext: ReadWithPooledClient(dataSourceOutboundCampaignRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -36,7 +36,7 @@ func dataSourceOutboundCampaignRead(ctx context.Context, d *schema.ResourceData,
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			sdkcampaignentitylisting, _, getErr := outboundApi.GetOutboundCampaigns(pageSize, pageNum, "", "", []string{}, "", "", "", "", "", []string{}, "", "")

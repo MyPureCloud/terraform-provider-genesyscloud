@@ -174,7 +174,7 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 
 func routingQueueExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllRoutingQueues),
+		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingQueues),
 		RefAttrs: map[string]*RefAttrSettings{
 			"division_id":                       {RefType: "genesyscloud_auth_division"},
 			"queue_flow_id":                     {RefType: "genesyscloud_flow"},
@@ -207,10 +207,10 @@ func resourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Queue",
 
-		CreateContext: createWithPooledClient(createQueue),
-		ReadContext:   readWithPooledClient(readQueue),
-		UpdateContext: updateWithPooledClient(updateQueue),
-		DeleteContext: deleteWithPooledClient(deleteQueue),
+		CreateContext: CreateWithPooledClient(createQueue),
+		ReadContext:   ReadWithPooledClient(readQueue),
+		UpdateContext: UpdateWithPooledClient(updateQueue),
+		DeleteContext: DeleteWithPooledClient(deleteQueue),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -545,10 +545,10 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
@@ -820,10 +820,10 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	// re-populating the queue after the delete. Otherwise it may not expire for a minute.
 	time.Sleep(5 * time.Second)
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingQueue(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Queue deleted
 				log.Printf("Queue %s deleted", name)
 				return nil
@@ -1309,7 +1309,7 @@ func updateQueueWrapupCodes(d *schema.ResourceData, routingAPI *platformclientv2
 				for _, codeId := range codesToRemove {
 					resp, err := routingAPI.DeleteRoutingQueueWrapupcode(d.Id(), codeId)
 					if err != nil {
-						if isStatus404(resp) {
+						if IsStatus404(resp) {
 							// Ignore missing queue or wrapup code
 							continue
 						}

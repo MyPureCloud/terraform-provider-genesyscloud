@@ -382,7 +382,7 @@ func testVerifyIntegrationDestroyed(state *terraform.State) error {
 		integration, resp, err := integrationAPI.GetIntegration(rs.Primary.ID, 100, 1, "", nil, "", "")
 		if integration != nil {
 			return fmt.Errorf("Integration (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Integration not found as expected
 			continue
 		} else {

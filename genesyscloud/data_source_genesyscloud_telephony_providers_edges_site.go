@@ -14,7 +14,7 @@ import (
 func dataSourceSite() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Sites. Select a site by name",
-		ReadContext: readWithPooledClient(dataSourceSiteRead),
+		ReadContext: ReadWithPooledClient(dataSourceSiteRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Site name.",
@@ -38,7 +38,7 @@ func dataSourceSiteRead(ctx context.Context, d *schema.ResourceData, m interface
 	name := d.Get("name").(string)
 	managed := d.Get("managed").(bool)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 50
 			sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", name, "", managed)

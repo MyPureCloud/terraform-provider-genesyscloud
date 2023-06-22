@@ -15,7 +15,7 @@ func dataSourceRoutingSmsAddress() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Routing Sms Address. Select a Routing Sms Address by name.`,
 
-		ReadContext: readWithPooledClient(dataSourceRoutingSmsAddressRead),
+		ReadContext: ReadWithPooledClient(dataSourceRoutingSmsAddressRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -36,7 +36,7 @@ func dataSourceRoutingSmsAddressRead(ctx context.Context, d *schema.ResourceData
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			sdksmsaddressentitylisting, _, getErr := routingApi.GetRoutingSmsAddresses(pageSize, pageNum)

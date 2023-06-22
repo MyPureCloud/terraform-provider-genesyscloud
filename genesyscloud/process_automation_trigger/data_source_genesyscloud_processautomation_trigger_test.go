@@ -1,12 +1,13 @@
-package genesyscloud
+package process_automation_trigger
 
 import (
 	"fmt"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
@@ -14,30 +15,27 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 		triggerResource1 = "test-trigger1"
 		triggerResource2 = "test-trigger2"
 
-		triggerName1             = "Terraform trigger1-" + uuid.NewString()
-		topicName1               = "v2.detail.events.conversation.{id}.customer.end"
-		enabled1                 = "true"
-		targetType1              = "Workflow"
-		match_criteria_json_path = "mediaType"
-		match_criteria_operator  = "Equal"
-		match_criteria_value     = "CHAT"
-		eventTtlSeconds1         = "60"
-		description1             = "description 1"
+		triggerName1     = "Terraform trigger1-" + uuid.NewString()
+		topicName1       = "v2.detail.events.conversation.{id}.customer.end"
+		enabled1         = "true"
+		targetType1      = "Workflow"
+		eventTtlSeconds1 = "60"
+		description1     = "description 1"
 
 		flowResource1 = "test_flow1"
-		filePath1     = "../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
+		filePath1     = "../../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
 		flowName1     = "terraform-provider-test-" + uuid.NewString()
 	)
 
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
 				Check: resource.ComposeTestCheckFunc(
-					getHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
+					gcloud.GetHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
 				),
 			},
 		},
@@ -75,13 +73,32 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
              exitReason:
                noValue: true`, flowName1, homeDivisionName)
 
+	//Need to have a JSON encoded path
+	matchCriteria := `([
+        {
+          "jsonPath": "direction",
+          "operator": "Equal",
+          "value": "INBOUND"
+        },
+        {
+          "jsonPath": "mediaType",
+          "operator": "Equal",
+          "value": "VOICE"
+        },
+        {
+          "jsonPath": "interactingDurationMs",
+          "operator": "LessThanOrEqual",
+          "value": 20000
+        }
+     ])`
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create a trigger
-				Config: generateFlowResource(
+				Config: gcloud.GenerateFlowResource(
 					flowResource1,
 					filePath1,
 					workflowConfig1,
@@ -96,12 +113,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
                         type = "%s"
                     }
                     `, "genesyscloud_flow."+flowResource1+".id", targetType1),
-					fmt.Sprintf(`match_criteria {
-                        json_path = "%s"
-                        operator = "%s"
-                        value = "%s"
-                    }
-                    `, match_criteria_json_path, match_criteria_operator, match_criteria_value),
+					matchCriteria,
 					eventTtlSeconds1,
 					description1,
 				) + generateProcessAutomationTriggerDataSource(
@@ -116,17 +128,6 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 		},
 	})
 
-}
-
-func getHomeDivisionName(key string, divisionName *string) resource.TestCheckFunc {
-	return func(state *terraform.State) error {
-		homeDivision, ok := state.RootModule().Resources[key]
-		if !ok {
-			return fmt.Errorf("Failed to find home division")
-		}
-		*divisionName = homeDivision.Primary.Attributes["name"]
-		return nil
-	}
 }
 
 func generateProcessAutomationTriggerDataSource(

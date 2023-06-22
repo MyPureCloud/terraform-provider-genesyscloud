@@ -85,7 +85,7 @@ func testVerifyKnowledgebasesDestroyed(state *terraform.State) error {
 		knowledgeBase, resp, err := knowledgeAPI.GetKnowledgeKnowledgebase(rs.Primary.ID)
 		if knowledgeBase != nil {
 			return fmt.Errorf("Knowledge base (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Knowledge base not found as expected
 			continue
 		} else {

@@ -344,7 +344,7 @@ func testVerifyEvaluationFormDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Evaluation form (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Evaluation form not found as expected
 			continue
 		}

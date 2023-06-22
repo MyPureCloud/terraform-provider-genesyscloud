@@ -6,11 +6,13 @@ resource "genesyscloud_processautomation_trigger" "example-trigger" {
     id   = data.genesyscloud_flow.workflow-trigger.id
     type = "Workflow"
   }
-  match_criteria {
-    json_path = "mediaType"
-    operator  = "Equal"
-    value     = "CHAT"
-  }
+  match_criteria = jsonencode([
+    {
+      "jsonPath" : "mediaType",
+      "operator" : "Equal",
+      "value" : "CHAT"
+    }
+  ])
   event_ttl_seconds = 60
   description       = "description of trigger"
 }

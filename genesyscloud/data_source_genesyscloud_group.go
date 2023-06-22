@@ -14,7 +14,7 @@ import (
 func dataSourceGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Groups. Select a group by name.",
-		ReadContext: readWithPooledClient(dataSourceGroupRead),
+		ReadContext: ReadWithPooledClient(dataSourceGroupRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Group name.",
@@ -39,7 +39,7 @@ func dataSourceGroupRead(ctx context.Context, d *schema.ResourceData, m interfac
 		Fields:  &[]string{nameField},
 	}
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		groups, _, getErr := groupsAPI.PostGroupsSearch(platformclientv2.Groupsearchrequest{
 			Query: &[]platformclientv2.Groupsearchcriteria{searchCriteria},
 		})

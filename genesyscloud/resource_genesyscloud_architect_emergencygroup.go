@@ -41,7 +41,7 @@ func getAllEmergencyGroups(_ context.Context, clientConfig *platformclientv2.Con
 
 func architectEmergencyGroupExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllEmergencyGroups),
+		GetResourcesFunc: GetAllWithPooledClient(getAllEmergencyGroups),
 		RefAttrs: map[string]*RefAttrSettings{
 			"division_id":                            {RefType: "genesyscloud_auth_division"},
 			"emergency_call_flows.emergency_flow_id": {RefType: "genesyscloud_flow"},
@@ -54,10 +54,10 @@ func resourceArchitectEmergencyGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Emergency Group",
 
-		CreateContext: createWithPooledClient(createEmergencyGroup),
-		ReadContext:   readWithPooledClient(readEmergencyGroup),
-		UpdateContext: updateWithPooledClient(updateEmergencyGroup),
-		DeleteContext: deleteWithPooledClient(deleteEmergencyGroup),
+		CreateContext: CreateWithPooledClient(createEmergencyGroup),
+		ReadContext:   ReadWithPooledClient(readEmergencyGroup),
+		UpdateContext: UpdateWithPooledClient(updateEmergencyGroup),
+		DeleteContext: DeleteWithPooledClient(deleteEmergencyGroup),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -152,10 +152,10 @@ func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interf
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	log.Printf("Reading emergency group %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		emergencyGroup, resp, getErr := architectApi.GetArchitectEmergencygroup(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
@@ -203,7 +203,7 @@ func updateEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current emergency group version
 		emergencyGroup, resp, getErr := architectAPI.GetArchitectEmergencygroup(d.Id())
 		if getErr != nil {
@@ -243,10 +243,10 @@ func deleteEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.Errorf("Failed to delete emergency group %s: %s", d.Id(), err)
 	}
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		emergencyGroup, resp, err := architectApi.GetArchitectEmergencygroup(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// group deleted
 				log.Printf("Deleted emergency group %s", d.Id())
 				return nil

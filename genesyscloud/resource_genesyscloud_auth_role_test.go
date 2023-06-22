@@ -405,7 +405,7 @@ func testVerifyRolesDestroyed(state *terraform.State) error {
 		role, resp, err := authAPI.GetAuthorizationRole(rs.Primary.ID, false, nil)
 		if role != nil {
 			return fmt.Errorf("Role (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Role not found as expected
 			continue
 		} else {

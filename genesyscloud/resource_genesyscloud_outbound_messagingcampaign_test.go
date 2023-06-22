@@ -423,7 +423,7 @@ func testVerifyOutboundMessagingCampaignDestroyed(state *terraform.State) error 
 		campaign, resp, err := outboundAPI.GetOutboundMessagingcampaign(rs.Primary.ID)
 		if campaign != nil {
 			return fmt.Errorf("messaging campaign (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Messaging Campaign not found as expected
 			continue
 		} else {

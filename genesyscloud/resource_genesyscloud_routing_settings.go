@@ -17,10 +17,10 @@ func resourceRoutingSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "An organization's routing settings",
 
-		CreateContext: createWithPooledClient(createRoutingSettings),
-		ReadContext:   readWithPooledClient(readRoutingSettings),
-		UpdateContext: updateWithPooledClient(updateRoutingSettings),
-		DeleteContext: deleteWithPooledClient(deleteRoutingSettings),
+		CreateContext: CreateWithPooledClient(createRoutingSettings),
+		ReadContext:   ReadWithPooledClient(readRoutingSettings),
+		UpdateContext: UpdateWithPooledClient(updateRoutingSettings),
+		DeleteContext: DeleteWithPooledClient(deleteRoutingSettings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -91,7 +91,7 @@ func getAllRoutingSettings(_ context.Context, clientConfig *platformclientv2.Con
 
 func routingSettingsExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllRoutingSettings),
+		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingSettings),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }
@@ -107,11 +107,11 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading setting: %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		settings, resp, getErr := routingAPI.GetRoutingSettings()
 
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				//createRoutingSettings(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
 			}
@@ -184,7 +184,7 @@ func deleteRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 func readRoutingSettingsContactCenter(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
 	contactcenter, resp, getErr := routingAPI.GetRoutingSettingsContactcenter()
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			return nil
 		}
 		return diag.Errorf("Failed to read Contact center for routing setting %s: %s\n", d.Id(), getErr)
@@ -208,7 +208,7 @@ func readRoutingSettingsContactCenter(d *schema.ResourceData, routingAPI *platfo
 func readRoutingSettingsTranscription(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
 	transcription, resp, getErr := routingAPI.GetRoutingSettingsTranscription()
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			return nil
 		}
 		return diag.Errorf("Failed to read Contact center for routing setting %s: %s\n", d.Id(), getErr)

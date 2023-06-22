@@ -14,7 +14,7 @@ import (
 func dataSourceUserPrompt() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud User Prompts. Select a user prompt by name.",
-		ReadContext: readWithPooledClient(dataSourceUserPromptRead),
+		ReadContext: ReadWithPooledClient(dataSourceUserPromptRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "User Prompt name.",
@@ -33,7 +33,7 @@ func dataSourceUserPromptRead(ctx context.Context, d *schema.ResourceData, m int
 	nameArr := []string{name}
 
 	// Query user prompt by name. Retry in case search has not yet indexed the user prompt.
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		prompts, _, getErr := architectApi.GetArchitectPrompts(pageNum, pageSize, nameArr, "", "", "", "")

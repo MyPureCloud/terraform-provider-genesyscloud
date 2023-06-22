@@ -145,7 +145,7 @@ func testVerifyDidPoolsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("DID Pool (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// DID pool not found as expected
 			continue
 		}

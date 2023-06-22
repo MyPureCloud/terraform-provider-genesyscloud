@@ -105,7 +105,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	) + generateRoutingWrapupcodeResource(
 		wrapupCodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
-	) + generateFlowResource(
+	) + GenerateFlowResource(
 		"flow",
 		outboundFlowFilePath,
 		"",
@@ -458,7 +458,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 	) + generateRoutingWrapupcodeResource(
 		wrapupcodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
-	) + generateFlowResource(
+	) + GenerateFlowResource(
 		flowResourceId,
 		outboundFlowFilePath,
 		"",
@@ -1120,7 +1120,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 			callAnalysisResponseSet = generateRoutingWrapupcodeResource(
 				wrapUpCodeResourceId,
 				"wrapupcode "+uuid.NewString(),
-			) + generateFlowResource(
+			) + GenerateFlowResource(
 				flowResourceId,
 				outboundFlowFilePath,
 				"",
@@ -1269,7 +1269,7 @@ func testVerifyOutboundCampaignDestroyed(state *terraform.State) error {
 		campaign, resp, err := outboundAPI.GetOutboundCampaign(rs.Primary.ID)
 		if campaign != nil {
 			return fmt.Errorf("campaign (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// campaign not found as expected
 			continue
 		} else {

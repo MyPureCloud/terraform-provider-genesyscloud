@@ -39,7 +39,7 @@ func getAllFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.Conf
 
 func flowOutcomeExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllFlowOutcomes),
+		GetResourcesFunc: GetAllWithPooledClient(getAllFlowOutcomes),
 		RefAttrs: map[string]*RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
@@ -50,10 +50,10 @@ func resourceFlowOutcome() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud flow outcome`,
 
-		CreateContext: createWithPooledClient(createFlowOutcome),
-		ReadContext:   readWithPooledClient(readFlowOutcome),
-		UpdateContext: updateWithPooledClient(updateFlowOutcome),
-		DeleteContext: deleteWithPooledClient(deleteFlowOutcome),
+		CreateContext: CreateWithPooledClient(createFlowOutcome),
+		ReadContext:   ReadWithPooledClient(readFlowOutcome),
+		UpdateContext: UpdateWithPooledClient(updateFlowOutcome),
+		DeleteContext: DeleteWithPooledClient(deleteFlowOutcome),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -145,10 +145,10 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading Flow Outcome %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkflowoutcome, resp, getErr := architectApi.GetFlowsOutcome(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Flow Outcome %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Flow Outcome %s: %s", d.Id(), getErr))

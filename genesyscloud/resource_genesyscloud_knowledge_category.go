@@ -91,7 +91,7 @@ func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2
 
 func knowledgeCategoryExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeCategories),
+		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeCategories),
 		RefAttrs: map[string]*RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
@@ -102,10 +102,10 @@ func resourceKnowledgeCategory() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Category",
 
-		CreateContext: createWithPooledClient(createKnowledgeCategory),
-		ReadContext:   readWithPooledClient(readKnowledgeCategory),
-		UpdateContext: updateWithPooledClient(updateKnowledgeCategory),
-		DeleteContext: deleteWithPooledClient(deleteKnowledgeCategory),
+		CreateContext: CreateWithPooledClient(createKnowledgeCategory),
+		ReadContext:   ReadWithPooledClient(readKnowledgeCategory),
+		UpdateContext: UpdateWithPooledClient(updateKnowledgeCategory),
+		DeleteContext: DeleteWithPooledClient(deleteKnowledgeCategory),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -158,10 +158,10 @@ func readKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta int
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge category %s", knowledgeCategoryId)
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		knowledgeCategory, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr))
 			}
 			log.Printf("%s", getErr)
@@ -189,7 +189,7 @@ func updateKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating knowledge category %s", knowledgeCategory["name"].(string))
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current knowledge category version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId)
 		if getErr != nil {
@@ -227,10 +227,10 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete knowledge category %s: %s", id, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId)
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Knowledge category deleted
 				log.Printf("Deleted knowledge category %s", knowledgeCategoryId)
 				return nil

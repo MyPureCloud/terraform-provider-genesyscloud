@@ -31,10 +31,10 @@ func resourceOutboundCampaign() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound campaign`,
 
-		CreateContext: createWithPooledClient(createOutboundCampaign),
-		ReadContext:   readWithPooledClient(readOutboundCampaign),
-		UpdateContext: updateWithPooledClient(updateOutboundCampaign),
-		DeleteContext: deleteWithPooledClient(deleteOutboundCampaign),
+		CreateContext: CreateWithPooledClient(createOutboundCampaign),
+		ReadContext:   ReadWithPooledClient(readOutboundCampaign),
+		UpdateContext: UpdateWithPooledClient(updateOutboundCampaign),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundCampaign),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -233,7 +233,7 @@ func getAllOutboundCampaign(_ context.Context, clientConfig *platformclientv2.Co
 
 func outboundCampaignExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllOutboundCampaign),
+		GetResourcesFunc: GetAllWithPooledClient(getAllOutboundCampaign),
 		AllowZeroValues:  []string{`preview_time_out_seconds`},
 		RefAttrs: map[string]*RefAttrSettings{
 			`contact_list_id`: {
@@ -375,7 +375,7 @@ func updateOutboundCampaignStatus(d *schema.ResourceData, outboundApi *platformc
 			(*campaign.CampaignStatus != "on" && newCampaignStatus == "on")) {
 		campaign.CampaignStatus = &newCampaignStatus
 		log.Printf("Updating Outbound Campaign %s status to %s", *campaign.Name, newCampaignStatus)
-		diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			// Get current Outbound Campaign version
 			outboundCampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
 			if getErr != nil {
@@ -463,7 +463,7 @@ func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Updating Outbound Campaign %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Campaign version
 		outboundCampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
 		if getErr != nil {
@@ -500,10 +500,10 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Reading Outbound Campaign %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkcampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
@@ -609,7 +609,7 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Campaigns have to be turned off before they can be deleted
 	if campaignStatus != "off" {
-		diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			log.Printf("Turning off Outbound Campaign before deletion")
 			d.Set("campaign_status", "off")
 			outboundCampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
@@ -627,7 +627,7 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 			return diagErr
 		}
 	}
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Campaign")
 		_, resp, err := outboundApi.DeleteOutboundCampaign(d.Id())
 		if err != nil {
@@ -639,10 +639,10 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := outboundApi.GetOutboundCampaign(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Outbound Campaign deleted
 				log.Printf("Deleted Outbound Campaign %s", d.Id())
 				return nil

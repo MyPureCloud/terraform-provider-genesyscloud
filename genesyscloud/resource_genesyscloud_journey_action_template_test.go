@@ -83,7 +83,7 @@ func testVerifyJourneyActionTemplatesDestroyed(state *terraform.State) error {
 			return fmt.Errorf("journey action template (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Journey action map not found as expected
 			continue
 		}

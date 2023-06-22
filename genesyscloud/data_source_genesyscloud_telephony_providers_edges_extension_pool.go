@@ -14,7 +14,7 @@ import (
 func dataSourceExtensionPool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Extension pool. Select an Extension pool by starting number and ending number",
-		ReadContext: readWithPooledClient(dataSourceExtensionPoolRead),
+		ReadContext: ReadWithPooledClient(dataSourceExtensionPoolRead),
 		Schema: map[string]*schema.Schema{
 			"start_number": {
 				Description:      "Starting number of the Extension Pool range.",
@@ -39,7 +39,7 @@ func dataSourceExtensionPoolRead(ctx context.Context, d *schema.ResourceData, m 
 	extensionPoolStartPhoneNumber := d.Get("start_number").(string)
 	extensionPoolEndPhoneNumber := d.Get("end_number").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			extensionPools, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "")

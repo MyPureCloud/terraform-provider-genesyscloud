@@ -38,7 +38,7 @@ func getAllOutboundDncLists(_ context.Context, clientConfig *platformclientv2.Co
 
 func outboundDncListExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllOutboundDncLists),
+		GetResourcesFunc: GetAllWithPooledClient(getAllOutboundDncLists),
 		RefAttrs: map[string]*RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
@@ -49,10 +49,10 @@ func resourceOutboundDncList() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound DNC List`,
 
-		CreateContext: createWithPooledClient(createOutboundDncList),
-		ReadContext:   readWithPooledClient(readOutboundDncList),
-		UpdateContext: updateWithPooledClient(updateOutboundDncList),
-		DeleteContext: deleteWithPooledClient(deleteOutboundDncList),
+		CreateContext: CreateWithPooledClient(createOutboundDncList),
+		ReadContext:   ReadWithPooledClient(readOutboundDncList),
+		UpdateContext: UpdateWithPooledClient(updateOutboundDncList),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundDncList),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -234,7 +234,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		sdkDncList.DncSourceType = &dncSourceType
 	}
 	log.Printf("Updating Outbound DNC list %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound DNC list version
 		outboundDncList, resp, getErr := outboundApi.GetOutboundDnclist(d.Id(), false, false)
 		if getErr != nil {
@@ -273,10 +273,10 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkDncList, resp, getErr := outboundApi.GetOutboundDnclist(d.Id(), false, false)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
@@ -323,7 +323,7 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound DNC list")
 		resp, err := outboundApi.DeleteOutboundDnclist(d.Id())
 		if err != nil {
@@ -335,10 +335,10 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := outboundApi.GetOutboundDnclist(d.Id(), false, false)
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Outbound DNC list deleted
 				log.Printf("Deleted Outbound DNC list %s", d.Id())
 				return nil

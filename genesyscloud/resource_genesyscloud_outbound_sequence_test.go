@@ -293,7 +293,7 @@ func testVerifyOutboundSequenceDestroyed(state *terraform.State) error {
 		sequence, resp, err := outboundAPI.GetOutboundSequence(rs.Primary.ID)
 		if sequence != nil {
 			return fmt.Errorf("sequence (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Sequence not found as expected
 			continue
 		} else {

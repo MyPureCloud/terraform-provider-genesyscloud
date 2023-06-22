@@ -346,7 +346,7 @@ func verifyConfigurationDestroyed(state *terraform.State) error {
 
 		_, response, err := api.GetWebdeploymentsConfigurationVersionsDraft(rs.Primary.ID)
 
-		if isStatus404(response) {
+		if IsStatus404(response) {
 			continue
 		}
 

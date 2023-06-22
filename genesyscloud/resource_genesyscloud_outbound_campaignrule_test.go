@@ -561,7 +561,7 @@ func testVerifyCampaignRuleDestroyed(state *terraform.State) error {
 		campaignRule, resp, err := outboundApi.GetOutboundCampaignrule(rs.Primary.ID)
 		if campaignRule != nil {
 			return fmt.Errorf("emergency group (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Campaign rule not found as expected
 			continue
 		} else {

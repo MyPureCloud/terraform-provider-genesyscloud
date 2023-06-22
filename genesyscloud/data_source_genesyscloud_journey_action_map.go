@@ -14,7 +14,7 @@ import (
 func dataSourceJourneyActionMap() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Action Map. Select a journey action map by name",
-		ReadContext: readWithPooledClient(dataSourceJourneyActionMapRead),
+		ReadContext: ReadWithPooledClient(dataSourceJourneyActionMapRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Journey Action Map name.",
@@ -31,7 +31,7 @@ func dataSourceJourneyActionMapRead(ctx context.Context, d *schema.ResourceData,
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		pageCount := 1 // Needed because of broken journey common paging
 		for pageNum := 1; pageNum <= pageCount; pageNum++ {
 			const pageSize = 100

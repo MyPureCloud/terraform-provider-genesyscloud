@@ -14,7 +14,7 @@ import (
 func dataSourceScript() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Scripts. Select a script by name.",
-		ReadContext: readWithPooledClient(dataSourceScriptRead),
+		ReadContext: ReadWithPooledClient(dataSourceScriptRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Script name.",
@@ -40,7 +40,7 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Query for scripts by name. Retry in case new script is not yet indexed by search.
 	// As script names are non-unique, fail in case of multiple results.
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		var scripts *platformclientv2.Scriptentitylisting

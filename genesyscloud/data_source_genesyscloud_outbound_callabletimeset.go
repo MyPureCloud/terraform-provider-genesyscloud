@@ -14,7 +14,7 @@ import (
 func dataSourceOutboundCallabletimeset() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Clound Outbound Callable Timesets. Select a callable timeset by name.",
-		ReadContext: readWithPooledClient(dataSourceOutboundCallabletimesetRead),
+		ReadContext: ReadWithPooledClient(dataSourceOutboundCallabletimesetRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Callable timeset name.",
@@ -31,7 +31,7 @@ func dataSourceOutboundCallabletimesetRead(ctx context.Context, d *schema.Resour
 
 	timesetName := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 

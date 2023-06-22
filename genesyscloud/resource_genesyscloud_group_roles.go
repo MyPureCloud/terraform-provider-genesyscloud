@@ -15,7 +15,7 @@ import (
 
 func groupRolesExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllGroups),
+		GetResourcesFunc: GetAllWithPooledClient(getAllGroups),
 		RefAttrs: map[string]*RefAttrSettings{
 			"group_id":           {RefType: "genesyscloud_group"},
 			"roles.role_id":      {RefType: "genesyscloud_auth_role"},
@@ -31,10 +31,10 @@ func resourceGroupRoles() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Group Roles maintains group role assignments.`,
 
-		CreateContext: createWithPooledClient(createGroupRoles),
-		ReadContext:   readWithPooledClient(readGroupRoles),
-		UpdateContext: updateWithPooledClient(updateGroupRoles),
-		DeleteContext: deleteWithPooledClient(deleteGroupRoles),
+		CreateContext: CreateWithPooledClient(createGroupRoles),
+		ReadContext:   ReadWithPooledClient(readGroupRoles),
+		UpdateContext: UpdateWithPooledClient(updateGroupRoles),
+		DeleteContext: DeleteWithPooledClient(deleteGroupRoles),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -68,13 +68,13 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading roles for group %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceGroupRoles())
 		d.Set("group_id", d.Id())
 
 		roles, resp, err := readSubjectRoles(d.Id(), authAPI)
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))

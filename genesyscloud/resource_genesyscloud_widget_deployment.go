@@ -135,7 +135,7 @@ func buildSDKClientConfig(clientType string, d *schema.ResourceData) (*platformc
 
 func widgetDeploymentExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllWidgetDeployments),
+		GetResourcesFunc: GetAllWithPooledClient(getAllWidgetDeployments),
 		RefAttrs: map[string]*RefAttrSettings{
 			"flow_id": {RefType: "genesyscloud_flow"},
 		},
@@ -146,10 +146,10 @@ func resourceWidgetDeployment() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Widget Deployment",
 
-		CreateContext: createWithPooledClient(createWidgetDeployment),
-		ReadContext:   readWithPooledClient(readWidgetDeployment),
-		UpdateContext: updateWithPooledClient(updateWidgetDeployment),
-		DeleteContext: deleteWithPooledClient(deleteWidgetDeployment),
+		CreateContext: CreateWithPooledClient(createWidgetDeployment),
+		ReadContext:   ReadWithPooledClient(readWidgetDeployment),
+		UpdateContext: UpdateWithPooledClient(updateWidgetDeployment),
+		DeleteContext: DeleteWithPooledClient(deleteWidgetDeployment),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -239,11 +239,11 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading widget deployment %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentWidget, resp, getErr := widgetsAPI.GetWidgetsDeployment(d.Id())
 
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read widget deployment %s: %s", d.Id(), getErr))
 			}
 
@@ -381,10 +381,10 @@ func deleteWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.Errorf("Failed to delete widget deployment %s: %s", name, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := widgetAPI.GetWidgetsDeployment(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				log.Printf("Widget deployment %s deleted", name)
 				return nil
 			}

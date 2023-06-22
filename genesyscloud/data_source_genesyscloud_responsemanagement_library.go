@@ -15,7 +15,7 @@ func dataSourceResponsemanagementLibrary() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Responsemanagement Library. Select a Responsemanagement Library by name.`,
 
-		ReadContext: readWithPooledClient(dataSourceResponsemanagementLibraryRead),
+		ReadContext: ReadWithPooledClient(dataSourceResponsemanagementLibraryRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -36,7 +36,7 @@ func dataSourceResponsemanagementLibraryRead(ctx context.Context, d *schema.Reso
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			sdklibraryentitylisting, _, getErr := responseManagementApi.GetResponsemanagementLibraries(pageNum, pageSize, "", "")

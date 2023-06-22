@@ -381,7 +381,7 @@ func testVerifyIvrConfigsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("IVR config (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// IVR Config not found as expected
 			continue
 		}

@@ -14,7 +14,7 @@ import (
 func dataSourceOutboundAttemptLimit() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Outbound Attempt Limits. Select an attempt limit by name.",
-		ReadContext: readWithPooledClient(dataSourceOutboundAttemptLimitRead),
+		ReadContext: ReadWithPooledClient(dataSourceOutboundAttemptLimitRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Attempt Limit name.",
@@ -30,7 +30,7 @@ func dataSourceOutboundAttemptLimitRead(ctx context.Context, d *schema.ResourceD
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		attemptLimits, _, getErr := outboundAPI.GetOutboundAttemptlimits(pageSize, pageNum, true, "", name, "", "")

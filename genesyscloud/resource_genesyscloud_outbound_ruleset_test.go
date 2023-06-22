@@ -308,7 +308,7 @@ func testVerifyroutingRulesetDestroyed(state *terraform.State) error {
 		ruleset, resp, err := outboundAPI.GetOutboundRuleset(rs.Primary.ID)
 		if ruleset != nil {
 			return fmt.Errorf("ruleset (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// ruleset not found as expected
 			continue
 		} else {

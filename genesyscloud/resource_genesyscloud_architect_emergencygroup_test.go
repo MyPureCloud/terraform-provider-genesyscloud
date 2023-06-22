@@ -42,7 +42,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					description: "",
 					dnis:        nil,
 					depends_on:  "",
-				}) + generateFlowResource(
+				}) + GenerateFlowResource(
 					flowResource,
 					flowFilePath,
 					inboundCallConfig,
@@ -75,7 +75,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					description: "",
 					dnis:        nil,
 					depends_on:  "",
-				}) + generateFlowResource(
+				}) + GenerateFlowResource(
 					flowResource,
 					flowFilePath,
 					inboundCallConfig,
@@ -153,7 +153,7 @@ func testVerifyEmergencyGroupDestroyed(state *terraform.State) error {
 		eGroup, resp, err := archAPI.GetArchitectEmergencygroup(rs.Primary.ID)
 		if eGroup != nil {
 			return fmt.Errorf("emergency group (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Emergency group not found as expected
 			continue
 		} else {
