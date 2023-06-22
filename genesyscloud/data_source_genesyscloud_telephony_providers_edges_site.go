@@ -21,6 +21,12 @@ func dataSourceSite() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"managed": {
+				Description: "Return entities that are managed by Genesys Cloud.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 		},
 	}
 }
@@ -30,11 +36,12 @@ func dataSourceSiteRead(ctx context.Context, d *schema.ResourceData, m interface
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
+	managed := d.Get("managed").(bool)
 
 	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 50
-			sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", name, "", false)
+			sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", name, "", managed)
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting site %s: %s", name, getErr))
 			}
