@@ -123,6 +123,12 @@ var (
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"readonly_selectors": {
+				Description: "List of CSS selectors which should be read-only when screen sharing is active",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 
@@ -650,11 +656,13 @@ func readCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesett
 	enabled, _ := cfg["enabled"].(bool)
 	allowAgentControl, _ := cfg["allow_agent_control"].(bool)
 	maskSelectors := InterfaceListToStrings(cfg["mask_selectors"].([]interface{}))
+	readonlySelectors := InterfaceListToStrings(cfg["readonly_selectors"].([]interface{}))
 
 	return &platformclientv2.Cobrowsesettings{
 		Enabled:           &enabled,
 		AllowAgentControl: &allowAgentControl,
 		MaskSelectors:     &maskSelectors,
+		ReadonlySelectors: &readonlySelectors,
 	}
 }
 
@@ -901,6 +909,7 @@ func flattenCobrowseSettings(cobrowseSettings *platformclientv2.Cobrowsesettings
 		"enabled":             cobrowseSettings.Enabled,
 		"allow_agent_control": cobrowseSettings.AllowAgentControl,
 		"mask_selectors":      cobrowseSettings.MaskSelectors,
+		"readonly_selectors":  cobrowseSettings.ReadonlySelectors,
 	}}
 }
 
