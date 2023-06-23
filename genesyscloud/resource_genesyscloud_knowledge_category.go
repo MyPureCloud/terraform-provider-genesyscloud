@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -134,7 +134,7 @@ func createKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
-	knowledgeCategoryRequest := buildKnowledgeCategory(knowledgeCategory)
+	knowledgeCategoryRequest := buildKnowledgeCategoryCreate(knowledgeCategory)
 
 	log.Printf("Creating knowledge category %s", knowledgeCategory["name"].(string))
 	knowledgeCategoryResponse, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseCategories(knowledgeBaseId, *knowledgeCategoryRequest)
@@ -196,7 +196,7 @@ func updateKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 			return resp, diag.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr)
 		}
 
-		knowledgeCategoryUpdate := buildKnowledgeCategory(knowledgeCategory)
+		knowledgeCategoryUpdate := buildKnowledgeCategoryUpdate(knowledgeCategory)
 
 		log.Printf("Updating knowledge category %s", knowledgeCategory["name"].(string))
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId, *knowledgeCategoryUpdate)
@@ -242,10 +242,27 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func buildKnowledgeCategory(categoryIn map[string]interface{}) *platformclientv2.Categoryrequest {
+func buildKnowledgeCategoryUpdate(categoryIn map[string]interface{}) *platformclientv2.Categoryupdaterequest {
 	name := categoryIn["name"].(string)
 
-	categoryOut := platformclientv2.Categoryrequest{
+	categoryOut := platformclientv2.Categoryupdaterequest{
+		Name: &name,
+	}
+
+	if description, ok := categoryIn["description"].(string); ok && description != "" {
+		categoryOut.Description = &description
+	}
+	if parentId, ok := categoryIn["parent_id"].(string); ok && parentId != "" {
+		categoryOut.ParentCategoryId = &parentId
+	}
+
+	return &categoryOut
+}
+
+func buildKnowledgeCategoryCreate(categoryIn map[string]interface{}) *platformclientv2.Categorycreaterequest {
+	name := categoryIn["name"].(string)
+
+	categoryOut := platformclientv2.Categorycreaterequest{
 		Name: &name,
 	}
 
