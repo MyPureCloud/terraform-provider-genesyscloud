@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Users. Select a user by email or name.",
-		ReadContext: readWithPooledClient(dataSourceUserRead),
+		ReadContext: ReadWithPooledClient(dataSourceUserRead),
 		Schema: map[string]*schema.Schema{
 			"email": {
 				Description: "User email.",
@@ -55,7 +55,7 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 	}
 
 	// Retry in case user is not yet indexed
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		users, _, getErr := usersAPI.PostUsersSearch(platformclientv2.Usersearchrequest{
 			SortBy:    &emailField,
 			SortOrder: &sortOrderAsc,

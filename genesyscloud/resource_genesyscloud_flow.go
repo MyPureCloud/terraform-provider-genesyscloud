@@ -5,13 +5,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -39,7 +42,7 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 
 func flowExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllFlows),
+		GetResourcesFunc: GetAllWithPooledClient(getAllFlows),
 		RefAttrs:         map[string]*RefAttrSettings{},
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"filepath": resourceFlow().Schema["filepath"],
@@ -54,10 +57,10 @@ func resourceFlow() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Flow`,
 
-		CreateContext: createWithPooledClient(createFlow),
-		ReadContext:   readWithPooledClient(readFlow),
-		UpdateContext: updateWithPooledClient(updateFlow),
-		DeleteContext: deleteWithPooledClient(deleteFlow),
+		CreateContext: CreateWithPooledClient(createFlow),
+		ReadContext:   ReadWithPooledClient(readFlow),
+		UpdateContext: UpdateWithPooledClient(updateFlow),
+		DeleteContext: DeleteWithPooledClient(deleteFlow),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -98,10 +101,10 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		flow, resp, err := architectAPI.GetFlow(d.Id(), false)
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
@@ -176,7 +179,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	// Pre-define here before entering retry function, otherwise it will be overwritten
 	flowID := ""
 
-	retryErr := withRetries(ctx, 16*time.Minute, func() *resource.RetryError {
+	retryErr := WithRetries(ctx, 16*time.Minute, func() *resource.RetryError {
 		flowJob, response, err := architectAPI.GetFlowsJob(jobId, []string{"messages"})
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
@@ -228,10 +231,10 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		resp, err := architectAPI.DeleteFlow(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Flow deleted
 				log.Printf("Deleted Flow %s", d.Id())
 				return nil
@@ -243,4 +246,34 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 		return nil
 	})
+}
+
+func GenerateFlowResource(resourceID, srcFile, filecontent string, force_unlock bool, substitutions ...string) string {
+	fullyQualifiedPath, _ := filepath.Abs(srcFile)
+
+	if filecontent != "" {
+		updateFile(srcFile, filecontent)
+	}
+
+	flowResourceStr := fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
+        filepath = %s
+		file_content_hash =  filesha256(%s)
+		force_unlock = %v
+		%s
+	}
+	`, resourceID, strconv.Quote(srcFile), strconv.Quote(fullyQualifiedPath), force_unlock, strings.Join(substitutions, "\n"))
+
+	return flowResourceStr
+}
+
+func updateFile(filepath, content string) {
+	file, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer file.Close()
+
+	file.WriteString(content)
 }

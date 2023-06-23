@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceDidPool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud DID pool. Select a DID pool by starting phone number and ending phone number",
-		ReadContext: readWithPooledClient(dataSourceDidPoolRead),
+		ReadContext: ReadWithPooledClient(dataSourceDidPoolRead),
 		Schema: map[string]*schema.Schema{
 			"start_phone_number": {
 				Description:      "Starting phone number of the DID Pool range.",
@@ -39,7 +39,7 @@ func dataSourceDidPoolRead(ctx context.Context, d *schema.ResourceData, m interf
 	didPoolStartPhoneNumber := d.Get("start_phone_number").(string)
 	didPoolEndPhoneNumber := d.Get("end_phone_number").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			didPools, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)

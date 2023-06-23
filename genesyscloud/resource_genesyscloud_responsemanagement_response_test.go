@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceResponseManagementResponse(t *testing.T) {
@@ -290,7 +290,7 @@ func testVerifyResponseManagementResponseDestroyed(state *terraform.State) error
 		responses, resp, err := managementAPI.GetResponsemanagementResponse(rs.Primary.ID, "")
 		if responses != nil {
 			return fmt.Errorf("response (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// response not found as expected
 			continue
 		} else {

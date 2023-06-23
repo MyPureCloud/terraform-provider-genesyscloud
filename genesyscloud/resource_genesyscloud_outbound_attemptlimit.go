@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -88,7 +88,7 @@ func getAllAttemptLimits(_ context.Context, clientConfig *platformclientv2.Confi
 
 func outboundAttemptLimitExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllAttemptLimits),
+		GetResourcesFunc: GetAllWithPooledClient(getAllAttemptLimits),
 	}
 }
 
@@ -96,10 +96,10 @@ func resourceOutboundAttemptLimit() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Attempt Limit`,
 
-		CreateContext: createWithPooledClient(createOutboundAttemptLimit),
-		ReadContext:   readWithPooledClient(readOutboundAttemptLimit),
-		UpdateContext: updateWithPooledClient(updateOutboundAttemptLimit),
-		DeleteContext: deleteWithPooledClient(deleteOutboundAttemptLimit),
+		CreateContext: CreateWithPooledClient(createOutboundAttemptLimit),
+		ReadContext:   ReadWithPooledClient(readOutboundAttemptLimit),
+		UpdateContext: UpdateWithPooledClient(updateOutboundAttemptLimit),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundAttemptLimit),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -220,7 +220,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	log.Printf("Updating Outbound Attempt Limit %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Attempt Limit version
 		outboundAttemptLimit, resp, getErr := outboundApi.GetOutboundAttemptlimit(d.Id())
 		if getErr != nil {
@@ -247,10 +247,10 @@ func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Reading Outbound Attempt Limit %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkAttemptLimits, resp, getErr := outboundApi.GetOutboundAttemptlimit(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("failed to read Outbound Attempt Limit %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Attempt Limit %s: %s", d.Id(), getErr))
@@ -287,7 +287,7 @@ func deleteOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Attempt Limit")
 		resp, err := outboundApi.DeleteOutboundAttemptlimit(d.Id())
 		if err != nil {
@@ -299,10 +299,10 @@ func deleteOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := outboundApi.GetOutboundAttemptlimit(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Outbound Attempt Limit deleted
 				log.Printf("Deleted Outbound Attempt Limit %s", d.Id())
 				return nil

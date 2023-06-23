@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 type extensionPoolStruct struct {
@@ -128,7 +128,7 @@ func testVerifyExtensionPoolsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Extension Pool (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Extension pool not found as expected
 			continue
 		}

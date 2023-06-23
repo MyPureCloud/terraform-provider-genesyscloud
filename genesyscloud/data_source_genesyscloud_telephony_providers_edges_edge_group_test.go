@@ -51,9 +51,40 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 				) + generateEdgeGroupDataSource(
 					edgeGroupData,
 					edgeGroupName1,
-					"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes),
+					"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes,
+					false,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_edge_group."+edgeGroupData, "id", "genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "id"),
+				),
+			},
+		},
+	})
+}
+
+/*
+This test expects that the org has a product called "voice" enabled on it. If the test org does not have this product on it, the test can be skipped or ignored.
+*/
+func TestAccDataSourceEdgeGroupManaged(t *testing.T) {
+	t.Parallel()
+	var (
+		edgeGroupData  = "edgeGroupData"
+		edgeGroupName1 = "PureCloud Voice - AWS"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: generateEdgeGroupDataSource(
+					edgeGroupData,
+					edgeGroupName1,
+					"",
+					true,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_edge_group."+edgeGroupData, "name", edgeGroupName1),
 				),
 			},
 		},
@@ -65,10 +96,12 @@ func generateEdgeGroupDataSource(
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
-	dependsOnResource string) string {
+	dependsOnResource string,
+	managed bool) string {
 	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_edge_group" "%s" {
 		name = "%s"
+		managed = %t
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceID, name, managed, dependsOnResource)
 }

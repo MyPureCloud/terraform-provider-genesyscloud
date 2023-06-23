@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 // Row IDs structured as {table-id}/{key-value}
@@ -66,7 +66,7 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 
 func architectDatatableRowExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllArchitectDatatableRows),
+		GetResourcesFunc: GetAllWithPooledClient(getAllArchitectDatatableRows),
 		RefAttrs: map[string]*RefAttrSettings{
 			"datatable_id": {RefType: "genesyscloud_architect_datatable"},
 		},
@@ -78,10 +78,10 @@ func resourceArchitectDatatableRow() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Datatable Row",
 
-		CreateContext: createWithPooledClient(createArchitectDatatableRow),
-		ReadContext:   readWithPooledClient(readArchitectDatatableRow),
-		UpdateContext: updateWithPooledClient(updateArchitectDatatableRow),
-		DeleteContext: deleteWithPooledClient(deleteArchitectDatatableRow),
+		CreateContext: CreateWithPooledClient(createArchitectDatatableRow),
+		ReadContext:   ReadWithPooledClient(readArchitectDatatableRow),
+		UpdateContext: UpdateWithPooledClient(updateArchitectDatatableRow),
+		DeleteContext: DeleteWithPooledClient(deleteArchitectDatatableRow),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -149,10 +149,10 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 
 	log.Printf("Reading Datatable Row %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		row, resp, getErr := archAPI.GetFlowsDatatableRow(tableId, keyStr, false)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
@@ -212,7 +212,7 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("Deleting Datatable Row %s", d.Id())
 	resp, err := archAPI.DeleteFlowsDatatableRow(tableId, keyStr)
 	if err != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Parent datatable was probably deleted which caused the row to be deleted
 			log.Printf("Datatable row already deleted %s", d.Id())
 			return nil
@@ -220,10 +220,10 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 		return diag.Errorf("Failed to delete Datatable Row %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := archAPI.GetFlowsDatatableRow(tableId, keyStr, false)
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Datatable deleted
 				log.Printf("Deleted datatable row %s", d.Id())
 				return nil

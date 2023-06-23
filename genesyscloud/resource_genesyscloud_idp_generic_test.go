@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceIdpGeneric(t *testing.T) {
@@ -192,7 +192,7 @@ func testVerifyIdpGenericDestroyed(state *terraform.State) error {
 		generic, resp, err := idpAPI.GetIdentityprovidersGeneric()
 		if generic != nil {
 			return fmt.Errorf("Generic IDP still exists")
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Generic IDP not found as expected
 			continue
 		} else {

@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -306,7 +306,7 @@ func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclien
 
 func journeyActionTemplateExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllJourneyActionTemplates),
+		GetResourcesFunc: GetAllWithPooledClient(getAllJourneyActionTemplates),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No Reference
 	}
 }
@@ -314,10 +314,10 @@ func journeyActionTemplateExporter() *ResourceExporter {
 func resourceJourneyActionTemplate() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Action Template",
-		CreateContext: createWithPooledClient(createJourneyActionTemplate),
-		ReadContext:   readWithPooledClient(readJourneyActionTemplate),
-		UpdateContext: updateWithPooledClient(updateJourneyActionTemplate),
-		DeleteContext: deleteWithPooledClient(deleteJourneyActionTemplate),
+		CreateContext: CreateWithPooledClient(createJourneyActionTemplate),
+		ReadContext:   ReadWithPooledClient(readJourneyActionTemplate),
+		UpdateContext: UpdateWithPooledClient(updateJourneyActionTemplate),
+		DeleteContext: DeleteWithPooledClient(deleteJourneyActionTemplate),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -333,7 +333,7 @@ func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	result, resp, err := journeyApi.PostJourneyActiontemplates(*actionTemplate)
 	if err != nil {
 		input, _ := interfaceToJson(*actionTemplate)
-		return diag.Errorf("failed to create journey action template %s: %s\n(input: %+v)\n(resp: %s)", *actionTemplate.Name, err, input, getBody(resp))
+		return diag.Errorf("failed to create journey action template %s: %s\n(input: %+v)\n(resp: %s)", *actionTemplate.Name, err, input, GetBody(resp))
 	}
 	data.SetId(*result.Id)
 	log.Printf("Created Journey Action Template %s %s", *result.Name, *result.Id)
@@ -343,10 +343,10 @@ func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
 	journeyApi := journeyApiConfig(i)
 	log.Printf("Reading Journey Action Template %s", data.Id())
-	return withRetriesForRead(ctx, data, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, data, func() *resource.RetryError {
 		actionTemplate, resp, getErr := journeyApi.GetJourneyActiontemplate(data.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
@@ -362,7 +362,7 @@ func updateJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	journeyApi := journeyApiConfig(i)
 	patchActionTemplate := buildSdkPatchActionTemplate(data)
 	log.Printf("Updating Journey Action Template %s", data.Id())
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		actionTemplate, resp, getErr := journeyApi.GetJourneyActiontemplate(data.Id())
 		if getErr != nil {
 			return resp, diag.Errorf("failed to read current journey action template %s: %s", data.Id(), getErr)
@@ -371,7 +371,7 @@ func updateJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 		_, resp, patchErr := journeyApi.PatchJourneyActiontemplate(data.Id(), *patchActionTemplate)
 		if patchErr != nil {
 			input, _ := interfaceToJson(*patchActionTemplate)
-			return resp, diag.Errorf("error updating journey action template %s: %s\n(input: %+v)\n(resp: %s)", *patchActionTemplate.Name, patchErr, input, getBody(resp))
+			return resp, diag.Errorf("error updating journey action template %s: %s\n(input: %+v)\n(resp: %s)", *patchActionTemplate.Name, patchErr, input, GetBody(resp))
 		}
 		return resp, nil
 	})
@@ -389,10 +389,10 @@ func deleteJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	if _, err := journeyApi.DeleteJourneyActiontemplate(data.Id(), true); err != nil {
 		return diag.Errorf("Failed to delete journey action template with name %s: %s", name, err)
 	}
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := journeyApi.GetJourneyActiontemplate(data.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				log.Printf("Deleted Journey Action Template %s", data.Id())
 				return nil
 			}

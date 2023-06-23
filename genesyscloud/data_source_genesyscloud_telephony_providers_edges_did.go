@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceDid() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud DID. The identifier is the E-164 phone number.",
-		ReadContext: readWithPooledClient(dataSourceDidRead),
+		ReadContext: ReadWithPooledClient(dataSourceDidRead),
 		Schema: map[string]*schema.Schema{
 			"phone_number": {
 				Description:      "Phone number for the DID.",
@@ -32,7 +32,7 @@ func dataSourceDidRead(ctx context.Context, d *schema.ResourceData, m interface{
 
 	didPhoneNumber := d.Get("phone_number").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			dids, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesDids(100, pageNum, "", "", didPhoneNumber, "", "", nil)
 

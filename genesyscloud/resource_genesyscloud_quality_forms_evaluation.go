@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -179,7 +179,7 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 
 func evaluationFormExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllEvaluationForms),
+		GetResourcesFunc: GetAllWithPooledClient(getAllEvaluationForms),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"question_groups.questions.answer_options.value", "question_groups.weight"},
 	}
@@ -188,10 +188,10 @@ func evaluationFormExporter() *ResourceExporter {
 func resourceEvaluationForm() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Evaluation Forms",
-		CreateContext: createWithPooledClient(createEvaluationForm),
-		ReadContext:   readWithPooledClient(readEvaluationForm),
-		UpdateContext: updateWithPooledClient(updateEvaluationForm),
-		DeleteContext: deleteWithPooledClient(deleteEvaluationForm),
+		CreateContext: CreateWithPooledClient(createEvaluationForm),
+		ReadContext:   ReadWithPooledClient(readEvaluationForm),
+		UpdateContext: UpdateWithPooledClient(updateEvaluationForm),
+		DeleteContext: DeleteWithPooledClient(deleteEvaluationForm),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -267,10 +267,10 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 	log.Printf("Reading evaluation form %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		evaluationForm, resp, getErr := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
@@ -358,10 +358,10 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Failed to delete evaluation form %s: %v", name, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Evaluation form deleted
 				log.Printf("Deleted evaluation form %s", d.Id())
 				return nil

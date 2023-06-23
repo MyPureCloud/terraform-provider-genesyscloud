@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -94,10 +94,10 @@ func resourceOutboundSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "An organization's outbound settings",
 
-		CreateContext: createWithPooledClient(createOutboundSettings),
-		ReadContext:   readWithPooledClient(readOutboundSettings),
-		UpdateContext: updateWithPooledClient(updateOutboundSettings),
-		DeleteContext: deleteWithPooledClient(deleteOutboundSettings),
+		CreateContext: CreateWithPooledClient(createOutboundSettings),
+		ReadContext:   ReadWithPooledClient(readOutboundSettings),
+		UpdateContext: UpdateWithPooledClient(updateOutboundSettings),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundSettings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -143,7 +143,7 @@ func getAllOutboundSettings(_ context.Context, clientConfig *platformclientv2.Co
 
 func outboundSettingsExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllOutboundSettings),
+		GetResourcesFunc: GetAllWithPooledClient(getAllOutboundSettings),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }
@@ -165,7 +165,7 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Updating Outbound Settings %s", d.Id())
 
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound settings version
 		setting, resp, getErr := outboundApi.GetOutboundSettings()
 		if getErr != nil {
@@ -309,11 +309,11 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Reading Outbound setting %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		settings, resp, getErr := outboundApi.GetOutboundSettings()
 
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))

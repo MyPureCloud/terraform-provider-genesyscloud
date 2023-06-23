@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
@@ -42,7 +42,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					description: "",
 					dnis:        nil,
 					depends_on:  "",
-				}) + generateFlowResource(
+				}) + GenerateFlowResource(
 					flowResource,
 					flowFilePath,
 					inboundCallConfig,
@@ -75,7 +75,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					description: "",
 					dnis:        nil,
 					depends_on:  "",
-				}) + generateFlowResource(
+				}) + GenerateFlowResource(
 					flowResource,
 					flowFilePath,
 					inboundCallConfig,
@@ -153,7 +153,7 @@ func testVerifyEmergencyGroupDestroyed(state *terraform.State) error {
 		eGroup, resp, err := archAPI.GetArchitectEmergencygroup(rs.Primary.ID)
 		if eGroup != nil {
 			return fmt.Errorf("emergency group (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Emergency group not found as expected
 			continue
 		} else {

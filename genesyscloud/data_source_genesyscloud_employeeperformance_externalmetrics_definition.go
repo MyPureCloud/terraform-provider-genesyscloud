@@ -8,14 +8,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Employeeperformance Externalmetrics Definition. Select a Employeeperformance Externalmetrics Definition by name.`,
 
-		ReadContext: readWithPooledClient(dataSourceEmployeeperformanceExternalmetricsDefinitionRead),
+		ReadContext: ReadWithPooledClient(dataSourceEmployeeperformanceExternalmetricsDefinitionRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -36,7 +36,7 @@ func dataSourceEmployeeperformanceExternalmetricsDefinitionRead(ctx context.Cont
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			sdkexternalmetricdefinitionlisting, _, getErr := gamificationApi.GetEmployeeperformanceExternalmetricsDefinitions(pageSize, pageNum)

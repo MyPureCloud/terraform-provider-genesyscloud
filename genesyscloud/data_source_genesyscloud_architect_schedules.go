@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceSchedule() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Schedule. Select a schedule by name",
-		ReadContext: readWithPooledClient(dataSourceScheduleRead),
+		ReadContext: ReadWithPooledClient(dataSourceScheduleRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Schedule name.",
@@ -31,7 +31,7 @@ func dataSourceScheduleRead(ctx context.Context, d *schema.ResourceData, m inter
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			schedule, _, getErr := archAPI.GetArchitectSchedules(pageNum, pageSize, "", "", name, nil)

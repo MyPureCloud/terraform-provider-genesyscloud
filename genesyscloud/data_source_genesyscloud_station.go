@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceStation() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Stations. Select a station by name.",
-		ReadContext: readWithPooledClient(dataSourceStationRead),
+		ReadContext: ReadWithPooledClient(dataSourceStationRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Station name.",
@@ -31,7 +31,7 @@ func dataSourceStationRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	stationName := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageSize = 50
 		const pageNum = 1
 		stations, _, getErr := stationsAPI.GetStations(pageSize, pageNum, "", stationName, "", "", "", "")

@@ -5,13 +5,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceOrganizationsMe() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud current organization",
-		ReadContext: readWithPooledClient(dataSourceOrganizationsMeRead),
+		ReadContext: ReadWithPooledClient(dataSourceOrganizationsMeRead),
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:     schema.TypeString,

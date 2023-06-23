@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceIntegrationAction() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud integration action. Select an integration action by name",
-		ReadContext: readWithPooledClient(dataSourceIntegrationActionRead),
+		ReadContext: ReadWithPooledClient(dataSourceIntegrationActionRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the integration action",
@@ -31,7 +31,7 @@ func dataSourceIntegrationActionRead(ctx context.Context, d *schema.ResourceData
 
 	actionName := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			integrationAction, _, getErr := integrationAPI.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", actionName, "", "", "")

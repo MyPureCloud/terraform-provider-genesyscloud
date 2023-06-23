@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 type surveyFormStruct struct {
@@ -364,7 +364,7 @@ func testVerifySurveyFormDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Survey form (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Survey form not found as expected
 			continue
 		}

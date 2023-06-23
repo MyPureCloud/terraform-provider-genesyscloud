@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -78,7 +78,7 @@ func getAllIntegrations(_ context.Context, clientConfig *platformclientv2.Config
 
 func integrationExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllIntegrations),
+		GetResourcesFunc: GetAllWithPooledClient(getAllIntegrations),
 		RefAttrs: map[string]*RefAttrSettings{
 			"config.credentials.*": {RefType: "genesyscloud_integration_credential"},
 		},
@@ -93,10 +93,10 @@ func resourceIntegration() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Integration",
 
-		CreateContext: createWithPooledClient(createIntegration),
-		ReadContext:   readWithPooledClient(readIntegration),
-		UpdateContext: updateWithPooledClient(updateIntegration),
-		DeleteContext: deleteWithPooledClient(deleteIntegration),
+		CreateContext: CreateWithPooledClient(createIntegration),
+		ReadContext:   ReadWithPooledClient(readIntegration),
+		UpdateContext: UpdateWithPooledClient(updateIntegration),
+		DeleteContext: DeleteWithPooledClient(deleteIntegration),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -179,12 +179,12 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading integration %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		currentIntegration, resp, getErr := integrationAPI.GetIntegration(d.Id(), pageSize, pageNum, "", nil, "", "")
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
@@ -251,12 +251,12 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diag.Errorf("Failed to delete the integration %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		_, resp, err := integrationAPI.GetIntegration(d.Id(), pageSize, pageNum, "", nil, "", "")
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Integration deleted
 				log.Printf("Deleted Integration %s", d.Id())
 				return nil
@@ -368,7 +368,7 @@ func updateIntegrationConfig(d *schema.ResourceData, integrationAPI *platformcli
 				credential = buildConfigCredentials(configMap["credentials"].(map[string]interface{}))
 			}
 
-			diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
 				// Get latest config version
 				integrationConfig, resp, err := integrationAPI.GetIntegrationConfigCurrent(d.Id())

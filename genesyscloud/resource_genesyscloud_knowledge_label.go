@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -110,7 +110,7 @@ func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, kn
 
 func knowledgeLabelExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllKnowledgeLabels),
+		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeLabels),
 		RefAttrs: map[string]*RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
@@ -121,10 +121,10 @@ func resourceKnowledgeLabel() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Label",
 
-		CreateContext: createWithPooledClient(createKnowledgeLabel),
-		ReadContext:   readWithPooledClient(readKnowledgeLabel),
-		UpdateContext: updateWithPooledClient(updateKnowledgeLabel),
-		DeleteContext: deleteWithPooledClient(deleteKnowledgeLabel),
+		CreateContext: CreateWithPooledClient(createKnowledgeLabel),
+		ReadContext:   ReadWithPooledClient(readKnowledgeLabel),
+		UpdateContext: UpdateWithPooledClient(updateKnowledgeLabel),
+		DeleteContext: DeleteWithPooledClient(deleteKnowledgeLabel),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -177,10 +177,10 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge label %s", knowledgeLabelId)
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		knowledgeLabel, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr))
 			}
 			log.Printf("%s", getErr)
@@ -208,7 +208,7 @@ func updateKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Updating knowledge label %s", knowledgeLabel["name"].(string))
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current knowledge label version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if getErr != nil {
@@ -246,10 +246,10 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Failed to delete knowledge label %s: %s", id, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Knowledge label deleted
 				log.Printf("Deleted knowledge label %s", knowledgeLabelId)
 				return nil

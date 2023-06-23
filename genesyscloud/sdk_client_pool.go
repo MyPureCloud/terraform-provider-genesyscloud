@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 // SDKClientPool holds a pool of client configs for the Genesys Cloud SDK. One should be
@@ -96,19 +96,19 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) {
 type resContextFunc func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics
 type getAllConfigFunc func(context.Context, *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics)
 
-func createWithPooledClient(method resContextFunc) schema.CreateContextFunc {
+func CreateWithPooledClient(method resContextFunc) schema.CreateContextFunc {
 	return schema.CreateContextFunc(runWithPooledClient(method))
 }
 
-func readWithPooledClient(method resContextFunc) schema.ReadContextFunc {
+func ReadWithPooledClient(method resContextFunc) schema.ReadContextFunc {
 	return schema.ReadContextFunc(runWithPooledClient(method))
 }
 
-func updateWithPooledClient(method resContextFunc) schema.UpdateContextFunc {
+func UpdateWithPooledClient(method resContextFunc) schema.UpdateContextFunc {
 	return schema.UpdateContextFunc(runWithPooledClient(method))
 }
 
-func deleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
+func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
 	return schema.DeleteContextFunc(runWithPooledClient(method))
 }
 
@@ -134,7 +134,7 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 }
 
 // Inject a pooled SDK client connection into an exporter's getAll* method
-func getAllWithPooledClient(method getAllConfigFunc) GetAllResourcesFunc {
+func GetAllWithPooledClient(method getAllConfigFunc) GetAllResourcesFunc {
 	return func(ctx context.Context) (ResourceIDMetaMap, diag.Diagnostics) {
 		clientConfig := sdkClientPool.acquire()
 		defer sdkClientPool.release(clientConfig)

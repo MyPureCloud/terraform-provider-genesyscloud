@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 const ActionTemplateResourceName = "genesyscloud_journey_action_template"
@@ -83,7 +83,7 @@ func testVerifyJourneyActionTemplatesDestroyed(state *terraform.State) error {
 			return fmt.Errorf("journey action template (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Journey action map not found as expected
 			continue
 		}

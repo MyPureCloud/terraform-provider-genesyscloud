@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var providerResources map[string]*schema.Resource
@@ -113,7 +113,6 @@ func registerResources() {
 	RegisterResource("genesyscloud_outbound_wrapupcodemappings", resourceOutboundWrapUpCodeMappings())
 	RegisterResource("genesyscloud_outbound_dnclist", resourceOutboundDncList())
 	RegisterResource("genesyscloud_orgauthorization_pairing", resourceOrgauthorizationPairing())
-	RegisterResource("genesyscloud_processautomation_trigger", resourceProcessAutomationTrigger())
 	RegisterResource("genesyscloud_quality_forms_evaluation", resourceEvaluationForm())
 	RegisterResource("genesyscloud_quality_forms_survey", resourceSurveyForm())
 	RegisterResource("genesyscloud_responsemanagement_library", resourceResponsemanagementLibrary())
@@ -173,7 +172,6 @@ func registerDataSources() {
 	RegisterDataSource("genesyscloud_knowledge_label", dataSourceKnowledgeLabel())
 	RegisterDataSource("genesyscloud_location", dataSourceLocation())
 	RegisterDataSource("genesyscloud_oauth_client", dataSourceOAuthClient())
-	RegisterDataSource("genesyscloud_processautomation_trigger", dataSourceProcessAutomationTrigger())
 	RegisterDataSource("genesyscloud_organizations_me", dataSourceOrganizationsMe())
 	RegisterDataSource("genesyscloud_outbound_attempt_limit", dataSourceOutboundAttemptLimit())
 	RegisterDataSource("genesyscloud_outbound_callanalysisresponseset", dataSourceOutboundCallAnalysisResponseSet())

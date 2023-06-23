@@ -7,8 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -17,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 // lockFlow will search for a specific flow and then lock it.  This is to specifically test the force_unlock flag where I want to create a flow,  simulate some one locking it and then attempt to
@@ -25,7 +23,7 @@ import (
 func lockFlow(flowName string, flowType string) {
 	archAPI := platformclientv2.NewArchitectApi()
 	ctx := context.Background()
-	withRetries(ctx, 5*time.Second, func() *resource.RetryError {
+	WithRetries(ctx, 5*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			flows, _, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, flowName, "", "", "", "", "", "", "", false, false, "", "", nil)
@@ -77,7 +75,7 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create flow
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					flowResource,
 					filePath,
 					inboundcallConfig1,
@@ -90,7 +88,7 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 			{
 				//Lock the flow, do a deploy and check to make sure the flow is locked b
 				PreConfig: flowLocFunc, //This will lock the flow.
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					flowResource,
 					filePath,
 					inboundcallConfig2,
@@ -137,7 +135,7 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 			{
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
 				Check: resource.ComposeTestCheckFunc(
-					getHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
+					GetHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
 				),
 			},
 		},
@@ -175,7 +173,7 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create flow
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					flowResource1,
 					filePath1,
 					inboundcallConfig1,
@@ -187,7 +185,7 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 			},
 			{
 				// Update flow with name
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					flowResource1,
 					filePath2,
 					inboundcallConfig2,
@@ -206,7 +204,7 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 			},
 			{
 				// Create inboundemail flow
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					flowResource2,
 					filePath3,
 					inboundemailConfig1,
@@ -218,7 +216,7 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 			},
 			{
 				// Update inboundemail flow to inboundcall
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					flowResource2,
 					filePath2,
 					inboundcallConfig2,
@@ -254,7 +252,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create flow
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					flowResource1,
 					filePath1,
 					"",
@@ -272,7 +270,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					flowResource1,
 					filePath1,
 					"",
@@ -363,7 +361,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create flow
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					flowResource1,
 					destFile,
 					"",
@@ -381,7 +379,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 			},
 			{ // Update the flow, but make sure that we touch the YAML file and change something int
 				PreConfig: func() { transformFile(destFile) },
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					flowResource1,
 					destFile,
 					"",
@@ -400,36 +398,6 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
 	})
-}
-
-func generateFlowResource(resourceID, srcFile, filecontent string, force_unlock bool, substitutions ...string) string {
-	fullyQualifiedPath, _ := filepath.Abs(srcFile)
-
-	if filecontent != "" {
-		updateFile(srcFile, filecontent)
-	}
-
-	flowResourceStr := fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
-        filepath = %s
-		file_content_hash =  filesha256(%s)
-		force_unlock = %v
-		%s
-	}
-	`, resourceID, strconv.Quote(srcFile), strconv.Quote(fullyQualifiedPath), force_unlock, strings.Join(substitutions, "\n"))
-
-	return flowResourceStr
-}
-
-func updateFile(filepath, content string) {
-	file, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer file.Close()
-
-	file.WriteString(content)
 }
 
 // Check if flow is published, then check if flow name and type are correct

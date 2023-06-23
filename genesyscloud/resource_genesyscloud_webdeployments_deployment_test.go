@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
@@ -207,7 +207,7 @@ func verifyDeploymentDestroyed(state *terraform.State) error {
 
 		_, response, err := api.GetWebdeploymentsDeployment(rs.Primary.ID)
 
-		if isStatus404(response) {
+		if IsStatus404(response) {
 			continue
 		}
 

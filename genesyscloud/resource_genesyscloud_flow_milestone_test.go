@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceFlowMilestone(t *testing.T) {
@@ -103,7 +103,7 @@ func testVerifyFlowMilestoneDestroyed(state *terraform.State) error {
 		milestone, resp, err := archAPi.GetFlowsMilestone(rs.Primary.ID)
 		if milestone != nil {
 			return fmt.Errorf("Milestone (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Milestone not found as expected
 			continue
 		} else {

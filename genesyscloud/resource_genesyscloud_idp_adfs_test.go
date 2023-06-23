@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceIdpAdfs(t *testing.T) {
@@ -148,7 +148,7 @@ func testVerifyIdpAdfsDestroyed(state *terraform.State) error {
 		adfs, resp, err := idpAPI.GetIdentityprovidersAdfs()
 		if adfs != nil {
 			return fmt.Errorf("ADFS still exists")
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// ADFS not found as expected
 			continue
 		} else {

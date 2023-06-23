@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func testAccCheckSkillConditions(resourceName string, targetSkillConditionJson string) resource.TestCheckFunc {
@@ -716,7 +716,7 @@ func testVerifySkillGroupDestroyed(state *terraform.State) error {
 		skillGroupPayload := make(map[string]interface{})
 
 		if err != nil {
-			if isStatus404(response) {
+			if IsStatus404(response) {
 				break
 			}
 

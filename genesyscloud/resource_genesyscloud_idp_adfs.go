@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func getAllIdpAdfs(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -21,7 +21,7 @@ func getAllIdpAdfs(_ context.Context, clientConfig *platformclientv2.Configurati
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersAdfs()
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -34,7 +34,7 @@ func getAllIdpAdfs(_ context.Context, clientConfig *platformclientv2.Configurati
 
 func idpAdfsExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllIdpAdfs),
+		GetResourcesFunc: GetAllWithPooledClient(getAllIdpAdfs),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }
@@ -43,10 +43,10 @@ func resourceIdpAdfs() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on ADFS Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-microsoft-adfs-single-sign-provider/",
 
-		CreateContext: createWithPooledClient(createIdpAdfs),
-		ReadContext:   readWithPooledClient(readIdpAdfs),
-		UpdateContext: updateWithPooledClient(updateIdpAdfs),
-		DeleteContext: deleteWithPooledClient(deleteIdpAdfs),
+		CreateContext: CreateWithPooledClient(createIdpAdfs),
+		ReadContext:   ReadWithPooledClient(readIdpAdfs),
+		UpdateContext: UpdateWithPooledClient(updateIdpAdfs),
+		DeleteContext: DeleteWithPooledClient(deleteIdpAdfs),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -98,10 +98,10 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP ADFS")
-	return withRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
 		adfs, resp, getErr := idpAPI.GetIdentityprovidersAdfs()
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				createIdpAdfs(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
 			}
@@ -190,10 +190,10 @@ func deleteIdpAdfs(ctx context.Context, _ *schema.ResourceData, meta interface{}
 		return diag.Errorf("Failed to delete IDP ADFS: %s", err)
 	}
 
-	return withRetries(ctx, 180*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersAdfs()
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// IDP ADFS deleted
 				log.Printf("Deleted IDP ADFS")
 				return nil

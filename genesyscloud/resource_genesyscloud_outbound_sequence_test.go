@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceOutboundSequence(t *testing.T) {
@@ -293,7 +293,7 @@ func testVerifyOutboundSequenceDestroyed(state *terraform.State) error {
 		sequence, resp, err := outboundAPI.GetOutboundSequence(rs.Primary.ID)
 		if sequence != nil {
 			return fmt.Errorf("sequence (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Sequence not found as expected
 			continue
 		} else {

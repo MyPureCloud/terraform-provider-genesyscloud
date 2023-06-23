@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceArchitectEmergencyGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Emergency Groups. Select an emergency group by name.",
-		ReadContext: readWithPooledClient(dataSourceEmergencyGroupRead),
+		ReadContext: ReadWithPooledClient(dataSourceEmergencyGroupRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Emergency Group name.",
@@ -32,7 +32,7 @@ func dataSourceEmergencyGroupRead(ctx context.Context, d *schema.ResourceData, m
 	name := d.Get("name").(string)
 
 	// Query emergency group by name. Retry in case search has not yet indexed the emergency group.
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		emergencyGroups, _, getErr := archAPI.GetArchitectEmergencygroups(pageNum, pageSize, "", "", name)

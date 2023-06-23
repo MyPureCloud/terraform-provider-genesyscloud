@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceKnowledgeLabel() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Knowledge Base Label. Select a label by name.",
-		ReadContext: readWithPooledClient(dataSourceKnowledgeLabelRead),
+		ReadContext: ReadWithPooledClient(dataSourceKnowledgeLabelRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Knowledge base label name",
@@ -37,7 +37,7 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 	name := d.Get("name").(string)
 	knowledgeBaseName := d.Get("knowledge_base_name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", true, "", "")
 		unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", false, "", "")

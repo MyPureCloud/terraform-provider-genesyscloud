@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceOutboundCampaignRule() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Outbound Campaign Rules. Select a campaign rule by name.",
-		ReadContext: readWithPooledClient(dataSourceCampaignRuleRead),
+		ReadContext: ReadWithPooledClient(dataSourceCampaignRuleRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Campaign Rule name.",
@@ -32,7 +32,7 @@ func dataSourceCampaignRuleRead(ctx context.Context, d *schema.ResourceData, m i
 	name := d.Get("name").(string)
 
 	// Query campaign rule by name. Retry in case search has not yet indexed the campaign rule.
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		campaignRules, _, getErr := outboundAPI.GetOutboundCampaignrules(pageSize, pageNum, true, "", name, "", "")

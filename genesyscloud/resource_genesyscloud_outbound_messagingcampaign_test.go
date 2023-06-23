@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 /*
@@ -423,7 +423,7 @@ func testVerifyOutboundMessagingCampaignDestroyed(state *terraform.State) error 
 		campaign, resp, err := outboundAPI.GetOutboundMessagingcampaign(rs.Primary.ID)
 		if campaign != nil {
 			return fmt.Errorf("messaging campaign (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Messaging Campaign not found as expected
 			continue
 		} else {

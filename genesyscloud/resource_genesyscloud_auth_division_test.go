@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceAuthDivisionBasic(t *testing.T) {
@@ -150,7 +150,7 @@ func testVerifyDivisionsDestroyed(state *terraform.State) error {
 		division, resp, err := authAPI.GetAuthorizationDivision(rs.Primary.ID, false)
 		if division != nil {
 			return fmt.Errorf("Division (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Division not found as expected
 			continue
 		} else {

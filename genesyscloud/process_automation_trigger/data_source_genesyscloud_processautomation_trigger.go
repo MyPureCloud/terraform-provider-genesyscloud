@@ -1,4 +1,4 @@
-package genesyscloud
+package process_automation_trigger
 
 import (
 	"context"
@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"time"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 type ProcessAutomationTriggers struct {
@@ -22,7 +24,7 @@ type ProcessAutomationTriggers struct {
 func dataSourceProcessAutomationTrigger() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud process automation trigger. Select a trigger by name",
-		ReadContext: readWithPooledClient(dataSourceProcessAutomationTriggerRead),
+		ReadContext: gcloud.ReadWithPooledClient(dataSourceProcessAutomationTriggerRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the trigger",
@@ -34,12 +36,12 @@ func dataSourceProcessAutomationTrigger() *schema.Resource {
 }
 
 func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	triggerName := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		// create path
 		path := integrationAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
 

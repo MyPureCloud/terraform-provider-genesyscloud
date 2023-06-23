@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceArchitectDatatableRow(t *testing.T) {
@@ -175,7 +175,7 @@ func testVerifyDatatableRowsDestroyed(state *terraform.State) error {
 		row, resp, err := archAPI.GetFlowsDatatableRow(tableID, keyStr, false)
 		if row != nil {
 			return fmt.Errorf("Datatable Row (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Datatable Row not found as expected
 			continue
 		} else {

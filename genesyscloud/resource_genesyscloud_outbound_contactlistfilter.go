@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -129,7 +129,7 @@ func getAllOutboundContactListFilters(_ context.Context, clientConfig *platformc
 
 func outboundContactListFilterExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllOutboundContactListFilters),
+		GetResourcesFunc: GetAllWithPooledClient(getAllOutboundContactListFilters),
 		RefAttrs: map[string]*RefAttrSettings{
 			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
 		},
@@ -140,10 +140,10 @@ func resourceOutboundContactListFilter() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Contact List Filter`,
 
-		CreateContext: createWithPooledClient(createOutboundContactListFilter),
-		ReadContext:   readWithPooledClient(readOutboundContactListFilter),
-		UpdateContext: updateWithPooledClient(updateOutboundContactListFilter),
-		DeleteContext: deleteWithPooledClient(deleteOutboundContactListFilter),
+		CreateContext: CreateWithPooledClient(createOutboundContactListFilter),
+		ReadContext:   ReadWithPooledClient(readOutboundContactListFilter),
+		UpdateContext: UpdateWithPooledClient(updateOutboundContactListFilter),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundContactListFilter),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -227,7 +227,7 @@ func updateOutboundContactListFilter(ctx context.Context, d *schema.ResourceData
 	}
 
 	log.Printf("Updating Outbound Contact List Filter %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Contact list filter version
 		outboundContactListFilter, resp, getErr := outboundApi.GetOutboundContactlistfilter(d.Id())
 		if getErr != nil {
@@ -254,10 +254,10 @@ func readOutboundContactListFilter(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("Reading Outbound Contact List Filter %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkContactListFilter, resp, getErr := outboundApi.GetOutboundContactlistfilter(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("failed to read Outbound Contact List Filter %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Contact List Filter %s: %s", d.Id(), getErr))
@@ -286,7 +286,7 @@ func deleteOutboundContactListFilter(ctx context.Context, d *schema.ResourceData
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Contact List Filter")
 		resp, err := outboundApi.DeleteOutboundContactlistfilter(d.Id())
 		if err != nil {
@@ -298,10 +298,10 @@ func deleteOutboundContactListFilter(ctx context.Context, d *schema.ResourceData
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := outboundApi.GetOutboundContactlistfilter(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Outbound Contact list filter deleted
 				log.Printf("Deleted Outbound Contact List Filter %s", d.Id())
 				return nil

@@ -9,16 +9,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func resourceOrgauthorizationPairing() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud orgauthorization pairing`,
 
-		CreateContext: createWithPooledClient(createOrgauthorizationPairing),
-		ReadContext:   readWithPooledClient(readOrgauthorizationPairing),
-		DeleteContext: deleteWithPooledClient(deleteOrgauthorizationPairing),
+		CreateContext: CreateWithPooledClient(createOrgauthorizationPairing),
+		ReadContext:   ReadWithPooledClient(readOrgauthorizationPairing),
+		DeleteContext: DeleteWithPooledClient(deleteOrgauthorizationPairing),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -76,10 +76,10 @@ func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading Orgauthorization Pairing %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdktrustrequest, resp, getErr := organizationAuthorizationApi.GetOrgauthorizationPairing(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Orgauthorization Pairing %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Orgauthorization Pairing %s: %s", d.Id(), getErr))

@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func buildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{} {
@@ -53,7 +53,7 @@ func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 	// Retrieve defaults from the settings
 	phoneBaseSetting, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(id)
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			return nil
 		}
 		return fmt.Errorf("Failed to read phone base settings %s: %s", id, getErr)
@@ -80,7 +80,7 @@ func customizeTrunkBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 	// Retrieve defaults from the settings
 	trunkBaseSetting, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(id, true)
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			return nil
 		}
 		return fmt.Errorf("Failed to read phone base settings %s: %s", id, getErr)

@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -105,7 +105,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	) + generateRoutingWrapupcodeResource(
 		wrapupCodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
-	) + generateFlowResource(
+	) + GenerateFlowResource(
 		"flow",
 		outboundFlowFilePath,
 		"",
@@ -458,7 +458,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 	) + generateRoutingWrapupcodeResource(
 		wrapupcodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
-	) + generateFlowResource(
+	) + GenerateFlowResource(
 		flowResourceId,
 		outboundFlowFilePath,
 		"",
@@ -1120,7 +1120,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 			callAnalysisResponseSet = generateRoutingWrapupcodeResource(
 				wrapUpCodeResourceId,
 				"wrapupcode "+uuid.NewString(),
-			) + generateFlowResource(
+			) + GenerateFlowResource(
 				flowResourceId,
 				outboundFlowFilePath,
 				"",
@@ -1269,7 +1269,7 @@ func testVerifyOutboundCampaignDestroyed(state *terraform.State) error {
 		campaign, resp, err := outboundAPI.GetOutboundCampaign(rs.Primary.ID)
 		if campaign != nil {
 			return fmt.Errorf("campaign (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// campaign not found as expected
 			continue
 		} else {

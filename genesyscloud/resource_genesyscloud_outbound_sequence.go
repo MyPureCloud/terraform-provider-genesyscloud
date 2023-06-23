@@ -12,17 +12,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func resourceOutboundSequence() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound sequence`,
 
-		CreateContext: createWithPooledClient(createOutboundSequence),
-		ReadContext:   readWithPooledClient(readOutboundSequence),
-		UpdateContext: updateWithPooledClient(updateOutboundSequence),
-		DeleteContext: deleteWithPooledClient(deleteOutboundSequence),
+		CreateContext: CreateWithPooledClient(createOutboundSequence),
+		ReadContext:   ReadWithPooledClient(readOutboundSequence),
+		UpdateContext: UpdateWithPooledClient(updateOutboundSequence),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundSequence),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -89,7 +89,7 @@ func getAllOutboundSequence(_ context.Context, clientConfig *platformclientv2.Co
 
 func outboundSequenceExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllOutboundSequence),
+		GetResourcesFunc: GetAllWithPooledClient(getAllOutboundSequence),
 		RefAttrs: map[string]*RefAttrSettings{
 			`campaign_ids`: {
 				RefType: "genesyscloud_outbound_campaign",
@@ -161,7 +161,7 @@ func updateOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Updating Outbound Sequence %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Sequence version
 		outboundSequence, resp, getErr := outboundApi.GetOutboundSequence(d.Id())
 		if getErr != nil {
@@ -188,10 +188,10 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Reading Outbound Sequence %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkcampaignsequence, resp, getErr := outboundApi.GetOutboundSequence(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
@@ -222,7 +222,7 @@ func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Sequence")
 		resp, err := outboundApi.DeleteOutboundSequence(d.Id())
 		if err != nil {
@@ -234,10 +234,10 @@ func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := outboundApi.GetOutboundSequence(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Outbound Sequence deleted
 				log.Printf("Deleted Outbound Sequence %s", d.Id())
 				return nil

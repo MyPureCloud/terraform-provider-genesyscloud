@@ -1,12 +1,15 @@
 package genesyscloud
 
 import (
+	"fmt"
 	"log"
 	"sync"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 type JsonMap map[string]interface{}
@@ -15,6 +18,17 @@ type JsonMap map[string]interface{}
 var divOnce sync.Once
 var homeDivID string
 var homeDivErr diag.Diagnostics
+
+func GetHomeDivisionName(key string, divisionName *string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		homeDivision, ok := state.RootModule().Resources[key]
+		if !ok {
+			return fmt.Errorf("Failed to find home division")
+		}
+		*divisionName = homeDivision.Primary.Attributes["name"]
+		return nil
+	}
+}
 
 func getHomeDivisionID() (string, diag.Diagnostics) {
 	divOnce.Do(func() {
