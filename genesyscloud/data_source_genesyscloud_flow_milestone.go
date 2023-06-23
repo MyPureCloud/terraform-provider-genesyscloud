@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceFlowMilestone() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Flow Milestone. Select a milestone by name.",
-		ReadContext: readWithPooledClient(dataSourceFlowMilestoneRead),
+		ReadContext: ReadWithPooledClient(dataSourceFlowMilestoneRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Milestone name.",
@@ -31,7 +31,7 @@ func dataSourceFlowMilestoneRead(ctx context.Context, d *schema.ResourceData, m 
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			milestone, _, getErr := archAPI.GetFlowsMilestones(pageNum, pageSize, "", "", nil, name, "", "", nil)

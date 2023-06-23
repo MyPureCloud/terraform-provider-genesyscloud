@@ -8,14 +8,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceOutboundRuleset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Outbound Ruleset. Select an Outbound Ruleset by name.`,
 
-		ReadContext: readWithPooledClient(dataSourceOutboundRulesetRead),
+		ReadContext: ReadWithPooledClient(dataSourceOutboundRulesetRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -36,7 +36,7 @@ func dataSourceOutboundRulesetRead(ctx context.Context, d *schema.ResourceData, 
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			sdkrulesetentitylisting, _, getErr := outboundApi.GetOutboundRulesets(pageSize, pageNum, false, "", "", "", "")

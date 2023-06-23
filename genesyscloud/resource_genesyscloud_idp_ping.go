@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func getAllIdpPing(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -21,7 +21,7 @@ func getAllIdpPing(_ context.Context, clientConfig *platformclientv2.Configurati
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersPing()
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -34,7 +34,7 @@ func getAllIdpPing(_ context.Context, clientConfig *platformclientv2.Configurati
 
 func idpPingExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllIdpPing),
+		GetResourcesFunc: GetAllWithPooledClient(getAllIdpPing),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }
@@ -43,10 +43,10 @@ func resourceIdpPing() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on Ping Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-ping-identity-single-sign-provider/",
 
-		CreateContext: createWithPooledClient(createIdpPing),
-		ReadContext:   readWithPooledClient(readIdpPing),
-		UpdateContext: updateWithPooledClient(updateIdpPing),
-		DeleteContext: deleteWithPooledClient(deleteIdpPing),
+		CreateContext: CreateWithPooledClient(createIdpPing),
+		ReadContext:   ReadWithPooledClient(readIdpPing),
+		UpdateContext: UpdateWithPooledClient(updateIdpPing),
+		DeleteContext: DeleteWithPooledClient(deleteIdpPing),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -99,10 +99,10 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading IDP Ping")
 
-	return withRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
 		ping, resp, getErr := idpAPI.GetIdentityprovidersPing()
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				createIdpPing(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
 			}
@@ -191,10 +191,10 @@ func deleteIdpPing(ctx context.Context, _ *schema.ResourceData, meta interface{}
 		return diag.Errorf("Failed to delete IDP Ping: %s", err)
 	}
 
-	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersPing()
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// IDP Ping deleted
 				log.Printf("Deleted IDP Ping")
 				return nil

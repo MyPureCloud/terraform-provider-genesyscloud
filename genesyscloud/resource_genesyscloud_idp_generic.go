@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func getAllIdpGeneric(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -22,7 +22,7 @@ func getAllIdpGeneric(_ context.Context, clientConfig *platformclientv2.Configur
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersGeneric()
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
@@ -35,7 +35,7 @@ func getAllIdpGeneric(_ context.Context, clientConfig *platformclientv2.Configur
 
 func idpGenericExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllIdpGeneric),
+		GetResourcesFunc: GetAllWithPooledClient(getAllIdpGeneric),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 	}
 }
@@ -44,10 +44,10 @@ func resourceIdpGeneric() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on Generic Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-a-generic-single-sign-on-provider/",
 
-		CreateContext: createWithPooledClient(createIdpGeneric),
-		ReadContext:   readWithPooledClient(readIdpGeneric),
-		UpdateContext: updateWithPooledClient(updateIdpGeneric),
-		DeleteContext: deleteWithPooledClient(deleteIdpGeneric),
+		CreateContext: CreateWithPooledClient(createIdpGeneric),
+		ReadContext:   ReadWithPooledClient(readIdpGeneric),
+		UpdateContext: UpdateWithPooledClient(updateIdpGeneric),
+		DeleteContext: DeleteWithPooledClient(deleteIdpGeneric),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -132,10 +132,10 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading IDP Generic")
 
-	return withRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
 		generic, resp, getErr := idpAPI.GetIdentityprovidersGeneric()
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				createIdpGeneric(ctx, d, meta)
 				return resource.RetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
 			}
@@ -256,10 +256,10 @@ func deleteIdpGeneric(ctx context.Context, _ *schema.ResourceData, meta interfac
 		return diag.Errorf("Failed to delete IDP Generic: %s", err)
 	}
 
-	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersGeneric()
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// IDP Generic deleted
 				log.Printf("Deleted IDP Generic")
 				return nil

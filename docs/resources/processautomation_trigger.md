@@ -3,13 +3,10 @@ page_title: "genesyscloud_processautomation_trigger Resource - terraform-provide
 subcategory: ""
 description: |-
   Genesys Cloud Process Automation Trigger
-  NOTE: This component is currently in beta. If you wish to use this provider make sure your client has the correct permissions
 ---
 # genesyscloud_processautomation_trigger (Resource)
 
 Genesys Cloud Process Automation Trigger
-
-**NOTE: This component is currently in beta. If you wish to use this provider make sure your client has the correct permissions**
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
@@ -31,11 +28,13 @@ resource "genesyscloud_processautomation_trigger" "example-trigger" {
     id   = data.genesyscloud_flow.workflow-trigger.id
     type = "Workflow"
   }
-  match_criteria {
-    json_path = "mediaType"
-    operator  = "Equal"
-    value     = "CHAT"
-  }
+  match_criteria = jsonencode([
+    {
+      "jsonPath" : "mediaType",
+      "operator" : "Equal",
+      "value" : "CHAT"
+    }
+  ])
   event_ttl_seconds = 60
   description       = "description of trigger"
 }
@@ -56,7 +55,7 @@ resource "genesyscloud_processautomation_trigger" "example-trigger" {
 - `delay_by_seconds` (Number) How long to delay processing of a trigger after an event passes the match criteria. Must be an number between 60 and 900 inclusive. Only one of event_ttl_seconds or delay_by_seconds can be set.
 - `description` (String) A description of the trigger
 - `event_ttl_seconds` (Number) How old an event can be to fire the trigger. Must be an number greater than or equal to 10. Only one of event_ttl_seconds or delay_by_seconds can be set.
-- `match_criteria` (Block Set) Match criteria that controls when the trigger will fire. (see [below for nested schema](#nestedblock--match_criteria))
+- `match_criteria` (String) Match criteria that controls when the trigger will fire. NOTE: The match_criteria field type has changed from a complex object to a string. This was done to allow for complex JSON object definitions.
 
 ### Read-Only
 
@@ -69,18 +68,4 @@ Required:
 
 - `id` (String) Id of the target the trigger is configured to hit
 - `type` (String) Type of the target the trigger is configured to hit
-
-
-<a id="nestedblock--match_criteria"></a>
-### Nested Schema for `match_criteria`
-
-Required:
-
-- `json_path` (String) The json path of the topic event to be compared to match criteria value
-- `operator` (String) The operator used to compare the json path against the value of the match criteria
-
-Optional:
-
-- `value` (String) Value the jsonPath is compared against
-- `values` (List of String) Values the jsonPath are compared against
 

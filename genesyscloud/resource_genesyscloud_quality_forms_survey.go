@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -175,7 +175,7 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 
 func surveyFormExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllSurveyForms),
+		GetResourcesFunc: GetAllWithPooledClient(getAllSurveyForms),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"question_groups.questions.answer_options.value"},
 	}
@@ -184,10 +184,10 @@ func surveyFormExporter() *ResourceExporter {
 func resourceSurveyForm() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Survey Forms",
-		CreateContext: createWithPooledClient(createSurveyForm),
-		ReadContext:   readWithPooledClient(readSurveyForm),
-		UpdateContext: updateWithPooledClient(updateSurveyForm),
-		DeleteContext: deleteWithPooledClient(deleteSurveyForm),
+		CreateContext: CreateWithPooledClient(createSurveyForm),
+		ReadContext:   ReadWithPooledClient(readSurveyForm),
+		UpdateContext: UpdateWithPooledClient(updateSurveyForm),
+		DeleteContext: DeleteWithPooledClient(deleteSurveyForm),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -293,10 +293,10 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 	log.Printf("Reading survey form %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		surveyForm, resp, getErr := qualityAPI.GetQualityFormsSurvey(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read survey form %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read survey form %s: %s", d.Id(), getErr))
@@ -345,7 +345,7 @@ func updateSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
 		// Get the latest unpublished version of the form
 		formVersions, getResp, err := qualityAPI.GetQualityFormsSurveyVersions(d.Id(), 25, 1)
@@ -421,10 +421,10 @@ func deleteSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 		return diag.Errorf("Failed to delete survey form %s: %s", name, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := qualityAPI.GetQualityFormsSurvey(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// survey form deleted
 				log.Printf("Deleted survey form %s", d.Id())
 				return nil

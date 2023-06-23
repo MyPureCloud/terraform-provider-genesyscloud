@@ -11,17 +11,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func resourcePhoneBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Phone Base Settings",
 
-		CreateContext: createWithPooledClient(createPhoneBaseSettings),
-		ReadContext:   readWithPooledClient(readPhoneBaseSettings),
-		UpdateContext: updateWithPooledClient(updatePhoneBaseSettings),
-		DeleteContext: deleteWithPooledClient(deletePhoneBaseSettings),
+		CreateContext: CreateWithPooledClient(createPhoneBaseSettings),
+		ReadContext:   ReadWithPooledClient(readPhoneBaseSettings),
+		UpdateContext: UpdateWithPooledClient(updatePhoneBaseSettings),
+		DeleteContext: DeleteWithPooledClient(deletePhoneBaseSettings),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -137,7 +137,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 
 	phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			return nil
 		}
 		return diag.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr)
@@ -160,10 +160,10 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading phone base settings %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
@@ -211,10 +211,10 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete phone base settings: %s", err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		phoneBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Phone base settings deleted
 				log.Printf("Deleted Phone base settings %s", d.Id())
 				return nil
@@ -237,12 +237,12 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	err := withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	err := WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, "")
 			if getErr != nil {
-				if isStatus404(resp) {
+				if IsStatus404(resp) {
 					return resource.RetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
 				}
 				return resource.NonRetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
@@ -267,7 +267,7 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 func phoneBaseSettingsExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc:     getAllWithPooledClient(getAllPhoneBaseSettings),
+		GetResourcesFunc:     GetAllWithPooledClient(getAllPhoneBaseSettings),
 		RefAttrs:             map[string]*RefAttrSettings{},
 		JsonEncodeAttributes: []string{"properties"},
 	}

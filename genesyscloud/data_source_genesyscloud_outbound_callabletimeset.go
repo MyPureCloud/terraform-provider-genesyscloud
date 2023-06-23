@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceOutboundCallabletimeset() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Clound Outbound Callable Timesets. Select a callable timeset by name.",
-		ReadContext: readWithPooledClient(dataSourceOutboundCallabletimesetRead),
+		ReadContext: ReadWithPooledClient(dataSourceOutboundCallabletimesetRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Callable timeset name.",
@@ -31,7 +31,7 @@ func dataSourceOutboundCallabletimesetRead(ctx context.Context, d *schema.Resour
 
 	timesetName := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 

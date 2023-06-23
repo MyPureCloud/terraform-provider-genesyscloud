@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceIdpOkta(t *testing.T) {
@@ -134,7 +134,7 @@ func testVerifyIdpOktaDestroyed(state *terraform.State) error {
 		okta, resp, err := idpAPI.GetIdentityprovidersOkta()
 		if okta != nil {
 			return fmt.Errorf("Okta still exists")
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Okta not found as expected
 			continue
 		} else {

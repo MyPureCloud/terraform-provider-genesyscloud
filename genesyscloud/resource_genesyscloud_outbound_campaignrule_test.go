@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
@@ -114,8 +114,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						resourceId,
 						ruleName,
-						falseValue,
-						falseValue,
+						falseValue, // enabled
+						falseValue, // matchAnyConditions
 						generateCampaignRuleEntity(campaignRuleEntityCampaignIds, campaignRuleEntitySequenceIds),
 						generateCampaignRuleConditions(
 							"",
@@ -178,8 +178,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						resourceId,
 						ruleNameUpdated,
-						trueValue,
-						trueValue,
+						trueValue, // enabled
+						trueValue, // matchAnyConditions
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
@@ -234,8 +234,213 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						resourceId,
 						ruleNameUpdated,
-						falseValue,
-						trueValue,
+						falseValue, // enabled
+						trueValue,  // matchAnyConditions
+						generateCampaignRuleEntity(
+							campaignRuleEntityCampaignIds,
+							campaignRuleEntitySequenceIds,
+						),
+						generateCampaignRuleConditions(
+							"",
+							campaignRuleCondition1TypeUpdate,
+							generateCampaignRuleParameters(
+								paramRulesOperatorUpdated,
+								paramRulesValueUpdated,
+								paramRulesDialingModeUpdated,
+								paramRulesPriorityUpdated,
+							),
+						),
+						generateCampaignRuleActions(
+							"",
+							campaignRuleActionType,
+							campaignRuleActionCampaignIds,
+							campaignRuleActionSequenceIds,
+							campaignRuleActionUseTriggeringEntity,
+							"",
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", falseValue),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_outbound_campaignrule." + resourceId,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyCampaignRuleDestroyed,
+	})
+}
+
+func TestAccResourceOutboundCampaignRuleEnabledAtCreation(t *testing.T) {
+	var (
+		resourceId      = "campaign_rule"
+		ruleName        = "Terraform test rule " + uuid.NewString()
+		ruleNameUpdated = "Terraform test rule " + uuid.NewString()
+
+		campaign1ResourceId  = "campaign1"
+		campaign1Name        = "TF Test Campaign " + uuid.NewString()
+		outboundFlowFilePath = "../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		campaign1FlowName    = "test flow " + uuid.NewString()
+		campaign1Resource    = generateCampaignResourceForCampaignRuleTests(
+			campaign1ResourceId,
+			campaign1Name,
+			"off",
+			"contact-list",
+			"test contact list"+uuid.NewString(),
+			"location",
+			"test location "+uuid.NewString(),
+			fmt.Sprintf("+131783%v", 10000+rand.Intn(99999-10000)), // append random 5 digit number
+			"site",
+			"test site "+uuid.NewString(),
+			"wrapupcode",
+			"test wrapup code "+uuid.NewString(),
+			"campaignrule-test-flow",
+			outboundFlowFilePath,
+			campaign1FlowName,
+			"${data.genesyscloud_auth_division_home.home.name}",
+			"car",
+			"test car"+uuid.NewString(),
+		)
+
+		campaign2ResourceId = "campaign2"
+		campaign2Name       = "TF Test Campaign " + uuid.NewString()
+		campaign2FlowName   = "test flow " + uuid.NewString()
+		campaign2Resource   = generateCampaignResourceForCampaignRuleTests(
+			campaign2ResourceId,
+			campaign2Name,
+			"off",
+			"contact-list-2",
+			"test contact list"+uuid.NewString(),
+			"location-2",
+			"test location "+uuid.NewString(),
+			fmt.Sprintf("+131782%v", 10000+rand.Intn(99999-10000)), // append random 5 digit number
+			"site-2",
+			"test site "+uuid.NewString(),
+			"wrapupcode-2",
+			"test wrapup code "+uuid.NewString(),
+			"campaignrule-test-flow-2",
+			outboundFlowFilePath,
+			campaign2FlowName,
+			"${data.genesyscloud_auth_division_home.home.name}",
+			"car-2",
+			"test car"+uuid.NewString(),
+		)
+
+		sequenceResourceId = "sequence"
+		sequenceName       = "TF Test Sequence " + uuid.NewString()
+		sequenceResource   = generateOutboundSequence(
+			sequenceResourceId,
+			sequenceName,
+			[]string{"genesyscloud_outbound_campaign." + campaign1ResourceId + ".id"},
+			nullValue,
+			nullValue,
+		)
+
+		campaignRuleEntityCampaignIds = []string{"genesyscloud_outbound_campaign." + campaign1ResourceId + ".id"}
+		campaignRuleEntitySequenceIds = []string{"genesyscloud_outbound_sequence." + sequenceResourceId + ".id"}
+
+		campaignRuleActionType                = "turnOffCampaign"
+		campaignRuleActionCampaignIds         = []string{"genesyscloud_outbound_campaign." + campaign2ResourceId + ".id"}
+		campaignRuleActionSequenceIds         = []string{"genesyscloud_outbound_sequence." + sequenceResourceId + ".id"}
+		campaignRuleActionUseTriggeringEntity = falseValue
+
+		campaignRuleCondition1Type = "campaignProgress"
+		paramRulesOperator         = "lessThan"
+		paramRulesValue            = "0.4"
+		paramRulesDialingMode      = "preview"
+		paramRulesPriority         = "2"
+
+		campaignRuleCondition1TypeUpdate = "campaignAgents"
+		paramRulesOperatorUpdated        = "greaterThan"
+		paramRulesValueUpdated           = "50"
+		paramRulesDialingModeUpdated     = ""
+		paramRulesPriorityUpdated        = ""
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create
+			{
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) +
+					sequenceResource +
+					campaign1Resource +
+					campaign2Resource +
+					generateOutboundCampaignRule(
+						resourceId,
+						ruleName,
+						trueValue,  // enabled
+						falseValue, // matchAnyConditions
+						generateCampaignRuleEntity(campaignRuleEntityCampaignIds, campaignRuleEntitySequenceIds),
+						generateCampaignRuleConditions(
+							"",
+							campaignRuleCondition1Type,
+							generateCampaignRuleParameters(
+								paramRulesOperator,
+								paramRulesValue,
+								paramRulesDialingMode,
+								paramRulesPriority,
+							),
+						),
+						generateCampaignRuleActions(
+							"",
+							campaignRuleActionType,
+							campaignRuleActionCampaignIds,
+							campaignRuleActionSequenceIds,
+							campaignRuleActionUseTriggeringEntity,
+							generateCampaignRuleParameters(
+								paramRulesOperator,
+								paramRulesValue,
+								paramRulesDialingMode,
+								paramRulesPriority,
+							),
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "name", ruleName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "match_any_conditions", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "enabled", trueValue),
+
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_entities.0.sequence_ids.0",
+						"genesyscloud_outbound_sequence."+sequenceResourceId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_entities.0.campaign_ids.0",
+						"genesyscloud_outbound_campaign."+campaign1ResourceId, "id"),
+
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_conditions.0.condition_type", campaignRuleCondition1Type),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_conditions.0.parameters.0.operator", paramRulesOperator),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_conditions.0.parameters.0.value", paramRulesValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_conditions.0.parameters.0.dialing_mode", paramRulesDialingMode),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_conditions.0.parameters.0.priority", paramRulesPriority),
+
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_actions.0.parameters.0.operator", paramRulesOperator),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_actions.0.parameters.0.value", paramRulesValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_actions.0.parameters.0.dialing_mode", paramRulesDialingMode),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_actions.0.parameters.0.priority", paramRulesPriority),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_actions.0.campaign_rule_action_entities.0.campaign_ids.0",
+						"genesyscloud_outbound_campaign."+campaign2ResourceId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceId, "campaign_rule_actions.0.campaign_rule_action_entities.0.sequence_ids.0",
+						"genesyscloud_outbound_sequence."+sequenceResourceId, "id"),
+				),
+			},
+			// Update (Setting 'enabled' back to false because we can't create or delete a rule with 'enabled' set to true)
+			{
+				Config: fmt.Sprintf(`
+			data "genesyscloud_auth_division_home" "home" {}
+			`) +
+					sequenceResource +
+					campaign1Resource +
+					campaign2Resource +
+					generateOutboundCampaignRule(
+						resourceId,
+						ruleNameUpdated,
+						falseValue, // enabled
+						trueValue,  // matchAnyConditions
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
@@ -305,7 +510,7 @@ func generateCampaignRuleActions(id string,
 	}
 	return fmt.Sprintf(`
 	campaign_rule_actions {
-		id          = "%s" 
+		id          = "%s"
 		action_type = "%s"
 		campaign_rule_action_entities {
 			campaign_ids          = [%s]
@@ -341,7 +546,7 @@ func generateCampaignRuleParameters(operator string, value string, dialingMode s
 		parameters {
 			operator     = "%s"
 			value        = "%s"
-			%s	
+			%s
 			%s
 		}
 `, operator, value, dialingMode, priority)
@@ -356,7 +561,7 @@ func testVerifyCampaignRuleDestroyed(state *terraform.State) error {
 		campaignRule, resp, err := outboundApi.GetOutboundCampaignrule(rs.Primary.ID)
 		if campaignRule != nil {
 			return fmt.Errorf("emergency group (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Campaign rule not found as expected
 			continue
 		} else {
@@ -410,7 +615,7 @@ resource "genesyscloud_outbound_contact_list" "%s" {
 	name 						 = "%s"
 	preview_mode_column_name     = "Cell"
 	preview_mode_accepted_values = ["Cell"]
-	column_names                 = ["Cell", "Home", "zipcode"] 
+	column_names                 = ["Cell", "Home", "zipcode"]
 	automatic_time_zone_mapping  = false
 	phone_columns {
 		column_name = "Cell"
@@ -475,7 +680,7 @@ resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
 			data = "${genesyscloud_flow.%s.id}"
 		}
 	}
-}	
+}
 	`, campaignResourceId,
 		campaignName,
 		campaignStatus,

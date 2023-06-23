@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -203,7 +203,7 @@ func getAllAuthExternalContacts(_ context.Context, clientConfig *platformclientv
 
 func externalContactExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllAuthExternalContacts),
+		GetResourcesFunc: GetAllWithPooledClient(getAllAuthExternalContacts),
 		RefAttrs: map[string]*RefAttrSettings{
 			"external_organization": {}, //Need to add this when we external orgs implemented
 		},
@@ -214,10 +214,10 @@ func resourceExternalContact() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud External Contact",
 
-		CreateContext: createWithPooledClient(createExternalContact),
-		ReadContext:   readWithPooledClient(readExternalContact),
-		UpdateContext: updateWithPooledClient(updateExternalContact),
-		DeleteContext: deleteWithPooledClient(deleteExternalContact),
+		CreateContext: CreateWithPooledClient(createExternalContact),
+		ReadContext:   ReadWithPooledClient(readExternalContact),
+		UpdateContext: UpdateWithPooledClient(updateExternalContact),
+		DeleteContext: DeleteWithPooledClient(deleteExternalContact),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -638,10 +638,10 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 
 	log.Printf("Reading contact %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		externalContact, resp, getErr := externalAPI.GetExternalcontactsContact(d.Id(), nil)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
@@ -792,13 +792,13 @@ func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.Errorf("Failed to delete external contact %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 180*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
 		_, resp, err := externalAPI.GetExternalcontactsContact(d.Id(), nil)
 
 		if err == nil {
 			return resource.NonRetryableError(fmt.Errorf("Error deleting external contact %s: %s", d.Id(), err))
 		}
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Success  : External contact deleted
 			log.Printf("Deleted external contact %s", d.Id())
 			return nil

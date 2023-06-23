@@ -20,6 +20,10 @@ copy-hooks:
 testacc:
 	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m -parallel 20  -coverprofile=coverage.out
 
+unittests: 
+	go test -tags unit ./... -v $(TESTARGS) -timeout 120m -parallel 20  -coverprofile=unitcoverage.out
+
+
 coverage:
     go tool cover -func coverage.out | grep "total:" | \
     awk '{print ((int($$3) > 80) != 1) }'

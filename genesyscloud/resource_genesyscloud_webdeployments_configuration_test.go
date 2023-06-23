@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
@@ -80,6 +80,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						trueValue,
 						trueValue,
 						[]string{strconv.Quote("selector-one")},
+						[]string{strconv.Quote("selector-one")},
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -103,6 +104,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", trueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.0", "selector-one"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.0", "selector-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", trueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
@@ -148,6 +151,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						falseValue,
 						falseValue,
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
+						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -172,6 +176,9 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "2"),
 					validateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
 					validateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "2"),
+					validateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
+					validateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", trueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
@@ -318,14 +325,15 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 	`, name, description, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbMaskSelectors []string) string {
+func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbMaskSelectors []string, cbReadonlySelectors []string) string {
 	return fmt.Sprintf(`
 	cobrowse {
 		enabled = %s
 		allow_agent_control = %s
 		mask_selectors = [ %s ]
+		readonly_selectors = [ %s ]
 	}
-`, cbEnabled, cbAllowAgentControl, strings.Join(cbMaskSelectors, ", "))
+`, cbEnabled, cbAllowAgentControl, strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "))
 }
 
 func verifyConfigurationDestroyed(state *terraform.State) error {
@@ -338,7 +346,7 @@ func verifyConfigurationDestroyed(state *terraform.State) error {
 
 		_, response, err := api.GetWebdeploymentsConfigurationVersionsDraft(rs.Primary.ID)
 
-		if isStatus404(response) {
+		if IsStatus404(response) {
 			continue
 		}
 

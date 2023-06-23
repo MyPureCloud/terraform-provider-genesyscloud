@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceRoutingWrapupcode(t *testing.T) {
@@ -71,7 +71,7 @@ func testVerifyWrapupcodesDestroyed(state *terraform.State) error {
 		wrapupcode, resp, err := routingAPI.GetRoutingWrapupcode(rs.Primary.ID)
 		if wrapupcode != nil {
 			return fmt.Errorf("Wrapupcode (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Wrapupcode not found as expected
 			continue
 		} else {

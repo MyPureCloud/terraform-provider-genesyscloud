@@ -4,18 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func userRolesExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllUsers),
+		GetResourcesFunc: GetAllWithPooledClient(getAllUsers),
 		RefAttrs: map[string]*RefAttrSettings{
 			"user_id":            {RefType: "genesyscloud_user"},
 			"roles.role_id":      {RefType: "genesyscloud_auth_role"},
@@ -33,10 +33,10 @@ func resourceUserRoles() *schema.Resource {
 
 Terraform expects to manage the resources that are defined in its stack. You can use this resource to assign roles to existing users that are not managed by Terraform. However, one thing you have to remember is that when you use this resource to assign roles to existing users, you must define all roles assigned to those users in this resource. Otherwise, you will inadvertently drop all of the existing roles assigned to the user and replace them with the one defined in this resource. Keep this in mind, as the author of this note inadvertently stripped his Genesys admin account of administrator privileges while using this resource to assign a role to his account. The best lessons in life are often free and self-inflicted.`,
 
-		CreateContext: createWithPooledClient(createUserRoles),
-		ReadContext:   readWithPooledClient(readUserRoles),
-		UpdateContext: updateWithPooledClient(updateUserRoles),
-		DeleteContext: deleteWithPooledClient(deleteUserRoles),
+		CreateContext: CreateWithPooledClient(createUserRoles),
+		ReadContext:   ReadWithPooledClient(readUserRoles),
+		UpdateContext: UpdateWithPooledClient(updateUserRoles),
+		DeleteContext: DeleteWithPooledClient(deleteUserRoles),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -70,7 +70,7 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Reading roles for user %s", d.Id())
 	d.Set("user_id", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		roles, _, err := readSubjectRoles(d.Id(), authAPI)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("%v", err))

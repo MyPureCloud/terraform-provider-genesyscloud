@@ -67,9 +67,44 @@ func TestAccDataSourceSite(t *testing.T) {
 					strconv.Quote("Wilco plumbing")) + location + generateSiteDataSource(
 					siteDataRes,
 					name,
-					"genesyscloud_telephony_providers_edges_site."+siteRes),
+					"genesyscloud_telephony_providers_edges_site."+siteRes,
+					false),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_site."+siteDataRes, "id", "genesyscloud_telephony_providers_edges_site."+siteRes, "id"),
+				),
+			},
+		},
+	})
+}
+
+/*
+This test expects that the org has a product called "voice" enabled on it. If the test org does not have this product on it, the test can be skipped or ignored.
+*/
+func TestAccDataSourceSiteManaged(t *testing.T) {
+	t.Parallel()
+	var (
+		siteDataRes = "managed-site-data"
+		name        = "PureCloud Voice - AWS"
+	)
+
+	err := authorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: generateSiteDataSource(
+					siteDataRes,
+					name,
+					"",
+					true,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_site."+siteDataRes, "name", name),
 				),
 			},
 		},
@@ -81,10 +116,12 @@ func generateSiteDataSource(
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
-	dependsOnResource string) string {
+	dependsOnResource string,
+	managed bool) string {
 	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_site" "%s" {
 		name = "%s"
+		managed = %t
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceID, name, managed, dependsOnResource)
 }

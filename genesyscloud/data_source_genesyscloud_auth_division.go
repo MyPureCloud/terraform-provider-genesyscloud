@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceAuthDivision() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Divisions. Select a division by name.",
-		ReadContext: readWithPooledClient(dataSourceAuthDivisionRead),
+		ReadContext: ReadWithPooledClient(dataSourceAuthDivisionRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Division name.",
@@ -32,7 +32,7 @@ func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m i
 	name := d.Get("name").(string)
 
 	// Query division by name. Retry in case search has not yet indexed the division.
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, name)

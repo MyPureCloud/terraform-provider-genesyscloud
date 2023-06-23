@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -40,7 +40,7 @@ func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2
 
 func routingEmailDomainExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllRoutingEmailDomains),
+		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingEmailDomains),
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"custom_smtp_server_id": resourceRoutingEmailDomain().Schema["custom_smtp_server_id"],
 		},
@@ -51,10 +51,10 @@ func resourceRoutingEmailDomain() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Email Domain",
 
-		CreateContext: createWithPooledClient(createRoutingEmailDomain),
-		ReadContext:   readWithPooledClient(readRoutingEmailDomain),
-		UpdateContext: updateWithPooledClient(updateRoutingEmailDomain),
-		DeleteContext: deleteWithPooledClient(deleteRoutingEmailDomain),
+		CreateContext: CreateWithPooledClient(createRoutingEmailDomain),
+		ReadContext:   ReadWithPooledClient(readRoutingEmailDomain),
+		UpdateContext: UpdateWithPooledClient(updateRoutingEmailDomain),
+		DeleteContext: DeleteWithPooledClient(deleteRoutingEmailDomain),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -127,10 +127,10 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Reading routing email domain %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		domain, resp, getErr := routingAPI.GetRoutingEmailDomain(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
@@ -207,10 +207,10 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to delete routing email domain %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 90*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 90*time.Second, func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingEmailDomain(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Routing email domain deleted
 				log.Printf("Deleted Routing email domain %s", d.Id())
 				return nil

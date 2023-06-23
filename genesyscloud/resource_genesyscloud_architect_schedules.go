@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -42,7 +42,7 @@ func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.
 
 func architectSchedulesExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllArchitectSchedules),
+		GetResourcesFunc: GetAllWithPooledClient(getAllArchitectSchedules),
 		RefAttrs: map[string]*RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
@@ -53,10 +53,10 @@ func resourceArchitectSchedules() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Schedules",
 
-		CreateContext: createWithPooledClient(createArchitectSchedules),
-		ReadContext:   readWithPooledClient(readArchitectSchedules),
-		UpdateContext: updateWithPooledClient(updateArchitectSchedules),
-		DeleteContext: deleteWithPooledClient(deleteArchitectSchedules),
+		CreateContext: CreateWithPooledClient(createArchitectSchedules),
+		ReadContext:   ReadWithPooledClient(readArchitectSchedules),
+		UpdateContext: UpdateWithPooledClient(updateArchitectSchedules),
+		DeleteContext: DeleteWithPooledClient(deleteArchitectSchedules),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -158,10 +158,10 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Reading schedule %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		schedule, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read schedule %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read schedule %s: %s", d.Id(), getErr))
@@ -223,7 +223,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to parse date %s: %s", end, err)
 	}
 
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current schedule version
 		sched, resp, getErr := archAPI.GetArchitectSchedule(d.Id())
 		if getErr != nil {
@@ -267,10 +267,10 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to delete schedule %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		schedule, resp, err := archAPI.GetArchitectSchedule(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// schedule deleted
 				log.Printf("Deleted schedule %s", d.Id())
 				return nil

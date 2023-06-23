@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -68,10 +68,10 @@ func resourceOutboundMessagingCampaign() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Messaging Campaign`,
 
-		CreateContext: createWithPooledClient(createOutboundMessagingcampaign),
-		ReadContext:   readWithPooledClient(readOutboundMessagingcampaign),
-		UpdateContext: updateWithPooledClient(updateOutboundMessagingcampaign),
-		DeleteContext: deleteWithPooledClient(deleteOutboundMessagingcampaign),
+		CreateContext: CreateWithPooledClient(createOutboundMessagingcampaign),
+		ReadContext:   ReadWithPooledClient(readOutboundMessagingcampaign),
+		UpdateContext: UpdateWithPooledClient(updateOutboundMessagingcampaign),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundMessagingcampaign),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -182,7 +182,7 @@ func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformcl
 
 func outboundMessagingcampaignExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllOutboundMessagingcampaign),
+		GetResourcesFunc: GetAllWithPooledClient(getAllOutboundMessagingcampaign),
 		RefAttrs: map[string]*RefAttrSettings{
 			`division_id`:             {RefType: "genesyscloud_auth_division"},
 			`contact_list_id`:         {RefType: "genesyscloud_outbound_contact_list"},
@@ -266,7 +266,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	}
 
 	log.Printf("Updating Outbound Messagingcampaign %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Messagingcampaign version
 		outboundMessagingcampaign, resp, getErr := outboundApi.GetOutboundMessagingcampaign(d.Id())
 		if getErr != nil {
@@ -293,10 +293,10 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("Reading Outbound Messagingcampaign %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkmessagingcampaign, resp, getErr := outboundApi.GetOutboundMessagingcampaign(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Messagingcampaign %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Messagingcampaign %s: %s", d.Id(), getErr))
@@ -355,7 +355,7 @@ func deleteOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Messagingcampaign")
 		_, resp, err := outboundApi.DeleteOutboundMessagingcampaign(d.Id())
 		if err != nil {
@@ -367,10 +367,10 @@ func deleteOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := outboundApi.GetOutboundMessagingcampaign(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Outbound Messagingcampaign deleted
 				log.Printf("Deleted Outbound Messagingcampaign %s", d.Id())
 				return nil

@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourcePhoneBaseSettings(t *testing.T) {
@@ -101,7 +101,7 @@ func testVerifyPhoneBaseSettingsDestroyed(state *terraform.State) error {
 		phoneBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(rs.Primary.ID)
 		if phoneBaseSettings != nil {
 			return fmt.Errorf("PhoneBaseSettings (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// PhoneBaseSettings not found as expected
 			continue
 		} else {

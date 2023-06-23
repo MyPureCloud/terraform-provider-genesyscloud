@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -157,7 +157,7 @@ func getAllCampaignRules(_ context.Context, clientConfig *platformclientv2.Confi
 
 func outboundCampaignRuleExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllCampaignRules),
+		GetResourcesFunc: GetAllWithPooledClient(getAllCampaignRules),
 		RefAttrs: map[string]*RefAttrSettings{
 			`campaign_rule_actions.campaign_rule_action_entities.campaign_ids`: {
 				RefType: "genesyscloud_outbound_campaign",
@@ -179,10 +179,10 @@ func resourceOutboundCampaignRule() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound campaign rule`,
 
-		CreateContext: createWithPooledClient(createOutboundCampaignRule),
-		ReadContext:   readWithPooledClient(readOutboundCampaignRule),
-		UpdateContext: updateWithPooledClient(updateOutboundCampaignRule),
-		DeleteContext: deleteWithPooledClient(deleteOutboundCampaignRule),
+		CreateContext: CreateWithPooledClient(createOutboundCampaignRule),
+		ReadContext:   ReadWithPooledClient(readOutboundCampaignRule),
+		UpdateContext: UpdateWithPooledClient(updateOutboundCampaignRule),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundCampaignRule),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -220,7 +220,7 @@ func resourceOutboundCampaignRule() *schema.Resource {
 				Type:        schema.TypeBool,
 			},
 			`enabled`: {
-				Description: `Whether or not this campaign rule is currently enabled. Required on updates.`,
+				Description: `Whether or not this campaign rule is currently enabled.`,
 				Optional:    true,
 				Default:     false,
 				Type:        schema.TypeBool,
@@ -246,12 +246,15 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		CampaignRuleConditions: buildOutboundCampaignRuleConditionSlice(campaignRuleConditions),
 		CampaignRuleActions:    buildOutboundCampaignRuleActionSlice(campaignRuleActions),
 		MatchAnyConditions:     &matchAnyConditions,
-		Enabled:                &enabled,
 	}
 
 	if name != "" {
 		sdkCampaignRule.Name = &name
 	}
+
+	// All campaign rules have to be created in an "off" state to start out with
+	defaultStatus := false
+	sdkCampaignRule.Enabled = &defaultStatus
 
 	log.Printf("Creating Outbound Campaign Rule %s", name)
 	outboundCampaignRule, _, err := outboundApi.PostOutboundCampaignrules(sdkCampaignRule)
@@ -260,8 +263,17 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	d.SetId(*outboundCampaignRule.Id)
-
 	log.Printf("Created Outbound Campaign Rule %s %s", name, *outboundCampaignRule.Id)
+
+	// Campaign rules can be enabled after creation
+	if enabled {
+		d.Set("enabled", enabled)
+		diag := updateOutboundCampaignRule(ctx, d, meta)
+		if diag != nil {
+			return diag
+		}
+	}
+
 	return readOutboundCampaignRule(ctx, d, meta)
 }
 
@@ -288,7 +300,7 @@ func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	log.Printf("Updating Outbound Campaign Rule %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Campaign Rule version
 		outboundCampaignRule, resp, getErr := outboundApi.GetOutboundCampaignrule(d.Id())
 		if getErr != nil {
@@ -315,10 +327,10 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Reading Outbound Campaign Rule %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkCampaignRule, resp, getErr := outboundApi.GetOutboundCampaignrule(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("failed to read Outbound Campaign Rule %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Campaign Rule %s: %s", d.Id(), getErr))
@@ -354,7 +366,18 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	ruleEnabled := d.Get("enabled").(bool)
+	if ruleEnabled {
+		// Have to disable rule before we can delete
+		log.Printf("Disabling Outbound Campaign Rule")
+		d.Set("enabled", false)
+		diagErr := updateOutboundCampaignRule(ctx, d, meta)
+		if diagErr != nil {
+			return diagErr
+		}
+	}
+
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Campaign Rule")
 		resp, err := outboundApi.DeleteOutboundCampaignrule(d.Id())
 		if err != nil {
@@ -366,10 +389,10 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := outboundApi.GetOutboundCampaignrule(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Outbound Campaign Rule deleted
 				log.Printf("Deleted Outbound Campaign Rule %s", d.Id())
 				return nil

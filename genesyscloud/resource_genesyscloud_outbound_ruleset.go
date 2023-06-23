@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -246,10 +246,10 @@ func resourceOutboundRuleset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound ruleset`,
 
-		CreateContext: createWithPooledClient(createOutboundRuleset),
-		ReadContext:   readWithPooledClient(readOutboundRuleset),
-		UpdateContext: updateWithPooledClient(updateOutboundRuleset),
-		DeleteContext: deleteWithPooledClient(deleteOutboundRuleset),
+		CreateContext: CreateWithPooledClient(createOutboundRuleset),
+		ReadContext:   ReadWithPooledClient(readOutboundRuleset),
+		UpdateContext: UpdateWithPooledClient(updateOutboundRuleset),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundRuleset),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -305,7 +305,7 @@ func getAllOutboundRuleset(_ context.Context, clientConfig *platformclientv2.Con
 
 func outboundRulesetExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllOutboundRuleset),
+		GetResourcesFunc: GetAllWithPooledClient(getAllOutboundRuleset),
 		RefAttrs: map[string]*RefAttrSettings{
 			"contact_list_id": {
 				RefType: "genesyscloud_outbound_contact_list",
@@ -371,7 +371,7 @@ func updateOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	log.Printf("Updating Outbound Ruleset %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Ruleset version
 		outboundRuleset, resp, getErr := outboundApi.GetOutboundRuleset(d.Id())
 		if getErr != nil {
@@ -398,10 +398,10 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 
 	log.Printf("Reading Outbound Ruleset %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkruleset, resp, getErr := outboundApi.GetOutboundRuleset(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Ruleset %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Ruleset %s: %s", d.Id(), getErr))
@@ -432,7 +432,7 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Ruleset")
 		resp, err := outboundApi.DeleteOutboundRuleset(d.Id())
 		if err != nil {
@@ -444,10 +444,10 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := outboundApi.GetOutboundRuleset(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Outbound Ruleset deleted
 				log.Printf("Deleted Outbound Ruleset %s", d.Id())
 				return nil

@@ -26,6 +26,7 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     enabled             = true
     allow_agent_control = true
     mask_selectors      = [".my-class", "#my-id"]
+    readonly_selectors  = [".my-class", "#my-id"]
   }
   journey_events {
     enabled                   = true

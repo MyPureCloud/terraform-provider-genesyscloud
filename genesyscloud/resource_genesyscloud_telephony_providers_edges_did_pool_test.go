@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 type didPoolStruct struct {
@@ -24,12 +24,15 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
 	didPoolStartPhoneNumber1 := "+14175540014"
 	didPoolEndPhoneNumber1 := "+14175540015"
-	err := authorizeSdk()
-	if err != nil {
+	if err := authorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
-	deleteDidPoolWithNumber(didPoolStartPhoneNumber1)
-	deleteDidPoolWithNumber(didPoolEndPhoneNumber1)
+	if err := deleteDidPoolWithNumber(didPoolStartPhoneNumber1); err != nil {
+		t.Fatalf("error deleting did pool start number: %v", err)
+	}
+	if err := deleteDidPoolWithNumber(didPoolEndPhoneNumber1); err != nil {
+		t.Fatalf("error deleting did pool end number: %v", err)
+	}
 
 	didPoolDescription1 := "Test description"
 	didPoolComments1 := "Test comments"
@@ -142,7 +145,7 @@ func testVerifyDidPoolsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("DID Pool (%s) still exists", rs.Primary.ID)
 		}
 
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// DID pool not found as expected
 			continue
 		}

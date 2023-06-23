@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -105,7 +105,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	) + generateRoutingWrapupcodeResource(
 		wrapupCodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
-	) + generateFlowResource(
+	) + GenerateFlowResource(
 		"flow",
 		outboundFlowFilePath,
 		"",
@@ -458,7 +458,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 	) + generateRoutingWrapupcodeResource(
 		wrapupcodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
-	) + generateFlowResource(
+	) + GenerateFlowResource(
 		flowResourceId,
 		outboundFlowFilePath,
 		"",
@@ -667,7 +667,8 @@ data "genesyscloud_auth_division_home" "home" {}
 				// Add contacts to the contact list (because we have access to the state and can pull out the contactlist ID to pass to the API)
 				Check: addContactsToContactList,
 			},
-			// Now, we create the outbound campaign and it should stay running because it has contacts to call
+			// Now, we create the outbound campaign and it should stay running because it has contacts to call. We leave it running to test
+			// the destroy command takes care of turning it off before deleting.
 			{
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
@@ -688,44 +689,16 @@ data "genesyscloud_auth_division_home" "home" {}
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "site_id",
+						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "call_analysis_response_set_id",
+						"genesyscloud_outbound_callanalysisresponseset."+carResourceId, "id"),
 					verifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_campaign."+resourceId, "campaign_status", []string{"on", "complete"}),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
-						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "site_id",
-						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "call_analysis_response_set_id",
-						"genesyscloud_outbound_callanalysisresponseset."+carResourceId, "id"),
 				),
 			},
-			{
-				Config: fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-`) + generateOutboundCampaignBasic(
-					resourceId,
-					name,
-					contactListResourceId,
-					siteId,
-					emergencyNumber,
-					carResourceId,
-					strconv.Quote("off"),
-					outboundFlowFilePath,
-					flowResourceId,
-					flowName,
-					"${data.genesyscloud_auth_division_home.home.name}",
-					locationResourceId,
-					wrapupcodeResourceId,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceId, "name", name),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_id",
-						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "site_id",
-						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "call_analysis_response_set_id",
-						"genesyscloud_outbound_callanalysisresponseset."+carResourceId, "id"),
-					verifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_campaign."+resourceId, "campaign_status", []string{"off", "complete"}),
-				),
-			},
+			// Don't turn campaign back off to ensure campaign can be destroyed properly by turning it off within the destroy handler
 			{
 				// Import/Read
 				ResourceName:            "genesyscloud_outbound_campaign." + resourceId,
@@ -1147,7 +1120,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 			callAnalysisResponseSet = generateRoutingWrapupcodeResource(
 				wrapUpCodeResourceId,
 				"wrapupcode "+uuid.NewString(),
-			) + generateFlowResource(
+			) + GenerateFlowResource(
 				flowResourceId,
 				outboundFlowFilePath,
 				"",
@@ -1296,7 +1269,7 @@ func testVerifyOutboundCampaignDestroyed(state *terraform.State) error {
 		campaign, resp, err := outboundAPI.GetOutboundCampaign(rs.Primary.ID)
 		if campaign != nil {
 			return fmt.Errorf("campaign (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// campaign not found as expected
 			continue
 		} else {

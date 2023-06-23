@@ -1,3 +1,6 @@
+//go:build unit
+// +build unit
+
 package architect_api
 
 import (
@@ -6,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestUploadIvrDnisChunksSuccess(t *testing.T) {

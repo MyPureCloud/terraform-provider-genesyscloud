@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceResponseManagamentResponseAsset() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Response Management Response Assets. Select a response asset by name.",
-		ReadContext: readWithPooledClient(dataSourceResponseManagamentResponseAssetRead),
+		ReadContext: ReadWithPooledClient(dataSourceResponseManagamentResponseAssetRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Response asset name.",
@@ -45,7 +45,7 @@ func dataSourceResponseManagamentResponseAssetRead(ctx context.Context, d *schem
 	sdkConfig := m.(*ProviderMeta).ClientConfig
 	respManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		responseData, _, getErr := respManagementApi.PostResponsemanagementResponseassetsSearch(body, nil)
 		if getErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting response asset %s: %s", name, getErr))

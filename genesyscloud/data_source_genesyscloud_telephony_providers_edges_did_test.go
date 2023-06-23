@@ -20,13 +20,16 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 		didDataRes              = "didData"
 	)
 
-	err := authorizeSdk()
-	if err != nil {
+	if err := authorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	deleteIvrStartingWith("test-config")
-	deleteDidPoolWithNumber(didPoolStartPhoneNumber)
-	deleteDidPoolWithNumber(didPoolEndPhoneNumber)
+	if err := deleteDidPoolWithNumber(didPoolStartPhoneNumber); err != nil {
+		t.Fatalf("error deleting did pool start number: %v", err)
+	}
+	if err := deleteDidPoolWithNumber(didPoolEndPhoneNumber); err != nil {
+		t.Fatalf("error deleting did pool end number: %v", err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },

@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceIntegrationCredential() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud integration credential. Select an integration credential by name",
-		ReadContext: readWithPooledClient(dataSourceIntegrationCredentialRead),
+		ReadContext: ReadWithPooledClient(dataSourceIntegrationCredentialRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the integration credential",
@@ -31,7 +31,7 @@ func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.Resource
 
 	credName := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			integrationCredentials, _, getErr := integrationAPI.GetIntegrationsCredentials(pageNum, pageSize)

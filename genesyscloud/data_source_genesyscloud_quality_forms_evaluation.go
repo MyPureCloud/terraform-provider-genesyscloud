@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceQualityFormsEvaluations() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Evaluation Forms. Select an evaluations form by name",
-		ReadContext: readWithPooledClient(dataSourceQualityFormsEvaluationsRead),
+		ReadContext: ReadWithPooledClient(dataSourceQualityFormsEvaluationsRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Evaluation Form name.",
@@ -31,7 +31,7 @@ func dataSourceQualityFormsEvaluationsRead(ctx context.Context, d *schema.Resour
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			form, _, getErr := qualityAPI.GetQualityForms(pageSize, pageNum, "", "", "", "", name, "")

@@ -11,17 +11,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func resourceResponseManagamentResponseAsset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud responsemanagement response asset`,
 
-		CreateContext: createWithPooledClient(createResponsemanagementResponseAsset),
-		ReadContext:   readWithPooledClient(readResponsemanagementResponseAsset),
-		UpdateContext: updateWithPooledClient(updateResponsemanagementResponseAsset),
-		DeleteContext: deleteWithPooledClient(deleteResponsemanagementResponseAsset),
+		CreateContext: CreateWithPooledClient(createResponsemanagementResponseAsset),
+		ReadContext:   ReadWithPooledClient(readResponsemanagementResponseAsset),
+		UpdateContext: UpdateWithPooledClient(updateResponsemanagementResponseAsset),
+		DeleteContext: DeleteWithPooledClient(deleteResponsemanagementResponseAsset),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -91,10 +91,10 @@ func readResponsemanagementResponseAsset(ctx context.Context, d *schema.Resource
 
 	log.Printf("Reading Responsemanagement response asset %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkAsset, resp, getErr := responseManagementApi.GetResponsemanagementResponseasset(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
@@ -155,7 +155,7 @@ func deleteResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Responsemanagement response asset")
 		resp, err := responseManagementApi.DeleteResponsemanagementResponseasset(d.Id())
 		if err != nil {
@@ -167,10 +167,10 @@ func deleteResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 		return diagErr
 	}
 	time.Sleep(20 * time.Second)
-	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := responseManagementApi.GetResponsemanagementResponseasset(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Response asset deleted
 				log.Printf("Deleted Responsemanagement response asset %s", d.Id())
 				return nil

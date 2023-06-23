@@ -11,17 +11,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func resourceResponsemanagementLibrary() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud responsemanagement library`,
 
-		CreateContext: createWithPooledClient(createResponsemanagementLibrary),
-		ReadContext:   readWithPooledClient(readResponsemanagementLibrary),
-		UpdateContext: updateWithPooledClient(updateResponsemanagementLibrary),
-		DeleteContext: deleteWithPooledClient(deleteResponsemanagementLibrary),
+		CreateContext: CreateWithPooledClient(createResponsemanagementLibrary),
+		ReadContext:   ReadWithPooledClient(readResponsemanagementLibrary),
+		UpdateContext: UpdateWithPooledClient(updateResponsemanagementLibrary),
+		DeleteContext: DeleteWithPooledClient(deleteResponsemanagementLibrary),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -42,7 +42,7 @@ func getAllResponsemanagementLibrary(_ context.Context, clientConfig *platformcl
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		sdklibraryentitylisting, _, getErr := responseManagementApi.GetResponsemanagementLibraries(pageNum, pageSize, "")
+		sdklibraryentitylisting, _, getErr := responseManagementApi.GetResponsemanagementLibraries(pageNum, pageSize, "", "")
 		if getErr != nil {
 			return nil, diag.Errorf("Error requesting page of Responsemanagement Library: %s", getErr)
 		}
@@ -61,7 +61,7 @@ func getAllResponsemanagementLibrary(_ context.Context, clientConfig *platformcl
 
 func responsemanagementLibraryExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllResponsemanagementLibrary),
+		GetResourcesFunc: GetAllWithPooledClient(getAllResponsemanagementLibrary),
 	}
 }
 
@@ -102,7 +102,7 @@ func updateResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	}
 
 	log.Printf("Updating Responsemanagement Library %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Responsemanagement Library version
 		responsemanagementLibrary, resp, getErr := responseManagementApi.GetResponsemanagementLibrary(d.Id())
 		if getErr != nil {
@@ -129,10 +129,10 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("Reading Responsemanagement Library %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdklibrary, resp, getErr := responseManagementApi.GetResponsemanagementLibrary(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Responsemanagement Library %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Responsemanagement Library %s: %s", d.Id(), getErr))
@@ -153,7 +153,7 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Responsemanagement Library")
 		resp, err := responseManagementApi.DeleteResponsemanagementLibrary(d.Id())
 		if err != nil {
@@ -165,10 +165,10 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := responseManagementApi.GetResponsemanagementLibrary(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Responsemanagement Library deleted
 				log.Printf("Deleted Responsemanagement Library %s", d.Id())
 				return nil

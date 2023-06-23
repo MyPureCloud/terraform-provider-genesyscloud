@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func getAllCredentials(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -42,7 +42,7 @@ func getAllCredentials(_ context.Context, clientConfig *platformclientv2.Configu
 
 func credentialExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllCredentials),
+		GetResourcesFunc: GetAllWithPooledClient(getAllCredentials),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No Reference
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"fields": resourceCredential().Schema["fields"],
@@ -54,10 +54,10 @@ func resourceCredential() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Credential",
 
-		CreateContext: createWithPooledClient(createCredential),
-		ReadContext:   readWithPooledClient(readCredential),
-		UpdateContext: updateWithPooledClient(updateCredential),
-		DeleteContext: deleteWithPooledClient(deleteCredential),
+		CreateContext: CreateWithPooledClient(createCredential),
+		ReadContext:   ReadWithPooledClient(readCredential),
+		UpdateContext: UpdateWithPooledClient(updateCredential),
+		DeleteContext: DeleteWithPooledClient(deleteCredential),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -119,10 +119,10 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading credential %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentCredential, resp, getErr := integrationAPI.GetIntegrationsCredential(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read credential %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read credential %s: %s", d.Id(), getErr))
@@ -174,10 +174,10 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 		return diag.Errorf("Failed to delete the credential %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := integrationAPI.GetIntegrationsCredential(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Integration credential deleted
 				log.Printf("Deleted Integration credential %s", d.Id())
 				return nil

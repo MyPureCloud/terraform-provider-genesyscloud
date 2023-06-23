@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceExternalContacts(t *testing.T) {
@@ -264,7 +264,7 @@ func testVerifyContactDestroyed(state *terraform.State) error {
 		externalContact, resp, err := externalAPI.GetExternalcontactsContact(rs.Primary.ID, nil)
 		if externalContact != nil {
 			return fmt.Errorf("External contact (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// External Contact not found as expected
 			continue
 		} else {

@@ -26,7 +26,7 @@ func TestAccDataSourceFlow(t *testing.T) {
 		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					flowResource,
 					filePath,
 					inboundcallConfig,

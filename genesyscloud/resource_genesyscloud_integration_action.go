@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -102,7 +102,7 @@ func getAllIntegrationActions(_ context.Context, clientConfig *platformclientv2.
 
 func integrationActionExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllIntegrationActions),
+		GetResourcesFunc: GetAllWithPooledClient(getAllIntegrationActions),
 		RefAttrs: map[string]*RefAttrSettings{
 			"integration_id": {RefType: "genesyscloud_integration"},
 		},
@@ -114,10 +114,10 @@ func resourceIntegrationAction() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/",
 
-		CreateContext: createWithPooledClient(createIntegrationAction),
-		ReadContext:   readWithPooledClient(readIntegrationAction),
-		UpdateContext: updateWithPooledClient(updateIntegrationAction),
-		DeleteContext: deleteWithPooledClient(deleteIntegrationAction),
+		CreateContext: CreateWithPooledClient(createIntegrationAction),
+		ReadContext:   ReadWithPooledClient(readIntegrationAction),
+		UpdateContext: UpdateWithPooledClient(updateIntegrationAction),
+		DeleteContext: DeleteWithPooledClient(deleteIntegrationAction),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -203,7 +203,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		return diagErr
 	}
 
-	diagErr = retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr = RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		action, resp, err := sdkPostIntegrationAction(&IntegrationAction{
 			Name:          &name,
 			Category:      &category,
@@ -233,10 +233,10 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading integration action %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		action, resp, getErr := sdkGetIntegrationAction(d.Id(), integAPI)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
@@ -245,7 +245,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		// Retrieve config request/response templates
 		reqTemp, resp, getErr := sdkGetIntegrationActionTemplate(d.Id(), "requesttemplate.vm", integAPI)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				d.SetId("")
 				return nil
 			}
@@ -254,7 +254,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 		successTemp, resp, getErr := sdkGetIntegrationActionTemplate(d.Id(), "successtemplate.vm", integAPI)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				d.SetId("")
 				return nil
 			}
@@ -340,7 +340,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Updating integration action %s", name)
 
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest action version to send with PATCH
 		action, resp, getErr := sdkGetIntegrationAction(d.Id(), integAPI)
 		if getErr != nil {
@@ -375,7 +375,7 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Deleting integration action %s", name)
 	resp, err := integAPI.DeleteIntegrationsAction(d.Id())
 	if err != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			// Parent integration was probably deleted which caused the action to be deleted
 			log.Printf("Integration action already deleted %s", d.Id())
 			return nil
@@ -383,10 +383,10 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete Integration action %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := sdkGetIntegrationAction(d.Id(), integAPI)
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Integration action deleted
 				log.Printf("Deleted Integration action %s", d.Id())
 				return nil

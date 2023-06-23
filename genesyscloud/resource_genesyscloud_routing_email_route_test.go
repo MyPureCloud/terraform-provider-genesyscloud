@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
@@ -327,7 +327,7 @@ func testVerifyRoutingEmailRouteDestroyed(state *terraform.State) error {
 		for pageNum := 1; ; pageNum++ {
 			routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(rs.Primary.Attributes["domain_id"], 100, pageNum, "")
 			if getErr != nil {
-				if isStatus404(resp) {
+				if IsStatus404(resp) {
 					// Domain not found
 					continue
 				}

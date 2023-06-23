@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceOutboundContactListBasic(t *testing.T) {
@@ -406,7 +406,7 @@ func testVerifyContactListDestroyed(state *terraform.State) error {
 		contactList, resp, err := outboundAPI.GetOutboundContactlist(rs.Primary.ID, false, false)
 		if contactList != nil {
 			return fmt.Errorf("contact list (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Contact list not found as expected
 			continue
 		} else {

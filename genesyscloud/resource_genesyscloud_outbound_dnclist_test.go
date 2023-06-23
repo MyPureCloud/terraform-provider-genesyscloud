@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
@@ -341,7 +341,7 @@ func testVerifyDncListDestroyed(state *terraform.State) error {
 		dncList, resp, err := outboundAPI.GetOutboundDnclist(rs.Primary.ID, false, false)
 		if dncList != nil {
 			return fmt.Errorf("dnc list (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// dnc list not found as expected
 			continue
 		} else {

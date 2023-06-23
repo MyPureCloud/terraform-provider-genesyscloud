@@ -25,6 +25,10 @@ data "genesyscloud_telephony_providers_edges_site" "site" {
 
 - `name` (String) Site name.
 
+### Optional
+
+- `managed` (Boolean) Return entities that are managed by Genesys Cloud. Defaults to `false`.
+
 ### Read-Only
 
 - `id` (String) The ID of this resource.

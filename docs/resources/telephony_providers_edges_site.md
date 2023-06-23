@@ -96,6 +96,8 @@ resource "genesyscloud_telephony_providers_edges_site" "site" {
 - `media_regions_use_latency_based` (Boolean) Latency based on media region Defaults to `false`.
 - `number_plans` (Block List) Number plans for the site. The order of the plans in the resource file determines the priority of the plans. Specifying number plans will not result in the default plans being overwritten. (see [below for nested schema](#nestedblock--number_plans))
 - `outbound_routes` (Block List) Outbound Routes for the site. The default outbound route will not be delete if routes are specified (see [below for nested schema](#nestedblock--outbound_routes))
+- `primary_sites` (List of String) Used for primary phone edge assignment on physical edges only.  List of primary sites the phones can be assigned to. If no primary_sites are defined, the site id for this site will be used as the primary site id.
+- `secondary_sites` (List of String) Used for secondary phone edge assignment on physical edges only.  List of secondary sites the phones can be assigned to.  If no primary_sites or secondary_sites are defined then the current site will defined as primary and secondary.
 
 ### Read-Only
 

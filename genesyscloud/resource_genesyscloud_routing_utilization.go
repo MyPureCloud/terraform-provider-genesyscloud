@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -69,7 +69,7 @@ func getAllRoutingUtilization(_ context.Context, _ *platformclientv2.Configurati
 
 func routingUtilizationExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllRoutingUtilization),
+		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingUtilization),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"maximum_capacity"},
 	}
@@ -79,10 +79,10 @@ func resourceRoutingUtilization() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Org-wide Routing Utilization Settings.",
 
-		CreateContext: createWithPooledClient(createRoutingUtilization),
-		ReadContext:   readWithPooledClient(readRoutingUtilization),
-		UpdateContext: updateWithPooledClient(updateRoutingUtilization),
-		DeleteContext: deleteWithPooledClient(deleteRoutingUtilization),
+		CreateContext: CreateWithPooledClient(createRoutingUtilization),
+		ReadContext:   ReadWithPooledClient(readRoutingUtilization),
+		UpdateContext: UpdateWithPooledClient(updateRoutingUtilization),
+		DeleteContext: DeleteWithPooledClient(deleteRoutingUtilization),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -147,10 +147,10 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Routing Utilization")
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		settings, resp, getErr := routingAPI.GetRoutingUtilization()
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", getErr))

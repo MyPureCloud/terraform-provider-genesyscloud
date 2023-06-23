@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceWebDeploymentsConfiguration() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Web Deployments Configurations. Select a configuration by name.",
-		ReadContext: readWithPooledClient(dataSourceConfigurationRead),
+		ReadContext: ReadWithPooledClient(dataSourceConfigurationRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the configuration",
@@ -36,7 +36,7 @@ func dataSourceConfigurationRead(ctx context.Context, d *schema.ResourceData, m 
 
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		configs, _, err := api.GetWebdeploymentsConfigurations(false)
 
 		if err != nil {

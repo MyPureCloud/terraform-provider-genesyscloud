@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceIdpPing(t *testing.T) {
@@ -148,7 +148,7 @@ func testVerifyIdpPingDestroyed(state *terraform.State) error {
 		ping, resp, err := idpAPI.GetIdentityprovidersPing()
 		if ping != nil {
 			return fmt.Errorf("Ping still exists")
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Ping not found as expected
 			continue
 		} else {

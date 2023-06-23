@@ -4,25 +4,25 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func resourceOutboundSequence() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound sequence`,
 
-		CreateContext: createWithPooledClient(createOutboundSequence),
-		ReadContext:   readWithPooledClient(readOutboundSequence),
-		UpdateContext: updateWithPooledClient(updateOutboundSequence),
-		DeleteContext: deleteWithPooledClient(deleteOutboundSequence),
+		CreateContext: CreateWithPooledClient(createOutboundSequence),
+		ReadContext:   ReadWithPooledClient(readOutboundSequence),
+		UpdateContext: UpdateWithPooledClient(updateOutboundSequence),
+		DeleteContext: DeleteWithPooledClient(deleteOutboundSequence),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -40,7 +40,7 @@ func resourceOutboundSequence() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`status`: {
-				Description:  `The current status of the CampaignSequence. A CampaignSequence can be turned 'on' or 'off'.`,
+				Description:  `The current status of the CampaignSequence. A CampaignSequence can be turned 'on' or 'off' (default). Changing from "on" to "off" will cause the current sequence to drop and be recreated with a new ID.`,
 				Optional:     true,
 				Computed:     true,
 				Type:         schema.TypeString,
@@ -55,6 +55,9 @@ func resourceOutboundSequence() *schema.Resource {
 				Type:        schema.TypeBool,
 			},
 		},
+		CustomizeDiff: customdiff.ForceNewIfChange("status", func(ctx context.Context, old, new, meta any) bool {
+			return new.(string) == "off" && (old.(string) == "on" || old.(string) == "complete")
+		}),
 	}
 }
 
@@ -74,6 +77,9 @@ func getAllOutboundSequence(_ context.Context, clientConfig *platformclientv2.Co
 		}
 
 		for _, entity := range *sdkcampaignsequenceentitylisting.Entities {
+			if *entity.Status != "off" && *entity.Status != "on" {
+				*entity.Status = "off"
+			}
 			resources[*entity.Id] = &ResourceMeta{Name: *entity.Name}
 		}
 	}
@@ -83,7 +89,7 @@ func getAllOutboundSequence(_ context.Context, clientConfig *platformclientv2.Co
 
 func outboundSequenceExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllOutboundSequence),
+		GetResourcesFunc: GetAllWithPooledClient(getAllOutboundSequence),
 		RefAttrs: map[string]*RefAttrSettings{
 			`campaign_ids`: {
 				RefType: "genesyscloud_outbound_campaign",
@@ -108,9 +114,10 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	if name != "" {
 		sdkcampaignsequence.Name = &name
 	}
-	if status != "" {
-		sdkcampaignsequence.Status = &status
-	}
+
+	// All campaigns sequences have to be created in an "off" state to start out with
+	defaultStatus := "off"
+	sdkcampaignsequence.Status = &defaultStatus
 
 	log.Printf("Creating Outbound Sequence %s", name)
 	outboundSequence, _, err := outboundApi.PostOutboundSequences(sdkcampaignsequence)
@@ -119,8 +126,17 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	d.SetId(*outboundSequence.Id)
-
 	log.Printf("Created Outbound Sequence %s %s", name, *outboundSequence.Id)
+
+	// Campaigns sequences can be enabled after creation
+	if status == "on" {
+		d.Set("status", status)
+		diag := updateOutboundSequence(ctx, d, meta)
+		if diag != nil {
+			return diag
+		}
+	}
+
 	return readOutboundSequence(ctx, d, meta)
 }
 
@@ -145,7 +161,7 @@ func updateOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	log.Printf("Updating Outbound Sequence %s", name)
-	diagErr := retryWhen(isVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Sequence version
 		outboundSequence, resp, getErr := outboundApi.GetOutboundSequence(d.Id())
 		if getErr != nil {
@@ -172,10 +188,10 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Reading Outbound Sequence %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		sdkcampaignsequence, resp, getErr := outboundApi.GetOutboundSequence(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
@@ -206,7 +222,7 @@ func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
-	diagErr := retryWhen(isStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Sequence")
 		resp, err := outboundApi.DeleteOutboundSequence(d.Id())
 		if err != nil {
@@ -218,10 +234,10 @@ func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 		return diagErr
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := outboundApi.GetOutboundSequence(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Outbound Sequence deleted
 				log.Printf("Deleted Outbound Sequence %s", d.Id())
 				return nil

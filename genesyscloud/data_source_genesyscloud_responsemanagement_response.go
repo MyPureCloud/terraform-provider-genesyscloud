@@ -8,14 +8,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceResponsemanagementResponse() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Responsemanagement Response. Select a Responsemanagement Response by name.`,
 
-		ReadContext: readWithPooledClient(dataSourceResponsemanagementResponseRead),
+		ReadContext: ReadWithPooledClient(dataSourceResponsemanagementResponseRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -42,7 +42,7 @@ func dataSourceResponsemanagementResponseRead(ctx context.Context, d *schema.Res
 	name := d.Get("name").(string)
 	library := d.Get("library_id").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			sdkresponseentitylisting, _, getErr := responseManagementApi.GetResponsemanagementResponses(library, pageNum, pageSize, "")

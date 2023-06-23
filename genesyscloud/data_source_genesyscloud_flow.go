@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceFlow() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Flows. Select a flow by name.",
-		ReadContext: readWithPooledClient(dataSourceFlowRead),
+		ReadContext: ReadWithPooledClient(dataSourceFlowRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Flow name.",
@@ -32,7 +32,7 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 	name := d.Get("name").(string)
 
 	// Query flow by name. Retry in case search has not yet indexed the flow.
-	return withRetries(ctx, 5*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 5*time.Second, func() *resource.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			flows, _, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, false, "", "", nil)

@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
@@ -122,7 +122,7 @@ func testVerifySmsAddressDestroyed(state *terraform.State) error {
 		address, resp, err := routingAPI.GetRoutingSmsAddress(rs.Primary.ID)
 		if address != nil {
 			return fmt.Errorf("address (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Address not found as expected
 			continue
 		} else {

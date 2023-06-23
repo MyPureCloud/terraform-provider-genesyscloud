@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceResponseManagementLibrary(t *testing.T) {
@@ -62,14 +62,14 @@ func generateResponseManagementLibraryResource(
 func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error {
 	responseAPI := platformclientv2.NewResponseManagementApi()
 
-	diagErr := withRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "genesyscloud_responsemanagement_library" {
 				continue
 			}
 			_, resp, err := responseAPI.GetResponsemanagementLibrary(rs.Primary.ID)
 			if err != nil {
-				if isStatus404(resp) {
+				if IsStatus404(resp) {
 					continue
 				}
 				return resource.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))

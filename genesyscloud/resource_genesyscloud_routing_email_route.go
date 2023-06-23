@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -53,7 +53,7 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 				const pageSize = 100
 				routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(*domain.Id, pageSize, pageNum, "")
 				if getErr != nil {
-					if isStatus404(resp) {
+					if IsStatus404(resp) {
 						// Domain not found
 						break
 					}
@@ -77,7 +77,7 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 
 func routingEmailRouteExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllRoutingEmailRoutes),
+		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingEmailRoutes),
 		RefAttrs: map[string]*RefAttrSettings{
 			"domain_id":                     {RefType: "genesyscloud_routing_email_domain"},
 			"queue_id":                      {RefType: "genesyscloud_routing_queue"},
@@ -98,10 +98,10 @@ func resourceRoutingEmailRoute() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Email Domain Route",
 
-		CreateContext: createWithPooledClient(createRoutingEmailRoute),
-		ReadContext:   readWithPooledClient(readRoutingEmailRoute),
-		UpdateContext: updateWithPooledClient(updateRoutingEmailRoute),
-		DeleteContext: deleteWithPooledClient(deleteRoutingEmailRoute),
+		CreateContext: CreateWithPooledClient(createRoutingEmailRoute),
+		ReadContext:   ReadWithPooledClient(readRoutingEmailRoute),
+		UpdateContext: UpdateWithPooledClient(updateRoutingEmailRoute),
+		DeleteContext: DeleteWithPooledClient(deleteRoutingEmailRoute),
 		Importer: &schema.ResourceImporter{
 			StateContext: importRoutingEmailRoute,
 		},
@@ -277,13 +277,13 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 
 	// The normal GET route API has a long cache TTL (5 minutes) which can result in stale data.
 	// This can be bypassed by issuing a domain query instead.
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		var route *platformclientv2.Inboundroute
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			routes, resp, getErr := routingAPI.GetRoutingEmailDomainRoutes(domainID, pageSize, pageNum, "")
 			if getErr != nil {
-				if isStatus404(resp) {
+				if IsStatus404(resp) {
 					// Domain not found, so route also does not exist
 					d.SetId("")
 					return resource.RetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
@@ -456,10 +456,10 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete email route %s: %s", d.Id(), err)
 	}
 
-	return withRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		_, resp, err := routingAPI.GetRoutingEmailDomainRoute(domainID, d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// Routing email domain route deleted
 				log.Printf("Deleted Routing email domain route %s", d.Id())
 				return nil

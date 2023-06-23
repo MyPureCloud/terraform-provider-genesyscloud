@@ -51,6 +51,7 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     enabled             = true
     allow_agent_control = true
     mask_selectors      = [".my-class", "#my-id"]
+    readonly_selectors  = [".my-class", "#my-id"]
   }
   journey_events {
     enabled                   = true
@@ -130,11 +131,11 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
 - `languages` (List of String) A list of languages supported on the configuration.
 - `messenger` (Block List, Max: 1) Settings concerning messenger (see [below for nested schema](#nestedblock--messenger))
 - `status` (String) The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.
-- `version` (String) The version of the configuration.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `version` (String) The version of the configuration.
 
 <a id="nestedblock--cobrowse"></a>
 ### Nested Schema for `cobrowse`
@@ -144,6 +145,7 @@ Optional:
 - `allow_agent_control` (Boolean) Whether agent can take control over customer's screen or not
 - `enabled` (Boolean) Whether or not cobrowse is enabled
 - `mask_selectors` (List of String) List of CSS selectors which should be masked when screen sharing is active
+- `readonly_selectors` (List of String) List of CSS selectors which should be read-only when screen sharing is active
 
 
 <a id="nestedblock--journey_events"></a>

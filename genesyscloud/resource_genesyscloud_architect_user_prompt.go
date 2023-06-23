@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 type PromptAudioData struct {
@@ -739,7 +739,7 @@ func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configu
 
 func architectUserPromptExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllUserPrompts),
+		GetResourcesFunc: GetAllWithPooledClient(getAllUserPrompts),
 		RefAttrs:         map[string]*RefAttrSettings{}, // No references
 		CustomFileWriter: CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
@@ -752,10 +752,10 @@ func resourceArchitectUserPrompt() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud User Audio Prompt",
 
-		CreateContext: createWithPooledClient(createUserPrompt),
-		ReadContext:   readWithPooledClient(readUserPrompt),
-		UpdateContext: updateWithPooledClient(updateUserPrompt),
-		DeleteContext: deleteWithPooledClient(deleteUserPrompt),
+		CreateContext: CreateWithPooledClient(createUserPrompt),
+		ReadContext:   ReadWithPooledClient(readUserPrompt),
+		UpdateContext: UpdateWithPooledClient(updateUserPrompt),
+		DeleteContext: DeleteWithPooledClient(deleteUserPrompt),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -871,10 +871,10 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading User Prompt %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		userPrompt, resp, getErr := architectAPI.GetArchitectPrompt(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
@@ -971,7 +971,7 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 	log.Printf("Deleted user prompt %s", name)
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		_, resp, err := architectApi.GetArchitectPrompt(d.Id())
 		if err != nil {
 			if resp != nil && resp.StatusCode == 404 {

@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceKnowledgeV1DocumentBasic(t *testing.T) {
@@ -213,7 +213,7 @@ func testVerifyKnowledgeV1DocumentDestroyed(state *terraform.State) error {
 		knowledgeDocument, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, knowledgeBaseCoreLanguage1)
 		if knowledgeDocument != nil {
 			return fmt.Errorf("Knowledge document (%s) still exists", knowledgeDocumentId)
-		} else if isStatus404(resp) || isStatus400(resp) {
+		} else if IsStatus404(resp) || IsStatus400(resp) {
 			// Knowledge base document not found as expected
 			continue
 		} else {

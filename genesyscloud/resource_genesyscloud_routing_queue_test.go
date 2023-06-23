@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -195,7 +195,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 			{
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
 				Check: resource.ComposeTestCheckFunc(
-					getHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
+					GetHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
 				),
 			},
 		},
@@ -233,17 +233,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					queueFlowResource1,
 					queueFlowFilePath1,
 					queueFlowInboundcallConfig1,
 					false,
-				) + generateFlowResource(
+				) + GenerateFlowResource(
 					emailInQueueFlowResource1,
 					queueFlowFilePath2,
 					emailInQueueFlowInboundcallConfig2,
 					false,
-				) + generateFlowResource(
+				) + GenerateFlowResource(
 					messageInQueueFlowResource1,
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,
@@ -263,17 +263,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 			},
 			{
 				// Update the flows
-				Config: generateFlowResource(
+				Config: GenerateFlowResource(
 					queueFlowResource2,
 					queueFlowFilePath1,
 					queueFlowInboundcallConfig1,
 					false,
-				) + generateFlowResource(
+				) + GenerateFlowResource(
 					emailInQueueFlowResource2,
 					queueFlowFilePath2,
 					emailInQueueFlowInboundcallConfig2,
 					false,
-				) + generateFlowResource(
+				) + GenerateFlowResource(
 					messageInQueueFlowResource2,
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,
@@ -595,7 +595,7 @@ func testVerifyQueuesDestroyed(state *terraform.State) error {
 		queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID)
 		if queue != nil {
 			return fmt.Errorf("Queue (%s) still exists", rs.Primary.ID)
-		} else if isStatus404(resp) {
+		} else if IsStatus404(resp) {
 			// Queue not found as expected
 			continue
 		} else {

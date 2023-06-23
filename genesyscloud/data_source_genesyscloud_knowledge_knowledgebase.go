@@ -9,13 +9,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceKnowledgeKnowledgebase() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Knowledge Base. Select a knowledge base by name.",
-		ReadContext: readWithPooledClient(dataSourceKnowledgeKnowledgebaseRead),
+		ReadContext: ReadWithPooledClient(dataSourceKnowledgeKnowledgebaseRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Knowledge base name",
@@ -40,7 +40,7 @@ func dataSourceKnowledgeKnowledgebaseRead(ctx context.Context, d *schema.Resourc
 	coreLanguage := d.Get("core_language").(string)
 
 	// Find first non-deleted knowledge base by name. Retry in case new knowledge base is not yet indexed by search
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), name, coreLanguage, true, "", "")

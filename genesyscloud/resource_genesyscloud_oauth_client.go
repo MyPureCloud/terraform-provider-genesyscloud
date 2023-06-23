@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -60,7 +60,7 @@ func getAllOAuthClients(_ context.Context, clientConfig *platformclientv2.Config
 
 func oauthClientExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllOAuthClients),
+		GetResourcesFunc: GetAllWithPooledClient(getAllOAuthClients),
 		RefAttrs: map[string]*RefAttrSettings{
 			"roles.role_id":             {RefType: "genesyscloud_auth_role"},
 			"roles.division_id":         {RefType: "genesyscloud_auth_division", AltValues: []string{"*"}},
@@ -78,10 +78,10 @@ func resourceOAuthClient() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud OAuth Clients. See this page for detailed configuration information: https://help.mypurecloud.com/articles/create-an-oauth-client/",
 
-		CreateContext: createWithPooledClient(createOAuthClient),
-		ReadContext:   readWithPooledClient(readOAuthClient),
-		UpdateContext: updateWithPooledClient(updateOAuthClient),
-		DeleteContext: deleteWithPooledClient(deleteOAuthClient),
+		CreateContext: CreateWithPooledClient(createOAuthClient),
+		ReadContext:   ReadWithPooledClient(readOAuthClient),
+		UpdateContext: UpdateWithPooledClient(updateOAuthClient),
+		DeleteContext: DeleteWithPooledClient(deleteOAuthClient),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -220,10 +220,10 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading oauth client %s", d.Id())
 
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		client, resp, getErr := oauthAPI.GetOauthClient(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read oauth client %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read oauth client %s: %s", d.Id(), getErr))
@@ -346,10 +346,10 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diag.Errorf("Failed to delete oauth client %s: %s", name, err)
 	}
 
-	return withRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		oauthClient, resp, err := oauthAPI.GetOauthClient(d.Id())
 		if err != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				// OAuth client deleted
 				log.Printf("Deleted OAuth client %s", d.Id())
 				return nil

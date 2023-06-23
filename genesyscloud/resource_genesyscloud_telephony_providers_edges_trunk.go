@@ -11,17 +11,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func resourceTrunk() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Trunk. Created by assigning a trunk base settings to an edge or edge group",
 
-		CreateContext: createWithPooledClient(createTrunk),
-		ReadContext:   readWithPooledClient(readTrunk),
-		UpdateContext: updateWithPooledClient(updateTrunk),
-		DeleteContext: deleteWithPooledClient(deleteTrunk),
+		CreateContext: CreateWithPooledClient(createTrunk),
+		ReadContext:   ReadWithPooledClient(readTrunk),
+		UpdateContext: UpdateWithPooledClient(updateTrunk),
+		DeleteContext: DeleteWithPooledClient(deleteTrunk),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -62,7 +62,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	trunkBase, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingsId, true)
 	if getErr != nil {
-		if isStatus404(resp) {
+		if IsStatus404(resp) {
 			return nil
 		}
 		return diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
@@ -73,7 +73,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		edgeId := edgeIdI.(string)
 		edge, resp, getErr := edgesAPI.GetTelephonyProvidersEdge(edgeId, nil)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return nil
 			}
 			return diag.Errorf("Failed to read edge %s: %s", edgeId, getErr)
@@ -95,7 +95,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		edgeGroupId := edgeGroupIdI.(string)
 		edgeGroup, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(edgeGroupId, nil)
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return diag.Errorf("Failed to get edge group %s: %s", edgeGroupId, getErr)
 			}
 			return diag.Errorf("Failed to read edge group %s: %s", edgeGroupId, getErr)
@@ -161,10 +161,10 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading trunk %s", d.Id())
-	return withRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		trunk, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunk(d.Id())
 		if getErr != nil {
-			if isStatus404(resp) {
+			if IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
@@ -195,7 +195,7 @@ func deleteTrunk(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.
 
 func trunkExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: getAllWithPooledClient(getAllTrunks),
+		GetResourcesFunc: GetAllWithPooledClient(getAllTrunks),
 		RefAttrs: map[string]*RefAttrSettings{
 			"trunk_base_settings_id": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 			"edge_group_id":          {RefType: "genesyscloud_telephony_providers_edges_edge_group"},
@@ -211,12 +211,12 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	err := withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	err := WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			trunks, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
 			if getErr != nil {
-				if isStatus404(resp) {
+				if IsStatus404(resp) {
 					return resource.RetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
 				}
 				return resource.NonRetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))

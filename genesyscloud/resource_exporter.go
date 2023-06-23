@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -14,8 +15,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
 
+var resourceExporters map[string]*ResourceExporter
+var resourceExporterMapMutex = sync.RWMutex{}
+
+func init() {
+	resourceExporters = make(map[string]*ResourceExporter)
+}
+
+func RegisterExporter(exporterName string, resourceExporter *ResourceExporter) {
+	resourceMapMutex.Lock()
+	resourceExporters[exporterName] = resourceExporter
+	resourceMapMutex.Unlock()
+}
+
 type ResourceMeta struct {
-	// Name of the resoruce to be used in exports
+	// Name of the resource to be used in exports
 	Name string
 
 	// Prefix to add to the ID when reading state
@@ -213,97 +227,94 @@ func (r *ResourceExporter) RemoveFieldIfMissing(attribute string, config map[str
 }
 
 func GetResourceExporters(filter []string) map[string]*ResourceExporter {
-	exporters := map[string]*ResourceExporter{
-		// Add new resources that can be exported here
-		"genesyscloud_architect_datatable":                             architectDatatableExporter(),
-		"genesyscloud_architect_datatable_row":                         architectDatatableRowExporter(),
-		"genesyscloud_architect_emergencygroup":                        architectEmergencyGroupExporter(),
-		"genesyscloud_architect_ivr":                                   architectIvrExporter(),
-		"genesyscloud_architect_schedules":                             architectSchedulesExporter(),
-		"genesyscloud_architect_schedulegroups":                        architectScheduleGroupsExporter(),
-		"genesyscloud_architect_user_prompt":                           architectUserPromptExporter(),
-		"genesyscloud_auth_division":                                   authDivisionExporter(),
-		"genesyscloud_auth_role":                                       authRoleExporter(),
-		"genesyscloud_employeeperformance_externalmetrics_definitions": employeeperformanceExternalmetricsDefinitionExporter(),
-		"genesyscloud_externalcontacts_contact":                        externalContactExporter(),
-		"genesyscloud_flow":                                            flowExporter(),
-		"genesyscloud_flow_milestone":                                  flowMilestoneExporter(),
-		"genesyscloud_flow_outcome":                                    flowOutcomeExporter(),
-		"genesyscloud_group":                                           groupExporter(),
-		"genesyscloud_group_roles":                                     groupRolesExporter(),
-		"genesyscloud_idp_adfs":                                        idpAdfsExporter(),
-		"genesyscloud_idp_generic":                                     idpGenericExporter(),
-		"genesyscloud_idp_gsuite":                                      idpGsuiteExporter(),
-		"genesyscloud_idp_okta":                                        idpOktaExporter(),
-		"genesyscloud_idp_onelogin":                                    idpOneloginExporter(),
-		"genesyscloud_idp_ping":                                        idpPingExporter(),
-		"genesyscloud_idp_salesforce":                                  idpSalesforceExporter(),
-		"genesyscloud_integration":                                     integrationExporter(),
-		"genesyscloud_integration_action":                              integrationActionExporter(),
-		"genesyscloud_integration_credential":                          credentialExporter(),
-		"genesyscloud_journey_action_map":                              journeyActionMapExporter(),
-		"genesyscloud_journey_action_template":                         journeyActionTemplateExporter(),
-		"genesyscloud_journey_outcome":                                 journeyOutcomeExporter(),
-		"genesyscloud_journey_segment":                                 journeySegmentExporter(),
-		"genesyscloud_knowledge_knowledgebase":                         knowledgeKnowledgebaseExporter(),
-		"genesyscloud_knowledge_document":                              knowledgeDocumentExporter(),
-		"genesyscloud_knowledge_category":                              knowledgeCategoryExporter(),
-		"genesyscloud_location":                                        locationExporter(),
-		"genesyscloud_oauth_client":                                    oauthClientExporter(),
-		"genesyscloud_outbound_attempt_limit":                          outboundAttemptLimitExporter(),
-		"genesyscloud_outbound_callanalysisresponseset":                outboundCallAnalysisResponseSetExporter(),
-		"genesyscloud_outbound_callabletimeset":                        outboundCallableTimesetExporter(),
-		"genesyscloud_outbound_campaign":                               outboundCampaignExporter(),
-		"genesyscloud_outbound_contact_list":                           outboundContactListExporter(),
-		"genesyscloud_outbound_contactlistfilter":                      outboundContactListFilterExporter(),
-		"genesyscloud_outbound_ruleset":                                outboundRulesetExporter(),
-		"genesyscloud_outbound_messagingcampaign":                      outboundMessagingcampaignExporter(),
-		"genesyscloud_outbound_sequence":                               outboundSequenceExporter(),
-		"genesyscloud_outbound_dnclist":                                outboundDncListExporter(),
-		"genesyscloud_outbound_campaignrule":                           outboundCampaignRuleExporter(),
-		"genesyscloud_outbound_settings":                               outboundSettingsExporter(),
-		"genesyscloud_outbound_wrapupcodemappings":                     outboundWrapupCodeMappingsExporter(),
-		"genesyscloud_processautomation_trigger":                       processAutomationTriggerExporter(),
-		"genesyscloud_quality_forms_evaluation":                        evaluationFormExporter(),
-		"genesyscloud_quality_forms_survey":                            surveyFormExporter(),
-		"genesyscloud_recording_media_retention_policy":                mediaRetentionPolicyExporter(),
-		"genesyscloud_responsemanagement_library":                      responsemanagementLibraryExporter(),
-		"genesyscloud_responsemanagement_response":                     responsemanagementResponseExporter(),
-		"genesyscloud_routing_email_domain":                            routingEmailDomainExporter(),
-		"genesyscloud_routing_email_route":                             routingEmailRouteExporter(),
-		"genesyscloud_routing_language":                                routingLanguageExporter(),
-		"genesyscloud_routing_queue":                                   routingQueueExporter(),
-		"genesyscloud_routing_settings":                                routingSettingsExporter(),
-		"genesyscloud_routing_skill":                                   routingSkillExporter(),
-		"genesyscloud_routing_skill_group":                             resourceSkillGroupExporter(),
-		"genesyscloud_routing_sms_address":                             routingSmsAddressExporter(),
-		"genesyscloud_routing_utilization":                             routingUtilizationExporter(),
-		"genesyscloud_routing_wrapupcode":                              routingWrapupCodeExporter(),
-		"genesyscloud_script":                                          scriptExporter(),
-		"genesyscloud_telephony_providers_edges_did_pool":              telephonyDidPoolExporter(),
-		"genesyscloud_telephony_providers_edges_edge_group":            edgeGroupExporter(),
-		"genesyscloud_telephony_providers_edges_extension_pool":        telephonyExtensionPoolExporter(),
-		"genesyscloud_telephony_providers_edges_phone":                 phoneExporter(),
-		"genesyscloud_telephony_providers_edges_site":                  siteExporter(),
-		"genesyscloud_telephony_providers_edges_phonebasesettings":     phoneBaseSettingsExporter(),
-		"genesyscloud_telephony_providers_edges_trunkbasesettings":     trunkBaseSettingsExporter(),
-		"genesyscloud_telephony_providers_edges_trunk":                 trunkExporter(),
-		"genesyscloud_user":                                            userExporter(),
-		"genesyscloud_user_roles":                                      userRolesExporter(),
-		"genesyscloud_webdeployments_configuration":                    webDeploymentConfigurationExporter(),
-		"genesyscloud_webdeployments_deployment":                       webDeploymentExporter(),
-		"genesyscloud_widget_deployment":                               widgetDeploymentExporter(),
-	}
+
+	RegisterExporter("genesyscloud_architect_datatable", architectDatatableExporter())
+	RegisterExporter("genesyscloud_architect_datatable_row", architectDatatableRowExporter())
+	RegisterExporter("genesyscloud_architect_emergencygroup", architectEmergencyGroupExporter())
+	RegisterExporter("genesyscloud_architect_ivr", architectIvrExporter())
+	RegisterExporter("genesyscloud_architect_schedules", architectSchedulesExporter())
+	RegisterExporter("genesyscloud_architect_schedulegroups", architectScheduleGroupsExporter())
+	RegisterExporter("genesyscloud_architect_user_prompt", architectUserPromptExporter())
+	RegisterExporter("genesyscloud_auth_division", authDivisionExporter())
+	RegisterExporter("genesyscloud_auth_role", authRoleExporter())
+	RegisterExporter("genesyscloud_employeeperformance_externalmetrics_definitions", employeeperformanceExternalmetricsDefinitionExporter())
+	RegisterExporter("genesyscloud_externalcontacts_contact", externalContactExporter())
+	RegisterExporter("genesyscloud_flow", flowExporter())
+	RegisterExporter("genesyscloud_flow_milestone", flowMilestoneExporter())
+	RegisterExporter("genesyscloud_flow_outcome", flowOutcomeExporter())
+	RegisterExporter("genesyscloud_group", groupExporter())
+	RegisterExporter("genesyscloud_group_roles", groupRolesExporter())
+	RegisterExporter("genesyscloud_idp_adfs", idpAdfsExporter())
+	RegisterExporter("genesyscloud_idp_generic", idpGenericExporter())
+	RegisterExporter("genesyscloud_idp_gsuite", idpGsuiteExporter())
+	RegisterExporter("genesyscloud_idp_okta", idpOktaExporter())
+	RegisterExporter("genesyscloud_idp_onelogin", idpOneloginExporter())
+	RegisterExporter("genesyscloud_idp_ping", idpPingExporter())
+	RegisterExporter("genesyscloud_idp_salesforce", idpSalesforceExporter())
+	RegisterExporter("genesyscloud_integration", integrationExporter())
+	RegisterExporter("genesyscloud_integration_action", integrationActionExporter())
+	RegisterExporter("genesyscloud_integration_credential", credentialExporter())
+	RegisterExporter("genesyscloud_journey_action_map", journeyActionMapExporter())
+	RegisterExporter("genesyscloud_journey_action_template", journeyActionTemplateExporter())
+	RegisterExporter("genesyscloud_journey_outcome", journeyOutcomeExporter())
+	RegisterExporter("genesyscloud_journey_segment", journeySegmentExporter())
+	RegisterExporter("genesyscloud_knowledge_knowledgebase", knowledgeKnowledgebaseExporter())
+	RegisterExporter("genesyscloud_knowledge_document", knowledgeDocumentExporter())
+	RegisterExporter("genesyscloud_knowledge_category", knowledgeCategoryExporter())
+	RegisterExporter("genesyscloud_location", locationExporter())
+	RegisterExporter("genesyscloud_oauth_client", oauthClientExporter())
+	RegisterExporter("genesyscloud_outbound_attempt_limit", outboundAttemptLimitExporter())
+	RegisterExporter("genesyscloud_outbound_callanalysisresponseset", outboundCallAnalysisResponseSetExporter())
+	RegisterExporter("genesyscloud_outbound_callabletimeset", outboundCallableTimesetExporter())
+	RegisterExporter("genesyscloud_outbound_campaign", outboundCampaignExporter())
+	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactListExporter())
+	RegisterExporter("genesyscloud_outbound_contactlistfilter", outboundContactListFilterExporter())
+	RegisterExporter("genesyscloud_outbound_ruleset", outboundRulesetExporter())
+	RegisterExporter("genesyscloud_outbound_messagingcampaign", outboundMessagingcampaignExporter())
+	RegisterExporter("genesyscloud_outbound_sequence", outboundSequenceExporter())
+	RegisterExporter("genesyscloud_outbound_dnclist", outboundDncListExporter())
+	RegisterExporter("genesyscloud_outbound_campaignrule", outboundCampaignRuleExporter())
+	RegisterExporter("genesyscloud_outbound_settings", outboundSettingsExporter())
+	RegisterExporter("genesyscloud_outbound_wrapupcodemappings", outboundWrapupCodeMappingsExporter())
+	RegisterExporter("genesyscloud_quality_forms_evaluation", evaluationFormExporter())
+	RegisterExporter("genesyscloud_quality_forms_survey", surveyFormExporter())
+	RegisterExporter("genesyscloud_recording_media_retention_policy", mediaRetentionPolicyExporter())
+	RegisterExporter("genesyscloud_responsemanagement_library", responsemanagementLibraryExporter())
+	RegisterExporter("genesyscloud_responsemanagement_response", responsemanagementResponseExporter())
+	RegisterExporter("genesyscloud_routing_email_domain", routingEmailDomainExporter())
+	RegisterExporter("genesyscloud_routing_email_route", routingEmailRouteExporter())
+	RegisterExporter("genesyscloud_routing_language", routingLanguageExporter())
+	RegisterExporter("genesyscloud_routing_queue", routingQueueExporter())
+	RegisterExporter("genesyscloud_routing_settings", routingSettingsExporter())
+	RegisterExporter("genesyscloud_routing_skill", routingSkillExporter())
+	RegisterExporter("genesyscloud_routing_skill_group", resourceSkillGroupExporter())
+	RegisterExporter("genesyscloud_routing_sms_address", routingSmsAddressExporter())
+	RegisterExporter("genesyscloud_routing_utilization", routingUtilizationExporter())
+	RegisterExporter("genesyscloud_routing_wrapupcode", routingWrapupCodeExporter())
+	RegisterExporter("genesyscloud_script", scriptExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", telephonyDidPoolExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_edge_group", edgeGroupExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", telephonyExtensionPoolExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_phone", phoneExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_site", siteExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_phonebasesettings", phoneBaseSettingsExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_trunkbasesettings", trunkBaseSettingsExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_trunk", trunkExporter())
+	RegisterExporter("genesyscloud_user", userExporter())
+	RegisterExporter("genesyscloud_user_roles", userRolesExporter())
+	RegisterExporter("genesyscloud_webdeployments_configuration", webDeploymentConfigurationExporter())
+	RegisterExporter("genesyscloud_webdeployments_deployment", webDeploymentExporter())
+	RegisterExporter("genesyscloud_widget_deployment", widgetDeploymentExporter())
 
 	// Include all if no filters
 	if len(filter) > 0 {
-		for resType := range exporters {
+		for resType := range resourceExporters {
 			if !StringInSlice(resType, formatFilter(filter)) {
-				delete(exporters, resType)
+				delete(resourceExporters, resType)
 			}
 		}
 	}
-	return exporters
+	return resourceExporters
 }
 
 // Removes the ::resource_name from the resource_types list

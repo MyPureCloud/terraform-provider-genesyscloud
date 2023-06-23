@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v99/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func dataSourceOutboundDncList() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Outbound DNC Lists. Select a DNC list by name.",
-		ReadContext: readWithPooledClient(dataSourceOutboundDncListRead),
+		ReadContext: ReadWithPooledClient(dataSourceOutboundDncListRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "DNC List name.",
@@ -30,7 +30,7 @@ func dataSourceOutboundDncListRead(ctx context.Context, d *schema.ResourceData, 
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 	name := d.Get("name").(string)
 
-	return withRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		dncLists, _, getErr := outboundAPI.GetOutboundDnclists(false, false, pageSize, pageNum, true, "", name, "", []string{}, "", "")
