@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
+	"encoding/json"
 )
 
 /*
@@ -39,6 +41,45 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 		return fmt.Errorf("the memberGroupType %s cannot be located. Can not resolve to a reference attribute", memberGroupType)
 	}
 
+	return nil
+}
+
+/*
+This property takes a key 'skills' with an array of skill ids wrapped into a string (Example: {'skills': '['skillIdHere']'} ).
+This causes problems with the exporter because our export process expects id to map to a specific resource
+and we have an array of attributes wrapped in a string.
+
+This customer custom router will look at the skills array if present and resolve each string id find the appropriate resource out of the exporters and build a reference appropriately.
+*/
+func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
+
+	if exporter, ok := exporters["genesyscloud_routing_skill"]; ok {
+			skillIDs := configMap["skills"].(string)
+
+			if len(skillIDs) == 0 {
+					return nil
+			} else {
+					sanitisedSkillIds := []string{}
+					skillIDs = skillIDs[1 : len(skillIDs)-1]
+					skillIdList := strings.Split(skillIDs, ",")
+					exportId := ""
+
+					// Trim the double quotes from each element in the array
+					for i := 0; i < len(skillIdList); i++ {
+							skillIdList[i] = strings.Trim(skillIdList[i], "\"")
+					}
+
+					for _, skillId := range skillIdList {
+							exportId = (*exporter.SanitizedResourceMap[skillId]).Name
+							sanitisedSkillIds = append(sanitisedSkillIds, fmt.Sprintf("${genesyscloud_routing_skill.%s.id}", exportId))
+					}
+
+					jsonData, _ := json.Marshal(sanitisedSkillIds)
+					configMap["skills"] = string(jsonData)
+			}
+	} else {
+			return fmt.Errorf("unable to locate genesyscloud_routing_skill in the exporters array.")
+	}
 	return nil
 }
 

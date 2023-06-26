@@ -323,6 +323,10 @@ func outboundRulesetExporter() *ResourceExporter {
 				RefType: "genesyscloud_integration_action",
 			},
 		},
+		JsonEncodeAttributes: []string{"rules.actions.properties.skills"},
+	 	CustomAttributeResolver: map[string]*RefAttrCustomResolver{
+	 		"rules.actions.properties.skills": {ResolverFunc: RuleSetSkillPropertyResolver},
+	    },
 	}
 }
 
