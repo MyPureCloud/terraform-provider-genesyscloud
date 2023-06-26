@@ -20,7 +20,7 @@ func TestAccDataSourceOutboundContactList(t *testing.T) {
 		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateOutboundContactList(
+				Config: generateOutboundContactList(
 					resourceId,
 					contactListName,
 					nullValue,  // divisionId

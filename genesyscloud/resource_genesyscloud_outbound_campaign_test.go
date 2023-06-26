@@ -68,7 +68,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 
 	referencedResources := fmt.Sprintf(`
 		data "genesyscloud_auth_division_home" "home" {}
-		`) + GenerateOutboundContactList(
+		`) + generateOutboundContactList(
 		contactListResourceId,
 		"contact list "+uuid.NewString(),
 		nullValue,
@@ -435,7 +435,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	referencedResources := GenerateOutboundContactList(
+	referencedResources := generateOutboundContactList(
 		contactListResourceId,
 		"contact list "+uuid.NewString(),
 		nullValue,
@@ -1096,7 +1096,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 		callableTimeSet         string
 	)
 	if contactListResourceId != "" {
-		contactList = GenerateOutboundContactList(
+		contactList = generateOutboundContactList(
 			contactListResourceId,
 			"terraform contact list "+uuid.NewString(),
 			nullValue,

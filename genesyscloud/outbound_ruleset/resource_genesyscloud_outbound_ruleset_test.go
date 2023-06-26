@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-
-	test_resource_generation "terraform-provider-genesyscloud/genesyscloud/test_resource_generation"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
@@ -46,7 +45,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: test_resource_generation.GenerateOutboundContactList(
+				Config: generateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -56,7 +55,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					test_resource_generation.GeneratePhoneColumnsBlock(
+					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -74,7 +73,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 			},
 			// Update name, contact_list_id and queue_id
 			{
-				Config: test_resource_generation.GenerateOutboundContactList(
+				Config: generateOutboundContactList(
 					contactListResourceId2,
 					contactListName2,
 					nullValue,
@@ -84,7 +83,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					test_resource_generation.GeneratePhoneColumnsBlock(
+					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -130,7 +129,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: test_resource_generation.GenerateOutboundContactList(
+				Config: generateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -140,7 +139,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					test_resource_generation.GeneratePhoneColumnsBlock(
+					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -175,7 +174,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				),
 			},
 			{
-				Config: test_resource_generation.GenerateOutboundContactList(
+				Config: generateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -185,7 +184,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					test_resource_generation.GeneratePhoneColumnsBlock(
+					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -246,7 +245,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				),
 			},
 			{
-				Config: test_resource_generation.GenerateOutboundContactList(
+				Config: generateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -256,7 +255,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					test_resource_generation.GeneratePhoneColumnsBlock(
+					generatePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -327,4 +326,41 @@ func testVerifyroutingRulesetDestroyed(state *terraform.State) error {
 	}
 	// Success. All rulesets destroyed
 	return nil
+}
+
+func generateOutboundContactList(
+	resourceId string,
+	name string,
+	divisionId string,
+	previewModeColumnName string,
+	previewModeAcceptedValues []string,
+	columnNames []string,
+	automaticTimeZoneMapping string,
+	zipCodeColumnName string,
+	attemptLimitId string,
+	nestedBlocks ...string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_outbound_contact_list" "%s" {
+	name                         = "%s"
+	division_id                  = %s
+	preview_mode_column_name     = %s
+	preview_mode_accepted_values = [%s]
+	column_names                 = [%s] 
+	automatic_time_zone_mapping  = %s
+	zip_code_column_name         = %s
+	attempt_limit_id             = %s
+	%s
+}
+`, resourceId, name, divisionId, previewModeColumnName, strings.Join(previewModeAcceptedValues, ", "),
+		strings.Join(columnNames, ", "), automaticTimeZoneMapping, zipCodeColumnName, attemptLimitId, strings.Join(nestedBlocks, "\n"))
+}
+
+func generatePhoneColumnsBlock(columnName, columnType, callableTimeColumn string) string {
+	return fmt.Sprintf(`
+	phone_columns {
+		column_name          = "%s"
+		type                 = "%s"
+		callable_time_column = %s
+	}
+`, columnName, columnType, callableTimeColumn)
 }

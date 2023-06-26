@@ -42,7 +42,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 			),
 		)
 
-		contactListResource = GenerateOutboundContactList(
+		contactListResource = generateOutboundContactList(
 			contactListResourceId,
 			contactListName,
 			nullValue,

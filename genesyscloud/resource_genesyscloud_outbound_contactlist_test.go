@@ -43,7 +43,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateOutboundContactList(
+				Config: generateOutboundContactList(
 					resourceId,
 					name,
 					nullValue,
@@ -100,7 +100,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 			},
 			// Update
 			{
-				Config: GenerateOutboundContactList(
+				Config: generateOutboundContactList(
 					resourceId,
 					name,
 					nullValue,
@@ -158,7 +158,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 			},
 			{
 				// Update (forcenew)
-				Config: GenerateOutboundContactList(
+				Config: generateOutboundContactList(
 					resourceId,
 					nameUpdated,
 					nullValue,
@@ -252,7 +252,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					attemptLimitDataSourceID,
 					attemptLimitName,
 					"genesyscloud_outbound_attempt_limit."+attemptLimitResourceID,
-				) + `data "genesyscloud_auth_division_home" "home" {}` + GenerateOutboundContactList(
+				) + `data "genesyscloud_auth_division_home" "home" {}` + generateOutboundContactList(
 					resourceId,
 					nameUpdated,
 					"data.genesyscloud_auth_division_home.home.id",
@@ -338,7 +338,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 	})
 }
 
-func GenerateOutboundContactList(
+func generateOutboundContactList(
 	resourceId string,
 	name string,
 	divisionId string,
@@ -365,7 +365,7 @@ resource "genesyscloud_outbound_contact_list" "%s" {
 		strings.Join(columnNames, ", "), automaticTimeZoneMapping, zipCodeColumnName, attemptLimitId, strings.Join(nestedBlocks, "\n"))
 }
 
-func GeneratePhoneColumnsBlock(columnName, columnType, callableTimeColumn string) string {
+func generatePhoneColumnsBlock(columnName, columnType, callableTimeColumn string) string {
 	return fmt.Sprintf(`
 	phone_columns {
 		column_name          = "%s"

@@ -45,7 +45,7 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		rangeInSetUpdated     = []string{"a", "b"}
 	)
 
-	contactListResource := GenerateOutboundContactList(
+	contactListResource := generateOutboundContactList(
 		contactListResourceId,
 		contactListName,
 		nullValue,

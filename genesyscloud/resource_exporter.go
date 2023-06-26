@@ -269,7 +269,6 @@ func GetResourceExporters(filter []string) map[string]*ResourceExporter {
 	RegisterExporter("genesyscloud_outbound_campaign", outboundCampaignExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactListExporter())
 	RegisterExporter("genesyscloud_outbound_contactlistfilter", outboundContactListFilterExporter())
-	RegisterExporter("genesyscloud_outbound_ruleset", outboundRulesetExporter())
 	RegisterExporter("genesyscloud_outbound_messagingcampaign", outboundMessagingcampaignExporter())
 	RegisterExporter("genesyscloud_outbound_sequence", outboundSequenceExporter())
 	RegisterExporter("genesyscloud_outbound_dnclist", outboundDncListExporter())

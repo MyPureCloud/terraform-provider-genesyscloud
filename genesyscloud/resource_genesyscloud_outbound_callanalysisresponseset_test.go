@@ -112,7 +112,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 			},
 			{
 				// Test outbound flow reference when reactionType is 'transfer_flow'
-				Config: `data "genesyscloud_auth_division_home" "home" {}` + GenerateOutboundContactList(
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + generateOutboundContactList(
 					contactListResourceId,
 					contactListName,
 					nullValue,

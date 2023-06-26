@@ -17,6 +17,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
 )
 
+// Registering our resource provider for export
+func init() {
+	gcloud.RegisterResource("genesyscloud_outbound_ruleset", resourceOutboundRuleset())
+	gcloud.RegisterDataSource("genesyscloud_outbound_ruleset", dataSourceOutboundRuleset())
+	gcloud.RegisterExporter("genesyscloud_outbound_ruleset", outboundRulesetExporter())
+}
+
 var (
 	outboundrulesetdialerruleResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
