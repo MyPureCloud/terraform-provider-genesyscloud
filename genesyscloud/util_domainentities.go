@@ -5,7 +5,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
 )
 
-func buildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Domainentityref {
+func BuildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Domainentityref {
 	idVal := d.Get(idAttr).(string)
 	if idVal == "" {
 		return nil

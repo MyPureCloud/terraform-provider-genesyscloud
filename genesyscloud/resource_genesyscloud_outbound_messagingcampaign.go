@@ -205,9 +205,9 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkmessagingcampaign := platformclientv2.Messagingcampaign{
-		Division:           buildSdkDomainEntityRef(d, "division_id"),
-		CallableTimeSet:    buildSdkDomainEntityRef(d, "callable_time_set_id"),
-		ContactList:        buildSdkDomainEntityRef(d, "contact_list_id"),
+		Division:           BuildSdkDomainEntityRef(d, "division_id"),
+		CallableTimeSet:    BuildSdkDomainEntityRef(d, "callable_time_set_id"),
+		ContactList:        BuildSdkDomainEntityRef(d, "contact_list_id"),
 		DncLists:           buildSdkDomainEntityRefArr(d, "dnc_list_ids"),
 		AlwaysRunning:      &alwaysRunning,
 		ContactSorts:       buildSdkoutboundmessagingcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
@@ -246,9 +246,9 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkmessagingcampaign := platformclientv2.Messagingcampaign{
-		Division:           buildSdkDomainEntityRef(d, "division_id"),
-		CallableTimeSet:    buildSdkDomainEntityRef(d, "callable_time_set_id"),
-		ContactList:        buildSdkDomainEntityRef(d, "contact_list_id"),
+		Division:           BuildSdkDomainEntityRef(d, "division_id"),
+		CallableTimeSet:    BuildSdkDomainEntityRef(d, "callable_time_set_id"),
+		ContactList:        BuildSdkDomainEntityRef(d, "contact_list_id"),
 		DncLists:           buildSdkDomainEntityRefArr(d, "dnc_list_ids"),
 		AlwaysRunning:      &alwaysRunning,
 		ContactSorts:       buildSdkoutboundmessagingcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),

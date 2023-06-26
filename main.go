@@ -7,6 +7,7 @@ import (
 
 	_ "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	_ "terraform-provider-genesyscloud/genesyscloud/tfexporter"
+	_ "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )

@@ -500,10 +500,10 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		Bullseye:                   buildSdkBullseyeSettings(d),
 		AcwSettings:                buildSdkAcwSettings(d),
 		SkillEvaluationMethod:      &skillEvaluationMethod,
-		QueueFlow:                  buildSdkDomainEntityRef(d, "queue_flow_id"),
-		EmailInQueueFlow:           buildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
-		MessageInQueueFlow:         buildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
-		WhisperPrompt:              buildSdkDomainEntityRef(d, "whisper_prompt_id"),
+		QueueFlow:                  BuildSdkDomainEntityRef(d, "queue_flow_id"),
+		EmailInQueueFlow:           BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
+		MessageInQueueFlow:         BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
+		WhisperPrompt:              BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
 		AutoAnswerOnly:             &autoAnswerOnly,
 		CallingPartyName:           &callingPartyName,
 		CallingPartyNumber:         &callingPartyNumber,
@@ -764,10 +764,10 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		Bullseye:                   buildSdkBullseyeSettings(d),
 		AcwSettings:                buildSdkAcwSettings(d),
 		SkillEvaluationMethod:      &skillEvaluationMethod,
-		QueueFlow:                  buildSdkDomainEntityRef(d, "queue_flow_id"),
-		EmailInQueueFlow:           buildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
-		MessageInQueueFlow:         buildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
-		WhisperPrompt:              buildSdkDomainEntityRef(d, "whisper_prompt_id"),
+		QueueFlow:                  BuildSdkDomainEntityRef(d, "queue_flow_id"),
+		EmailInQueueFlow:           BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
+		MessageInQueueFlow:         BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
+		WhisperPrompt:              BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
 		AutoAnswerOnly:             &autoAnswerOnly,
 		CallingPartyName:           &callingPartyName,
 		CallingPartyNumber:         &callingPartyNumber,
@@ -1158,7 +1158,7 @@ func validateMapCommTypes(val interface{}, _ cty.Path) diag.Diagnostics {
 func buildSdkQueueMessagingAddresses(d *schema.ResourceData) *platformclientv2.Queuemessagingaddresses {
 	if _, ok := d.GetOk("outbound_messaging_sms_address_id"); ok {
 		return &platformclientv2.Queuemessagingaddresses{
-			SmsAddress: buildSdkDomainEntityRef(d, "outbound_messaging_sms_address_id"),
+			SmsAddress: BuildSdkDomainEntityRef(d, "outbound_messaging_sms_address_id"),
 		}
 	}
 	return nil

@@ -150,7 +150,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	configId := d.Get("configuration.0.id").(string)
 	configVersion := d.Get("configuration.0.version").(string)
 
-	flow := buildSdkDomainEntityRef(d, "flow_id")
+	flow := BuildSdkDomainEntityRef(d, "flow_id")
 
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
@@ -280,7 +280,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	configId := d.Get("configuration.0.id").(string)
 	configVersion := d.Get("configuration.0.version").(string)
 
-	flow := buildSdkDomainEntityRef(d, "flow_id")
+	flow := BuildSdkDomainEntityRef(d, "flow_id")
 
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,

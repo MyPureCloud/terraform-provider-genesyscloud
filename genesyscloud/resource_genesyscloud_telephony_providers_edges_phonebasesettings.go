@@ -71,7 +71,7 @@ func resourcePhoneBaseSettings() *schema.Resource {
 func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
+	phoneMetaBase := BuildSdkDomainEntityRef(d, "phone_meta_base_id")
 	properties := buildBaseSettingsProperties(d)
 
 	phoneBase := platformclientv2.Phonebase{
@@ -110,7 +110,7 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
+	phoneMetaBase := BuildSdkDomainEntityRef(d, "phone_meta_base_id")
 	properties := buildBaseSettingsProperties(d)
 	id := d.Id()
 

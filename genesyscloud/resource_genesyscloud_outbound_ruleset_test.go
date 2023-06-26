@@ -37,7 +37,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundContactList(
+				Config: GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -65,7 +65,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 			},
 			// Update name, contact_list_id and queue_id
 			{
-				Config: generateOutboundContactList(
+				Config: GenerateOutboundContactList(
 					contactListResourceId2,
 					contactListName2,
 					nullValue,
@@ -121,7 +121,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundContactList(
+				Config: GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -166,7 +166,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				),
 			},
 			{
-				Config: generateOutboundContactList(
+				Config: GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -237,7 +237,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				),
 			},
 			{
-				Config: generateOutboundContactList(
+				Config: GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,

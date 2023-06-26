@@ -218,12 +218,12 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
-		Division:                     buildSdkDomainEntityRef(d, "division_id"),
+		Division:                     BuildSdkDomainEntityRef(d, "division_id"),
 		ColumnNames:                  &columnNames,
 		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
 		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
 		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
-		AttemptLimits:                buildSdkDomainEntityRef(d, "attempt_limit_id"),
+		AttemptLimits:                BuildSdkDomainEntityRef(d, "attempt_limit_id"),
 		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
 		ColumnDataTypeSpecifications: buildSdkOutboundContactListColumnDataTypeSpecifications(d.Get("column_data_type_specifications").([]interface{})),
 	}
@@ -262,12 +262,12 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
-		Division:                     buildSdkDomainEntityRef(d, "division_id"),
+		Division:                     BuildSdkDomainEntityRef(d, "division_id"),
 		ColumnNames:                  &columnNames,
 		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
 		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
 		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
-		AttemptLimits:                buildSdkDomainEntityRef(d, "attempt_limit_id"),
+		AttemptLimits:                BuildSdkDomainEntityRef(d, "attempt_limit_id"),
 		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
 		ColumnDataTypeSpecifications: buildSdkOutboundContactListColumnDataTypeSpecifications(d.Get("column_data_type_specifications").([]interface{})),
 	}

@@ -41,7 +41,7 @@ func dataSourceOutboundRulesetRead(ctx context.Context, d *schema.ResourceData, 
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			sdkrulesetentitylisting, _, getErr := outboundApi.GetOutboundRulesets(pageSize, pageNum, false, "", "", "", "")
+			sdkrulesetentitylisting, _, getErr := getOutboundRulesets(pageSize, pageNum, false, outboundApi)
 			if getErr != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error requesting Outbound Ruleset %s: %s", name, getErr))
 			}

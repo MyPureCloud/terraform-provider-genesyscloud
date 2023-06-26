@@ -288,7 +288,7 @@ func getAllOutboundRuleset(_ context.Context, clientConfig *platformclientv2.Con
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		sdkrulesetentitylisting, _, getErr := outboundApi.GetOutboundRulesets(pageSize, pageNum, true, "", "", "", "")
+		sdkrulesetentitylisting, _, getErr := getOutboundRulesets(pageSize, pageNum, true, outboundApi)
 		if getErr != nil {
 			return nil, diag.Errorf("Error requesting page of Outbound Ruleset: %s", getErr)
 		}
@@ -345,7 +345,7 @@ func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	log.Printf("Creating Outbound Ruleset %s", name)
-	outboundRuleset, _, err := outboundApi.PostOutboundRulesets(sdkruleset)
+	outboundRuleset, _, err := postOutboundRulesets(sdkruleset, outboundApi)
 	if err != nil {
 		return diag.Errorf("Failed to create Outbound Ruleset %s: %s", name, err)
 	}
@@ -375,12 +375,12 @@ func updateOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	log.Printf("Updating Outbound Ruleset %s", name)
 	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Ruleset version
-		outboundRuleset, resp, getErr := outboundApi.GetOutboundRuleset(d.Id())
+		outboundRuleset, resp, getErr := getOutboundRuleset(d.Id(), outboundApi)
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read Outbound Ruleset %s: %s", d.Id(), getErr)
 		}
 		sdkruleset.Version = outboundRuleset.Version
-		outboundRuleset, _, updateErr := outboundApi.PutOutboundRuleset(d.Id(), sdkruleset)
+		outboundRuleset, _, updateErr := putOutboundRuleset(sdkruleset, outboundApi, d.Id())
 		if updateErr != nil {
 			return resp, diag.Errorf("Failed to update Outbound Ruleset %s: %s", name, updateErr)
 		}
@@ -436,7 +436,7 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Ruleset")
-		resp, err := outboundApi.DeleteOutboundRuleset(d.Id())
+		resp, err := removeOutboundRuleset(d.Id(),outboundApi)
 		if err != nil {
 			return resp, diag.Errorf("Failed to delete Outbound Ruleset: %s", err)
 		}
@@ -447,7 +447,7 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		_, resp, err := outboundApi.GetOutboundRuleset(d.Id())
+		_, resp, err := getOutboundRuleset(d.Id(),outboundApi)
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
 				// Outbound Ruleset deleted

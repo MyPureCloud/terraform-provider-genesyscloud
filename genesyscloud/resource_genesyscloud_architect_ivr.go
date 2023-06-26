@@ -125,10 +125,10 @@ func resourceArchitectIvrConfig() *schema.Resource {
 func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	openHoursFlowId := buildSdkDomainEntityRef(d, "open_hours_flow_id")
-	closedHoursFlowId := buildSdkDomainEntityRef(d, "closed_hours_flow_id")
-	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
-	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
+	openHoursFlowId := BuildSdkDomainEntityRef(d, "open_hours_flow_id")
+	closedHoursFlowId := BuildSdkDomainEntityRef(d, "closed_hours_flow_id")
+	holidayHoursFlowId := BuildSdkDomainEntityRef(d, "holiday_hours_flow_id")
+	scheduleGroupId := BuildSdkDomainEntityRef(d, "schedule_group_id")
 	divisionId := d.Get("division_id").(string)
 	dnis := buildSdkStringList(d, "dnis")
 
@@ -236,10 +236,10 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	openHoursFlowId := buildSdkDomainEntityRef(d, "open_hours_flow_id")
-	closedHoursFlowId := buildSdkDomainEntityRef(d, "closed_hours_flow_id")
-	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
-	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
+	openHoursFlowId := BuildSdkDomainEntityRef(d, "open_hours_flow_id")
+	closedHoursFlowId := BuildSdkDomainEntityRef(d, "closed_hours_flow_id")
+	holidayHoursFlowId := BuildSdkDomainEntityRef(d, "holiday_hours_flow_id")
+	scheduleGroupId := BuildSdkDomainEntityRef(d, "schedule_group_id")
 	divisionId := d.Get("division_id").(string)
 	dnis := buildSdkStringList(d, "dnis")
 

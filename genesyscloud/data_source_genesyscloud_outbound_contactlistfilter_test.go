@@ -25,7 +25,7 @@ func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
 		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundContactList(
+				Config: GenerateOutboundContactList(
 					contactListResourceId,
 					contactListName,
 					nullValue,

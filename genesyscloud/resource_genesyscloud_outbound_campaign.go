@@ -292,21 +292,21 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkcampaign := platformclientv2.Campaign{
-		ContactList:                    buildSdkDomainEntityRef(d, "contact_list_id"),
-		Queue:                          buildSdkDomainEntityRef(d, "queue_id"),
-		Script:                         buildSdkDomainEntityRef(d, "script_id"),
-		EdgeGroup:                      buildSdkDomainEntityRef(d, "edge_group_id"),
-		Site:                           buildSdkDomainEntityRef(d, "site_id"),
+		ContactList:                    BuildSdkDomainEntityRef(d, "contact_list_id"),
+		Queue:                          BuildSdkDomainEntityRef(d, "queue_id"),
+		Script:                         BuildSdkDomainEntityRef(d, "script_id"),
+		EdgeGroup:                      BuildSdkDomainEntityRef(d, "edge_group_id"),
+		Site:                           BuildSdkDomainEntityRef(d, "site_id"),
 		PhoneColumns:                   buildSdkoutboundcampaignPhonecolumnSlice(d.Get("phone_columns").([]interface{})),
 		DncLists:                       buildSdkDomainEntityRefArr(d, "dnc_list_ids"),
-		CallableTimeSet:                buildSdkDomainEntityRef(d, "callable_time_set_id"),
-		CallAnalysisResponseSet:        buildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
+		CallableTimeSet:                BuildSdkDomainEntityRef(d, "callable_time_set_id"),
+		CallAnalysisResponseSet:        BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
 		RuleSets:                       buildSdkDomainEntityRefArr(d, "rule_set_ids"),
 		SkipPreviewDisabled:            &skipPreviewDisabled,
 		AlwaysRunning:                  &alwaysRunning,
 		ContactSorts:                   buildSdkoutboundcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
 		ContactListFilters:             buildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
-		Division:                       buildSdkDomainEntityRef(d, "division_id"),
+		Division:                       BuildSdkDomainEntityRef(d, "division_id"),
 		DynamicContactQueueingSettings: buildSdkDynamicContactQueueingSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 	}
 
@@ -413,21 +413,21 @@ func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkcampaign := platformclientv2.Campaign{
-		ContactList:                    buildSdkDomainEntityRef(d, "contact_list_id"),
-		Queue:                          buildSdkDomainEntityRef(d, "queue_id"),
-		Script:                         buildSdkDomainEntityRef(d, "script_id"),
-		EdgeGroup:                      buildSdkDomainEntityRef(d, "edge_group_id"),
-		Site:                           buildSdkDomainEntityRef(d, "site_id"),
+		ContactList:                    BuildSdkDomainEntityRef(d, "contact_list_id"),
+		Queue:                          BuildSdkDomainEntityRef(d, "queue_id"),
+		Script:                         BuildSdkDomainEntityRef(d, "script_id"),
+		EdgeGroup:                      BuildSdkDomainEntityRef(d, "edge_group_id"),
+		Site:                           BuildSdkDomainEntityRef(d, "site_id"),
 		PhoneColumns:                   buildSdkoutboundcampaignPhonecolumnSlice(d.Get("phone_columns").([]interface{})),
 		DncLists:                       buildSdkDomainEntityRefArr(d, "dnc_list_ids"),
-		CallableTimeSet:                buildSdkDomainEntityRef(d, "callable_time_set_id"),
-		CallAnalysisResponseSet:        buildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
+		CallableTimeSet:                BuildSdkDomainEntityRef(d, "callable_time_set_id"),
+		CallAnalysisResponseSet:        BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
 		RuleSets:                       buildSdkDomainEntityRefArr(d, "rule_set_ids"),
 		SkipPreviewDisabled:            &skipPreviewDisabled,
 		AlwaysRunning:                  &alwaysRunning,
 		ContactSorts:                   buildSdkoutboundcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
 		ContactListFilters:             buildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
-		Division:                       buildSdkDomainEntityRef(d, "division_id"),
+		Division:                       BuildSdkDomainEntityRef(d, "division_id"),
 		DynamicContactQueueingSettings: buildSdkDynamicContactQueueingSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 	}
 

@@ -27,7 +27,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		contactListName       = "Contact List " + uuid.NewString()
 		column1               = "phone"
 		column2               = "zipcode"
-		contactListResource   = generateOutboundContactList(
+		contactListResource   = GenerateOutboundContactList(
 			contactListResourceId,
 			contactListName,
 			nullValue,

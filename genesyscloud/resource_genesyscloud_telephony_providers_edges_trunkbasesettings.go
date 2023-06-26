@@ -78,7 +78,7 @@ func resourceTrunkBaseSettings() *schema.Resource {
 func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	trunkMetaBase := buildSdkDomainEntityRef(d, "trunk_meta_base_id")
+	trunkMetaBase := BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
 	properties := buildBaseSettingsProperties(d)
 
 	trunkType := d.Get("trunk_type").(string)
@@ -115,7 +115,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	trunkMetaBase := buildSdkDomainEntityRef(d, "trunk_meta_base_id")
+	trunkMetaBase := BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
 	properties := buildBaseSettingsProperties(d)
 	trunkType := d.Get("trunk_type").(string)
 	managed := d.Get("managed").(bool)

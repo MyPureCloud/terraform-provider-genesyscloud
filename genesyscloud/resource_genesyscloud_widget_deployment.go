@@ -303,7 +303,7 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	description := d.Get("description").(string)
 	auth_required := d.Get("authentication_required").(bool)
 	disabled := d.Get("disabled").(bool)
-	flowId := buildSdkDomainEntityRef(d, "flow_id")
+	flowId := BuildSdkDomainEntityRef(d, "flow_id")
 	allowed_domains := buildSdkAllowedDomains(d) //Need to make this an array of strings.
 	client_type := d.Get("client_type").(string)
 	client_config, client_config_err := buildSDKClientConfig(client_type, d)
@@ -399,7 +399,7 @@ func updateWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	description := d.Get("description").(string)
 	auth_required := d.Get("authentication_required").(bool)
 	disabled := d.Get("disabled").(bool)
-	flowId := buildSdkDomainEntityRef(d, "flow_id")
+	flowId := BuildSdkDomainEntityRef(d, "flow_id")
 	allowed_domains := buildSdkAllowedDomains(d) //Need to make this an array of strings.
 	client_type := d.Get("client_type").(string)
 	client_config, client_config_err := buildSDKClientConfig(client_type, d)

@@ -150,7 +150,7 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 
 	sdkDncListCreate := platformclientv2.Dnclistcreate{
 		DncCodes: &dncCodes,
-		Division: buildSdkDomainEntityRef(d, "division_id"),
+		Division: BuildSdkDomainEntityRef(d, "division_id"),
 	}
 
 	if name != "" {
@@ -212,7 +212,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 
 	sdkDncList := platformclientv2.Dnclist{
 		DncCodes: &dncCodes,
-		Division: buildSdkDomainEntityRef(d, "division_id"),
+		Division: BuildSdkDomainEntityRef(d, "division_id"),
 	}
 
 	if name != "" {

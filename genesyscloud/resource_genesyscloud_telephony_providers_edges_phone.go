@@ -157,7 +157,7 @@ func getLineBaseSettingsID(api *platformclientv2.TelephonyProvidersEdgeApi, phon
 func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	state := d.Get("state").(string)
-	site := buildSdkDomainEntityRef(d, "site_id")
+	site := BuildSdkDomainEntityRef(d, "site_id")
 	phoneBaseSettings := buildSdkPhoneBaseSettings(d, "phone_base_settings_id")
 
 	capabilities := buildSdkCapabilities(d)
@@ -214,7 +214,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	if webRtcUserId != "" {
-		createPhone.WebRtcUser = buildSdkDomainEntityRef(d, "web_rtc_user_id")
+		createPhone.WebRtcUser = BuildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 
 	log.Printf("Creating phone %s", name)
@@ -335,9 +335,9 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 
 func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
-	site := buildSdkDomainEntityRef(d, "site_id")
+	site := BuildSdkDomainEntityRef(d, "site_id")
 	phoneBaseSettings := buildSdkPhoneBaseSettings(d, "phone_base_settings_id")
-	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
+	phoneMetaBase := BuildSdkDomainEntityRef(d, "phone_meta_base_id")
 	webRtcUserId := d.Get("web_rtc_user_id")
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
@@ -380,7 +380,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	if webRtcUserId != "" {
-		updatePhoneBody.WebRtcUser = buildSdkDomainEntityRef(d, "web_rtc_user_id")
+		updatePhoneBody.WebRtcUser = BuildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 
 	log.Printf("Updating phone %s", name)

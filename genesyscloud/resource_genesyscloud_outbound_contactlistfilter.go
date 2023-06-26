@@ -184,7 +184,7 @@ func createOutboundContactListFilter(ctx context.Context, d *schema.ResourceData
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactListFilter := platformclientv2.Contactlistfilter{
-		ContactList: buildSdkDomainEntityRef(d, "contact_list_id"),
+		ContactList: BuildSdkDomainEntityRef(d, "contact_list_id"),
 		Clauses:     buildSdkOutboundContactListFilterClauseSlice(d.Get("clauses").([]interface{})),
 	}
 
@@ -215,7 +215,7 @@ func updateOutboundContactListFilter(ctx context.Context, d *schema.ResourceData
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkContactListFilter := platformclientv2.Contactlistfilter{
-		ContactList: buildSdkDomainEntityRef(d, "contact_list_id"),
+		ContactList: BuildSdkDomainEntityRef(d, "contact_list_id"),
 		Clauses:     buildSdkOutboundContactListFilterClauseSlice(d.Get("clauses").([]interface{})),
 	}
 

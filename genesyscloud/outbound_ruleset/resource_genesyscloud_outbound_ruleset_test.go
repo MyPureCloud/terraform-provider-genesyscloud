@@ -9,10 +9,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	
+
+	test_resource_generation "terraform-provider-genesyscloud/genesyscloud/test_resource_generation"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
 )
+
+const falseValue = "false"
+const trueValue = "true"
+const nullValue = "null"
 
 func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 	t.Parallel()
@@ -24,7 +30,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 		previewModeColumnName     = "Cell"
 		previewModeAcceptedValues = []string{strconv.Quote(previewModeColumnName)}
 		columnNames               = []string{strconv.Quote("Cell"), strconv.Quote("Home")}
-		automaticTimeZoneMapping  = gcloud.FalseValue
+		automaticTimeZoneMapping  = falseValue
 
 		queueResource1 = "test-queue-1"
 		queueResource2 = "test-queue-2"
@@ -36,11 +42,11 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 		ruleSetName2      = "Test Rule Set " + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundContactList(
+				Config: test_resource_generation.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -50,12 +56,12 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					generatePhoneColumnsBlock(
+					test_resource_generation.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
 					),
-				) + GenerateRoutingQueueResourceBasic(
+				) + gcloud.GenerateRoutingQueueResourceBasic(
 					queueResource1,
 					queueName1) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
@@ -68,7 +74,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 			},
 			// Update name, contact_list_id and queue_id
 			{
-				Config: generateOutboundContactList(
+				Config: test_resource_generation.GenerateOutboundContactList(
 					contactListResourceId2,
 					contactListName2,
 					nullValue,
@@ -78,12 +84,12 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					generatePhoneColumnsBlock(
+					test_resource_generation.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
 					),
-				) + GenerateRoutingQueueResourceBasic(
+				) + gcloud.GenerateRoutingQueueResourceBasic(
 					queueResource2,
 					queueName2) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
@@ -113,18 +119,18 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 		previewModeColumnName     = "Cell"
 		previewModeAcceptedValues = []string{strconv.Quote(previewModeColumnName)}
 		columnNames               = []string{strconv.Quote("Cell"), strconv.Quote("Home")}
-		automaticTimeZoneMapping  = FalseValue
+		automaticTimeZoneMapping  = falseValue
 
 		ruleSetResourceId = "rule-set"
 		ruleSetName1      = "Test Rule Set " + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundContactList(
+				Config: test_resource_generation.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -134,7 +140,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					generatePhoneColumnsBlock(
+					test_resource_generation.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -169,7 +175,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				),
 			},
 			{
-				Config: generateOutboundContactList(
+				Config: test_resource_generation.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -179,7 +185,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					generatePhoneColumnsBlock(
+					test_resource_generation.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -240,7 +246,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				),
 			},
 			{
-				Config: generateOutboundContactList(
+				Config: test_resource_generation.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -250,7 +256,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					generatePhoneColumnsBlock(
+					test_resource_generation.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -311,7 +317,7 @@ func testVerifyroutingRulesetDestroyed(state *terraform.State) error {
 		ruleset, resp, err := outboundAPI.GetOutboundRuleset(rs.Primary.ID)
 		if ruleset != nil {
 			return fmt.Errorf("ruleset (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// ruleset not found as expected
 			continue
 		} else {

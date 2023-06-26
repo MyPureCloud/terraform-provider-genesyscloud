@@ -333,8 +333,8 @@ func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkruleset := platformclientv2.Ruleset{
-		ContactList: buildSdkDomainEntityRef(d, "contact_list_id"),
-		Queue:       buildSdkDomainEntityRef(d, "queue_id"),
+		ContactList: BuildSdkDomainEntityRef(d, "contact_list_id"),
+		Queue:       BuildSdkDomainEntityRef(d, "queue_id"),
 		Rules:       buildSdkoutboundrulesetDialerruleSlice(d.Get("rules").([]interface{})),
 	}
 
@@ -361,8 +361,8 @@ func updateOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
 	sdkruleset := platformclientv2.Ruleset{
-		ContactList: buildSdkDomainEntityRef(d, "contact_list_id"),
-		Queue:       buildSdkDomainEntityRef(d, "queue_id"),
+		ContactList: BuildSdkDomainEntityRef(d, "contact_list_id"),
+		Queue:       BuildSdkDomainEntityRef(d, "queue_id"),
 		Rules:       buildSdkoutboundrulesetDialerruleSlice(d.Get("rules").([]interface{})),
 	}
 
