@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
@@ -42,43 +43,77 @@ var (
 
 func getAllKnowledgeCategoriesV1(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
+	categoryEntities := make([]platformclientv2.Knowledgecategory, 0)
 	resources := make(ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		knowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", false, "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
-		}
-
-		if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
-			break
-		}
-		for _, knowledgeBase := range *knowledgeBases.Entities {
-			knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
-		}
+	// get published knowledge bases
+	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	if err != nil {
+		return nil, err
 	}
+	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
+
+	// get unpublished knowledge bases
+	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	if err != nil {
+		return nil, err
+	}
+	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+
 	for _, knowledgeBase := range knowledgeBaseList {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategories(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", "", "", fmt.Sprintf("%v", pageSize), "")
-			if getErr != nil {
-				return nil, diag.Errorf("Failed to get page of knowledge categories: %v", getErr)
-			}
-
-			if knowledgeCategories.Entities == nil || len(*knowledgeCategories.Entities) == 0 {
-				break
-			}
-
-			for _, knowledgeCategory := range *knowledgeCategories.Entities {
-				id := fmt.Sprintf("%s %s %s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id, *knowledgeCategory.LanguageCode)
-				resources[id] = &ResourceMeta{Name: *knowledgeCategory.Name}
-			}
+		partialEntities, err := getAllKnowledgeV1CategoryEntities(*knowledgeAPI, &knowledgeBase)
+		if err != nil {
+			return nil, err
 		}
+		categoryEntities = append(categoryEntities, *partialEntities...)
+	}
+
+	for _, knowledgeCategory := range categoryEntities {
+		id := fmt.Sprintf("%s %s %s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id, *knowledgeCategory.LanguageCode)
+		resources[id] = &ResourceMeta{Name: *knowledgeCategory.Name}
 	}
 
 	return resources, nil
+}
+
+func getAllKnowledgeV1CategoryEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgecategory, diag.Diagnostics) {
+	var (
+		after    string
+		entities []platformclientv2.Knowledgecategory
+	)
+
+	const pageSize = 100
+	for i := 0; ; i++ {
+		knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategories(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", after, "", fmt.Sprintf("%v", pageSize), "")
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of knowledge categories: %v", getErr)
+		}
+
+		if knowledgeCategories.Entities == nil || len(*knowledgeCategories.Entities) == 0 {
+			break
+		}
+
+		entities = append(entities, *knowledgeCategories.Entities...)
+
+		if knowledgeCategories.NextUri == nil || *knowledgeCategories.NextUri == "" {
+			break
+		}
+
+		u, err := url.Parse(*knowledgeCategories.NextUri)
+		if err != nil {
+			return nil, diag.Errorf("Failed to parse after cursor from knowledge category nextUri: %v", err)
+		}
+		m, _ := url.ParseQuery(u.RawQuery)
+		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
+			after = afterSlice[0]
+			if after == "" {
+				break
+			}
+		}
+	}
+
+	return &entities, nil
 }
 
 func knowledgeCategoryExporterV1() *ResourceExporter {

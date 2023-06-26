@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
@@ -39,54 +40,77 @@ func getAllKnowledgeLabels(_ context.Context, clientConfig *platformclientv2.Con
 	resources := make(ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		unpublishedKnowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", false, "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
-		}
-
-		publishedKnowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", true, "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
-		}
-
-		if unpublishedKnowledgeBases != nil && len(*unpublishedKnowledgeBases.Entities) > 0 {
-			for _, knowledgeBase := range *unpublishedKnowledgeBases.Entities {
-				knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
-			}
-		}
-		if publishedKnowledgeBases != nil && len(*publishedKnowledgeBases.Entities) > 0 {
-			for _, knowledgeBase := range *publishedKnowledgeBases.Entities {
-				knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
-			}
-		}
+	// get published knowledge bases
+	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	if err != nil {
+		return nil, err
 	}
+	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
+
+	// get unpublished knowledge bases
+	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	if err != nil {
+		return nil, err
+	}
+	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+
 	for _, knowledgeBase := range knowledgeBaseList {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			knowledgeLabels, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", false)
-			if getErr != nil {
-				return nil, diag.Errorf("Failed to get page of knowledge labels: %v", getErr)
-			}
+		labelEntities, err := getAllKnowledgeLabelEntities(*knowledgeAPI, &knowledgeBase)
+		if err != nil {
+			return nil, err
+		}
 
-			if knowledgeLabels.Entities == nil || len(*knowledgeLabels.Entities) == 0 {
-				break
-			}
-
-			for _, knowledgeLabel := range *knowledgeLabels.Entities {
-				id := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, *knowledgeBase.Id)
-				resources[id] = &ResourceMeta{Name: *knowledgeLabel.Name}
-			}
+		for _, knowledgeLabel := range *labelEntities {
+			id := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, *knowledgeBase.Id)
+			resources[id] = &ResourceMeta{Name: *knowledgeLabel.Name}
 		}
 	}
 
 	return resources, nil
 }
 
+func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Labelresponse, diag.Diagnostics) {
+	var (
+		after    string
+		entities []platformclientv2.Labelresponse
+	)
+
+	const pageSize = 100
+	for i := 0; ; i++ {
+		knowledgeLabels, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", false)
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of knowledge labels: %v", getErr)
+		}
+
+		if knowledgeLabels.Entities == nil || len(*knowledgeLabels.Entities) == 0 {
+			break
+		}
+
+		entities = append(entities, *knowledgeLabels.Entities...)
+
+		if knowledgeLabels.NextUri == nil || *knowledgeLabels.NextUri == "" {
+			break
+		}
+
+		u, err := url.Parse(*knowledgeLabels.NextUri)
+		if err != nil {
+			return nil, diag.Errorf("Failed to parse after cursor from knowledge label nextUri: %v", err)
+		}
+		m, _ := url.ParseQuery(u.RawQuery)
+		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
+			after = afterSlice[0]
+			if after == "" {
+				break
+			}
+		}
+	}
+
+	return &entities, nil
+}
+
 func knowledgeLabelExporter() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeCategories),
+		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeLabels),
 		RefAttrs: map[string]*RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},

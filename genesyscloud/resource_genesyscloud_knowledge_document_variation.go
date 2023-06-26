@@ -215,45 +215,50 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 	resources := make(ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		knowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", false, "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
+	// get published knowledge bases
+	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	if err != nil {
+		return nil, err
+	}
+	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
+
+	// get unpublished knowledge bases
+	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	if err != nil {
+		return nil, err
+	}
+	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+
+	for _, knowledgeBase := range knowledgeBaseList {
+		variationEntities, err := getAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase, clientConfig)
+		if err != nil {
+			return nil, err
 		}
 
-		if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
-			break
-		}
-		for _, knowledgeBase := range *knowledgeBases.Entities {
-			knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
-		}
-	}
-	for _, knowledgeBase := range knowledgeBaseList {
-		for pageNum := 1; ; pageNum++ {
+		// retrieve the documents for each knowledge base
+		for _, knowledgeDocument := range *variationEntities {
 			const pageSize = 100
-			knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil, nil)
-			if getErr != nil {
-				return nil, diag.Errorf("Failed to get page of Knowledge documents: %v", getErr)
+
+			// parse document state
+			var documentState string
+			isValidState := strings.EqualFold(*knowledgeDocument.State, "Published") || strings.EqualFold(*knowledgeDocument.State, "Draft")
+			if isValidState {
+				documentState = *knowledgeDocument.State
 			}
 
-			if knowledgeDocuments.Entities == nil || len(*knowledgeDocuments.Entities) == 0 {
+			// get the variations for each document
+			knowledgeDocumentVariations, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), documentState)
+			if getErr != nil {
+				return nil, diag.Errorf("Failed to get page of Knowledge document variations: %v", getErr)
+			}
+
+			if knowledgeDocumentVariations.Entities == nil || len(*knowledgeDocumentVariations.Entities) == 0 {
 				break
 			}
-			for _, knowledgeDocument := range *knowledgeDocuments.Entities {
-				const pageSize = 100
-				knowledgeDocumentVariations, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), "")
-				if getErr != nil {
-					return nil, diag.Errorf("Failed to get page of Knowledge document variations: %v", getErr)
-				}
 
-				if knowledgeDocumentVariations.Entities == nil || len(*knowledgeDocumentVariations.Entities) == 0 {
-					break
-				}
-				for _, knowledgeDocumentVariation := range *knowledgeDocumentVariations.Entities {
-					id := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.Id)
-					resources[id] = &ResourceMeta{Name: "variation" + uuid.NewString()}
-				}
+			for _, knowledgeDocumentVariation := range *knowledgeDocumentVariations.Entities {
+				id := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.Id)
+				resources[id] = &ResourceMeta{Name: "variation " + uuid.NewString()}
 			}
 		}
 	}
