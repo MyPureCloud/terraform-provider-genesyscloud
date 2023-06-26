@@ -29,7 +29,7 @@ var (
 
 	bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
-	bullseyeRingMemberGroupResource = &schema.Resource{
+	memberGroupResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"member_group_id": {
 				Description: "ID (GUID) for Group, SkillGroup, Team",
@@ -37,32 +37,6 @@ var (
 				Required:    true,
 			},
 			"member_group_type": {
-				Description:  "The type of the member group. Accepted values: TEAM, GROUP, SKILLGROUP",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"TEAM", "GROUP", "SKILLGROUP"}, false),
-			},
-		},
-	}
-
-	ConditionalGroupRoutingQueueResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "ID (GUID) for Queue",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-
-	conditionalGroupRoutingGroupResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"group_id": {
-				Description: "ID (GUID) for Group, SkillGroup, Team",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"group_type": {
 				Description:  "The type of the member group. Accepted values: TEAM, GROUP, SKILLGROUP",
 				Type:         schema.TypeString,
 				Required:     true,
@@ -202,21 +176,22 @@ func routingQueueExporter() *ResourceExporter {
 	return &ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingQueues),
 		RefAttrs: map[string]*RefAttrSettings{
-			"division_id":                       {RefType: "genesyscloud_auth_division"},
-			"queue_flow_id":                     {RefType: "genesyscloud_flow"},
-			"email_in_queue_flow_id":            {RefType: "genesyscloud_flow"},
-			"message_in_queue_flow_id":          {RefType: "genesyscloud_flow"},
-			"whisper_prompt_id":                 {RefType: "genesyscloud_architect_user_prompt"},
-			"outbound_messaging_sms_address_id": {}, // Ref type not yet defined
-			"default_script_ids.*":              {}, // Ref type not yet defined
-			"outbound_email_address.route_id":   {RefType: "genesyscloud_routing_email_route"},
-			"outbound_email_address.domain_id":  {RefType: "genesyscloud_routing_email_domain"},
-			"bullseye_rings.skills_to_remove":   {RefType: "genesyscloud_routing_skill"},
-			"members.user_id":                   {RefType: "genesyscloud_user"},
-			"wrapup_codes":                      {RefType: "genesyscloud_routing_wrapupcode"},
-			"skill_groups":                      {RefType: "genesyscloud_routing_skill_group"},
-			"teams":                             {}, //Need to add this when we get teams resources implemented
-			"groups":                            {RefType: "genesyscloud_group"},
+			"division_id":                              {RefType: "genesyscloud_auth_division"},
+			"queue_flow_id":                            {RefType: "genesyscloud_flow"},
+			"email_in_queue_flow_id":                   {RefType: "genesyscloud_flow"},
+			"message_in_queue_flow_id":                 {RefType: "genesyscloud_flow"},
+			"whisper_prompt_id":                        {RefType: "genesyscloud_architect_user_prompt"},
+			"outbound_messaging_sms_address_id":        {},                               // Ref type not yet defined
+			"default_script_ids.*":                     {RefType: "genesyscloud_script"}, // Ref type not yet defined
+			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},
+			"outbound_email_address.domain_id":         {RefType: "genesyscloud_routing_email_domain"},
+			"bullseye_rings.skills_to_remove":          {RefType: "genesyscloud_routing_skill"},
+			"members.user_id":                          {RefType: "genesyscloud_user"},
+			"wrapup_codes":                             {RefType: "genesyscloud_routing_wrapupcode"},
+			"skill_groups":                             {RefType: "genesyscloud_routing_skill_group"},
+			"teams":                                    {}, //Need to add this when we get teams resources implemented
+			"groups":                                   {RefType: "genesyscloud_group"},
+			"conditional_group_routing_rules.queue_id": {RefType: "genesyscloud_routing_queue"},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},
@@ -224,7 +199,8 @@ func routingQueueExporter() *ResourceExporter {
 		},
 		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
 		CustomAttributeResolver: map[string]*RefAttrCustomResolver{
-			"bullseye_rings.member_groups.member_group_id": {ResolverFunc: MemberGroupsResolver},
+			"bullseye_rings.member_groups.member_group_id":           {ResolverFunc: MemberGroupsResolver},
+			"conditional_group_routing_rules.groups.member_group_id": {ResolverFunc: MemberGroupsResolver},
 		},
 	}
 }
@@ -349,54 +325,55 @@ func resourceRoutingQueue() *schema.Resource {
 						"member_groups": {
 							Type:     schema.TypeSet,
 							Optional: true,
-							Elem:     bullseyeRingMemberGroupResource,
+							Elem:     memberGroupResource,
 						},
 					},
 				},
 			},
 			"conditional_group_routing_rules": {
-				Description: "The conditional_group_routing_rule settings for the queue.",
+				Description: "The Conditional Group Routing settings for the queue.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    5,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"queue": {
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem:     ConditionalGroupRoutingQueueResource,
+						"queue_id": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: `The ID of the queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified.`,
 						},
 						"operator": {
-							Description:  "Matching operator (GreaterThan| LessThan | GreaterThanOrEqualTo | LessThanOrEqualTo). The operator that compares the actual value against the condition value",
+							Description:  "The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.",
 							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "MEETS_THRESHOLD",
+							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
 						},
 						"metric": {
-							Description:  "Metric (EstimatedWaitTime). The queue metric being evaluated",
+							Description:  "The queue metric being evaluated. Valid values: EstimatedWaitTime.",
 							Type:         schema.TypeString,
 							Optional:     true,
 							Default:      "EstimatedWaitTime",
 							ValidateFunc: validation.StringInSlice([]string{"EstimatedWaitTime"}, false),
 						},
 						"condition_value": {
-							Description:  "Condition value of this ConditionalGroupRoutingRule. The limit value, beyond which a rule evaluates as true.",
+							Description:  "The limit value, beyond which a rule evaluates as true.",
 							Type:         schema.TypeFloat,
 							Required:     true,
 							ValidateFunc: validation.FloatBetween(0, 259200),
 						},
 						"wait_seconds": {
-							Description:  "The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule.",
+							Description:  "The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified.",
 							Type:         schema.TypeInt,
 							Optional:     true,
-							Default:      5,
+							Default:      2,
 							ValidateFunc: validation.IntBetween(0, 259200),
 						},
 						"groups": {
-							Type:     schema.TypeSet,
-							Optional: true,
-							Elem:     conditionalGroupRoutingGroupResource,
+							Type:        schema.TypeList,
+							Required:    true,
+							MinItems:    1,
+							Description: "The group(s) to activate if the rule evaluates as true.",
+							Elem:        memberGroupResource,
 						},
 					},
 				},
@@ -565,13 +542,18 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
 
+	conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	createQueue := platformclientv2.Createqueuerequest{
 		Name:                       &name,
 		Description:                &description,
 		MediaSettings:              buildSdkMediaSettings(d),
 		RoutingRules:               buildSdkRoutingRules(d),
 		Bullseye:                   buildSdkBullseyeSettings(d),
-		Conditionalgrouprouting:    buildSdkConditionalGroupRouting(d),
+		ConditionalGroupRouting:    conditionalGroupRouting,
 		AcwSettings:                buildSdkAcwSettings(d),
 		SkillEvaluationMethod:      &skillEvaluationMethod,
 		QueueFlow:                  buildSdkDomainEntityRef(d, "queue_flow_id"),
@@ -601,7 +583,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 	d.SetId(*queue.Id)
 
-	diagErr := updateQueueMembers(d, routingAPI)
+	diagErr = updateQueueMembers(d, routingAPI)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -804,6 +786,8 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
 		d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
 
+		d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
+
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
 		return cc.CheckState()
 	})
@@ -828,6 +812,11 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
 
+	conditionalGroupRouting, diagErr := buildSdkConditionalGroupRouting(d)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	log.Printf("Updating queue %s", name)
 
 	_, _, err := routingAPI.PutRoutingQueue(d.Id(), platformclientv2.Queuerequest{
@@ -836,7 +825,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		MediaSettings:              buildSdkMediaSettings(d),
 		RoutingRules:               buildSdkRoutingRules(d),
 		Bullseye:                   buildSdkBullseyeSettings(d),
-		Conditionalgrouprouting:    buildSdkConditionalGroupRouting(d),
+		ConditionalGroupRouting:    conditionalGroupRouting,
 		AcwSettings:                buildSdkAcwSettings(d),
 		SkillEvaluationMethod:      &skillEvaluationMethod,
 		QueueFlow:                  buildSdkDomainEntityRef(d, "queue_flow_id"),
@@ -859,7 +848,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("Error updating queue %s: %s", name, err)
 	}
 
-	diagErr := updateObjectDivision(d, "QUEUE", sdkConfig)
+	diagErr = updateObjectDivision(d, "QUEUE", sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -1010,7 +999,10 @@ func buildSdkRoutingRules(d *schema.ResourceData) *[]platformclientv2.Routingrul
 	var routingRules []platformclientv2.Routingrule
 	if configRoutingRules, ok := d.GetOk("routing_rules"); ok {
 		for _, configRule := range configRoutingRules.([]interface{}) {
-			ruleSettings := configRule.(map[string]interface{})
+			ruleSettings, ok := configRule.(map[string]interface{})
+			if !ok {
+				continue
+			}
 			var sdkRule platformclientv2.Routingrule
 			if operator, ok := ruleSettings["operator"].(string); ok {
 				sdkRule.Operator = &operator
@@ -1050,7 +1042,10 @@ func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye
 	if configRings, ok := d.GetOk("bullseye_rings"); ok {
 		var sdkRings []platformclientv2.Ring
 		for _, configRing := range configRings.([]interface{}) {
-			ringSettings := configRing.(map[string]interface{})
+			ringSettings, ok := configRing.(map[string]interface{})
+			if !ok {
+				continue
+			}
 			var sdkRing platformclientv2.Ring
 
 			if waitSeconds, ok := ringSettings["expansion_timeout_seconds"].(float64); ok {
@@ -1153,7 +1148,7 @@ func flattenBullseyeRings(sdkRings []platformclientv2.Ring) []interface{} {
 			}
 
 			if sdkRing.MemberGroups != nil {
-				memberGroups := schema.NewSet(schema.HashResource(bullseyeRingMemberGroupResource), []interface{}{})
+				memberGroups := schema.NewSet(schema.HashResource(memberGroupResource), []interface{}{})
 
 				for _, memberGroup := range *sdkRing.MemberGroups {
 					memberGroupMap := make(map[string]interface{})
@@ -1171,11 +1166,14 @@ func flattenBullseyeRings(sdkRings []platformclientv2.Ring) []interface{} {
 	return rings
 }
 
-func buildSdkConditionalGroupRouting(d *schema.ResourceData) *platformclientv2.Conditionalgrouprouting {
+func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.Conditionalgrouprouting, diag.Diagnostics) {
 	if configRules, ok := d.GetOk("conditional_group_routing_rules"); ok {
 		var sdkCGRRules []platformclientv2.Conditionalgrouproutingrule
-		for _, configRules := range configRules.([]interface{}) {
-			ruleSettings := configRules.(map[string]interface{})
+		for i, configRules := range configRules.([]interface{}) {
+			ruleSettings, ok := configRules.(map[string]interface{})
+			if !ok {
+				continue
+			}
 			var sdkCGRRule platformclientv2.Conditionalgrouproutingrule
 
 			if waitSeconds, ok := ruleSettings["wait_seconds"].(int); ok {
@@ -1194,26 +1192,23 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) *platformclientv2.C
 				sdkCGRRule.Metric = &metric
 			}
 
-			if queueSettings, ok := ruleSettings["queue"]; ok {
-				settingsSet := queueSettings.(*schema.Set)
-
-				for _, queueSetting := range settingsSet.List() {
-					settingsMap := queueSetting.(map[string]interface{})
-					queueID := settingsMap["id"].(string)
-					queue := &platformclientv2.Domainentityref{Id: &queueID}
-					sdkCGRRule.Queue = queue
+			if queueId, ok := ruleSettings["queue_id"].(string); ok && queueId != "" {
+				if i == 0 {
+					return nil, diag.Errorf("For rule 1, queue_id is always assumed to be the current queue, so should not be specified.")
 				}
+				sdkCGRRule.Queue = &platformclientv2.Domainentityref{Id: &queueId}
 			}
 
-			if memberGroups, ok := ruleSettings["groups"]; ok {
-				memberGroupList := memberGroups.(*schema.Set).List()
+			if memberGroupList, ok := ruleSettings["groups"].([]interface{}); ok {
 				if len(memberGroupList) > 0 {
-
 					sdkMemberGroups := make([]platformclientv2.Membergroup, len(memberGroupList))
 					for i, memberGroup := range memberGroupList {
-						settingsMap := memberGroup.(map[string]interface{})
-						memberGroupID := settingsMap["group_id"].(string)
-						memberGroupType := settingsMap["group_type"].(string)
+						settingsMap, ok := memberGroup.(map[string]interface{})
+						if !ok {
+							continue
+						}
+						memberGroupID := settingsMap["member_group_id"].(string)
+						memberGroupType := settingsMap["member_group_type"].(string)
 
 						sdkMemberGroups[i] = platformclientv2.Membergroup{
 							Id:      &memberGroupID,
@@ -1222,33 +1217,22 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) *platformclientv2.C
 					}
 					sdkCGRRule.Groups = &sdkMemberGroups
 				}
-				sdkCGRRules = append(sdkCGRRules, sdkCGRRule)
 			}
-
+			sdkCGRRules = append(sdkCGRRules, sdkCGRRule)
 		}
 		rules := &sdkCGRRules
-		return &platformclientv2.Conditionalgrouprouting{Rules: rules}
-
+		return &platformclientv2.Conditionalgrouprouting{Rules: rules}, nil
 	}
-	return nil
+	return nil, nil
 }
 
-/*
-The flattenBullseyeRings function maps the data retrieved from our SDK call over to the bullseye_ring attribute within the provider.
-You might notice in the code that we are always mapping all but the last item in the list of rings retrieved by the API.  The reason for this
-is that when you submit a list of bullseye_rings to the API, the API will always take the last item in the list and use it to drive default behavior
-This is a change from earlier parts of the API where you could define 6 bullseye rings and there would always be six.  Now when you define bullseye rings,
-the public API will take the list item in the list and make it the default and it will not show up on the screen.  To get around this you needed
-to always add a dumb bullseye ring block.  Now, we automatically add one for you.  We only except a maximum of 5 bullseyes_ring blocks, but we will always
-remove the last block returned by the API.
-*/
-func flattenConditionalGroupRoutingRules(rules *[]platformclientv2.Conditionalgrouproutingrule) []interface{} {
-	if rules == nil {
+func flattenConditionalGroupRoutingRules(queue *platformclientv2.Queue) []interface{} {
+	if queue.ConditionalGroupRouting == nil || len(*queue.ConditionalGroupRouting.Rules) == 0 {
 		return nil
 	}
 
-	Rules := make([]interface{}, len(*rules))
-	for i, rule := range *rules {
+	rules := make([]interface{}, len(*queue.ConditionalGroupRouting.Rules))
+	for i, rule := range *queue.ConditionalGroupRouting.Rules {
 		ruleSettings := make(map[string]interface{})
 
 		if rule.WaitSeconds != nil {
@@ -1260,36 +1244,38 @@ func flattenConditionalGroupRoutingRules(rules *[]platformclientv2.Conditionalgr
 		}
 
 		if rule.ConditionValue != nil {
-			ruleSettings["conditionValue"] = *rule.ConditionValue
+			ruleSettings["condition_value"] = *rule.ConditionValue
 		}
 
 		if rule.Metric != nil {
 			ruleSettings["metric"] = *rule.Metric
 		}
 
-		if rule.Queue != nil && rule.Queue.Id != nil {
-			ruleSettings["queue"] = *rule.Queue.Id
+		// The first rule is assumed to apply to this queue, so queue_id should be omitted from the first rule on queue creation
+		// Hence it should not be read in either
+		if rule.Queue != nil && *rule.Queue.Id != *queue.Id {
+			ruleSettings["queue_id"] = *rule.Queue.Id
 		}
 
 		if rule.Groups != nil {
-			memberGroups := schema.NewSet(schema.HashResource(bullseyeRingMemberGroupResource), []interface{}{})
+			memberGroups := make([]interface{}, 0)
 			for _, group := range *rule.Groups {
 				memberGroupMap := make(map[string]interface{})
 				if group.Id != nil {
-					memberGroupMap["group_id"] = *group.Id
+					memberGroupMap["member_group_id"] = *group.Id
 				}
 				if group.VarType != nil {
-					memberGroupMap["group_type"] = *group.VarType
+					memberGroupMap["member_group_type"] = *group.VarType
 				}
-				memberGroups.Add(memberGroupMap)
+				memberGroups = append(memberGroups, memberGroupMap)
 			}
 			ruleSettings["groups"] = memberGroups
 		}
 
-		Rules[i] = ruleSettings
+		rules[i] = ruleSettings
 	}
 
-	return Rules
+	return rules
 }
 
 func buildSdkAcwSettings(d *schema.ResourceData) *platformclientv2.Acwsettings {
@@ -1861,7 +1847,7 @@ func GenerateRoutingRules(operator string, threshold string, waitSeconds string)
 	`, operator, threshold, waitSeconds)
 }
 
-func GenerateDefaultScriptIDs(chat string, email string) string {
+func GenerateDefaultScriptIDs(chat, email string) string {
 	return fmt.Sprintf(`default_script_ids = {
 		CHAT  = "%s"
 		EMAIL = "%s"
@@ -1876,24 +1862,27 @@ func GenerateBullseyeSettings(expTimeout string, skillsToRemove ...string) strin
 	`, expTimeout, strings.Join(skillsToRemove, ", "))
 }
 
-func GenerateConditionalGroupRoutingRules(queueId string, operator string, metric string, conditionValue string, waitSeconds string, group_id string, group_type string) string {
+func GenerateConditionalGroupRoutingRules(queueId, operator, metric, conditionValue, waitSeconds string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`conditional_group_routing_rules {
-		queue {
-			id = "%s"
-		}
-		operator = "%s"
-		metric = "%s"
-		condition_Value = "%s"
-		wait_seconds = %s
-		groups {
-			group_id = "%s"
-			group_type = "%s" 
-		}
+		queue_id        = %s
+		operator        = "%s"
+		metric          = "%s"
+		condition_value = %s
+		wait_seconds    = %s
+		%s
 	}
-	`, queueId, operator, metric, conditionValue, waitSeconds, group_id, group_type)
+	`, queueId, operator, metric, conditionValue, waitSeconds, strings.Join(nestedBlocks, "\n"))
 }
 
-func GenerateBullseyeSettingsWithMemberGroup(expTimeout string, memberGroupId string, memberGroupType string, skillsToRemove ...string) string {
+func GenerateConditionalGroupRoutingRuleGroup(groupId, groupType string) string {
+	return fmt.Sprintf(`groups {
+		member_group_id   = %s
+		member_group_type = "%s"
+	}
+	`, groupId, groupType)
+}
+
+func GenerateBullseyeSettingsWithMemberGroup(expTimeout, memberGroupId, memberGroupType string, skillsToRemove ...string) string {
 	return fmt.Sprintf(`bullseye_rings {
 		expansion_timeout_seconds = %s
 		skills_to_remove = [%s]
@@ -1905,7 +1894,7 @@ func GenerateBullseyeSettingsWithMemberGroup(expTimeout string, memberGroupId st
 	`, expTimeout, strings.Join(skillsToRemove, ", "), memberGroupId, memberGroupType)
 }
 
-func GenerateMemberBlock(userID string, ringNum string) string {
+func GenerateMemberBlock(userID, ringNum string) string {
 	return fmt.Sprintf(`members {
 		user_id = %s
 		ring_num = %s
