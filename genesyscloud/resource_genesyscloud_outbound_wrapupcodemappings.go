@@ -56,7 +56,7 @@ func resourceOutboundWrapUpCodeMappings() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			`default_set`: {
 				Description: `The default set of wrap-up flags. These will be used if there is no entry for a given wrap-up code in the mapping.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
