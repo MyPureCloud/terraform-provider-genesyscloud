@@ -20,7 +20,7 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create using only required fields i.e. name
@@ -32,7 +32,7 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name1),
-					testDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
+					TestDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
 				),
 			},
 			{
@@ -46,7 +46,7 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "description", description),
-					testDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
+					TestDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
 				),
 			},
 			{

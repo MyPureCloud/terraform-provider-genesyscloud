@@ -15,7 +15,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 // Row IDs structured as {table-id}/{key-value}
@@ -31,8 +32,8 @@ func splitDatatableRowId(rowId string) (string, string) {
 	return "", ""
 }
 
-func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	tables, err := getAllArchitectDatatables(ctx, clientConfig)
@@ -55,7 +56,7 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 			for _, row := range *rows.Entities {
 				if keyVal, ok := row["key"]; ok {
 					keyStr := keyVal.(string) // Keys must be strings
-					resources[createDatatableRowId(tableId, keyStr)] = &ResourceMeta{Name: tableMeta.Name + "_" + keyStr}
+					resources[createDatatableRowId(tableId, keyStr)] = &resource_exporter.ResourceMeta{Name: tableMeta.Name + "_" + keyStr}
 				}
 			}
 		}
@@ -64,17 +65,17 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 	return resources, nil
 }
 
-func architectDatatableRowExporter() *ResourceExporter {
-	return &ResourceExporter{
+func ArchitectDatatableRowExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllArchitectDatatableRows),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"datatable_id": {RefType: "genesyscloud_architect_datatable"},
 		},
 		JsonEncodeAttributes: []string{"properties_json"},
 	}
 }
 
-func resourceArchitectDatatableRow() *schema.Resource {
+func ResourceArchitectDatatableRow() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Datatable Row",
 
@@ -158,7 +159,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectDatatableRow())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatableRow())
 		d.Set("datatable_id", tableId)
 		d.Set("key_value", keyStr)
 

@@ -12,12 +12,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func getAllIdpGsuite(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllIdpGsuite(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
-	resources := make(ResourceIDMetaMap)
+	resources := make(resource_exporter.ResourceIDMetaMap)
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersGsuite()
 	if getErr != nil {
@@ -28,18 +30,18 @@ func getAllIdpGsuite(_ context.Context, clientConfig *platformclientv2.Configura
 		return nil, diag.Errorf("Failed to get IDP GSuite: %v", getErr)
 	}
 
-	resources["0"] = &ResourceMeta{Name: "gsuite"}
+	resources["0"] = &resource_exporter.ResourceMeta{Name: "gsuite"}
 	return resources, nil
 }
 
-func idpGsuiteExporter() *ResourceExporter {
-	return &ResourceExporter{
+func IdpGsuiteExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllIdpGsuite),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceIdpGsuite() *schema.Resource {
+func ResourceIdpGsuite() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on GSuite Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-google-g-suite-single-sign-provider/",
 
@@ -109,11 +111,11 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpGsuite())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite())
 		if gsuite.Certificate != nil {
-			d.Set("certificates", stringListToInterfaceList([]string{*gsuite.Certificate}))
+			d.Set("certificates", lists.StringListToInterfaceList([]string{*gsuite.Certificate}))
 		} else if gsuite.Certificates != nil {
-			d.Set("certificates", stringListToInterfaceList(*gsuite.Certificates))
+			d.Set("certificates", lists.StringListToInterfaceList(*gsuite.Certificates))
 		} else {
 			d.Set("certificates", nil)
 		}
@@ -164,7 +166,7 @@ func updateIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 		Disabled:               &disabled,
 	}
 
-	certificates := buildSdkStringListFromInterfaceArray(d, "certificates")
+	certificates := lists.BuildSdkStringListFromInterfaceArray(d, "certificates")
 	if certificates != nil {
 		if len(*certificates) == 1 {
 			update.Certificate = &(*certificates)[0]

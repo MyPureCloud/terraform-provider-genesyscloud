@@ -26,11 +26,10 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 		filePath1     = "../../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
 		flowName1     = "terraform-provider-test-" + uuid.NewString()
 	)
-
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.ProviderFactories,
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
@@ -94,7 +93,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.ProviderFactories,
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create a trigger

@@ -11,10 +11,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func resourceEdgeGroup() *schema.Resource {
+func ResourceEdgeGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Edge Group. NOTE: This resource is being kept here for backwards compatibility with older Genesys Cloud Organization. You may get an error if you try to create an edge group with a Genesys Cloud Organization created in 2022 or later.`,
 
@@ -196,7 +198,7 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceEdgeGroup())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEdgeGroup())
 		d.Set("name", *edgeGroup.Name)
 		d.Set("state", *edgeGroup.State)
 		if edgeGroup.Description != nil {
@@ -227,8 +229,8 @@ func flattenPhoneTrunkBases(trunkBases []platformclientv2.Trunkbase) *schema.Set
 	return schema.NewSet(schema.HashString, interfaceList)
 }
 
-func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
@@ -245,7 +247,7 @@ func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configurati
 
 		for _, edgeGroup := range *edgeGroups.Entities {
 			if edgeGroup.State != nil && *edgeGroup.State != "deleted" {
-				resources[*edgeGroup.Id] = &ResourceMeta{Name: *edgeGroup.Name}
+				resources[*edgeGroup.Id] = &resource_exporter.ResourceMeta{Name: *edgeGroup.Name}
 			}
 		}
 	}
@@ -263,7 +265,7 @@ func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configurati
 
 		for _, edgeGroup := range *edgeGroups.Entities {
 			if edgeGroup.State != nil && *edgeGroup.State != "deleted" {
-				resources[*edgeGroup.Id] = &ResourceMeta{Name: *edgeGroup.Name}
+				resources[*edgeGroup.Id] = &resource_exporter.ResourceMeta{Name: *edgeGroup.Name}
 			}
 		}
 	}
@@ -271,10 +273,10 @@ func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configurati
 	return resources, nil
 }
 
-func edgeGroupExporter() *ResourceExporter {
-	return &ResourceExporter{
+func EdgeGroupExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllEdgeGroups),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"phone_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 		},
 	}
@@ -284,7 +286,7 @@ func buildSdkTrunkBases(d *schema.ResourceData) *[]platformclientv2.Trunkbase {
 	returnValue := make([]platformclientv2.Trunkbase, 0)
 
 	if ids, ok := d.GetOk("phone_trunk_base_ids"); ok {
-		phoneTrunkBaseIds := setToStringList(ids.(*schema.Set))
+		phoneTrunkBaseIds := lists.SetToStringList(ids.(*schema.Set))
 		for _, trunkBaseId := range *phoneTrunkBaseIds {
 			id := trunkBaseId
 			returnValue = append(returnValue, platformclientv2.Trunkbase{

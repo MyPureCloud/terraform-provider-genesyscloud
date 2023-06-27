@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 // lockFlow will search for a specific flow and then lock it.  This is to specifically test the force_unlock flag where I want to create a flow,  simulate some one locking it and then attempt to
@@ -71,7 +71,7 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -130,7 +130,7 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
@@ -169,7 +169,7 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -248,7 +248,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -257,7 +257,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					filePath1,
 					"",
 					false,
-					generateSubstitutionsMap(map[string]string{
+					GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName1,
 						"default_language":     "en-us",
 						"greeting":             "Archy says hi!!!",
@@ -275,7 +275,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					filePath1,
 					"",
 					false,
-					generateSubstitutionsMap(map[string]string{
+					GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName2,
 						"default_language":     "en-us",
 						"greeting":             "Archy says hi!!!",
@@ -357,7 +357,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create flow
@@ -366,7 +366,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					destFile,
 					"",
 					false,
-					generateSubstitutionsMap(map[string]string{
+					GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName1,
 						"default_language":     "en-us",
 						"greeting":             "Archy says hi!!!",
@@ -384,7 +384,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					destFile,
 					"",
 					false,
-					generateSubstitutionsMap(map[string]string{
+					GenerateSubstitutionsMap(map[string]string{
 						"flow_name":            flowName2,
 						"default_language":     "en-us",
 						"greeting":             "Archy says hi!!!",

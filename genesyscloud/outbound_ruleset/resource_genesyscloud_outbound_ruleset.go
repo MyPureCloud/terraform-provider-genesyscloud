@@ -14,15 +14,20 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-// Registering our resource provider for export
-func init() {
-	gcloud.RegisterResource("genesyscloud_outbound_ruleset", resourceOutboundRuleset())
-	gcloud.RegisterDataSource("genesyscloud_outbound_ruleset", dataSourceOutboundRuleset())
-	gcloud.RegisterExporter("genesyscloud_outbound_ruleset", outboundRulesetExporter())
-}
+// // Registering our resource provider for export
+// func register_outbound_ruleset() {
+// 	log.Printf("resource outbound_ruleset registered")
+// 	regInstance.RegisterResource("genesyscloud_outbound_ruleset", ResourceOutboundRuleset())
+// 	regInstance.RegisterDataSource("genesyscloud_outbound_ruleset", DataSourceOutboundRuleset())
+// 	//gcloud.RegisterExporter("genesyscloud_outbound_ruleset", outboundRulesetExporter())
+// }
+
+// var regInstance Registrar
+
 
 var (
 	outboundrulesetdialerruleResource = &schema.Resource{
@@ -251,7 +256,13 @@ var (
 	}
 )
 
-func resourceOutboundRuleset() *schema.Resource {
+var outboundAPIProxy *OutboundAPIProxy
+
+func init() {
+	outboundAPIProxy = NewOutboundAPIProxy()
+}
+
+func ResourceOutboundRuleset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound ruleset`,
 
@@ -289,33 +300,15 @@ func resourceOutboundRuleset() *schema.Resource {
 	}
 }
 
-func getAllOutboundRuleset(_ context.Context, clientConfig *platformclientv2.Configuration) (gcloud.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(gcloud.ResourceIDMetaMap)
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(clientConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		sdkrulesetentitylisting, _, getErr := getOutboundRulesets(pageSize, pageNum, true, outboundApi)
-		if getErr != nil {
-			return nil, diag.Errorf("Error requesting page of Outbound Ruleset: %s", getErr)
-		}
-
-		if sdkrulesetentitylisting.Entities == nil || len(*sdkrulesetentitylisting.Entities) == 0 {
-			break
-		}
-
-		for _, entity := range *sdkrulesetentitylisting.Entities {
-			resources[*entity.Id] = &gcloud.ResourceMeta{Name: *entity.Name}
-		}
-	}
-
-	return resources, nil
+func getAllOutboundRuleset(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	outboundAPIProxy.ConfigureProxyApiInstance(clientConfig)
+	return outboundAPIProxy.ReadAllOutboundRuleset(outboundAPIProxy)
 }
 
-func outboundRulesetExporter() *gcloud.ResourceExporter {
-	return &gcloud.ResourceExporter{
+func OutboundRulesetExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundRuleset),
-		RefAttrs: map[string]*gcloud.RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"contact_list_id": {
 				RefType: "genesyscloud_outbound_contact_list",
 			},
@@ -332,6 +325,10 @@ func outboundRulesetExporter() *gcloud.ResourceExporter {
 				RefType: "genesyscloud_integration_action",
 			},
 		},
+		JsonEncodeAttributes: []string{"rules.actions.properties.skills"},
+	 	CustomAttributeResolver: map[string]*resource_exporter.RefAttrCustomResolver{
+	 		"rules.actions.properties.skills": {ResolverFunc: resource_exporter.RuleSetSkillPropertyResolver},
+		},
 	}
 }
 
@@ -339,7 +336,7 @@ func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	outboundAPIProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	sdkruleset := platformclientv2.Ruleset{
 		ContactList: gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
@@ -352,7 +349,7 @@ func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	log.Printf("Creating Outbound Ruleset %s", name)
-	outboundRuleset, _, err := postOutboundRulesets(sdkruleset, outboundApi)
+	outboundRuleset, _, err := outboundAPIProxy.CreateOutboundRulesets(outboundAPIProxy, sdkruleset)
 	if err != nil {
 		return diag.Errorf("Failed to create Outbound Ruleset %s: %s", name, err)
 	}
@@ -367,7 +364,7 @@ func updateOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	outboundAPIProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	sdkruleset := platformclientv2.Ruleset{
 		ContactList: gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
@@ -382,12 +379,12 @@ func updateOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	log.Printf("Updating Outbound Ruleset %s", name)
 	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound Ruleset version
-		outboundRuleset, resp, getErr := getOutboundRuleset(d.Id(), outboundApi)
+		outboundRuleset, resp, getErr := outboundAPIProxy.ReadOutboundRuleset(outboundAPIProxy, d.Id())
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read Outbound Ruleset %s: %s", d.Id(), getErr)
 		}
 		sdkruleset.Version = outboundRuleset.Version
-		outboundRuleset, _, updateErr := putOutboundRuleset(sdkruleset, outboundApi, d.Id())
+		outboundRuleset, _, updateErr := outboundAPIProxy.UpdateOutboundRuleset(outboundAPIProxy, sdkruleset, d.Id())
 		if updateErr != nil {
 			return resp, diag.Errorf("Failed to update Outbound Ruleset %s: %s", name, updateErr)
 		}
@@ -403,12 +400,12 @@ func updateOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	outboundAPIProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	log.Printf("Reading Outbound Ruleset %s", d.Id())
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
-		sdkruleset, resp, getErr := outboundApi.GetOutboundRuleset(d.Id())
+		sdkruleset, resp, getErr := outboundAPIProxy.ReadOutboundRuleset(outboundAPIProxy,d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Ruleset %s: %s", d.Id(), getErr))
@@ -416,7 +413,7 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Ruleset %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundRuleset())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundRuleset())
 
 		if sdkruleset.Name != nil {
 			d.Set("name", *sdkruleset.Name)
@@ -439,11 +436,11 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 
 func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	outboundAPIProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Ruleset")
-		resp, err := removeOutboundRuleset(d.Id(),outboundApi)
+		resp, err := outboundAPIProxy.DeleteOutboundRuleset(outboundAPIProxy,d.Id())
 		if err != nil {
 			return resp, diag.Errorf("Failed to delete Outbound Ruleset: %s", err)
 		}
@@ -454,7 +451,7 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
-		_, resp, err := getOutboundRuleset(d.Id(),outboundApi)
+		_, resp, err := outboundAPIProxy.ReadOutboundRuleset(outboundAPIProxy,d.Id())
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
 				// Outbound Ruleset deleted

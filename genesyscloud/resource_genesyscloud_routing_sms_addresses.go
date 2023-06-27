@@ -11,7 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func resourceRoutingSmsAddress() *schema.Resource {
@@ -73,8 +74,8 @@ func resourceRoutingSmsAddress() *schema.Resource {
 	}
 }
 
-func getAllRoutingSmsAddress(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllRoutingSmsAddress(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	routingApi := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -89,15 +90,15 @@ func getAllRoutingSmsAddress(_ context.Context, clientConfig *platformclientv2.C
 		}
 
 		for _, entity := range *sdksmsaddressentitylisting.Entities {
-			resources[*entity.Id] = &ResourceMeta{Name: *entity.Name}
+			resources[*entity.Id] = &resource_exporter.ResourceMeta{Name: *entity.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func routingSmsAddressExporter() *ResourceExporter {
-	return &ResourceExporter{
+func RoutingSmsAddressExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingSmsAddress),
 	}
 }

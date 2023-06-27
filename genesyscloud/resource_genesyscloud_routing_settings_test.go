@@ -15,7 +15,7 @@ func TestAccResourceRoutingSettingsBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -55,7 +55,7 @@ func TestAccResourceRoutingSettingsContactCenter(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create with contact center
@@ -100,7 +100,7 @@ func TestAccResourceRoutingSettingsTranscription(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create with transcription

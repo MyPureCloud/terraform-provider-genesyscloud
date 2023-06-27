@@ -13,7 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -110,8 +112,8 @@ var (
 	}
 )
 
-func getAllAuthRoles(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllAuthRoles(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -126,17 +128,17 @@ func getAllAuthRoles(_ context.Context, clientConfig *platformclientv2.Configura
 		}
 
 		for _, role := range *roles.Entities {
-			resources[*role.Id] = &ResourceMeta{Name: *role.Name}
+			resources[*role.Id] = &resource_exporter.ResourceMeta{Name: *role.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func authRoleExporter() *ResourceExporter {
-	return &ResourceExporter{
+func AuthRoleExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllAuthRoles),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"permission_policies.conditions.terms.operands.queue_id": {RefType: "genesyscloud_routing_queue"},
 			"permission_policies.conditions.terms.operands.user_id":  {RefType: "genesyscloud_user"},
 		},
@@ -148,7 +150,7 @@ func authRoleExporter() *ResourceExporter {
 	}
 }
 
-func resourceAuthRole() *schema.Resource {
+func ResourceAuthRole() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Authorization Role",
 
@@ -242,7 +244,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 			return resource.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceAuthRole())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthRole())
 		d.Set("name", *role.Name)
 
 		if role.Description != nil {
@@ -258,7 +260,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		}
 
 		if role.Permissions != nil {
-			d.Set("permissions", stringListToSet(*role.Permissions))
+			d.Set("permissions", lists.StringListToSet(*role.Permissions))
 		} else {
 			d.Set("permissions", nil)
 		}
@@ -343,7 +345,7 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 
 func buildSdkRolePermissions(d *schema.ResourceData) *[]string {
 	if permConfig, ok := d.GetOk("permissions"); ok {
-		return setToStringList(permConfig.(*schema.Set))
+		return lists.SetToStringList(permConfig.(*schema.Set))
 	}
 	return nil
 }
@@ -373,7 +375,7 @@ func buildSdkRolePermPolicies(d *schema.ResourceData) *[]platformclientv2.Domain
 
 func buildSdkPermPolicyActions(policyAttrs map[string]interface{}) *[]string {
 	if actions, ok := policyAttrs["action_set"]; ok {
-		return setToStringList(actions.(*schema.Set))
+		return lists.SetToStringList(actions.(*schema.Set))
 	}
 	return nil
 }
@@ -444,7 +446,7 @@ func flattenRolePermissionPolicies(policies []platformclientv2.Domainpermissionp
 			policyMap["entity_name"] = *sdkPolicy.EntityName
 		}
 		if sdkPolicy.ActionSet != nil {
-			policyMap["action_set"] = stringListToSet(*sdkPolicy.ActionSet)
+			policyMap["action_set"] = lists.StringListToSet(*sdkPolicy.ActionSet)
 		}
 		if sdkPolicy.ResourceConditionNode != nil {
 			policyMap["conditions"] = flattenRoleConditionNode(*sdkPolicy.ResourceConditionNode)

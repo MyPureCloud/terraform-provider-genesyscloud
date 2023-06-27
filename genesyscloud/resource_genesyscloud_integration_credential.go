@@ -12,11 +12,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllCredentials(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllCredentials(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -32,7 +33,7 @@ func getAllCredentials(_ context.Context, clientConfig *platformclientv2.Configu
 
 		for _, cred := range *credentials.Entities {
 			if cred.Name != nil { // Credential is possible to have no name
-				resources[*cred.Id] = &ResourceMeta{Name: *cred.Name}
+				resources[*cred.Id] = &resource_exporter.ResourceMeta{Name: *cred.Name}
 			}
 		}
 	}
@@ -40,17 +41,17 @@ func getAllCredentials(_ context.Context, clientConfig *platformclientv2.Configu
 	return resources, nil
 }
 
-func credentialExporter() *ResourceExporter {
-	return &ResourceExporter{
+func CredentialExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllCredentials),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No Reference
+		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No Reference
 		UnResolvableAttributes: map[string]*schema.Schema{
-			"fields": resourceCredential().Schema["fields"],
+			"fields": ResourceCredential().Schema["fields"],
 		},
 	}
 }
 
-func resourceCredential() *schema.Resource {
+func ResourceCredential() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Credential",
 
@@ -128,7 +129,7 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 			return resource.NonRetryableError(fmt.Errorf("Failed to read credential %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceCredential())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceCredential())
 		d.Set("name", *currentCredential.Name)
 		d.Set("credential_type_name", *currentCredential.VarType.Name)
 

@@ -17,7 +17,7 @@ func TestAccDataSourceLineBaseSettings(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Creating a phone base settings will result in a line base settings of the same name being created

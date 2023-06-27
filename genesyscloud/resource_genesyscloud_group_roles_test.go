@@ -12,7 +12,7 @@ import (
 func TestAccResourceGroupRolesMembership(t *testing.T) {
 	t.Parallel()
 	var (
-		groupRoleResource = "test-group-roles"
+		groupRoleResource = "test-group-roles1"
 		groupResource1    = "test-group"
 		groupName         = "terraform-" + uuid.NewString()
 		roleResource1     = "test-role-1"
@@ -26,7 +26,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create group with 1 role in default division

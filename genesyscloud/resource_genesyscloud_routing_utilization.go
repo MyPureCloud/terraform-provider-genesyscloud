@@ -14,7 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -60,22 +62,22 @@ func getSdkUtilizationTypes() []string {
 	return types
 }
 
-func getAllRoutingUtilization(_ context.Context, _ *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingUtilization(_ context.Context, _ *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
 	// Routing utilization config always exists
-	resources := make(ResourceIDMetaMap)
-	resources["0"] = &ResourceMeta{Name: "routing_utilization"}
+	resources := make(resource_exporter.ResourceIDMetaMap)
+	resources["0"] = &resource_exporter.ResourceMeta{Name: "routing_utilization"}
 	return resources, nil
 }
 
-func routingUtilizationExporter() *ResourceExporter {
-	return &ResourceExporter{
+func RoutingUtilizationExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingUtilization),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"maximum_capacity"},
 	}
 }
 
-func resourceRoutingUtilization() *schema.Resource {
+func ResourceRoutingUtilization() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Org-wide Routing Utilization Settings.",
 
@@ -156,7 +158,7 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSkill())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill())
 		if settings.Utilization != nil {
 			for sdkType, schemaType := range utilizationMediaTypes {
 				if mediaSettings, ok := (*settings.Utilization)[sdkType]; ok {
@@ -209,7 +211,7 @@ func flattenUtilizationSetting(settings platformclientv2.Mediautilization) []int
 		settingsMap["maximum_capacity"] = *settings.MaximumCapacity
 	}
 	if settings.InterruptableMediaTypes != nil {
-		settingsMap["interruptible_media_types"] = stringListToSet(*settings.InterruptableMediaTypes)
+		settingsMap["interruptible_media_types"] = lists.StringListToSet(*settings.InterruptableMediaTypes)
 	}
 	if settings.IncludeNonAcd != nil {
 		settingsMap["include_non_acd"] = *settings.IncludeNonAcd
@@ -239,7 +241,7 @@ func buildSdkMediaUtilization(settings []interface{}) platformclientv2.Mediautil
 	// Optional
 	interruptableMediaTypes := &[]string{}
 	if types, ok := settingsMap["interruptible_media_types"]; ok {
-		interruptableMediaTypes = setToStringList(types.(*schema.Set))
+		interruptableMediaTypes = lists.SetToStringList(types.(*schema.Set))
 	}
 
 	return platformclientv2.Mediautilization{

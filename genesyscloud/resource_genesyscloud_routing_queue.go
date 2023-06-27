@@ -17,7 +17,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -146,8 +148,8 @@ var (
 	}
 )
 
-func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	// Newly created resources often aren't returned unless there's a delay
@@ -165,17 +167,17 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, queue := range *queues.Entities {
-			resources[*queue.Id] = &ResourceMeta{Name: *queue.Name}
+			resources[*queue.Id] = &resource_exporter.ResourceMeta{Name: *queue.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func routingQueueExporter() *ResourceExporter {
-	return &ResourceExporter{
+func RoutingQueueExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingQueues),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"division_id":                       {RefType: "genesyscloud_auth_division"},
 			"queue_flow_id":                     {RefType: "genesyscloud_flow"},
 			"email_in_queue_flow_id":            {RefType: "genesyscloud_flow"},
@@ -197,13 +199,13 @@ func routingQueueExporter() *ResourceExporter {
 			"members":                {"user_id"},
 		},
 		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
-		CustomAttributeResolver: map[string]*RefAttrCustomResolver{
-			"bullseye_rings.member_groups.member_group_id": {ResolverFunc: MemberGroupsResolver},
+		CustomAttributeResolver: map[string]*resource_exporter.RefAttrCustomResolver{
+			"bullseye_rings.member_groups.member_group_id": {ResolverFunc: resource_exporter.MemberGroupsResolver},
 		},
 	}
 }
 
-func resourceRoutingQueue() *schema.Resource {
+func ResourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Queue",
 
@@ -554,7 +556,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingQueue())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue())
 		if currentQueue.Name != nil {
 			d.Set("name", *currentQueue.Name)
 		} else {
@@ -1148,7 +1150,7 @@ func validateMapCommTypes(val interface{}, _ cty.Path) diag.Diagnostics {
 	commTypes := []string{"CALL", "CALLBACK", "CHAT", "COBROWSE", "EMAIL", "MESSAGE", "SOCIAL_EXPRESSION", "VIDEO", "SCREENSHARE"}
 	m := val.(map[string]interface{})
 	for k := range m {
-		if !StringInSlice(k, commTypes) {
+		if !lists.StringInSlice(k, commTypes) {
 			return diag.Errorf("%s is an invalid communication type key.", k)
 		}
 	}
@@ -1302,9 +1304,9 @@ func updateQueueWrapupCodes(d *schema.ResourceData, routingAPI *platformclientv2
 					existingCodes = append(existingCodes, *code.Id)
 				}
 			}
-			configCodes := *setToStringList(codesConfig.(*schema.Set))
+			configCodes := *lists.SetToStringList(codesConfig.(*schema.Set))
 
-			codesToRemove := sliceDifference(existingCodes, configCodes)
+			codesToRemove := lists.SliceDifference(existingCodes, configCodes)
 			if len(codesToRemove) > 0 {
 				for _, codeId := range codesToRemove {
 					resp, err := routingAPI.DeleteRoutingQueueWrapupcode(d.Id(), codeId)
@@ -1318,7 +1320,7 @@ func updateQueueWrapupCodes(d *schema.ResourceData, routingAPI *platformclientv2
 				}
 			}
 
-			codesToAdd := sliceDifference(configCodes, existingCodes)
+			codesToAdd := lists.SliceDifference(configCodes, existingCodes)
 			if len(codesToAdd) > 0 {
 				err := addWrapupCodesInChunks(d.Id(), codesToAdd, routingAPI)
 				if err != nil {
@@ -1397,7 +1399,7 @@ func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.Rou
 			}
 
 			if len(oldUserIds) > 0 {
-				usersToRemove := sliceDifference(oldUserIds, newUserIds)
+				usersToRemove := lists.SliceDifference(oldUserIds, newUserIds)
 				err := updateMembersInChunks(d.Id(), usersToRemove, true, routingAPI)
 				if err != nil {
 					return err
@@ -1405,7 +1407,7 @@ func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.Rou
 			}
 
 			if len(newUserIds) > 0 {
-				usersToAdd := sliceDifference(newUserIds, oldUserIds)
+				usersToAdd := lists.SliceDifference(newUserIds, oldUserIds)
 				err := updateMembersInChunks(d.Id(), usersToAdd, false, routingAPI)
 				if err != nil {
 					return err
@@ -1564,7 +1566,7 @@ func flattenQueueWrapupCodes(queueID string, api *platformclientv2.RoutingApi) (
 	}
 
 	if codeIds != nil {
-		return stringListToSet(codeIds), nil
+		return lists.StringListToSet(codeIds), nil
 	}
 	return nil, nil
 }
@@ -1583,7 +1585,7 @@ func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *stri
 	}
 
 	if groupIds != nil {
-		return stringListToSet(groupIds)
+		return lists.StringListToSet(groupIds)
 	}
 
 	return nil

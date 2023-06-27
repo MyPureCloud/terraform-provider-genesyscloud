@@ -12,12 +12,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func getAllIdpPing(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllIdpPing(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
-	resources := make(ResourceIDMetaMap)
+	resources := make(resource_exporter.ResourceIDMetaMap)
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersPing()
 	if getErr != nil {
@@ -28,18 +30,18 @@ func getAllIdpPing(_ context.Context, clientConfig *platformclientv2.Configurati
 		return nil, diag.Errorf("Failed to get IDP Ping: %v", getErr)
 	}
 
-	resources["0"] = &ResourceMeta{Name: "ping"}
+	resources["0"] = &resource_exporter.ResourceMeta{Name: "ping"}
 	return resources, nil
 }
 
-func idpPingExporter() *ResourceExporter {
-	return &ResourceExporter{
+func IdpPingExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllIdpPing),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceIdpPing() *schema.Resource {
+func ResourceIdpPing() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on Ping Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-ping-identity-single-sign-provider/",
 
@@ -109,11 +111,11 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpPing())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpPing())
 		if ping.Certificate != nil {
-			d.Set("certificates", stringListToInterfaceList([]string{*ping.Certificate}))
+			d.Set("certificates", lists.StringListToInterfaceList([]string{*ping.Certificate}))
 		} else if ping.Certificates != nil {
-			d.Set("certificates", stringListToInterfaceList(*ping.Certificates))
+			d.Set("certificates", lists.StringListToInterfaceList(*ping.Certificates))
 		} else {
 			d.Set("certificates", nil)
 		}
@@ -164,7 +166,7 @@ func updateIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 		Disabled:               &disabled,
 	}
 
-	certificates := buildSdkStringListFromInterfaceArray(d, "certificates")
+	certificates := lists.BuildSdkStringListFromInterfaceArray(d, "certificates")
 	if certificates != nil {
 		if len(*certificates) == 1 {
 			update.Certificate = &(*certificates)[0]

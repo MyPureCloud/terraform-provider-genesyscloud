@@ -9,7 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func resourceOrgauthorizationPairing() *schema.Resource {
@@ -47,8 +48,8 @@ func deleteOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 }
 
 func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	userIds := InterfaceListToStrings(d.Get("user_ids").([]interface{}))
-	groupIds := InterfaceListToStrings(d.Get("group_ids").([]interface{}))
+	userIds := lists.InterfaceListToStrings(d.Get("user_ids").([]interface{}))
+	groupIds := lists.InterfaceListToStrings(d.Get("group_ids").([]interface{}))
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	organizationAuthorizationApi := platformclientv2.NewOrganizationAuthorizationApiWithConfig(sdkConfig)
@@ -87,27 +88,27 @@ func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, me
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOrgauthorizationPairing())
 
-		schemaUserIds := InterfaceListToStrings(d.Get("user_ids").([]interface{}))
+		schemaUserIds := lists.InterfaceListToStrings(d.Get("user_ids").([]interface{}))
 		if sdktrustrequest.Users != nil {
 			ids := make([]string, 0)
 			for _, item := range *sdktrustrequest.Users {
 				ids = append(ids, *item.Id)
 			}
 			// if lists are the same: Set in original order to avoid plan not empty error
-			if listsAreEquivalent(schemaUserIds, ids) {
+			if lists.ListsAreEquivalent(schemaUserIds, ids) {
 				d.Set("user_ids", schemaUserIds)
 			} else {
 				d.Set("user_ids", ids)
 			}
 		}
-		schemaGroupIds := InterfaceListToStrings(d.Get("group_ids").([]interface{}))
+		schemaGroupIds := lists.InterfaceListToStrings(d.Get("group_ids").([]interface{}))
 		if sdktrustrequest.Groups != nil {
 			ids := make([]string, 0)
 			for _, item := range *sdktrustrequest.Groups {
 				ids = append(ids, *item.Id)
 			}
 			// if lists are the same: Set in original order to avoid plan not empty error
-			if listsAreEquivalent(schemaGroupIds, ids) {
+			if lists.ListsAreEquivalent(schemaGroupIds, ids) {
 				d.Set("group_ids", schemaGroupIds)
 			} else {
 				d.Set("group_ids", ids)

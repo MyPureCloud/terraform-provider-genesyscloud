@@ -19,7 +19,7 @@ func TestAccDataSourceOutboundRuleset(t *testing.T) {
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.ProviderFactories,
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {

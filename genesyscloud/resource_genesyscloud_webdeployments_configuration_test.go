@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
@@ -23,7 +23,7 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: basicConfigurationResource(configName, configDescription),
@@ -70,7 +70,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: complexConfigurationResource(
@@ -174,11 +174,11 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", falseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", falseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "2"),
-					validateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
-					validateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "2"),
-					validateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
-					validateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", trueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),

@@ -13,7 +13,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -39,9 +40,9 @@ var (
 	}
 )
 
-func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
-	resources := make(ResourceIDMetaMap)
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -81,7 +82,7 @@ func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2
 
 			for _, knowledgeCategory := range *knowledgeCategories.Entities {
 				id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
-				resources[id] = &ResourceMeta{Name: *knowledgeCategory.Name}
+				resources[id] = &resource_exporter.ResourceMeta{Name: *knowledgeCategory.Name}
 			}
 		}
 	}
@@ -89,16 +90,16 @@ func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2
 	return resources, nil
 }
 
-func knowledgeCategoryExporter() *ResourceExporter {
-	return &ResourceExporter{
+func KnowledgeCategoryExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeCategories),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
 	}
 }
 
-func resourceKnowledgeCategory() *schema.Resource {
+func ResourceKnowledgeCategory() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Category",
 
@@ -168,7 +169,7 @@ func readKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceKnowledgeCategory())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeCategory())
 
 		newId := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
 		d.SetId(newId)
@@ -196,7 +197,7 @@ func updateKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 			return resp, diag.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr)
 		}
 
-		knowledgeCategoryUpdate := buildKnowledgeCategory(knowledgeCategory)
+		knowledgeCategoryUpdate := updateBuildKnowledgeCategory(knowledgeCategory)
 
 		log.Printf("Updating knowledge category %s", knowledgeCategory["name"].(string))
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId, *knowledgeCategoryUpdate)
@@ -242,10 +243,27 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func buildKnowledgeCategory(categoryIn map[string]interface{}) *platformclientv2.Categoryrequest {
+func buildKnowledgeCategory(categoryIn map[string]interface{}) *platformclientv2.Categorycreaterequest {
 	name := categoryIn["name"].(string)
 
-	categoryOut := platformclientv2.Categoryrequest{
+	categoryOut := platformclientv2.Categorycreaterequest{
+		Name: &name,
+	}
+
+	if description, ok := categoryIn["description"].(string); ok && description != "" {
+		categoryOut.Description = &description
+	}
+	if parentId, ok := categoryIn["parent_id"].(string); ok && parentId != "" {
+		categoryOut.ParentCategoryId = &parentId
+	}
+
+	return &categoryOut
+}
+
+func updateBuildKnowledgeCategory(categoryIn map[string]interface{}) *platformclientv2.Categoryupdaterequest {
+	name := categoryIn["name"].(string)
+
+	categoryOut := platformclientv2.Categoryupdaterequest{
 		Name: &name,
 	}
 

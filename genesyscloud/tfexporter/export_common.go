@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 const (
@@ -60,8 +60,8 @@ func determineVarValue(s *schema.Schema) interface{} {
 	return nil
 }
 
-func resolveReference(refSettings *gcloud.RefAttrSettings, refID string, exporters map[string]*gcloud.ResourceExporter, exportingState bool) string {
-	if gcloud.StringInSlice(refID, refSettings.AltValues) {
+func resolveReference(refSettings *resource_exporter.RefAttrSettings, refID string, exporters map[string]*resource_exporter.ResourceExporter, exportingState bool) string {
+	if lists.StringInSlice(refID, refSettings.AltValues) {
 		// This is not actually a reference to another object. Keep the value
 		return refID
 	}

@@ -9,15 +9,17 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -32,17 +34,17 @@ func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclie
 		}
 
 		for _, scheduleGroup := range *scheduleGroups.Entities {
-			resources[*scheduleGroup.Id] = &ResourceMeta{Name: *scheduleGroup.Name}
+			resources[*scheduleGroup.Id] = &resource_exporter.ResourceMeta{Name: *scheduleGroup.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func architectScheduleGroupsExporter() *ResourceExporter {
-	return &ResourceExporter{
+func ArchitectScheduleGroupsExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllArchitectScheduleGroups),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"division_id":          {RefType: "genesyscloud_auth_division"},
 			"open_schedules_id":    {RefType: "genesyscloud_architect_schedules"},
 			"closed_schedules_id":  {RefType: "genesyscloud_architect_schedules"},
@@ -51,7 +53,7 @@ func architectScheduleGroupsExporter() *ResourceExporter {
 	}
 }
 
-func resourceArchitectScheduleGroups() *schema.Resource {
+func ResourceArchitectScheduleGroups() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Schedule Groups",
 
@@ -118,9 +120,9 @@ func createArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 
 	schedGroup := platformclientv2.Schedulegroup{
 		Name:             &name,
-		OpenSchedules:    buildSdkDomainEntityRefArr(d, "open_schedules_id"),
-		ClosedSchedules:  buildSdkDomainEntityRefArr(d, "closed_schedules_id"),
-		HolidaySchedules: buildSdkDomainEntityRefArr(d, "holiday_schedules_id"),
+		OpenSchedules:    BuildSdkDomainEntityRefArr(d, "open_schedules_id"),
+		ClosedSchedules:  BuildSdkDomainEntityRefArr(d, "closed_schedules_id"),
+		HolidaySchedules: BuildSdkDomainEntityRefArr(d, "holiday_schedules_id"),
 	}
 
 	// Optional attributes
@@ -167,7 +169,7 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 			return resource.NonRetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectScheduleGroups())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectScheduleGroups())
 		d.Set("name", *scheduleGroup.Name)
 		d.Set("division_id", *scheduleGroup.Division.Id)
 		d.Set("description", nil)
@@ -226,9 +228,9 @@ func updateArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 			Version:          scheduleGroup.Version,
 			Description:      &description,
 			TimeZone:         &timeZone,
-			OpenSchedules:    buildSdkDomainEntityRefArr(d, "open_schedules_id"),
-			ClosedSchedules:  buildSdkDomainEntityRefArr(d, "closed_schedules_id"),
-			HolidaySchedules: buildSdkDomainEntityRefArr(d, "holiday_schedules_id"),
+			OpenSchedules:    BuildSdkDomainEntityRefArr(d, "open_schedules_id"),
+			ClosedSchedules:  BuildSdkDomainEntityRefArr(d, "closed_schedules_id"),
+			HolidaySchedules: BuildSdkDomainEntityRefArr(d, "holiday_schedules_id"),
 		})
 		if putErr != nil {
 			msg := ""

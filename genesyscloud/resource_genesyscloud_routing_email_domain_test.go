@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
@@ -19,7 +19,7 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 		domainRes = "routing-domain1"
 		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000))
 	)
-	err := authorizeSdk()
+	err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +27,7 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create purecloud subdomain
@@ -60,7 +60,7 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 		domainId        = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
 		mailFromDomain1 = "test." + domainId
 	)
-	err := authorizeSdk()
+	err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create custom domain

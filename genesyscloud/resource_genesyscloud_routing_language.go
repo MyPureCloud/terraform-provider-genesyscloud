@@ -12,11 +12,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -32,7 +33,7 @@ func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Co
 
 		for _, language := range *languages.Entities {
 			if language.State != nil && *language.State != "deleted" {
-				resources[*language.Id] = &ResourceMeta{Name: *language.Name}
+				resources[*language.Id] = &resource_exporter.ResourceMeta{Name: *language.Name}
 			}
 		}
 	}
@@ -40,14 +41,14 @@ func getAllRoutingLanguages(_ context.Context, clientConfig *platformclientv2.Co
 	return resources, nil
 }
 
-func routingLanguageExporter() *ResourceExporter {
-	return &ResourceExporter{
+func RoutingLanguageExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingLanguages),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceRoutingLanguage() *schema.Resource {
+func ResourceRoutingLanguage() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Language",
 
@@ -108,7 +109,7 @@ func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta inter
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingLanguage())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingLanguage())
 		d.Set("name", *language.Name)
 		log.Printf("Read language %s %s", d.Id(), *language.Name)
 		return cc.CheckState()

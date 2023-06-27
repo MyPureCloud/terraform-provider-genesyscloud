@@ -7,7 +7,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 // SDKClientPool holds a pool of client configs for the Genesys Cloud SDK. One should be
@@ -94,7 +95,7 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) {
 }
 
 type resContextFunc func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics
-type getAllConfigFunc func(context.Context, *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics)
+type getAllConfigFunc func(context.Context, *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics)
 
 func CreateWithPooledClient(method resContextFunc) schema.CreateContextFunc {
 	return schema.CreateContextFunc(runWithPooledClient(method))
@@ -134,8 +135,8 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 }
 
 // Inject a pooled SDK client connection into an exporter's getAll* method
-func GetAllWithPooledClient(method getAllConfigFunc) GetAllResourcesFunc {
-	return func(ctx context.Context) (ResourceIDMetaMap, diag.Diagnostics) {
+func GetAllWithPooledClient(method getAllConfigFunc) resource_exporter.GetAllResourcesFunc {
+	return func(ctx context.Context) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
 		clientConfig := sdkClientPool.acquire()
 		defer sdkClientPool.release(clientConfig)
 

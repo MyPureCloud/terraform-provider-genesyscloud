@@ -13,7 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 type EvaluationFormQuestionGroupStruct struct {
@@ -898,7 +899,7 @@ var (
 	qualityAPI = platformclientv2.NewQualityApi()
 )
 
-func resourceMediaRetentionPolicy() *schema.Resource {
+func ResourceMediaRetentionPolicy() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Media Retention Policies",
 		CreateContext: CreateWithPooledClient(createMediaRetentionPolicy),
@@ -963,8 +964,8 @@ func resourceMediaRetentionPolicy() *schema.Resource {
 	}
 }
 
-func getAllMediaRetentionPolicies(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllMediaRetentionPolicies(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	recordingAPI := platformclientv2.NewRecordingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -980,7 +981,7 @@ func getAllMediaRetentionPolicies(_ context.Context, clientConfig *platformclien
 		}
 
 		for _, retentionPolicy := range *retentionPolicies.Entities {
-			resources[*retentionPolicy.Id] = &ResourceMeta{Name: *retentionPolicy.Name}
+			resources[*retentionPolicy.Id] = &resource_exporter.ResourceMeta{Name: *retentionPolicy.Name}
 		}
 	}
 
@@ -2925,10 +2926,10 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	return readMediaRetentionPolicy(ctx, d, meta)
 }
 
-func mediaRetentionPolicyExporter() *ResourceExporter {
-	return &ResourceExporter{
+func MediaRetentionPolicyExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllMediaRetentionPolicies),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"media_policies.chat_policy.conditions.for_queue_ids":                                         {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
 			"media_policies.call_policy.conditions.for_queue_ids":                                         {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
 			"media_policies.message_policy.conditions.for_queue_ids":                                      {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},

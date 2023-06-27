@@ -12,7 +12,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -154,8 +156,8 @@ func resourceResponsemanagementResponse() *schema.Resource {
 	}
 }
 
-func getAllResponsemanagementResponse(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllResponsemanagementResponse(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -182,7 +184,7 @@ func getAllResponsemanagementResponse(_ context.Context, clientConfig *platformc
 				}
 
 				for _, entity := range *sdkresponseentitylisting.Entities {
-					resources[*entity.Id] = &ResourceMeta{Name: *entity.Name}
+					resources[*entity.Id] = &resource_exporter.ResourceMeta{Name: *entity.Name}
 				}
 			}
 		}
@@ -191,10 +193,10 @@ func getAllResponsemanagementResponse(_ context.Context, clientConfig *platformc
 	return resources, nil
 }
 
-func responsemanagementResponseExporter() *ResourceExporter {
-	return &ResourceExporter{
+func ResponsemanagementResponseExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllResponsemanagementResponse),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			`library_ids`: {
 				RefType: "genesyscloud_responsemanagement_library",
 			},
@@ -217,7 +219,7 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	sdkresponse := platformclientv2.Response{
-		Libraries:     buildSdkDomainEntityRefArr(d, "library_ids"),
+		Libraries:     BuildSdkDomainEntityRefArr(d, "library_ids"),
 		Texts:         buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
 		Substitutions: buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
 		Assets:        buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
@@ -262,7 +264,7 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
 	sdkresponse := platformclientv2.Response{
-		Libraries:     buildSdkDomainEntityRefArr(d, "library_ids"),
+		Libraries:     BuildSdkDomainEntityRefArr(d, "library_ids"),
 		Texts:         buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
 		Substitutions: buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
 		Assets:        buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
@@ -328,7 +330,7 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 			d.Set("name", *sdkresponse.Name)
 		}
 		if sdkresponse.Libraries != nil {
-			d.Set("library_ids", sdkDomainEntityRefArrToList(*sdkresponse.Libraries))
+			d.Set("library_ids", SdkDomainEntityRefArrToList(*sdkresponse.Libraries))
 		}
 		if sdkresponse.Texts != nil {
 			d.Set("texts", flattenSdkresponsemanagementresponseResponsetextSlice(*sdkresponse.Texts))
@@ -473,7 +475,7 @@ func buildSdkresponsemanagementresponseAddressableentityrefSlice(addressableenti
 	if addressableentityref == nil {
 		return nil
 	}
-	strList := setToStringList(addressableentityref)
+	strList := lists.SetToStringList(addressableentityref)
 	if strList == nil {
 		return nil
 	}

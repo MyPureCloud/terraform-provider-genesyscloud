@@ -15,10 +15,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func resourceTrunkBaseSettings() *schema.Resource {
+func ResourceTrunkBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Trunk Base Settings",
 
@@ -202,7 +203,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceTrunkBaseSettings())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunkBaseSettings())
 		d.Set("name", *trunkBaseSettings.Name)
 		d.Set("state", *trunkBaseSettings.State)
 		if trunkBaseSettings.Description != nil {
@@ -268,8 +269,8 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
@@ -284,7 +285,7 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 		for _, trunkBaseSetting := range *trunkBaseSettings.Entities {
 			if trunkBaseSetting.State != nil && *trunkBaseSetting.State != "deleted" {
-				resources[*trunkBaseSetting.Id] = &ResourceMeta{Name: *trunkBaseSetting.Name}
+				resources[*trunkBaseSetting.Id] = &resource_exporter.ResourceMeta{Name: *trunkBaseSetting.Name}
 			}
 		}
 	}
@@ -342,10 +343,10 @@ func getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig *platformclientv2.Con
 	return successPayload, response, err
 }
 
-func trunkBaseSettingsExporter() *ResourceExporter {
-	return &ResourceExporter{
+func TrunkBaseSettingsExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc:     GetAllWithPooledClient(getAllTrunkBaseSettings),
-		RefAttrs:             map[string]*RefAttrSettings{},
+		RefAttrs:             map[string]*resource_exporter.RefAttrSettings{},
 		JsonEncodeAttributes: []string{"properties"},
 	}
 }

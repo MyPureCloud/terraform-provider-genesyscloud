@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
-func dataSourceArchitectDatatable() *schema.Resource {
+func DataSourceArchitectDatatable() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Architect Datatables. Select an architect datatable by name.",
-		ReadContext: ReadWithPooledClient(dataSourceArchitectDatatableRead),
+		ReadContext: ReadWithPooledClient(DataSourceArchitectDatatableRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Datatable name.",
@@ -25,7 +25,7 @@ func dataSourceArchitectDatatable() *schema.Resource {
 	}
 }
 
-func dataSourceArchitectDatatableRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func DataSourceArchitectDatatableRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 

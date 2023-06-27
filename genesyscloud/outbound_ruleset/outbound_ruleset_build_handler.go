@@ -1,7 +1,7 @@
 package outbound_ruleset
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 

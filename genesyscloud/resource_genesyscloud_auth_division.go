@@ -11,11 +11,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -30,21 +31,21 @@ func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, division := range *divisions.Entities {
-			resources[*division.Id] = &ResourceMeta{Name: *division.Name}
+			resources[*division.Id] = &resource_exporter.ResourceMeta{Name: *division.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func authDivisionExporter() *ResourceExporter {
-	return &ResourceExporter{
+func AuthDivisionExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllAuthDivisions),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceAuthDivision() *schema.Resource {
+func ResourceAuthDivision() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Authorization Division",
 
@@ -124,7 +125,7 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 			return resource.NonRetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceAuthDivision())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthDivision())
 		d.Set("name", *division.Name)
 
 		if division.Description != nil {

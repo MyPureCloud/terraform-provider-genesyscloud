@@ -14,7 +14,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -210,9 +212,9 @@ var (
 	}
 )
 
-func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
-	resources := make(ResourceIDMetaMap)
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -232,7 +234,7 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 	for _, knowledgeBase := range knowledgeBaseList {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil)
+			knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil, nil)
 			if getErr != nil {
 				return nil, diag.Errorf("Failed to get page of Knowledge documents: %v", getErr)
 			}
@@ -252,7 +254,7 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 				}
 				for _, knowledgeDocumentVariation := range *knowledgeDocumentVariations.Entities {
 					id := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.Id)
-					resources[id] = &ResourceMeta{Name: "variation" + uuid.NewString()}
+					resources[id] = &resource_exporter.ResourceMeta{Name: "variation" + uuid.NewString()}
 				}
 			}
 		}
@@ -261,17 +263,17 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 	return resources, nil
 }
 
-func knowledgeDocumentVariationExporter() *ResourceExporter {
-	return &ResourceExporter{
+func knowledgeDocumentVariationExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeDocumentVariations),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"knowledge_base_id":     {RefType: "genesyscloud_knowledge_knowledgebase"},
 			"knowledge_document_id": {RefType: "genesyscloud_knowledge_document"},
 		},
 	}
 }
 
-func resourceKnowledgeDocumentVariation() *schema.Resource {
+func ResourceKnowledgeDocumentVariation() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Document Variation",
 
@@ -429,7 +431,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 			knowledgeDocumentVariation = variation
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceKnowledgeDocumentVariation())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocumentVariation())
 
 		newId := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocumentVariation.Document.KnowledgeBase.Id, documentResourceId)
 		d.SetId(newId)
@@ -617,7 +619,7 @@ func buildDocumentText(textIn map[string]interface{}) *platformclientv2.Document
 			Text: &textString,
 		}
 		if marks, ok := text["marks"].(*schema.Set); ok {
-			markArr := setToStringList(marks)
+			markArr := lists.SetToStringList(marks)
 			textOut.Marks = markArr
 		}
 		if hyperlink, ok := text["hyperlink"].(string); ok {
@@ -732,7 +734,7 @@ func flattenDocumentText(textIn platformclientv2.Documenttext) []interface{} {
 		textOut["text"] = *textIn.Text
 	}
 	if textIn.Marks != nil {
-		markSet := stringListToSet(*textIn.Marks)
+		markSet := lists.StringListToSet(*textIn.Marks)
 		textOut["marks"] = markSet
 	}
 	if textIn.Hyperlink != nil {

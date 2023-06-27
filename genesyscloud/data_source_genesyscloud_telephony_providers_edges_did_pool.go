@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func dataSourceDidPool() *schema.Resource {
@@ -20,13 +20,13 @@ func dataSourceDidPool() *schema.Resource {
 				Description:      "Starting phone number of the DID Pool range.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: ValidatePhoneNumber,
 			},
 			"end_phone_number": {
 				Description:      "Ending phone number of the DID Pool range.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: ValidatePhoneNumber,
 			},
 		},
 	}

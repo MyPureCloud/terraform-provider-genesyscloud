@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 type Mediapolicies struct {
@@ -437,7 +437,7 @@ var (
 	userResource1            = "test-user-1"
 	userName                 = "terraform-user" + uuid.NewString()
 	userEmail                = "notanemail@example.com" + uuid.NewString()
-	userRoleResource1        = "test-user-role-1"
+	userRoleResource1        = "test-user-role-2"
 	questionGroupName        = "terraform-question-group" + uuid.NewString()
 	evaluationFormResource1  = "test-evaluation-form-1"
 	evaluationFormName       = "terraform-evaluation-form" + uuid.NewString()
@@ -913,7 +913,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 		domainId  = fmt.Sprintf("terraform%v.com", time.Now().Unix())
 	)
 
-	err := authorizeSdk()
+	err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -921,7 +921,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateRoutingEmailDomainResource(
@@ -948,13 +948,13 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
-					generateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
+					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						generateSubstitutionsMap(map[string]string{
+						GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",
@@ -1055,13 +1055,13 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
-					generateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
+					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						generateSubstitutionsMap(map[string]string{
+						GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",
@@ -1162,13 +1162,13 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
-					generateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
+					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						generateSubstitutionsMap(map[string]string{
+						GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",
@@ -1269,13 +1269,13 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
-					generateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
+					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						generateSubstitutionsMap(map[string]string{
+						GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",

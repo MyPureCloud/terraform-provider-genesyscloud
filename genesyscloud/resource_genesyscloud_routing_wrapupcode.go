@@ -12,11 +12,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllRoutingWrapupCodes(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllRoutingWrapupCodes(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -31,21 +32,21 @@ func getAllRoutingWrapupCodes(_ context.Context, clientConfig *platformclientv2.
 		}
 
 		for _, wrapupcode := range *wrapupcodes.Entities {
-			resources[*wrapupcode.Id] = &ResourceMeta{Name: *wrapupcode.Name}
+			resources[*wrapupcode.Id] = &resource_exporter.ResourceMeta{Name: *wrapupcode.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func routingWrapupCodeExporter() *ResourceExporter {
-	return &ResourceExporter{
+func RoutingWrapupCodeExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingWrapupCodes),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceRoutingWrapupCode() *schema.Resource {
+func ResourceRoutingWrapupCode() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Wrapup Code",
 
@@ -100,7 +101,7 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read wrapupcode %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingWrapupCode())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingWrapupCode())
 		d.Set("name", *wrapupcode.Name)
 
 		log.Printf("Read wrapupcode %s %s", d.Id(), *wrapupcode.Name)
@@ -151,4 +152,13 @@ func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 		}
 		return resource.RetryableError(fmt.Errorf("Routing wrapup code %s still exists", d.Id()))
 	})
+}
+
+func GenerateRoutingWrapupcodeResource(
+	resourceID string,
+	name string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_wrapupcode" "%s" {
+		name = "%s"
+	}
+	`, resourceID, name)
 }

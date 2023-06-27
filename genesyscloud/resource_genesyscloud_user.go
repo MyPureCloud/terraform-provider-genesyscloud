@@ -14,8 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -27,7 +29,7 @@ var (
 				Description:      "Phone number. Defaults to US country code.",
 				Type:             schema.TypeString,
 				Optional:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: ValidatePhoneNumber,
 			},
 			"media_type": {
 				Description:  "Media type of phone number (SMS | PHONE).",
@@ -112,8 +114,8 @@ var (
 	}
 )
 
-func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	// Newly created resources often aren't returned unless there's a delay
@@ -147,7 +149,7 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 			}
 
 			for _, user := range *users.Entities {
-				resources[*user.Id] = &ResourceMeta{Name: *user.Email}
+				resources[*user.Id] = &resource_exporter.ResourceMeta{Name: *user.Email}
 			}
 		}
 	}()
@@ -173,7 +175,7 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 			}
 
 			for _, user := range *users.Entities {
-				resources[*user.Id] = &ResourceMeta{Name: *user.Email}
+				resources[*user.Id] = &resource_exporter.ResourceMeta{Name: *user.Email}
 			}
 		}
 	}()
@@ -192,10 +194,10 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	}
 }
 
-func userExporter() *ResourceExporter {
-	return &ResourceExporter{
+func UserExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllUsers),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"manager":                       {RefType: "genesyscloud_user"},
 			"division_id":                   {RefType: "genesyscloud_auth_division"},
 			"routing_skills.skill_id":       {RefType: "genesyscloud_routing_skill"},
@@ -211,7 +213,7 @@ func userExporter() *ResourceExporter {
 	}
 }
 
-func resourceUser() *schema.Resource {
+func ResourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud User",
 
@@ -558,7 +560,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return resource.NonRetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceUser())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUser())
 
 		// Required attributes
 		d.Set("name", *currentUser.Name)
@@ -911,7 +913,7 @@ func buildSdkEmployerInfo(d *schema.ResourceData) *platformclientv2.Employerinfo
 
 func buildSdkCertifications(d *schema.ResourceData) *[]string {
 	if certs := d.Get("certifications"); certs != nil {
-		return setToStringList(certs.(*schema.Set))
+		return lists.SetToStringList(certs.(*schema.Set))
 	}
 	return nil
 }
@@ -1125,7 +1127,7 @@ func updateUserLanguages(d *schema.ResourceData, usersAPI *platformclientv2.User
 			}
 
 			if len(oldLangIds) > 0 {
-				langsToRemove := sliceDifference(oldLangIds, newLangIds)
+				langsToRemove := lists.SliceDifference(oldLangIds, newLangIds)
 				for _, langID := range langsToRemove {
 					diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 						resp, err := usersAPI.DeleteUserRoutinglanguage(d.Id(), langID)
@@ -1142,7 +1144,7 @@ func updateUserLanguages(d *schema.ResourceData, usersAPI *platformclientv2.User
 
 			if len(newLangIds) > 0 {
 				// Languages to add
-				langsToAddOrUpdate := sliceDifference(newLangIds, oldLangIds)
+				langsToAddOrUpdate := lists.SliceDifference(newLangIds, oldLangIds)
 
 				// Check for existing proficiencies to update which can be done with the same API
 				for langID, newNum := range newLangProfs {
@@ -1221,7 +1223,7 @@ func updateUserRoutingLanguages(
 func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	if d.HasChange("profile_skills") {
 		if profileSkills := d.Get("profile_skills"); profileSkills != nil {
-			profileSkills := setToStringList(profileSkills.(*schema.Set))
+			profileSkills := lists.SetToStringList(profileSkills.(*schema.Set))
 			diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				_, resp, err := usersAPI.PutUserProfileskills(d.Id(), *profileSkills)
 				if err != nil {
@@ -1315,14 +1317,14 @@ func flattenUserLocations(locations *[]platformclientv2.Location) *schema.Set {
 
 func flattenUserProfileSkills(skills *[]string) *schema.Set {
 	if skills != nil {
-		return stringListToSet(*skills)
+		return lists.StringListToSet(*skills)
 	}
 	return nil
 }
 
 func flattenUserCertifications(certs *[]string) *schema.Set {
 	if certs != nil {
-		return stringListToSet(*certs)
+		return lists.StringListToSet(*certs)
 	}
 	return nil
 }

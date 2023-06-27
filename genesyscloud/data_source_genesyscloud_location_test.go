@@ -23,15 +23,15 @@ func TestAccDataSourceLocation(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateLocationResource(
+				Config: GenerateLocationResource(
 					locResource,
 					locName,
 					locNotes,
 					[]string{}, // no paths or emergency number
-					generateLocationAddress(street, city, state, country, zip),
+					GenerateLocationAddress(street, city, state, country, zip),
 				) + generateLocationDataSource(
 					locData,
 					locName,

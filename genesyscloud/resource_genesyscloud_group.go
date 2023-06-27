@@ -8,14 +8,15 @@ import (
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -26,7 +27,7 @@ var (
 				Description:      "Phone number for this contact type.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: ValidatePhoneNumber,
 			},
 			"extension": {
 				Description: "Phone extension.",
@@ -43,8 +44,8 @@ var (
 	}
 )
 
-func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -59,24 +60,24 @@ func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuratio
 		}
 
 		for _, group := range *groups.Entities {
-			resources[*group.Id] = &ResourceMeta{Name: *group.Name}
+			resources[*group.Id] = &resource_exporter.ResourceMeta{Name: *group.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func groupExporter() *ResourceExporter {
-	return &ResourceExporter{
+func GroupExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllGroups),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"owner_ids":  {RefType: "genesyscloud_user"},
 			"member_ids": {RefType: "genesyscloud_user"},
 		},
 	}
 }
 
-func resourceGroup() *schema.Resource {
+func ResourceGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Directory Group",
 
@@ -201,7 +202,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceGroup())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup())
 		if group.Name != nil {
 			d.Set("name", *group.Name)
 		} else {
@@ -380,7 +381,7 @@ func buildSdkGroupAddresses(d *schema.ResourceData) *[]platformclientv2.Groupcon
 
 func buildSdkGroupOwners(d *schema.ResourceData) *[]string {
 	if permConfig, ok := d.GetOk("owner_ids"); ok {
-		return setToStringList(permConfig.(*schema.Set))
+		return lists.SetToStringList(permConfig.(*schema.Set))
 	}
 	return nil
 }
@@ -427,24 +428,24 @@ func flattenGroupOwners(owners []platformclientv2.User) *schema.Set {
 func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.GroupsApi) diag.Diagnostics {
 	if d.HasChange("member_ids") {
 		if membersConfig := d.Get("member_ids"); membersConfig != nil {
-			configMemberIds := *setToStringList(membersConfig.(*schema.Set))
+			configMemberIds := *lists.SetToStringList(membersConfig.(*schema.Set))
 			existingMemberIds, err := getGroupMemberIds(d, groupsAPI)
 			if err != nil {
 				return err
 			}
 
-			membersToRemove := sliceDifference(existingMemberIds, configMemberIds)
+			membersToRemove := lists.SliceDifference(existingMemberIds, configMemberIds)
 			if err := deleteGroupMembers(d, membersToRemove, groupsAPI); err != nil {
 				return err
 			}
 
-			membersToAdd := sliceDifference(configMemberIds, existingMemberIds)
+			membersToAdd := lists.SliceDifference(configMemberIds, existingMemberIds)
 			if len(membersToAdd) < 1 {
 				return nil
 			}
 
 			maxMembersPerRequest := 50
-			chunkedMemberIds := utillists.ChunkStringSlice(membersToAdd, maxMembersPerRequest)
+			chunkedMemberIds := lists.ChunkStringSlice(membersToAdd, maxMembersPerRequest)
 			for _, chunk := range chunkedMemberIds {
 				if err := addGroupMembers(d, chunk, groupsAPI); err != nil {
 					return err

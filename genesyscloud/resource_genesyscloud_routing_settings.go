@@ -10,10 +10,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func resourceRoutingSettings() *schema.Resource {
+func ResourceRoutingSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "An organization's routing settings",
 
@@ -83,16 +84,16 @@ func resourceRoutingSettings() *schema.Resource {
 	}
 }
 
-func getAllRoutingSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
-	resources["0"] = &ResourceMeta{Name: "routing_settings"}
+func getAllRoutingSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
+	resources["0"] = &resource_exporter.ResourceMeta{Name: "routing_settings"}
 	return resources, nil
 }
 
-func routingSettingsExporter() *ResourceExporter {
-	return &ResourceExporter{
+func RoutingSettingsExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingSettings),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
 	}
 }
 
@@ -118,7 +119,7 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSettings())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings())
 		if settings.ResetAgentScoreOnPresenceChange != nil {
 			d.Set("reset_agent_on_presence_change", *settings.ResetAgentScoreOnPresenceChange)
 		} else {

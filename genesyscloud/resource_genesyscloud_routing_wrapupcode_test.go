@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func TestAccResourceRoutingWrapupcode(t *testing.T) {
@@ -19,11 +19,11 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingWrapupcodeResource(
+				Config: GenerateRoutingWrapupcodeResource(
 					codeResource1,
 					codeName1,
 				),
@@ -33,7 +33,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 			},
 			{
 				// Update with a new name
-				Config: generateRoutingWrapupcodeResource(
+				Config: GenerateRoutingWrapupcodeResource(
 					codeResource1,
 					codeName2,
 				),
@@ -52,14 +52,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 	})
 }
 
-func generateRoutingWrapupcodeResource(
-	resourceID string,
-	name string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_wrapupcode" "%s" {
-		name = "%s"
-	}
-	`, resourceID, name)
-}
+
 
 func testVerifyWrapupcodesDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()

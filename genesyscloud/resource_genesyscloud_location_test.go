@@ -3,13 +3,12 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func TestAccResourceLocationBasic(t *testing.T) {
@@ -39,16 +38,16 @@ func TestAccResourceLocationBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateLocationResource(
+				Config: GenerateLocationResource(
 					locResource1,
 					locName1,
 					locNotes1,
 					[]string{}, // no paths or emergency number
-					generateLocationAddress(street1, city1, state1, country1, zip1),
+					GenerateLocationAddress(street1, city1, state1, country1, zip1),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "name", locName1),
@@ -64,17 +63,17 @@ func TestAccResourceLocationBasic(t *testing.T) {
 			},
 			{
 				// Update with new location path and number
-				Config: generateLocationResource(
+				Config: GenerateLocationResource(
 					locResource1,
 					locName2,
 					locNotes2,
 					[]string{"genesyscloud_location." + locResource2 + ".id"},
-					generateLocationEmergencyNum(
+					GenerateLocationEmergencyNum(
 						emergencyNum1,
 						nullValue, // Default number type
 					),
-					generateLocationAddress(street1, city1, state1, country1, zip1),
-				) + generateLocationResourceBasic(locResource2, locName3),
+					GenerateLocationAddress(street1, city1, state1, country1, zip1),
+				) + GenerateLocationResourceBasic(locResource2, locName3),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "name", locName2),
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "notes", locNotes2),
@@ -85,17 +84,17 @@ func TestAccResourceLocationBasic(t *testing.T) {
 			},
 			{
 				// Update with new number and no path
-				Config: generateLocationResource(
+				Config: GenerateLocationResource(
 					locResource1,
 					locName2,
 					nullValue,
 					[]string{},
-					generateLocationEmergencyNum(
+					GenerateLocationEmergencyNum(
 						emergencyNum2,
 						strconv.Quote(locNumberElin),
 					),
-					generateLocationAddress(street1, city1, state1, country1, zip1),
-				) + generateLocationResourceBasic(locResource2, locName3),
+					GenerateLocationAddress(street1, city1, state1, country1, zip1),
+				) + GenerateLocationResourceBasic(locResource2, locName3),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "name", locName2),
 					resource.TestCheckNoResourceAttr("genesyscloud_location."+locResource1, "path.%"),
@@ -105,12 +104,12 @@ func TestAccResourceLocationBasic(t *testing.T) {
 			},
 			{
 				// Remove number (cannot change address when emergency number is assigned)
-				Config: generateLocationResource(
+				Config: GenerateLocationResource(
 					locResource1,
 					locName2,
 					nullValue,
 					[]string{},
-					generateLocationAddress(street1, city1, state1, country1, zip1),
+					GenerateLocationAddress(street1, city1, state1, country1, zip1),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "name", locName2),
@@ -120,12 +119,12 @@ func TestAccResourceLocationBasic(t *testing.T) {
 			},
 			{
 				// Update address
-				Config: generateLocationResource(
+				Config: GenerateLocationResource(
 					locResource1,
 					locName2,
 					nullValue,
 					[]string{},
-					generateLocationAddress(street2, city2, state2, country1, zip2),
+					GenerateLocationAddress(street2, city2, state2, country1, zip2),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResource1, "name", locName2),
@@ -145,47 +144,6 @@ func TestAccResourceLocationBasic(t *testing.T) {
 		},
 		CheckDestroy: testVerifyLocationsDestroyed,
 	})
-}
-
-func generateLocationResourceBasic(
-	resourceID,
-	name string,
-	nestedBlocks ...string) string {
-	return generateLocationResource(resourceID, name, "", []string{})
-}
-
-func generateLocationResource(
-	resourceID,
-	name,
-	notes string,
-	paths []string,
-	nestedBlocks ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_location" "%s" {
-		name = "%s"
-        notes = "%s"
-        path = [%s]
-        %s
-	}
-	`, resourceID, name, notes, strings.Join(paths, ","), strings.Join(nestedBlocks, "\n"))
-}
-
-func generateLocationEmergencyNum(number, typeStr string) string {
-	return fmt.Sprintf(`emergency_number {
-		number = "%s"
-        type = %s
-	}
-	`, number, typeStr)
-}
-
-func generateLocationAddress(street1, city, state, country, zip string) string {
-	return fmt.Sprintf(`address {
-		street1  = "%s"
-		city     = "%s"
-		state    = "%s"
-		country  = "%s"
-		zip_code = "%s"
-	}
-	`, street1, city, state, country, zip)
 }
 
 func testVerifyLocationsDestroyed(state *terraform.State) error {

@@ -17,7 +17,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -347,8 +349,8 @@ var (
 	}
 )
 
-func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(clientConfig)
 
 	pageCount := 1 // Needed because of broken journey common paging
@@ -364,7 +366,7 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 		}
 
 		for _, actionMap := range *actionMaps.Entities {
-			resources[*actionMap.Id] = &ResourceMeta{Name: *actionMap.DisplayName}
+			resources[*actionMap.Id] = &resource_exporter.ResourceMeta{Name: *actionMap.DisplayName}
 		}
 
 		pageCount = *actionMaps.PageCount
@@ -373,10 +375,10 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 	return resources, nil
 }
 
-func journeyActionMapExporter() *ResourceExporter {
-	return &ResourceExporter{
+func JourneyActionMapExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllJourneyActionMaps),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"trigger_with_segments":                                             {RefType: "genesyscloud_journey_segment"},
 			"trigger_with_outcome_probability_conditions.outcome_id":            {RefType: "genesyscloud_journey_outcome"},
 			"action.architect_flow_fields.architect_flow_id":                    {RefType: "genesyscloud_flow"},
@@ -387,7 +389,7 @@ func journeyActionMapExporter() *ResourceExporter {
 	}
 }
 
-func resourceJourneyActionMap() *schema.Resource {
+func ResourceJourneyActionMap() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Action Map",
 		CreateContext: CreateWithPooledClient(createJourneyActionMap),
@@ -434,7 +436,7 @@ func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta inte
 			return resource.NonRetryableError(fmt.Errorf("failed to read journey action map %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceJourneyActionMap())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyActionMap())
 		flattenActionMap(d, actionMap)
 
 		log.Printf("Read journey action map %s %s", d.Id(), *actionMap.DisplayName)
@@ -500,14 +502,14 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Actionmap) {
 	d.Set("is_active", *actionMap.IsActive)
 	d.Set("display_name", *actionMap.DisplayName)
-	d.Set("trigger_with_segments", stringListToSetOrNil(actionMap.TriggerWithSegments))
-	resourcedata.SetNillableValue(d, "trigger_with_event_conditions", flattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
-	resourcedata.SetNillableValue(d, "trigger_with_outcome_probability_conditions", flattenList(actionMap.TriggerWithOutcomeProbabilityConditions, flattenOutcomeProbabilityCondition))
-	resourcedata.SetNillableValue(d, "page_url_conditions", flattenList(actionMap.PageUrlConditions, flattenUrlCondition))
-	d.Set("activation", flattenAsList(actionMap.Activation, flattenActivation))
+	d.Set("trigger_with_segments", lists.StringListToSetOrNil(actionMap.TriggerWithSegments))
+	resourcedata.SetNillableValue(d, "trigger_with_event_conditions", lists.FlattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
+	resourcedata.SetNillableValue(d, "trigger_with_outcome_probability_conditions", lists.FlattenList(actionMap.TriggerWithOutcomeProbabilityConditions, flattenOutcomeProbabilityCondition))
+	resourcedata.SetNillableValue(d, "page_url_conditions", lists.FlattenList(actionMap.PageUrlConditions, flattenUrlCondition))
+	d.Set("activation", lists.FlattenAsList(actionMap.Activation, flattenActivation))
 	d.Set("weight", *actionMap.Weight)
-	resourcedata.SetNillableValue(d, "action", flattenAsList(actionMap.Action, flattenActionMapAction))
-	resourcedata.SetNillableValue(d, "action_map_schedule_groups", flattenAsList(actionMap.ActionMapScheduleGroups, flattenActionMapScheduleGroups))
+	resourcedata.SetNillableValue(d, "action", lists.FlattenAsList(actionMap.Action, flattenActionMapAction))
+	resourcedata.SetNillableValue(d, "action_map_schedule_groups", lists.FlattenAsList(actionMap.ActionMapScheduleGroups, flattenActionMapScheduleGroups))
 	d.Set("ignore_frequency_cap", *actionMap.IgnoreFrequencyCap)
 	resourcedata.SetNillableTime(d, "start_date", actionMap.StartDate)
 	resourcedata.SetNillableTime(d, "end_date", actionMap.EndDate)
@@ -516,7 +518,7 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionmap {
 	isActive := actionMap.Get("is_active").(bool)
 	displayName := actionMap.Get("display_name").(string)
-	triggerWithSegments := buildSdkStringList(actionMap, "trigger_with_segments")
+	triggerWithSegments := lists.BuildSdkStringList(actionMap, "trigger_with_segments")
 	triggerWithEventConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
 	triggerWithOutcomeProbabilityConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition)
 	pageUrlConditions := resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition)
@@ -548,10 +550,10 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 func buildSdkPatchActionMap(patchActionMap *schema.ResourceData) *platformclientv2.Patchactionmap {
 	isActive := patchActionMap.Get("is_active").(bool)
 	displayName := patchActionMap.Get("display_name").(string)
-	triggerWithSegments := buildSdkStringList(patchActionMap, "trigger_with_segments")
-	triggerWithEventConditions := nilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_event_conditions", buildSdkEventCondition))
-	triggerWithOutcomeProbabilityConditions := nilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
-	pageUrlConditions := nilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "page_url_conditions", buildSdkUrlCondition))
+	triggerWithSegments := lists.BuildSdkStringList(patchActionMap, "trigger_with_segments")
+	triggerWithEventConditions := lists.NilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_event_conditions", buildSdkEventCondition))
+	triggerWithOutcomeProbabilityConditions := lists.NilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
+	pageUrlConditions := lists.NilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "page_url_conditions", buildSdkUrlCondition))
 	activation := resourcedata.BuildSdkListFirstElement(patchActionMap, "activation", buildSdkActivation, true)
 	weight := patchActionMap.Get("weight").(int)
 	action := resourcedata.BuildSdkListFirstElement(patchActionMap, "action", buildSdkPatchAction, true)
@@ -580,7 +582,7 @@ func buildSdkPatchActionMap(patchActionMap *schema.ResourceData) *platformclient
 func flattenEventCondition(eventCondition *platformclientv2.Eventcondition) map[string]interface{} {
 	eventConditionMap := make(map[string]interface{})
 	eventConditionMap["key"] = *eventCondition.Key
-	eventConditionMap["values"] = stringListToSet(*eventCondition.Values)
+	eventConditionMap["values"] = lists.StringListToSet(*eventCondition.Values)
 	eventConditionMap["operator"] = *eventCondition.Operator
 	eventConditionMap["stream_type"] = *eventCondition.StreamType
 	eventConditionMap["session_type"] = *eventCondition.SessionType
@@ -629,7 +631,7 @@ func buildSdkOutcomeProbabilityCondition(outcomeProbabilityCondition map[string]
 
 func flattenUrlCondition(urlCondition *platformclientv2.Urlcondition) map[string]interface{} {
 	urlConditionMap := make(map[string]interface{})
-	urlConditionMap["values"] = stringListToSet(*urlCondition.Values)
+	urlConditionMap["values"] = lists.StringListToSet(*urlCondition.Values)
 	urlConditionMap["operator"] = *urlCondition.Operator
 	return urlConditionMap
 }
@@ -668,9 +670,9 @@ func flattenActionMapAction(actionMapAction *platformclientv2.Actionmapaction) m
 	if actionMapAction.ActionTemplate != nil {
 		stringmap.SetValueIfNotNil(actionMapActionMap, "action_template_id", actionMapAction.ActionTemplate.Id)
 	}
-	stringmap.SetValueIfNotNil(actionMapActionMap, "architect_flow_fields", flattenAsList(actionMapAction.ArchitectFlowFields, flattenArchitectFlowFields))
-	stringmap.SetValueIfNotNil(actionMapActionMap, "web_messaging_offer_fields", flattenAsList(actionMapAction.WebMessagingOfferFields, flattenWebMessagingOfferFields))
-	stringmap.SetValueIfNotNil(actionMapActionMap, "open_action_fields", flattenAsList(actionMapAction.OpenActionFields, flattenOpenActionFields))
+	stringmap.SetValueIfNotNil(actionMapActionMap, "architect_flow_fields", lists.FlattenAsList(actionMapAction.ArchitectFlowFields, flattenArchitectFlowFields))
+	stringmap.SetValueIfNotNil(actionMapActionMap, "web_messaging_offer_fields", lists.FlattenAsList(actionMapAction.WebMessagingOfferFields, flattenWebMessagingOfferFields))
+	stringmap.SetValueIfNotNil(actionMapActionMap, "open_action_fields", lists.FlattenAsList(actionMapAction.OpenActionFields, flattenOpenActionFields))
 	return actionMapActionMap
 }
 
@@ -724,7 +726,7 @@ func getActionMapActionTemplate(actionMapAction map[string]interface{}) *platfor
 func flattenArchitectFlowFields(architectFlowFields *platformclientv2.Architectflowfields) map[string]interface{} {
 	architectFlowFieldsMap := make(map[string]interface{})
 	architectFlowFieldsMap["architect_flow_id"] = *architectFlowFields.ArchitectFlow.Id
-	stringmap.SetValueIfNotNil(architectFlowFieldsMap, "flow_request_mappings", flattenList(architectFlowFields.FlowRequestMappings, flattenRequestMapping))
+	stringmap.SetValueIfNotNil(architectFlowFieldsMap, "flow_request_mappings", lists.FlattenList(architectFlowFields.FlowRequestMappings, flattenRequestMapping))
 	return architectFlowFieldsMap
 }
 
@@ -806,7 +808,7 @@ func getArchitectFlow(actionMapAction map[string]interface{}) *platformclientv2.
 
 func flattenOpenActionFields(openActionFields *platformclientv2.Openactionfields) map[string]interface{} {
 	architectFlowFieldsMap := make(map[string]interface{})
-	architectFlowFieldsMap["open_action"] = flattenAsList(openActionFields.OpenAction, flattenOpenActionDomainEntityRef)
+	architectFlowFieldsMap["open_action"] = lists.FlattenAsList(openActionFields.OpenAction, flattenOpenActionDomainEntityRef)
 	if openActionFields.ConfigurationFields != nil {
 		jsonString, err := interfaceToJson(openActionFields.ConfigurationFields)
 		if err != nil {

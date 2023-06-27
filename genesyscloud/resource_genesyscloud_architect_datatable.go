@@ -18,7 +18,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -49,8 +50,8 @@ var (
 	}
 )
 
-func getAllArchitectDatatables(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllArchitectDatatables(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -65,23 +66,23 @@ func getAllArchitectDatatables(_ context.Context, clientConfig *platformclientv2
 		}
 
 		for _, table := range *tables.Entities {
-			resources[*table.Id] = &ResourceMeta{Name: *table.Name}
+			resources[*table.Id] = &resource_exporter.ResourceMeta{Name: *table.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func architectDatatableExporter() *ResourceExporter {
-	return &ResourceExporter{
+func ArchitectDatatableExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllArchitectDatatables),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }
 
-func resourceArchitectDatatable() *schema.Resource {
+func ResourceArchitectDatatable() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Datatables",
 
@@ -174,7 +175,7 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read datatable %s: %s", d.Id(), getErr))
 		}
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectDatatable())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable())
 		d.Set("name", *datatable.Name)
 		d.Set("division_id", *datatable.Division.Id)
 

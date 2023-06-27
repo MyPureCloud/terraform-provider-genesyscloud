@@ -17,7 +17,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -73,8 +74,8 @@ var (
 	}
 )
 
-func getAllIntegrationActions(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllIntegrationActions(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -93,24 +94,24 @@ func getAllIntegrationActions(_ context.Context, clientConfig *platformclientv2.
 			if strings.HasPrefix(*action.Id, "static") {
 				continue
 			}
-			resources[*action.Id] = &ResourceMeta{Name: *action.Name}
+			resources[*action.Id] = &resource_exporter.ResourceMeta{Name: *action.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func integrationActionExporter() *ResourceExporter {
-	return &ResourceExporter{
+func IntegrationActionExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllIntegrationActions),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"integration_id": {RefType: "genesyscloud_integration"},
 		},
 		JsonEncodeAttributes: []string{"contract_input", "contract_output"},
 	}
 }
 
-func resourceIntegrationAction() *schema.Resource {
+func ResourceIntegrationAction() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/",
 
@@ -261,7 +262,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read success template for integration action %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIntegrationAction())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction())
 		if action.Name != nil {
 			d.Set("name", *action.Name)
 		} else {

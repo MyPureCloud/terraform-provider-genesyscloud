@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func cleanupRoutingEmailDomains() {
@@ -47,7 +47,7 @@ func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 		emailDataResourceId   = "email_domain_data"
 	)
 
-	err := authorizeSdk()
+	err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateRoutingEmailDomainResource(

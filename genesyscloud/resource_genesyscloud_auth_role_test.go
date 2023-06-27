@@ -9,7 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func TestAccResourceAuthRoleDefault(t *testing.T) {
@@ -31,7 +32,7 @@ func TestAccResourceAuthRoleDefault(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Modify default role
@@ -85,7 +86,7 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -153,7 +154,7 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create with a scalar condition
@@ -431,12 +432,12 @@ func validateRolePermissions(roleResourceName string, permissions ...string) res
 			configPerms[i] = roleResource.Primary.Attributes["permissions."+strconv.Itoa(i)]
 		}
 
-		extraPerms := sliceDifference(configPerms, permissions)
+		extraPerms := lists.SliceDifference(configPerms, permissions)
 		if len(extraPerms) > 0 {
 			return fmt.Errorf("Unexpected permissions found for role %s in state: %v", roleResource.Primary.ID, extraPerms)
 		}
 
-		missingPerms := sliceDifference(permissions, configPerms)
+		missingPerms := lists.SliceDifference(permissions, configPerms)
 		if len(missingPerms) > 0 {
 			return fmt.Errorf("Missing expected permissions for role %s in state: %v", roleResource.Primary.ID, missingPerms)
 		}
@@ -467,12 +468,12 @@ func validatePermissionPolicy(roleResourceName string, domain string, entityName
 					stateActions[j] = roleAttrs["permission_policies."+strconv.Itoa(i)+".action_set."+strconv.Itoa(j)]
 				}
 
-				extraActions := sliceDifference(stateActions, actionSet)
+				extraActions := lists.SliceDifference(stateActions, actionSet)
 				if len(extraActions) > 0 {
 					return fmt.Errorf("Unexpected permission actions found for role %s in state: %v", roleResource.Primary.ID, extraActions)
 				}
 
-				missingActions := sliceDifference(actionSet, stateActions)
+				missingActions := lists.SliceDifference(actionSet, stateActions)
 				if len(missingActions) > 0 {
 					return fmt.Errorf("Missing expected permission actions for role %s in state: %v", roleResource.Primary.ID, missingActions)
 				}

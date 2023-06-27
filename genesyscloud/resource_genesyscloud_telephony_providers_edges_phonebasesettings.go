@@ -11,10 +11,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func resourcePhoneBaseSettings() *schema.Resource {
+func ResourcePhoneBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Phone Base Settings",
 
@@ -169,7 +170,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourcePhoneBaseSettings())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings())
 		d.Set("name", *phoneBaseSettings.Name)
 		if phoneBaseSettings.Description != nil {
 			d.Set("description", *phoneBaseSettings.Description)
@@ -232,8 +233,8 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
@@ -254,7 +255,7 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 			for _, phoneBaseSetting := range *phoneBaseSettings.Entities {
 				if phoneBaseSetting.State != nil && *phoneBaseSetting.State != "deleted" {
-					resources[*phoneBaseSetting.Id] = &ResourceMeta{Name: *phoneBaseSetting.Name}
+					resources[*phoneBaseSetting.Id] = &resource_exporter.ResourceMeta{Name: *phoneBaseSetting.Name}
 				}
 			}
 		}
@@ -265,10 +266,10 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 	return resources, err
 }
 
-func phoneBaseSettingsExporter() *ResourceExporter {
-	return &ResourceExporter{
+func PhoneBaseSettingsExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc:     GetAllWithPooledClient(getAllPhoneBaseSettings),
-		RefAttrs:             map[string]*RefAttrSettings{},
+		RefAttrs:             map[string]*resource_exporter.RefAttrSettings{},
 		JsonEncodeAttributes: []string{"properties"},
 	}
 }

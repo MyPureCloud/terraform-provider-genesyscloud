@@ -12,7 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -150,8 +151,8 @@ var (
 	}
 )
 
-func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -166,17 +167,17 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 		}
 
 		for _, surveyForm := range *surveyForms.Entities {
-			resources[*surveyForm.Id] = &ResourceMeta{Name: *surveyForm.Name}
+			resources[*surveyForm.Id] = &resource_exporter.ResourceMeta{Name: *surveyForm.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func surveyFormExporter() *ResourceExporter {
-	return &ResourceExporter{
+func SurveyFormExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllSurveyForms),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"question_groups.questions.answer_options.value"},
 	}
 }

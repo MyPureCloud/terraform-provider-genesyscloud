@@ -14,7 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -283,8 +285,8 @@ var (
 	}
 )
 
-func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(clientConfig)
 	pageCount := 1 // Needed because of broken journey common paging
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
@@ -297,21 +299,21 @@ func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclien
 			break
 		}
 		for _, actionTemplate := range *actionTemplates.Entities {
-			resources[*actionTemplate.Id] = &ResourceMeta{Name: *actionTemplate.Name}
+			resources[*actionTemplate.Id] = &resource_exporter.ResourceMeta{Name: *actionTemplate.Name}
 		}
 		pageCount = *actionTemplates.PageCount
 	}
 	return resources, nil
 }
 
-func journeyActionTemplateExporter() *ResourceExporter {
-	return &ResourceExporter{
+func JourneyActionTemplateExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllJourneyActionTemplates),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No Reference
+		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No Reference
 	}
 }
 
-func resourceJourneyActionTemplate() *schema.Resource {
+func ResourceJourneyActionTemplate() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Action Template",
 		CreateContext: CreateWithPooledClient(createJourneyActionTemplate),
@@ -351,7 +353,7 @@ func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i
 			}
 			return resource.NonRetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
 		}
-		cc := consistency_checker.NewConsistencyCheck(ctx, data, i, resourceJourneyActionTemplate())
+		cc := consistency_checker.NewConsistencyCheck(ctx, data, i, ResourceJourneyActionTemplate())
 		flattenActionTemplate(data, actionTemplate)
 		log.Printf("Read Journey Action Template %s %s", data.Id(), *actionTemplate.Name)
 		return cc.CheckState()
@@ -685,7 +687,7 @@ func flattenActionTemplate(data *schema.ResourceData, actionTemplate *platformcl
 	resourcedata.SetNillableValue(data, "description", actionTemplate.Description)
 	data.Set("media_type", *actionTemplate.MediaType)
 	data.Set("state", *actionTemplate.State)
-	resourcedata.SetNillableValue(data, "content_offer", flattenAsList(actionTemplate.ContentOffer, flattenActionTemplateContentOffer))
+	resourcedata.SetNillableValue(data, "content_offer", lists.FlattenAsList(actionTemplate.ContentOffer, flattenActionTemplateContentOffer))
 }
 
 func flattenActionTemplateContentOffer(resource *platformclientv2.Contentoffer) map[string]interface{} {
@@ -696,8 +698,8 @@ func flattenActionTemplateContentOffer(resource *platformclientv2.Contentoffer) 
 	actionTemplateContentOfferMap["title"] = resource.Title
 	actionTemplateContentOfferMap["headline"] = resource.Headline
 	actionTemplateContentOfferMap["body"] = resource.Body
-	stringmap.SetValueIfNotNil(actionTemplateContentOfferMap, "call_to_action", flattenAsList(resource.CallToAction, flattenCallToAction))
-	stringmap.SetValueIfNotNil(actionTemplateContentOfferMap, "style", flattenAsList(resource.Style, flattenStyle))
+	stringmap.SetValueIfNotNil(actionTemplateContentOfferMap, "call_to_action", lists.FlattenAsList(resource.CallToAction, flattenCallToAction))
+	stringmap.SetValueIfNotNil(actionTemplateContentOfferMap, "style", lists.FlattenAsList(resource.Style, flattenStyle))
 	return actionTemplateContentOfferMap
 }
 
@@ -711,13 +713,13 @@ func flattenCallToAction(resource *platformclientv2.Calltoaction) map[string]int
 
 func flattenStyle(resource *platformclientv2.Contentofferstylingconfiguration) map[string]interface{} {
 	styleMap := make(map[string]interface{})
-	stringmap.SetValueIfNotNil(styleMap, "position", flattenAsList(resource.Position, flattenPositionProperties))
-	stringmap.SetValueIfNotNil(styleMap, "offer", flattenAsList(resource.Offer, flattenOfferProperties))
-	stringmap.SetValueIfNotNil(styleMap, "close_button", flattenAsList(resource.CloseButton, flattenCloseButtonProperties))
-	stringmap.SetValueIfNotNil(styleMap, "cta_button", flattenAsList(resource.CtaButton, flattenCtaButtonProperties))
-	stringmap.SetValueIfNotNil(styleMap, "title", flattenAsList(resource.Title, flattenTextStyleProperties))
-	stringmap.SetValueIfNotNil(styleMap, "headline", flattenAsList(resource.Headline, flattenTextStyleProperties))
-	stringmap.SetValueIfNotNil(styleMap, "body", flattenAsList(resource.Body, flattenTextStyleProperties))
+	stringmap.SetValueIfNotNil(styleMap, "position", lists.FlattenAsList(resource.Position, flattenPositionProperties))
+	stringmap.SetValueIfNotNil(styleMap, "offer", lists.FlattenAsList(resource.Offer, flattenOfferProperties))
+	stringmap.SetValueIfNotNil(styleMap, "close_button", lists.FlattenAsList(resource.CloseButton, flattenCloseButtonProperties))
+	stringmap.SetValueIfNotNil(styleMap, "cta_button", lists.FlattenAsList(resource.CtaButton, flattenCtaButtonProperties))
+	stringmap.SetValueIfNotNil(styleMap, "title", lists.FlattenAsList(resource.Title, flattenTextStyleProperties))
+	stringmap.SetValueIfNotNil(styleMap, "headline", lists.FlattenAsList(resource.Headline, flattenTextStyleProperties))
+	stringmap.SetValueIfNotNil(styleMap, "body", lists.FlattenAsList(resource.Body, flattenTextStyleProperties))
 	return styleMap
 }
 

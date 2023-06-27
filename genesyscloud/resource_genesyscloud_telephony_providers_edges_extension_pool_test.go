@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 type extensionPoolStruct struct {
@@ -23,7 +23,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 	extensionPoolResource1 := "test-extensionpool1"
 	extensionPoolStartNumber1 := "15000"
 	extensionPoolEndNumber1 := "15001"
-	err := authorizeSdk()
+	err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create

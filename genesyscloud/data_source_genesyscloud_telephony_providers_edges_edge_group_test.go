@@ -37,7 +37,7 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + generateEdgeGroupResourceWithCustomAttrs(
@@ -74,7 +74,7 @@ func TestAccDataSourceEdgeGroupManaged(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateEdgeGroupDataSource(

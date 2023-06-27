@@ -13,7 +13,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -34,9 +35,9 @@ var (
 	}
 )
 
-func getAllKnowledgeLabels(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeLabels(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
-	resources := make(ResourceIDMetaMap)
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -76,7 +77,7 @@ func getAllKnowledgeLabels(_ context.Context, clientConfig *platformclientv2.Con
 
 			for _, knowledgeLabel := range *knowledgeLabels.Entities {
 				id := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, *knowledgeBase.Id)
-				resources[id] = &ResourceMeta{Name: *knowledgeLabel.Name}
+				resources[id] = &resource_exporter.ResourceMeta{Name: *knowledgeLabel.Name}
 			}
 		}
 	}
@@ -84,16 +85,16 @@ func getAllKnowledgeLabels(_ context.Context, clientConfig *platformclientv2.Con
 	return resources, nil
 }
 
-func knowledgeLabelExporter() *ResourceExporter {
-	return &ResourceExporter{
+func knowledgeLabelExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeCategories),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
 	}
 }
 
-func resourceKnowledgeLabel() *schema.Resource {
+func ResourceKnowledgeLabel() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Label",
 
@@ -163,7 +164,7 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceKnowledgeLabel())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeLabel())
 
 		newId := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, knowledgeBaseId)
 		d.SetId(newId)

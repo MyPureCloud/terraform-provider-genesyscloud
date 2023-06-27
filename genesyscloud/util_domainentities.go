@@ -2,7 +2,8 @@ package genesyscloud
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func BuildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Domainentityref {
@@ -13,10 +14,10 @@ func BuildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformcli
 	return &platformclientv2.Domainentityref{Id: &idVal}
 }
 
-func buildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platformclientv2.Domainentityref {
+func BuildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platformclientv2.Domainentityref {
 	if ids, ok := d.GetOk(idAttr); ok && ids != nil {
 		if setIds, ok := ids.(*schema.Set); ok {
-			strList := setToStringList(setIds)
+			strList := lists.SetToStringList(setIds)
 			if setIds != nil {
 				domainEntityRefs := make([]platformclientv2.Domainentityref, len(*strList))
 				for i, id := range *strList {
@@ -26,7 +27,7 @@ func buildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platfo
 				return &domainEntityRefs
 			}
 		} else {
-			strList := InterfaceListToStrings(ids.([]interface{}))
+			strList := lists.InterfaceListToStrings(ids.([]interface{}))
 			if len(strList) > 0 {
 				domainEntityRefs := make([]platformclientv2.Domainentityref, len(strList))
 				for i, id := range strList {
@@ -40,7 +41,7 @@ func buildSdkDomainEntityRefArr(d *schema.ResourceData, idAttr string) *[]platfo
 	return nil
 }
 
-func buildSdkDomainEntityRefArrFromArr(ids []interface{}) *[]platformclientv2.Domainentityref {
+func BuildSdkDomainEntityRefArrFromArr(ids []interface{}) *[]platformclientv2.Domainentityref {
 	var domainEntityRefs []platformclientv2.Domainentityref
 	for _, id := range ids {
 		if idStr, ok := id.(string); ok {
@@ -58,7 +59,7 @@ func sdkDomainEntityRefArrToSet(entityRefs []platformclientv2.Domainentityref) *
 	return schema.NewSet(schema.HashString, interfaceList)
 }
 
-func sdkDomainEntityRefArrToList(entityRefs []platformclientv2.Domainentityref) []interface{} {
+func SdkDomainEntityRefArrToList(entityRefs []platformclientv2.Domainentityref) []interface{} {
 	interfaceList := make([]interface{}, len(entityRefs))
 	for i, v := range entityRefs {
 		interfaceList[i] = *v.Id

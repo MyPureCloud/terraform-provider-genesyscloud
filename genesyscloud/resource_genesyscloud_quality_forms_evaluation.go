@@ -13,7 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -154,8 +156,8 @@ var (
 	}
 )
 
-func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -170,22 +172,22 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, evaluationForm := range *evaluationForms.Entities {
-			resources[*evaluationForm.Id] = &ResourceMeta{Name: *evaluationForm.Name}
+			resources[*evaluationForm.Id] = &resource_exporter.ResourceMeta{Name: *evaluationForm.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func evaluationFormExporter() *ResourceExporter {
-	return &ResourceExporter{
+func EvaluationFormExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllEvaluationForms),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"question_groups.questions.answer_options.value", "question_groups.weight"},
 	}
 }
 
-func resourceEvaluationForm() *schema.Resource {
+func ResourceEvaluationForm() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Evaluation Forms",
 		CreateContext: CreateWithPooledClient(createEvaluationForm),
@@ -276,7 +278,7 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			return resource.NonRetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceEvaluationForm())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEvaluationForm())
 		if evaluationForm.Name != nil {
 			d.Set("name", *evaluationForm.Name)
 		}
@@ -589,7 +591,7 @@ func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibility
 		visibilityConditionMap["combining_operation"] = *visibilityCondition.CombiningOperation
 	}
 	if visibilityCondition.Predicates != nil {
-		visibilityConditionMap["predicates"] = InterfaceListToStrings(*visibilityCondition.Predicates)
+		visibilityConditionMap["predicates"] = lists.InterfaceListToStrings(*visibilityCondition.Predicates)
 	}
 
 	return []interface{}{visibilityConditionMap}

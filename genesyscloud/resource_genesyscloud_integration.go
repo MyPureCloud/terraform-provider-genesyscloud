@@ -12,7 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -53,8 +54,8 @@ var (
 	}
 )
 
-func getAllIntegrations(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllIntegrations(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -69,27 +70,27 @@ func getAllIntegrations(_ context.Context, clientConfig *platformclientv2.Config
 		}
 
 		for _, integration := range *integrations.Entities {
-			resources[*integration.Id] = &ResourceMeta{Name: *integration.Name}
+			resources[*integration.Id] = &resource_exporter.ResourceMeta{Name: *integration.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func integrationExporter() *ResourceExporter {
-	return &ResourceExporter{
+func IntegrationExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllIntegrations),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
 			"config.credentials.*": {RefType: "genesyscloud_integration_credential"},
 		},
 		JsonEncodeAttributes: []string{"config.properties", "config.advanced"},
-		EncodedRefAttrs: map[*JsonEncodeRefAttr]*RefAttrSettings{
+		EncodedRefAttrs: map[*resource_exporter.JsonEncodeRefAttr]*resource_exporter.RefAttrSettings{
 			{Attr: "config.properties", NestedAttr: "groups"}: {RefType: "genesyscloud_group"},
 		},
 	}
 }
 
-func resourceIntegration() *schema.Resource {
+func ResourceIntegration() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Integration",
 

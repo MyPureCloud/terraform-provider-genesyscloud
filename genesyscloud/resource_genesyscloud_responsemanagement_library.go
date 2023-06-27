@@ -11,10 +11,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func resourceResponsemanagementLibrary() *schema.Resource {
+func ResourceResponsemanagementLibrary() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud responsemanagement library`,
 
@@ -36,8 +37,8 @@ func resourceResponsemanagementLibrary() *schema.Resource {
 	}
 }
 
-func getAllResponsemanagementLibrary(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllResponsemanagementLibrary(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resource_exporter.ResourceIDMetaMap)
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -52,15 +53,15 @@ func getAllResponsemanagementLibrary(_ context.Context, clientConfig *platformcl
 		}
 
 		for _, entity := range *sdklibraryentitylisting.Entities {
-			resources[*entity.Id] = &ResourceMeta{Name: *entity.Name}
+			resources[*entity.Id] = &resource_exporter.ResourceMeta{Name: *entity.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func responsemanagementLibraryExporter() *ResourceExporter {
-	return &ResourceExporter{
+func ResponsemanagementLibraryExporter() *resource_exporter.ResourceExporter {
+	return &resource_exporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllResponsemanagementLibrary),
 	}
 }
@@ -138,7 +139,7 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Responsemanagement Library %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceResponsemanagementLibrary())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementLibrary())
 
 		if sdklibrary.Name != nil {
 			d.Set("name", *sdklibrary.Name)
