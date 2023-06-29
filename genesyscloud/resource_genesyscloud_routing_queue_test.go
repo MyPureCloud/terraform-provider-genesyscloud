@@ -152,6 +152,302 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 	})
 }
 
+func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
+	var (
+		queueResource1          = "test-queue"
+		queueName1              = "Terraform Test Queue1-" + uuid.NewString()
+		queueDesc1              = "This is a test"
+		alertTimeout1           = "7"
+		slPercent1              = "0.5"
+		slDuration1             = "1000"
+		wrapupPromptMandTimeout = "MANDATORY_TIMEOUT"
+		skillEvalAll            = "ALL"
+
+		skillGroupResourceId = "skillgroup"
+		skillGroupName       = "test skillgroup " + uuid.NewString()
+
+		groupResourceId = "group"
+		groupName       = "terraform test group" + uuid.NewString()
+		queueResource2  = "test-queue-2"
+		queueName2      = "Terraform Test Queue2-" + uuid.NewString()
+
+		conditionalGroupRouting1Operator       = "LessThanOrEqualTo"
+		conditionalGroupRouting1Metric         = "EstimatedWaitTime"
+		conditionalGroupRouting1ConditionValue = "0"
+		conditionalGroupRouting1WaitSeconds    = "20"
+		conditionalGroupRouting1GroupType      = "SKILLGROUP"
+
+		conditionalGroupRouting2Operator       = "GreaterThanOrEqualTo"
+		conditionalGroupRouting2Metric         = "EstimatedWaitTime"
+		conditionalGroupRouting2ConditionValue = "5"
+		conditionalGroupRouting2WaitSeconds    = "15"
+		conditionalGroupRouting2GroupType      = "GROUP"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateRoutingSkillGroupResourceBasic(
+					skillGroupResourceId,
+					skillGroupName,
+					"description",
+				) + GenerateRoutingQueueResource(
+					queueResource1,
+					queueName1,
+					queueDesc1,
+					nullValue, // MANDATORY_TIMEOUT
+					"200000",  // acw_timeout
+					nullValue, // ALL
+					nullValue, // auto_answer_only true
+					nullValue, // No calling party name
+					nullValue, // No calling party number
+					nullValue, // enable_transcription false
+					nullValue, // enable_manual_assignment false
+					GenerateMediaSettings("media_settings_call", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_chat", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_email", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_message", alertTimeout1, slPercent1, slDuration1),
+					GenerateConditionalGroupRoutingRules(
+						nullValue,                              // queue_id (queue_id in the first rule should be omitted)
+						conditionalGroupRouting1Operator,       // operator
+						conditionalGroupRouting1Metric,         // metric
+						conditionalGroupRouting1ConditionValue, // condition_value
+						conditionalGroupRouting1WaitSeconds,    // wait_seconds
+						GenerateConditionalGroupRoutingRuleGroup(
+							"genesyscloud_routing_skill_group."+skillGroupResourceId+".id", // group_id
+							conditionalGroupRouting1GroupType,                              // group_type
+						),
+					),
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "name", queueName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "description", queueDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "acw_wrapup_prompt", wrapupPromptMandTimeout),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "acw_timeout_ms", "200000"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "skill_evaluation_method", skillEvalAll),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
+
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.operator", conditionalGroupRouting1Operator),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.metric", conditionalGroupRouting1Metric),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.condition_value", conditionalGroupRouting1ConditionValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.wait_seconds", conditionalGroupRouting1WaitSeconds),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_type", conditionalGroupRouting1GroupType),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceId, "id"),
+
+					testDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
+					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, slPercent1, slDuration1),
+				),
+			},
+			{
+				// Update
+				Config: generateBasicGroupResource(
+					groupResourceId,
+					groupName,
+				) +
+					generateRoutingQueueResourceBasic(
+						queueResource2,
+						queueName2,
+					) +
+					generateRoutingSkillGroupResourceBasic(
+						skillGroupResourceId,
+						skillGroupName,
+						"description",
+					) + GenerateRoutingQueueResource(
+					queueResource1,
+					queueName1,
+					queueDesc1,
+					nullValue, // MANDATORY_TIMEOUT
+					"200000",  // acw_timeout
+					nullValue, // ALL
+					nullValue, // auto_answer_only true
+					nullValue, // No calling party name
+					nullValue, // No calling party number
+					nullValue, // enable_transcription false
+					nullValue, // enable_manual_assignment false
+					GenerateMediaSettings("media_settings_call", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_chat", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_email", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_message", alertTimeout1, slPercent1, slDuration1),
+					GenerateConditionalGroupRoutingRules(
+						nullValue,                              // queue_id (queue_id in the first rule should be omitted)
+						conditionalGroupRouting1Operator,       // operator
+						conditionalGroupRouting1Metric,         // metric
+						conditionalGroupRouting1ConditionValue, // condition_value
+						conditionalGroupRouting1WaitSeconds,    // wait_seconds
+						GenerateConditionalGroupRoutingRuleGroup(
+							"genesyscloud_routing_skill_group."+skillGroupResourceId+".id", // group_id
+							conditionalGroupRouting1GroupType,                              // group_type
+						),
+					),
+					GenerateConditionalGroupRoutingRules(
+						"genesyscloud_routing_queue."+queueResource2+".id", // queue_id
+						conditionalGroupRouting2Operator,                   // operator
+						conditionalGroupRouting2Metric,                     // metric
+						conditionalGroupRouting2ConditionValue,             // condition_value
+						conditionalGroupRouting2WaitSeconds,                // wait_seconds
+						GenerateConditionalGroupRoutingRuleGroup(
+							"genesyscloud_group."+groupResourceId+".id", // group_id
+							conditionalGroupRouting2GroupType,           // group_type
+						),
+					),
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
+					"groups = [genesyscloud_group."+groupResourceId+".id]",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "name", queueName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "description", queueDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "acw_wrapup_prompt", wrapupPromptMandTimeout),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "acw_timeout_ms", "200000"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "skill_evaluation_method", skillEvalAll),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
+
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.operator", conditionalGroupRouting1Operator),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.metric", conditionalGroupRouting1Metric),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.condition_value", conditionalGroupRouting1ConditionValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.wait_seconds", conditionalGroupRouting1WaitSeconds),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_type", conditionalGroupRouting1GroupType),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceId, "id"),
+
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.1.operator", conditionalGroupRouting2Operator),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.1.metric", conditionalGroupRouting2Metric),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.1.condition_value", conditionalGroupRouting2ConditionValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.1.wait_seconds", conditionalGroupRouting2WaitSeconds),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.1.groups.0.member_group_type", conditionalGroupRouting2GroupType),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.1.groups.0.member_group_id", "genesyscloud_group."+groupResourceId, "id"),
+
+					testDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
+					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, slPercent1, slDuration1),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
+}
+
+func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
+	var (
+		queueResource1          = "test-queue"
+		queueName1              = "Terraform Test Queue1-" + uuid.NewString()
+		queueDesc1              = "This is a test"
+		alertTimeout1           = "7"
+		slPercent1              = "0.5"
+		slDuration1             = "1000"
+		wrapupPromptMandTimeout = "MANDATORY_TIMEOUT"
+		routingRuleOpAny        = "ANY"
+		skillEvalAll            = "ALL"
+
+		skillGroupResourceId = "skillgroup"
+		skillGroupName       = "test skillgroup " + uuid.NewString()
+
+		conditionalGroupRouting1Operator       = "LessThanOrEqualTo"
+		conditionalGroupRouting1Metric         = "EstimatedWaitTime"
+		conditionalGroupRouting1ConditionValue = "0"
+		conditionalGroupRouting1WaitSeconds    = "20"
+		conditionalGroupRouting1GroupType      = "SKILLGROUP"
+	)
+
+	// Create CGR queue with routing rules
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: generateRoutingSkillGroupResourceBasic(
+					skillGroupResourceId,
+					skillGroupName,
+					"description",
+				) + GenerateRoutingQueueResource(
+					queueResource1,
+					queueName1,
+					queueDesc1,
+					nullValue, // MANDATORY_TIMEOUT
+					"200000",  // acw_timeout
+					nullValue, // ALL
+					nullValue, // auto_answer_only true
+					nullValue, // No calling party name
+					nullValue, // No calling party number
+					nullValue, // enable_transcription false
+					nullValue, // enable_manual_assignment false
+					GenerateMediaSettings("media_settings_call", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_chat", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_email", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_message", alertTimeout1, slPercent1, slDuration1),
+					GenerateRoutingRules(routingRuleOpAny, "50", "6"),
+					GenerateConditionalGroupRoutingRules(
+						nullValue,                              // queue_id (queue_id in the first rule should be omitted)
+						conditionalGroupRouting1Operator,       // operator
+						conditionalGroupRouting1Metric,         // metric
+						conditionalGroupRouting1ConditionValue, // condition_value
+						conditionalGroupRouting1WaitSeconds,    // wait_seconds
+						GenerateConditionalGroupRoutingRuleGroup(
+							"genesyscloud_routing_skill_group."+skillGroupResourceId+".id", // group_id
+							conditionalGroupRouting1GroupType,                              // group_type
+						),
+					),
+					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceId+".id]",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "name", queueName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "description", queueDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "acw_wrapup_prompt", wrapupPromptMandTimeout),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "acw_timeout_ms", "200000"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "skill_evaluation_method", skillEvalAll),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
+
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.operator", conditionalGroupRouting1Operator),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.metric", conditionalGroupRouting1Metric),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.condition_value", conditionalGroupRouting1ConditionValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.wait_seconds", conditionalGroupRouting1WaitSeconds),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_type", conditionalGroupRouting1GroupType),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceId, "id"),
+
+					testDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
+					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, slPercent1, slDuration1),
+					validateRoutingRules(queueResource1, 0, routingRuleOpAny, "50", "6"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
+}
+
 func TestAccResourceRoutingQueueFlows(t *testing.T) {
 	var (
 		queueResource1 = "test-queue"
