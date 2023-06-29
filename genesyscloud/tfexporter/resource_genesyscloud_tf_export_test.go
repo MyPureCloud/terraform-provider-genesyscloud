@@ -889,7 +889,7 @@ func getResourceDefinition(filePath, resourceType string) (map[string]*json.RawM
 func TestForExportCycles(t *testing.T) {
 
 	// Assumes exporting all resource types
-	exporters := gcloud.GetResourceExporters(nil)
+	exporters := gcloud.GetResourceExporters()
 
 	graph := simple.NewDirectedGraph()
 

@@ -2,7 +2,6 @@ package genesyscloud
 
 import (
 	"context"
-	"fmt"
 	"hash/fnv"
 	"regexp"
 	"strconv"
@@ -126,6 +125,9 @@ type ResourceExporter struct {
 	CustomFileWriter CustomFileWriterSettings
 
 	CustomFlowResolver map[string]*CustomFlowResolver
+
+	//This a place holder filter out specific resources from a filter.
+	FilterResource func(ResourceIDMetaMap, string, []string) ResourceIDMetaMap
 }
 
 func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
@@ -134,33 +136,13 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name st
 		return err
 	}
 
-	if subStringInSlice(fmt.Sprintf("%v::", name), filter) {
-		result = filterResources(result, name, filter)
+	if r.FilterResource != nil {
+		result = r.FilterResource(result, name, filter)
 	}
 
 	r.SanitizedResourceMap = result
 	sanitizeResourceNames(r.SanitizedResourceMap)
 	return nil
-}
-
-func filterResources(result ResourceIDMetaMap, name string, filter []string) ResourceIDMetaMap {
-	names := make([]string, 0)
-	for _, f := range filter {
-		n := fmt.Sprintf("%v::", name)
-		if strings.Contains(f, n) {
-			names = append(names, strings.Replace(f, n, "", 1))
-		}
-	}
-
-	newResult := make(ResourceIDMetaMap)
-	for _, name := range names {
-		for k, v := range result {
-			if v.Name == name {
-				newResult[k] = v
-			}
-		}
-	}
-	return newResult
 }
 
 func (r *ResourceExporter) GetRefAttrSettings(attribute string) *RefAttrSettings {
@@ -226,7 +208,7 @@ func (r *ResourceExporter) RemoveFieldIfMissing(attribute string, config map[str
 	return false
 }
 
-func GetResourceExporters(filter []string) map[string]*ResourceExporter {
+func GetResourceExporters() map[string]*ResourceExporter {
 
 	RegisterExporter("genesyscloud_architect_datatable", architectDatatableExporter())
 	RegisterExporter("genesyscloud_architect_datatable_row", architectDatatableRowExporter())
@@ -306,28 +288,17 @@ func GetResourceExporters(filter []string) map[string]*ResourceExporter {
 	RegisterExporter("genesyscloud_webdeployments_deployment", webDeploymentExporter())
 	RegisterExporter("genesyscloud_widget_deployment", widgetDeploymentExporter())
 
-	// Include all if no filters
-	if len(filter) > 0 {
-		for resType := range resourceExporters {
-			if !StringInSlice(resType, formatFilter(filter)) {
-				delete(resourceExporters, resType)
-			}
-		}
-	}
-	return resourceExporters
-}
+	//Make a Copy of the Map
+	exportCopy := make(map[string]*ResourceExporter, len(resourceExporters))
 
-// Removes the ::resource_name from the resource_types list
-func formatFilter(filter []string) []string {
-	newFilter := make([]string, 0)
-	for _, str := range filter {
-		newFilter = append(newFilter, strings.Split(str, "::")[0])
+	for k, v := range resourceExporters {
+		exportCopy[k] = v
 	}
-	return newFilter
+	return exportCopy
 }
 
 func GetAvailableExporterTypes() []string {
-	exporters := GetResourceExporters(nil)
+	exporters := GetResourceExporters()
 	types := make([]string, len(exporters))
 	i := 0
 	for k := range exporters {
