@@ -1,11 +1,7 @@
-# This GitHub action can publish assets for release when a tag is created.
-# Currently its setup to run on any tag that matches the pattern "v*" (ie. v0.1.0).
+# This GitHub action can publish assets for release based on the latest tag.
 #
 name: release
-on:
-  push:
-    tags:
-      - 'v*'
+on: workflow_dispatch
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
