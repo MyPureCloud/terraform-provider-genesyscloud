@@ -73,6 +73,7 @@ func groupExporter() *ResourceExporter {
 			"owner_ids":  {RefType: "genesyscloud_user"},
 			"member_ids": {RefType: "genesyscloud_user"},
 		},
+		E164Numbers: []string{"addresses.number"},
 	}
 }
 
