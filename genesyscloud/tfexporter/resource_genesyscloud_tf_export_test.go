@@ -422,7 +422,7 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 
-	exportedContents = removeTfConfigBlock(exportedContents)
+	exportedContents = removeTerraformProviderBlock(exportedContents)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
@@ -451,7 +451,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 
 	// routing queue attributes
 	var (
-		queueName      = fmt.Sprintf("Charlie_Test_Queue_%v", uuid.NewString())
+		queueName      = fmt.Sprintf("queue_%v", uuid.NewString())
 		queueID        = queueName
 		description    = "This is a test queue"
 		autoAnswerOnly = "true"
@@ -464,8 +464,8 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		rrThreshold   = "9"
 		rrWaitSeconds = "300"
 
-		chatScriptID  = "81ddba00-9fad-11e7-9a00-3137c42c4ae9"
-		emailScriptID = "153fcff5-597e-4f17-94e5-17eac456a0b2"
+		chatScriptID  = uuid.NewString()
+		emailScriptID = uuid.NewString()
 	)
 
 	routingQueue := gcloud.GenerateRoutingQueueResource(
@@ -518,7 +518,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 
-	exportContents = removeTfConfigBlock(exportContents)
+	exportContents = removeTerraformProviderBlock(exportContents)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
@@ -740,7 +740,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 	})
 }
 
-func removeTfConfigBlock(export string) string {
+func removeTerraformProviderBlock(export string) string {
 	return strings.Replace(export, terraformHCLBlock, "", -1)
 }
 
