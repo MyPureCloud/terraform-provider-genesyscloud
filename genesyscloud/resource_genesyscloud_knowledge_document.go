@@ -2,8 +2,10 @@ package genesyscloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
@@ -12,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -66,42 +68,109 @@ var (
 
 func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
+	documentEntities := make([]platformclientv2.Knowledgedocumentresponse, 0)
 	resources := make(ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		knowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", false, "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
-		}
-
-		if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
-			break
-		}
-		for _, knowledgeBase := range *knowledgeBases.Entities {
-			knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
-		}
+	// get published knowledge bases
+	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	if err != nil {
+		return nil, err
 	}
-	for _, knowledgeBase := range knowledgeBaseList {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil)
-			if getErr != nil {
-				return nil, diag.Errorf("Failed to get page of Knowledge documents: %v", getErr)
-			}
+	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
 
-			if knowledgeDocuments.Entities == nil || len(*knowledgeDocuments.Entities) == 0 {
-				break
-			}
-			for _, knowledgeDocument := range *knowledgeDocuments.Entities {
-				id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
-				resources[id] = &ResourceMeta{Name: *knowledgeDocument.Title}
-			}
+	// get unpublished knowledge bases
+	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	if err != nil {
+		return nil, err
+	}
+	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+
+	for _, knowledgeBase := range knowledgeBaseList {
+		partialEntities, err := getAllKnowledgeDocumentEntities(*knowledgeAPI, &knowledgeBase, clientConfig)
+		if err != nil {
+			return nil, err
 		}
+		documentEntities = append(documentEntities, *partialEntities...)
+	}
+
+	for _, knowledgeDocument := range documentEntities {
+		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
+		resources[id] = &ResourceMeta{Name: *knowledgeDocument.Title}
 	}
 
 	return resources, nil
+}
+
+func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase, clientConfig *platformclientv2.Configuration) (*[]platformclientv2.Knowledgedocumentresponse, diag.Diagnostics) {
+	var (
+		after    string
+		entities []platformclientv2.Knowledgedocumentresponse
+	)
+
+	const pageSize = 100
+	// prepare base url
+	resourcePath := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s/documents", url.PathEscape(*knowledgeBase.Id))
+	listDocumentsBaseUrl := fmt.Sprintf("%s%s", knowledgeAPI.Configuration.BasePath, resourcePath)
+
+	for i := 0; ; i++ {
+		// prepare query params
+		queryParams := make(map[string]string, 0)
+		queryParams["after"] = after
+		queryParams["pageSize"] = fmt.Sprintf("%v", pageSize)
+		queryParams["includeDrafts"] = "true"
+
+		// prepare headers
+		headers := make(map[string]string)
+		headers["Authorization"] = fmt.Sprintf("Bearer %s", clientConfig.AccessToken)
+		headers["Content-Type"] = "application/json"
+		headers["Accept"] = "application/json"
+
+		// execute request
+		response, err := clientConfig.APIClient.CallAPI(listDocumentsBaseUrl, "GET", nil, headers, queryParams, nil, "", nil)
+		if err != nil {
+			return nil, diag.Errorf("Failed to read knowledge document list response %v", err)
+		}
+
+		// process response
+		var knowledgeDocuments platformclientv2.Knowledgedocumentresponselisting
+		unmarshalErr := json.Unmarshal(response.RawBody, &knowledgeDocuments)
+		if unmarshalErr != nil {
+			return nil, diag.Errorf("Failed to unmarshal knowledge document list response %v", unmarshalErr)
+		}
+
+		/**
+		 * Todo: restore direct SDK invocation and remove workaround once the SDK supports optional boolean args.
+		 */
+		// knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocuments(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", nil, nil, true, true, nil, nil)
+		// if getErr != nil {
+		// 	return nil, diag.Errorf("Failed to get page of knowledge documents: %v", getErr)
+		// }
+
+		if knowledgeDocuments.Entities == nil || len(*knowledgeDocuments.Entities) == 0 {
+			break
+		}
+
+		entities = append(entities, *knowledgeDocuments.Entities...)
+
+		if knowledgeDocuments.NextUri == nil || *knowledgeDocuments.NextUri == "" {
+			break
+		}
+
+		u, err := url.Parse(*knowledgeDocuments.NextUri)
+		if err != nil {
+			return nil, diag.Errorf("Failed to parse after cursor from knowledge document nextUri: %v", err)
+		}
+		m, _ := url.ParseQuery(u.RawQuery)
+		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
+			after = afterSlice[0]
+			if after == "" {
+				break
+			}
+		}
+	}
+
+	return &entities, nil
 }
 
 func knowledgeDocumentExporter() *ResourceExporter {
@@ -169,7 +238,7 @@ func buildDocumentAlternatives(requestIn map[string]interface{}, knowledgeAPI *p
 	return nil
 }
 
-func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string) platformclientv2.Knowledgedocumentreq {
+func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string) (*platformclientv2.Knowledgedocumentreq, diag.Diagnostics) {
 	requestIn := d.Get("knowledge_document").([]interface{})[0].(map[string]interface{})
 	title := requestIn["title"].(string)
 	visible := requestIn["visible"].(bool)
@@ -183,10 +252,10 @@ func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platfor
 	if categoryName, ok := requestIn["category_name"].(string); ok && categoryName != "" {
 		pageSize := 1
 		knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), "", false, categoryName, "", "", false)
-
 		if getErr != nil {
-			fmt.Errorf("Failed to get page of knowledge categories: %v", getErr)
-		} else if len(*knowledgeCategories.Entities) > 0 {
+			return nil, diag.Errorf("Failed to get page of knowledge categories: %v", getErr)
+		}
+		if len(*knowledgeCategories.Entities) > 0 {
 			matchingCategory := (*knowledgeCategories.Entities)[0]
 			requestOut.CategoryId = matchingCategory.Id
 		}
@@ -197,10 +266,10 @@ func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platfor
 		labelIds := make([]string, 0)
 		for _, labelName := range labelStringList {
 			knowledgeLabels, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), labelName, false)
-
 			if getErr != nil {
-				fmt.Errorf("Failed to get page of knowledge labels: %v", getErr)
-			} else if len(*knowledgeLabels.Entities) > 0 {
+				return nil, diag.Errorf("Failed to get page of knowledge labels: %v", getErr)
+			}
+			if len(*knowledgeLabels.Entities) > 0 {
 				matchingLabel := (*knowledgeLabels.Entities)[0]
 				labelIds = append(labelIds, *matchingLabel.Id)
 			}
@@ -208,7 +277,7 @@ func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platfor
 		requestOut.LabelIds = &labelIds
 	}
 
-	return requestOut
+	return &requestOut, nil
 }
 
 func flattenDocumentAlternatives(alternativesIn *[]platformclientv2.Knowledgedocumentalternative) []interface{} {
@@ -233,9 +302,9 @@ func flattenDocumentAlternatives(alternativesIn *[]platformclientv2.Knowledgedoc
 	return alternativesOut
 }
 
-func flattenKnowledgeDocument(documentIn *platformclientv2.Knowledgedocumentresponse, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string) []interface{} {
+func flattenKnowledgeDocument(documentIn *platformclientv2.Knowledgedocumentresponse, knowledgeAPI *platformclientv2.KnowledgeApi, knowledgeBaseId string) ([]interface{}, error) {
 	if documentIn == nil {
-		return nil
+		return nil, nil
 	}
 
 	documentOut := make(map[string]interface{})
@@ -253,8 +322,9 @@ func flattenKnowledgeDocument(documentIn *platformclientv2.Knowledgedocumentresp
 		knowledgeCategory, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, *documentIn.Category.Id)
 
 		if getErr != nil {
-			fmt.Errorf("Failed to get knowledge category: %v", getErr)
-		} else if knowledgeCategory.Name != nil {
+			return nil, fmt.Errorf("Failed to get knowledge category: %v", getErr)
+		}
+		if knowledgeCategory.Name != nil {
 			documentOut["category_name"] = knowledgeCategory.Name
 		}
 	}
@@ -264,27 +334,31 @@ func flattenKnowledgeDocument(documentIn *platformclientv2.Knowledgedocumentresp
 			knowledgeLabel, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, *label.Id)
 
 			if getErr != nil {
-				fmt.Errorf("Failed to get knowledge label: %v", getErr)
-			} else if knowledgeLabel.Name != nil {
+				return nil, fmt.Errorf("Failed to get knowledge label: %v", getErr)
+			}
+			if knowledgeLabel.Name != nil {
 				labelNames = append(labelNames, *knowledgeLabel.Name)
 			}
 		}
 		documentOut["label_names"] = labelNames
 	}
 
-	return []interface{}{documentOut}
+	return []interface{}{documentOut}, nil
 }
 
 func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
-
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	published := d.Get("published").(bool)
-	body := buildKnowledgeDocumentRequest(d, knowledgeAPI, knowledgeBaseId)
+
+	body, buildErr := buildKnowledgeDocumentRequest(d, knowledgeAPI, knowledgeBaseId)
+	if buildErr != nil {
+		return buildErr
+	}
 
 	log.Printf("Creating knowledge document")
-	knowledgeDocument, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseDocuments(knowledgeBaseId, body)
+	knowledgeDocument, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseDocuments(knowledgeBaseId, *body)
 
 	if err != nil {
 		return diag.Errorf("Failed to create knowledge document: %s", err)
@@ -332,7 +406,12 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, knowledgeBaseId)
 		d.SetId(id)
 		d.Set("knowledge_base_id", *knowledgeDocument.KnowledgeBase.Id)
-		d.Set("knowledge_document", flattenKnowledgeDocument(knowledgeDocument, knowledgeAPI, knowledgeBaseId))
+
+		flattenedDocument, err := flattenKnowledgeDocument(knowledgeDocument, knowledgeAPI, knowledgeBaseId)
+		if err != nil {
+			return resource.NonRetryableError(err)
+		}
+		d.Set("knowledge_document", flattenedDocument)
 
 		if *knowledgeDocument.State == "Published" {
 			d.Set("published", true)
@@ -366,10 +445,13 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 			return resp, diag.Errorf("Failed to read Knowledge document %s: %s", knowledgeDocumentId, getErr)
 		}
 
-		update := buildKnowledgeDocumentRequest(d, knowledgeAPI, knowledgeBaseId)
+		update, err := buildKnowledgeDocumentRequest(d, knowledgeAPI, knowledgeBaseId)
+		if err != nil {
+			return nil, err
+		}
 
 		log.Printf("Updating knowledge document %s", knowledgeDocumentId)
-		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, update)
+		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, *update)
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update knowledge document %s: %s", knowledgeDocumentId, putErr)
 		}

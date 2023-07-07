@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
@@ -353,7 +353,6 @@ func testVerifyKnowledgeDocumentVariationDestroyed(state *terraform.State) error
 				// Unexpected error
 				return fmt.Errorf("Unexpected error: %s", draftErr)
 			}
-			continue
 		} else {
 			// Unexpected error
 			return fmt.Errorf("Unexpected error: %s", publishedErr)

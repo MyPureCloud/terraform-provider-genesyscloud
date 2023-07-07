@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -41,52 +42,77 @@ var (
 
 func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
+	categoryEntities := make([]platformclientv2.Categoryresponse, 0)
 	resources := make(ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		unpublishedKnowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", false, "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
-		}
-
-		publishedKnowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", true, "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
-		}
-
-		if unpublishedKnowledgeBases != nil && len(*unpublishedKnowledgeBases.Entities) > 0 {
-			for _, knowledgeBase := range *unpublishedKnowledgeBases.Entities {
-				knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
-			}
-		}
-		if publishedKnowledgeBases != nil && len(*publishedKnowledgeBases.Entities) > 0 {
-			for _, knowledgeBase := range *publishedKnowledgeBases.Entities {
-				knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
-			}
-		}
+	// get published knowledge bases
+	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	if err != nil {
+		return nil, err
 	}
+	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
+
+	// get unpublished knowledge bases
+	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	if err != nil {
+		return nil, err
+	}
+	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+
 	for _, knowledgeBase := range knowledgeBaseList {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", false, "", "", "", false)
-			if getErr != nil {
-				return nil, diag.Errorf("Failed to get page of knowledge categories: %v", getErr)
-			}
-
-			if knowledgeCategories.Entities == nil || len(*knowledgeCategories.Entities) == 0 {
-				break
-			}
-
-			for _, knowledgeCategory := range *knowledgeCategories.Entities {
-				id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
-				resources[id] = &ResourceMeta{Name: *knowledgeCategory.Name}
-			}
+		partialEntities, err := getAllKnowledgeCategoryEntities(*knowledgeAPI, &knowledgeBase)
+		if err != nil {
+			return nil, err
 		}
+		categoryEntities = append(categoryEntities, *partialEntities...)
+	}
+
+	for _, knowledgeCategory := range categoryEntities {
+		id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+		resources[id] = &ResourceMeta{Name: *knowledgeCategory.Name}
 	}
 
 	return resources, nil
+}
+
+func getAllKnowledgeCategoryEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Categoryresponse, diag.Diagnostics) {
+	var (
+		after    string
+		entities []platformclientv2.Categoryresponse
+	)
+
+	const pageSize = 100
+	for i := 0; ; i++ {
+		knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(*knowledgeBase.Id, "", after, fmt.Sprintf("%v", pageSize), "", false, "", "", "", false)
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of knowledge categories: %v", getErr)
+		}
+
+		if knowledgeCategories.Entities == nil || len(*knowledgeCategories.Entities) == 0 {
+			break
+		}
+
+		entities = append(entities, *knowledgeCategories.Entities...)
+
+		if knowledgeCategories.NextUri == nil || *knowledgeCategories.NextUri == "" {
+			break
+		}
+
+		u, err := url.Parse(*knowledgeCategories.NextUri)
+		if err != nil {
+			return nil, diag.Errorf("Failed to parse after cursor from knowledge category nextUri: %v", err)
+		}
+		m, _ := url.ParseQuery(u.RawQuery)
+		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
+			after = afterSlice[0]
+			if after == "" {
+				break
+			}
+		}
+	}
+
+	return &entities, nil
 }
 
 func knowledgeCategoryExporter() *ResourceExporter {
@@ -134,7 +160,7 @@ func createKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
-	knowledgeCategoryRequest := buildKnowledgeCategory(knowledgeCategory)
+	knowledgeCategoryRequest := buildKnowledgeCategoryCreate(knowledgeCategory)
 
 	log.Printf("Creating knowledge category %s", knowledgeCategory["name"].(string))
 	knowledgeCategoryResponse, _, err := knowledgeAPI.PostKnowledgeKnowledgebaseCategories(knowledgeBaseId, *knowledgeCategoryRequest)
@@ -196,7 +222,7 @@ func updateKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 			return resp, diag.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr)
 		}
 
-		knowledgeCategoryUpdate := buildKnowledgeCategory(knowledgeCategory)
+		knowledgeCategoryUpdate := buildKnowledgeCategoryUpdate(knowledgeCategory)
 
 		log.Printf("Updating knowledge category %s", knowledgeCategory["name"].(string))
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId, *knowledgeCategoryUpdate)
@@ -242,10 +268,27 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func buildKnowledgeCategory(categoryIn map[string]interface{}) *platformclientv2.Categoryrequest {
+func buildKnowledgeCategoryUpdate(categoryIn map[string]interface{}) *platformclientv2.Categoryupdaterequest {
 	name := categoryIn["name"].(string)
 
-	categoryOut := platformclientv2.Categoryrequest{
+	categoryOut := platformclientv2.Categoryupdaterequest{
+		Name: &name,
+	}
+
+	if description, ok := categoryIn["description"].(string); ok && description != "" {
+		categoryOut.Description = &description
+	}
+	if parentId, ok := categoryIn["parent_id"].(string); ok && parentId != "" {
+		categoryOut.ParentCategoryId = &parentId
+	}
+
+	return &categoryOut
+}
+
+func buildKnowledgeCategoryCreate(categoryIn map[string]interface{}) *platformclientv2.Categorycreaterequest {
+	name := categoryIn["name"].(string)
+
+	categoryOut := platformclientv2.Categorycreaterequest{
 		Name: &name,
 	}
 

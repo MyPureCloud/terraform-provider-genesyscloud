@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 func getOutboundWrapupCodeMappings(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -56,7 +56,7 @@ func resourceOutboundWrapUpCodeMappings() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			`default_set`: {
 				Description: `The default set of wrap-up flags. These will be used if there is no entry for a given wrap-up code in the mapping.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,

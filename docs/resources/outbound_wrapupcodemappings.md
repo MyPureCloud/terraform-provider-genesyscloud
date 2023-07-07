@@ -35,11 +35,11 @@ resource "genesyscloud_outbound_wrapupcodemappings" "example_mappings" {
 
 ### Required
 
-- `default_set` (List of String) The default set of wrap-up flags. These will be used if there is no entry for a given wrap-up code in the mapping.
 - `mappings` (Block List, Min: 1) A map from wrap-up code identifiers to a set of wrap-up flags. (see [below for nested schema](#nestedblock--mappings))
 
 ### Optional
 
+- `default_set` (List of String) The default set of wrap-up flags. These will be used if there is no entry for a given wrap-up code in the mapping.
 - `placeholder` (String) Placeholder data used internally by the provider. Defaults to `***`.
 
 ### Read-Only

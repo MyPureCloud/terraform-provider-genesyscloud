@@ -4,17 +4,19 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v102/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
 )
 
 var (
@@ -97,47 +99,88 @@ var (
 
 func getAllKnowledgeDocumentsV1(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
+	documentEntities := make([]platformclientv2.Knowledgedocument, 0)
 	resources := make(ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		knowledgeBases, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), "", "", false, "", "")
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of knowledge bases: %v", getErr)
-		}
-
-		if knowledgeBases.Entities == nil || len(*knowledgeBases.Entities) == 0 {
-			break
-		}
-		for _, knowledgeBase := range *knowledgeBases.Entities {
-			knowledgeBaseList = append(knowledgeBaseList, knowledgeBase)
-		}
+	// get published knowledge bases
+	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	if err != nil {
+		return nil, err
 	}
-	for _, knowledgeBase := range knowledgeBaseList {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocuments(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", "", "", fmt.Sprintf("%v", pageSize), "", "", "", "", nil)
-			if getErr != nil {
-				return nil, diag.Errorf("Failed to get page of Knowledge documents: %v", getErr)
-			}
+	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
 
-			if knowledgeDocuments.Entities == nil || len(*knowledgeDocuments.Entities) == 0 {
-				break
-			}
-			for _, knowledgeDocument := range *knowledgeDocuments.Entities {
-				id := fmt.Sprintf("%s %s %s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.LanguageCode)
-				resources[id] = &ResourceMeta{Name: *knowledgeDocument.Name}
-			}
+	// get unpublished knowledge bases
+	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
+	if err != nil {
+		return nil, err
+	}
+	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+
+	for _, knowledgeBase := range knowledgeBaseList {
+		partialEntities, err := getAllKnowledgeV1DocumentEntities(*knowledgeAPI, &knowledgeBase)
+		if err != nil {
+			return nil, err
 		}
+		documentEntities = append(documentEntities, *partialEntities...)
+	}
+
+	for _, knowledgeDocument := range documentEntities {
+		id := fmt.Sprintf("%s %s %s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.LanguageCode)
+		var name string
+		if knowledgeDocument.Name != nil {
+			name = *knowledgeDocument.Name
+		} else {
+			name = fmt.Sprintf("document " + uuid.NewString())
+		}
+		resources[id] = &ResourceMeta{Name: name}
 	}
 
 	return resources, nil
 }
 
+func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocument, diag.Diagnostics) {
+	var (
+		after    string
+		entities []platformclientv2.Knowledgedocument
+	)
+
+	const pageSize = 100
+	for i := 0; ; i++ {
+		knowledgeDocuments, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocuments(*knowledgeBase.Id, *knowledgeBase.CoreLanguage, "", after, "", fmt.Sprintf("%v", pageSize), "", "", "", "", nil)
+		if getErr != nil {
+			return nil, diag.Errorf("Failed to get page of knowledge documents: %v", getErr)
+		}
+
+		if knowledgeDocuments.Entities == nil || len(*knowledgeDocuments.Entities) == 0 {
+			break
+		}
+
+		entities = append(entities, *knowledgeDocuments.Entities...)
+
+		if knowledgeDocuments.NextUri == nil || *knowledgeDocuments.NextUri == "" {
+			break
+		}
+
+		u, err := url.Parse(*knowledgeDocuments.NextUri)
+		if err != nil {
+			return nil, diag.Errorf("Failed to parse after cursor from knowledge document nextUri: %v", err)
+		}
+		m, _ := url.ParseQuery(u.RawQuery)
+		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
+			after = afterSlice[0]
+			if after == "" {
+				break
+			}
+		}
+	}
+
+	return &entities, nil
+}
+
 func knowledgeDocumentExporterV1() *ResourceExporter {
 	return &ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeDocuments),
+		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeDocumentsV1),
 		RefAttrs: map[string]*RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
