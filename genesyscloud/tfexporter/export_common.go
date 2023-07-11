@@ -83,6 +83,15 @@ func resolveReference(refSettings *gcloud.RefAttrSettings, refID string, exporte
 	return ""
 }
 
+// Correct exported e164 number e.g. +(1) 111-222-333 --> +1111222333
+func sanitizeE164Number(number string) string {
+	charactersToRemove := []string{" ", "-", "(", ")"}
+	for _, c := range charactersToRemove {
+		number = strings.Replace(number, c, "", -1)
+	}
+	return number
+}
+
 func getFilePath(d *schema.ResourceData, filename string) (string, diag.Diagnostics) {
 	directory := d.Get("directory").(string)
 	if strings.HasPrefix(directory, "~") {
