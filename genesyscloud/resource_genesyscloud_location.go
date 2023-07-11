@@ -45,6 +45,7 @@ func locationExporter() *ResourceExporter {
 		RefAttrs: map[string]*RefAttrSettings{
 			"path": {RefType: "genesyscloud_location"},
 		},
+		E164Numbers: []string{"emergency_number.number"},
 	}
 }
 

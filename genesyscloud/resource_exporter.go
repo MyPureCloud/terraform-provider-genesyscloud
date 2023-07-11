@@ -128,6 +128,8 @@ type ResourceExporter struct {
 
 	//This a place holder filter out specific resources from a filter.
 	FilterResource func(ResourceIDMetaMap, string, []string) ResourceIDMetaMap
+	// Attributes that are e164 numbers and should be ensured to export in the correct format (remove hyphens, whitespace, etc.)
+	E164Numbers []string
 }
 
 func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
@@ -177,6 +179,10 @@ func (r *ResourceExporter) AllowForZeroValues(attribute string) bool {
 
 func (r *ResourceExporter) IsJsonEncodable(attribute string) bool {
 	return StringInSlice(attribute, r.JsonEncodeAttributes)
+}
+
+func (r *ResourceExporter) IsAttributeE164(attribute string) bool {
+	return StringInSlice(attribute, r.E164Numbers)
 }
 
 func (r *ResourceExporter) AddExcludedAttribute(attribute string) {

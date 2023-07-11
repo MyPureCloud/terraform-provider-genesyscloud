@@ -653,6 +653,14 @@ func sanitizeConfigMap(
 			continue
 		}
 
+		if exporter.IsAttributeE164(currAttr) {
+			if phoneNumber, ok := configMap[key].(string); !ok || phoneNumber == "" {
+				continue
+			}
+			configMap[key] = sanitizeE164Number(configMap[key].(string))
+			continue
+		}
+
 		switch val.(type) {
 		case map[string]interface{}:
 			// Maps are sanitized in-place
