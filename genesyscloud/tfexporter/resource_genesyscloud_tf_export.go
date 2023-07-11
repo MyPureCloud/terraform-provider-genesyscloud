@@ -44,7 +44,7 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:    true,
 			},
 			"resource_types": {
-				Description: "Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types.",
+				Description: "Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types. NOTE: This field is deprecated and will be removed in future release.  Please use the include_filter_resources or exclude_filter_resources attribute.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
@@ -54,7 +54,7 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew: true,
 			},
 			"include_filter_resources": {
-				Description: "Include resources by regex strings",
+				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
@@ -64,7 +64,7 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew: true,
 			},
 			"exclude_filter_resources": {
-				Description: "Include resources by regex strings",
+				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
@@ -113,6 +113,9 @@ type resourceInfo struct {
 }
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	if diagErr := validateResourceFilters(d); diagErr != nil {
+		return diagErr
+	}
 
 	if _, ok := d.GetOk("include_filter_resources"); ok {
 		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources)
@@ -144,6 +147,29 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	d.SetId(gre.exportFilePath)
+
+	return nil
+}
+
+// validateResourceFilters checks to see if more then one resource filter has been defined
+func validateResourceFilters(d *schema.ResourceData) diag.Diagnostics {
+	counter := 0
+
+	if _, ok := d.GetOk("include_filter_resources"); ok {
+		counter++
+	}
+
+	if _, ok := d.GetOk("exclude_filter_resources"); ok {
+		counter++
+	}
+
+	if _, ok := d.GetOk("resource_types"); ok {
+		counter++
+	}
+
+	if counter > 1 {
+		return diag.Errorf("The include_filter_resources, exclude_filter_resources, and resource_types attributes are mutually exclusive. You have defined more then one attribute.")
+	}
 
 	return nil
 }

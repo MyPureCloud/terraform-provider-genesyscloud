@@ -411,6 +411,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 			{ResourceName: "test-queue-prod-2", Name: "test-queue-" + uuid.NewString() + "-prod", Description: "This is a test prod queue 2", AcwTimeoutMs: 200000},
 			{ResourceName: "test-queue-prod-3", Name: "test-queue-" + uuid.NewString() + "-prod", Description: "This is a test prod queue 3", AcwTimeoutMs: 200000},
 			{ResourceName: "test-queue-test-4", Name: "test-queue-" + uuid.NewString() + "-test", Description: "This is a test queue 4", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-dev-1", Name: "test-queue-" + uuid.NewString() + "-dev", Description: "This is a dev queue 5", AcwTimeoutMs: 200000},
 		}
 	)
 	defer os.RemoveAll(exportTestDir)
@@ -435,7 +436,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueResources[3].Name), queueResources[3]), //Want to make sure the test queue is there
-					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "-prod"),                                                        //We should not find any "prod" queues here because we only wanted to include queues that ended with a -prod
+					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "-(dev|test)$"),                                                 //We should not find any "prod" queues here because we only wanted to include queues that ended with a -prod
 				),
 			},
 		},
