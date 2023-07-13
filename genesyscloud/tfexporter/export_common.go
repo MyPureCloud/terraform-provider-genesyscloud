@@ -106,7 +106,6 @@ func IncludeFilterResourceByRegex(result gcloud.ResourceIDMetaMap, name string, 
 				newResourceMap[k] = result[k]
 			}
 		}
-
 	}
 
 	return newResourceMap

@@ -69,25 +69,7 @@ type GenesysCloudResourceExporter struct {
 	meta                  interface{}
 }
 
-func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
-	gre := &GenesysCloudResourceExporter{
-		exportAsHCL:         d.Get("export_as_hcl").(bool),
-		logPermissionErrors: d.Get("log_permission_errors").(bool),
-		filterType:          filterType,
-		includeStateFile:    d.Get("include_state_file").(bool),
-		version:             meta.(*gcloud.ProviderMeta).Version,
-		provider:            gcloud.New(meta.(*gcloud.ProviderMeta).Version)(),
-		d:                   d,
-		ctx:                 ctx,
-		meta:                meta,
-	}
-
-	err := gre.setUpExportFilePaths()
-	if err != nil {
-		return nil, err
-	}
-
-	//Setting up the filter
+func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
 	switch filterType {
 	case LegacyInclude:
 		var filter []string
@@ -120,7 +102,28 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		gre.resourceTypeFilter = ExcludeFilterByResourceType //Setting up the resource type filter
 		gre.resourceFilter = ExcludeFilterResourceByRegex    //Setting up the resource filters
 	}
+}
 
+func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
+	gre := &GenesysCloudResourceExporter{
+		exportAsHCL:         d.Get("export_as_hcl").(bool),
+		logPermissionErrors: d.Get("log_permission_errors").(bool),
+		filterType:          filterType,
+		includeStateFile:    d.Get("include_state_file").(bool),
+		version:             meta.(*gcloud.ProviderMeta).Version,
+		provider:            gcloud.New(meta.(*gcloud.ProviderMeta).Version)(),
+		d:                   d,
+		ctx:                 ctx,
+		meta:                meta,
+	}
+
+	err := gre.setUpExportFilePaths()
+	if err != nil {
+		return nil, err
+	}
+
+	//Setting up the filter
+	configureExporterType(ctx, d, gre, filterType)
 	return gre, nil
 }
 
@@ -214,16 +217,16 @@ func formatFilter(filter []string) []string {
 func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr diag.Diagnostics) {
 	log.Printf("Retrieving map of Genesys Cloud resources to export")
 	var filter []string
-	if resourceTypes, ok := g.d.GetOk("resource_types"); ok {
-		filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
+	if exportableResourceTypes, ok := g.d.GetOk("resource_types"); ok {
+		filter = gcloud.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
 	}
 
-	if resourceTypes, ok := g.d.GetOk("include_filter_resources"); ok {
-		filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
+	if exportableResourceTypes, ok := g.d.GetOk("include_filter_resources"); ok {
+		filter = gcloud.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
 	}
 
-	if resourceTypes, ok := g.d.GetOk("exclude_filter_resources"); ok {
-		filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
+	if exportableResourceTypes, ok := g.d.GetOk("exclude_filter_resources"); ok {
+		filter = gcloud.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
 	}
 
 	newFilter := make([]string, 0)
