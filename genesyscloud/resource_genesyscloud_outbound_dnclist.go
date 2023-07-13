@@ -120,7 +120,7 @@ func resourceOutboundDncList() *schema.Resource {
 							ValidateDiagFunc: validateDateTime,
 						},
 						`phone_numbers`: {
-							Description: `Phone numbers to add to a DNC list. Only possible if the dncSourceType is rds.`,
+							Description: `Phone numbers to add to a DNC list. Only possible if the dncSourceType is rds.  Phone numbers must be in an E.164 number format.`,
 							Optional:    true,
 							Type:        schema.TypeList,
 							Elem: &schema.Schema{

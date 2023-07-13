@@ -76,7 +76,7 @@ Optional:
 
 Required:
 
-- `number` (String) Emergency phone number.
+- `number` (String) Emergency phone number.  Must be in an E.164 number format.
 
 Optional:
 

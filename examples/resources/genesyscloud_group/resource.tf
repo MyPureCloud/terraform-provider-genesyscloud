@@ -7,7 +7,7 @@ resource "genesyscloud_group" "sample_group" {
   owner_ids     = [genesyscloud_user.test-user.id]
   member_ids    = [genesyscloud_user.test-user.id]
   addresses {
-    number = "3174181234"
+    number = "+13174181234"
     type   = "GROUPRING"
   }
 }

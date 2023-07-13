@@ -86,7 +86,7 @@ func resourceLocation() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"number": {
-							Description:      "Emergency phone number.",
+							Description:      "Emergency phone number.  Must be in an E.164 number format.",
 							Type:             schema.TypeString,
 							Required:         true,
 							ValidateDiagFunc: validatePhoneNumber,
