@@ -22,10 +22,10 @@ resource "genesyscloud_tf_export" "export" {
   directory = "./terraform"
   // leaving resource_types empty will cause all exportable resources to be exported
   // export all resources of a single type by providing the resource type
-  // resources can be exported by name with the syntax `resource_type::resource_name`
-  resource_types     = ["genesyscloud_user", "genesyscloud_routing_queue::Marketing Queue", "genesyscloud_routing_queue::Sales Queue"]
-  include_state_file = true
-  exclude_attributes = ["genesyscloud_user.skills"]
+  // resources can be exported by name with the syntax `resource_type::regular expression`
+  include_filter_resources = ["genesyscloud_user", "genesyscloud_routing_queue::Marketing Queue", "genesyscloud_routing_queue::Sales Queue"]
+  include_state_file       = true
+  exclude_attributes       = ["genesyscloud_user.skills"]
 }
 ```
 
@@ -36,12 +36,12 @@ resource "genesyscloud_tf_export" "export" {
 
 - `directory` (String) Directory where the config and state files will be exported. Defaults to `./genesyscloud`.
 - `exclude_attributes` (List of String) Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_name}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.
-- `exclude_filter_resources` (List of String) Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information
+- `exclude_filter_resources` (List of String) Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information
 - `export_as_hcl` (Boolean) Export the config as HCL. Defaults to `false`.
 - `include_filter_resources` (List of String) Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information
 - `include_state_file` (Boolean) Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. When `false`, GUID fields will be omitted from the config file unless a resource reference can be supplied. In this case, the resource type will need to be included in the `resource_types` array. Defaults to `false`.
 - `log_permission_errors` (Boolean) Log permission/product issues rather than fail. Defaults to `false`.
-- `resource_types` (List of String) Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types. NOTE: This field is deprecated and will be removed in future release.  Please use the include_filter_resources or exclude_filter_resources attribute.
+- `resource_types` (List of String, Deprecated) Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types. NOTE: This field is deprecated and will be removed in future release.  Please use the include_filter_resources or exclude_filter_resources attribute.
 
 ### Read-Only
 
