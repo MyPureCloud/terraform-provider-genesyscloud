@@ -40,8 +40,10 @@ type QueueExport struct {
 	AcwTimeoutMs int    `json:"acw_timeout_ms"`
 	Description  string `json:"description"`
 	Name         string `json:"name"`
+	ResourceName string `-`
 }
 
+// GenerateRoutingQueueResourceBasic
 func TestAccResourceTfExport(t *testing.T) {
 	var (
 		exportTestDir   = "../../.terraform" + uuid.NewString()
@@ -196,7 +198,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_tf_export."+exportResource1,
 						"resource_types.1", "genesyscloud_routing_queue::"+queueName),
 					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", gcloud.SanitizeResourceName(userEmail1), testUser1),
-					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueName), testQueue),
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueName), *testQueue),
 				),
 			},
 			{
@@ -241,7 +243,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 						"genesyscloud_tf_export."+exportResource1, "resource_types.2",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", gcloud.SanitizeResourceName(userEmail1), testUser1),
-					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueName), testQueue),
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueName), *testQueue),
 					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunkbasesettings"),
 				),
 			},
@@ -296,8 +298,145 @@ func TestAccResourceTfExportByName(t *testing.T) {
 						"genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", gcloud.SanitizeResourceName(userEmail1), testUser1),
 					testUserExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_user", gcloud.SanitizeResourceName(userEmail2), testUser2),
-					testQueueExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueName), testQueue),
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueName), *testQueue),
 					testTrunkBaseSettingsExport(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_telephony_providers_edges_trunkbasesettings"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+func TestAccResourceTfExportIncludeFilterResourcesByType(t *testing.T) {
+	var (
+		exportTestDir  = "../.terraform" + uuid.NewString()
+		exportResource = "test-export2"
+	)
+
+	queueResources := []QueueExport{
+		{ResourceName: "test-queue-prod-1", Name: "test-queue-" + uuid.NewString() + "-prod", Description: "This is a test prod queue 1", AcwTimeoutMs: 200000},
+		{ResourceName: "test-queue-prod-2", Name: "test-queue-" + uuid.NewString() + "-prod", Description: "This is a test prod queue 2", AcwTimeoutMs: 200000},
+		{ResourceName: "test-queue-prod-3", Name: "test-queue-" + uuid.NewString() + "-prod", Description: "This is a test prod queue 3", AcwTimeoutMs: 200000},
+		{ResourceName: "test-queue-test-1", Name: "test-queue-" + uuid.NewString() + "-test", Description: "This is a test prod queue 4", AcwTimeoutMs: 200000},
+	}
+
+	defer os.RemoveAll(exportTestDir)
+
+	queueResourceDef := buildQueueResources(queueResources)
+	config := queueResourceDef +
+		generateTfExportByIncludeFilterResources(
+			exportResource,
+			exportTestDir,
+			trueValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue"),
+			},
+		)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				// Generate a queue as well and export it
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueResources[0].Name), queueResources[0]),
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueResources[1].Name), queueResources[1]),
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueResources[2].Name), queueResources[2]),
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueResources[3].Name), queueResources[3]),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceTfExportIncludeFilterResourcesByRegEx will create 4 queues (three ending with -prod and then one watching with -test).  The
+// The code will use a regex to include all queues that have a name that match a regular expression.  (e.g. -prod).  The test checks to see if any -test
+// queues are exported.
+func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
+	var (
+		exportTestDir  = "../.terraform" + uuid.NewString()
+		exportResource = "test-export2"
+
+		queueResources = []QueueExport{
+			{ResourceName: "test-queue-prod-1", Name: "test-queue-" + uuid.NewString() + "-prod", Description: "This is a test prod queue 1", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-prod-2", Name: "test-queue-" + uuid.NewString() + "-prod", Description: "This is a test prod queue 2", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-prod-3", Name: "test-queue-" + uuid.NewString() + "-prod", Description: "This is a test prod queue 3", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-4", Name: "test-queue-" + uuid.NewString() + "-test", Description: "This is a test prod queue 4", AcwTimeoutMs: 200000},
+		}
+	)
+	defer os.RemoveAll(exportTestDir)
+
+	queueResourceDef := buildQueueResources(queueResources)
+	config := queueResourceDef +
+		generateTfExportByIncludeFilterResources(
+			exportResource,
+			exportTestDir,
+			trueValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue::-prod"),
+			},
+		)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				// Generate a queue as well and export it
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueResources[0].Name), queueResources[0]),
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueResources[1].Name), queueResources[1]),
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueResources[2].Name), queueResources[2]),
+					testQueueExportMatchesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "-prod"), //We should not find any "test" queues here because we only wanted to include queues that ended with a -prod
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceTfExportExcludeFilterResourcesByRegEx will exclude any test resources that match a regular expression provided.  In our test case we exclude
+// all routing queues that have a regex with -prod in it.  We then check to see if there is any prod queues present
+func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
+	var (
+		exportTestDir  = "../.terraform" + uuid.NewString()
+		exportResource = "test-export2"
+
+		queueResources = []QueueExport{
+			{ResourceName: "test-queue-prod-1", Name: "test-queue-" + uuid.NewString() + "-prod", Description: "This is a test prod queue 1", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-prod-2", Name: "test-queue-" + uuid.NewString() + "-prod", Description: "This is a test prod queue 2", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-prod-3", Name: "test-queue-" + uuid.NewString() + "-prod", Description: "This is a test prod queue 3", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-test-4", Name: "test-queue-" + uuid.NewString() + "-test", Description: "This is a test queue 4", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-dev-1", Name: "test-queue-" + uuid.NewString() + "-dev", Description: "This is a dev queue 5", AcwTimeoutMs: 200000},
+		}
+	)
+	defer os.RemoveAll(exportTestDir)
+
+	queueResourceDef := buildQueueResources(queueResources)
+	config := queueResourceDef +
+		generateTfExportByExcludeFilterResources(
+			exportResource,
+			exportTestDir,
+			trueValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue::-prod"),
+			},
+		)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				// Generate a queue as well and export it
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", gcloud.SanitizeResourceName(queueResources[3].Name), queueResources[3]), //Want to make sure the test queue is there
+					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "-(dev|test)$"),                                                 //We should not find any "prod" queues here because we only wanted to include queues that ended with a -prod
 				),
 			},
 		},
@@ -815,15 +954,17 @@ func testUserExport(filePath, resourceType, resourceName string, expectedUser *U
 	}
 }
 
-func testQueueExport(filePath, resourceType, resourceName string, expectedQueue *QueueExport) resource.TestCheckFunc {
+// testQueueExportEqual  Checks to see if the queues passed match the expected value
+func testQueueExportEqual(filePath, resourceType, name string, expectedQueue QueueExport) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
+		expectedQueue.ResourceName = "" //Setting the resource name to be empty because is it not needed
 		raw, err := getResourceDefinition(filePath, resourceType)
 		if err != nil {
 			return err
 		}
 
 		var r *json.RawMessage
-		if err := json.Unmarshal(*raw[resourceName], &r); err != nil {
+		if err := json.Unmarshal(*raw[name], &r); err != nil {
 			return err
 		}
 
@@ -832,8 +973,77 @@ func testQueueExport(filePath, resourceType, resourceName string, expectedQueue 
 			return err
 		}
 
-		if *exportedQueue != *expectedQueue {
-			return fmt.Errorf("objects are not equal. Expected: %v. Got: %v", *expectedQueue, *exportedQueue)
+		if *exportedQueue != expectedQueue {
+			return fmt.Errorf("objects are not equal. Expected: %v. Got: %v", expectedQueue, *exportedQueue)
+		}
+
+		return nil
+	}
+}
+
+// testQueueExportMatchesRegEx tests to see if all of the queues retrieved in the export match the regex passed into it.
+func testQueueExportMatchesRegEx(filePath, resourceType, regEx string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		tfExport, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			return err
+		}
+
+		var tfExportRaw map[string]*json.RawMessage
+		if err := json.Unmarshal(tfExport, &tfExportRaw); err != nil {
+			return err
+		}
+
+		var resourceRaw map[string]*json.RawMessage
+		if err := json.Unmarshal(*tfExportRaw["resource"], &resourceRaw); err != nil {
+			return err
+		}
+
+		var resources map[string]interface{}
+		if json.Unmarshal(*resourceRaw[resourceType], &resources); err != nil {
+			return err
+		}
+
+		for k, _ := range resources {
+			regEx := regexp.MustCompile(regEx)
+
+			if !regEx.MatchString(k) {
+				return fmt.Errorf("Resource %s::%s was found in the config file when it did not match the include regex: %s", resourceType, k, regEx)
+			}
+		}
+
+		return nil
+	}
+}
+
+func testQueueExportExcludesRegEx(filePath, resourceType, regEx string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		tfExport, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			return err
+		}
+
+		var tfExportRaw map[string]*json.RawMessage
+		if err := json.Unmarshal(tfExport, &tfExportRaw); err != nil {
+			return err
+		}
+
+		var resourceRaw map[string]*json.RawMessage
+		if err := json.Unmarshal(*tfExportRaw["resource"], &resourceRaw); err != nil {
+			return err
+		}
+
+		var resources map[string]interface{}
+		if json.Unmarshal(*resourceRaw[resourceType], &resources); err != nil {
+			return err
+		}
+
+		for k, _ := range resources {
+			regEx := regexp.MustCompile(regEx)
+
+			if regEx.MatchString(k) {
+				return fmt.Errorf("Resource %s::%s was found in the config file when it should have been excluded by the regex: %s", resourceType, k, regEx)
+			}
 		}
 
 		return nil
@@ -889,7 +1099,7 @@ func getResourceDefinition(filePath, resourceType string) (map[string]*json.RawM
 func TestForExportCycles(t *testing.T) {
 
 	// Assumes exporting all resource types
-	exporters := gcloud.GetResourceExporters(nil)
+	exporters := gcloud.GetResourceExporters()
 
 	graph := simple.NewDirectedGraph()
 
@@ -1044,6 +1254,35 @@ func generateTfExportByName(
 	`, resourceID, directory, includeState, strings.Join(items, ","), excludedAttributes, exportAsHCL, logErrors)
 }
 
+func generateTfExportByIncludeFilterResources(
+	resourceID string,
+	directory string,
+	includeState string,
+	items []string,
+) string {
+	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
+		directory = "%s"
+		include_state_file = %s
+		include_filter_resources = [%s]
+	}
+	`, resourceID, directory, includeState, strings.Join(items, ","))
+}
+
+func generateTfExportByExcludeFilterResources(
+	resourceID string,
+	directory string,
+	includeState string,
+	items []string,
+) string {
+	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
+		directory = "%s"
+		include_state_file = %s
+		exclude_filter_resources = [%s]
+		log_permission_errors=true
+	}
+	`, resourceID, directory, includeState, strings.Join(items, ","))
+}
+
 func getExportedFileContents(filename string, result *string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		d, err := ioutil.ReadFile(filename)
@@ -1141,4 +1380,25 @@ func validateRoutingRules(resourceName string, ringNum int, operator string, thr
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "routing_rules."+ringNumStr+".threshold", threshold),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "routing_rules."+ringNumStr+".wait_seconds", waitSec),
 	)
+}
+
+func buildQueueResources(queueExports []QueueExport) string {
+	queueResourceDefinitions := ""
+	for _, queueExport := range queueExports {
+		queueResourceDefinitions = queueResourceDefinitions + gcloud.GenerateRoutingQueueResource(
+			queueExport.ResourceName,
+			queueExport.Name,
+			queueExport.Description,
+			nullValue, // MANDATORY_TIMEOUT
+			fmt.Sprintf("%v", queueExport.AcwTimeoutMs), // acw_timeout
+			nullValue, // ALL
+			nullValue, // auto_answer_only true
+			nullValue, // No calling party name
+			nullValue, // No calling party number
+			nullValue, // enable_manual_assignment false
+			nullValue, // enable_transcription false
+		)
+	}
+
+	return queueResourceDefinitions
 }

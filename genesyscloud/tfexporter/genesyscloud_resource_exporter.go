@@ -48,6 +48,10 @@ type unresolvableAttributeInfo struct {
 
 type GenesysCloudResourceExporter struct {
 	configExporter        Exporter
+	filterType            ExporterFilterType
+	resourceTypeFilter    ExporterResourceTypeFilter
+	resourceFilter        ExporterResourceFilter
+	filterList            *[]string
 	exportAsHCL           bool
 	logPermissionErrors   bool
 	includeStateFile      bool
@@ -65,10 +69,46 @@ type GenesysCloudResourceExporter struct {
 	meta                  interface{}
 }
 
-func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}) (*GenesysCloudResourceExporter, diag.Diagnostics) {
+func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
+	switch filterType {
+	case LegacyInclude:
+		var filter []string
+		if resourceTypes, ok := d.GetOk("resource_types"); ok {
+			filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
+			gre.filterList = &filter
+		}
+
+		//Setting up the resource type filter
+		gre.resourceTypeFilter = IncludeFilterByResourceType //Setting up the resource type filter
+		gre.resourceFilter = FilterResourceByName            //Setting up the resource filters
+	case IncludeResources:
+		var filter []string
+		if resourceTypes, ok := d.GetOk("include_filter_resources"); ok {
+			filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
+			gre.filterList = &filter
+		}
+
+		//Setting up the resource type filter
+		gre.resourceTypeFilter = IncludeFilterByResourceType //Setting up the resource type filter
+		gre.resourceFilter = IncludeFilterResourceByRegex    //Setting up the resource filters
+	case ExcludeResources:
+		var filter []string
+		if resourceTypes, ok := d.GetOk("exclude_filter_resources"); ok {
+			filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
+			gre.filterList = &filter
+		}
+
+		//Setting up the resource type filter
+		gre.resourceTypeFilter = ExcludeFilterByResourceType //Setting up the resource type filter
+		gre.resourceFilter = ExcludeFilterResourceByRegex    //Setting up the resource filters
+	}
+}
+
+func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
 	gre := &GenesysCloudResourceExporter{
 		exportAsHCL:         d.Get("export_as_hcl").(bool),
 		logPermissionErrors: d.Get("log_permission_errors").(bool),
+		filterType:          filterType,
 		includeStateFile:    d.Get("include_state_file").(bool),
 		version:             meta.(*gcloud.ProviderMeta).Version,
 		provider:            gcloud.New(meta.(*gcloud.ProviderMeta).Version)(),
@@ -82,6 +122,8 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		return nil, err
 	}
 
+	//Setting up the filter
+	configureExporterType(ctx, d, gre, filterType)
 	return gre, nil
 }
 
@@ -151,14 +193,23 @@ func (g *GenesysCloudResourceExporter) setUpExportFilePaths() (diagErr diag.Diag
 // elements in the resource_type attribute will be returned.
 func (g *GenesysCloudResourceExporter) retrieveExporters() {
 	log.Printf("Retrieving exporters list")
-	var filter []string
-	if resourceTypes, ok := g.d.GetOk("resource_types"); ok {
-		filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
+	exports := gcloud.GetResourceExporters()
+
+	if g.resourceTypeFilter != nil && g.filterList != nil {
+		exports = g.resourceTypeFilter(exports, *g.filterList)
 	}
 
-	exports := gcloud.GetResourceExporters(filter)
-
 	g.exporters = &exports
+
+}
+
+// Removes the ::resource_name from the resource_types list
+func formatFilter(filter []string) []string {
+	newFilter := make([]string, 0)
+	for _, str := range filter {
+		newFilter = append(newFilter, strings.Split(str, "::")[0])
+	}
+	return newFilter
 }
 
 // retrieveSanitizedResourceMaps will retrieve a list of all of the resources to be exported.  It will also apply a filter (e.g the :: ) and only return the specific Genesys Cloud
@@ -166,8 +217,16 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() {
 func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr diag.Diagnostics) {
 	log.Printf("Retrieving map of Genesys Cloud resources to export")
 	var filter []string
-	if resourceTypes, ok := g.d.GetOk("resource_types"); ok {
-		filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
+	if exportableResourceTypes, ok := g.d.GetOk("resource_types"); ok {
+		filter = gcloud.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+	}
+
+	if exportableResourceTypes, ok := g.d.GetOk("include_filter_resources"); ok {
+		filter = gcloud.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+	}
+
+	if exportableResourceTypes, ok := g.d.GetOk("exclude_filter_resources"); ok {
+		filter = gcloud.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
 	}
 
 	newFilter := make([]string, 0)
@@ -178,7 +237,7 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr 
 	}
 
 	//Retrieve a map of all of the objects we are going to build.  Apply the filter that will remove specific classes of an object
-	diagErr = buildSanitizedResourceMaps(*g.exporters, newFilter, g.logPermissionErrors)
+	diagErr = g.buildSanitizedResourceMaps(*g.exporters, newFilter, g.logPermissionErrors)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -344,7 +403,7 @@ func (g *GenesysCloudResourceExporter) sourceForVersion(version string) string {
 	return providerSource
 }
 
-func buildSanitizedResourceMaps(exporters map[string]*gcloud.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[string]*gcloud.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
 	errorChan := make(chan diag.Diagnostics)
 	wgDone := make(chan bool)
 	// Cancel remaining goroutines if an error occurs
@@ -357,7 +416,9 @@ func buildSanitizedResourceMaps(exporters map[string]*gcloud.ResourceExporter, f
 		go func(name string, exporter *gcloud.ResourceExporter) {
 			defer wg.Done()
 			log.Printf("Getting all resources for type %s", name)
+			exporter.FilterResource = g.resourceFilter
 			err := exporter.LoadSanitizedResourceMap(ctx, name, filter)
+
 			// Used in tests
 			if mockError != nil {
 				err = mockError
