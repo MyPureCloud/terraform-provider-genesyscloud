@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -21,6 +22,126 @@ const (
 
 // Common Exporter interface to abstract away whether we are using HCL or JSON as our exporter
 type Exporter func() diag.Diagnostics
+type ExporterFilterType int64
+type ExporterResourceTypeFilter func(exports map[string]*gcloud.ResourceExporter, filter []string) map[string]*gcloud.ResourceExporter
+type ExporterResourceFilter func(result gcloud.ResourceIDMetaMap, name string, filter []string) gcloud.ResourceIDMetaMap
+
+const (
+	LegacyInclude ExporterFilterType = iota
+	IncludeResources
+	ExcludeResources
+)
+
+func IncludeFilterByResourceType(exports map[string]*gcloud.ResourceExporter, filter []string) map[string]*gcloud.ResourceExporter {
+	if len(filter) > 0 {
+		for resType := range exports {
+			if !gcloud.StringInSlice(resType, formatFilter(filter)) {
+				delete(exports, resType)
+			}
+		}
+	}
+
+	return exports
+}
+
+func ExcludeFilterByResourceType(exports map[string]*gcloud.ResourceExporter, filter []string) map[string]*gcloud.ResourceExporter {
+	if len(filter) > 0 {
+		for resType := range exports {
+			for _, f := range filter {
+				if resType == f {
+					delete(exports, resType)
+				}
+			}
+		}
+	}
+	return exports
+}
+
+func FilterResourceByName(result gcloud.ResourceIDMetaMap, name string, filter []string) gcloud.ResourceIDMetaMap {
+	if gcloud.SubStringInSlice(fmt.Sprintf("%v::", name), filter) {
+		names := make([]string, 0)
+		for _, f := range filter {
+			n := fmt.Sprintf("%v::", name)
+
+			if strings.Contains(f, n) {
+				names = append(names, strings.Replace(f, n, "", 1))
+			}
+		}
+
+		newResult := make(gcloud.ResourceIDMetaMap)
+		for _, name := range names {
+			for k, v := range result {
+				if v.Name == name {
+					newResult[k] = v
+				}
+			}
+		}
+		return newResult
+	}
+
+	return result
+}
+
+func IncludeFilterResourceByRegex(result gcloud.ResourceIDMetaMap, name string, filter []string) gcloud.ResourceIDMetaMap {
+	newFilters := make([]string, 0)
+	for _, f := range filter {
+		if strings.Contains(f, "::") {
+			i := strings.Index(f, "::")
+			regexStr := f[i+2:]
+			newFilters = append(newFilters, regexStr)
+		}
+	}
+
+	newResourceMap := make(gcloud.ResourceIDMetaMap)
+
+	if len(newFilters) == 0 {
+		return result
+	}
+
+	for _, pattern := range newFilters {
+		for k, _ := range result {
+			match, _ := regexp.MatchString(pattern, result[k].Name)
+
+			if match {
+				newResourceMap[k] = result[k]
+			}
+		}
+	}
+
+	return newResourceMap
+}
+
+func ExcludeFilterResourceByRegex(result gcloud.ResourceIDMetaMap, name string, filter []string) gcloud.ResourceIDMetaMap {
+
+	newFilters := make([]string, 0)
+	for _, f := range filter {
+		if strings.Contains(f, "::") {
+			i := strings.Index(f, "::")
+			regexStr := f[i+2:]
+			newFilters = append(newFilters, regexStr)
+		}
+	}
+
+	if len(newFilters) == 0 {
+		return result
+	}
+
+	newResourceMap := make(gcloud.ResourceIDMetaMap)
+
+	for k, _ := range result {
+		for _, pattern := range newFilters {
+			match, _ := regexp.MatchString(pattern, result[k].Name)
+			if !match {
+				newResourceMap[k] = result[k]
+			} else {
+				delete(newResourceMap, k)
+				break
+			}
+		}
+
+	}
+	return newResourceMap
+}
 
 /*
 This file is used to hold common methods that are used across the exporter.  They do not have strong affinity to any one particular export process (e.g. HCL or JSON).

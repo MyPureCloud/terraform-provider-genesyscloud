@@ -44,14 +44,38 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:    true,
 			},
 			"resource_types": {
-				Description: "Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types.",
+				Description: "Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types. NOTE: This field is deprecated and will be removed in future release.  Please use the include_filter_resources or exclude_filter_resources attribute.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
 					ValidateFunc: gcloud.ValidateSubStringInSlice(gcloud.GetAvailableExporterTypes()),
 				},
-				ForceNew: true,
+				ForceNew:      true,
+				Deprecated:    "Use include_filter_resources attribute instead",
+				ConflictsWith: []string{"include_filter_resources", "exclude_filter_resources"},
+			},
+			"include_filter_resources": {
+				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: gcloud.ValidateSubStringInSlice(gcloud.GetAvailableExporterTypes()),
+				},
+				ForceNew:      true,
+				ConflictsWith: []string{"resource_types", "exclude_filter_resources"},
+			},
+			"exclude_filter_resources": {
+				Description: "Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: gcloud.ValidateSubStringInSlice(gcloud.GetAvailableExporterTypes()),
+				},
+				ForceNew:      true,
+				ConflictsWith: []string{"resource_types", "include_filter_resources"},
 			},
 			"include_state_file": {
 				Description: "Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. When `false`, GUID fields will be omitted from the config file unless a resource reference can be supplied. In this case, the resource type will need to be included in the `resource_types` array.",
@@ -93,8 +117,30 @@ type resourceInfo struct {
 }
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta)
+	if _, ok := d.GetOk("include_filter_resources"); ok {
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources)
+		diagErr := gre.Export()
+		if diagErr != nil {
+			return diagErr
+		}
 
+		d.SetId(gre.exportFilePath)
+		return nil
+	}
+
+	if _, ok := d.GetOk("exclude_filter_resources"); ok {
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, ExcludeResources)
+		diagErr := gre.Export()
+		if diagErr != nil {
+			return diagErr
+		}
+
+		d.SetId(gre.exportFilePath)
+		return nil
+	}
+
+	//Dealing with the traditional resource
+	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, LegacyInclude)
 	diagErr := gre.Export()
 	if diagErr != nil {
 		return diagErr

@@ -25,7 +25,7 @@ func removeStringFromSlice(value string, slice []string) []string {
 	return s
 }
 
-func subStringInSlice(a string, list []string) bool {
+func SubStringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if strings.Contains(b, a) {
 			return true
