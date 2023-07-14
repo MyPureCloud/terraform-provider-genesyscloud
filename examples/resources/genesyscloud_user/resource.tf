@@ -16,7 +16,7 @@ resource "genesyscloud_user" "example_user" {
       type    = "HOME"
     }
     phone_numbers {
-      number     = "3174181234"
+      number     = "+13174181234"
       media_type = "PHONE"
       type       = "MOBILE"
     }

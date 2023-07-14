@@ -24,7 +24,7 @@ func validatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 
 		formattedNum := phonenumbers.Format(phoneNumber, phonenumbers.E164)
 		if formattedNum != numberStr {
-			return diag.Errorf("Failed to parse number in an E164 format.  Passed %s and expected: %s", numberStr, formattedNum)
+			return diag.Errorf("Failed to parse number in an E.164 format.  Passed %s and expected: %s", numberStr, formattedNum)
 		}
 		return nil
 	}

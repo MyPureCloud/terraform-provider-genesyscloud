@@ -56,5 +56,5 @@ resource "genesyscloud_outbound_dnclist" "dnc_list" {
 Optional:
 
 - `expiration_date` (String) Expiration date for DNC phone numbers in yyyy-MM-ddTHH:mmZ format.
-- `phone_numbers` (List of String) Phone numbers to add to a DNC list. Only possible if the dncSourceType is rds.
+- `phone_numbers` (List of String) Phone numbers to add to a DNC list. Only possible if the dncSourceType is rds.  Phone numbers must be in an E.164 number format.
 
