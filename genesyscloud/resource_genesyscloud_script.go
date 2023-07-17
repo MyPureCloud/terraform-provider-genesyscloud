@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -31,6 +31,26 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 			break
 		}
 		for _, script := range *scripts.Entities {
+			//We only want scripts that are published.
+			_, resp, err := scriptsAPI.GetScriptsPublishedScriptId(*script.Id, "")
+
+			//If the item is not found this indicates it is not published
+			if resp.StatusCode == http.StatusNotFound && err == nil {
+				log.Printf("Script id %s, script %s name is not published and will not be returned for export", *script.Id, *script.Name)
+				continue
+			}
+
+			//Some APIs will return an error code even if the response code is a 404.
+			if resp.StatusCode == http.StatusNotFound && err != nil {
+				log.Printf("Script id %s, script %s name is not published and will not be returned for export.  Also an err was returned on call %s", *script.Id, *script.Name, err)
+				continue
+			}
+
+			//All other errors should be failed
+			if err != nil {
+				return nil, diag.Errorf("Failed to retrieve publication status for script id %s.  Err: %v", *script.Id, err)
+			}
+
 			resources[*script.Id] = &ResourceMeta{Name: *script.Name}
 		}
 	}
@@ -144,6 +164,15 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 	}
 	if len(sdkScripts) == 0 {
 		return diag.Errorf("Script %s not found after creation.", scriptName)
+	}
+
+	//Publish the 	script
+	publishScriptBody := &platformclientv2.Publishscriptrequestdata{
+		ScriptId: sdkScripts[0].Id,
+	}
+
+	if _, _, err := scriptsAPI.PostScriptsPublished("0", *publishScriptBody); err != nil {
+		return diag.Errorf("An error occurred : %s while trying to publish script.  Error: %s", *sdkScripts[0].Id, err)
 	}
 
 	d.SetId(*sdkScripts[0].Id)

@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func TestAccResourceScriptBasic(t *testing.T) {
@@ -38,6 +38,7 @@ func TestAccResourceScriptBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "script_name", name),
 					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "filepath", filePath),
+					validateScriptPublished("genesyscloud_script."+resourceId),
 				),
 			},
 			// Update
@@ -51,6 +52,7 @@ func TestAccResourceScriptBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "script_name", nameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "filepath", filePath),
+					validateScriptPublished("genesyscloud_script."+resourceId),
 				),
 			},
 			{
@@ -102,4 +104,40 @@ func testVerifyScriptDestroyed(state *terraform.State) error {
 	}
 	// Success. All Scripts destroyed
 	return nil
+}
+
+func validateScriptPublished(scriptResourceName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		scriptResource, ok := state.RootModule().Resources[scriptResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find script %s in state", scriptResourceName)
+		}
+
+		scriptID := scriptResource.Primary.ID
+		scriptsAPI := platformclientv2.NewScriptsApi()
+
+		script, resp, err := scriptsAPI.GetScriptsPublishedScriptId(scriptID, "")
+
+		//if response == 200
+		if resp.StatusCode == http.StatusOK && *script.Id == scriptID {
+			return nil
+		}
+
+		//If the item is not found this indicates it is not published
+		if resp.StatusCode == http.StatusNotFound && err == nil {
+			return fmt.Errorf("Script %s was created, but not published.", scriptID)
+		}
+
+		//Some APIs will return an error code even if the response code is a 404.
+		if resp.StatusCode == http.StatusNotFound && err == nil {
+			return fmt.Errorf("Script %s was created, but not published.", scriptID)
+		}
+
+		//Err
+		if err != nil {
+			// Unexpected error
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+		return nil
+	}
 }

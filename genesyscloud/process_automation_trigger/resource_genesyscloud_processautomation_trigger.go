@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
