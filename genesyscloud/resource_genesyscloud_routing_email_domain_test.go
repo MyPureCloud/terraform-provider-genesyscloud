@@ -19,7 +19,7 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 		domainRes = "routing-domain1"
 		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000))
 	)
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 		domainId        = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
 		mailFromDomain1 = "test." + domainId
 	)
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}

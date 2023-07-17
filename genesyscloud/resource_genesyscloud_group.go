@@ -24,7 +24,7 @@ var (
 	groupAddressResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"number": {
-				Description:      "Phone number for this contact type.",
+				Description:      "Phone number for this contact type.  Must be in an E.164 number format.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: ValidatePhoneNumber,
@@ -74,6 +74,7 @@ func GroupExporter() *resource_exporter.ResourceExporter {
 			"owner_ids":  {RefType: "genesyscloud_user"},
 			"member_ids": {RefType: "genesyscloud_user"},
 		},
+		E164Numbers: []string{"addresses.number"},
 	}
 }
 

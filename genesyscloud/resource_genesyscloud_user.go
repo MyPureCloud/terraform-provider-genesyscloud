@@ -26,7 +26,7 @@ var (
 	phoneNumberResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"number": {
-				Description:      "Phone number. Defaults to US country code.",
+				Description:      "Phone number. Phone number must be in an E.164 number format.",
 				Type:             schema.TypeString,
 				Optional:         true,
 				ValidateDiagFunc: ValidatePhoneNumber,

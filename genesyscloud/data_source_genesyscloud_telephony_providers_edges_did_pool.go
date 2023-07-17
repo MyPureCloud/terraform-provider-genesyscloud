@@ -17,7 +17,7 @@ func dataSourceDidPool() *schema.Resource {
 		ReadContext: ReadWithPooledClient(dataSourceDidPoolRead),
 		Schema: map[string]*schema.Schema{
 			"start_phone_number": {
-				Description:      "Starting phone number of the DID Pool range.",
+				Description:      "Starting phone number of the DID Pool range. Must be in an E.164 number format.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: ValidatePhoneNumber,

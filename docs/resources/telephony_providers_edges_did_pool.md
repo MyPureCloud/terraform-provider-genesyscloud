@@ -35,8 +35,8 @@ resource "genesyscloud_telephony_providers_edges_did_pool" "example_did_pool" {
 
 ### Required
 
-- `end_phone_number` (String) Ending phone number of the DID Pool range. Changing the end_phone_number attribute will cause the did_pool object to be dropped and recreated with a new ID.
-- `start_phone_number` (String) Starting phone number of the DID Pool range. Changing the start_phone_number attribute will cause the did_pool object to be dropped and recreated with a new ID.
+- `end_phone_number` (String) Ending phone number of the DID Pool range.  Phone number must be in an E.164 number format. Changing the end_phone_number attribute will cause the did_pool object to be dropped and recreated with a new ID.
+- `start_phone_number` (String) Starting phone number of the DID Pool range. Phone number must be in a E.164 number format. Changing the start_phone_number attribute will cause the did_pool object to be dropped and recreated with a new ID.
 
 ### Optional
 

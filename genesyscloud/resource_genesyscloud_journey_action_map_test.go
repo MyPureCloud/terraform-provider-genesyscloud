@@ -60,7 +60,7 @@ func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 }
 
 func setupJourneyActionMap(t *testing.T, testCaseName string) {
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}

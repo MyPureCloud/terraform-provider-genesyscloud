@@ -23,7 +23,7 @@ func TestAccDataSourceSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 		name        = "PureCloud Voice - AWS"
 	)
 
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}

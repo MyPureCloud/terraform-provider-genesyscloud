@@ -24,7 +24,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
 	didPoolStartPhoneNumber1 := "+14175540014"
 	didPoolEndPhoneNumber1 := "+14175540015"
-	if err := AuthorizeSdk(); err != nil {
+	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	if err := deleteDidPoolWithNumber(didPoolStartPhoneNumber1); err != nil {

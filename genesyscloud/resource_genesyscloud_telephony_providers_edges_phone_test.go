@@ -214,7 +214,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 	t.Parallel()
 	didPoolResource1 := "test-didpool1"
 	number := "+14175538114"
-	if err := AuthorizeSdk(); err != nil {
+	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	if err := deleteDidPoolWithNumber(number); err != nil {

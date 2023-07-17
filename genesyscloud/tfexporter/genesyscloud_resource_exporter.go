@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	r_registrar "terraform-provider-genesyscloud/genesyscloud/Registrar"
+	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
@@ -55,6 +55,10 @@ type unresolvableAttributeInfo struct {
 
 type GenesysCloudResourceExporter struct {
 	configExporter        Exporter
+	filterType            ExporterFilterType
+	resourceTypeFilter    ExporterResourceTypeFilter
+	resourceFilter        ExporterResourceFilter
+	filterList            *[]string
 	exportAsHCL           bool
 	logPermissionErrors   bool
 	includeStateFile      bool
@@ -72,7 +76,42 @@ type GenesysCloudResourceExporter struct {
 	meta                  interface{}
 }
 
-func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}) (*GenesysCloudResourceExporter, diag.Diagnostics) {
+func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
+	switch filterType {
+	case LegacyInclude:
+		var filter []string
+		if resourceTypes, ok := d.GetOk("resource_types"); ok {
+			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
+			gre.filterList = &filter
+		}
+
+		//Setting up the resource type filter
+		gre.resourceTypeFilter = IncludeFilterByResourceType //Setting up the resource type filter
+		gre.resourceFilter = FilterResourceByName            //Setting up the resource filters
+	case IncludeResources:
+		var filter []string
+		if resourceTypes, ok := d.GetOk("include_filter_resources"); ok {
+			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
+			gre.filterList = &filter
+		}
+
+		//Setting up the resource type filter
+		gre.resourceTypeFilter = IncludeFilterByResourceType //Setting up the resource type filter
+		gre.resourceFilter = IncludeFilterResourceByRegex    //Setting up the resource filters
+	case ExcludeResources:
+		var filter []string
+		if resourceTypes, ok := d.GetOk("exclude_filter_resources"); ok {
+			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
+			gre.filterList = &filter
+		}
+
+		//Setting up the resource type filter
+		gre.resourceTypeFilter = ExcludeFilterByResourceType //Setting up the resource type filter
+		gre.resourceFilter = ExcludeFilterResourceByRegex    //Setting up the resource filters
+	}
+}
+
+func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
 	
 	if(providerResources == nil){
 		providerResources , providerDataSources = r_registrar.GetResources()
@@ -81,6 +120,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 	gre := &GenesysCloudResourceExporter{
 		exportAsHCL:         d.Get("export_as_hcl").(bool),
 		logPermissionErrors: d.Get("log_permission_errors").(bool),
+		filterType:          filterType,
 		includeStateFile:    d.Get("include_state_file").(bool),
 		version:             meta.(*gcloud.ProviderMeta).Version,
 		provider:            gcloud.New(meta.(*gcloud.ProviderMeta).Version,providerResources,providerDataSources)(),
@@ -94,6 +134,8 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		return nil, err
 	}
 
+	//Setting up the filter
+	configureExporterType(ctx, d, gre, filterType)
 	return gre, nil
 }
 
@@ -162,16 +204,24 @@ func (g *GenesysCloudResourceExporter) setUpExportFilePaths() (diagErr diag.Diag
 // retrieveExporters will return a list of all the registered exporters. If the resource_type on the exporter contains any elements, only the defined
 // elements in the resource_type attribute will be returned.
 func (g *GenesysCloudResourceExporter) retrieveExporters() {
-	fmt.Println("Retrieving exporters list")
-	var filter []string
-	if resourceTypes, ok := g.d.GetOk("resource_types"); ok {
-		filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
+	log.Printf("Retrieving exporters list")
+	exports := resource_exporter.GetResourceExporters()
+
+	if g.resourceTypeFilter != nil && g.filterList != nil {
+		exports = g.resourceTypeFilter(exports, *g.filterList)
 	}
-	fmt.Println("filter")
-	fmt.Println(filter)
-	exports := resource_exporter.GetResourceExporters(filter)
 
 	g.exporters = &exports
+
+}
+
+// Removes the ::resource_name from the resource_types list
+func formatFilter(filter []string) []string {
+	newFilter := make([]string, 0)
+	for _, str := range filter {
+		newFilter = append(newFilter, strings.Split(str, "::")[0])
+	}
+	return newFilter
 }
 
 // retrieveSanitizedResourceMaps will retrieve a list of all of the resources to be exported.  It will also apply a filter (e.g the :: ) and only return the specific Genesys Cloud
@@ -179,8 +229,16 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() {
 func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr diag.Diagnostics) {
 	log.Printf("Retrieving map of Genesys Cloud resources to export")
 	var filter []string
-	if resourceTypes, ok := g.d.GetOk("resource_types"); ok {
-		filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
+	if exportableResourceTypes, ok := g.d.GetOk("resource_types"); ok {
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+	}
+
+	if exportableResourceTypes, ok := g.d.GetOk("include_filter_resources"); ok {
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+	}
+
+	if exportableResourceTypes, ok := g.d.GetOk("exclude_filter_resources"); ok {
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
 	}
 
 	newFilter := make([]string, 0)
@@ -191,7 +249,7 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr 
 	}
 
 	//Retrieve a map of all of the objects we are going to build.  Apply the filter that will remove specific classes of an object
-	diagErr = buildSanitizedResourceMaps(*g.exporters, newFilter, g.logPermissionErrors)
+	diagErr = g.buildSanitizedResourceMaps(*g.exporters, newFilter, g.logPermissionErrors)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -357,7 +415,7 @@ func (g *GenesysCloudResourceExporter) sourceForVersion(version string) string {
 	return providerSource
 }
 
-func buildSanitizedResourceMaps(exporters map[string]*resource_exporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[string]*resource_exporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
 	errorChan := make(chan diag.Diagnostics)
 	wgDone := make(chan bool)
 	// Cancel remaining goroutines if an error occurs
@@ -370,7 +428,9 @@ func buildSanitizedResourceMaps(exporters map[string]*resource_exporter.Resource
 		go func(name string, exporter *resource_exporter.ResourceExporter) {
 			defer wg.Done()
 			log.Printf("Getting all resources for type %s", name)
+			exporter.FilterResource = g.resourceFilter
 			err := exporter.LoadSanitizedResourceMap(ctx, name, filter)
+
 			// Used in tests
 			if mockError != nil {
 				err = mockError
@@ -442,7 +502,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *re
 
 	res := provider.ResourcesMap[resType]
 	if res == nil {
-		return nil, diag.Errorf("Resource type %v not defined", provider.ResourcesMap)
+		return nil, diag.Errorf("Resource type %v not defined", resType)
 	}
 
 	ctyType := res.CoreConfigSchema().ImpliedType()
@@ -605,6 +665,14 @@ func sanitizeConfigMap(
 		if exporter.IsAttributeExcluded(currAttr) {
 			// Excluded. Remove from the config.
 			configMap[key] = nil
+			continue
+		}
+
+		if exporter.IsAttributeE164(currAttr) {
+			if phoneNumber, ok := configMap[key].(string); !ok || phoneNumber == "" {
+				continue
+			}
+			configMap[key] = sanitizeE164Number(configMap[key].(string))
 			continue
 		}
 

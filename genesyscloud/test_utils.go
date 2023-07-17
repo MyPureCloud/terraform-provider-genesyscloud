@@ -9,12 +9,10 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	register "terraform-provider-genesyscloud/genesyscloud/Registrar"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists" 
 )
 
@@ -29,30 +27,24 @@ const (
 // ProviderFactories are used to instantiate a provider during acceptance testing.
 // The factory function will be invoked for every Terraform CLI command executed
 // to create a provider server to which the CLI can reattach.
-var ProviderFactories = map[string]func() (*schema.Provider, error){
-	"genesyscloud": func() (*schema.Provider, error) {
-		providerResources, providerDataSources := regInstance.RegisterResourcesAndDataSources()
-		return New("0.1.0",providerResources, providerDataSources)(), nil
-	},
-}
 
 
 func GetProviderFactories (providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) (map[string]func() (*schema.Provider, error)) {
 	return map[string]func() (*schema.Provider, error){
 		"genesyscloud": func() (*schema.Provider, error) {
 			provider := New("0.1.0",providerResources, providerDataSources)()
-			log.Println(provider)
 			return provider,nil
 		},
 	}
 }
 
 
-var regInstance register.TestRegistrar
+
 
 //simply no way to get to call this SetRegistrar(l register.TestRegistrar) with testregister struct defined in main.
 // go test cannot call any methods of main/ or any default methods out of the test/package scope.
 
+// var regInstance register.TestRegistrar
 // func SetRegistrar(l *register.TestRegistrar) {
 //     regInstance = l
 // }

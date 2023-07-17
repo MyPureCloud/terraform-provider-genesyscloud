@@ -127,7 +127,7 @@ func ResourcePhone() *schema.Resource {
 				Optional:    true,
 			},
 			"line_addresses": {
-				Description: "Ordered list of Line DIDs for standalone phones.",
+				Description: "Ordered list of Line DIDs for standalone phones.  Each phone number must be in an E.164 phone number format.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,

@@ -93,7 +93,7 @@ func TestAccResourceWidgetDeploymentV2Widget(t *testing.T) {
 		disabled:               "true",
 	}
 
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +162,7 @@ func TestAccResourceWidgetDeploymentV1Widget(t *testing.T) {
 		authenticationUrl:      "https://localhost",
 	}
 
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}

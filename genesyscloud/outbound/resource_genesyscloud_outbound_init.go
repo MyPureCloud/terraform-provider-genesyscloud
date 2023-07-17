@@ -1,7 +1,7 @@
 package outbound
 
 import (
-	registrar "terraform-provider-genesyscloud/genesyscloud/Registrar"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 func SetRegistrar(l registrar.Registrar) {
@@ -42,8 +42,5 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_outbound_campaignrule", OutboundCampaignRuleExporter())
 	l.RegisterExporter("genesyscloud_outbound_settings", OutboundSettingsExporter())
 	l.RegisterExporter("genesyscloud_outbound_wrapupcodemappings", OutboundWrapupCodeMappingsExporter())
-
-
-
-	
+		
 }

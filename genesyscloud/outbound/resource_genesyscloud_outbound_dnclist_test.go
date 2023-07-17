@@ -14,6 +14,8 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
 )
 
+const nullValue = "null"
+
 func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 	
 	t.Parallel()

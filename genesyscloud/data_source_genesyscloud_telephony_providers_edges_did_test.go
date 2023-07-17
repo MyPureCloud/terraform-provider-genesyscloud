@@ -20,7 +20,7 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 		didDataRes              = "didData"
 	)
 
-	if err := AuthorizeSdk(); err != nil {
+	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	deleteIvrStartingWith("test-config")

@@ -47,7 +47,7 @@ func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 		emailDataResourceId   = "email_domain_data"
 	)
 
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}

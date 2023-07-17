@@ -15,7 +15,7 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 		didPoolDataRes          = "didPoolData"
 	)
 
-	if err := AuthorizeSdk(); err != nil {
+	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	if err := deleteDidPoolWithNumber(didPoolStartPhoneNumber); err != nil {

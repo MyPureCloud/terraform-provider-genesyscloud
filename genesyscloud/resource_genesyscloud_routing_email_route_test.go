@@ -39,7 +39,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		bccEmail1     = "test1@" + domainId
 		bccEmail2     = "test2@" + domainId
 	)
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}

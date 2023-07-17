@@ -59,7 +59,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	)
 
 	// necessary to avoid errors during site creation
-	err := gcloud.AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -428,7 +428,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 	)
 
 	// necessary to avoid errors during site creation
-	err := gcloud.AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -631,7 +631,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 	)
 
 	// necessary to avoid errors during site creation
-	err := gcloud.AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}

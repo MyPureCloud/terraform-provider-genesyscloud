@@ -42,8 +42,6 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 		ruleSetName2      = "Test Rule Set " + uuid.NewString()
 	)
 
-	fmt.Println(providerResources)
-	fmt.Println(providerDataSources)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),

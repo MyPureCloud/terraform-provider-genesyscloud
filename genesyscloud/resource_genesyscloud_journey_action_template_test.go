@@ -32,7 +32,7 @@ func runJourneyActionTemplateTestCase(t *testing.T, testCaseName string) {
 }
 
 func setupJourneyActionTemplate(t *testing.T, testCaseName string) {
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}

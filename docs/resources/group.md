@@ -32,7 +32,7 @@ resource "genesyscloud_group" "sample_group" {
   owner_ids     = [genesyscloud_user.test-user.id]
   member_ids    = [genesyscloud_user.test-user.id]
   addresses {
-    number = "3174181234"
+    number = "+13174181234"
     type   = "GROUPRING"
   }
 }
@@ -64,7 +64,7 @@ resource "genesyscloud_group" "sample_group" {
 
 Required:
 
-- `number` (String) Phone number for this contact type.
+- `number` (String) Phone number for this contact type.  Must be in an E.164 number format.
 - `type` (String) Contact type of the address. (GROUPRING | GROUPPHONE)
 
 Optional:

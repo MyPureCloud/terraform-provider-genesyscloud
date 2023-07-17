@@ -27,7 +27,7 @@ func TestAccDataSourceWidgetDeployment(t *testing.T) {
 		authenticationUrl:      "https://localhost",
 	}
 
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}

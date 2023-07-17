@@ -484,16 +484,18 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 	return nil
 }
 
-func AuthorizeSdk() error {
+func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 	// Create new config
 	sdkConfig := platformclientv2.GetDefaultConfiguration()
 
+	
 	sdkConfig.BasePath = GetRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
 
 	err := sdkConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
 	if err != nil {
-		return err
+		return sdkConfig, err
 	}
 
-	return nil
+	return sdkConfig, nil
 }
+

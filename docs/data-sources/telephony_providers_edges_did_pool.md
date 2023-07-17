@@ -25,7 +25,7 @@ data "genesyscloud_telephony_providers_edges_did_pool" "didPool" {
 ### Required
 
 - `end_phone_number` (String) Ending phone number of the DID Pool range.
-- `start_phone_number` (String) Starting phone number of the DID Pool range.
+- `start_phone_number` (String) Starting phone number of the DID Pool range. Must be in an E.164 number format.
 
 ### Read-Only
 

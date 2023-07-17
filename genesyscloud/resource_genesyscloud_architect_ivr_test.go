@@ -53,7 +53,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 	ivrConfigDescription := "Terraform IVR config"
 	number1 := "+14175550011"
 	number2 := "+14175550012"
-	if err := AuthorizeSdk(); err != nil {
+	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	deleteIvrStartingWith("terraform-ivrconfig-")
@@ -129,7 +129,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 	divResource2 := "auth-division2"
 	divName1 := "TerraformDiv-" + uuid.NewString()
 	divName2 := "TerraformDiv-" + uuid.NewString()
-	if err := AuthorizeSdk(); err != nil {
+	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	deleteIvrStartingWith("terraform-ivrconfig-")

@@ -125,7 +125,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
 	)
 
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}

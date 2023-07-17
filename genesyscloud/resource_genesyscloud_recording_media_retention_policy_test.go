@@ -913,7 +913,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 		domainId  = fmt.Sprintf("terraform%v.com", time.Now().Unix())
 	)
 
-	err := AuthorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}

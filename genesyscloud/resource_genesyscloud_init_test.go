@@ -1,13 +1,11 @@
 package genesyscloud
 
 import (
-	"log"
 	"testing"
-	"os"
-	
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"	
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	//ob_ruleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	"log"
+	"sync"
 )
 
 
@@ -15,65 +13,21 @@ var (
 	sdkConfig *platformclientv2.Configuration
 	providerDataSources map[string]*schema.Resource
 	providerResources map[string]*schema.Resource
-
+    err error
 )
 
-func init_test_resources() error{
-	providerDataSources = make(map[string]*schema.Resource)
-    providerResources = make(map[string]*schema.Resource)
-	sdkConfig = platformclientv2.GetDefaultConfiguration()
-	sdkConfig.BasePath = GetRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
+type registerTestInstance struct{
+	resourceMapMutex sync.RWMutex
+	datasourceMapMutex sync.RWMutex
+}
 
-	err := sdkConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
-	if err != nil {
-		return err
-	}
-
-	// providerDataSources["genesyscloud_outbound_callabletimeset"] = dataSourceOutboundCallabletimeset()
-
-	// providerResources["genesyscloud_outbound_callabletimeset"] = resourceOutboundCallabletimeset()
-
-	// providerDataSources["genesyscloud_outbound_attempt_limit"] = DataSourceOutboundAttemptLimit()
-	// providerDataSources["genesyscloud_outbound_callanalysisresponseset"] = dataSourceOutboundCallAnalysisResponseSet()
-	// providerDataSources["genesyscloud_outbound_campaign"] = dataSourceOutboundCampaign()
-	// providerDataSources["genesyscloud_outbound_campaignrule"] = dataSourceOutboundCampaignRule()
-	// providerDataSources["genesyscloud_outbound_contact_list"] = DataSourceOutboundContactList()
-	// providerDataSources["genesyscloud_outbound_messagingcampaign"] = dataSourceOutboundMessagingcampaign()
-	// providerDataSources["genesyscloud_outbound_contactlistfilter"] = dataSourceOutboundContactListFilter()
-	// providerDataSources["genesyscloud_outbound_sequence"] = dataSourceOutboundSequence()
-	// providerDataSources["genesyscloud_outbound_dnclist"] = dataSourceOutboundDncList()
-
-	// providerResources["genesyscloud_outbound_campaignrule"] = resourceOutboundCampaignRule()
-	// providerResources["genesyscloud_outbound_attempt_limit"] = ResourceOutboundAttemptLimit()
-	// providerResources["genesyscloud_outbound_callanalysisresponseset"] = resourceOutboundCallAnalysisResponseSet()
-	// providerResources["genesyscloud_outbound_campaign"] = resourceOutboundCampaign()
-	// providerResources["genesyscloud_outbound_contactlistfilter"] = resourceOutboundContactListFilter()
-	// providerResources["genesyscloud_outbound_contact_list"] = ResourceOutboundContactList()
-	// providerResources["genesyscloud_outbound_messagingcampaign"] = resourceOutboundMessagingCampaign()
-	// providerResources["genesyscloud_outbound_sequence"] = resourceOutboundSequence()
-	// providerResources["genesyscloud_outbound_settings"] = ResourceOutboundSettings()
-	// providerResources["genesyscloud_outbound_wrapupcodemappings"] = resourceOutboundWrapUpCodeMappings()
-	// providerResources["genesyscloud_outbound_dnclist"] = resourceOutboundDncList()
-
-	providerDataSources["genesyscloud_telephony_providers_edges_site"] = DataSourceSite()
+func (r *registerTestInstance) registerTestResources() {
+	r.resourceMapMutex.Lock()
 	providerResources["genesyscloud_telephony_providers_edges_site"] =  ResourceSite()
-	providerDataSources["genesyscloud_routing_wrapupcode"] =  DataSourceRoutingWrapupcode()
     providerResources["genesyscloud_routing_wrapupcode"] =  ResourceRoutingWrapupCode()
-	providerDataSources["genesyscloud_routing_queue"] =  DataSourceRoutingQueue()
 	providerResources["genesyscloud_routing_queue"] =  ResourceRoutingQueue()
 	providerResources["genesyscloud_flow"] =  ResourceFlow()
-	providerDataSources["genesyscloud_flow"] =  DataSourceFlow()
-	providerDataSources["genesyscloud_location"] =  DataSourceLocation()
 	providerResources["genesyscloud_location"] =  ResourceLocation()
-	providerDataSources["genesyscloud_auth_division_home"] =  DataSourceAuthDivisionHome()
-
-	// providerResources["genesyscloud_outbound_ruleset"] = ob_ruleset.ResourceOutboundRuleset()
-	// providerDataSources["genesyscloud_outbound_ruleset"] =  ob_ruleset.DataSourceOutboundRuleset()
-
-
-
-
-	log.Printf("resource registration started")
 	providerResources["genesyscloud_architect_datatable"] = ResourceArchitectDatatable()
 	providerResources["genesyscloud_architect_datatable_row"] = ResourceArchitectDatatableRow()
 	providerResources["genesyscloud_architect_emergencygroup"] = ResourceArchitectEmergencyGroup()
@@ -91,6 +45,8 @@ func init_test_resources() error{
 	providerResources["genesyscloud_group"] = ResourceGroup()
 	providerResources["genesyscloud_group_roles"] = ResourceGroupRoles()
 	providerResources["genesyscloud_idp_adfs"] = ResourceIdpAdfs()
+
+	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()
 	providerResources["genesyscloud_idp_okta"] = ResourceIdpOkta()
@@ -145,8 +101,19 @@ func init_test_resources() error{
 	providerResources["genesyscloud_webdeployments_configuration"] = ResourceWebDeploymentConfiguration()
 	providerResources["genesyscloud_webdeployments_deployment"] = ResourceWebDeployment()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
+	r.resourceMapMutex.Unlock()
+}
 
+func (r *registerTestInstance) registerTestDataSources() {
 
+	r.datasourceMapMutex.Lock()
+
+	providerDataSources["genesyscloud_telephony_providers_edges_site"] = DataSourceSite()
+	providerDataSources["genesyscloud_routing_wrapupcode"] =  DataSourceRoutingWrapupcode()
+	providerDataSources["genesyscloud_routing_queue"] =  DataSourceRoutingQueue()
+	providerDataSources["genesyscloud_flow"] =  DataSourceFlow()
+	providerDataSources["genesyscloud_location"] =  DataSourceLocation()
+	providerDataSources["genesyscloud_auth_division_home"] =  DataSourceAuthDivisionHome()
 
 	providerDataSources["genesyscloud_architect_datatable"] = DataSourceArchitectDatatable()
 	providerDataSources["genesyscloud_architect_ivr"] = DataSourceArchitectIvr()
@@ -191,7 +158,7 @@ func init_test_resources() error{
 	providerDataSources["genesyscloud_routing_sms_address"] = dataSourceRoutingSmsAddress()
 	providerDataSources["genesyscloud_routing_email_domain"] = dataSourceRoutingEmailDomain()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
- providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
+
 	providerDataSources["genesyscloud_script"] = dataSourceScript()
 	providerDataSources["genesyscloud_station"] = dataSourceStation()
 	providerDataSources["genesyscloud_user"] = dataSourceUser()
@@ -208,27 +175,33 @@ func init_test_resources() error{
 	providerDataSources["genesyscloud_webdeployments_configuration"] = dataSourceWebDeploymentsConfiguration()
 	providerDataSources["genesyscloud_webdeployments_deployment"] = dataSourceWebDeploymentsDeployment()
 	providerDataSources["genesyscloud_widget_deployment"] = dataSourceWidgetDeployments()
-	log.Printf("resource registration ended")
 
+	r.datasourceMapMutex.Unlock()
 
-
-	
-
-
-	log.Println(providerResources)
-	log.Println(providerDataSources)
-	return nil
 }
 
+func init_test_resources() {
+
+	if sdkConfig, err = AuthorizeSdk(); err != nil {
+		log.Fatal(err)
+	}
+
+	providerDataSources = make(map[string]*schema.Resource)
+	providerResources = make(map[string]*schema.Resource)
+
+	reg_instance := &registerTestInstance{}
+
+	reg_instance.registerTestDataSources()
+	reg_instance.registerTestResources()
+
+}
+
+
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite
+	// Run setup function before starting the test suite for resources in GenesysCloud Parent Package.
 	init_test_resources()
 
 	// Run the test suite
 	m.Run()
 
-	// Perform any necessary teardown operations
-
-	// Exit with the appropriate exit code
-	//os.Exit(exitCode)
 }

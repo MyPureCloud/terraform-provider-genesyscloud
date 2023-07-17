@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -21,6 +22,126 @@ const (
 
 // Common Exporter interface to abstract away whether we are using HCL or JSON as our exporter
 type Exporter func() diag.Diagnostics
+type ExporterFilterType int64
+type ExporterResourceTypeFilter func(exports map[string]*resource_exporter.ResourceExporter, filter []string) map[string]*resource_exporter.ResourceExporter
+type ExporterResourceFilter func(result resource_exporter.ResourceIDMetaMap, name string, filter []string) resource_exporter.ResourceIDMetaMap
+
+const (
+	LegacyInclude ExporterFilterType = iota
+	IncludeResources
+	ExcludeResources
+)
+
+func IncludeFilterByResourceType(exports map[string]*resource_exporter.ResourceExporter, filter []string) map[string]*resource_exporter.ResourceExporter {
+	if len(filter) > 0 {
+		for resType := range exports {
+			if !lists.StringInSlice(resType, formatFilter(filter)) {
+				delete(exports, resType)
+			}
+		}
+	}
+
+	return exports
+}
+
+func ExcludeFilterByResourceType(exports map[string]*resource_exporter.ResourceExporter, filter []string) map[string]*resource_exporter.ResourceExporter {
+	if len(filter) > 0 {
+		for resType := range exports {
+			for _, f := range filter {
+				if resType == f {
+					delete(exports, resType)
+				}
+			}
+		}
+	}
+	return exports
+}
+
+func FilterResourceByName(result resource_exporter.ResourceIDMetaMap, name string, filter []string) resource_exporter.ResourceIDMetaMap {
+	if lists.SubStringInSlice(fmt.Sprintf("%v::", name), filter) {
+		names := make([]string, 0)
+		for _, f := range filter {
+			n := fmt.Sprintf("%v::", name)
+
+			if strings.Contains(f, n) {
+				names = append(names, strings.Replace(f, n, "", 1))
+			}
+		}
+
+		newResult := make(resource_exporter.ResourceIDMetaMap)
+		for _, name := range names {
+			for k, v := range result {
+				if v.Name == name {
+					newResult[k] = v
+				}
+			}
+		}
+		return newResult
+	}
+
+	return result
+}
+
+func IncludeFilterResourceByRegex(result resource_exporter.ResourceIDMetaMap, name string, filter []string) resource_exporter.ResourceIDMetaMap {
+	newFilters := make([]string, 0)
+	for _, f := range filter {
+		if strings.Contains(f, "::") {
+			i := strings.Index(f, "::")
+			regexStr := f[i+2:]
+			newFilters = append(newFilters, regexStr)
+		}
+	}
+
+	newResourceMap := make(resource_exporter.ResourceIDMetaMap)
+
+	if len(newFilters) == 0 {
+		return result
+	}
+
+	for _, pattern := range newFilters {
+		for k, _ := range result {
+			match, _ := regexp.MatchString(pattern, result[k].Name)
+
+			if match {
+				newResourceMap[k] = result[k]
+			}
+		}
+	}
+
+	return newResourceMap
+}
+
+func ExcludeFilterResourceByRegex(result resource_exporter.ResourceIDMetaMap, name string, filter []string) resource_exporter.ResourceIDMetaMap {
+
+	newFilters := make([]string, 0)
+	for _, f := range filter {
+		if strings.Contains(f, "::") {
+			i := strings.Index(f, "::")
+			regexStr := f[i+2:]
+			newFilters = append(newFilters, regexStr)
+		}
+	}
+
+	if len(newFilters) == 0 {
+		return result
+	}
+
+	newResourceMap := make(resource_exporter.ResourceIDMetaMap)
+
+	for k, _ := range result {
+		for _, pattern := range newFilters {
+			match, _ := regexp.MatchString(pattern, result[k].Name)
+			if !match {
+				newResourceMap[k] = result[k]
+			} else {
+				delete(newResourceMap, k)
+				break
+			}
+		}
+
+	}
+	return newResourceMap
+}
 
 /*
 This file is used to hold common methods that are used across the exporter.  They do not have strong affinity to any one particular export process (e.g. HCL or JSON).
@@ -81,6 +202,15 @@ func resolveReference(refSettings *resource_exporter.RefAttrSettings, refID stri
 	}
 	// No match found. Remove the value from the config since we do not have a reference to use
 	return ""
+}
+
+// Correct exported e164 number e.g. +(1) 111-222-333 --> +1111222333
+func sanitizeE164Number(number string) string {
+	charactersToRemove := []string{" ", "-", "(", ")"}
+	for _, c := range charactersToRemove {
+		number = strings.Replace(number, c, "", -1)
+	}
+	return number
 }
 
 func getFilePath(d *schema.ResourceData, filename string) (string, diag.Diagnostics) {

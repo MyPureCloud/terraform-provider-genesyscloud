@@ -1115,7 +1115,8 @@ func buildAssignMeteredEvaluations(assignments []interface{}) *[]platformclientv
 
 		evaluators := make([]platformclientv2.User, 0)
 		for _, evaluatorId := range idStrings {
-			evaluators = append(evaluators, platformclientv2.User{Id: &evaluatorId})
+			evaluator := evaluatorId
+			evaluators = append(evaluators, platformclientv2.User{Id: &evaluator})
 		}
 
 		temp := platformclientv2.Meteredevaluationassignment{
@@ -1204,7 +1205,8 @@ func buildAssignMeteredAssignmentByAgent(assignments []interface{}) *[]platformc
 
 		evaluators := make([]platformclientv2.User, 0)
 		for _, evaluatorId := range idStrings {
-			evaluators = append(evaluators, platformclientv2.User{Id: &evaluatorId})
+			evaluator := evaluatorId
+			evaluators = append(evaluators, platformclientv2.User{Id: &evaluator})
 		}
 
 		temp := platformclientv2.Meteredassignmentbyagent{
@@ -1295,7 +1297,8 @@ func buildAssignCalibrations(assignments []interface{}) *[]platformclientv2.Cali
 
 		evaluators := make([]platformclientv2.User, 0)
 		for _, evaluatorId := range idStrings {
-			evaluators = append(evaluators, platformclientv2.User{Id: &evaluatorId})
+			id := evaluatorId
+			evaluators = append(evaluators, platformclientv2.User{Id: &id})
 		}
 
 		temp := platformclientv2.Calibrationassignment{
@@ -1878,6 +1881,7 @@ func buildCallMediaPolicyConditions(callMediaPolicyConditions []interface{}) *pl
 	if !ok {
 		return nil
 	}
+
 	directions := make([]string, 0)
 	for _, v := range conditionsMap["directions"].([]interface{}) {
 		direction := fmt.Sprintf("%v", v)
@@ -1898,7 +1902,8 @@ func buildCallMediaPolicyConditions(callMediaPolicyConditions []interface{}) *pl
 
 	forUsers := make([]platformclientv2.User, 0)
 	for _, id := range idStrings {
-		forUsers = append(forUsers, platformclientv2.User{Id: &id})
+		userId := id
+		forUsers = append(forUsers, platformclientv2.User{Id: &userId})
 	}
 
 	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
@@ -1909,7 +1914,8 @@ func buildCallMediaPolicyConditions(callMediaPolicyConditions []interface{}) *pl
 
 	wrapupCodes := make([]platformclientv2.Wrapupcode, 0)
 	for _, id := range wrapupCodeIdStrings {
-		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &id})
+		wrapupId := id
+		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &wrapupId})
 	}
 
 	languageIds := conditionsMap["language_ids"].([]interface{})
@@ -1920,7 +1926,8 @@ func buildCallMediaPolicyConditions(callMediaPolicyConditions []interface{}) *pl
 
 	languages := make([]platformclientv2.Language, 0)
 	for _, id := range languageIdStrings {
-		languages = append(languages, platformclientv2.Language{Id: &id})
+		languageId := id
+		languages = append(languages, platformclientv2.Language{Id: &languageId})
 	}
 
 	forQueueIds := conditionsMap["for_queue_ids"].([]interface{})
@@ -1931,7 +1938,8 @@ func buildCallMediaPolicyConditions(callMediaPolicyConditions []interface{}) *pl
 
 	forQueues := make([]platformclientv2.Queue, 0)
 	for _, id := range queueIdStrings {
-		forQueues = append(forQueues, platformclientv2.Queue{Id: &id})
+		queueId := id
+		forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 	}
 
 	return &platformclientv2.Callmediapolicyconditions{
@@ -1946,6 +1954,53 @@ func buildCallMediaPolicyConditions(callMediaPolicyConditions []interface{}) *pl
 	}
 }
 
+func flattenCallMediaPolicyConditions(conditions *platformclientv2.Callmediapolicyconditions) []interface{} {
+	if conditions == nil {
+		return nil
+	}
+
+	conditionsMap := make(map[string]interface{})
+	if conditions.ForUsers != nil {
+		userIds := make([]string, 0)
+		for _, user := range *conditions.ForUsers {
+			userIds = append(userIds, *user.Id)
+		}
+		conditionsMap["for_user_ids"] = userIds
+	}
+	if conditions.DateRanges != nil {
+		conditionsMap["date_ranges"] = *conditions.DateRanges
+	}
+	if conditions.Directions != nil {
+		conditionsMap["directions"] = *conditions.Directions
+	}
+	if conditions.ForQueues != nil {
+		queueIds := make([]string, 0)
+		for _, queue := range *conditions.ForQueues {
+			queueIds = append(queueIds, *queue.Id)
+		}
+		conditionsMap["for_queue_ids"] = queueIds
+	}
+	if conditions.WrapupCodes != nil {
+		wrapupCodeIds := make([]string, 0)
+		for _, code := range *conditions.WrapupCodes {
+			wrapupCodeIds = append(wrapupCodeIds, *code.Id)
+		}
+		conditionsMap["wrapup_code_ids"] = wrapupCodeIds
+	}
+	if conditions.Languages != nil {
+		languageIds := make([]string, 0)
+		for _, code := range *conditions.Languages {
+			languageIds = append(languageIds, *code.Id)
+		}
+		conditionsMap["language_ids"] = languageIds
+	}
+	if conditions.TimeAllowed != nil {
+		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
+	}
+
+	return []interface{}{conditionsMap}
+}
+
 func buildChatMediaPolicyConditions(chatMediaPolicyConditions []interface{}) *platformclientv2.Chatmediapolicyconditions {
 	if chatMediaPolicyConditions == nil || len(chatMediaPolicyConditions) <= 0 {
 		return nil
@@ -1955,6 +2010,7 @@ func buildChatMediaPolicyConditions(chatMediaPolicyConditions []interface{}) *pl
 	if !ok {
 		return nil
 	}
+
 	dateRanges := make([]string, 0)
 	for _, v := range conditionsMap["date_ranges"].([]interface{}) {
 		dateRange := fmt.Sprintf("%v", v)
@@ -1969,7 +2025,8 @@ func buildChatMediaPolicyConditions(chatMediaPolicyConditions []interface{}) *pl
 
 	forUsers := make([]platformclientv2.User, 0)
 	for _, id := range idStrings {
-		forUsers = append(forUsers, platformclientv2.User{Id: &id})
+		userId := id
+		forUsers = append(forUsers, platformclientv2.User{Id: &userId})
 	}
 
 	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
@@ -1980,7 +2037,8 @@ func buildChatMediaPolicyConditions(chatMediaPolicyConditions []interface{}) *pl
 
 	wrapupCodes := make([]platformclientv2.Wrapupcode, 0)
 	for _, id := range wrapupCodeIdStrings {
-		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &id})
+		wrapupId := id
+		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &wrapupId})
 	}
 
 	languageIds := conditionsMap["language_ids"].([]interface{})
@@ -1991,7 +2049,8 @@ func buildChatMediaPolicyConditions(chatMediaPolicyConditions []interface{}) *pl
 
 	languages := make([]platformclientv2.Language, 0)
 	for _, id := range languageIdStrings {
-		languages = append(languages, platformclientv2.Language{Id: &id})
+		languageId := id
+		languages = append(languages, platformclientv2.Language{Id: &languageId})
 	}
 
 	forQueueIds := conditionsMap["for_queue_ids"].([]interface{})
@@ -2002,7 +2061,8 @@ func buildChatMediaPolicyConditions(chatMediaPolicyConditions []interface{}) *pl
 
 	forQueues := make([]platformclientv2.Queue, 0)
 	for _, id := range queueIdStrings {
-		forQueues = append(forQueues, platformclientv2.Queue{Id: &id})
+		queueId := id
+		forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 	}
 
 	return &platformclientv2.Chatmediapolicyconditions{
@@ -2087,7 +2147,8 @@ func buildEmailMediaPolicyConditions(emailMediaPolicyConditions []interface{}) *
 
 	forUsers := make([]platformclientv2.User, 0)
 	for _, id := range idStrings {
-		forUsers = append(forUsers, platformclientv2.User{Id: &id})
+		userId := id
+		forUsers = append(forUsers, platformclientv2.User{Id: &userId})
 	}
 
 	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
@@ -2098,7 +2159,8 @@ func buildEmailMediaPolicyConditions(emailMediaPolicyConditions []interface{}) *
 
 	wrapupCodes := make([]platformclientv2.Wrapupcode, 0)
 	for _, id := range wrapupCodeIdStrings {
-		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &id})
+		wrapupId := id
+		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &wrapupId})
 	}
 
 	languageIds := conditionsMap["language_ids"].([]interface{})
@@ -2109,7 +2171,8 @@ func buildEmailMediaPolicyConditions(emailMediaPolicyConditions []interface{}) *
 
 	languages := make([]platformclientv2.Language, 0)
 	for _, id := range languageIdStrings {
-		languages = append(languages, platformclientv2.Language{Id: &id})
+		languageId := id
+		languages = append(languages, platformclientv2.Language{Id: &languageId})
 	}
 
 	forQueueIds := conditionsMap["for_queue_ids"].([]interface{})
@@ -2120,7 +2183,8 @@ func buildEmailMediaPolicyConditions(emailMediaPolicyConditions []interface{}) *
 
 	forQueues := make([]platformclientv2.Queue, 0)
 	for _, id := range queueIdStrings {
-		forQueues = append(forQueues, platformclientv2.Queue{Id: &id})
+		queueId := id
+		forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 	}
 
 	return &platformclientv2.Emailmediapolicyconditions{
@@ -2201,7 +2265,8 @@ func buildMessageMediaPolicyConditions(messageMediaPolicyConditions []interface{
 
 	forUsers := make([]platformclientv2.User, 0)
 	for _, id := range idStrings {
-		forUsers = append(forUsers, platformclientv2.User{Id: &id})
+		userId := id
+		forUsers = append(forUsers, platformclientv2.User{Id: &userId})
 	}
 
 	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
@@ -2212,7 +2277,8 @@ func buildMessageMediaPolicyConditions(messageMediaPolicyConditions []interface{
 
 	wrapupCodes := make([]platformclientv2.Wrapupcode, 0)
 	for _, id := range wrapupCodeIdStrings {
-		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &id})
+		wrapupId := id
+		wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &wrapupId})
 	}
 
 	languageIds := conditionsMap["language_ids"].([]interface{})
@@ -2223,7 +2289,8 @@ func buildMessageMediaPolicyConditions(messageMediaPolicyConditions []interface{
 
 	languages := make([]platformclientv2.Language, 0)
 	for _, id := range languageIdStrings {
-		languages = append(languages, platformclientv2.Language{Id: &id})
+		languageId := id
+		languages = append(languages, platformclientv2.Language{Id: &languageId})
 	}
 
 	forQueueIds := conditionsMap["for_queue_ids"].([]interface{})
@@ -2234,7 +2301,8 @@ func buildMessageMediaPolicyConditions(messageMediaPolicyConditions []interface{
 
 	forQueues := make([]platformclientv2.Queue, 0)
 	for _, id := range queueIdStrings {
-		forQueues = append(forQueues, platformclientv2.Queue{Id: &id})
+		queueId := id
+		forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 	}
 
 	return &platformclientv2.Messagemediapolicyconditions{
@@ -2262,53 +2330,6 @@ func flattenMessageMediaPolicyConditions(conditions *platformclientv2.Messagemed
 	}
 	if conditions.DateRanges != nil {
 		conditionsMap["date_ranges"] = *conditions.DateRanges
-	}
-	if conditions.ForQueues != nil {
-		queueIds := make([]string, 0)
-		for _, queue := range *conditions.ForQueues {
-			queueIds = append(queueIds, *queue.Id)
-		}
-		conditionsMap["for_queue_ids"] = queueIds
-	}
-	if conditions.WrapupCodes != nil {
-		wrapupCodeIds := make([]string, 0)
-		for _, code := range *conditions.WrapupCodes {
-			wrapupCodeIds = append(wrapupCodeIds, *code.Id)
-		}
-		conditionsMap["wrapup_code_ids"] = wrapupCodeIds
-	}
-	if conditions.Languages != nil {
-		languageIds := make([]string, 0)
-		for _, code := range *conditions.Languages {
-			languageIds = append(languageIds, *code.Id)
-		}
-		conditionsMap["language_ids"] = languageIds
-	}
-	if conditions.TimeAllowed != nil {
-		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
-	}
-
-	return []interface{}{conditionsMap}
-}
-
-func flattenCallMediaPolicyConditions(conditions *platformclientv2.Callmediapolicyconditions) []interface{} {
-	if conditions == nil {
-		return nil
-	}
-
-	conditionsMap := make(map[string]interface{})
-	if conditions.ForUsers != nil {
-		userIds := make([]string, 0)
-		for _, user := range *conditions.ForUsers {
-			userIds = append(userIds, *user.Id)
-		}
-		conditionsMap["for_user_ids"] = userIds
-	}
-	if conditions.DateRanges != nil {
-		conditionsMap["date_ranges"] = *conditions.DateRanges
-	}
-	if conditions.Directions != nil {
-		conditionsMap["directions"] = *conditions.Directions
 	}
 	if conditions.ForQueues != nil {
 		queueIds := make([]string, 0)
@@ -2548,7 +2569,8 @@ func buildConditions(d *schema.ResourceData) *platformclientv2.Policyconditions 
 
 		forUsers := make([]platformclientv2.User, 0)
 		for _, id := range idStrings {
-			forUsers = append(forUsers, platformclientv2.User{Id: &id})
+			userId := id
+			forUsers = append(forUsers, platformclientv2.User{Id: &userId})
 		}
 
 		wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
@@ -2559,7 +2581,8 @@ func buildConditions(d *schema.ResourceData) *platformclientv2.Policyconditions 
 
 		wrapupCodes := make([]platformclientv2.Wrapupcode, 0)
 		for _, id := range wrapupCodeIdStrings {
-			wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &id})
+			wrapupId := id
+			wrapupCodes = append(wrapupCodes, platformclientv2.Wrapupcode{Id: &wrapupId})
 		}
 
 		forQueueIds := conditionsMap["for_queue_ids"].([]interface{})
@@ -2570,7 +2593,8 @@ func buildConditions(d *schema.ResourceData) *platformclientv2.Policyconditions 
 
 		forQueues := make([]platformclientv2.Queue, 0)
 		for _, id := range queueIdStrings {
-			forQueues = append(forQueues, platformclientv2.Queue{Id: &id})
+			queueId := id
+			forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 		}
 
 		return &platformclientv2.Policyconditions{

@@ -26,7 +26,7 @@ import (
 // 	//gcloud.RegisterExporter("genesyscloud_outbound_ruleset", outboundRulesetExporter())
 // }
 
-// var regInstance Registrar
+// var regInstance registrar
 
 
 var (

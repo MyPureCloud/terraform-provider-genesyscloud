@@ -2,14 +2,12 @@ package resource_exporter
 
 import (
 	"context"
-	"fmt"
 	"hash/fnv"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"unicode"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -20,23 +18,9 @@ import (
 var resourceExporters map[string]*ResourceExporter
 var resourceExporterMapMutex = sync.RWMutex{}
 
-func init() {
-	resourceExporters = make(map[string]*ResourceExporter)
-}
-
-func RegisterExporter(exporterName string, resourceExporter *ResourceExporter) {
-	//resourceMapMutex.Lock()
-	resourceExporters[exporterName] = resourceExporter
-	//resourceMapMutex.Unlock()
-}
-
-func SetRegisterExporter(resources map[string]*ResourceExporter) {
-	//resourceMapMutex.Lock()
-	resourceExporters = resources
-	//resourceMapMutex.Unlock()
-}
-
-
+// func init() {
+// 	resourceExporters = make(map[string]*ResourceExporter)
+// }
 
 type ResourceMeta struct {
 	// Name of the resource to be used in exports
@@ -136,6 +120,11 @@ type ResourceExporter struct {
 	CustomFileWriter CustomFileWriterSettings
 
 	CustomFlowResolver map[string]*CustomFlowResolver
+
+	//This a place holder filter out specific resources from a filter.
+	FilterResource func(ResourceIDMetaMap, string, []string) ResourceIDMetaMap
+	// Attributes that are e164 numbers and should be ensured to export in the correct format (remove hyphens, whitespace, etc.)
+	E164Numbers []string
 }
 
 func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name string, filter []string) diag.Diagnostics {
@@ -144,33 +133,13 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name st
 		return err
 	}
 
-	if lists.SubStringInSlice(fmt.Sprintf("%v::", name), filter) {
-		result = filterResources(result, name, filter)
+	if r.FilterResource != nil {
+		result = r.FilterResource(result, name, filter)
 	}
 
 	r.SanitizedResourceMap = result
 	sanitizeResourceNames(r.SanitizedResourceMap)
 	return nil
-}
-
-func filterResources(result ResourceIDMetaMap, name string, filter []string) ResourceIDMetaMap {
-	names := make([]string, 0)
-	for _, f := range filter {
-		n := fmt.Sprintf("%v::", name)
-		if strings.Contains(f, n) {
-			names = append(names, strings.Replace(f, n, "", 1))
-		}
-	}
-
-	newResult := make(ResourceIDMetaMap)
-	for _, name := range names {
-		for k, v := range result {
-			if v.Name == name {
-				newResult[k] = v
-			}
-		}
-	}
-	return newResult
 }
 
 func (r *ResourceExporter) GetRefAttrSettings(attribute string) *RefAttrSettings {
@@ -207,6 +176,10 @@ func (r *ResourceExporter) IsJsonEncodable(attribute string) bool {
 	return lists.StringInSlice(attribute, r.JsonEncodeAttributes)
 }
 
+func (r *ResourceExporter) IsAttributeE164(attribute string) bool {
+	return lists.StringInSlice(attribute, r.E164Numbers)
+}
+
 func (r *ResourceExporter) AddExcludedAttribute(attribute string) {
 	r.ExcludedAttributes = append(r.ExcludedAttributes, attribute)
 }
@@ -236,39 +209,19 @@ func (r *ResourceExporter) RemoveFieldIfMissing(attribute string, config map[str
 	return false
 }
 
-func GetResourceExporters(filter []string) map[string]*ResourceExporter {
+func GetResourceExporters() map[string]*ResourceExporter {
 
+	//Make a Copy of the Map
 	exportCopy := make(map[string]*ResourceExporter, len(resourceExporters))
 
 	for k, v := range resourceExporters {
 		exportCopy[k] = v
 	}
-	
-
-	// Include all if no filters
-	if len(filter) > 0 {
-		for resType := range exportCopy {
-			if !lists.StringInSlice(resType, FormatFilter(filter)) {
-				delete(exportCopy, resType)
-			}
-		}
-	}
 	return exportCopy
-}
-
-// Removes the ::resource_name from the resource_types list
-func FormatFilter(filter []string) []string {
-	newFilter := make([]string, 0)
-	for _, str := range filter {
-		newFilter = append(newFilter, strings.Split(str, "::")[0])
-	}
-	return newFilter
 }
 //terraform-provider-genesyscloud/genesyscloud/tfexporter
 func GetAvailableExporterTypes() []string {
-	exporters := GetResourceExporters(nil)
-	log.Println("exporters")
-	log.Println(exporters)
+	exporters := GetResourceExporters()
 	types := make([]string, len(exporters))
 	i := 0
 	for k := range exporters {
@@ -308,4 +261,16 @@ func SanitizeResourceName(inputName string) string {
 	}
 
 	return name
+}
+
+func RegisterExporter(exporterName string, resourceExporter *ResourceExporter) {
+	resourceExporterMapMutex.Lock()
+	resourceExporters[exporterName] = resourceExporter
+	resourceExporterMapMutex.Unlock()
+}
+
+func SetRegisterExporter(resources map[string]*ResourceExporter) {
+	resourceExporterMapMutex.Lock()
+	resourceExporters = resources
+	resourceExporterMapMutex.Unlock()
 }

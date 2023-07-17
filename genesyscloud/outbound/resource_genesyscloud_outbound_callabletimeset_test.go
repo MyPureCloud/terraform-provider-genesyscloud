@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"log"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -115,9 +114,6 @@ func generateOutboundCallabletimeset(
 	resourceId string,
 	name string,
 	nestedBlocks ...string) string {
-		log.Println("dwdwdwd")
-	log.Println(providerResources)
-	log.Println(providerDataSources)
 
 	return fmt.Sprintf(`
 		resource "genesyscloud_outbound_callabletimeset" "%s"{
