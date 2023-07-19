@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	files "terraform-provider-genesyscloud/genesyscloud/util/files"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 type PromptAudioData struct {
@@ -717,8 +717,8 @@ var userPromptResource = &schema.Resource{
 	},
 }
 
-func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -733,18 +733,18 @@ func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configu
 		}
 
 		for _, userPrompt := range *userPrompts.Entities {
-			resources[*userPrompt.Id] = &resource_exporter.ResourceMeta{Name: *userPrompt.Name}
+			resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{Name: *userPrompt.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func ArchitectUserPromptExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllUserPrompts),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
-		CustomFileWriter: resource_exporter.CustomFileWriterSettings{
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
 			SubDirectory:              "audio_prompts",
 		},

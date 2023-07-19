@@ -1,14 +1,14 @@
 package resource_register
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 
 type Registrar interface {
 	RegisterResource(resourceName string, resource *schema.Resource)
 	RegisterDataSource(dataSourceName string, datasource *schema.Resource)
-	RegisterExporter(exporterName string, resourceExporter *resource_exporter.ResourceExporter) 
+	RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) 
 }
 
 

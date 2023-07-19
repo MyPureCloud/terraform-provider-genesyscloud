@@ -13,11 +13,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllCredentials(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllCredentials(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -33,7 +33,7 @@ func getAllCredentials(_ context.Context, clientConfig *platformclientv2.Configu
 
 		for _, cred := range *credentials.Entities {
 			if cred.Name != nil { // Credential is possible to have no name
-				resources[*cred.Id] = &resource_exporter.ResourceMeta{Name: *cred.Name}
+				resources[*cred.Id] = &resourceExporter.ResourceMeta{Name: *cred.Name}
 			}
 		}
 	}
@@ -41,10 +41,10 @@ func getAllCredentials(_ context.Context, clientConfig *platformclientv2.Configu
 	return resources, nil
 }
 
-func CredentialExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func CredentialExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllCredentials),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No Reference
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No Reference
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"fields": ResourceCredential().Schema["fields"],
 		},

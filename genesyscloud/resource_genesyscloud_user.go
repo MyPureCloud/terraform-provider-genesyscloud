@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -114,8 +114,8 @@ var (
 	}
 )
 
-func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	// Newly created resources often aren't returned unless there's a delay
@@ -149,7 +149,7 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 			}
 
 			for _, user := range *users.Entities {
-				resources[*user.Id] = &resource_exporter.ResourceMeta{Name: *user.Email}
+				resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
 			}
 		}
 	}()
@@ -175,7 +175,7 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 			}
 
 			for _, user := range *users.Entities {
-				resources[*user.Id] = &resource_exporter.ResourceMeta{Name: *user.Email}
+				resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
 			}
 		}
 	}()
@@ -194,10 +194,10 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	}
 }
 
-func UserExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func UserExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllUsers),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"manager":                       {RefType: "genesyscloud_user"},
 			"division_id":                   {RefType: "genesyscloud_auth_division"},
 			"routing_skills.skill_id":       {RefType: "genesyscloud_routing_skill"},

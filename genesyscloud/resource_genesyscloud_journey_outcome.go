@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -88,8 +88,8 @@ var (
 	}
 )
 
-func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(clientConfig)
 
 	pageCount := 1 // Needed because of broken journey common paging
@@ -105,7 +105,7 @@ func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, journeyOutcome := range *journeyOutcomes.Entities {
-			resources[*journeyOutcome.Id] = &resource_exporter.ResourceMeta{Name: *journeyOutcome.DisplayName}
+			resources[*journeyOutcome.Id] = &resourceExporter.ResourceMeta{Name: *journeyOutcome.DisplayName}
 		}
 
 		pageCount = *journeyOutcomes.PageCount
@@ -114,10 +114,10 @@ func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Con
 	return resources, nil
 }
 
-func JourneyOutcomeExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func JourneyOutcomeExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllJourneyOutcomes),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 func ResourceJourneyOutcome() *schema.Resource {

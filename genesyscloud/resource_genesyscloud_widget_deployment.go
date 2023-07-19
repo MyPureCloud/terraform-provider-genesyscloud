@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -49,8 +49,8 @@ var (
 	}
 )
 
-func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(clientConfig)
 	widgetDeployments, _, getErr := widgetsAPI.GetWidgetsDeployments()
 	if getErr != nil {
@@ -58,7 +58,7 @@ func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.C
 	}
 
 	for _, widgetDeployment := range *widgetDeployments.Entities {
-		resources[*widgetDeployment.Id] = &resource_exporter.ResourceMeta{Name: *widgetDeployment.Name}
+		resources[*widgetDeployment.Id] = &resourceExporter.ResourceMeta{Name: *widgetDeployment.Name}
 	}
 
 	return resources, nil
@@ -135,10 +135,10 @@ func buildSDKClientConfig(clientType string, d *schema.ResourceData) (*platformc
 	return widgetClientConfig, nil
 }
 
-func WidgetDeploymentExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func WidgetDeploymentExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllWidgetDeployments),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"flow_id": {RefType: "genesyscloud_flow"},
 		},
 	}
@@ -350,7 +350,7 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 // Sometimes the Widget API creates 2 deployments due to a bug. This function will delete any duplicates
-func deletePotentialDuplicateDeployments(widgetAPI *platformclientv2.WidgetsApi, name, id string, existingResourceIDMetaMap, newResourceIDMetaMap resource_exporter.ResourceIDMetaMap) {
+func deletePotentialDuplicateDeployments(widgetAPI *platformclientv2.WidgetsApi, name, id string, existingResourceIDMetaMap, newResourceIDMetaMap resourceExporter.ResourceIDMetaMap) {
 	for _, val := range existingResourceIDMetaMap {
 		for key1, val1 := range newResourceIDMetaMap {
 			if val.Name == val1.Name {

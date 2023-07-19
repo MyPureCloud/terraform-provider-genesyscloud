@@ -14,10 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func resourceOutboundSequence() *schema.Resource {
+func ResourceOutboundSequence() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound sequence`,
 
@@ -63,8 +63,8 @@ func resourceOutboundSequence() *schema.Resource {
 	}
 }
 
-func getAllOutboundSequence(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllOutboundSequence(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -82,17 +82,17 @@ func getAllOutboundSequence(_ context.Context, clientConfig *platformclientv2.Co
 			if *entity.Status != "off" && *entity.Status != "on" {
 				*entity.Status = "off"
 			}
-			resources[*entity.Id] = &resource_exporter.ResourceMeta{Name: *entity.Name}
+			resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: *entity.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func OutboundSequenceExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func OutboundSequenceExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundSequence),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`campaign_ids`: {
 				RefType: "genesyscloud_outbound_campaign",
 			},
@@ -199,7 +199,7 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundSequence())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSequence())
 
 		if sdkcampaignsequence.Name != nil {
 			d.Set("name", *sdkcampaignsequence.Name)

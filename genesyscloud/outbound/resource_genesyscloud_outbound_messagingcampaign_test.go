@@ -15,7 +15,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
 
-	ob_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 /*
@@ -31,7 +31,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		contactListName       = "Contact List " + uuid.NewString()
 		column1               = "phone"
 		column2               = "zipcode"
-		contactListResource   = ob_contact_list.GenerateOutboundContactList(
+		contactListResource   = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			contactListName,
 			nullValue,
@@ -41,7 +41,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 			nullValue,
 			nullValue,
 			nullValue,
-			ob_contact_list.GeneratePhoneColumnsBlock(
+			obContactList.GeneratePhoneColumnsBlock(
 				column1,
 				"cell",
 				strconv.Quote(column1),

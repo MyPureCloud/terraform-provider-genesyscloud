@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -48,7 +48,7 @@ type putOutboundRulesetFunc func(*OutboundAPIProxy, platformclientv2.Ruleset, st
 
 type removeOutboundRulesetFunc func(*OutboundAPIProxy, string) (*platformclientv2.APIResponse, error)
 
-type getAllOutboundRulesetFunc func(*OutboundAPIProxy)  (resource_exporter.ResourceIDMetaMap, diag.Diagnostics)
+type getAllOutboundRulesetFunc func(*OutboundAPIProxy)  (resourceExporter.ResourceIDMetaMap, diag.Diagnostics)
 
 type getOutboundRulesetsDataFunc func(context.Context, *OutboundAPIProxy, *schema.ResourceData, string) (diag.Diagnostics)
 
@@ -73,8 +73,8 @@ func removeOutboundRuleset(a *OutboundAPIProxy,id string) (*platformclientv2.API
 	return a.oAPI.DeleteOutboundRuleset(id)
 }
 
-func getOutboundRulesets(a *OutboundAPIProxy) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getOutboundRulesets(a *OutboundAPIProxy) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		sdkrulesetentitylisting, _, getErr := a.oAPI.GetOutboundRulesets(pageSize, pageNum, true, "", "", "", "")
@@ -87,7 +87,7 @@ func getOutboundRulesets(a *OutboundAPIProxy) (resource_exporter.ResourceIDMetaM
 		}
 
 		for _, entity := range *sdkrulesetentitylisting.Entities {
-			resources[*entity.Id] = &resource_exporter.ResourceMeta{Name: *entity.Name}
+			resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: *entity.Name}
 		}
 	}
 

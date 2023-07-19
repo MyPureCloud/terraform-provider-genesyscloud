@@ -16,7 +16,7 @@ import (
 	"github.com/leekchan/timeutil"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists" 
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func ResourceSite() *schema.Resource {
@@ -241,8 +241,8 @@ func ResourceSite() *schema.Resource {
 	}
 }
 
-func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
@@ -260,7 +260,7 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (res
 
 		for _, site := range *sites.Entities {
 			if site.State != nil && *site.State != "deleted" {
-				resources[*site.Id] = &resource_exporter.ResourceMeta{Name: *site.Name}
+				resources[*site.Id] = &resourceExporter.ResourceMeta{Name: *site.Name}
 			}
 		}
 	}
@@ -279,7 +279,7 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (res
 
 		for _, site := range *sites.Entities {
 			if site.State != nil && *site.State != "deleted" {
-				resources[*site.Id] = &resource_exporter.ResourceMeta{Name: *site.Name}
+				resources[*site.Id] = &resourceExporter.ResourceMeta{Name: *site.Name}
 			}
 		}
 	}
@@ -287,10 +287,10 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (res
 	return resources, nil
 }
 
-func SiteExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func SiteExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getSites),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"location_id": {RefType: "genesyscloud_location"},
 			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 			"primary_sites":   {RefType: "genesyscloud_telephony_providers_edges_site"},

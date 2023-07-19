@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -42,10 +42,10 @@ var (
 	}
 )
 
-func getAllKnowledgeCategoriesV1(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeCategoriesV1(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	categoryEntities := make([]platformclientv2.Knowledgecategory, 0)
-	resources := make(resource_exporter.ResourceIDMetaMap)
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	// get published knowledge bases
@@ -72,7 +72,7 @@ func getAllKnowledgeCategoriesV1(_ context.Context, clientConfig *platformclient
 
 	for _, knowledgeCategory := range categoryEntities {
 		id := fmt.Sprintf("%s %s %s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id, *knowledgeCategory.LanguageCode)
-		resources[id] = &resource_exporter.ResourceMeta{Name: *knowledgeCategory.Name}
+		resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeCategory.Name}
 	}
 
 	return resources, nil
@@ -117,10 +117,10 @@ func getAllKnowledgeV1CategoryEntities(knowledgeAPI platformclientv2.KnowledgeAp
 	return &entities, nil
 }
 
-func KnowledgeCategoryExporterV1() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func KnowledgeCategoryExporterV1() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeCategoriesV1),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
 	}

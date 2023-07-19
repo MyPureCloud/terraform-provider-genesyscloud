@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -74,8 +74,8 @@ var (
 	}
 )
 
-func getAllIntegrationActions(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllIntegrationActions(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -94,17 +94,17 @@ func getAllIntegrationActions(_ context.Context, clientConfig *platformclientv2.
 			if strings.HasPrefix(*action.Id, "static") {
 				continue
 			}
-			resources[*action.Id] = &resource_exporter.ResourceMeta{Name: *action.Name}
+			resources[*action.Id] = &resourceExporter.ResourceMeta{Name: *action.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func IntegrationActionExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func IntegrationActionExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllIntegrationActions),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"integration_id": {RefType: "genesyscloud_integration"},
 		},
 		JsonEncodeAttributes: []string{"contract_input", "contract_output"},

@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -524,8 +524,8 @@ func flattenPhoneCapabilities(capabilities *platformclientv2.Phonecapabilities) 
 	return []interface{}{capabilitiesMap}
 }
 
-func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
@@ -542,7 +542,7 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 
 		for _, phone := range *phones.Entities {
 			if phone.State != nil && *phone.State != "deleted" {
-				resources[*phone.Id] = &resource_exporter.ResourceMeta{Name: *phone.Name}
+				resources[*phone.Id] = &resourceExporter.ResourceMeta{Name: *phone.Name}
 			}
 		}
 	}
@@ -550,10 +550,10 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 	return resources, nil
 }
 
-func PhoneExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func PhoneExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllPhones),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"web_rtc_user_id":        {RefType: "genesyscloud_user"},
 			"site_id":                {RefType: "genesyscloud_telephony_providers_edges_site"},
 			"phone_base_settings_id": {RefType: "genesyscloud_telephony_providers_edges_phonebasesettings"},

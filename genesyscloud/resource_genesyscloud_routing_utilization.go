@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -62,17 +62,17 @@ func getSdkUtilizationTypes() []string {
 	return types
 }
 
-func getAllRoutingUtilization(_ context.Context, _ *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllRoutingUtilization(_ context.Context, _ *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	// Routing utilization config always exists
-	resources := make(resource_exporter.ResourceIDMetaMap)
-	resources["0"] = &resource_exporter.ResourceMeta{Name: "routing_utilization"}
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	resources["0"] = &resourceExporter.ResourceMeta{Name: "routing_utilization"}
 	return resources, nil
 }
 
-func RoutingUtilizationExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func RoutingUtilizationExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingUtilization),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"maximum_capacity"},
 	}
 }

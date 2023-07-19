@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -112,8 +112,8 @@ var (
 	}
 )
 
-func getAllAuthRoles(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllAuthRoles(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -128,17 +128,17 @@ func getAllAuthRoles(_ context.Context, clientConfig *platformclientv2.Configura
 		}
 
 		for _, role := range *roles.Entities {
-			resources[*role.Id] = &resource_exporter.ResourceMeta{Name: *role.Name}
+			resources[*role.Id] = &resourceExporter.ResourceMeta{Name: *role.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func AuthRoleExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func AuthRoleExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllAuthRoles),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"permission_policies.conditions.terms.operands.queue_id": {RefType: "genesyscloud_routing_queue"},
 			"permission_policies.conditions.terms.operands.user_id":  {RefType: "genesyscloud_user"},
 		},

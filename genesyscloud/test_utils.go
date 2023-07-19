@@ -38,28 +38,6 @@ func GetProviderFactories (providerResources map[string]*schema.Resource, provid
 	}
 }
 
-
-
-
-//simply no way to get to call this SetRegistrar(l register.TestRegistrar) with testregister struct defined in main.
-// go test cannot call any methods of main/ or any default methods out of the test/package scope.
-
-// var regInstance register.TestRegistrar
-// func SetRegistrar(l *register.TestRegistrar) {
-//     regInstance = l
-// }
-
-
-// we have to identify providerResources, providerDataSources for each test case, call them individually
-// but again a problem with hierarchial resources for example outbound_campain
-// campaign is in gcloud, and it depends on ob_ruleset. (obruleset already importing glcoud)  again causes cyclic dependency. (fundamentally a bad design)
-// one solution is to move all the resources to respective packages at a stretch. 
-// we can address each resource dependencies individually.
-
-
-
-//each test function need to call providerfactories
-
 func TestAccPreCheck(t *testing.T) {
 	if v := os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"); v == "" {
 		t.Fatal("Missing env GENESYSCLOUD_OAUTHCLIENT_ID")

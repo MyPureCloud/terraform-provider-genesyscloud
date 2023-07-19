@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -285,8 +285,8 @@ var (
 	}
 )
 
-func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(clientConfig)
 	pageCount := 1 // Needed because of broken journey common paging
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
@@ -299,17 +299,17 @@ func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclien
 			break
 		}
 		for _, actionTemplate := range *actionTemplates.Entities {
-			resources[*actionTemplate.Id] = &resource_exporter.ResourceMeta{Name: *actionTemplate.Name}
+			resources[*actionTemplate.Id] = &resourceExporter.ResourceMeta{Name: *actionTemplate.Name}
 		}
 		pageCount = *actionTemplates.PageCount
 	}
 	return resources, nil
 }
 
-func JourneyActionTemplateExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func JourneyActionTemplateExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllJourneyActionTemplates),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No Reference
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No Reference
 	}
 }
 

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -178,8 +178,8 @@ var (
 	}
 )
 
-func getAllAuthExternalContacts(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllAuthExternalContacts(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	externalAPI := platformclientv2.NewExternalContactsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -195,17 +195,17 @@ func getAllAuthExternalContacts(_ context.Context, clientConfig *platformclientv
 
 		for _, externalContact := range *externalContacts.Entities {
 			log.Printf("Dealing with external concat id : %s", *externalContact.Id)
-			resources[*externalContact.Id] = &resource_exporter.ResourceMeta{Name: *externalContact.Id}
+			resources[*externalContact.Id] = &resourceExporter.ResourceMeta{Name: *externalContact.Id}
 		}
 	}
 
 	return resources, nil
 }
 
-func ExternalContactExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func ExternalContactExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllAuthExternalContacts),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"external_organization": {}, //Need to add this when we external orgs implemented
 		},
 	}

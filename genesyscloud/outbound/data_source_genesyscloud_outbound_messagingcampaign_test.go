@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	ob_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 var trueValue = "true"
@@ -46,7 +46,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 			),
 		)
 
-		contactListResource = ob_contact_list.GenerateOutboundContactList(
+		contactListResource = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			contactListName,
 			nullValue,
@@ -56,7 +56,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 			falseValue,
 			nullValue,
 			nullValue,
-			ob_contact_list.GeneratePhoneColumnsBlock(
+			obContactList.GeneratePhoneColumnsBlock(
 				column1,
 				"cell",
 				strconv.Quote(column1),

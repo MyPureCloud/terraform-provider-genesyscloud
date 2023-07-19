@@ -15,12 +15,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	files  "terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
-func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -35,22 +35,22 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 		}
 
 		for _, flow := range *flows.Entities {
-			resources[*flow.Id] = &resource_exporter.ResourceMeta{Name: *flow.Name}
+			resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func FlowExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func FlowExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllFlows),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{},
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"filepath": ResourceFlow().Schema["filepath"],
 		},
-		CustomFlowResolver: map[string]*resource_exporter.CustomFlowResolver{
-			"file_content_hash": {ResolverFunc: resource_exporter.FileContentHashResolver},
+		CustomFlowResolver: map[string]*resourceExporter.CustomFlowResolver{
+			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
 		},
 	}
 }

@@ -14,11 +14,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	telephonyAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -34,7 +34,7 @@ func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configurat
 
 		for _, didPool := range *didPools.Entities {
 			if didPool.State != nil && *didPool.State != "deleted" {
-				resources[*didPool.Id] = &resource_exporter.ResourceMeta{Name: *didPool.StartPhoneNumber}
+				resources[*didPool.Id] = &resourceExporter.ResourceMeta{Name: *didPool.StartPhoneNumber}
 			}
 		}
 	}
@@ -42,10 +42,10 @@ func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configurat
 	return resources, nil
 }
 
-func TelephonyDidPoolExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func TelephonyDidPoolExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllDidPools),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 

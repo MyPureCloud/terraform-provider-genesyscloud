@@ -12,11 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllEmergencyGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllEmergencyGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -32,7 +32,7 @@ func getAllEmergencyGroups(_ context.Context, clientConfig *platformclientv2.Con
 
 		for _, emergencyGroupConfig := range *emergencyGroupConfigs.Entities {
 			if emergencyGroupConfig.State != nil && *emergencyGroupConfig.State != "deleted" {
-				resources[*emergencyGroupConfig.Id] = &resource_exporter.ResourceMeta{Name: *emergencyGroupConfig.Name}
+				resources[*emergencyGroupConfig.Id] = &resourceExporter.ResourceMeta{Name: *emergencyGroupConfig.Name}
 			}
 		}
 	}
@@ -40,10 +40,10 @@ func getAllEmergencyGroups(_ context.Context, clientConfig *platformclientv2.Con
 	return resources, nil
 }
 
-func ArchitectEmergencyGroupExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func ArchitectEmergencyGroupExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllEmergencyGroups),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":                            {RefType: "genesyscloud_auth_division"},
 			"emergency_call_flows.emergency_flow_id": {RefType: "genesyscloud_flow"},
 			"emergency_call_flows.ivr_ids":           {RefType: "genesyscloud_architect_ivr"},

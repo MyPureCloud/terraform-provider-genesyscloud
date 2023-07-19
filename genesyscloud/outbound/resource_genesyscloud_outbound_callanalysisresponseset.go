@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -116,8 +116,8 @@ var (
 	}
 )
 
-func getAllCallAnalysisResponseSets(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllCallAnalysisResponseSets(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -130,24 +130,24 @@ func getAllCallAnalysisResponseSets(_ context.Context, clientConfig *platformcli
 			break
 		}
 		for _, responseSetConfig := range *responseSetConfigs.Entities {
-			resources[*responseSetConfig.Id] = &resource_exporter.ResourceMeta{Name: *responseSetConfig.Name}
+			resources[*responseSetConfig.Id] = &resourceExporter.ResourceMeta{Name: *responseSetConfig.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func OutboundCallAnalysisResponseSetExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func OutboundCallAnalysisResponseSetExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllCallAnalysisResponseSets),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"responses.callable_person.data":  {RefType: "genesyscloud_flow"},
 			"responses.callable_machine.data": {RefType: "genesyscloud_flow"},
 		},
 	}
 }
 
-func resourceOutboundCallAnalysisResponseSet() *schema.Resource {
+func ResourceOutboundCallAnalysisResponseSet() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound Call Analysis Response Set`,
 
@@ -268,7 +268,7 @@ func readOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.Resource
 			}
 			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
 		}
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCallAnalysisResponseSet())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallAnalysisResponseSet())
 		if sdkResponseSet.Name != nil {
 			_ = d.Set("name", *sdkResponseSet.Name)
 		}

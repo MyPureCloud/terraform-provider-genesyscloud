@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	
-	ob_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 const falseValue = "false"
@@ -47,7 +47,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: ob_contact_list.GenerateOutboundContactList(
+				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -57,7 +57,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					ob_contact_list.GeneratePhoneColumnsBlock(
+					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -75,7 +75,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 			},
 			// Update name, contact_list_id and queue_id
 			{
-				Config: ob_contact_list.GenerateOutboundContactList(
+				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId2,
 					contactListName2,
 					nullValue,
@@ -85,7 +85,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					ob_contact_list.GeneratePhoneColumnsBlock(
+					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -131,7 +131,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: ob_contact_list.GenerateOutboundContactList(
+				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -141,7 +141,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					ob_contact_list.GeneratePhoneColumnsBlock(
+					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -176,7 +176,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				),
 			},
 			{
-				Config: ob_contact_list.GenerateOutboundContactList(
+				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -186,7 +186,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					ob_contact_list.GeneratePhoneColumnsBlock(
+					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),
@@ -247,7 +247,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				),
 			},
 			{
-				Config: ob_contact_list.GenerateOutboundContactList(
+				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
 					nullValue,
@@ -257,7 +257,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 					automaticTimeZoneMapping,
 					nullValue,
 					nullValue,
-					ob_contact_list.GeneratePhoneColumnsBlock(
+					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
 						strconv.Quote("Cell"),

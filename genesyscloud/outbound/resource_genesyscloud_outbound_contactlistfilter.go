@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -106,8 +106,8 @@ var (
 	}
 )
 
-func getAllOutboundContactListFilters(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllOutboundContactListFilters(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -122,23 +122,23 @@ func getAllOutboundContactListFilters(_ context.Context, clientConfig *platformc
 		}
 
 		for _, contactListFilterConfig := range *contactListFilterConfigs.Entities {
-			resources[*contactListFilterConfig.Id] = &resource_exporter.ResourceMeta{Name: *contactListFilterConfig.Name}
+			resources[*contactListFilterConfig.Id] = &resourceExporter.ResourceMeta{Name: *contactListFilterConfig.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func OutboundContactListFilterExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func OutboundContactListFilterExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundContactListFilters),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
 		},
 	}
 }
 
-func resourceOutboundContactListFilter() *schema.Resource {
+func ResourceOutboundContactListFilter() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Contact List Filter`,
 
@@ -265,7 +265,7 @@ func readOutboundContactListFilter(ctx context.Context, d *schema.ResourceData, 
 			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Contact List Filter %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundContactListFilter())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListFilter())
 		if sdkContactListFilter.Name != nil {
 			_ = d.Set("name", *sdkContactListFilter.Name)
 		}

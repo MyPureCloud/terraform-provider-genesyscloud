@@ -13,13 +13,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func getAllIdpOkta(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllIdpOkta(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
-	resources := make(resource_exporter.ResourceIDMetaMap)
+	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersOkta()
 	if getErr != nil {
@@ -30,14 +30,14 @@ func getAllIdpOkta(_ context.Context, clientConfig *platformclientv2.Configurati
 		return nil, diag.Errorf("Failed to get IDP Okta: %v", getErr)
 	}
 
-	resources["0"] = &resource_exporter.ResourceMeta{Name: "okta"}
+	resources["0"] = &resourceExporter.ResourceMeta{Name: "okta"}
 	return resources, nil
 }
 
-func IdpOktaExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func IdpOktaExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllIdpOkta),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 

@@ -14,11 +14,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
@@ -27,7 +27,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	}
 
 	for _, knowledgeBase := range *publishedEntities {
-		resources[*knowledgeBase.Id] = &resource_exporter.ResourceMeta{Name: *knowledgeBase.Name}
+		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{Name: *knowledgeBase.Name}
 	}
 
 	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
@@ -36,7 +36,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	}
 
 	for _, knowledgeBase := range *unpublishedEntities {
-		resources[*knowledgeBase.Id] = &resource_exporter.ResourceMeta{Name: *knowledgeBase.Name}
+		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{Name: *knowledgeBase.Name}
 	}
 
 	return resources, nil
@@ -81,10 +81,10 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 	return &entities, nil
 }
 
-func KnowledgeKnowledgebaseExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func KnowledgeKnowledgebaseExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeKnowledgebases),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 

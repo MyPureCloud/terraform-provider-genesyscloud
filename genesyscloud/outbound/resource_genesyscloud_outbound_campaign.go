@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -29,7 +29,7 @@ var (
 	}
 )
 
-func resourceOutboundCampaign() *schema.Resource {
+func ResourceOutboundCampaign() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound campaign`,
 
@@ -207,8 +207,8 @@ func resourceOutboundCampaign() *schema.Resource {
 	}
 }
 
-func getAllOutboundCampaign(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllOutboundCampaign(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -226,18 +226,18 @@ func getAllOutboundCampaign(_ context.Context, clientConfig *platformclientv2.Co
 			if *entity.CampaignStatus != "off" && *entity.CampaignStatus != "on" {
 				*entity.CampaignStatus = "off"
 			}
-			resources[*entity.Id] = &resource_exporter.ResourceMeta{Name: *entity.Name}
+			resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: *entity.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func OutboundCampaignExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func OutboundCampaignExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundCampaign),
 		AllowZeroValues:  []string{`preview_time_out_seconds`},
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`contact_list_id`: {
 				RefType: "genesyscloud_outbound_contact_list",
 			},
@@ -514,7 +514,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 			return resource.RetryableError(fmt.Errorf("Outbound Campaign still stopping %s", d.Id()))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCampaign())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign())
 
 		if sdkcampaign.Name != nil {
 			d.Set("name", *sdkcampaign.Name)

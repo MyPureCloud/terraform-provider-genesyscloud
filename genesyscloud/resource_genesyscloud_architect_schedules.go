@@ -15,11 +15,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -34,17 +34,17 @@ func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.
 		}
 
 		for _, schedule := range *schedules.Entities {
-			resources[*schedule.Id] = &resource_exporter.ResourceMeta{Name: *schedule.Name}
+			resources[*schedule.Id] = &resourceExporter.ResourceMeta{Name: *schedule.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func ArchitectSchedulesExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func ArchitectSchedulesExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllArchitectSchedules),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}

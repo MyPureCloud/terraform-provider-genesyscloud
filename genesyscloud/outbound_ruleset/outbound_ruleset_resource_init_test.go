@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"	
 	"testing"
 
-	ob_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
@@ -33,7 +33,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_outbound_ruleset"] =  DataSourceOutboundRuleset()
-	providerResources["genesyscloud_outbound_contact_list"] = outbound..ResourceOutboundContactList()
+	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
 }
 
 func TestMain(m *testing.M) {

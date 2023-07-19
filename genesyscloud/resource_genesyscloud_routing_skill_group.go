@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -40,8 +40,8 @@ type AllSkillGroups struct {
 	PreviousURI string `json:"previousUri"`
 }
 
-func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 	apiClient := &routingAPI.Configuration.APIClient
 	route := "/api/v2/routing/skillgroups"
@@ -70,7 +70,7 @@ func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Confi
 
 		for _, skillGroup := range skillGroupPayload.Entities {
 
-			resources[skillGroup.ID] = &resource_exporter.ResourceMeta{Name: skillGroup.Name}
+			resources[skillGroup.ID] = &resourceExporter.ResourceMeta{Name: skillGroup.Name}
 		}
 
 		if route == skillGroupPayload.NextURI || skillGroupPayload.NextURI == "" {
@@ -84,10 +84,10 @@ func getAllSkillGroups(ctx context.Context, clientConfig *platformclientv2.Confi
 	return resources, nil
 }
 
-func ResourceSkillGroupExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func ResourceSkillGroupExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllSkillGroups),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":         {RefType: "genesyscloud_auth_division"},
 			"member_division_ids": {RefType: "genesyscloud_auth_division"},
 		},
@@ -98,7 +98,7 @@ func ResourceSkillGroupExporter() *resource_exporter.ResourceExporter {
 	}
 }
 
-func resourceRoutingSkillGroup() *schema.Resource {
+func ResourceRoutingSkillGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Skill Group`,
 
@@ -383,7 +383,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 			return resource.RetryableError(fmt.Errorf("Failed to read skill groups %s: %s", d.Id(), err))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSkillGroup())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkillGroup())
 
 		name := skillGroupPayload["name"]
 		divisionId := skillGroupPayload["division"].(map[string]interface{})["id"]

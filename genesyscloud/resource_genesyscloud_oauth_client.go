@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -36,8 +36,8 @@ var (
 	}
 )
 
-func getAllOAuthClients(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllOAuthClients(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	oauthAPI := platformclientv2.NewOAuthApiWithConfig(clientConfig)
 
 	clients, _, getErr := oauthAPI.GetOauthClients()
@@ -54,16 +54,16 @@ func getAllOAuthClients(_ context.Context, clientConfig *platformclientv2.Config
 			// Don't include clients disabled by support
 			continue
 		}
-		resources[*client.Id] = &resource_exporter.ResourceMeta{Name: *client.Name}
+		resources[*client.Id] = &resourceExporter.ResourceMeta{Name: *client.Name}
 	}
 
 	return resources, nil
 }
 
-func OauthClientExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func OauthClientExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllOAuthClients),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"roles.role_id":             {RefType: "genesyscloud_auth_role"},
 			"roles.division_id":         {RefType: "genesyscloud_auth_division", AltValues: []string{"*"}},
 			"integration_credential_id": {RefType: "genesyscloud_integration_credential"},

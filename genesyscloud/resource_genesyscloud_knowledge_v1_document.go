@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -99,10 +99,10 @@ var (
 	}
 )
 
-func getAllKnowledgeDocumentsV1(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeDocumentsV1(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	documentEntities := make([]platformclientv2.Knowledgedocument, 0)
-	resources := make(resource_exporter.ResourceIDMetaMap)
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	// get published knowledge bases
@@ -135,7 +135,7 @@ func getAllKnowledgeDocumentsV1(_ context.Context, clientConfig *platformclientv
 		} else {
 			name = fmt.Sprintf("document " + uuid.NewString())
 		}
-		resources[id] = &resource_exporter.ResourceMeta{Name: name}
+		resources[id] = &resourceExporter.ResourceMeta{Name: name}
 	}
 
 	return resources, nil
@@ -180,10 +180,10 @@ func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeAp
 	return &entities, nil
 }
 
-func knowledgeDocumentExporterV1() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func knowledgeDocumentExporterV1() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeDocumentsV1),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
 	}

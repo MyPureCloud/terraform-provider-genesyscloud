@@ -13,11 +13,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -33,7 +33,7 @@ func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Confi
 
 		for _, skill := range *skills.Entities {
 			if skill.State != nil && *skill.State != "deleted" {
-				resources[*skill.Id] = &resource_exporter.ResourceMeta{Name: *skill.Name}
+				resources[*skill.Id] = &resourceExporter.ResourceMeta{Name: *skill.Name}
 			}
 		}
 	}
@@ -41,10 +41,10 @@ func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Confi
 	return resources, nil
 }
 
-func RoutingSkillExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func RoutingSkillExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingSkills),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 

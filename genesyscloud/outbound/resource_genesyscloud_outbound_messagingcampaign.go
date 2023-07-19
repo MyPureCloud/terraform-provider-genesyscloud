@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -66,7 +66,7 @@ var (
 	}
 )
 
-func resourceOutboundMessagingCampaign() *schema.Resource {
+func ResourceOutboundMessagingCampaign() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Messaging Campaign`,
 
@@ -159,8 +159,8 @@ func resourceOutboundMessagingCampaign() *schema.Resource {
 	}
 }
 
-func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -175,17 +175,17 @@ func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformcl
 		}
 
 		for _, entity := range *sdkMessagingcampaignEntityListing.Entities {
-			resources[*entity.Id] = &resource_exporter.ResourceMeta{Name: *entity.Name}
+			resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: *entity.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func OutboundMessagingcampaignExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func OutboundMessagingcampaignExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundMessagingcampaign),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`division_id`:             {RefType: "genesyscloud_auth_division"},
 			`contact_list_id`:         {RefType: "genesyscloud_outbound_contact_list"},
 			`contact_list_filter_ids`: {RefType: "genesyscloud_outbound_contactlistfilter"},
@@ -304,7 +304,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Messagingcampaign %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundMessagingCampaign())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign())
 
 		if sdkmessagingcampaign.Name != nil {
 			d.Set("name", *sdkmessagingcampaign.Name)

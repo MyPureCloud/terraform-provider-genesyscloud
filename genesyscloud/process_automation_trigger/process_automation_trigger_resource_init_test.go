@@ -3,7 +3,7 @@ package process_automation_trigger
 import (
 	
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"	
-	//ob_ruleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	//obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 )

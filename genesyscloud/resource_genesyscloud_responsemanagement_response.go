@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -82,7 +82,7 @@ var (
 	}
 )
 
-func resourceResponsemanagementResponse() *schema.Resource {
+func ResourceResponsemanagementResponse() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud responsemanagement response`,
 
@@ -156,8 +156,8 @@ func resourceResponsemanagementResponse() *schema.Resource {
 	}
 }
 
-func getAllResponsemanagementResponse(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllResponsemanagementResponse(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -184,7 +184,7 @@ func getAllResponsemanagementResponse(_ context.Context, clientConfig *platformc
 				}
 
 				for _, entity := range *sdkresponseentitylisting.Entities {
-					resources[*entity.Id] = &resource_exporter.ResourceMeta{Name: *entity.Name}
+					resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: *entity.Name}
 				}
 			}
 		}
@@ -193,10 +193,10 @@ func getAllResponsemanagementResponse(_ context.Context, clientConfig *platformc
 	return resources, nil
 }
 
-func ResponsemanagementResponseExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func ResponsemanagementResponseExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllResponsemanagementResponse),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`library_ids`: {
 				RefType: "genesyscloud_responsemanagement_library",
 			},
@@ -324,7 +324,7 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceResponsemanagementResponse())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementResponse())
 
 		if sdkresponse.Name != nil {
 			d.Set("name", *sdkresponse.Name)

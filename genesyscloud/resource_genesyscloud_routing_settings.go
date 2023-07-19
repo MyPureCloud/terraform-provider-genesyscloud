@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func ResourceRoutingSettings() *schema.Resource {
@@ -84,16 +84,16 @@ func ResourceRoutingSettings() *schema.Resource {
 	}
 }
 
-func getAllRoutingSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
-	resources["0"] = &resource_exporter.ResourceMeta{Name: "routing_settings"}
+func getAllRoutingSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	resources["0"] = &resourceExporter.ResourceMeta{Name: "routing_settings"}
 	return resources, nil
 }
 
-func RoutingSettingsExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func RoutingSettingsExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingSettings),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 

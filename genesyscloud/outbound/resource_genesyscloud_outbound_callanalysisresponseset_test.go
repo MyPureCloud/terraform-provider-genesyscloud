@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	ob_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
@@ -115,7 +115,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 			},
 			{
 				// Test outbound flow reference when reactionType is 'transfer_flow'
-				Config: `data "genesyscloud_auth_division_home" "home" {}` + ob_contact_list.GenerateOutboundContactList(
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + obContactList.GenerateOutboundContactList(
 					contactListResourceId,
 					contactListName,
 					nullValue,
@@ -125,7 +125,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 					falseValue,
 					nullValue,
 					nullValue,
-					ob_contact_list.GeneratePhoneColumnsBlock("Cell",
+					obContactList.GeneratePhoneColumnsBlock("Cell",
 						"cell",
 						nullValue,
 					),

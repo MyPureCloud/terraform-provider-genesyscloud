@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	ob_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
@@ -28,7 +28,7 @@ func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
 		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: ob_contact_list.GenerateOutboundContactList(
+				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId,
 					contactListName,
 					nullValue,
@@ -39,7 +39,7 @@ func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
 					nullValue,
 					nullValue,
 					"",
-					ob_contact_list.GeneratePhoneColumnsBlock(
+					obContactList.GeneratePhoneColumnsBlock(
 						column1,
 						"cell",
 						nullValue,

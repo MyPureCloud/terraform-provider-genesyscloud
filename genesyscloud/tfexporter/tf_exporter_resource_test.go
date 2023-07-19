@@ -5,7 +5,7 @@ import (
     "github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"    
     ob"terraform-provider-genesyscloud/genesyscloud/outbound"
     gcloud "terraform-provider-genesyscloud/genesyscloud"
-    resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+    resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
     outbound_attempt_limit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
     outbound_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
     "testing"
@@ -14,7 +14,7 @@ import (
 // had to do an init here since manual function call in export_test will not work since exporter already loaded 
 // at ValidateFunc: gcloud.ValidateSubStringInSlice(gcloud.GetAvailableExporterTypes()),
 func initTestresources() {
-    resourceExporters = make(map[string]*resource_exporter.ResourceExporter)
+    resourceExporters = make(map[string]*resourceExporter.ResourceExporter)
     providerResources = make(map[string]*schema.Resource)
     
     reg_instance := &registerTestInstance{}
@@ -95,6 +95,23 @@ func (r *registerTestInstance) registerTestResources() {
     providerResources["genesyscloud_webdeployments_configuration"] = gcloud.ResourceWebDeploymentConfiguration()
     providerResources["genesyscloud_webdeployments_deployment"] = gcloud.ResourceWebDeployment()
     providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
+
+    providerResources["genesyscloud_outbound_attempt_limit"] = outbound_attempt_limit.ResourceOutboundAttemptLimit()
+    providerResources["genesyscloud_outbound_callanalysisresponseset"] = ob.ResourceOutboundCallAnalysisResponseSet()
+    providerResources["genesyscloud_outbound_callabletimeset"] = ob.ResourceOutboundCallabletimeset()
+    providerResources["genesyscloud_outbound_campaign"] = ob.ResourceOutboundCampaign()
+    providerResources["genesyscloud_outbound_contact_list"] = outbound_contact_list.ResourceOutboundContactList()
+    providerResources["genesyscloud_outbound_contactlistfilter"] = ob.ResourceOutboundContactListFilter()
+    providerResources["genesyscloud_outbound_messagingcampaign"] = ob.ResourceOutboundMessagingCampaign()
+    providerResources["genesyscloud_outbound_sequence"] = ob.ResourceOutboundSequence()
+    providerResources["genesyscloud_outbound_dnclist"] = ob.ResourceOutboundDncList()
+    providerResources["genesyscloud_outbound_campaignrule"] = ob.ResourceOutboundCampaignRule()
+    providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
+    providerResources["genesyscloud_responsemanagement_response"] = gcloud.ResourceResponsemanagementResponse()
+    providerResources["genesyscloud_script"] = gcloud.ResourceScript()
+    providerResources["genesyscloud_routing_sms_address"] = gcloud.ResourceRoutingSmsAddress()
+    providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
+
     providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
 
@@ -176,15 +193,13 @@ func (r *registerTestInstance) registerTestExporters() {
     RegisterExporter("genesyscloud_webdeployments_configuration", gcloud.WebDeploymentConfigurationExporter())
     RegisterExporter("genesyscloud_webdeployments_deployment", gcloud.WebDeploymentExporter())
     RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
-
-    
-    
-    resource_exporter.SetRegisterExporter(resourceExporters)
+  
+    resourceExporter.SetRegisterExporter(resourceExporters)
 }
 
 
 
-func RegisterExporter(exporterName string, resourceExporter *resource_exporter.ResourceExporter) {
+func RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {
     resourceExporters[exporterName] = resourceExporter
 }
 

@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -349,8 +349,8 @@ var (
 	}
 )
 
-func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(clientConfig)
 
 	pageCount := 1 // Needed because of broken journey common paging
@@ -366,7 +366,7 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 		}
 
 		for _, actionMap := range *actionMaps.Entities {
-			resources[*actionMap.Id] = &resource_exporter.ResourceMeta{Name: *actionMap.DisplayName}
+			resources[*actionMap.Id] = &resourceExporter.ResourceMeta{Name: *actionMap.DisplayName}
 		}
 
 		pageCount = *actionMaps.PageCount
@@ -375,10 +375,10 @@ func getAllJourneyActionMaps(_ context.Context, clientConfig *platformclientv2.C
 	return resources, nil
 }
 
-func JourneyActionMapExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func JourneyActionMapExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllJourneyActionMaps),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"trigger_with_segments":                                             {RefType: "genesyscloud_journey_segment"},
 			"trigger_with_outcome_probability_conditions.outcome_id":            {RefType: "genesyscloud_journey_outcome"},
 			"action.architect_flow_fields.architect_flow_id":                    {RefType: "genesyscloud_flow"},

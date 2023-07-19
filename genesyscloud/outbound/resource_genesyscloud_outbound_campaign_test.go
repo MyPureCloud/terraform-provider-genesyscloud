@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	ob_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -71,7 +71,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 
 	referencedResources := fmt.Sprintf(`
 		data "genesyscloud_auth_division_home" "home" {}
-		`) + ob_contact_list.GenerateOutboundContactList(
+		`) + obContactList.GenerateOutboundContactList(
 		contactListResourceId,
 		"contact list "+uuid.NewString(),
 		nullValue,
@@ -81,17 +81,17 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		falseValue,
 		nullValue,
 		nullValue,
-		ob_contact_list.GeneratePhoneColumnsBlock(
+		obContactList.GeneratePhoneColumnsBlock(
 			"Cell",
 			"cell",
 			strconv.Quote("Cell"),
 		),
-		ob_contact_list.GeneratePhoneColumnsBlock(
+		obContactList.GeneratePhoneColumnsBlock(
 			"Home",
 			"home",
 			strconv.Quote("Home"),
 		),
-		ob_contact_list.GeneratePhoneColumnsDataTypeSpecBlock(
+		obContactList.GeneratePhoneColumnsDataTypeSpecBlock(
 			strconv.Quote("zipcode"), // columnName
 			strconv.Quote("TEXT"),    // columnDataType
 			nullValue,                // min
@@ -438,7 +438,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	referencedResources := ob_contact_list.GenerateOutboundContactList(
+	referencedResources := obContactList.GenerateOutboundContactList(
 		contactListResourceId,
 		"contact list "+uuid.NewString(),
 		nullValue,
@@ -448,12 +448,12 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		falseValue,
 		nullValue,
 		nullValue,
-		ob_contact_list.GeneratePhoneColumnsBlock(
+		obContactList.GeneratePhoneColumnsBlock(
 			"Cell",
 			"cell",
 			strconv.Quote("Cell"),
 		),
-		ob_contact_list.GeneratePhoneColumnsBlock(
+		obContactList.GeneratePhoneColumnsBlock(
 			"Home",
 			"home",
 			strconv.Quote("Home"),
@@ -1099,7 +1099,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 		callableTimeSet         string
 	)
 	if contactListResourceId != "" {
-		contactList = ob_contact_list.GenerateOutboundContactList(
+		contactList = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			"terraform contact list "+uuid.NewString(),
 			nullValue,
@@ -1109,8 +1109,8 @@ func generateReferencedResourcesForOutboundCampaignTests(
 			falseValue,
 			nullValue,
 			nullValue,
-			ob_contact_list.GeneratePhoneColumnsBlock("Cell", "cell", strconv.Quote("Cell")),
-			ob_contact_list.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
+			obContactList.GeneratePhoneColumnsBlock("Cell", "cell", strconv.Quote("Cell")),
+			obContactList.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
 	}
 	if dncListResourceId != "" {
 		dncList = generateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())

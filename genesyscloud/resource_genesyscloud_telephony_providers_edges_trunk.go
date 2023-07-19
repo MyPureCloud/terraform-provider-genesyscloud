@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func ResourceTrunk() *schema.Resource {
@@ -194,10 +194,10 @@ func deleteTrunk(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.
 	return nil
 }
 
-func TrunkExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func TrunkExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllTrunks),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"trunk_base_settings_id": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 			"edge_group_id":          {RefType: "genesyscloud_telephony_providers_edges_edge_group"},
 		},
@@ -207,8 +207,8 @@ func TrunkExporter() *resource_exporter.ResourceExporter {
 	}
 }
 
-func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
@@ -229,7 +229,7 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 
 			for _, trunk := range *trunks.Entities {
 				if trunk.State != nil && *trunk.State != "deleted" {
-					resources[*trunk.Id] = &resource_exporter.ResourceMeta{Name: *trunk.Name}
+					resources[*trunk.Id] = &resourceExporter.ResourceMeta{Name: *trunk.Name}
 				}
 			}
 		}

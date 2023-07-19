@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -134,8 +134,8 @@ var (
 	}
 )
 
-func getAllCampaignRules(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllCampaignRules(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -150,17 +150,17 @@ func getAllCampaignRules(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, campaignRuleConfig := range *campaignRuleConfigs.Entities {
-			resources[*campaignRuleConfig.Id] = &resource_exporter.ResourceMeta{Name: *campaignRuleConfig.Name}
+			resources[*campaignRuleConfig.Id] = &resourceExporter.ResourceMeta{Name: *campaignRuleConfig.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func OutboundCampaignRuleExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func OutboundCampaignRuleExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllCampaignRules),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`campaign_rule_actions.campaign_rule_action_entities.campaign_ids`: {
 				RefType: "genesyscloud_outbound_campaign",
 			},
@@ -177,7 +177,7 @@ func OutboundCampaignRuleExporter() *resource_exporter.ResourceExporter {
 	}
 }
 
-func resourceOutboundCampaignRule() *schema.Resource {
+func ResourceOutboundCampaignRule() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound campaign rule`,
 
@@ -338,7 +338,7 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Campaign Rule %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCampaignRule())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaignRule())
 
 		if sdkCampaignRule.Name != nil {
 			d.Set("name", *sdkCampaignRule.Name)

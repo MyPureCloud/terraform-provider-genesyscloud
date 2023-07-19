@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func ResourcePhoneBaseSettings() *schema.Resource {
@@ -233,8 +233,8 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
@@ -255,7 +255,7 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 			for _, phoneBaseSetting := range *phoneBaseSettings.Entities {
 				if phoneBaseSetting.State != nil && *phoneBaseSetting.State != "deleted" {
-					resources[*phoneBaseSetting.Id] = &resource_exporter.ResourceMeta{Name: *phoneBaseSetting.Name}
+					resources[*phoneBaseSetting.Id] = &resourceExporter.ResourceMeta{Name: *phoneBaseSetting.Name}
 				}
 			}
 		}
@@ -266,10 +266,10 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 	return resources, err
 }
 
-func PhoneBaseSettingsExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func PhoneBaseSettingsExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc:     GetAllWithPooledClient(getAllPhoneBaseSettings),
-		RefAttrs:             map[string]*resource_exporter.RefAttrSettings{},
+		RefAttrs:             map[string]*resourceExporter.RefAttrSettings{},
 		JsonEncodeAttributes: []string{"properties"},
 	}
 }

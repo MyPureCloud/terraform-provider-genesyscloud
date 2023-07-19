@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	ob_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 func TestAccResourceOutboundContactListFilter(t *testing.T) {
@@ -48,7 +48,7 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		rangeInSetUpdated     = []string{"a", "b"}
 	)
 
-	contactListResource := ob_contact_list.GenerateOutboundContactList(
+	contactListResource := obContactList.GenerateOutboundContactList(
 		contactListResourceId,
 		contactListName,
 		nullValue,
@@ -58,7 +58,7 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		nullValue,
 		nullValue,
 		nullValue,
-		ob_contact_list.GeneratePhoneColumnsBlock(
+		obContactList.GeneratePhoneColumnsBlock(
 			column,
 			"cell",
 			nullValue,

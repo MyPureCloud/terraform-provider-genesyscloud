@@ -11,13 +11,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func GroupRolesExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func GroupRolesExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllGroups),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"group_id":           {RefType: "genesyscloud_group"},
 			"roles.role_id":      {RefType: "genesyscloud_auth_role"},
 			"roles.division_ids": {RefType: "genesyscloud_auth_division", AltValues: []string{"*"}},

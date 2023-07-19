@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 
@@ -67,8 +67,8 @@ var (
 	}
 )
 
-func getAllAttemptLimits(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllAttemptLimits(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -83,15 +83,15 @@ func getAllAttemptLimits(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, attemptLimitConfig := range *attemptLimitConfigs.Entities {
-			resources[*attemptLimitConfig.Id] = &resource_exporter.ResourceMeta{Name: *attemptLimitConfig.Name}
+			resources[*attemptLimitConfig.Id] = &resourceExporter.ResourceMeta{Name: *attemptLimitConfig.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func OutboundAttemptLimitExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func OutboundAttemptLimitExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAttemptLimits),
 	}
 }

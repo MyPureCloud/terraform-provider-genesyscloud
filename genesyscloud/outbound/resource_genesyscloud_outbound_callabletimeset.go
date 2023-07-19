@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -57,7 +57,7 @@ var (
 	}
 )
 
-func resourceOutboundCallabletimeset() *schema.Resource {
+func ResourceOutboundCallabletimeset() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud outbound callabletimeset`,
 
@@ -85,14 +85,14 @@ func resourceOutboundCallabletimeset() *schema.Resource {
 	}
 }
 
-func OutboundCallableTimesetExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func OutboundCallableTimesetExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundCallableTimesets),
 	}
 }
 
-func getAllOutboundCallableTimesets(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllOutboundCallableTimesets(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -107,7 +107,7 @@ func getAllOutboundCallableTimesets(_ context.Context, clientConfig *platformcli
 		}
 
 		for _, callableTimesetConfig := range *callableTimesetConfigs.Entities {
-			resources[*callableTimesetConfig.Id] = &resource_exporter.ResourceMeta{Name: *callableTimesetConfig.Name}
+			resources[*callableTimesetConfig.Id] = &resourceExporter.ResourceMeta{Name: *callableTimesetConfig.Name}
 		}
 
 	}
@@ -191,7 +191,7 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundCallabletimeset())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallabletimeset())
 
 		if sdkcallabletimeset.Name != nil {
 			d.Set("name", *sdkcallabletimeset.Name)

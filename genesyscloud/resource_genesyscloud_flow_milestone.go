@@ -12,11 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	const pageSize = 100
@@ -32,17 +32,17 @@ func getAllFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Co
 		}
 
 		for _, milestone := range *milestones.Entities {
-			resources[*milestone.Id] = &resource_exporter.ResourceMeta{Name: *milestone.Name}
+			resources[*milestone.Id] = &resourceExporter.ResourceMeta{Name: *milestone.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func FlowMilestoneExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func FlowMilestoneExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllFlowMilestones),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}

@@ -3,7 +3,7 @@ package outbound_contact_list
 import (
 	
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"	
-	ob_attempt_limit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 )
@@ -26,12 +26,12 @@ type registerTestInstance struct{
 
 func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_contact_list"] = ResourceOutboundContactList()
-	providerResources["genesyscloud_outbound_attempt_limit"] = ob_attempt_limit.ResourceOutboundAttemptLimit()
+	providerResources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.ResourceOutboundAttemptLimit()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_outbound_contact_list"] =  DataSourceOutboundContactList()
-	providerDataSources["genesyscloud_outbound_attempt_limit"] =  ob_attempt_limit.DataSourceOutboundAttemptLimit()
+	providerDataSources["genesyscloud_outbound_attempt_limit"] =  obAttemptLimit.DataSourceOutboundAttemptLimit()
 	providerDataSources["genesyscloud_auth_division_home"] =  gcloud.DataSourceAuthDivisionHome()
 	providerDataSources["genesyscloud_auth_division_home"] =  gcloud.DataSourceAuthDivisionHome()
 }

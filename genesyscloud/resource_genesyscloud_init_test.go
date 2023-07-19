@@ -22,7 +22,10 @@ type registerTestInstance struct{
 }
 
 func (r *registerTestInstance) registerTestResources() {
+
 	r.resourceMapMutex.Lock()
+	defer r.resourceMapMutex.Unlock()
+
 	providerResources["genesyscloud_telephony_providers_edges_site"] =  ResourceSite()
     providerResources["genesyscloud_routing_wrapupcode"] =  ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_routing_queue"] =  ResourceRoutingQueue()
@@ -73,21 +76,21 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources["genesyscloud_orgauthorization_pairing"] = resourceOrgauthorizationPairing()
 	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = resourceSurveyForm()
+	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
 	providerResources["genesyscloud_responsemanagement_library"] = ResourceResponsemanagementLibrary()
-	providerResources["genesyscloud_responsemanagement_response"] = resourceResponsemanagementResponse()
+	providerResources["genesyscloud_responsemanagement_response"] = ResourceResponsemanagementResponse()
 	providerResources["genesyscloud_responsemanagement_responseasset"] = resourceResponseManagamentResponseAsset()
 	providerResources["genesyscloud_routing_email_domain"] = ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_email_route"] = ResourceRoutingEmailRoute()
 	providerResources["genesyscloud_routing_language"] = ResourceRoutingLanguage()
 	providerResources["genesyscloud_routing_queue"] = ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_skill"] = ResourceRoutingSkill()
-	providerResources["genesyscloud_routing_skill_group"] = resourceRoutingSkillGroup()
-	providerResources["genesyscloud_routing_sms_address"] = resourceRoutingSmsAddress()
+	providerResources["genesyscloud_routing_skill_group"] = ResourceRoutingSkillGroup()
+	providerResources["genesyscloud_routing_sms_address"] = ResourceRoutingSmsAddress()
 	providerResources["genesyscloud_routing_settings"] = ResourceRoutingSettings()
 	providerResources["genesyscloud_routing_utilization"] = ResourceRoutingUtilization()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_script"] = resourceScript()
+	providerResources["genesyscloud_script"] = ResourceScript()
 	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = ResourceTelephonyDidPool()
 	providerResources["genesyscloud_telephony_providers_edges_edge_group"] = ResourceEdgeGroup()
 	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = ResourceTelephonyExtensionPool()
@@ -101,12 +104,13 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_webdeployments_configuration"] = ResourceWebDeploymentConfiguration()
 	providerResources["genesyscloud_webdeployments_deployment"] = ResourceWebDeployment()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
-	r.resourceMapMutex.Unlock()
+	
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
 
 	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources["genesyscloud_telephony_providers_edges_site"] = DataSourceSite()
 	providerDataSources["genesyscloud_routing_wrapupcode"] =  DataSourceRoutingWrapupcode()
@@ -175,8 +179,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_webdeployments_configuration"] = dataSourceWebDeploymentsConfiguration()
 	providerDataSources["genesyscloud_webdeployments_deployment"] = dataSourceWebDeploymentsDeployment()
 	providerDataSources["genesyscloud_widget_deployment"] = dataSourceWidgetDeployments()
-
-	r.datasourceMapMutex.Unlock()
 
 }
 

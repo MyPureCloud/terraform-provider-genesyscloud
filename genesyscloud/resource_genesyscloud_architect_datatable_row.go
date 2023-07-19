@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 // Row IDs structured as {table-id}/{key-value}
@@ -32,8 +32,8 @@ func splitDatatableRowId(rowId string) (string, string) {
 	return "", ""
 }
 
-func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	tables, err := getAllArchitectDatatables(ctx, clientConfig)
@@ -56,7 +56,7 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 			for _, row := range *rows.Entities {
 				if keyVal, ok := row["key"]; ok {
 					keyStr := keyVal.(string) // Keys must be strings
-					resources[createDatatableRowId(tableId, keyStr)] = &resource_exporter.ResourceMeta{Name: tableMeta.Name + "_" + keyStr}
+					resources[createDatatableRowId(tableId, keyStr)] = &resourceExporter.ResourceMeta{Name: tableMeta.Name + "_" + keyStr}
 				}
 			}
 		}
@@ -65,10 +65,10 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 	return resources, nil
 }
 
-func ArchitectDatatableRowExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func ArchitectDatatableRowExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllArchitectDatatableRows),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"datatable_id": {RefType: "genesyscloud_architect_datatable"},
 		},
 		JsonEncodeAttributes: []string{"properties_json"},

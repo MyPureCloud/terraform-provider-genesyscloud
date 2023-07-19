@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 // // Registering our resource provider for export
@@ -300,15 +300,15 @@ func ResourceOutboundRuleset() *schema.Resource {
 	}
 }
 
-func getAllOutboundRuleset(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllOutboundRuleset(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	outboundAPIProxy.ConfigureProxyApiInstance(clientConfig)
 	return outboundAPIProxy.ReadAllOutboundRuleset(outboundAPIProxy)
 }
 
-func OutboundRulesetExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func OutboundRulesetExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundRuleset),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"contact_list_id": {
 				RefType: "genesyscloud_outbound_contact_list",
 			},
@@ -326,8 +326,8 @@ func OutboundRulesetExporter() *resource_exporter.ResourceExporter {
 			},
 		},
 		JsonEncodeAttributes: []string{"rules.actions.properties.skills"},
-	 	CustomAttributeResolver: map[string]*resource_exporter.RefAttrCustomResolver{
-	 		"rules.actions.properties.skills": {ResolverFunc: resource_exporter.RuleSetSkillPropertyResolver},
+	 	CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+	 		"rules.actions.properties.skills": {ResolverFunc: resourceExporter.RuleSetSkillPropertyResolver},
 		},
 	}
 }

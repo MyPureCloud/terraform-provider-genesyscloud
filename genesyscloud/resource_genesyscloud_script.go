@@ -17,12 +17,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	files "terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
-func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	scriptsAPI := platformclientv2.NewScriptsApiWithConfig(clientConfig)
 	pageSize := 50
 
@@ -35,25 +35,25 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 			break
 		}
 		for _, script := range *scripts.Entities {
-			resources[*script.Id] = &resource_exporter.ResourceMeta{Name: *script.Name}
+			resources[*script.Id] = &resourceExporter.ResourceMeta{Name: *script.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func ScriptExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func ScriptExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllScripts),
-		RefAttrs:         map[string]*resource_exporter.RefAttrSettings{},
-		CustomFileWriter: resource_exporter.CustomFileWriterSettings{
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ScriptResolver,
 			SubDirectory:              "scripts",
 		},
 	}
 }
 
-func resourceScript() *schema.Resource {
+func ResourceScript() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Script",
 
@@ -169,7 +169,7 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return resource.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceScript())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceScript())
 
 		if script.Name != nil {
 			_ = d.Set("script_name", *script.Name)

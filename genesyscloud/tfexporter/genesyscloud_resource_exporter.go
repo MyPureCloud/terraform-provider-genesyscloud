@@ -22,7 +22,7 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -43,7 +43,7 @@ var (
 
 	providerDataSources map[string]*schema.Resource
 	providerResources map[string]*schema.Resource
-	resourceExporters map[string]*resource_exporter.ResourceExporter
+	resourceExporters map[string]*resourceExporter.ResourceExporter
 )
 
 type unresolvableAttributeInfo struct {
@@ -66,7 +66,7 @@ type GenesysCloudResourceExporter struct {
 	provider              *schema.Provider
 	exportFilePath        string
 	tfVarsFilePath        string
-	exporters             *map[string]*resource_exporter.ResourceExporter
+	exporters             *map[string]*resourceExporter.ResourceExporter
 	resources             []resourceInfo
 	resourceTypeHCLBlocks [][]byte
 	resourceTypeMaps      map[string]map[string]gcloud.JsonMap
@@ -205,7 +205,7 @@ func (g *GenesysCloudResourceExporter) setUpExportFilePaths() (diagErr diag.Diag
 // elements in the resource_type attribute will be returned.
 func (g *GenesysCloudResourceExporter) retrieveExporters() {
 	log.Printf("Retrieving exporters list")
-	exports := resource_exporter.GetResourceExporters()
+	exports := resourceExporter.GetResourceExporters()
 
 	if g.resourceTypeFilter != nil && g.filterList != nil {
 		exports = g.resourceTypeFilter(exports, *g.filterList)
@@ -277,7 +277,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 	// We use concurrency here to spin off each exporter type and getting the data
 	for resType, exporter := range *g.exporters {
 		wg.Add(1)
-		go func(resType string, exporter *resource_exporter.ResourceExporter) {
+		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
 			//
 			typeResources, err := getResourcesForType(resType, g.provider, exporter, g.meta)
@@ -415,7 +415,7 @@ func (g *GenesysCloudResourceExporter) sourceForVersion(version string) string {
 	return providerSource
 }
 
-func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[string]*resource_exporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[string]*resourceExporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
 	errorChan := make(chan diag.Diagnostics)
 	wgDone := make(chan bool)
 	// Cancel remaining goroutines if an error occurs
@@ -425,7 +425,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	var wg sync.WaitGroup
 	for name, exporter := range exporters {
 		wg.Add(1)
-		go func(name string, exporter *resource_exporter.ResourceExporter) {
+		go func(name string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
 			log.Printf("Getting all resources for type %s", name)
 			exporter.FilterResource = g.resourceFilter
@@ -494,7 +494,7 @@ func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
 	return err
 }
 
-func getResourcesForType(resType string, provider *schema.Provider, exporter *resource_exporter.ResourceExporter, meta interface{}) ([]resourceInfo, diag.Diagnostics) {
+func getResourcesForType(resType string, provider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceInfo, diag.Diagnostics) {
 	lenResources := len(exporter.SanitizedResourceMap)
 	errorChan := make(chan diag.Diagnostics, lenResources)
 	resourceChan := make(chan resourceInfo, lenResources)
@@ -510,7 +510,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *re
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
 	for id, resMeta := range exporter.SanitizedResourceMap {
-		go func(id string, resMeta *resource_exporter.ResourceMeta) {
+		go func(id string, resMeta *resourceExporter.ResourceMeta) {
 			defer wg.Done()
 
 			fetchResourceState := func() error {
@@ -583,7 +583,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *re
 	}
 }
 
-func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resource_exporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
+func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
@@ -641,7 +641,7 @@ func sanitizeConfigMap(
 	resourceName string,
 	configMap map[string]interface{},
 	prevAttr string,
-	exporters map[string]*resource_exporter.ResourceExporter, //Map of all of the exporters
+	exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
 	exportingState bool,
 	exportingAsHCL bool) ([]unresolvableAttributeInfo, bool) {
 	exporter := exporters[resourceType] //Get the specific export that we will be working with
@@ -828,7 +828,7 @@ func sanitizeConfigArray(
 	resourceType string,
 	anArray []interface{},
 	currAttr string,
-	exporters map[string]*resource_exporter.ResourceExporter,
+	exporters map[string]*resourceExporter.ResourceExporter,
 	exportingState bool,
 	exportingAsHCL bool) []interface{} {
 	exporter := exporters[resourceType]
@@ -863,7 +863,7 @@ func sanitizeConfigArray(
 	return result
 }
 
-func populateConfigExcluded(exporters map[string]*resource_exporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
+func populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
 	for _, excluded := range configExcluded {
 		resourceIdx := strings.Index(excluded, ".")
 		if resourceIdx == -1 {

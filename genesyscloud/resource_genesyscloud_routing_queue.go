@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -148,8 +148,8 @@ var (
 	}
 )
 
-func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	// Newly created resources often aren't returned unless there's a delay
@@ -167,17 +167,17 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, queue := range *queues.Entities {
-			resources[*queue.Id] = &resource_exporter.ResourceMeta{Name: *queue.Name}
+			resources[*queue.Id] = &resourceExporter.ResourceMeta{Name: *queue.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func RoutingQueueExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func RoutingQueueExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingQueues),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":                              {RefType: "genesyscloud_auth_division"},
 			"queue_flow_id":                            {RefType: "genesyscloud_flow"},
 			"email_in_queue_flow_id":                   {RefType: "genesyscloud_flow"},
@@ -200,9 +200,9 @@ func RoutingQueueExporter() *resource_exporter.ResourceExporter {
 			"members":                {"user_id"},
 		},
 		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
-		CustomAttributeResolver: map[string]*resource_exporter.RefAttrCustomResolver{
-			"bullseye_rings.member_groups.member_group_id":           {ResolverFunc: resource_exporter.MemberGroupsResolver},
-			"conditional_group_routing_rules.groups.member_group_id": {ResolverFunc: resource_exporter.MemberGroupsResolver},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"bullseye_rings.member_groups.member_group_id":           {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"conditional_group_routing_rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
 		},
 	}
 }

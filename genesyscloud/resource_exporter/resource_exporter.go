@@ -30,7 +30,7 @@ type ResourceMeta struct {
 	IdPrefix string
 }
 
-// resource_exporter.ResourceIDMetaMap is a map of IDs to ResourceMeta
+// resourceExporter.ResourceIDMetaMap is a map of IDs to ResourceMeta
 type ResourceIDMetaMap map[string]*ResourceMeta
 
 // GetAllResourcesFunc is a method that returns all resource IDs
@@ -265,12 +265,12 @@ func SanitizeResourceName(inputName string) string {
 
 func RegisterExporter(exporterName string, resourceExporter *ResourceExporter) {
 	resourceExporterMapMutex.Lock()
-	resourceExporters[exporterName] = resourceExporter
-	resourceExporterMapMutex.Unlock()
+	defer resourceExporterMapMutex.Unlock()
+	resourceExporters[exporterName] = resourceExporter	
 }
 
 func SetRegisterExporter(resources map[string]*ResourceExporter) {
 	resourceExporterMapMutex.Lock()
-	resourceExporters = resources
-	resourceExporterMapMutex.Unlock()
+	defer resourceExporterMapMutex.Unlock()
+	resourceExporters = resources	
 }

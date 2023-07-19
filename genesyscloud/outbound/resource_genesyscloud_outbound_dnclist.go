@@ -14,12 +14,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func getAllOutboundDncLists(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllOutboundDncLists(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -32,23 +32,23 @@ func getAllOutboundDncLists(_ context.Context, clientConfig *platformclientv2.Co
 			break
 		}
 		for _, dncListConfig := range *dncListConfigs.Entities {
-			resources[*dncListConfig.Id] = &resource_exporter.ResourceMeta{Name: *dncListConfig.Name}
+			resources[*dncListConfig.Id] = &resourceExporter.ResourceMeta{Name: *dncListConfig.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func OutboundDncListExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func OutboundDncListExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllOutboundDncLists),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }
 
-func resourceOutboundDncList() *schema.Resource {
+func ResourceOutboundDncList() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound DNC List`,
 
@@ -285,7 +285,7 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundDncList())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList())
 
 		if sdkDncList.Name != nil {
 			_ = d.Set("name", *sdkDncList.Name)

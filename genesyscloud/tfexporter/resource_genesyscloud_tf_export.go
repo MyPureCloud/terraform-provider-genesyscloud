@@ -11,7 +11,7 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/go-cty/cty"
 
@@ -62,7 +62,7 @@ func ResourceTfExport() *schema.Resource {
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: gcloud.ValidateSubStringInSlice(resource_exporter.GetAvailableExporterTypes()),
+					ValidateFunc: gcloud.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
 				Deprecated:    "Use include_filter_resources attribute instead",
@@ -74,7 +74,7 @@ func ResourceTfExport() *schema.Resource {
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: gcloud.ValidateSubStringInSlice(resource_exporter.GetAvailableExporterTypes()),
+					ValidateFunc: gcloud.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
 				ConflictsWith: []string{"resource_types", "exclude_filter_resources"},
@@ -85,7 +85,7 @@ func ResourceTfExport() *schema.Resource {
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: gcloud.ValidateSubStringInSlice(resource_exporter.GetAvailableExporterTypes()),
+					ValidateFunc: gcloud.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
 				ConflictsWith: []string{"resource_types", "include_filter_resources"},

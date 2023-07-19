@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -229,8 +229,8 @@ func flattenPhoneTrunkBases(trunkBases []platformclientv2.Trunkbase) *schema.Set
 	return schema.NewSet(schema.HashString, interfaceList)
 }
 
-func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
@@ -247,7 +247,7 @@ func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configurati
 
 		for _, edgeGroup := range *edgeGroups.Entities {
 			if edgeGroup.State != nil && *edgeGroup.State != "deleted" {
-				resources[*edgeGroup.Id] = &resource_exporter.ResourceMeta{Name: *edgeGroup.Name}
+				resources[*edgeGroup.Id] = &resourceExporter.ResourceMeta{Name: *edgeGroup.Name}
 			}
 		}
 	}
@@ -265,7 +265,7 @@ func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configurati
 
 		for _, edgeGroup := range *edgeGroups.Entities {
 			if edgeGroup.State != nil && *edgeGroup.State != "deleted" {
-				resources[*edgeGroup.Id] = &resource_exporter.ResourceMeta{Name: *edgeGroup.Name}
+				resources[*edgeGroup.Id] = &resourceExporter.ResourceMeta{Name: *edgeGroup.Name}
 			}
 		}
 	}
@@ -273,10 +273,10 @@ func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configurati
 	return resources, nil
 }
 
-func EdgeGroupExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func EdgeGroupExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllEdgeGroups),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"phone_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 		},
 	}

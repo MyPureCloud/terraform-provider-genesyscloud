@@ -15,12 +15,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	webDeploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(clientConfig)
 
 	deployments, _, getErr := webDeploymentsAPI.GetWebdeploymentsDeployments([]string{})
@@ -29,16 +29,16 @@ func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Co
 	}
 
 	for _, deployment := range *deployments.Entities {
-		resources[*deployment.Id] = &resource_exporter.ResourceMeta{Name: *deployment.Name}
+		resources[*deployment.Id] = &resourceExporter.ResourceMeta{Name: *deployment.Name}
 	}
 
 	return resources, nil
 }
 
-func WebDeploymentExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func WebDeploymentExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllWebDeployments),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"flow_id":          {RefType: "genesyscloud_flow"},
 			"configuration.id": {RefType: "genesyscloud_webdeployments_configuration"},
 		},

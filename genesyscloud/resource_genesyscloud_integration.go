@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -54,8 +54,8 @@ var (
 	}
 )
 
-func getAllIntegrations(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllIntegrations(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -70,21 +70,21 @@ func getAllIntegrations(_ context.Context, clientConfig *platformclientv2.Config
 		}
 
 		for _, integration := range *integrations.Entities {
-			resources[*integration.Id] = &resource_exporter.ResourceMeta{Name: *integration.Name}
+			resources[*integration.Id] = &resourceExporter.ResourceMeta{Name: *integration.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func IntegrationExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func IntegrationExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllIntegrations),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"config.credentials.*": {RefType: "genesyscloud_integration_credential"},
 		},
 		JsonEncodeAttributes: []string{"config.properties", "config.advanced"},
-		EncodedRefAttrs: map[*resource_exporter.JsonEncodeRefAttr]*resource_exporter.RefAttrSettings{
+		EncodedRefAttrs: map[*resourceExporter.JsonEncodeRefAttr]*resourceExporter.RefAttrSettings{
 			{Attr: "config.properties", NestedAttr: "groups"}: {RefType: "genesyscloud_group"},
 		},
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 )
@@ -26,8 +26,8 @@ func init() {
 	architectIvrProxy = architect_api.NewArchitectIvrProxy()
 }
 
-func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	architectIvrProxy.ConfigureProxyApiInstance(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -43,7 +43,7 @@ func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configur
 
 		for _, ivrConfig := range *ivrConfigs.Entities {
 			if ivrConfig.State != nil && *ivrConfig.State != "deleted" {
-				resources[*ivrConfig.Id] = &resource_exporter.ResourceMeta{Name: *ivrConfig.Name}
+				resources[*ivrConfig.Id] = &resourceExporter.ResourceMeta{Name: *ivrConfig.Name}
 			}
 		}
 	}
@@ -51,10 +51,10 @@ func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configur
 	return resources, nil
 }
 
-func ArchitectIvrExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func ArchitectIvrExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllIvrConfigs),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"open_hours_flow_id":    {RefType: "genesyscloud_flow"},
 			"closed_hours_flow_id":  {RefType: "genesyscloud_flow"},
 			"holiday_hours_flow_id": {RefType: "genesyscloud_flow"},

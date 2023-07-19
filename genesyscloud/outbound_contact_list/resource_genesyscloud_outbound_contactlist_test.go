@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	ob_attempt_limit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 )
 
 func TestAccResourceOutboundContactListBasic(t *testing.T) {
@@ -243,14 +243,14 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				),
 			},
 			{
-				Config: ob_attempt_limit.GenerateAttemptLimitResource(
+				Config: obAttemptLimit.GenerateAttemptLimitResource(
 					attemptLimitResourceID,
 					attemptLimitName,
 					"5",
 					"5",
 					"America/Chicago",
 					"TODAY",
-				) + ob_attempt_limit.GenerateOutboundAttemptLimitDataSource(
+				) + obAttemptLimit.GenerateOutboundAttemptLimitDataSource(
 					attemptLimitDataSourceID,
 					attemptLimitName,
 					"genesyscloud_outbound_attempt_limit."+attemptLimitResourceID,

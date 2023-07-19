@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func ResourceResponsemanagementLibrary() *schema.Resource {
@@ -37,8 +37,8 @@ func ResourceResponsemanagementLibrary() *schema.Resource {
 	}
 }
 
-func getAllResponsemanagementLibrary(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllResponsemanagementLibrary(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -53,15 +53,15 @@ func getAllResponsemanagementLibrary(_ context.Context, clientConfig *platformcl
 		}
 
 		for _, entity := range *sdklibraryentitylisting.Entities {
-			resources[*entity.Id] = &resource_exporter.ResourceMeta{Name: *entity.Name}
+			resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: *entity.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func ResponsemanagementLibraryExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func ResponsemanagementLibraryExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllResponsemanagementLibrary),
 	}
 }

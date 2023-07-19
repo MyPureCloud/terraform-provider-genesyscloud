@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -34,8 +34,8 @@ var (
 	}
 )
 
-func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.Configuration) (resource_exporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resource_exporter.ResourceIDMetaMap)
+func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -66,7 +66,7 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 				}
 
 				for _, route := range *routes.Entities {
-					resources[*route.Id] = &resource_exporter.ResourceMeta{
+					resources[*route.Id] = &resourceExporter.ResourceMeta{
 						Name:     *route.Pattern + *domain.Id,
 						IdPrefix: *domain.Id + "/",
 					}
@@ -76,10 +76,10 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 	}
 }
 
-func RoutingEmailRouteExporter() *resource_exporter.ResourceExporter {
-	return &resource_exporter.ResourceExporter{
+func RoutingEmailRouteExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingEmailRoutes),
-		RefAttrs: map[string]*resource_exporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"domain_id":                     {RefType: "genesyscloud_routing_email_domain"},
 			"queue_id":                      {RefType: "genesyscloud_routing_queue"},
 			"skill_ids":                     {RefType: "genesyscloud_routing_skill"},

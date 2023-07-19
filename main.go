@@ -7,11 +7,11 @@ import (
         gcloud "terraform-provider-genesyscloud/genesyscloud"
         registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
         ob "terraform-provider-genesyscloud/genesyscloud/outbound"
-        ob_attempt_limit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
-        ob_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+        obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+        obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
         obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
         pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
-        resource_exporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+        resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
         tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 
         "github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
@@ -42,7 +42,7 @@ var (
 
 var providerResources map[string]*schema.Resource
 var providerDataSources map[string]*schema.Resource
-var resourceExporters map[string]*resource_exporter.ResourceExporter
+var resourceExporters map[string]*resourceExporter.ResourceExporter
 
 func main() {
         var debugMode bool
@@ -52,7 +52,7 @@ func main() {
 
         providerResources = make(map[string]*schema.Resource)
         providerDataSources = make(map[string]*schema.Resource)
-        resourceExporters = make(map[string]*resource_exporter.ResourceExporter)
+        resourceExporters = make(map[string]*resourceExporter.ResourceExporter)
 
         registerResources()
 
@@ -80,9 +80,9 @@ func registerResources() {
 
         ob.SetRegistrar(reg_instance)
         gcloud.SetRegistrar(reg_instance)
-        ob_attempt_limit.SetRegistrar(reg_instance)
-        ob_contact_list.SetRegistrar(reg_instance)
-        resource_exporter.SetRegisterExporter(resourceExporters)
+        obAttemptLimit.SetRegistrar(reg_instance)
+        obContactList.SetRegistrar(reg_instance)
+        resourceExporter.SetRegisterExporter(resourceExporters)
 
         // setting resources for Use cases  like TF export where provider is used in resource classes.
         //tfexp.GetRegistrarresources()
@@ -93,18 +93,18 @@ func registerResources() {
 
 func (r *RegisterInstance) RegisterResource(resourceName string, resource *schema.Resource) {
         r.resourceMapMutex.Lock()
-        providerResources[resourceName] = resource
-        r.resourceMapMutex.Unlock()
+        defer r.resourceMapMutex.Unlock()
+        providerResources[resourceName] = resource      
 }
 
 func (r *RegisterInstance) RegisterDataSource(dataSourceName string, datasource *schema.Resource) {
         r.datasourceMapMutex.Lock()
-        providerDataSources[dataSourceName] = datasource
-        r.datasourceMapMutex.Unlock()
+        defer r.datasourceMapMutex.Unlock()
+        providerDataSources[dataSourceName] = datasource       
 }
 
-func (r *RegisterInstance) RegisterExporter(exporterName string, resourceExporter *resource_exporter.ResourceExporter) {
+func (r *RegisterInstance) RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {
         r.exporterMapMutex.Lock()
-        resourceExporters[exporterName] = resourceExporter
-        r.exporterMapMutex.Unlock()
+        defer r.exporterMapMutex.Unlock()
+        resourceExporters[exporterName] = resourceExporter        
 }

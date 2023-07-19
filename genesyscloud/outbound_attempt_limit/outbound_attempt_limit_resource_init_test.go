@@ -37,13 +37,3 @@ func TestMain(m *testing.M) {
 	// Run the test suite for outbound ruleset
 	m.Run()
 }
-
-
-// main lo unna funtion  is called by individual packages
-
-// main has struct wit those function
-// ind packages have interface 
-
-
-// outbound lo una function should be called by ob_ruleset
-
