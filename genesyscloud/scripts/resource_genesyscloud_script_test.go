@@ -1,12 +1,13 @@
-package genesyscloud
+package scripts
 
 import (
 	"fmt"
 	"log"
 	"net/http"
 	"path/filepath"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -14,30 +15,37 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+func getTestDataPath(elem ...string) string {
+	basePath := filepath.Join("../..", "test", "data")
+	subPath := filepath.Join(elem...)
+	return filepath.Join(basePath, subPath)
+}
+
 func TestAccResourceScriptBasic(t *testing.T) {
 	t.Parallel()
 	var (
 		resourceId    = "script"
 		name          = "testscriptname" + uuid.NewString()
 		nameUpdated   = "testscriptname" + uuid.NewString()
-		filePath      = testrunner.GetTestDataPath("resource", "genesyscloud_script", "test_script.json")
+		filePath      = getTestDataPath("resource", "genesyscloud_script", "test_script.json")
 		substitutions = make(map[string]string, 0)
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateScriptResource(
 					resourceId,
 					name,
 					filePath,
-					GenerateSubstitutionsMap(substitutions),
+					gcloud.GenerateSubstitutionsMap(substitutions),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "script_name", name),
 					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "filepath", filePath),
+					validateScriptPublished("genesyscloud_script."+resourceId),
 				),
 			},
 			// Update
@@ -46,11 +54,12 @@ func TestAccResourceScriptBasic(t *testing.T) {
 					resourceId,
 					nameUpdated,
 					filePath,
-					GenerateSubstitutionsMap(substitutions),
+					gcloud.GenerateSubstitutionsMap(substitutions),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "script_name", nameUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "filepath", filePath),
+					validateScriptPublished("genesyscloud_script."+resourceId),
 				),
 			},
 			{
@@ -102,4 +111,41 @@ func testVerifyScriptDestroyed(state *terraform.State) error {
 	}
 	// Success. All Scripts destroyed
 	return nil
+}
+
+// validateScriptPublished checks to see if the script has been published after it was creart
+func validateScriptPublished(scriptResourceName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		scriptResource, ok := state.RootModule().Resources[scriptResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find script %s in state", scriptResourceName)
+		}
+
+		scriptID := scriptResource.Primary.ID
+		scriptsAPI := platformclientv2.NewScriptsApi()
+
+		script, resp, err := scriptsAPI.GetScriptsPublishedScriptId(scriptID, "")
+
+		//if response == 200
+		if resp.StatusCode == http.StatusOK && *script.Id == scriptID {
+			return nil
+		}
+
+		//If the item is not found this indicates it is not published
+		if resp.StatusCode == http.StatusNotFound && err == nil {
+			return fmt.Errorf("Script %s was created, but not published.", scriptID)
+		}
+
+		//Some APIs will return an error code even if the response code is a 404.
+		if resp.StatusCode == http.StatusNotFound && err == nil {
+			return fmt.Errorf("Script %s was created, but not published.", scriptID)
+		}
+
+		//Err
+		if err != nil {
+			// Unexpected error
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+		return nil
+	}
 }

@@ -1,9 +1,10 @@
-package genesyscloud
+package scripts
 
 import (
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -14,12 +15,12 @@ func TestAccDataSourceScript(t *testing.T) {
 		scriptDataSource = "script-data"
 		resourceId       = "script"
 		name             = "tfscript" + uuid.NewString()
-		filePath         = testrunner.GetTestDataPath("resource", "genesyscloud_script", "test_script.json")
+		filePath         = getTestDataPath("resource", "genesyscloud_script", "test_script.json")
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateScriptResource(
@@ -31,7 +32,6 @@ func TestAccDataSourceScript(t *testing.T) {
 					scriptDataSource,
 					name,
 					resourceId,
-					false, // published
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_script."+scriptDataSource, "id",
@@ -57,15 +57,14 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateScriptDataSource(
 					callbackDataSource,
 					callbackName,
 					"",
-					true, // published
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.genesyscloud_script."+callbackDataSource, "id",
@@ -78,7 +77,6 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					inboundDataSource,
 					inboundName,
 					"",
-					true, // published
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.genesyscloud_script."+inboundDataSource, "id",
@@ -91,7 +89,6 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					outboundDataSource,
 					outboundName,
 					"",
-					true, // published
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.genesyscloud_script."+outboundDataSource, "id",
@@ -103,19 +100,17 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 	})
 }
 
-func generateScriptDataSource(dataSourceID, name, resourceId string, published bool) string {
+func generateScriptDataSource(dataSourceID, name, resourceId string) string {
 	if resourceId != "" {
 		return fmt.Sprintf(`data "genesyscloud_script" "%s" {
 		name = "%s"
 		depends_on = [genesyscloud_script.%s]
-		published = %t
 	}
-	`, dataSourceID, name, resourceId, published)
+	`, dataSourceID, name, resourceId)
 	} else {
 		return fmt.Sprintf(`data "genesyscloud_script" "%s" {
 		name = "%s"
-		published = %t
 	}
-	`, dataSourceID, name, published)
+	`, dataSourceID, name)
 	}
 }

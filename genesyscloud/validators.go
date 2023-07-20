@@ -9,12 +9,13 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
+	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/nyaruka/phonenumbers"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists" 
-	files "terraform-provider-genesyscloud/genesyscloud/util/files" 
 )
 
 func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
@@ -123,7 +124,7 @@ func validateLocalDateTimes(date interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // Validates a file path or URL
-func validatePath(i interface{}, k string) (warnings []string, errors []error) {
+func ValidatePath(i interface{}, k string) (warnings []string, errors []error) {
 	v, ok := i.(string)
 	if !ok {
 		errors = append(errors, fmt.Errorf("expected type of %s to be string", k))

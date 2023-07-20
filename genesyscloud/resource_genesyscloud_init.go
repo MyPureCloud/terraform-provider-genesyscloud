@@ -4,8 +4,6 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
-
-
 func SetRegistrar(l registrar.Registrar) {
 
 	registerDataSources(l)
@@ -16,11 +14,11 @@ func SetRegistrar(l registrar.Registrar) {
 func registerDataSources(l registrar.Registrar) {
 
 	l.RegisterDataSource("genesyscloud_telephony_providers_edges_site", DataSourceSite())
-	l.RegisterDataSource("genesyscloud_routing_wrapupcode",  DataSourceRoutingWrapupcode())
-	l.RegisterDataSource("genesyscloud_routing_queue",  DataSourceRoutingQueue())
-	l.RegisterDataSource("genesyscloud_flow",  DataSourceFlow())
-	l.RegisterDataSource("genesyscloud_location",  DataSourceLocation())
-	l.RegisterDataSource("genesyscloud_auth_division_home",  DataSourceAuthDivisionHome())
+	l.RegisterDataSource("genesyscloud_routing_wrapupcode", DataSourceRoutingWrapupcode())
+	l.RegisterDataSource("genesyscloud_routing_queue", DataSourceRoutingQueue())
+	l.RegisterDataSource("genesyscloud_flow", DataSourceFlow())
+	l.RegisterDataSource("genesyscloud_location", DataSourceLocation())
+	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
 	l.RegisterDataSource("genesyscloud_architect_datatable", DataSourceArchitectDatatable())
 	l.RegisterDataSource("genesyscloud_architect_ivr", DataSourceArchitectIvr())
 	l.RegisterDataSource("genesyscloud_architect_emergencygroup", DataSourceArchitectEmergencyGroup())
@@ -49,7 +47,6 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_location", DataSourceLocation())
 	l.RegisterDataSource("genesyscloud_oauth_client", dataSourceOAuthClient())
 	l.RegisterDataSource("genesyscloud_organizations_me", dataSourceOrganizationsMe())
-	
 	l.RegisterDataSource("genesyscloud_quality_forms_evaluation", dataSourceQualityFormsEvaluations())
 	l.RegisterDataSource("genesyscloud_quality_forms_survey", dataSourceQualityFormsSurvey())
 	l.RegisterDataSource("genesyscloud_recording_media_retention_policy", dataSourceRecordingMediaRetentionPolicy())
@@ -64,8 +61,8 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_routing_sms_address", dataSourceRoutingSmsAddress())
 	l.RegisterDataSource("genesyscloud_routing_email_domain", dataSourceRoutingEmailDomain())
 	l.RegisterDataSource("genesyscloud_routing_wrapupcode", DataSourceRoutingWrapupcode())
- 	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
-	l.RegisterDataSource("genesyscloud_script", dataSourceScript())
+	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
+
 	l.RegisterDataSource("genesyscloud_station", dataSourceStation())
 	l.RegisterDataSource("genesyscloud_user", dataSourceUser())
 	l.RegisterDataSource("genesyscloud_telephony_providers_edges_did", dataSourceDid())
@@ -85,11 +82,11 @@ func registerDataSources(l registrar.Registrar) {
 
 func registerResources(l registrar.Registrar) {
 
-	l.RegisterResource("genesyscloud_routing_wrapupcode",  ResourceRoutingWrapupCode())
-	l.RegisterResource("genesyscloud_telephony_providers_edges_site",  ResourceSite())
-	l.RegisterResource("genesyscloud_routing_queue",  ResourceRoutingQueue())
-	l.RegisterResource("genesyscloud_flow",  ResourceFlow())
-	l.RegisterResource("genesyscloud_location",  ResourceLocation())
+	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
+	l.RegisterResource("genesyscloud_telephony_providers_edges_site", ResourceSite())
+	l.RegisterResource("genesyscloud_routing_queue", ResourceRoutingQueue())
+	l.RegisterResource("genesyscloud_flow", ResourceFlow())
+	l.RegisterResource("genesyscloud_location", ResourceLocation())
 	l.RegisterResource("genesyscloud_architect_datatable", ResourceArchitectDatatable())
 	l.RegisterResource("genesyscloud_architect_datatable_row", ResourceArchitectDatatableRow())
 	l.RegisterResource("genesyscloud_architect_emergencygroup", ResourceArchitectEmergencyGroup())
@@ -147,7 +144,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_routing_settings", ResourceRoutingSettings())
 	l.RegisterResource("genesyscloud_routing_utilization", ResourceRoutingUtilization())
 	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
-	l.RegisterResource("genesyscloud_script", ResourceScript())
 	l.RegisterResource("genesyscloud_telephony_providers_edges_did_pool", ResourceTelephonyDidPool())
 	l.RegisterResource("genesyscloud_telephony_providers_edges_edge_group", ResourceEdgeGroup())
 	l.RegisterResource("genesyscloud_telephony_providers_edges_extension_pool", ResourceTelephonyExtensionPool())
@@ -161,7 +157,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_webdeployments_configuration", ResourceWebDeploymentConfiguration())
 	l.RegisterResource("genesyscloud_webdeployments_deployment", ResourceWebDeployment())
 	l.RegisterResource("genesyscloud_widget_deployment", ResourceWidgetDeployment())
-
 
 }
 
@@ -216,7 +211,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_routing_sms_address", RoutingSmsAddressExporter())
 	l.RegisterExporter("genesyscloud_routing_utilization", RoutingUtilizationExporter())
 	l.RegisterExporter("genesyscloud_routing_wrapupcode", RoutingWrapupCodeExporter())
-	l.RegisterExporter("genesyscloud_script", ScriptExporter())
 	l.RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", TelephonyDidPoolExporter())
 	l.RegisterExporter("genesyscloud_telephony_providers_edges_edge_group", EdgeGroupExporter())
 	l.RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", TelephonyExtensionPoolExporter())

@@ -3,12 +3,12 @@
 page_title: "genesyscloud_script Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Scripts. Select a script by name.
+  Data source for Genesys Cloud Scripts. Select a script by name.  This will only search on published scripts.  Unpublished scripts will not be returned
 ---
 
 # genesyscloud_script (Data Source)
 
-Data source for Genesys Cloud Scripts. Select a script by name.
+Data source for Genesys Cloud Scripts. Select a script by name.  This will only search on published scripts.  Unpublished scripts will not be returned
 
 ## Example Usage
 
@@ -24,10 +24,6 @@ data "genesyscloud_script" "example-script" {
 ### Required
 
 - `name` (String) Script name.
-
-### Optional
-
-- `published` (Boolean) Filter by published scripts. Use this for querying default scripts. Defaults to `false`.
 
 ### Read-Only
 

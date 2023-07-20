@@ -1,21 +1,22 @@
 package main
 
 import (
-        "flag"
-        "sync"
+	"flag"
+	"sync"
 
-        gcloud "terraform-provider-genesyscloud/genesyscloud"
-        registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-        ob "terraform-provider-genesyscloud/genesyscloud/outbound"
-        obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
-        obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-        obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
-        pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
-        resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-        tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
+	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/scripts"
+	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 
-        "github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-        "github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -31,13 +32,13 @@ import (
 //go:generate git restore docs/index.md
 //go:generate go run terraform-provider-genesyscloud/apidocs
 var (
-        // these will be set by the goreleaser configuration
-        // to appropriate values for the compiled binary
-        // 0.1.0 is the default version for developing locally
-        version string = "0.1.0"
+	// these will be set by the goreleaser configuration
+	// to appropriate values for the compiled binary
+	// 0.1.0 is the default version for developing locally
+	version string = "0.1.0"
 
-        // goreleaser can also pass the specific commit if you want
-        // commit  string = ""
+	// goreleaser can also pass the specific commit if you want
+	// commit  string = ""
 )
 
 var providerResources map[string]*schema.Resource
@@ -45,66 +46,67 @@ var providerDataSources map[string]*schema.Resource
 var resourceExporters map[string]*resourceExporter.ResourceExporter
 
 func main() {
-        var debugMode bool
+	var debugMode bool
 
-        flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
-        flag.Parse()
+	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
+	flag.Parse()
 
-        providerResources = make(map[string]*schema.Resource)
-        providerDataSources = make(map[string]*schema.Resource)
-        resourceExporters = make(map[string]*resourceExporter.ResourceExporter)
+	providerResources = make(map[string]*schema.Resource)
+	providerDataSources = make(map[string]*schema.Resource)
+	resourceExporters = make(map[string]*resourceExporter.ResourceExporter)
 
-        registerResources()
+	registerResources()
 
-        opts := &plugin.ServeOpts{ProviderFunc: gcloud.New(version, providerResources, providerDataSources)}
+	opts := &plugin.ServeOpts{ProviderFunc: gcloud.New(version, providerResources, providerDataSources)}
 
-        if debugMode {
-                opts.Debug = true
-                opts.ProviderAddr = "registry.terraform.io/mypurecloud/genesyscloud"
-        }
-        plugin.Serve(opts)
+	if debugMode {
+		opts.Debug = true
+		opts.ProviderAddr = "registry.terraform.io/mypurecloud/genesyscloud"
+	}
+	plugin.Serve(opts)
 }
 
 type RegisterInstance struct {
-        resourceMapMutex   sync.RWMutex
-        datasourceMapMutex sync.RWMutex
-        exporterMapMutex   sync.RWMutex
+	resourceMapMutex   sync.RWMutex
+	datasourceMapMutex sync.RWMutex
+	exporterMapMutex   sync.RWMutex
 }
 
 func registerResources() {
 
-        reg_instance := &RegisterInstance{}
+	reg_instance := &RegisterInstance{}
 
-        pat.SetRegistrar(reg_instance)
-        obs.SetRegistrar(reg_instance)
+	pat.SetRegistrar(reg_instance)
+	obs.SetRegistrar(reg_instance)
 
-        ob.SetRegistrar(reg_instance)
-        gcloud.SetRegistrar(reg_instance)
-        obAttemptLimit.SetRegistrar(reg_instance)
-        obContactList.SetRegistrar(reg_instance)
-        resourceExporter.SetRegisterExporter(resourceExporters)
+	ob.SetRegistrar(reg_instance)
+	gcloud.SetRegistrar(reg_instance)
+	obAttemptLimit.SetRegistrar(reg_instance)
+	obContactList.SetRegistrar(reg_instance)
+	scripts.SetRegistrar(reg_instance)
+	resourceExporter.SetRegisterExporter(resourceExporters)
 
-        // setting resources for Use cases  like TF export where provider is used in resource classes.
-        //tfexp.GetRegistrarresources()
-        tfexp.SetRegistrar(reg_instance)
-        registrar.SetResources(providerResources, providerDataSources)
+	// setting resources for Use cases  like TF export where provider is used in resource classes.
+	//tfexp.GetRegistrarresources()
+	tfexp.SetRegistrar(reg_instance)
+	registrar.SetResources(providerResources, providerDataSources)
 
 }
 
 func (r *RegisterInstance) RegisterResource(resourceName string, resource *schema.Resource) {
-        r.resourceMapMutex.Lock()
-        defer r.resourceMapMutex.Unlock()
-        providerResources[resourceName] = resource      
+	r.resourceMapMutex.Lock()
+	defer r.resourceMapMutex.Unlock()
+	providerResources[resourceName] = resource
 }
 
 func (r *RegisterInstance) RegisterDataSource(dataSourceName string, datasource *schema.Resource) {
-        r.datasourceMapMutex.Lock()
-        defer r.datasourceMapMutex.Unlock()
-        providerDataSources[dataSourceName] = datasource       
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+	providerDataSources[dataSourceName] = datasource
 }
 
 func (r *RegisterInstance) RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {
-        r.exporterMapMutex.Lock()
-        defer r.exporterMapMutex.Unlock()
-        resourceExporters[exporterName] = resourceExporter        
+	r.exporterMapMutex.Lock()
+	defer r.exporterMapMutex.Unlock()
+	resourceExporters[exporterName] = resourceExporter
 }

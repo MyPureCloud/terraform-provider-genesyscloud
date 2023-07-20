@@ -11,12 +11,13 @@ import (
 	"strings"
 	"time"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	files  "terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -72,7 +73,7 @@ func ResourceFlow() *schema.Resource {
 				Description:  "YAML file path for flow configuration.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validatePath,
+				ValidateFunc: ValidatePath,
 			},
 			"file_content_hash": {
 				Description: "Hash value of the YAML file content. Used to detect changes.",

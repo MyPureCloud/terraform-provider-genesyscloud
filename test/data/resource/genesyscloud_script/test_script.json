@@ -209,7 +209,8 @@
                                 "value": {}
                             },
                             "value": {
-                                "typeName": "variable"
+                                "typeName": "variable",
+                                "value": "MyCheckBox"
                             },
                             "changeAction": {
                                 "typeName": "action",
