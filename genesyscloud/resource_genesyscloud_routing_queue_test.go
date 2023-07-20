@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -42,7 +42,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -85,7 +85,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
-					testDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
+					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
 					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
@@ -130,7 +130,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "calling_party_number", callingPartyNumber),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", trueValue),
-					testDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
+					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
 					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout2, slPercent2, slDuration2),
 					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout2, slPercent2, slDuration2),
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout2, slPercent2, slDuration2),
@@ -186,7 +186,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -241,7 +241,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_type", conditionalGroupRouting1GroupType),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceId, "id"),
 
-					testDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
+					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
 					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
@@ -329,7 +329,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.1.groups.0.member_group_type", conditionalGroupRouting2GroupType),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.1.groups.0.member_group_id", "genesyscloud_group."+groupResourceId, "id"),
 
-					testDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
+					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
 					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
@@ -373,7 +373,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 	// Create CGR queue with routing rules
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateRoutingSkillGroupResourceBasic(
@@ -428,7 +428,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_type", conditionalGroupRouting1GroupType),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceId, "id"),
 
-					testDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
+					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
 					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
@@ -473,7 +473,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
@@ -512,7 +512,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -600,7 +600,7 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -705,7 +705,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create with two wrapup codes
@@ -714,10 +714,10 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					queueName,
 					GenerateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
-				) + generateRoutingWrapupcodeResource(
+				) + GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource1,
 					wrapupCodeName1,
-				) + generateRoutingWrapupcodeResource(
+				) + GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource2,
 					wrapupCodeName2,
 				),
@@ -735,13 +735,13 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource1+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id",
 						"genesyscloud_routing_wrapupcode."+wrapupCodeResource3+".id"),
-				) + generateRoutingWrapupcodeResource(
+				) + GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource1,
 					wrapupCodeName1,
-				) + generateRoutingWrapupcodeResource(
+				) + GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource2,
 					wrapupCodeName2,
-				) + generateRoutingWrapupcodeResource(
+				) + GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource3,
 					wrapupCodeName3,
 				),
@@ -756,7 +756,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					queueResource,
 					queueName,
 					GenerateQueueWrapupCodes("genesyscloud_routing_wrapupcode."+wrapupCodeResource2+".id"),
-				) + generateRoutingWrapupcodeResource(
+				) + GenerateRoutingWrapupcodeResource(
 					wrapupCodeResource2,
 					wrapupCodeName2,
 				),
@@ -805,7 +805,7 @@ func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -1233,7 +1233,7 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create

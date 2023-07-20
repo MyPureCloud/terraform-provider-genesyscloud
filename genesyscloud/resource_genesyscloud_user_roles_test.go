@@ -15,7 +15,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 	var (
 		empRoleDataSrc   = "employee-role"
 		empRoleName      = "employee"
-		userRoleResource = "test-user-roles"
+		userRoleResource = "test-user-roles2"
 		userResource1    = "test-user"
 		email1           = "terraform-" + uuid.NewString() + "@example.com"
 		userName1        = "Role Terraform"
@@ -30,7 +30,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 role in default division

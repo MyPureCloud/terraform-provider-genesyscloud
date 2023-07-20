@@ -13,9 +13,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/nyaruka/phonenumbers"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists" 
+	files "terraform-provider-genesyscloud/genesyscloud/util/files" 
 )
 
-func validatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
+func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 	if numberStr, ok := number.(string); ok {
 		phoneNumber, err := phonenumbers.Parse(numberStr, "US")
 		if err != nil {
@@ -59,7 +61,7 @@ func validateDate(date interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // Validates a date string is in the format 2006-01-02T15:04Z
-func validateDateTime(date interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateDateTime(date interface{}, _ cty.Path) diag.Diagnostics {
 	if dateStr, ok := date.(string); ok {
 		_, err := time.Parse("2006-01-02T15:04Z", dateStr)
 		if err != nil {
@@ -82,7 +84,7 @@ func validateCountryCode(code interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // Validates a date string is in format hh:mm:ss
-func validateTime(time interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateTime(time interface{}, _ cty.Path) diag.Diagnostics {
 	timeStr := time.(string)
 	if len(timeStr) > 9 {
 		timeStr = timeStr[:8]
@@ -95,7 +97,7 @@ func validateTime(time interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // Validates a date string is in format hh:mm
-func validateTimeHHMM(time interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateTimeHHMM(time interface{}, _ cty.Path) diag.Diagnostics {
 	timeStr := time.(string)
 	if timeStr == "" {
 		return nil
@@ -133,7 +135,7 @@ func validatePath(i interface{}, k string) (warnings []string, errors []error) {
 		return warnings, errors
 	}
 
-	_, file, err := downloadOrOpenFile(v)
+	_, file, err := files.DownloadOrOpenFile(v)
 	if err != nil {
 		errors = append(errors, err)
 	}
@@ -173,12 +175,12 @@ func ValidateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 			}
 		}
 
-		if !StringInSlice(v, valid) || !SubStringInSlice(v, valid) {
+		if !lists.StringInSlice(v, valid) || !lists.SubStringInSlice(v, valid) {
 			errors = append(errors, fmt.Errorf("string %s not in slice", v))
 			return warnings, errors
 		}
 
-		if !SubStringInSlice(v, valid) {
+		if !lists.SubStringInSlice(v, valid) {
 			errors = append(errors, fmt.Errorf("substring %s not in slice", v))
 			return warnings, errors
 		}

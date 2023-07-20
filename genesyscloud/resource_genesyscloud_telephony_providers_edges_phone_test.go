@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 type phoneConfig struct {
@@ -138,7 +138,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: config1,
@@ -183,6 +183,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 }
 
 func deleteDidPoolWithNumber(number string) error {
+	//sdkConfig := m.(*ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -213,7 +214,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 	t.Parallel()
 	didPoolResource1 := "test-didpool1"
 	number := "+14175538114"
-	if err := authorizeSdk(); err != nil {
+	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	if err := deleteDidPoolWithNumber(number); err != nil {
@@ -229,19 +230,19 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 	locationRes := "test-location"
 
 	emergencyNumber := "+13173114121"
-	if err := deleteLocationWithNumber(emergencyNumber); err != nil {
+	if err := DeleteLocationWithNumber(emergencyNumber); err != nil {
 		t.Fatal(err)
 	}
 
-	locationConfig := generateLocationResource(
+	locationConfig := GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		generateLocationEmergencyNum(
+		GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), generateLocationAddress(
+		), GenerateLocationAddress(
 			"0176 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -250,7 +251,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		))
 
 	siteRes := "test-site"
-	siteConfig := generateSiteResourceWithCustomAttrs(
+	siteConfig := GenerateSiteResourceWithCustomAttrs(
 		siteRes,
 		"tf site "+uuid.NewString(),
 		"test site description",
@@ -303,7 +304,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: locationConfig + siteConfig + config,

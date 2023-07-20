@@ -35,7 +35,7 @@ func TestAccResourceOAuthClient(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create client cred client with 1 role in default division
@@ -63,7 +63,7 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "state", stateActive),
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "integration_credential_name", credentialName1),
 					resource.TestCheckNoResourceAttr("genesyscloud_oauth_client."+clientResource1, "scopes.%"),
-					validateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI1),
+					ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI1),
 					validateOauthRole("genesyscloud_oauth_client."+clientResource1, "data.genesyscloud_auth_role."+roleResource1, ""),
 				),
 			},
@@ -91,7 +91,7 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "access_token_validity_seconds", tokenSec2),
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "state", stateInactive),
 					resource.TestCheckNoResourceAttr("genesyscloud_oauth_client."+clientResource1, "scopes.%"),
-					validateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI2),
+					ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI2),
 				),
 			},
 			{
@@ -114,8 +114,8 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "access_token_validity_seconds", tokenSec1),
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "state", stateActive),
 					resource.TestCheckNoResourceAttr("genesyscloud_oauth_client."+clientResource1, "roles.%"),
-					validateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI1),
-					validateStringInArray("genesyscloud_oauth_client."+clientResource1, "scopes", scope1),
+					ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "registered_redirect_uris", redirectURI1),
+					ValidateStringInArray("genesyscloud_oauth_client."+clientResource1, "scopes", scope1),
 				),
 			},
 			{

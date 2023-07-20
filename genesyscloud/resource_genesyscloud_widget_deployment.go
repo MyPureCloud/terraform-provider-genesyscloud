@@ -14,7 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 const (
@@ -47,8 +49,8 @@ var (
 	}
 )
 
-func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(clientConfig)
 	widgetDeployments, _, getErr := widgetsAPI.GetWidgetsDeployments()
 	if getErr != nil {
@@ -56,7 +58,7 @@ func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.C
 	}
 
 	for _, widgetDeployment := range *widgetDeployments.Entities {
-		resources[*widgetDeployment.Id] = &ResourceMeta{Name: *widgetDeployment.Name}
+		resources[*widgetDeployment.Id] = &resourceExporter.ResourceMeta{Name: *widgetDeployment.Name}
 	}
 
 	return resources, nil
@@ -65,7 +67,7 @@ func getAllWidgetDeployments(_ context.Context, clientConfig *platformclientv2.C
 func buildSdkAllowedDomains(d *schema.ResourceData) *[]string {
 	allowed_domains := []string{}
 	if domains, ok := d.GetOk("allowed_domains"); ok {
-		allowed_domains = InterfaceListToStrings(domains.([]interface{}))
+		allowed_domains = lists.InterfaceListToStrings(domains.([]interface{}))
 	}
 	return &allowed_domains
 }
@@ -133,16 +135,16 @@ func buildSDKClientConfig(clientType string, d *schema.ResourceData) (*platformc
 	return widgetClientConfig, nil
 }
 
-func widgetDeploymentExporter() *ResourceExporter {
-	return &ResourceExporter{
+func WidgetDeploymentExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllWidgetDeployments),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"flow_id": {RefType: "genesyscloud_flow"},
 		},
 	}
 }
 
-func resourceWidgetDeployment() *schema.Resource {
+func ResourceWidgetDeployment() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Widget Deployment",
 
@@ -250,7 +252,7 @@ func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta inte
 			return resource.NonRetryableError(fmt.Errorf("Failed to read widget deployment %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceWidgetDeployment())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWidgetDeployment())
 		d.Set("name", *currentWidget.Name)
 		if currentWidget.Description != nil {
 			d.Set("description", *currentWidget.Description)
@@ -303,7 +305,7 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	description := d.Get("description").(string)
 	auth_required := d.Get("authentication_required").(bool)
 	disabled := d.Get("disabled").(bool)
-	flowId := buildSdkDomainEntityRef(d, "flow_id")
+	flowId := BuildSdkDomainEntityRef(d, "flow_id")
 	allowed_domains := buildSdkAllowedDomains(d) //Need to make this an array of strings.
 	client_type := d.Get("client_type").(string)
 	client_config, client_config_err := buildSDKClientConfig(client_type, d)
@@ -348,7 +350,7 @@ func createWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 // Sometimes the Widget API creates 2 deployments due to a bug. This function will delete any duplicates
-func deletePotentialDuplicateDeployments(widgetAPI *platformclientv2.WidgetsApi, name, id string, existingResourceIDMetaMap, newResourceIDMetaMap ResourceIDMetaMap) {
+func deletePotentialDuplicateDeployments(widgetAPI *platformclientv2.WidgetsApi, name, id string, existingResourceIDMetaMap, newResourceIDMetaMap resourceExporter.ResourceIDMetaMap) {
 	for _, val := range existingResourceIDMetaMap {
 		for key1, val1 := range newResourceIDMetaMap {
 			if val.Name == val1.Name {
@@ -399,7 +401,7 @@ func updateWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta in
 	description := d.Get("description").(string)
 	auth_required := d.Get("authentication_required").(bool)
 	disabled := d.Get("disabled").(bool)
-	flowId := buildSdkDomainEntityRef(d, "flow_id")
+	flowId := BuildSdkDomainEntityRef(d, "flow_id")
 	allowed_domains := buildSdkAllowedDomains(d) //Need to make this an array of strings.
 	client_type := d.Get("client_type").(string)
 	client_config, client_config_err := buildSDKClientConfig(client_type, d)

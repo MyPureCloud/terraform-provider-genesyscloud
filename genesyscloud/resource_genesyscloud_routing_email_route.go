@@ -13,7 +13,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -33,8 +34,8 @@ var (
 	}
 )
 
-func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -65,7 +66,7 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 				}
 
 				for _, route := range *routes.Entities {
-					resources[*route.Id] = &ResourceMeta{
+					resources[*route.Id] = &resourceExporter.ResourceMeta{
 						Name:     *route.Pattern + *domain.Id,
 						IdPrefix: *domain.Id + "/",
 					}
@@ -75,10 +76,10 @@ func getAllRoutingEmailRoutes(_ context.Context, clientConfig *platformclientv2.
 	}
 }
 
-func routingEmailRouteExporter() *ResourceExporter {
-	return &ResourceExporter{
+func RoutingEmailRouteExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingEmailRoutes),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"domain_id":                     {RefType: "genesyscloud_routing_email_domain"},
 			"queue_id":                      {RefType: "genesyscloud_routing_queue"},
 			"skill_ids":                     {RefType: "genesyscloud_routing_skill"},
@@ -94,7 +95,7 @@ func routingEmailRouteExporter() *ResourceExporter {
 	}
 }
 
-func resourceRoutingEmailRoute() *schema.Resource {
+func ResourceRoutingEmailRoute() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Email Domain Route",
 
@@ -229,12 +230,12 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		Pattern:   &pattern,
 		FromName:  &fromName,
 		FromEmail: &fromEmail,
-		Queue:     buildSdkDomainEntityRef(d, "queue_id"),
+		Queue:     BuildSdkDomainEntityRef(d, "queue_id"),
 		Priority:  &priority,
-		Language:  buildSdkDomainEntityRef(d, "language_id"),
-		Flow:      buildSdkDomainEntityRef(d, "flow_id"),
-		SpamFlow:  buildSdkDomainEntityRef(d, "spam_flow_id"),
-		Skills:    buildSdkDomainEntityRefArr(d, "skill_ids"),
+		Language:  BuildSdkDomainEntityRef(d, "language_id"),
+		Flow:      BuildSdkDomainEntityRef(d, "flow_id"),
+		SpamFlow:  BuildSdkDomainEntityRef(d, "spam_flow_id"),
+		Skills:    BuildSdkDomainEntityRefArr(d, "skill_ids"),
 		AutoBcc:   buildSdkAutoBccEmailAddresses(d),
 	}
 
@@ -308,7 +309,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingEmailRoute())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailRoute())
 
 		if route.Pattern != nil {
 			d.Set("pattern", *route.Pattern)
@@ -415,12 +416,12 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		Pattern:   &pattern,
 		FromName:  &fromName,
 		FromEmail: &fromEmail,
-		Queue:     buildSdkDomainEntityRef(d, "queue_id"),
+		Queue:     BuildSdkDomainEntityRef(d, "queue_id"),
 		Priority:  &priority,
-		Language:  buildSdkDomainEntityRef(d, "language_id"),
-		Flow:      buildSdkDomainEntityRef(d, "flow_id"),
-		SpamFlow:  buildSdkDomainEntityRef(d, "spam_flow_id"),
-		Skills:    buildSdkDomainEntityRefArr(d, "skill_ids"),
+		Language:  BuildSdkDomainEntityRef(d, "language_id"),
+		Flow:      BuildSdkDomainEntityRef(d, "flow_id"),
+		SpamFlow:  BuildSdkDomainEntityRef(d, "spam_flow_id"),
+		Skills:    BuildSdkDomainEntityRefArr(d, "skill_ids"),
 		AutoBcc:   buildSdkAutoBccEmailAddresses(d),
 	}
 

@@ -14,11 +14,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	files  "terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
-func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -33,27 +35,27 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 		}
 
 		for _, flow := range *flows.Entities {
-			resources[*flow.Id] = &ResourceMeta{Name: *flow.Name}
+			resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func flowExporter() *ResourceExporter {
-	return &ResourceExporter{
+func FlowExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllFlows),
-		RefAttrs:         map[string]*RefAttrSettings{},
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 		UnResolvableAttributes: map[string]*schema.Schema{
-			"filepath": resourceFlow().Schema["filepath"],
+			"filepath": ResourceFlow().Schema["filepath"],
 		},
-		CustomFlowResolver: map[string]*CustomFlowResolver{
-			"file_content_hash": {ResolverFunc: FileContentHashResolver},
+		CustomFlowResolver: map[string]*resourceExporter.CustomFlowResolver{
+			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
 		},
 	}
 }
 
-func resourceFlow() *schema.Resource {
+func ResourceFlow() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Flow`,
 
@@ -165,12 +167,12 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	filePath := d.Get("filepath").(string)
 	substitutions := d.Get("substitutions").(map[string]interface{})
 
-	reader, _, err := downloadOrOpenFile(filePath)
+	reader, _, err := files.DownloadOrOpenFile(filePath)
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
 
-	s3Uploader := NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
+	s3Uploader := files.NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
 	_, err = s3Uploader.Upload()
 	if err != nil {
 		return diag.Errorf(err.Error())

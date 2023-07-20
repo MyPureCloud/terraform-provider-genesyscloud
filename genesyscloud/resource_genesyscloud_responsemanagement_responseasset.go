@@ -11,7 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	files "terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 func resourceResponseManagamentResponseAsset() *schema.Resource {
@@ -68,12 +69,12 @@ func createResponsemanagementResponseAsset(ctx context.Context, d *schema.Resour
 
 	headers := *postResponseData.Headers
 	url := *postResponseData.Url
-	reader, _, err := downloadOrOpenFile(fileName)
+	reader, _, err := files.DownloadOrOpenFile(fileName)
 	if err != nil {
 		return diag.Errorf(err.Error())
 	}
 
-	s3Uploader := NewS3Uploader(reader, nil, nil, headers, "PUT", url)
+	s3Uploader := files.NewS3Uploader(reader, nil, nil, headers, "PUT", url)
 	_, err = s3Uploader.Upload()
 	if err != nil {
 		return diag.Errorf(err.Error())
@@ -100,7 +101,7 @@ func readResponsemanagementResponseAsset(ctx context.Context, d *schema.Resource
 			return resource.NonRetryableError(fmt.Errorf("Failed to read response asset %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceResponsemanagementLibrary())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementLibrary())
 
 		_ = d.Set("filename", *sdkAsset.Name)
 

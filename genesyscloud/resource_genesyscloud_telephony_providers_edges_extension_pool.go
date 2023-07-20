@@ -12,11 +12,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllExtensionPools(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllExtensionPools(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	telephonyAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -32,7 +33,7 @@ func getAllExtensionPools(_ context.Context, clientConfig *platformclientv2.Conf
 
 		for _, extensionPool := range *extensionPools.Entities {
 			if extensionPool.State != nil && *extensionPool.State != "deleted" {
-				resources[*extensionPool.Id] = &ResourceMeta{Name: *extensionPool.StartNumber}
+				resources[*extensionPool.Id] = &resourceExporter.ResourceMeta{Name: *extensionPool.StartNumber}
 			}
 		}
 	}
@@ -40,14 +41,14 @@ func getAllExtensionPools(_ context.Context, clientConfig *platformclientv2.Conf
 	return resources, nil
 }
 
-func telephonyExtensionPoolExporter() *ResourceExporter {
-	return &ResourceExporter{
+func TelephonyExtensionPoolExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllExtensionPools),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceTelephonyExtensionPool() *schema.Resource {
+func ResourceTelephonyExtensionPool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Extension Pool",
 
@@ -126,7 +127,7 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceTelephonyExtensionPool())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyExtensionPool())
 		d.Set("start_number", *extensionPool.StartNumber)
 		d.Set("end_number", *extensionPool.EndNumber)
 

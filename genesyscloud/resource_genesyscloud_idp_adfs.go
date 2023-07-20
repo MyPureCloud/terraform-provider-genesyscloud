@@ -12,12 +12,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func getAllIdpAdfs(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllIdpAdfs(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
-	resources := make(ResourceIDMetaMap)
+	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersAdfs()
 	if getErr != nil {
@@ -28,18 +30,18 @@ func getAllIdpAdfs(_ context.Context, clientConfig *platformclientv2.Configurati
 		return nil, diag.Errorf("Failed to get IDP ADFS: %v", getErr)
 	}
 
-	resources["0"] = &ResourceMeta{Name: "adfs"}
+	resources["0"] = &resourceExporter.ResourceMeta{Name: "adfs"}
 	return resources, nil
 }
 
-func idpAdfsExporter() *ResourceExporter {
-	return &ResourceExporter{
+func IdpAdfsExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllIdpAdfs),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceIdpAdfs() *schema.Resource {
+func ResourceIdpAdfs() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on ADFS Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-microsoft-adfs-single-sign-provider/",
 
@@ -108,11 +110,11 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpAdfs())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpAdfs())
 		if adfs.Certificate != nil {
-			d.Set("certificates", stringListToInterfaceList([]string{*adfs.Certificate}))
+			d.Set("certificates", lists.StringListToInterfaceList([]string{*adfs.Certificate}))
 		} else if adfs.Certificates != nil {
-			d.Set("certificates", stringListToInterfaceList(*adfs.Certificates))
+			d.Set("certificates", lists.StringListToInterfaceList(*adfs.Certificates))
 		} else {
 			d.Set("certificates", nil)
 		}
@@ -163,7 +165,7 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 		Disabled:               &disabled,
 	}
 
-	certificates := buildSdkStringListFromInterfaceArray(d, "certificates")
+	certificates := lists.BuildSdkStringListFromInterfaceArray(d, "certificates")
 	if certificates != nil {
 		if len(*certificates) == 1 {
 			update.Certificate = &(*certificates)[0]

@@ -13,11 +13,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	telephonyAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -33,7 +34,7 @@ func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configurat
 
 		for _, didPool := range *didPools.Entities {
 			if didPool.State != nil && *didPool.State != "deleted" {
-				resources[*didPool.Id] = &ResourceMeta{Name: *didPool.StartPhoneNumber}
+				resources[*didPool.Id] = &resourceExporter.ResourceMeta{Name: *didPool.StartPhoneNumber}
 			}
 		}
 	}
@@ -41,14 +42,14 @@ func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configurat
 	return resources, nil
 }
 
-func telephonyDidPoolExporter() *ResourceExporter {
-	return &ResourceExporter{
+func TelephonyDidPoolExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllDidPools),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceTelephonyDidPool() *schema.Resource {
+func ResourceTelephonyDidPool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud DID Pool",
 
@@ -66,14 +67,14 @@ func resourceTelephonyDidPool() *schema.Resource {
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: ValidatePhoneNumber,
 			},
 			"end_phone_number": {
 				Description:      "Ending phone number of the DID Pool range.  Phone number must be in an E.164 number format. Changing the end_phone_number attribute will cause the did_pool object to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: ValidatePhoneNumber,
 			},
 			"description": {
 				Description: "DID Pool description.",
@@ -143,7 +144,7 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceTelephonyDidPool())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyDidPool())
 		d.Set("start_phone_number", *didPool.StartPhoneNumber)
 		d.Set("end_phone_number", *didPool.EndPhoneNumber)
 

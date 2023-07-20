@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 type didPoolStruct struct {
@@ -24,7 +24,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
 	didPoolStartPhoneNumber1 := "+14175540014"
 	didPoolEndPhoneNumber1 := "+14175540015"
-	if err := authorizeSdk(); err != nil {
+	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	if err := deleteDidPoolWithNumber(didPoolStartPhoneNumber1); err != nil {
@@ -40,7 +40,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create

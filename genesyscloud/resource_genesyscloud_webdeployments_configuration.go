@@ -14,7 +14,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -273,8 +275,8 @@ var (
 	}
 )
 
-func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	webDeploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(clientConfig)
 
 	configurations, _, getErr := webDeploymentsAPI.GetWebdeploymentsConfigurations(false)
@@ -283,20 +285,20 @@ func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platfo
 	}
 
 	for _, configuration := range *configurations.Entities {
-		resources[*configuration.Id] = &ResourceMeta{Name: *configuration.Name}
+		resources[*configuration.Id] = &resourceExporter.ResourceMeta{Name: *configuration.Name}
 	}
 
 	return resources, nil
 }
 
-func webDeploymentConfigurationExporter() *ResourceExporter {
-	return &ResourceExporter{
+func WebDeploymentConfigurationExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc:   GetAllWithPooledClient(getAllWebDeploymentConfigurations),
 		ExcludedAttributes: []string{"version"},
 	}
 }
 
-func resourceWebDeploymentConfiguration() *schema.Resource {
+func ResourceWebDeploymentConfiguration() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Web Deployment Configuration",
 
@@ -406,7 +408,7 @@ func waitForConfigurationDraftToBeActive(ctx context.Context, api *platformclien
 
 func readWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (string, *platformclientv2.Webdeploymentconfigurationversion) {
 	name := d.Get("name").(string)
-	languages := InterfaceListToStrings(d.Get("languages").([]interface{}))
+	languages := lists.InterfaceListToStrings(d.Get("languages").([]interface{}))
 	defaultLanguage := d.Get("default_language").(string)
 
 	inputCfg := &platformclientv2.Webdeploymentconfigurationversion{
@@ -455,14 +457,14 @@ func readJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyevents
 		Enabled: &enabled,
 	}
 
-	excludedQueryParams := InterfaceListToStrings(cfg["excluded_query_parameters"].([]interface{}))
+	excludedQueryParams := lists.InterfaceListToStrings(cfg["excluded_query_parameters"].([]interface{}))
 	journeySettings.ExcludedQueryParameters = &excludedQueryParams
 
 	if keepUrlFragment, ok := cfg["should_keep_url_fragment"].(bool); ok && keepUrlFragment {
 		journeySettings.ShouldKeepUrlFragment = &keepUrlFragment
 	}
 
-	searchQueryParameters := InterfaceListToStrings(cfg["search_query_parameters"].([]interface{}))
+	searchQueryParameters := lists.InterfaceListToStrings(cfg["search_query_parameters"].([]interface{}))
 	journeySettings.SearchQueryParameters = &searchQueryParameters
 
 	pageviewConfig := cfg["pageview_config"]
@@ -621,7 +623,7 @@ func readMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengerse
 			for i, modeCfg := range modesCfg {
 				if mode, ok := modeCfg.(map[string]interface{}); ok {
 					maxFileSize := mode["max_file_size_kb"].(int)
-					fileTypes := InterfaceListToStrings(mode["file_types"].([]interface{}))
+					fileTypes := lists.InterfaceListToStrings(mode["file_types"].([]interface{}))
 					modes[i] = platformclientv2.Fileuploadmode{
 						FileTypes:     &fileTypes,
 						MaxFileSizeKB: &maxFileSize,
@@ -655,8 +657,8 @@ func readCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesett
 
 	enabled, _ := cfg["enabled"].(bool)
 	allowAgentControl, _ := cfg["allow_agent_control"].(bool)
-	maskSelectors := InterfaceListToStrings(cfg["mask_selectors"].([]interface{}))
-	readonlySelectors := InterfaceListToStrings(cfg["readonly_selectors"].([]interface{}))
+	maskSelectors := lists.InterfaceListToStrings(cfg["mask_selectors"].([]interface{}))
+	readonlySelectors := lists.InterfaceListToStrings(cfg["readonly_selectors"].([]interface{}))
 
 	return &platformclientv2.Cobrowsesettings{
 		Enabled:           &enabled,
@@ -775,7 +777,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 			return resource.NonRetryableError(fmt.Errorf("Failed to read web deployment configuration %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceWebDeploymentConfiguration())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeploymentConfiguration())
 		d.Set("name", *configuration.Name)
 		if configuration.Description != nil {
 			d.Set("description", *configuration.Description)

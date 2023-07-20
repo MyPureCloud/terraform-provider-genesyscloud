@@ -5,12 +5,11 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func TestAccResourceSite(t *testing.T) {
@@ -36,26 +35,26 @@ func TestAccResourceSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	err := authorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	emergencyNumber := "+13173124740"
-	err = deleteLocationWithNumber(emergencyNumber)
+	err = DeleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	location := generateLocationResource(
+	location := GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		generateLocationEmergencyNum(
+		GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), generateLocationAddress(
+		), GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -65,10 +64,10 @@ func TestAccResourceSite(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateSiteResourceWithCustomAttrs(
+				Config: GenerateSiteResourceWithCustomAttrs(
 					siteRes,
 					name1,
 					description1,
@@ -88,7 +87,7 @@ func TestAccResourceSite(t *testing.T) {
 			},
 			// Update description, name and media_regions_use_latency_based
 			{
-				Config: generateSiteResourceWithCustomAttrs(
+				Config: GenerateSiteResourceWithCustomAttrs(
 					siteRes,
 					name2,
 					description2,
@@ -108,7 +107,7 @@ func TestAccResourceSite(t *testing.T) {
 			},
 			// Update with EdgeAutoUpdateConfig
 			{
-				Config: generateSiteResourceWithCustomAttrs(
+				Config: GenerateSiteResourceWithCustomAttrs(
 					siteRes,
 					name2,
 					description2,
@@ -132,7 +131,7 @@ func TestAccResourceSite(t *testing.T) {
 			},
 			// Update the EdgeAutoUpdateConfig
 			{
-				Config: generateSiteResourceWithCustomAttrs(
+				Config: GenerateSiteResourceWithCustomAttrs(
 					siteRes,
 					name2,
 					description2,
@@ -172,26 +171,26 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	err := authorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	emergencyNumber := "+13173124741"
-	err = deleteLocationWithNumber(emergencyNumber)
+	err = DeleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	location := generateLocationResource(
+	location := GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		generateLocationEmergencyNum(
+		GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), generateLocationAddress(
+		), GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -201,10 +200,10 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateSiteResourceWithCustomAttrs(
+				Config: GenerateSiteResourceWithCustomAttrs(
 					siteRes,
 					name,
 					description,
@@ -262,7 +261,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 			},
 			// Remove 2 number plans and update the properties of others
 			{
-				Config: generateSiteResourceWithCustomAttrs(
+				Config: GenerateSiteResourceWithCustomAttrs(
 					siteRes,
 					name,
 					description,
@@ -305,7 +304,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 			},
 			// Add one plan back in
 			{
-				Config: generateSiteResourceWithCustomAttrs(
+				Config: GenerateSiteResourceWithCustomAttrs(
 					siteRes,
 					name,
 					description,
@@ -373,26 +372,26 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	err := authorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	emergencyNumber := "+13173124742"
-	err = deleteLocationWithNumber(emergencyNumber)
+	err = DeleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	location := generateLocationResource(
+	location := GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		generateLocationEmergencyNum(
+		GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), generateLocationAddress(
+		), GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -426,10 +425,10 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateSiteResourceWithCustomAttrs(
+				Config: GenerateSiteResourceWithCustomAttrs(
 					siteRes,
 					name,
 					description,
@@ -471,7 +470,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 			},
 			// Remove a route and update the description, classification types, trunk base ids, distribution and enabled value of another route
 			{
-				Config: generateSiteResourceWithCustomAttrs(
+				Config: GenerateSiteResourceWithCustomAttrs(
 					siteRes,
 					name,
 					description,
@@ -510,63 +509,6 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 	})
 }
 
-func deleteLocationWithNumber(emergencyNumber string) error {
-	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		locations, _, getErr := locationsAPI.GetLocations(pageSize, pageNum, nil, "")
-		if getErr != nil {
-			return getErr
-		}
-
-		if locations.Entities == nil || len(*locations.Entities) == 0 {
-			break
-		}
-
-		for _, location := range *locations.Entities {
-			if location.EmergencyNumber != nil {
-				if strings.Contains(*location.EmergencyNumber.E164, emergencyNumber) {
-					err := deleteSiteWithLocationId(*location.Id)
-					if err != nil {
-						return err
-					}
-					_, err = locationsAPI.DeleteLocation(*location.Id)
-					time.Sleep(30 * time.Second)
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func deleteSiteWithLocationId(locationId string) error {
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false)
-		if getErr != nil {
-			return getErr
-		}
-
-		if sites.Entities == nil || len(*sites.Entities) == 0 {
-			return nil
-		}
-
-		for _, site := range *sites.Entities {
-			if site.Location != nil && *site.Location.Id == locationId {
-				_, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(*site.Id)
-				if err != nil {
-					return err
-				}
-				time.Sleep(8 * time.Second)
-				break
-			}
-		}
-	}
-}
 
 func testVerifySitesDestroyed(state *terraform.State) error {
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApi()
@@ -594,30 +536,7 @@ func testVerifySitesDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func generateSiteResourceWithCustomAttrs(
-	siteRes,
-	name,
-	description,
-	locationId,
-	mediaModel string,
-	mediaRegionsUseLatencyBased bool,
-	mediaRegions string,
-	callerId string,
-	callerName string,
-	otherAttrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_site" "%s" {
-		name = "%s"
-		description = "%s"
-		location_id = %s
-		media_model = "%s"
-		media_regions_use_latency_based = %v
-		media_regions= %s
-		caller_id = %s
-		caller_name = %s
-		%s
-	}
-	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
-}
+
 
 func generateSiteEdgeAutoUpdateConfig(timeZone, rrule, start, end string) string {
 	return fmt.Sprintf(`edge_auto_update_config {

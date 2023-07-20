@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func TestAccResourceScriptBasic(t *testing.T) {
@@ -26,14 +26,14 @@ func TestAccResourceScriptBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateScriptResource(
 					resourceId,
 					name,
 					filePath,
-					generateSubstitutionsMap(substitutions),
+					GenerateSubstitutionsMap(substitutions),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "script_name", name),
@@ -46,7 +46,7 @@ func TestAccResourceScriptBasic(t *testing.T) {
 					resourceId,
 					nameUpdated,
 					filePath,
-					generateSubstitutionsMap(substitutions),
+					GenerateSubstitutionsMap(substitutions),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_script."+resourceId, "script_name", nameUpdated),

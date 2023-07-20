@@ -14,11 +14,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -33,23 +34,23 @@ func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.
 		}
 
 		for _, schedule := range *schedules.Entities {
-			resources[*schedule.Id] = &ResourceMeta{Name: *schedule.Name}
+			resources[*schedule.Id] = &resourceExporter.ResourceMeta{Name: *schedule.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func architectSchedulesExporter() *ResourceExporter {
-	return &ResourceExporter{
+func ArchitectSchedulesExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllArchitectSchedules),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }
 
-func resourceArchitectSchedules() *schema.Resource {
+func ResourceArchitectSchedules() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Schedules",
 
@@ -183,7 +184,7 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 			End = nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectSchedules())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedules())
 		d.Set("name", *schedule.Name)
 		d.Set("division_id", *schedule.Division.Id)
 		d.Set("description", nil)

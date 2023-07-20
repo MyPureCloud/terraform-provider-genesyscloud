@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"strings"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -12,12 +13,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func getAllLocations(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllLocations(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -32,24 +35,24 @@ func getAllLocations(_ context.Context, clientConfig *platformclientv2.Configura
 		}
 
 		for _, location := range *locations.Entities {
-			resources[*location.Id] = &ResourceMeta{Name: *location.Name}
+			resources[*location.Id] = &resourceExporter.ResourceMeta{Name: *location.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func locationExporter() *ResourceExporter {
-	return &ResourceExporter{
+func LocationExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllLocations),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"path": {RefType: "genesyscloud_location"},
 		},
 		E164Numbers: []string{"emergency_number.number"},
 	}
 }
 
-func resourceLocation() *schema.Resource {
+func ResourceLocation() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Location",
 
@@ -89,7 +92,7 @@ func resourceLocation() *schema.Resource {
 							Description:      "Emergency phone number.  Must be in an E.164 number format.",
 							Type:             schema.TypeString,
 							Required:         true,
-							ValidateDiagFunc: validatePhoneNumber,
+							ValidateDiagFunc: ValidatePhoneNumber,
 							DiffSuppressFunc: comparePhoneNumbers,
 						},
 						"type": {
@@ -195,7 +198,7 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceLocation())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceLocation())
 		d.Set("name", *location.Name)
 
 		if location.Notes != nil {
@@ -313,7 +316,7 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 func buildSdkLocationPath(d *schema.ResourceData) *[]string {
 	path := []string{}
 	if pathConfig, ok := d.GetOk("path"); ok {
-		path = InterfaceListToStrings(pathConfig.([]interface{}))
+		path = lists.InterfaceListToStrings(pathConfig.([]interface{}))
 	}
 	return &path
 }
@@ -415,4 +418,45 @@ func comparePhoneNumbers(_, old, new string, _ *schema.ResourceData) bool {
 		return old == new
 	}
 	return phonenumbers.IsNumberMatchWithNumbers(oldNum, newNum) == phonenumbers.EXACT_MATCH
+}
+
+func GenerateLocationResourceBasic(
+	resourceID,
+	name string,
+	nestedBlocks ...string) string {
+	return GenerateLocationResource(resourceID, name, "", []string{})
+}
+
+func GenerateLocationResource(
+	resourceID,
+	name,
+	notes string,
+	paths []string,
+	nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_location" "%s" {
+		name = "%s"
+        notes = "%s"
+        path = [%s]
+        %s
+	}
+	`, resourceID, name, notes, strings.Join(paths, ","), strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateLocationEmergencyNum(number, typeStr string) string {
+	return fmt.Sprintf(`emergency_number {
+		number = "%s"
+        type = %s
+	}
+	`, number, typeStr)
+}
+
+func GenerateLocationAddress(street1, city, state, country, zip string) string {
+	return fmt.Sprintf(`address {
+		street1  = "%s"
+		city     = "%s"
+		state    = "%s"
+		country  = "%s"
+		zip_code = "%s"
+	}
+	`, street1, city, state, country, zip)
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func TestAccResourceArchitectSchedules(t *testing.T) {
@@ -32,7 +32,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -51,7 +51,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "end", end),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "rrule", rrule),
-					testDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
+					TestDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
 				),
 			},
 			{
@@ -71,7 +71,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "start", start2),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "end", end),
 					resource.TestCheckResourceAttr("genesyscloud_architect_schedules."+schedResource1, "rrule", rrule),
-					testDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
+					TestDefaultHomeDivision("genesyscloud_architect_schedules."+schedResource1),
 				),
 			},
 			{

@@ -12,7 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -150,8 +151,8 @@ var (
 	}
 )
 
-func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -166,22 +167,22 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 		}
 
 		for _, surveyForm := range *surveyForms.Entities {
-			resources[*surveyForm.Id] = &ResourceMeta{Name: *surveyForm.Name}
+			resources[*surveyForm.Id] = &resourceExporter.ResourceMeta{Name: *surveyForm.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func surveyFormExporter() *ResourceExporter {
-	return &ResourceExporter{
+func SurveyFormExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllSurveyForms),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"question_groups.questions.answer_options.value"},
 	}
 }
 
-func resourceSurveyForm() *schema.Resource {
+func ResourceSurveyForm() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Survey Forms",
 		CreateContext: CreateWithPooledClient(createSurveyForm),
@@ -302,7 +303,7 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 			return resource.NonRetryableError(fmt.Errorf("Failed to read survey form %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceSurveyForm())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSurveyForm())
 		if surveyForm.Name != nil {
 			d.Set("name", *surveyForm.Name)
 		}

@@ -12,12 +12,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func getAllIdpSalesforce(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllIdpSalesforce(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(clientConfig)
-	resources := make(ResourceIDMetaMap)
+	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	_, resp, getErr := idpAPI.GetIdentityprovidersSalesforce()
 	if getErr != nil {
@@ -28,18 +30,18 @@ func getAllIdpSalesforce(_ context.Context, clientConfig *platformclientv2.Confi
 		return nil, diag.Errorf("Failed to get IDP Salesforce: %v", getErr)
 	}
 
-	resources["0"] = &ResourceMeta{Name: "salesforce"}
+	resources["0"] = &resourceExporter.ResourceMeta{Name: "salesforce"}
 	return resources, nil
 }
 
-func idpSalesforceExporter() *ResourceExporter {
-	return &ResourceExporter{
+func IdpSalesforceExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllIdpSalesforce),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceIdpSalesforce() *schema.Resource {
+func ResourceIdpSalesforce() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Single Sign-on Salesforce Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-salesforce-as-a-single-sign-on-provider/",
 
@@ -104,11 +106,11 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceIdpSalesforce())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpSalesforce())
 		if salesforce.Certificate != nil {
-			d.Set("certificates", stringListToInterfaceList([]string{*salesforce.Certificate}))
+			d.Set("certificates", lists.StringListToInterfaceList([]string{*salesforce.Certificate}))
 		} else if salesforce.Certificates != nil {
-			d.Set("certificates", stringListToInterfaceList(*salesforce.Certificates))
+			d.Set("certificates", lists.StringListToInterfaceList(*salesforce.Certificates))
 		} else {
 			d.Set("certificates", nil)
 		}
@@ -151,7 +153,7 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 		Disabled:     &disabled,
 	}
 
-	certificates := buildSdkStringListFromInterfaceArray(d, "certificates")
+	certificates := lists.BuildSdkStringListFromInterfaceArray(d, "certificates")
 	if certificates != nil {
 		if len(*certificates) == 1 {
 			update.Certificate = &(*certificates)[0]

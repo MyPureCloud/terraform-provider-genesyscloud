@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -18,14 +18,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-// Registering our resource provider for export
-func init() {
-	gcloud.RegisterResource("genesyscloud_processautomation_trigger", resourceProcessAutomationTrigger())
-	gcloud.RegisterDataSource("genesyscloud_processautomation_trigger", dataSourceProcessAutomationTrigger())
-	gcloud.RegisterExporter("genesyscloud_processautomation_trigger", processAutomationTriggerExporter())
-}
+
 
 var (
 	target = &schema.Resource{
@@ -121,10 +117,10 @@ func resourceProcessAutomationTrigger() *schema.Resource {
 	}
 }
 
-func processAutomationTriggerExporter() *gcloud.ResourceExporter {
-	return &gcloud.ResourceExporter{
+func ProcessAutomationTriggerExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllProcessAutomationTriggersResourceMap),
-		RefAttrs: map[string]*gcloud.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"target.id": {RefType: "genesyscloud_flow"},
 		},
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 type ivrConfigStruct struct {
@@ -53,7 +53,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 	ivrConfigDescription := "Terraform IVR config"
 	number1 := "+14175550011"
 	number2 := "+14175550012"
-	if err := authorizeSdk(); err != nil {
+	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	deleteIvrStartingWith("terraform-ivrconfig-")
@@ -68,7 +68,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -104,8 +104,8 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "name", ivrConfigName),
 					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "description", ivrConfigDescription),
-					validateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[0]),
-					validateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[1]),
+					ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[0]),
+					ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[1]),
 				),
 			},
 			{
@@ -129,7 +129,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 	divResource2 := "auth-division2"
 	divName1 := "TerraformDiv-" + uuid.NewString()
 	divName2 := "TerraformDiv-" + uuid.NewString()
-	if err := authorizeSdk(); err != nil {
+	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	deleteIvrStartingWith("terraform-ivrconfig-")
@@ -144,7 +144,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -198,8 +198,8 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "name", ivrConfigName),
 					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResource1, "description", ivrConfigDescription),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_ivr."+ivrConfigResource1, "division_id", "genesyscloud_auth_division."+divResource1, "id"),
-					validateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[0]),
-					validateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[1]),
+					ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[0]),
+					ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResource1, "dnis", ivrConfigDnis[1]),
 				),
 			},
 			{
@@ -266,7 +266,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: didPoolResource + generateIvrConfigResource(&ivrConfigStruct{

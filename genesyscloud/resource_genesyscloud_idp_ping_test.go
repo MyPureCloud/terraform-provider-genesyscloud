@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func TestAccResourceIdpPing(t *testing.T) {
@@ -20,7 +20,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -32,7 +32,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					nullValue, // Not disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert1),
+					ValidateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "target_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "relying_party_identifier", ""),
@@ -49,7 +49,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					trueValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert2),
+					ValidateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "relying_party_identifier", relyingPartyID1),
@@ -66,8 +66,8 @@ func TestAccResourceIdpPing(t *testing.T) {
 					falseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert1),
-					validateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert2),
+					ValidateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert1),
+					ValidateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "relying_party_identifier", relyingPartyID2),
@@ -84,7 +84,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					falseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert1),
+					ValidateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "certificates.#", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "target_uri", uri1),
@@ -102,8 +102,8 @@ func TestAccResourceIdpPing(t *testing.T) {
 					falseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert1),
-					validateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert2),
+					ValidateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert1),
+					ValidateStringInArray("genesyscloud_idp_ping.ping", "certificates", testCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "certificates.#", "2"),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "target_uri", uri1),

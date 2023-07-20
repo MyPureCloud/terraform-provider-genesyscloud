@@ -13,7 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -34,8 +36,8 @@ var (
 	}
 )
 
-func getAllOAuthClients(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllOAuthClients(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	oauthAPI := platformclientv2.NewOAuthApiWithConfig(clientConfig)
 
 	clients, _, getErr := oauthAPI.GetOauthClients()
@@ -52,16 +54,16 @@ func getAllOAuthClients(_ context.Context, clientConfig *platformclientv2.Config
 			// Don't include clients disabled by support
 			continue
 		}
-		resources[*client.Id] = &ResourceMeta{Name: *client.Name}
+		resources[*client.Id] = &resourceExporter.ResourceMeta{Name: *client.Name}
 	}
 
 	return resources, nil
 }
 
-func oauthClientExporter() *ResourceExporter {
-	return &ResourceExporter{
+func OauthClientExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllOAuthClients),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"roles.role_id":             {RefType: "genesyscloud_auth_role"},
 			"roles.division_id":         {RefType: "genesyscloud_auth_division", AltValues: []string{"*"}},
 			"integration_credential_id": {RefType: "genesyscloud_integration_credential"},
@@ -74,7 +76,7 @@ func oauthClientExporter() *ResourceExporter {
 	}
 }
 
-func resourceOAuthClient() *schema.Resource {
+func ResourceOAuthClient() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud OAuth Clients. See this page for detailed configuration information: https://help.mypurecloud.com/articles/create-an-oauth-client/",
 
@@ -229,7 +231,7 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 			return resource.NonRetryableError(fmt.Errorf("Failed to read oauth client %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOAuthClient())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOAuthClient())
 		d.Set("name", *client.Name)
 
 		if client.Description != nil {
@@ -257,13 +259,13 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		if client.RegisteredRedirectUri != nil {
-			d.Set("registered_redirect_uris", stringListToSet(*client.RegisteredRedirectUri))
+			d.Set("registered_redirect_uris", lists.StringListToSet(*client.RegisteredRedirectUri))
 		} else {
 			d.Set("registered_redirect_uris", nil)
 		}
 
 		if client.Scope != nil {
-			d.Set("scopes", stringListToSet(*client.Scope))
+			d.Set("scopes", lists.StringListToSet(*client.Scope))
 		} else {
 			d.Set("scopes", nil)
 		}
@@ -369,14 +371,14 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
 func buildOAuthRedirectURIs(d *schema.ResourceData) *[]string {
 	if config, ok := d.GetOk("registered_redirect_uris"); ok {
-		return setToStringList(config.(*schema.Set))
+		return lists.SetToStringList(config.(*schema.Set))
 	}
 	return nil
 }
 
 func buildOAuthScopes(d *schema.ResourceData) *[]string {
 	if config, ok := d.GetOk("scopes"); ok {
-		return setToStringList(config.(*schema.Set))
+		return lists.SetToStringList(config.(*schema.Set))
 	}
 	return nil
 }

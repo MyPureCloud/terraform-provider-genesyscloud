@@ -10,15 +10,19 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
+	"path"
+	"os"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	files "terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
-func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	scriptsAPI := platformclientv2.NewScriptsApiWithConfig(clientConfig)
 	pageSize := 50
 
@@ -31,25 +35,25 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 			break
 		}
 		for _, script := range *scripts.Entities {
-			resources[*script.Id] = &ResourceMeta{Name: *script.Name}
+			resources[*script.Id] = &resourceExporter.ResourceMeta{Name: *script.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func scriptExporter() *ResourceExporter {
-	return &ResourceExporter{
+func ScriptExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllScripts),
-		RefAttrs:         map[string]*RefAttrSettings{},
-		CustomFileWriter: CustomFileWriterSettings{
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ScriptResolver,
 			SubDirectory:              "scripts",
 		},
 	}
 }
 
-func resourceScript() *schema.Resource {
+func ResourceScript() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Script",
 
@@ -121,7 +125,7 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 	headers := make(map[string]string, 0)
 	headers["Authorization"] = "Bearer " + accessToken
 
-	s3Uploader := NewS3Uploader(nil, formData, substitutions, headers, "POST", basePath+"/uploads/v2/scripter")
+	s3Uploader := files.NewS3Uploader(nil, formData, substitutions, headers, "POST", basePath+"/uploads/v2/scripter")
 	resp, err := s3Uploader.Upload()
 	if err != nil {
 		return diag.Errorf("%v", err)
@@ -165,7 +169,7 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return resource.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceScript())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceScript())
 
 		if script.Name != nil {
 			_ = d.Set("script_name", *script.Name)
@@ -317,7 +321,7 @@ func getScriptExportUrl(scriptId string, meta interface{}) (string, error) {
 }
 
 func createScriptFormData(filePath, scriptName string) (map[string]io.Reader, error) {
-	fileReader, _, err := downloadOrOpenFile(filePath)
+	fileReader, _, err := files.DownloadOrOpenFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -325,4 +329,29 @@ func createScriptFormData(filePath, scriptName string) (map[string]io.Reader, er
 	formData["file"] = fileReader
 	formData["scriptName"] = strings.NewReader(scriptName)
 	return formData, nil
+}
+
+func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+	exportFileName := fmt.Sprintf("script-%s.json", scriptId)
+
+	fullPath := path.Join(exportDirectory, subDirectory)
+	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
+		return err
+	}
+
+	url, err := getScriptExportUrl(scriptId, meta)
+	if err != nil {
+		return err
+	}
+
+	if err := files.DownloadExportFile(fullPath, exportFileName, url); err != nil {
+		return err
+	}
+
+	// Update filepath field in configMap to point to exported script file
+	configMap["filepath"] = path.Join(subDirectory, exportFileName)
+
+	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDirectory, exportFileName))
+
+	return err
 }

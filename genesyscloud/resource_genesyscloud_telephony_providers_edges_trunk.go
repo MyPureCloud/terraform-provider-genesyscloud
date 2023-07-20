@@ -11,10 +11,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func resourceTrunk() *schema.Resource {
+func ResourceTrunk() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Trunk. Created by assigning a trunk base settings to an edge or edge group",
 
@@ -170,7 +171,7 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceTrunk())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunk())
 		d.Set("name", *trunk.Name)
 		if trunk.TrunkBase != nil {
 			d.Set("trunk_base_settings_id", *trunk.TrunkBase.Id)
@@ -193,21 +194,21 @@ func deleteTrunk(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.
 	return nil
 }
 
-func trunkExporter() *ResourceExporter {
-	return &ResourceExporter{
+func TrunkExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllTrunks),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"trunk_base_settings_id": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 			"edge_group_id":          {RefType: "genesyscloud_telephony_providers_edges_edge_group"},
 		},
 		UnResolvableAttributes: map[string]*schema.Schema{
-			"edge_id": resourceTrunk().Schema["edge_id"],
+			"edge_id": ResourceTrunk().Schema["edge_id"],
 		},
 	}
 }
 
-func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
@@ -228,7 +229,7 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 
 			for _, trunk := range *trunks.Entities {
 				if trunk.State != nil && *trunk.State != "deleted" {
-					resources[*trunk.Id] = &ResourceMeta{Name: *trunk.Name}
+					resources[*trunk.Id] = &resourceExporter.ResourceMeta{Name: *trunk.Name}
 				}
 			}
 		}

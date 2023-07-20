@@ -15,7 +15,7 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 		didPoolDataRes          = "didPoolData"
 	)
 
-	if err := authorizeSdk(); err != nil {
+	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
 	if err := deleteDidPoolWithNumber(didPoolStartPhoneNumber); err != nil {
@@ -27,7 +27,7 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create

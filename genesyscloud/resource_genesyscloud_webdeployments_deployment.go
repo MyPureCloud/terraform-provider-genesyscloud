@@ -14,11 +14,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	webDeploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(clientConfig)
 
 	deployments, _, getErr := webDeploymentsAPI.GetWebdeploymentsDeployments([]string{})
@@ -27,23 +29,23 @@ func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Co
 	}
 
 	for _, deployment := range *deployments.Entities {
-		resources[*deployment.Id] = &ResourceMeta{Name: *deployment.Name}
+		resources[*deployment.Id] = &resourceExporter.ResourceMeta{Name: *deployment.Name}
 	}
 
 	return resources, nil
 }
 
-func webDeploymentExporter() *ResourceExporter {
-	return &ResourceExporter{
+func WebDeploymentExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllWebDeployments),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"flow_id":          {RefType: "genesyscloud_flow"},
 			"configuration.id": {RefType: "genesyscloud_webdeployments_configuration"},
 		},
 	}
 }
 
-func resourceWebDeployment() *schema.Resource {
+func ResourceWebDeployment() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Web Deployment",
 
@@ -135,7 +137,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	allowAllDomains := d.Get("allow_all_domains").(bool)
-	allowedDomains := InterfaceListToStrings(d.Get("allowed_domains").([]interface{}))
+	allowedDomains := lists.InterfaceListToStrings(d.Get("allowed_domains").([]interface{}))
 
 	err := validAllowedDomainsSettings(d)
 	if err != nil {
@@ -150,7 +152,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	configId := d.Get("configuration.0.id").(string)
 	configVersion := d.Get("configuration.0.version").(string)
 
-	flow := buildSdkDomainEntityRef(d, "flow_id")
+	flow := BuildSdkDomainEntityRef(d, "flow_id")
 
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
@@ -229,7 +231,7 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 			return resource.NonRetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceWebDeployment())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeployment())
 		d.Set("name", *deployment.Name)
 		if deployment.Description != nil {
 			d.Set("description", *deployment.Description)
@@ -264,7 +266,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	allowAllDomains := d.Get("allow_all_domains").(bool)
-	allowedDomains := InterfaceListToStrings(d.Get("allowed_domains").([]interface{}))
+	allowedDomains := lists.InterfaceListToStrings(d.Get("allowed_domains").([]interface{}))
 	status := d.Get("status").(string)
 
 	err := validAllowedDomainsSettings(d)
@@ -280,7 +282,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	configId := d.Get("configuration.0.id").(string)
 	configVersion := d.Get("configuration.0.version").(string)
 
-	flow := buildSdkDomainEntityRef(d, "flow_id")
+	flow := BuildSdkDomainEntityRef(d, "flow_id")
 
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,

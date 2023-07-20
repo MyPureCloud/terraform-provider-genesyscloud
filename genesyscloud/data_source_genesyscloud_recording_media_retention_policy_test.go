@@ -125,7 +125,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		domainId  = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
 	)
 
-	err := authorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateRoutingEmailDomainResource(
@@ -160,13 +160,13 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
-					generateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
+					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						generateSubstitutionsMap(map[string]string{
+						GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",

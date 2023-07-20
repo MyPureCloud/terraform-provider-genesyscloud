@@ -10,13 +10,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func groupRolesExporter() *ResourceExporter {
-	return &ResourceExporter{
+func GroupRolesExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllGroups),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"group_id":           {RefType: "genesyscloud_group"},
 			"roles.role_id":      {RefType: "genesyscloud_auth_role"},
 			"roles.division_ids": {RefType: "genesyscloud_auth_division", AltValues: []string{"*"}},
@@ -27,7 +28,7 @@ func groupRolesExporter() *ResourceExporter {
 	}
 }
 
-func resourceGroupRoles() *schema.Resource {
+func ResourceGroupRoles() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Group Roles maintains group role assignments.`,
 
@@ -69,7 +70,7 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 	log.Printf("Reading roles for group %s", d.Id())
 
 	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceGroupRoles())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupRoles())
 		d.Set("group_id", d.Id())
 
 		roles, resp, err := readSubjectRoles(d.Id(), authAPI)

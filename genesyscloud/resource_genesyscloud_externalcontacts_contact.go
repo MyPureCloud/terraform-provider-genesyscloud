@@ -11,7 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -36,7 +37,7 @@ var (
 				Description:      "Phone number in e164 format.",
 				Type:             schema.TypeString,
 				Optional:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: ValidatePhoneNumber,
 			},
 			"country_code": {
 				Description: "Phone number country code.",
@@ -177,8 +178,8 @@ var (
 	}
 )
 
-func getAllAuthExternalContacts(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllAuthExternalContacts(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	externalAPI := platformclientv2.NewExternalContactsApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -194,23 +195,23 @@ func getAllAuthExternalContacts(_ context.Context, clientConfig *platformclientv
 
 		for _, externalContact := range *externalContacts.Entities {
 			log.Printf("Dealing with external concat id : %s", *externalContact.Id)
-			resources[*externalContact.Id] = &ResourceMeta{Name: *externalContact.Id}
+			resources[*externalContact.Id] = &resourceExporter.ResourceMeta{Name: *externalContact.Id}
 		}
 	}
 
 	return resources, nil
 }
 
-func externalContactExporter() *ResourceExporter {
-	return &ResourceExporter{
+func ExternalContactExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllAuthExternalContacts),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"external_organization": {}, //Need to add this when we external orgs implemented
 		},
 	}
 }
 
-func resourceExternalContact() *schema.Resource {
+func ResourceExternalContact() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud External Contact",
 
@@ -647,7 +648,7 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 			return resource.NonRetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceExternalContact())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContact())
 
 		if externalContact.FirstName != nil {
 			d.Set("first_name", *externalContact.FirstName)

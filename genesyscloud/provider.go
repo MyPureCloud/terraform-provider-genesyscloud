@@ -6,26 +6,20 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
+	"os"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
-
-var providerResources map[string]*schema.Resource
-var providerDataSources map[string]*schema.Resource
-
-var resourceMapMutex = sync.RWMutex{}
-var datasourceMapMutex = sync.RWMutex{}
 
 func init() {
 	// Set descriptions to support markdown syntax, this will be used in document generation
 	// and the language server.
-	providerResources = make(map[string]*schema.Resource)
-	providerDataSources = make(map[string]*schema.Resource)
+	// providerResources = make(map[string]*schema.Resource)
+	// providerDataSources = make(map[string]*schema.Resource)
 	schema.DescriptionKind = schema.StringMarkdown
 
 	// Customize the content of descriptions when output.
@@ -37,187 +31,12 @@ func init() {
 		return strings.TrimSpace(desc)
 	}
 
-	//Registering the schema resources.  We do this in the init to make sure everything is setup before anyone uses a provider.
-	registerResources()
-	registerDataSources()
 }
 
-// So I am basically inverting the registration process as we refactor.
-// While resources are all in the same package I will continue to register them through the RegisterResource and
-// RegisterDataSource.  However, to keep things cleans and avoid circular dependencies, as resources are moved into
-// their own packages, I am going to have the individual resources register themselves.
-func RegisterResource(resourceName string, resource *schema.Resource) {
-	resourceMapMutex.Lock()
-	providerResources[resourceName] = resource
-	resourceMapMutex.Unlock()
-}
 
-func RegisterDataSource(dataSourceName string, datasource *schema.Resource) {
-	datasourceMapMutex.Lock()
-	providerDataSources[dataSourceName] = datasource
-	datasourceMapMutex.Unlock()
-}
-
-func registerResources() {
-	RegisterResource("genesyscloud_architect_datatable", resourceArchitectDatatable())
-	RegisterResource("genesyscloud_architect_datatable_row", resourceArchitectDatatableRow())
-	RegisterResource("genesyscloud_architect_emergencygroup", resourceArchitectEmergencyGroup())
-	RegisterResource("genesyscloud_flow", resourceFlow())
-	RegisterResource("genesyscloud_flow_milestone", resourceFlowMilestone())
-	RegisterResource("genesyscloud_flow_outcome", resourceFlowOutcome())
-	RegisterResource("genesyscloud_architect_ivr", resourceArchitectIvrConfig())
-	RegisterResource("genesyscloud_architect_schedules", resourceArchitectSchedules())
-	RegisterResource("genesyscloud_architect_schedulegroups", resourceArchitectScheduleGroups())
-	RegisterResource("genesyscloud_architect_user_prompt", resourceArchitectUserPrompt())
-	RegisterResource("genesyscloud_auth_role", resourceAuthRole())
-	RegisterResource("genesyscloud_auth_division", resourceAuthDivision())
-	RegisterResource("genesyscloud_employeeperformance_externalmetrics_definitions", resourceEmployeeperformanceExternalmetricsDefinition())
-	RegisterResource("genesyscloud_externalcontacts_contact", resourceExternalContact())
-	RegisterResource("genesyscloud_group", resourceGroup())
-	RegisterResource("genesyscloud_group_roles", resourceGroupRoles())
-	RegisterResource("genesyscloud_idp_adfs", resourceIdpAdfs())
-	RegisterResource("genesyscloud_idp_generic", resourceIdpGeneric())
-	RegisterResource("genesyscloud_idp_gsuite", resourceIdpGsuite())
-	RegisterResource("genesyscloud_idp_okta", resourceIdpOkta())
-	RegisterResource("genesyscloud_idp_onelogin", resourceIdpOnelogin())
-	RegisterResource("genesyscloud_idp_ping", resourceIdpPing())
-	RegisterResource("genesyscloud_idp_salesforce", resourceIdpSalesforce())
-	RegisterResource("genesyscloud_integration", resourceIntegration())
-	RegisterResource("genesyscloud_integration_action", resourceIntegrationAction())
-	RegisterResource("genesyscloud_integration_credential", resourceCredential())
-	RegisterResource("genesyscloud_journey_action_map", resourceJourneyActionMap())
-	RegisterResource("genesyscloud_journey_action_template", resourceJourneyActionTemplate())
-	RegisterResource("genesyscloud_journey_outcome", resourceJourneyOutcome())
-	RegisterResource("genesyscloud_journey_segment", resourceJourneySegment())
-	RegisterResource("genesyscloud_knowledge_knowledgebase", resourceKnowledgeKnowledgebase())
-	RegisterResource("genesyscloud_knowledge_document", resourceKnowledgeDocument())
-	RegisterResource("genesyscloud_knowledge_v1_document", resourceKnowledgeDocumentV1())
-	RegisterResource("genesyscloud_knowledge_document_variation", resourceKnowledgeDocumentVariation())
-	RegisterResource("genesyscloud_knowledge_category", resourceKnowledgeCategory())
-	RegisterResource("genesyscloud_knowledge_v1_category", resourceKnowledgeCategoryV1())
-	RegisterResource("genesyscloud_knowledge_label", resourceKnowledgeLabel())
-	RegisterResource("genesyscloud_location", resourceLocation())
-	RegisterResource("genesyscloud_recording_media_retention_policy", resourceMediaRetentionPolicy())
-	RegisterResource("genesyscloud_oauth_client", resourceOAuthClient())
-	RegisterResource("genesyscloud_outbound_campaignrule", resourceOutboundCampaignRule())
-	RegisterResource("genesyscloud_outbound_attempt_limit", resourceOutboundAttemptLimit())
-	RegisterResource("genesyscloud_outbound_callanalysisresponseset", resourceOutboundCallAnalysisResponseSet())
-	RegisterResource("genesyscloud_outbound_campaign", resourceOutboundCampaign())
-	RegisterResource("genesyscloud_outbound_contactlistfilter", resourceOutboundContactListFilter())
-	RegisterResource("genesyscloud_outbound_callabletimeset", resourceOutboundCallabletimeset())
-	RegisterResource("genesyscloud_outbound_contact_list", resourceOutboundContactList())
-	RegisterResource("genesyscloud_outbound_ruleset", resourceOutboundRuleset())
-	RegisterResource("genesyscloud_outbound_messagingcampaign", resourceOutboundMessagingCampaign())
-	RegisterResource("genesyscloud_outbound_sequence", resourceOutboundSequence())
-	RegisterResource("genesyscloud_outbound_settings", resourceOutboundSettings())
-	RegisterResource("genesyscloud_outbound_wrapupcodemappings", resourceOutboundWrapUpCodeMappings())
-	RegisterResource("genesyscloud_outbound_dnclist", resourceOutboundDncList())
-	RegisterResource("genesyscloud_orgauthorization_pairing", resourceOrgauthorizationPairing())
-	RegisterResource("genesyscloud_quality_forms_evaluation", resourceEvaluationForm())
-	RegisterResource("genesyscloud_quality_forms_survey", resourceSurveyForm())
-	RegisterResource("genesyscloud_responsemanagement_library", resourceResponsemanagementLibrary())
-	RegisterResource("genesyscloud_responsemanagement_response", resourceResponsemanagementResponse())
-	RegisterResource("genesyscloud_responsemanagement_responseasset", resourceResponseManagamentResponseAsset())
-	RegisterResource("genesyscloud_routing_email_domain", resourceRoutingEmailDomain())
-	RegisterResource("genesyscloud_routing_email_route", resourceRoutingEmailRoute())
-	RegisterResource("genesyscloud_routing_language", resourceRoutingLanguage())
-	RegisterResource("genesyscloud_routing_queue", resourceRoutingQueue())
-	RegisterResource("genesyscloud_routing_skill", resourceRoutingSkill())
-	RegisterResource("genesyscloud_routing_skill_group", resourceRoutingSkillGroup())
-	RegisterResource("genesyscloud_routing_sms_address", resourceRoutingSmsAddress())
-	RegisterResource("genesyscloud_routing_settings", resourceRoutingSettings())
-	RegisterResource("genesyscloud_routing_utilization", resourceRoutingUtilization())
-	RegisterResource("genesyscloud_routing_wrapupcode", resourceRoutingWrapupCode())
-	RegisterResource("genesyscloud_script", resourceScript())
-	RegisterResource("genesyscloud_telephony_providers_edges_did_pool", resourceTelephonyDidPool())
-	RegisterResource("genesyscloud_telephony_providers_edges_edge_group", resourceEdgeGroup())
-	RegisterResource("genesyscloud_telephony_providers_edges_extension_pool", resourceTelephonyExtensionPool())
-	RegisterResource("genesyscloud_telephony_providers_edges_phone", resourcePhone())
-	RegisterResource("genesyscloud_telephony_providers_edges_site", resourceSite())
-	RegisterResource("genesyscloud_telephony_providers_edges_phonebasesettings", resourcePhoneBaseSettings())
-	RegisterResource("genesyscloud_telephony_providers_edges_trunkbasesettings", resourceTrunkBaseSettings())
-	RegisterResource("genesyscloud_telephony_providers_edges_trunk", resourceTrunk())
-	RegisterResource("genesyscloud_user", resourceUser())
-	RegisterResource("genesyscloud_user_roles", resourceUserRoles())
-	RegisterResource("genesyscloud_webdeployments_configuration", resourceWebDeploymentConfiguration())
-	RegisterResource("genesyscloud_webdeployments_deployment", resourceWebDeployment())
-	RegisterResource("genesyscloud_widget_deployment", resourceWidgetDeployment())
-}
-
-func registerDataSources() {
-	RegisterDataSource("genesyscloud_architect_datatable", dataSourceArchitectDatatable())
-	RegisterDataSource("genesyscloud_architect_ivr", dataSourceArchitectIvr())
-	RegisterDataSource("genesyscloud_architect_emergencygroup", dataSourceArchitectEmergencyGroup())
-	RegisterDataSource("genesyscloud_architect_schedules", dataSourceSchedule())
-	RegisterDataSource("genesyscloud_architect_schedulegroups", dataSourceArchitectScheduleGroups())
-	RegisterDataSource("genesyscloud_architect_user_prompt", dataSourceUserPrompt())
-	RegisterDataSource("genesyscloud_auth_role", dataSourceAuthRole())
-	RegisterDataSource("genesyscloud_auth_division", dataSourceAuthDivision())
-	RegisterDataSource("genesyscloud_auth_division_home", dataSourceAuthDivisionHome())
-	RegisterDataSource("genesyscloud_employeeperformance_externalmetrics_definitions", dataSourceEmployeeperformanceExternalmetricsDefinition())
-	RegisterDataSource("genesyscloud_externalcontacts_contact", dataSourceExternalContactsContact())
-	RegisterDataSource("genesyscloud_flow", dataSourceFlow())
-	RegisterDataSource("genesyscloud_flow_milestone", dataSourceFlowMilestone())
-	RegisterDataSource("genesyscloud_flow_outcome", dataSourceFlowOutcome())
-	RegisterDataSource("genesyscloud_group", dataSourceGroup())
-	RegisterDataSource("genesyscloud_integration", dataSourceIntegration())
-	RegisterDataSource("genesyscloud_integration_action", dataSourceIntegrationAction())
-	RegisterDataSource("genesyscloud_integration_credential", dataSourceIntegrationCredential())
-	RegisterDataSource("genesyscloud_journey_action_map", dataSourceJourneyActionMap())
-	RegisterDataSource("genesyscloud_journey_action_template", dataSourceJourneyActionTemplate())
-	RegisterDataSource("genesyscloud_journey_outcome", dataSourceJourneyOutcome())
-	RegisterDataSource("genesyscloud_journey_segment", dataSourceJourneySegment())
-	RegisterDataSource("genesyscloud_knowledge_knowledgebase", dataSourceKnowledgeKnowledgebase())
-	RegisterDataSource("genesyscloud_knowledge_category", dataSourceKnowledgeCategory())
-	RegisterDataSource("genesyscloud_knowledge_label", dataSourceKnowledgeLabel())
-	RegisterDataSource("genesyscloud_location", dataSourceLocation())
-	RegisterDataSource("genesyscloud_oauth_client", dataSourceOAuthClient())
-	RegisterDataSource("genesyscloud_organizations_me", dataSourceOrganizationsMe())
-	RegisterDataSource("genesyscloud_outbound_attempt_limit", dataSourceOutboundAttemptLimit())
-	RegisterDataSource("genesyscloud_outbound_callanalysisresponseset", dataSourceOutboundCallAnalysisResponseSet())
-	RegisterDataSource("genesyscloud_outbound_campaign", dataSourceOutboundCampaign())
-	RegisterDataSource("genesyscloud_outbound_campaignrule", dataSourceOutboundCampaignRule())
-	RegisterDataSource("genesyscloud_outbound_callabletimeset", dataSourceOutboundCallabletimeset())
-	RegisterDataSource("genesyscloud_outbound_contact_list", dataSourceOutboundContactList())
-	RegisterDataSource("genesyscloud_outbound_messagingcampaign", dataSourceOutboundMessagingcampaign())
-	RegisterDataSource("genesyscloud_outbound_contactlistfilter", dataSourceOutboundContactListFilter())
-	RegisterDataSource("genesyscloud_outbound_ruleset", dataSourceOutboundRuleset())
-	RegisterDataSource("genesyscloud_outbound_sequence", dataSourceOutboundSequence())
-	RegisterDataSource("genesyscloud_outbound_dnclist", dataSourceOutboundDncList())
-	RegisterDataSource("genesyscloud_quality_forms_evaluation", dataSourceQualityFormsEvaluations())
-	RegisterDataSource("genesyscloud_quality_forms_survey", dataSourceQualityFormsSurvey())
-	RegisterDataSource("genesyscloud_recording_media_retention_policy", dataSourceRecordingMediaRetentionPolicy())
-	RegisterDataSource("genesyscloud_responsemanagement_library", dataSourceResponsemanagementLibrary())
-	RegisterDataSource("genesyscloud_responsemanagement_response", dataSourceResponsemanagementResponse())
-	RegisterDataSource("genesyscloud_responsemanagement_responseasset", dataSourceResponseManagamentResponseAsset())
-	RegisterDataSource("genesyscloud_routing_language", dataSourceRoutingLanguage())
-	RegisterDataSource("genesyscloud_routing_queue", dataSourceRoutingQueue())
-	RegisterDataSource("genesyscloud_routing_settings", dataSourceRoutingSettings())
-	RegisterDataSource("genesyscloud_routing_skill", dataSourceRoutingSkill())
-	RegisterDataSource("genesyscloud_routing_skill_group", dataSourceRoutingSkillGroup())
-	RegisterDataSource("genesyscloud_routing_sms_address", dataSourceRoutingSmsAddress())
-	RegisterDataSource("genesyscloud_routing_email_domain", dataSourceRoutingEmailDomain())
-	RegisterDataSource("genesyscloud_routing_wrapupcode", dataSourceRoutingWrapupcode())
-	RegisterDataSource("genesyscloud_script", dataSourceScript())
-	RegisterDataSource("genesyscloud_station", dataSourceStation())
-	RegisterDataSource("genesyscloud_user", dataSourceUser())
-	RegisterDataSource("genesyscloud_telephony_providers_edges_did", dataSourceDid())
-	RegisterDataSource("genesyscloud_telephony_providers_edges_did_pool", dataSourceDidPool())
-	RegisterDataSource("genesyscloud_telephony_providers_edges_edge_group", dataSourceEdgeGroup())
-	RegisterDataSource("genesyscloud_telephony_providers_edges_extension_pool", dataSourceExtensionPool())
-	RegisterDataSource("genesyscloud_telephony_providers_edges_site", dataSourceSite())
-	RegisterDataSource("genesyscloud_telephony_providers_edges_linebasesettings", dataSourceLineBaseSettings())
-	RegisterDataSource("genesyscloud_telephony_providers_edges_phone", dataSourcePhone())
-	RegisterDataSource("genesyscloud_telephony_providers_edges_phonebasesettings", dataSourcePhoneBaseSettings())
-	RegisterDataSource("genesyscloud_telephony_providers_edges_trunk", dataSourceTrunk())
-	RegisterDataSource("genesyscloud_telephony_providers_edges_trunkbasesettings", dataSourceTrunkBaseSettings())
-	RegisterDataSource("genesyscloud_webdeployments_configuration", dataSourceWebDeploymentsConfiguration())
-	RegisterDataSource("genesyscloud_webdeployments_deployment", dataSourceWebDeploymentsDeployment())
-	RegisterDataSource("genesyscloud_widget_deployment", dataSourceWidgetDeployments())
-}
 
 // New initializes the provider schema
-func New(version string) func() *schema.Provider {
+func New(version string,providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) func() *schema.Provider {
 	return func() *schema.Provider {
 
 		/*
@@ -399,7 +218,7 @@ func getRegionDomain(region string) string {
 	return getRegionMap()[strings.ToLower(region)]
 }
 
-func getRegionBasePath(region string) string {
+func GetRegionBasePath(region string) string {
 	return "https://api." + getRegionDomain(region)
 }
 
@@ -407,7 +226,7 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 	accessToken := data.Get("access_token").(string)
 	oauthclientID := data.Get("oauthclient_id").(string)
 	oauthclientSecret := data.Get("oauthclient_secret").(string)
-	basePath := getRegionBasePath(data.Get("aws_region").(string))
+	basePath := GetRegionBasePath(data.Get("aws_region").(string))
 
 	config.BasePath = basePath
 	if data.Get("sdk_debug").(bool) {
@@ -481,3 +300,19 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
 	return nil
 }
+
+func AuthorizeSdk() (*platformclientv2.Configuration, error) {
+	// Create new config
+	sdkConfig := platformclientv2.GetDefaultConfiguration()
+
+	
+	sdkConfig.BasePath = GetRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
+
+	err := sdkConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+	if err != nil {
+		return sdkConfig, err
+	}
+
+	return sdkConfig, nil
+}
+

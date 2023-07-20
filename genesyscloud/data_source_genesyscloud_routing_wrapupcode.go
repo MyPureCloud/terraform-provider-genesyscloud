@@ -8,10 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
-func dataSourceRoutingWrapupcode() *schema.Resource {
+func DataSourceRoutingWrapupcode() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Wrap-up Code. Select a wrap-up code by name",
 		ReadContext: ReadWithPooledClient(dataSourceRoutingWrapupcodeRead),

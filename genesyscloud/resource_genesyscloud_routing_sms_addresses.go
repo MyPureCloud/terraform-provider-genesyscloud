@@ -11,10 +11,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func resourceRoutingSmsAddress() *schema.Resource {
+func ResourceRoutingSmsAddress() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud routing sms address`,
 
@@ -73,8 +74,8 @@ func resourceRoutingSmsAddress() *schema.Resource {
 	}
 }
 
-func getAllRoutingSmsAddress(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllRoutingSmsAddress(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	routingApi := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -89,15 +90,15 @@ func getAllRoutingSmsAddress(_ context.Context, clientConfig *platformclientv2.C
 		}
 
 		for _, entity := range *sdksmsaddressentitylisting.Entities {
-			resources[*entity.Id] = &ResourceMeta{Name: *entity.Name}
+			resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: *entity.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func routingSmsAddressExporter() *ResourceExporter {
-	return &ResourceExporter{
+func RoutingSmsAddressExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingSmsAddress),
 	}
 }
@@ -164,7 +165,7 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Sms Address %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSmsAddress())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSmsAddress())
 
 		if sdksmsaddress.Name != nil {
 			d.Set("name", *sdksmsaddress.Name)

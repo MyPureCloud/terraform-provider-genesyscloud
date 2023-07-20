@@ -13,7 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -72,7 +74,7 @@ var (
 	}
 )
 
-func resourcePhone() *schema.Resource {
+func ResourcePhone() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Phone",
 
@@ -129,7 +131,7 @@ func resourcePhone() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validatePhoneNumber},
+				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: ValidatePhoneNumber},
 			},
 			"capabilities": {
 				Description: "Phone Capabilities.",
@@ -157,7 +159,7 @@ func getLineBaseSettingsID(api *platformclientv2.TelephonyProvidersEdgeApi, phon
 func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	state := d.Get("state").(string)
-	site := buildSdkDomainEntityRef(d, "site_id")
+	site := BuildSdkDomainEntityRef(d, "site_id")
 	phoneBaseSettings := buildSdkPhoneBaseSettings(d, "phone_base_settings_id")
 
 	capabilities := buildSdkCapabilities(d)
@@ -214,7 +216,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	if webRtcUserId != "" {
-		createPhone.WebRtcUser = buildSdkDomainEntityRef(d, "web_rtc_user_id")
+		createPhone.WebRtcUser = BuildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 
 	log.Printf("Creating phone %s", name)
@@ -257,7 +259,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return resource.NonRetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourcePhone())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone())
 		d.Set("name", *currentPhone.Name)
 		d.Set("state", *currentPhone.State)
 		d.Set("site_id", *currentPhone.Site.Id)
@@ -335,9 +337,9 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 
 func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
-	site := buildSdkDomainEntityRef(d, "site_id")
+	site := BuildSdkDomainEntityRef(d, "site_id")
 	phoneBaseSettings := buildSdkPhoneBaseSettings(d, "phone_base_settings_id")
-	phoneMetaBase := buildSdkDomainEntityRef(d, "phone_meta_base_id")
+	phoneMetaBase := BuildSdkDomainEntityRef(d, "phone_meta_base_id")
 	webRtcUserId := d.Get("web_rtc_user_id")
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
@@ -380,7 +382,7 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	if webRtcUserId != "" {
-		updatePhoneBody.WebRtcUser = buildSdkDomainEntityRef(d, "web_rtc_user_id")
+		updatePhoneBody.WebRtcUser = BuildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 
 	log.Printf("Updating phone %s", name)
@@ -522,8 +524,8 @@ func flattenPhoneCapabilities(capabilities *platformclientv2.Phonecapabilities) 
 	return []interface{}{capabilitiesMap}
 }
 
-func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
@@ -540,7 +542,7 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 
 		for _, phone := range *phones.Entities {
 			if phone.State != nil && *phone.State != "deleted" {
-				resources[*phone.Id] = &ResourceMeta{Name: *phone.Name}
+				resources[*phone.Id] = &resourceExporter.ResourceMeta{Name: *phone.Name}
 			}
 		}
 	}
@@ -548,10 +550,10 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 	return resources, nil
 }
 
-func phoneExporter() *ResourceExporter {
-	return &ResourceExporter{
+func PhoneExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllPhones),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"web_rtc_user_id":        {RefType: "genesyscloud_user"},
 			"site_id":                {RefType: "genesyscloud_telephony_providers_edges_site"},
 			"phone_base_settings_id": {RefType: "genesyscloud_telephony_providers_edges_phonebasesettings"},
@@ -564,7 +566,7 @@ func buildSdkLines(d *schema.ResourceData, lineBaseSettings *platformclientv2.Do
 	isStandAlone = false
 
 	lineAddresses, ok := d.GetOk("line_addresses")
-	lineStringList := InterfaceListToStrings(lineAddresses.([]interface{}))
+	lineStringList := lists.InterfaceListToStrings(lineAddresses.([]interface{}))
 
 	// If line_addresses is not provided, phone is not standalone
 	if !ok || len(lineStringList) == 0 {

@@ -6,10 +6,10 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func postProcessAutomationTrigger(pat *ProcessAutomationTrigger, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {
@@ -155,8 +155,8 @@ func deleteProcessAutomationTrigger(triggerId string, api *platformclientv2.Inte
 	return response, err
 }
 
-func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig *platformclientv2.Configuration) (gcloud.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(gcloud.ResourceIDMetaMap)
+func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
 	// create path and map variables
@@ -174,7 +174,7 @@ func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig 
 		}
 
 		for _, trigger := range *processAutomationTriggers.Entities {
-			resources[*trigger.Id] = &gcloud.ResourceMeta{Name: *trigger.Name}
+			resources[*trigger.Id] = &resourceExporter.ResourceMeta{Name: *trigger.Name}
 		}
 
 		if processAutomationTriggers.NextUri == nil {

@@ -7,10 +7,10 @@ import (
 	"regexp"
 	"strings"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 const (
@@ -23,8 +23,8 @@ const (
 // Common Exporter interface to abstract away whether we are using HCL or JSON as our exporter
 type Exporter func() diag.Diagnostics
 type ExporterFilterType int64
-type ExporterResourceTypeFilter func(exports map[string]*gcloud.ResourceExporter, filter []string) map[string]*gcloud.ResourceExporter
-type ExporterResourceFilter func(result gcloud.ResourceIDMetaMap, name string, filter []string) gcloud.ResourceIDMetaMap
+type ExporterResourceTypeFilter func(exports map[string]*resourceExporter.ResourceExporter, filter []string) map[string]*resourceExporter.ResourceExporter
+type ExporterResourceFilter func(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap
 
 const (
 	LegacyInclude ExporterFilterType = iota
@@ -32,10 +32,10 @@ const (
 	ExcludeResources
 )
 
-func IncludeFilterByResourceType(exports map[string]*gcloud.ResourceExporter, filter []string) map[string]*gcloud.ResourceExporter {
+func IncludeFilterByResourceType(exports map[string]*resourceExporter.ResourceExporter, filter []string) map[string]*resourceExporter.ResourceExporter {
 	if len(filter) > 0 {
 		for resType := range exports {
-			if !gcloud.StringInSlice(resType, formatFilter(filter)) {
+			if !lists.StringInSlice(resType, formatFilter(filter)) {
 				delete(exports, resType)
 			}
 		}
@@ -44,7 +44,7 @@ func IncludeFilterByResourceType(exports map[string]*gcloud.ResourceExporter, fi
 	return exports
 }
 
-func ExcludeFilterByResourceType(exports map[string]*gcloud.ResourceExporter, filter []string) map[string]*gcloud.ResourceExporter {
+func ExcludeFilterByResourceType(exports map[string]*resourceExporter.ResourceExporter, filter []string) map[string]*resourceExporter.ResourceExporter {
 	if len(filter) > 0 {
 		for resType := range exports {
 			for _, f := range filter {
@@ -57,8 +57,8 @@ func ExcludeFilterByResourceType(exports map[string]*gcloud.ResourceExporter, fi
 	return exports
 }
 
-func FilterResourceByName(result gcloud.ResourceIDMetaMap, name string, filter []string) gcloud.ResourceIDMetaMap {
-	if gcloud.SubStringInSlice(fmt.Sprintf("%v::", name), filter) {
+func FilterResourceByName(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap {
+	if lists.SubStringInSlice(fmt.Sprintf("%v::", name), filter) {
 		names := make([]string, 0)
 		for _, f := range filter {
 			n := fmt.Sprintf("%v::", name)
@@ -68,7 +68,7 @@ func FilterResourceByName(result gcloud.ResourceIDMetaMap, name string, filter [
 			}
 		}
 
-		newResult := make(gcloud.ResourceIDMetaMap)
+		newResult := make(resourceExporter.ResourceIDMetaMap)
 		for _, name := range names {
 			for k, v := range result {
 				if v.Name == name {
@@ -82,7 +82,7 @@ func FilterResourceByName(result gcloud.ResourceIDMetaMap, name string, filter [
 	return result
 }
 
-func IncludeFilterResourceByRegex(result gcloud.ResourceIDMetaMap, name string, filter []string) gcloud.ResourceIDMetaMap {
+func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap {
 	newFilters := make([]string, 0)
 	for _, f := range filter {
 		if strings.Contains(f, "::") {
@@ -92,7 +92,7 @@ func IncludeFilterResourceByRegex(result gcloud.ResourceIDMetaMap, name string, 
 		}
 	}
 
-	newResourceMap := make(gcloud.ResourceIDMetaMap)
+	newResourceMap := make(resourceExporter.ResourceIDMetaMap)
 
 	if len(newFilters) == 0 {
 		return result
@@ -111,7 +111,7 @@ func IncludeFilterResourceByRegex(result gcloud.ResourceIDMetaMap, name string, 
 	return newResourceMap
 }
 
-func ExcludeFilterResourceByRegex(result gcloud.ResourceIDMetaMap, name string, filter []string) gcloud.ResourceIDMetaMap {
+func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap {
 
 	newFilters := make([]string, 0)
 	for _, f := range filter {
@@ -126,7 +126,7 @@ func ExcludeFilterResourceByRegex(result gcloud.ResourceIDMetaMap, name string, 
 		return result
 	}
 
-	newResourceMap := make(gcloud.ResourceIDMetaMap)
+	newResourceMap := make(resourceExporter.ResourceIDMetaMap)
 
 	for k, _ := range result {
 		for _, pattern := range newFilters {
@@ -181,8 +181,8 @@ func determineVarValue(s *schema.Schema) interface{} {
 	return nil
 }
 
-func resolveReference(refSettings *gcloud.RefAttrSettings, refID string, exporters map[string]*gcloud.ResourceExporter, exportingState bool) string {
-	if gcloud.StringInSlice(refID, refSettings.AltValues) {
+func resolveReference(refSettings *resourceExporter.RefAttrSettings, refID string, exporters map[string]*resourceExporter.ResourceExporter, exportingState bool) string {
+	if lists.StringInSlice(refID, refSettings.AltValues) {
 		// This is not actually a reference to another object. Keep the value
 		return refID
 	}

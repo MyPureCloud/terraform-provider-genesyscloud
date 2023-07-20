@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists" 
 )
 
 const (
@@ -26,10 +27,15 @@ const (
 // ProviderFactories are used to instantiate a provider during acceptance testing.
 // The factory function will be invoked for every Terraform CLI command executed
 // to create a provider server to which the CLI can reattach.
-var ProviderFactories = map[string]func() (*schema.Provider, error){
-	"genesyscloud": func() (*schema.Provider, error) {
-		return New("0.1.0")(), nil
-	},
+
+
+func GetProviderFactories (providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) (map[string]func() (*schema.Provider, error)) {
+	return map[string]func() (*schema.Provider, error){
+		"genesyscloud": func() (*schema.Provider, error) {
+			provider := New("0.1.0",providerResources, providerDataSources)()
+			return provider,nil
+		},
+	}
 }
 
 func TestAccPreCheck(t *testing.T) {
@@ -45,7 +51,7 @@ func TestAccPreCheck(t *testing.T) {
 }
 
 // Verify default division is home division
-func testDefaultHomeDivision(resource string) resource.TestCheckFunc {
+func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		homeDivID, err := getHomeDivisionID()
 		if err != nil {
@@ -73,7 +79,7 @@ func generateStringArray(vals ...string) string {
 
 // For fields such as genesyscloud_outbound_campaign.campaign_status, which use a diff suppress func,
 // and may return as "on", or "complete" depending on how long the operation takes
-func verifyAttributeInArrayOfPotentialValues(resource string, key string, potentialValues []string) resource.TestCheckFunc {
+func VerifyAttributeInArrayOfPotentialValues(resource string, key string, potentialValues []string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		r := state.RootModule().Resources[resource]
 		if r == nil {
@@ -90,7 +96,7 @@ func verifyAttributeInArrayOfPotentialValues(resource string, key string, potent
 	}
 }
 
-func validateStringInArray(resourceName string, attrName string, value string) resource.TestCheckFunc {
+func ValidateStringInArray(resourceName string, attrName string, value string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		resourceState, ok := state.RootModule().Resources[resourceName]
 		if !ok {
@@ -115,7 +121,7 @@ func validateStringInArray(resourceName string, attrName string, value string) r
 	}
 }
 
-// The 'TestCheckResourceAttrPair' version of validateStringInArray
+// The 'TestCheckResourceAttrPair' version of ValidateStringInArray
 func validateResourceAttributeInArray(resource1Name string, arrayAttrName, resource2Name string, valueAttrName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		valueResourceState, ok := state.RootModule().Resources[resource2Name]
@@ -194,7 +200,7 @@ func validateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 			}
 			if arr, ok := val.([]interface{}); ok {
 				// Property is an array. Check if string value exists in array.
-				if StringInSlice(jsonValue, InterfaceListToStrings(arr)) {
+				if lists.StringInSlice(jsonValue, lists.InterfaceListToStrings(arr)) {
 					return nil
 				}
 				return fmt.Errorf("JSON array property for resourceState %s.%s does not contain expected %s", resourceName, jsonProp, jsonValue)
@@ -325,7 +331,7 @@ func generateMapAttr(name string, properties ...string) string {
 	`, name, strings.Join(properties, "\n"))
 }
 
-func generateSubstitutionsMap(substitutions map[string]string) string {
+func GenerateSubstitutionsMap(substitutions map[string]string) string {
 	var substitutionsStr string
 	for k, v := range substitutions {
 		substitutionsStr += fmt.Sprintf("\t%s = \"%s\"\n", k, v)
@@ -346,3 +352,70 @@ func randString(length int) string {
 
 	return string(s)
 }
+
+
+
+
+
+
+
+// func DeleteLocationWithNumber(emergencyNumber string) error {
+// 	sdkConfig := platformclientv2.GetDefaultConfiguration()
+// 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
+
+// 	for pageNum := 1; ; pageNum++ {
+// 		const pageSize = 100
+// 		locations, _, getErr := locationsAPI.GetLocations(pageSize, pageNum, nil, "")
+// 		if getErr != nil {
+// 			return getErr
+// 		}
+
+// 		if locations.Entities == nil || len(*locations.Entities) == 0 {
+// 			break
+// 		}
+
+// 		for _, location := range *locations.Entities {
+// 			if location.EmergencyNumber != nil {
+// 				if strings.Contains(*location.EmergencyNumber.E164, emergencyNumber) {
+// 					err := deleteSiteWithLocationId(*location.Id)
+// 					if err != nil {
+// 						return err
+// 					}
+// 					_, err = locationsAPI.DeleteLocation(*location.Id)
+// 					time.Sleep(30 * time.Second)
+// 					return err
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	return nil
+// }
+
+// func deleteSiteWithLocationId(locationId string) error {
+// 	sdkConfig := platformclientv2.GetDefaultConfiguration()
+// 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+// 	for pageNum := 1; ; pageNum++ {
+// 		const pageSize = 100
+// 		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false)
+// 		if getErr != nil {
+// 			return getErr
+// 		}
+
+// 		if sites.Entities == nil || len(*sites.Entities) == 0 {
+// 			return nil
+// 		}
+
+// 		for _, site := range *sites.Entities {
+// 			if site.Location != nil && *site.Location.Id == locationId {
+// 				_, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(*site.Id)
+// 				if err != nil {
+// 					return err
+// 				}
+// 				time.Sleep(8 * time.Second)
+// 				break
+// 			}
+// 		}
+// 	}
+// }
+

@@ -12,10 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func resourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
+func ResourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud employeeperformance externalmetrics definition`,
 
@@ -67,8 +68,8 @@ func resourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
 	}
 }
 
-func getAllEmployeeperformanceExternalmetricsDefinition(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllEmployeeperformanceExternalmetricsDefinition(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	gamificationApi := platformclientv2.NewGamificationApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -83,15 +84,15 @@ func getAllEmployeeperformanceExternalmetricsDefinition(_ context.Context, clien
 		}
 
 		for _, entity := range *sdkexternalmetricdefinitionlisting.Entities {
-			resources[*entity.Id] = &ResourceMeta{Name: *entity.Name}
+			resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: *entity.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func employeeperformanceExternalmetricsDefinitionExporter() *ResourceExporter {
-	return &ResourceExporter{
+func EmployeeperformanceExternalmetricsDefinitionExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllEmployeeperformanceExternalmetricsDefinition),
 		AllowZeroValues:  []string{"precision"},
 	}
@@ -186,7 +187,7 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceEmployeeperformanceExternalmetricsDefinition())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition())
 
 		if sdkexternalmetricdefinition.Name != nil {
 			d.Set("name", *sdkexternalmetricdefinition.Name)

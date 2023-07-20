@@ -15,7 +15,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -86,8 +88,8 @@ var (
 	}
 )
 
-func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(clientConfig)
 
 	pageCount := 1 // Needed because of broken journey common paging
@@ -103,7 +105,7 @@ func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, journeyOutcome := range *journeyOutcomes.Entities {
-			resources[*journeyOutcome.Id] = &ResourceMeta{Name: *journeyOutcome.DisplayName}
+			resources[*journeyOutcome.Id] = &resourceExporter.ResourceMeta{Name: *journeyOutcome.DisplayName}
 		}
 
 		pageCount = *journeyOutcomes.PageCount
@@ -112,13 +114,13 @@ func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Con
 	return resources, nil
 }
 
-func journeyOutcomeExporter() *ResourceExporter {
-	return &ResourceExporter{
+func JourneyOutcomeExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllJourneyOutcomes),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
-func resourceJourneyOutcome() *schema.Resource {
+func ResourceJourneyOutcome() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Outcome",
 		CreateContext: CreateWithPooledClient(createJourneyOutcome),
@@ -164,7 +166,7 @@ func readJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interf
 			return resource.NonRetryableError(fmt.Errorf("failed to read journey outcome %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceJourneyOutcome())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcome())
 		flattenJourneyOutcome(d, journeyOutcome)
 
 		log.Printf("Read journey outcome %s %s", d.Id(), *journeyOutcome.DisplayName)
@@ -231,9 +233,9 @@ func flattenJourneyOutcome(d *schema.ResourceData, journeyOutcome *platformclien
 	d.Set("display_name", *journeyOutcome.DisplayName)
 	resourcedata.SetNillableValue(d, "description", journeyOutcome.Description)
 	resourcedata.SetNillableValue(d, "is_positive", journeyOutcome.IsPositive)
-	resourcedata.SetNillableValue(d, "context", flattenAsList(journeyOutcome.Context, flattenContext))
-	resourcedata.SetNillableValue(d, "journey", flattenAsList(journeyOutcome.Journey, flattenJourney))
-	resourcedata.SetNillableValue(d, "associated_value_field", flattenAsList(journeyOutcome.AssociatedValueField, flattenAssociatedValueField))
+	resourcedata.SetNillableValue(d, "context", lists.FlattenAsList(journeyOutcome.Context, flattenContext))
+	resourcedata.SetNillableValue(d, "journey", lists.FlattenAsList(journeyOutcome.Journey, flattenJourney))
+	resourcedata.SetNillableValue(d, "associated_value_field", lists.FlattenAsList(journeyOutcome.AssociatedValueField, flattenAssociatedValueField))
 }
 
 func flattenAssociatedValueField(associatedValueField *platformclientv2.Associatedvaluefield) map[string]interface{} {

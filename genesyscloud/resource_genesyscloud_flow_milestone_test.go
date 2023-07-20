@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func TestAccResourceFlowMilestone(t *testing.T) {
@@ -24,7 +24,7 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -37,7 +37,7 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_milestone."+milestoneResource1, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_flow_milestone."+milestoneResource1, "description", description1),
-					testDefaultHomeDivision("genesyscloud_flow_milestone."+milestoneResource1),
+					TestDefaultHomeDivision("genesyscloud_flow_milestone."+milestoneResource1),
 				),
 			},
 			{
@@ -51,7 +51,7 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_milestone."+milestoneResource1, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_flow_milestone."+milestoneResource1, "description", description2),
-					testDefaultHomeDivision("genesyscloud_flow_milestone."+milestoneResource1),
+					TestDefaultHomeDivision("genesyscloud_flow_milestone."+milestoneResource1),
 				),
 			},
 			{

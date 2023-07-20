@@ -8,10 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
-func dataSourceAuthDivisionHome() *schema.Resource {
+func DataSourceAuthDivisionHome() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Divisions. Get the Home division",
 		ReadContext: ReadWithPooledClient(dataSourceAuthDivisionHomeRead),

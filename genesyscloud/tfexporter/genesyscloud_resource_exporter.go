@@ -21,6 +21,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 /*
@@ -37,6 +40,10 @@ var (
 	// The same UID is stored as the key in attributesDecoded, with the value being the jsonencode representation of the json string.
 	// When the bytes are being written to the file, the UID is found and replaced with the unquoted jsonencode object
 	attributesDecoded = make(map[string]string)
+
+	providerDataSources map[string]*schema.Resource
+	providerResources map[string]*schema.Resource
+	resourceExporters map[string]*resourceExporter.ResourceExporter
 )
 
 type unresolvableAttributeInfo struct {
@@ -59,7 +66,7 @@ type GenesysCloudResourceExporter struct {
 	provider              *schema.Provider
 	exportFilePath        string
 	tfVarsFilePath        string
-	exporters             *map[string]*gcloud.ResourceExporter
+	exporters             *map[string]*resourceExporter.ResourceExporter
 	resources             []resourceInfo
 	resourceTypeHCLBlocks [][]byte
 	resourceTypeMaps      map[string]map[string]gcloud.JsonMap
@@ -74,7 +81,7 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 	case LegacyInclude:
 		var filter []string
 		if resourceTypes, ok := d.GetOk("resource_types"); ok {
-			filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
+			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
 			gre.filterList = &filter
 		}
 
@@ -84,7 +91,7 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 	case IncludeResources:
 		var filter []string
 		if resourceTypes, ok := d.GetOk("include_filter_resources"); ok {
-			filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
+			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
 			gre.filterList = &filter
 		}
 
@@ -94,7 +101,7 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 	case ExcludeResources:
 		var filter []string
 		if resourceTypes, ok := d.GetOk("exclude_filter_resources"); ok {
-			filter = gcloud.InterfaceListToStrings(resourceTypes.([]interface{}))
+			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
 			gre.filterList = &filter
 		}
 
@@ -105,13 +112,18 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 }
 
 func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
+	
+	if(providerResources == nil){
+		providerResources , providerDataSources = r_registrar.GetResources()
+	}
+	
 	gre := &GenesysCloudResourceExporter{
 		exportAsHCL:         d.Get("export_as_hcl").(bool),
 		logPermissionErrors: d.Get("log_permission_errors").(bool),
 		filterType:          filterType,
 		includeStateFile:    d.Get("include_state_file").(bool),
 		version:             meta.(*gcloud.ProviderMeta).Version,
-		provider:            gcloud.New(meta.(*gcloud.ProviderMeta).Version)(),
+		provider:            gcloud.New(meta.(*gcloud.ProviderMeta).Version,providerResources,providerDataSources)(),
 		d:                   d,
 		ctx:                 ctx,
 		meta:                meta,
@@ -139,7 +151,7 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 
 	// Step #3 Build a list of exporters that have an attribute we want to exclude
 	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
-		if diagErr := populateConfigExcluded(*g.exporters, gcloud.InterfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
+		if diagErr := populateConfigExcluded(*g.exporters, lists.InterfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
 			return diagErr
 		}
 	}
@@ -193,7 +205,7 @@ func (g *GenesysCloudResourceExporter) setUpExportFilePaths() (diagErr diag.Diag
 // elements in the resource_type attribute will be returned.
 func (g *GenesysCloudResourceExporter) retrieveExporters() {
 	log.Printf("Retrieving exporters list")
-	exports := gcloud.GetResourceExporters()
+	exports := resourceExporter.GetResourceExporters()
 
 	if g.resourceTypeFilter != nil && g.filterList != nil {
 		exports = g.resourceTypeFilter(exports, *g.filterList)
@@ -218,15 +230,15 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr 
 	log.Printf("Retrieving map of Genesys Cloud resources to export")
 	var filter []string
 	if exportableResourceTypes, ok := g.d.GetOk("resource_types"); ok {
-		filter = gcloud.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
 	}
 
 	if exportableResourceTypes, ok := g.d.GetOk("include_filter_resources"); ok {
-		filter = gcloud.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
 	}
 
 	if exportableResourceTypes, ok := g.d.GetOk("exclude_filter_resources"); ok {
-		filter = gcloud.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
 	}
 
 	newFilter := make([]string, 0)
@@ -265,7 +277,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 	// We use concurrency here to spin off each exporter type and getting the data
 	for resType, exporter := range *g.exporters {
 		wg.Add(1)
-		go func(resType string, exporter *gcloud.ResourceExporter) {
+		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
 			//
 			typeResources, err := getResourcesForType(resType, g.provider, exporter, g.meta)
@@ -403,7 +415,7 @@ func (g *GenesysCloudResourceExporter) sourceForVersion(version string) string {
 	return providerSource
 }
 
-func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[string]*gcloud.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[string]*resourceExporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
 	errorChan := make(chan diag.Diagnostics)
 	wgDone := make(chan bool)
 	// Cancel remaining goroutines if an error occurs
@@ -413,7 +425,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	var wg sync.WaitGroup
 	for name, exporter := range exporters {
 		wg.Add(1)
-		go func(name string, exporter *gcloud.ResourceExporter) {
+		go func(name string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
 			log.Printf("Getting all resources for type %s", name)
 			exporter.FilterResource = g.resourceFilter
@@ -482,7 +494,7 @@ func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
 	return err
 }
 
-func getResourcesForType(resType string, provider *schema.Provider, exporter *gcloud.ResourceExporter, meta interface{}) ([]resourceInfo, diag.Diagnostics) {
+func getResourcesForType(resType string, provider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceInfo, diag.Diagnostics) {
 	lenResources := len(exporter.SanitizedResourceMap)
 	errorChan := make(chan diag.Diagnostics, lenResources)
 	resourceChan := make(chan resourceInfo, lenResources)
@@ -490,7 +502,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *gc
 
 	res := provider.ResourcesMap[resType]
 	if res == nil {
-		return nil, diag.Errorf("Resource type %s not defined", resType)
+		return nil, diag.Errorf("Resource type %v not defined", resType)
 	}
 
 	ctyType := res.CoreConfigSchema().ImpliedType()
@@ -498,7 +510,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *gc
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
 	for id, resMeta := range exporter.SanitizedResourceMap {
-		go func(id string, resMeta *gcloud.ResourceMeta) {
+		go func(id string, resMeta *resourceExporter.ResourceMeta) {
 			defer wg.Done()
 
 			fetchResourceState := func() error {
@@ -571,7 +583,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *gc
 	}
 }
 
-func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *gcloud.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
+func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
@@ -629,7 +641,7 @@ func sanitizeConfigMap(
 	resourceName string,
 	configMap map[string]interface{},
 	prevAttr string,
-	exporters map[string]*gcloud.ResourceExporter, //Map of all of the exporters
+	exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
 	exportingState bool,
 	exportingAsHCL bool) ([]unresolvableAttributeInfo, bool) {
 	exporter := exporters[resourceType] //Get the specific export that we will be working with
@@ -816,7 +828,7 @@ func sanitizeConfigArray(
 	resourceType string,
 	anArray []interface{},
 	currAttr string,
-	exporters map[string]*gcloud.ResourceExporter,
+	exporters map[string]*resourceExporter.ResourceExporter,
 	exportingState bool,
 	exportingAsHCL bool) []interface{} {
 	exporter := exporters[resourceType]
@@ -851,7 +863,7 @@ func sanitizeConfigArray(
 	return result
 }
 
-func populateConfigExcluded(exporters map[string]*gcloud.ResourceExporter, configExcluded []string) diag.Diagnostics {
+func populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
 	for _, excluded := range configExcluded {
 		resourceIdx := strings.Index(excluded, ".")
 		if resourceIdx == -1 {

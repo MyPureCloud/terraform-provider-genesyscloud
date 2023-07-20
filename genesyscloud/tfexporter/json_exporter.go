@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 type JsonExporter struct {
@@ -106,7 +107,7 @@ func getDecodedData(jsonString string, currAttr string) (string, error) {
 	return decodedJson, nil
 }
 
-func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *gcloud.ResourceExporter, exporters map[string]*gcloud.ResourceExporter, exportingState bool) (string, error) {
+func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *resourceExporter.ResourceExporter, exporters map[string]*resourceExporter.ResourceExporter, exportingState bool) (string, error) {
 	var jsonData interface{}
 	err := json.Unmarshal([]byte(currVal), &jsonData)
 	if err != nil {

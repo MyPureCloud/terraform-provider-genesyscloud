@@ -11,11 +11,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllEmergencyGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllEmergencyGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -31,7 +32,7 @@ func getAllEmergencyGroups(_ context.Context, clientConfig *platformclientv2.Con
 
 		for _, emergencyGroupConfig := range *emergencyGroupConfigs.Entities {
 			if emergencyGroupConfig.State != nil && *emergencyGroupConfig.State != "deleted" {
-				resources[*emergencyGroupConfig.Id] = &ResourceMeta{Name: *emergencyGroupConfig.Name}
+				resources[*emergencyGroupConfig.Id] = &resourceExporter.ResourceMeta{Name: *emergencyGroupConfig.Name}
 			}
 		}
 	}
@@ -39,10 +40,10 @@ func getAllEmergencyGroups(_ context.Context, clientConfig *platformclientv2.Con
 	return resources, nil
 }
 
-func architectEmergencyGroupExporter() *ResourceExporter {
-	return &ResourceExporter{
+func ArchitectEmergencyGroupExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllEmergencyGroups),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":                            {RefType: "genesyscloud_auth_division"},
 			"emergency_call_flows.emergency_flow_id": {RefType: "genesyscloud_flow"},
 			"emergency_call_flows.ivr_ids":           {RefType: "genesyscloud_architect_ivr"},
@@ -50,7 +51,7 @@ func architectEmergencyGroupExporter() *ResourceExporter {
 	}
 }
 
-func resourceArchitectEmergencyGroup() *schema.Resource {
+func ResourceArchitectEmergencyGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Architect Emergency Group",
 
@@ -161,7 +162,7 @@ func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interf
 			return resource.NonRetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectEmergencyGroup())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectEmergencyGroup())
 
 		if emergencyGroup.State != nil && *emergencyGroup.State == "deleted" {
 			d.SetId("")

@@ -10,7 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -105,7 +106,7 @@ func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *pl
 
 				var divisionIDs []string
 				if configDivs, ok := roleMap["division_ids"]; ok {
-					divisionIDs = *setToStringList(configDivs.(*schema.Set))
+					divisionIDs = *lists.SetToStringList(configDivs.(*schema.Set))
 				}
 
 				if len(divisionIDs) == 0 {
@@ -118,7 +119,7 @@ func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *pl
 				}
 			}
 
-			grantsToRemove := sliceDifference(existingGrants, configGrants)
+			grantsToRemove := lists.SliceDifference(existingGrants, configGrants)
 			if len(grantsToRemove) > 0 {
 				// It's possible for a role or division to be removed before this update is processed,
 				// and the bulk remove API returns failure if any roles/divisions no longer exist.
@@ -134,7 +135,7 @@ func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *pl
 				}
 			}
 
-			grantsToAdd := sliceDifference(configGrants, existingGrants)
+			grantsToAdd := lists.SliceDifference(configGrants, existingGrants)
 			if len(grantsToAdd) > 0 {
 				// In some cases new roles or divisions have not yet been added to the auth service cache causing 404s that should be retried.
 				diagErr = RetryWhen(IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -230,12 +231,12 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 					stateDivs[j] = resourceAttrs["roles."+strconv.Itoa(i)+".division_ids."+strconv.Itoa(j)]
 				}
 
-				extraDivs := sliceDifference(stateDivs, divisions)
+				extraDivs := lists.SliceDifference(stateDivs, divisions)
 				if len(extraDivs) > 0 {
 					return fmt.Errorf("Unexpected divisions found for role %s in state: %v", roleID, extraDivs)
 				}
 
-				missingDivs := sliceDifference(divisions, stateDivs)
+				missingDivs := lists.SliceDifference(divisions, stateDivs)
 				if len(missingDivs) > 0 {
 					return fmt.Errorf("Missing expected divisions for role %s in state: %v", roleID, missingDivs)
 				}

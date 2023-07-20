@@ -14,7 +14,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -40,10 +41,10 @@ var (
 	}
 )
 
-func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	categoryEntities := make([]platformclientv2.Categoryresponse, 0)
-	resources := make(ResourceIDMetaMap)
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	// get published knowledge bases
@@ -70,7 +71,7 @@ func getAllKnowledgeCategories(_ context.Context, clientConfig *platformclientv2
 
 	for _, knowledgeCategory := range categoryEntities {
 		id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
-		resources[id] = &ResourceMeta{Name: *knowledgeCategory.Name}
+		resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeCategory.Name}
 	}
 
 	return resources, nil
@@ -115,16 +116,16 @@ func getAllKnowledgeCategoryEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 	return &entities, nil
 }
 
-func knowledgeCategoryExporter() *ResourceExporter {
-	return &ResourceExporter{
+func KnowledgeCategoryExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeCategories),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
 	}
 }
 
-func resourceKnowledgeCategory() *schema.Resource {
+func ResourceKnowledgeCategory() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Category",
 
@@ -194,7 +195,7 @@ func readKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge category %s: %s", knowledgeCategoryId, getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceKnowledgeCategory())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeCategory())
 
 		newId := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
 		d.SetId(newId)

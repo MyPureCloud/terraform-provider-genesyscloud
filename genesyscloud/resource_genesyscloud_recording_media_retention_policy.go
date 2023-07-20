@@ -13,7 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 type EvaluationFormQuestionGroupStruct struct {
@@ -898,7 +899,7 @@ var (
 	qualityAPI = platformclientv2.NewQualityApi()
 )
 
-func resourceMediaRetentionPolicy() *schema.Resource {
+func ResourceMediaRetentionPolicy() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Media Retention Policies",
 		CreateContext: CreateWithPooledClient(createMediaRetentionPolicy),
@@ -963,8 +964,8 @@ func resourceMediaRetentionPolicy() *schema.Resource {
 	}
 }
 
-func getAllMediaRetentionPolicies(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllMediaRetentionPolicies(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	recordingAPI := platformclientv2.NewRecordingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -980,7 +981,7 @@ func getAllMediaRetentionPolicies(_ context.Context, clientConfig *platformclien
 		}
 
 		for _, retentionPolicy := range *retentionPolicies.Entities {
-			resources[*retentionPolicy.Id] = &ResourceMeta{Name: *retentionPolicy.Name}
+			resources[*retentionPolicy.Id] = &resourceExporter.ResourceMeta{Name: *retentionPolicy.Name}
 		}
 	}
 
@@ -2846,7 +2847,7 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 			return resource.NonRetryableError(fmt.Errorf("failed to read media retention policy %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceSurveyForm())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSurveyForm())
 		if retentionPolicy.Name != nil {
 			d.Set("name", *retentionPolicy.Name)
 		}
@@ -2949,10 +2950,10 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	return readMediaRetentionPolicy(ctx, d, meta)
 }
 
-func mediaRetentionPolicyExporter() *ResourceExporter {
-	return &ResourceExporter{
+func MediaRetentionPolicyExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllMediaRetentionPolicies),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"media_policies.chat_policy.conditions.for_queue_ids":                                         {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
 			"media_policies.call_policy.conditions.for_queue_ids":                                         {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},
 			"media_policies.message_policy.conditions.for_queue_ids":                                      {RefType: "genesyscloud_routing_queue", AltValues: []string{"*"}},

@@ -15,7 +15,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -248,8 +250,8 @@ var (
 	}
 )
 
-func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(clientConfig)
 
 	pageCount := 1 // Needed because of broken journey common paging
@@ -265,7 +267,7 @@ func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, journeySegment := range *journeySegments.Entities {
-			resources[*journeySegment.Id] = &ResourceMeta{Name: *journeySegment.DisplayName}
+			resources[*journeySegment.Id] = &resourceExporter.ResourceMeta{Name: *journeySegment.DisplayName}
 		}
 
 		pageCount = *journeySegments.PageCount
@@ -274,14 +276,14 @@ func getAllJourneySegments(_ context.Context, clientConfig *platformclientv2.Con
 	return resources, nil
 }
 
-func journeySegmentExporter() *ResourceExporter {
-	return &ResourceExporter{
+func JourneySegmentExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllJourneySegments),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceJourneySegment() *schema.Resource {
+func ResourceJourneySegment() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Journey Segment",
 		CreateContext: CreateWithPooledClient(createJourneySegment),
@@ -328,7 +330,7 @@ func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interf
 			return resource.NonRetryableError(fmt.Errorf("failed to read journey segment %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceJourneySegment())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneySegment())
 		flattenJourneySegment(d, journeySegment)
 
 		log.Printf("Read journey segment %s %s", d.Id(), *journeySegment.DisplayName)
@@ -398,9 +400,9 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 	d.Set("color", *journeySegment.Color)
 	d.Set("scope", *journeySegment.Scope)
 	resourcedata.SetNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
-	resourcedata.SetNillableValue(d, "context", flattenAsList(journeySegment.Context, flattenContext))
-	resourcedata.SetNillableValue(d, "journey", flattenAsList(journeySegment.Journey, flattenJourney))
-	resourcedata.SetNillableValue(d, "external_segment", flattenAsList(journeySegment.ExternalSegment, flattenExternalSegment))
+	resourcedata.SetNillableValue(d, "context", lists.FlattenAsList(journeySegment.Context, flattenContext))
+	resourcedata.SetNillableValue(d, "journey", lists.FlattenAsList(journeySegment.Journey, flattenJourney))
+	resourcedata.SetNillableValue(d, "external_segment", lists.FlattenAsList(journeySegment.ExternalSegment, flattenExternalSegment))
 	resourcedata.SetNillableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
 }
 
@@ -459,7 +461,7 @@ func flattenContext(context *platformclientv2.Context) map[string]interface{} {
 		return nil
 	}
 	contextMap := make(map[string]interface{})
-	contextMap["patterns"] = *flattenList(context.Patterns, flattenContextPattern)
+	contextMap["patterns"] = *lists.FlattenList(context.Patterns, flattenContextPattern)
 	return contextMap
 }
 
@@ -475,7 +477,7 @@ func buildSdkContext(context map[string]interface{}) *platformclientv2.Context {
 
 func flattenContextPattern(contextPattern *platformclientv2.Contextpattern) map[string]interface{} {
 	contextPatternMap := make(map[string]interface{})
-	contextPatternMap["criteria"] = *flattenList(contextPattern.Criteria, flattenEntityTypeCriteria)
+	contextPatternMap["criteria"] = *lists.FlattenList(contextPattern.Criteria, flattenEntityTypeCriteria)
 	return contextPatternMap
 }
 
@@ -488,7 +490,7 @@ func buildSdkContextPattern(contextPattern map[string]interface{}) *platformclie
 func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecriteria) map[string]interface{} {
 	entityTypeCriteriaMap := make(map[string]interface{})
 	entityTypeCriteriaMap["key"] = *entityTypeCriteria.Key
-	entityTypeCriteriaMap["values"] = stringListToSet(*entityTypeCriteria.Values)
+	entityTypeCriteriaMap["values"] = lists.StringListToSet(*entityTypeCriteria.Values)
 	entityTypeCriteriaMap["should_ignore_case"] = *entityTypeCriteria.ShouldIgnoreCase
 	entityTypeCriteriaMap["operator"] = *entityTypeCriteria.Operator
 	entityTypeCriteriaMap["entity_type"] = *entityTypeCriteria.EntityType
@@ -516,7 +518,7 @@ func flattenJourney(journey *platformclientv2.Journey) map[string]interface{} {
 		return nil
 	}
 	journeyMap := make(map[string]interface{})
-	journeyMap["patterns"] = *flattenList(journey.Patterns, flattenJourneyPattern)
+	journeyMap["patterns"] = *lists.FlattenList(journey.Patterns, flattenJourneyPattern)
 	return journeyMap
 }
 
@@ -532,7 +534,7 @@ func buildSdkJourney(journey map[string]interface{}) *platformclientv2.Journey {
 
 func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[string]interface{} {
 	journeyPatternMap := make(map[string]interface{})
-	journeyPatternMap["criteria"] = *flattenList(journeyPattern.Criteria, flattenCriteria)
+	journeyPatternMap["criteria"] = *lists.FlattenList(journeyPattern.Criteria, flattenCriteria)
 	journeyPatternMap["count"] = *journeyPattern.Count
 	journeyPatternMap["stream_type"] = *journeyPattern.StreamType
 	journeyPatternMap["session_type"] = *journeyPattern.SessionType
@@ -559,7 +561,7 @@ func buildSdkJourneyPattern(journeyPattern map[string]interface{}) *platformclie
 func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{} {
 	criteriaMap := make(map[string]interface{})
 	criteriaMap["key"] = *criteria.Key
-	criteriaMap["values"] = stringListToSet(*criteria.Values)
+	criteriaMap["values"] = lists.StringListToSet(*criteria.Values)
 	criteriaMap["should_ignore_case"] = *criteria.ShouldIgnoreCase
 	criteriaMap["operator"] = *criteria.Operator
 	return criteriaMap

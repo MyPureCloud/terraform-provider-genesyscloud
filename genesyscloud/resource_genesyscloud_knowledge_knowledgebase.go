@@ -13,11 +13,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
@@ -26,7 +27,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	}
 
 	for _, knowledgeBase := range *publishedEntities {
-		resources[*knowledgeBase.Id] = &ResourceMeta{Name: *knowledgeBase.Name}
+		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{Name: *knowledgeBase.Name}
 	}
 
 	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
@@ -35,7 +36,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	}
 
 	for _, knowledgeBase := range *unpublishedEntities {
-		resources[*knowledgeBase.Id] = &ResourceMeta{Name: *knowledgeBase.Name}
+		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{Name: *knowledgeBase.Name}
 	}
 
 	return resources, nil
@@ -80,14 +81,14 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 	return &entities, nil
 }
 
-func knowledgeKnowledgebaseExporter() *ResourceExporter {
-	return &ResourceExporter{
+func KnowledgeKnowledgebaseExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeKnowledgebases),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceKnowledgeKnowledgebase() *schema.Resource {
+func ResourceKnowledgeKnowledgebase() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge Base",
 
@@ -165,7 +166,7 @@ func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, met
 			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceKnowledgeKnowledgebase())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeKnowledgebase())
 
 		d.Set("name", *knowledgeBase.Name)
 		d.Set("description", *knowledgeBase.Description)

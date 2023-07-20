@@ -13,11 +13,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -33,21 +34,21 @@ func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2
 		}
 
 		for _, domain := range *domains.Entities {
-			resources[*domain.Id] = &ResourceMeta{Name: *domain.Id}
+			resources[*domain.Id] = &resourceExporter.ResourceMeta{Name: *domain.Id}
 		}
 	}
 }
 
-func routingEmailDomainExporter() *ResourceExporter {
-	return &ResourceExporter{
+func RoutingEmailDomainExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingEmailDomains),
 		UnResolvableAttributes: map[string]*schema.Schema{
-			"custom_smtp_server_id": resourceRoutingEmailDomain().Schema["custom_smtp_server_id"],
+			"custom_smtp_server_id": ResourceRoutingEmailDomain().Schema["custom_smtp_server_id"],
 		},
 	}
 }
 
-func resourceRoutingEmailDomain() *schema.Resource {
+func ResourceRoutingEmailDomain() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Email Domain",
 
@@ -136,7 +137,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 			return resource.NonRetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingEmailDomain())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain())
 		if domain.SubDomain != nil && *domain.SubDomain {
 			// Strip off the regional domain suffix added by the server
 			d.Set("domain_id", strings.SplitN(*domain.Id, ".", 2)[0])

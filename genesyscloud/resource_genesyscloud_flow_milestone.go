@@ -11,11 +11,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	const pageSize = 100
@@ -31,23 +32,23 @@ func getAllFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Co
 		}
 
 		for _, milestone := range *milestones.Entities {
-			resources[*milestone.Id] = &ResourceMeta{Name: *milestone.Name}
+			resources[*milestone.Id] = &resourceExporter.ResourceMeta{Name: *milestone.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func flowMilestoneExporter() *ResourceExporter {
-	return &ResourceExporter{
+func FlowMilestoneExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllFlowMilestones),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }
 
-func resourceFlowMilestone() *schema.Resource {
+func ResourceFlowMilestone() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud flow milestone`,
 
@@ -157,7 +158,7 @@ func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interfa
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Flow Milestone %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceFlowMilestone())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone())
 
 		if sdkflowmilestone.Name != nil {
 			d.Set("name", *sdkflowmilestone.Name)

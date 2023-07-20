@@ -12,7 +12,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 )
 
 const maxDnisPerRequest = 50
@@ -23,8 +26,8 @@ func init() {
 	architectIvrProxy = architect_api.NewArchitectIvrProxy()
 }
 
-func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	architectIvrProxy.ConfigureProxyApiInstance(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -40,7 +43,7 @@ func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configur
 
 		for _, ivrConfig := range *ivrConfigs.Entities {
 			if ivrConfig.State != nil && *ivrConfig.State != "deleted" {
-				resources[*ivrConfig.Id] = &ResourceMeta{Name: *ivrConfig.Name}
+				resources[*ivrConfig.Id] = &resourceExporter.ResourceMeta{Name: *ivrConfig.Name}
 			}
 		}
 	}
@@ -48,10 +51,10 @@ func getAllIvrConfigs(_ context.Context, clientConfig *platformclientv2.Configur
 	return resources, nil
 }
 
-func architectIvrExporter() *ResourceExporter {
-	return &ResourceExporter{
+func ArchitectIvrExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllIvrConfigs),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"open_hours_flow_id":    {RefType: "genesyscloud_flow"},
 			"closed_hours_flow_id":  {RefType: "genesyscloud_flow"},
 			"holiday_hours_flow_id": {RefType: "genesyscloud_flow"},
@@ -61,7 +64,7 @@ func architectIvrExporter() *ResourceExporter {
 	}
 }
 
-func resourceArchitectIvrConfig() *schema.Resource {
+func ResourceArchitectIvrConfig() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud IVR config",
 
@@ -90,7 +93,7 @@ func resourceArchitectIvrConfig() *schema.Resource {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validatePhoneNumber},
+				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: ValidatePhoneNumber},
 			},
 			"open_hours_flow_id": {
 				Description: "ID of inbound call flow for open hours.",
@@ -125,12 +128,12 @@ func resourceArchitectIvrConfig() *schema.Resource {
 func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	openHoursFlowId := buildSdkDomainEntityRef(d, "open_hours_flow_id")
-	closedHoursFlowId := buildSdkDomainEntityRef(d, "closed_hours_flow_id")
-	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
-	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
+	openHoursFlowId := BuildSdkDomainEntityRef(d, "open_hours_flow_id")
+	closedHoursFlowId := BuildSdkDomainEntityRef(d, "closed_hours_flow_id")
+	holidayHoursFlowId := BuildSdkDomainEntityRef(d, "holiday_hours_flow_id")
+	scheduleGroupId := BuildSdkDomainEntityRef(d, "schedule_group_id")
 	divisionId := d.Get("division_id").(string)
-	dnis := buildSdkStringList(d, "dnis")
+	dnis := lists.BuildSdkStringList(d, "dnis")
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
@@ -188,9 +191,9 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return nil
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectIvrConfig())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectIvrConfig())
 		d.Set("name", *ivrConfig.Name)
-		d.Set("dnis", stringListToSetOrNil(ivrConfig.Dnis))
+		d.Set("dnis", lists.StringListToSetOrNil(ivrConfig.Dnis))
 
 		if ivrConfig.Description != nil {
 			d.Set("description", *ivrConfig.Description)
@@ -236,12 +239,12 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	openHoursFlowId := buildSdkDomainEntityRef(d, "open_hours_flow_id")
-	closedHoursFlowId := buildSdkDomainEntityRef(d, "closed_hours_flow_id")
-	holidayHoursFlowId := buildSdkDomainEntityRef(d, "holiday_hours_flow_id")
-	scheduleGroupId := buildSdkDomainEntityRef(d, "schedule_group_id")
+	openHoursFlowId := BuildSdkDomainEntityRef(d, "open_hours_flow_id")
+	closedHoursFlowId := BuildSdkDomainEntityRef(d, "closed_hours_flow_id")
+	holidayHoursFlowId := BuildSdkDomainEntityRef(d, "holiday_hours_flow_id")
+	scheduleGroupId := BuildSdkDomainEntityRef(d, "schedule_group_id")
 	divisionId := d.Get("division_id").(string)
-	dnis := buildSdkStringList(d, "dnis")
+	dnis := lists.BuildSdkStringList(d, "dnis")
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)

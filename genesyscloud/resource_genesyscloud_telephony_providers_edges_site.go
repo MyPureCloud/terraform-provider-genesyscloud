@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"strings"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -13,10 +14,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists" 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func resourceSite() *schema.Resource {
+func ResourceSite() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Site",
 
@@ -68,7 +71,7 @@ func resourceSite() *schema.Resource {
 				Description:      "The caller ID value for the site. The callerID must be a valid E.164 formatted phone number",
 				Type:             schema.TypeString,
 				Optional:         true,
-				ValidateDiagFunc: validatePhoneNumber,
+				ValidateDiagFunc: ValidatePhoneNumber,
 			},
 			"caller_name": {
 				Description: "The caller name for the site",
@@ -238,8 +241,8 @@ func resourceSite() *schema.Resource {
 	}
 }
 
-func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
@@ -257,7 +260,7 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (Res
 
 		for _, site := range *sites.Entities {
 			if site.State != nil && *site.State != "deleted" {
-				resources[*site.Id] = &ResourceMeta{Name: *site.Name}
+				resources[*site.Id] = &resourceExporter.ResourceMeta{Name: *site.Name}
 			}
 		}
 	}
@@ -276,7 +279,7 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (Res
 
 		for _, site := range *sites.Entities {
 			if site.State != nil && *site.State != "deleted" {
-				resources[*site.Id] = &ResourceMeta{Name: *site.Name}
+				resources[*site.Id] = &resourceExporter.ResourceMeta{Name: *site.Name}
 			}
 		}
 	}
@@ -284,10 +287,10 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (Res
 	return resources, nil
 }
 
-func siteExporter() *ResourceExporter {
-	return &ResourceExporter{
+func SiteExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getSites),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"location_id": {RefType: "genesyscloud_location"},
 			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 			"primary_sites":   {RefType: "genesyscloud_telephony_providers_edges_site"},
@@ -311,8 +314,8 @@ func validateMediaRegions(regions *[]string, sdkConfig *platformclientv2.Configu
 
 	for _, region := range *regions {
 		if region != *homeRegion &&
-			!StringInSlice(region, *coreRegions) &&
-			!StringInSlice(region, *satRegions) {
+			!lists.StringInSlice(region, *coreRegions) &&
+			!lists.StringInSlice(region, *satRegions) {
 			return fmt.Errorf("region %s is not a valid media region.  please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions.", regions)
 		}
 
@@ -333,7 +336,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.FromErr(err)
 	}
 
-	mediaRegions := buildSdkStringListFromInterfaceArray(d, "media_regions")
+	mediaRegions := lists.BuildSdkStringListFromInterfaceArray(d, "media_regions")
 	callerID := d.Get("caller_id").(string)
 	callerName := d.Get("caller_name").(string)
 
@@ -432,7 +435,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return resource.NonRetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceSite())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite())
 		d.Set("name", *currentSite.Name)
 		d.Set("location_id", nil)
 		if currentSite.Location != nil {
@@ -459,11 +462,11 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("caller_name", currentSite.CallerName)
 
 		if currentSite.PrimarySites != nil {
-			d.Set("primary_sites", sdkDomainEntityRefArrToList(*currentSite.PrimarySites))
+			d.Set("primary_sites", SdkDomainEntityRefArrToList(*currentSite.PrimarySites))
 		}
 
 		if currentSite.SecondarySites != nil {
-			d.Set("secondary_sites", sdkDomainEntityRefArrToList(*currentSite.SecondarySites))
+			d.Set("secondary_sites", SdkDomainEntityRefArrToList(*currentSite.SecondarySites))
 		}
 
 		if retryErr := readSiteNumberPlans(d, edgesAPI); retryErr != nil {
@@ -486,14 +489,14 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	description := d.Get("description").(string)
 	mediaRegionsUseLatencyBased := d.Get("media_regions_use_latency_based").(bool)
 	edgeAutoUpdateConfig, err := buildSdkEdgeAutoUpdateConfig(d)
-	primarySites := InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
-	secondarySites := InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
+	primarySites := lists.InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
+	secondarySites := lists.InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	mediaRegions := buildSdkStringListFromInterfaceArray(d, "media_regions")
+	mediaRegions := lists.BuildSdkStringListFromInterfaceArray(d, "media_regions")
 	callerID := d.Get("caller_id").(string)
 	callerName := d.Get("caller_name").(string)
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
@@ -542,11 +545,11 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	if len(primarySites) > 0 {
-		site.PrimarySites = buildSdkDomainEntityRefArr(d, "primary_sites")
+		site.PrimarySites = BuildSdkDomainEntityRefArr(d, "primary_sites")
 	}
 
 	if len(secondarySites) > 0 {
-		site.SecondarySites = buildSdkDomainEntityRefArr(d, "secondary_sites")
+		site.SecondarySites = BuildSdkDomainEntityRefArr(d, "secondary_sites")
 	}
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
@@ -648,8 +651,8 @@ func nameInOutboundRoutes(name string, outboundRoutes []platformclientv2.Outboun
 
 // Contains the logic to determine if a primary or secondary site need to be updated.
 func updatePrimarySecondarySites(d *schema.ResourceData, siteId string, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) diag.Diagnostics {
-	primarySites := InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
-	secondarySites := InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
+	primarySites := lists.InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
+	secondarySites := lists.InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
 
 	site, resp, err := edgesAPI.GetTelephonyProvidersEdgesSite(siteId)
 
@@ -669,11 +672,11 @@ func updatePrimarySecondarySites(d *schema.ResourceData, siteId string, edgesAPI
 	}
 
 	if len(primarySites) > 0 {
-		site.PrimarySites = buildSdkDomainEntityRefArr(d, "primary_sites")
+		site.PrimarySites = BuildSdkDomainEntityRefArr(d, "primary_sites")
 	}
 
 	if len(secondarySites) > 0 {
-		site.SecondarySites = buildSdkDomainEntityRefArr(d, "secondary_sites")
+		site.SecondarySites = BuildSdkDomainEntityRefArr(d, "secondary_sites")
 	}
 
 	_, resp, err = edgesAPI.PutTelephonyProvidersEdgesSite(siteId, *site)
@@ -1079,4 +1082,89 @@ func buildSdkEdgeAutoUpdateConfig(d *schema.ResourceData) (*platformclientv2.Edg
 	}
 
 	return nil, nil
+}
+
+func GenerateSiteResourceWithCustomAttrs(
+	siteRes,
+	name,
+	description,
+	locationId,
+	mediaModel string,
+	mediaRegionsUseLatencyBased bool,
+	mediaRegions string,
+	callerId string,
+	callerName string,
+	otherAttrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_site" "%s" {
+		name = "%s"
+		description = "%s"
+		location_id = %s
+		media_model = "%s"
+		media_regions_use_latency_based = %v
+		media_regions= %s
+		caller_id = %s
+		caller_name = %s
+		%s
+	}
+	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
+}
+
+func DeleteLocationWithNumber(emergencyNumber string) error {
+	sdkConfig := platformclientv2.GetDefaultConfiguration()
+	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		locations, _, getErr := locationsAPI.GetLocations(pageSize, pageNum, nil, "")
+		if getErr != nil {
+			return getErr
+		}
+
+		if locations.Entities == nil || len(*locations.Entities) == 0 {
+			break
+		}
+
+		for _, location := range *locations.Entities {
+			if location.EmergencyNumber != nil {
+				if strings.Contains(*location.EmergencyNumber.E164, emergencyNumber) {
+					err := deleteSiteWithLocationId(*location.Id)
+					if err != nil {
+						return err
+					}
+					_, err = locationsAPI.DeleteLocation(*location.Id)
+					time.Sleep(30 * time.Second)
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func deleteSiteWithLocationId(locationId string) error {
+	sdkConfig := platformclientv2.GetDefaultConfiguration()
+	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false)
+		if getErr != nil {
+			return getErr
+		}
+
+		if sites.Entities == nil || len(*sites.Entities) == 0 {
+			return nil
+		}
+
+		for _, site := range *sites.Entities {
+			if site.Location != nil && *site.Location.Id == locationId {
+				_, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(*site.Id)
+				if err != nil {
+					return err
+				}
+				time.Sleep(8 * time.Second)
+				break
+			}
+		}
+	}
 }

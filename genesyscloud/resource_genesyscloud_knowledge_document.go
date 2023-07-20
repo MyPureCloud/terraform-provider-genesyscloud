@@ -14,7 +14,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -66,12 +68,13 @@ var (
 	}
 )
 
-func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	documentEntities := make([]platformclientv2.Knowledgedocumentresponse, 0)
-	resources := make(ResourceIDMetaMap)
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
+	
 	// get published knowledge bases
 	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
 	if err != nil {
@@ -96,7 +99,7 @@ func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.
 
 	for _, knowledgeDocument := range documentEntities {
 		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
-		resources[id] = &ResourceMeta{Name: *knowledgeDocument.Title}
+		resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeDocument.Title}
 	}
 
 	return resources, nil
@@ -108,6 +111,8 @@ func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 		entities []platformclientv2.Knowledgedocumentresponse
 	)
 
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	
 	const pageSize = 100
 	// prepare base url
 	resourcePath := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s/documents", url.PathEscape(*knowledgeBase.Id))
@@ -167,22 +172,26 @@ func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 			if after == "" {
 				break
 			}
+			for _, knowledgeDocument := range *knowledgeDocuments.Entities {
+				id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
+				resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeDocument.Title}
+			}
 		}
 	}
 
 	return &entities, nil
 }
 
-func knowledgeDocumentExporter() *ResourceExporter {
-	return &ResourceExporter{
+func KnowledgeDocumentExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeDocuments),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
 	}
 }
 
-func resourceKnowledgeDocument() *schema.Resource {
+func ResourceKnowledgeDocument() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge document",
 
@@ -261,7 +270,7 @@ func buildKnowledgeDocumentRequest(d *schema.ResourceData, knowledgeAPI *platfor
 		}
 	}
 	if labelNames, ok := requestIn["label_names"].([]interface{}); ok && labelNames != nil {
-		labelStringList := InterfaceListToStrings(labelNames)
+		labelStringList := lists.InterfaceListToStrings(labelNames)
 		pageSize := 1
 		labelIds := make([]string, 0)
 		for _, labelName := range labelStringList {
@@ -400,7 +409,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceKnowledgeDocument())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument())
 
 		// required
 		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, knowledgeBaseId)

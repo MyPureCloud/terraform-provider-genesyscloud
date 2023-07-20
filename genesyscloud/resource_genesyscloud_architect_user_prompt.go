@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"time"
+	"os"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -19,7 +20,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 type PromptAudioData struct {
@@ -714,8 +717,8 @@ var userPromptResource = &schema.Resource{
 	},
 }
 
-func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -730,25 +733,25 @@ func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configu
 		}
 
 		for _, userPrompt := range *userPrompts.Entities {
-			resources[*userPrompt.Id] = &ResourceMeta{Name: *userPrompt.Name}
+			resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{Name: *userPrompt.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func architectUserPromptExporter() *ResourceExporter {
-	return &ResourceExporter{
+func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllUserPrompts),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
-		CustomFileWriter: CustomFileWriterSettings{
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
 			SubDirectory:              "audio_prompts",
 		},
 	}
 }
 
-func resourceArchitectUserPrompt() *schema.Resource {
+func ResourceArchitectUserPrompt() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud User Audio Prompt",
 
@@ -880,7 +883,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 			return resource.NonRetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceArchitectUserPrompt())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt())
 		if userPrompt.Name != nil {
 			d.Set("name", *userPrompt.Name)
 		} else {
@@ -986,7 +989,7 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func uploadPrompt(uploadUri *string, filename *string, sdkConfig *platformclientv2.Configuration) error {
-	reader, file, err := downloadOrOpenFile(*filename)
+	reader, file, err := files.DownloadOrOpenFile(*filename)
 	if file != nil {
 		defer file.Close()
 	}
@@ -1261,4 +1264,24 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 		userPrompt.Description,
 		resourcesString,
 	)
+}
+
+func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+	fullPath := path.Join(exportDirectory, subDirectory)
+	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
+		return err
+	}
+
+	audioDataList, err := getArchitectPromptAudioData(promptId, meta)
+	if err != nil || len(audioDataList) == 0 {
+		return err
+	}
+
+	for _, data := range audioDataList {
+		if err := files.DownloadExportFile(fullPath, data.FileName, data.MediaUri); err != nil {
+			return err
+		}
+	}
+	updateFilenamesInExportConfigMap(configMap, audioDataList, subDirectory)
+	return nil
 }

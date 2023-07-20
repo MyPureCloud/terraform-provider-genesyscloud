@@ -12,11 +12,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -32,7 +33,7 @@ func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Confi
 
 		for _, skill := range *skills.Entities {
 			if skill.State != nil && *skill.State != "deleted" {
-				resources[*skill.Id] = &ResourceMeta{Name: *skill.Name}
+				resources[*skill.Id] = &resourceExporter.ResourceMeta{Name: *skill.Name}
 			}
 		}
 	}
@@ -40,14 +41,14 @@ func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Confi
 	return resources, nil
 }
 
-func routingSkillExporter() *ResourceExporter {
-	return &ResourceExporter{
+func RoutingSkillExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllRoutingSkills),
-		RefAttrs:         map[string]*RefAttrSettings{}, // No references
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
 
-func resourceRoutingSkill() *schema.Resource {
+func ResourceRoutingSkill() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Skill",
 
@@ -103,7 +104,7 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 			return resource.NonRetryableError(fmt.Errorf("Failed to read skill %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceRoutingSkill())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill())
 		if skill.State != nil && *skill.State == "deleted" {
 			d.SetId("")
 			return nil

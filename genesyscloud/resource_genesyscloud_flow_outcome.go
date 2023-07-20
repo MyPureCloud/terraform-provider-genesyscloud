@@ -10,11 +10,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-func getAllFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(ResourceIDMetaMap)
+func getAllFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	archAPI := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	const pageSize = 100
@@ -30,23 +31,23 @@ func getAllFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.Conf
 		}
 
 		for _, outcome := range *outcomes.Entities {
-			resources[*outcome.Id] = &ResourceMeta{Name: *outcome.Name}
+			resources[*outcome.Id] = &resourceExporter.ResourceMeta{Name: *outcome.Name}
 		}
 	}
 
 	return resources, nil
 }
 
-func flowOutcomeExporter() *ResourceExporter {
-	return &ResourceExporter{
+func FlowOutcomeExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllFlowOutcomes),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }
 
-func resourceFlowOutcome() *schema.Resource {
+func ResourceFlowOutcome() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud flow outcome`,
 
@@ -154,7 +155,7 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Flow Outcome %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceFlowOutcome())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowOutcome())
 
 		if sdkflowoutcome.Name != nil {
 			d.Set("name", *sdkflowoutcome.Name)

@@ -23,26 +23,26 @@ func TestAccDataSourceSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	err := authorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	emergencyNumber := "+13173124744"
-	err = deleteLocationWithNumber(emergencyNumber)
+	err = DeleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	location := generateLocationResource(
+	location := GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		generateLocationEmergencyNum(
+		GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), generateLocationAddress(
+		), GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -52,10 +52,10 @@ func TestAccDataSourceSite(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateSiteResourceWithCustomAttrs(
+				Config: GenerateSiteResourceWithCustomAttrs(
 					siteRes,
 					name,
 					description1,
@@ -87,14 +87,14 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 		name        = "PureCloud Voice - AWS"
 	)
 
-	err := authorizeSdk()
+	_, err := AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateSiteDataSource(

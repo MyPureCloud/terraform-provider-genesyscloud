@@ -16,7 +16,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v103/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -97,10 +99,10 @@ var (
 	}
 )
 
-func getAllKnowledgeDocumentsV1(_ context.Context, clientConfig *platformclientv2.Configuration) (ResourceIDMetaMap, diag.Diagnostics) {
+func getAllKnowledgeDocumentsV1(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	documentEntities := make([]platformclientv2.Knowledgedocument, 0)
-	resources := make(ResourceIDMetaMap)
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	// get published knowledge bases
@@ -133,7 +135,7 @@ func getAllKnowledgeDocumentsV1(_ context.Context, clientConfig *platformclientv
 		} else {
 			name = fmt.Sprintf("document " + uuid.NewString())
 		}
-		resources[id] = &ResourceMeta{Name: name}
+		resources[id] = &resourceExporter.ResourceMeta{Name: name}
 	}
 
 	return resources, nil
@@ -178,16 +180,16 @@ func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeAp
 	return &entities, nil
 }
 
-func knowledgeDocumentExporterV1() *ResourceExporter {
-	return &ResourceExporter{
+func knowledgeDocumentExporterV1() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeDocumentsV1),
-		RefAttrs: map[string]*RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
 	}
 }
 
-func resourceKnowledgeDocumentV1() *schema.Resource {
+func ResourceKnowledgeDocumentV1() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Knowledge document",
 
@@ -238,7 +240,7 @@ func buildFaq(requestBody map[string]interface{}) *platformclientv2.Documentfaq 
 		faqOut.Answer = &answer
 	}
 	if alternatives, ok := temp["alternatives"].(*schema.Set); ok {
-		faqOut.Alternatives = setToStringList(alternatives)
+		faqOut.Alternatives = lists.SetToStringList(alternatives)
 	}
 	return &faqOut
 }
@@ -250,7 +252,7 @@ func buildCategories(requestBody map[string]interface{}, knowledgeAPI *platformc
 
 	categories := make([]platformclientv2.Documentcategoryinput, 0)
 
-	categoryList := setToStringList(requestBody["categories"].(*schema.Set))
+	categoryList := lists.SetToStringList(requestBody["categories"].(*schema.Set))
 	for _, categoryName := range *categoryList {
 		pageSize := 100
 		knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageCategories(knowledgeBaseId, languageCode, "", "", "", fmt.Sprintf("%v", pageSize), categoryName)
@@ -292,7 +294,7 @@ func buildArticle(requestBody map[string]interface{}) *platformclientv2.Document
 		articleOut.Content = &articleContent
 	}
 	if alternatives, ok := temp["alternatives"].(*schema.Set); ok {
-		articleOut.Alternatives = setToStringList(alternatives)
+		articleOut.Alternatives = lists.SetToStringList(alternatives)
 	}
 
 	return &articleOut
@@ -351,7 +353,7 @@ func flattenFaq(faq *platformclientv2.Documentfaq) []interface{} {
 		faqMap["answer"] = faq.Answer
 	}
 	if faq.Alternatives != nil {
-		faqMap["alternatives"] = stringListToSet(*faq.Alternatives)
+		faqMap["alternatives"] = lists.StringListToSet(*faq.Alternatives)
 	}
 
 	return []interface{}{faqMap}
@@ -370,7 +372,7 @@ func flattenArticle(article *platformclientv2.Documentarticle) []interface{} {
 		articleMap["content_location_url"] = article.Content.Body.LocationUrl
 	}
 	if article.Alternatives != nil {
-		articleMap["alternatives"] = stringListToSet(*article.Alternatives)
+		articleMap["alternatives"] = lists.StringListToSet(*article.Alternatives)
 	}
 
 	return []interface{}{articleMap}
@@ -389,7 +391,7 @@ func flattenCategories(categories *[]platformclientv2.Knowledgecategory) *schema
 		}
 	}
 
-	return stringListToSet(categoryList)
+	return lists.StringListToSet(categoryList)
 }
 
 func createKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -432,7 +434,7 @@ func readKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta i
 			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceKnowledgeDocument())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument())
 
 		// required
 		newId := fmt.Sprintf("%s %s %s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.LanguageCode)
