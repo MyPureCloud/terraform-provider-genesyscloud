@@ -1,4 +1,4 @@
-package genesyscloud
+package external_contacts
 
 import (
 	"context"
@@ -8,348 +8,41 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-var (
-	phoneNumber = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"display": {
-				Description: "Display string of the phone number.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"extension": {
-				Description: "Phone extension.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
-			"accepts_sms": {
-				Description: "If contact accept SMS.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"e164": {
-				Description:      "Phone number in e164 format.",
-				Type:             schema.TypeString,
-				Optional:         true,
-				ValidateDiagFunc: ValidatePhoneNumber,
-			},
-			"country_code": {
-				Description: "Phone number country code.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-		},
-	}
-
-	address = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"address1": {
-				Description: "Contact address 1.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"address2": {
-				Description: "Contact address 2.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"city": {
-				Description: "Contact address city.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"state": {
-				Description: "Contact address state.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"postal_code": {
-				Description: "Contact address postal code.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"country_code": {
-				Description:      "Contact address country code.",
-				Type:             schema.TypeString,
-				Optional:         true,
-				ValidateDiagFunc: validateCountryCode,
-			},
-		},
-	}
-
-	twitterId = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "Contact twitter id.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"name": {
-				Description: "Contact twitter name.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"screen_name": {
-				Description: "Contact twitter screen name.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"profile_url": {
-				Description: "Contact twitter account url.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-		},
-	}
-
-	lineIds = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"user_id": {
-				Description: "Contact line id.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-
-	lineId = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"ids": {
-				Description: "Contact line id.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        lineIds,
-			},
-			"display_name": {
-				Description: "Contact line display name.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-
-	whatsappId = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"phone_number": {
-				Description: "Contact whatsapp phone number.",
-				Type:        schema.TypeList,
-				Required:    true,
-				Elem:        phoneNumber,
-			},
-			"display_name": {
-				Description: "Contact whatsapp display name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-
-	facebookIds = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"scoped_id": {
-				Description: "Contact facebook scoped id.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-
-	facebookId = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"ids": {
-				Description: "Contact facebook scoped id.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        facebookIds,
-			},
-			"display_name": {
-				Description: "Contact whatsapp display name.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-)
-
-func getAllAuthExternalContacts(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+// getAllAuthExternalContacts retrieves all of the external contacts via Terraform in the Genesys Cloud
+func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	ep := GetExternalContactsContactsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	externalAPI := platformclientv2.NewExternalContactsApiWithConfig(clientConfig)
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		externalContacts, _, getErr := externalAPI.GetExternalcontactsContacts(pageSize, pageNum, "", "", nil)
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to get external contacts: %v", getErr)
-		}
+	externalContacts, err := ep.GetAllExternalContacts(ctx)
+	if err != nil {
+		return nil, diag.Errorf("Failed to get external contacts: %v", err)
+	}
 
-		if externalContacts.Entities == nil || len(*externalContacts.Entities) == 0 {
-			break
-		}
-
-		for _, externalContact := range *externalContacts.Entities {
-			log.Printf("Dealing with external concat id : %s", *externalContact.Id)
-			resources[*externalContact.Id] = &resourceExporter.ResourceMeta{Name: *externalContact.Id}
-		}
+	for _, externalContact := range *externalContacts {
+		log.Printf("Dealing with external contact id : %s", *externalContact.Id)
+		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{Name: *externalContact.Id}
 	}
 
 	return resources, nil
 }
 
-func ExternalContactExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllAuthExternalContacts),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"external_organization": {}, //Need to add this when we external orgs implemented
-		},
-	}
-}
-
-func ResourceExternalContact() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud External Contact",
-
-		CreateContext: CreateWithPooledClient(createExternalContact),
-		ReadContext:   ReadWithPooledClient(readExternalContact),
-		UpdateContext: UpdateWithPooledClient(updateExternalContact),
-		DeleteContext: DeleteWithPooledClient(deleteExternalContact),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"first_name": {
-				Description: "The first name of the contact.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"middle_name": {
-				Description: "The middle name of the contact.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"last_name": {
-				Description: "The last name of the contact.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"salutation": {
-				Description: "The salutation of the contact.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"title": {
-				Description: "The title of the contact.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"work_phone": {
-				Description: "Contact work phone settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        phoneNumber,
-			},
-			"cell_phone": {
-				Description: "Contact call phone settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        phoneNumber,
-			},
-			"home_phone": {
-				Description: "Contact home phone settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        phoneNumber,
-			},
-			"other_phone": {
-				Description: "Contact other phone settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        phoneNumber,
-			},
-			"work_email": {
-				Description: "Contact work email.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"personal_email": {
-				Description: "Contact personal email.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"other_email": {
-				Description: "Contact other email.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"address": {
-				Description: "Contact address.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        address,
-			},
-			"twitter_id": {
-				Description: "Contact twitter account informations.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        twitterId,
-			},
-			"line_id": {
-				Description: "Contact line account informations.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        lineId,
-			},
-			"whatsapp_id": {
-				Description: "Contact whatsapp account informations.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        whatsappId,
-			},
-			"facebook_id": {
-				Description: "Contact facebook account informations.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        facebookId,
-			},
-			"survey_opt_out": {
-				Description: "Contact survey opt out preference.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"external_system_url": {
-				Description: "Contact external system url.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-}
-
+// / createExternalContact creates an External Contact in Genesys Cloud via Terraform
 func createExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	externalAPI := platformclientv2.NewExternalContactsApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	ep := GetExternalContactsContactsProxy(sdkConfig)
 
 	externalContact := getExternalContactFromResourceData(d)
 
-	contact, _, err := externalAPI.PostExternalcontactsContacts(externalContact)
+	contact, err := ep.CreateExternalContact(ctx, &externalContact)
 	if err != nil {
 		return diag.Errorf("Failed to create external contact: %s", err)
 	}
@@ -359,6 +52,7 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 	return readExternalContact(ctx, d, meta)
 }
 
+// getExternalContactFromResourceData maps data from schema ResourceData object to a platformclientv2.Externalcontact
 func getExternalContactFromResourceData(d *schema.ResourceData) platformclientv2.Externalcontact {
 	firstName := d.Get("first_name").(string)
 	middleName := d.Get("middle_name").(string)
@@ -634,15 +328,15 @@ func flattenSdkFacebookScopedId(facebookScopedid *[]platformclientv2.Facebooksco
 }
 
 func readExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	externalAPI := platformclientv2.NewExternalContactsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading contact %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		externalContact, resp, getErr := externalAPI.GetExternalcontactsContact(d.Id(), nil)
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
@@ -770,11 +464,11 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func updateExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	externalAPI := platformclientv2.NewExternalContactsApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	ep := GetExternalContactsContactsProxy(sdkConfig)
 
 	externalContact := getExternalContactFromResourceData(d)
-	_, _, err := externalAPI.PutExternalcontactsContact(d.Id(), externalContact)
+	_, err := ep.UpdateExternalContact(ctx, d.Id(), &externalContact)
 	if err != nil {
 		return diag.Errorf("Failed to update external contact: %s", err)
 	}
@@ -785,21 +479,21 @@ func updateExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	externalAPI := platformclientv2.NewExternalContactsApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	ep := GetExternalContactsContactsProxy(sdkConfig)
 
-	_, _, err := externalAPI.DeleteExternalcontactsContact(d.Id())
+	_, err := ep.DeleteExternalContactId(ctx, d.Id())
 	if err != nil {
 		return diag.Errorf("Failed to delete external contact %s: %s", d.Id(), err)
 	}
 
-	return WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
-		_, resp, err := externalAPI.GetExternalcontactsContact(d.Id(), nil)
+	return gcloud.WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
+		_, respCode, err := ep.GetExternalContactById(ctx, d.Id())
 
 		if err == nil {
 			return resource.NonRetryableError(fmt.Errorf("Error deleting external contact %s: %s", d.Id(), err))
 		}
-		if IsStatus404(resp) {
+		if gcloud.IsStatus404ByInt(respCode) {
 			// Success  : External contact deleted
 			log.Printf("Deleted external contact %s", d.Id())
 			return nil

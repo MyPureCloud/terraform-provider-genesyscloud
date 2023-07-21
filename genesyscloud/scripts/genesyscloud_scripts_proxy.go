@@ -33,7 +33,7 @@ func NewScriptsProxy(clientConfig *platformclientv2.Configuration) *ScriptsProxy
 	}
 }
 
-// publishScript will publish the script after it has been successfully uploade
+// publishScript will publish the script after it has been successfully upload
 func (p *ScriptsProxy) publishScript(scriptId string) error {
 	publishScriptBody := &platformclientv2.Publishscriptrequestdata{
 		ScriptId: &scriptId,

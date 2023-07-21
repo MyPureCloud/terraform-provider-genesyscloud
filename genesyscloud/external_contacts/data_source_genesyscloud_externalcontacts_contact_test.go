@@ -1,20 +1,24 @@
-package genesyscloud
+package external_contacts
 
 import (
 	"fmt"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceExternalContacts(t *testing.T) {
 	var (
+		uniqueStr           = uuid.NewString()
 		externalContactData = "data-externalContact"
-		search              = "jean"
+		search              = "john-" + uniqueStr
 
 		externalContactResource = "resource-externalContact"
 		title                   = "integrator staff"
-		firstname               = "jean"
+		firstname               = "john-" + uniqueStr
 		middlename              = "jacques"
 		lastname                = "dupont"
 
@@ -51,8 +55,8 @@ func TestAccDataSourceExternalContacts(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create external contact with an lastname and others property
