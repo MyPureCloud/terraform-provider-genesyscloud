@@ -10,6 +10,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+/*
+Test Class for the External Contacts Data Souce
+*/
 func TestAccDataSourceExternalContacts(t *testing.T) {
 	var (
 		uniqueStr           = uuid.NewString()

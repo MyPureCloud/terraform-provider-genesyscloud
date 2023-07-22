@@ -7,7 +7,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+/*
+   genesyscloud_externalcontacts_contacts_init_test is used to initialize the data sources and resources
+   used in testing the externalcontacts_contacts resource.
+
+   Please make sure you register ALL resources and data sources your test cases will use.
+*/
+
+// providerDataSources holds a map of all registered resources
 var providerDataSources map[string]*schema.Resource
+
+// providerResources holds a map of all registered datasources.
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
@@ -15,6 +25,7 @@ type registerTestInstance struct {
 	datasourceMapMutex sync.RWMutex
 }
 
+// registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
@@ -23,8 +34,8 @@ func (r *registerTestInstance) registerTestResources() {
 
 }
 
+// registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
-
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
@@ -32,6 +43,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 }
 
+// initTestresources initializes all test resources and data sources.
 func initTestresources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
@@ -43,11 +55,11 @@ func initTestresources() {
 
 }
 
+// TestMain is a "setup" function called by the testing framework when run the
 func TestMain(m *testing.M) {
-
-	// Run setup function before starting the test suite for Outbound Package
+	// Run setup function before starting the test suite for external_contacts package
 	initTestresources()
 
-	// Run the test suite for outbound
+	// Run the test suite for suite for the external_contacts package
 	m.Run()
 }

@@ -12,6 +12,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+/*
+   The data_source_genesyscloud_externalcontacts_contact.go contains the data source implementation
+   for the resource.
+
+   Note:  This code should contain no code for doing the actual lookup in Genesys Cloud.  Instead,
+   it should be added to the _proxy.go file for the class using our proxy pattern.
+*/
+
 // dataSourceExternalContactsContactRead retrieves by search term the id in question
 func dataSourceExternalContactsContactRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
@@ -20,7 +28,7 @@ func dataSourceExternalContactsContactRead(ctx context.Context, d *schema.Resour
 	search := d.Get("search").(string)
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 
-		contactId, retryable, err := ep.GetExternalContactIdBySearch(ctx, search)
+		contactId, retryable, err := ep.getExternalContactIdBySearch(ctx, search)
 
 		if err != nil && !retryable {
 			return resource.NonRetryableError(fmt.Errorf("Error searching exteral contact %s: %s", search, err))

@@ -14,9 +14,23 @@ const (
 	DateParseFormat = "2006-01-02"
 )
 
+func SetMapValueIfNotNil[T any](targetMap map[string]interface{}, key string, value *T) {
+	if value != nil {
+		targetMap[key] = *value
+	}
+}
+
 func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
 	if value != nil {
 		d.Set(key, *value)
+	} else {
+		d.Set(key, nil)
+	}
+}
+
+func SetNillableValueWithInterfaceArrayWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) []interface{}) {
+	if value != nil {
+		d.Set(key, f(value))
 	} else {
 		d.Set(key, nil)
 	}

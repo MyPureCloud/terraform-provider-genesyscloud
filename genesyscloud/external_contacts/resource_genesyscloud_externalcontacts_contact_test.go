@@ -11,6 +11,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_externalcontacts_contact_test.go contains all of the test cases for running the resource
+tests for external_contacts.
+*/
 func TestAccResourceExternalContacts(t *testing.T) {
 	var (
 		contactresource1 = "externalcontact-contact1"

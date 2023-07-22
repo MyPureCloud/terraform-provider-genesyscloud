@@ -8,7 +8,15 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
-const resourceName = "genesyscloud_externalcontacts_contact "
+/*
+resource_genesyscloud_externalcontacts_contacts_schema.go should hold four types of functions within it:
+
+1.  The registration code that registers the Datasource, Resource and Exporter for the package.
+2.  The resource schema definitions for the externalcontacts_contacts resource.
+3.  The datasource schema definitions for the externalcontacts_contacts datasource.
+4.  The resource exporter configuration for the externalcontacts_contacts configuration.
+*/
+const resourceName = "genesyscloud_externalcontacts_contact"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
@@ -17,6 +25,7 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter(resourceName, ExternalContactExporter())
 }
 
+// ResourceExternalContact registers the genesyscloud_externalcontacts_contact resource with Terraform
 func ResourceExternalContact() *schema.Resource {
 	phoneNumber := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -310,6 +319,7 @@ func ResourceExternalContact() *schema.Resource {
 	}
 }
 
+// ExternalContactExporter returns the resourceExporter object used to hold the genesyscloud_externalcontacts_contact exporter's config
 func ExternalContactExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthExternalContacts),
@@ -319,6 +329,7 @@ func ExternalContactExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
+// DataSourceExternalContactsContact registers the genesyscloud_externalcontacts_contact data source
 func DataSourceExternalContactsContact() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud external contacts. Select a contact by any string search.",
