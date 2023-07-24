@@ -8,6 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+/*
+Defines the resource schema, the datasource, and the exporters for the scripts package
+*/
 const resourceName = "genesyscloud_script"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the packagee
