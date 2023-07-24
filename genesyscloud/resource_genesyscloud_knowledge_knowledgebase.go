@@ -6,15 +6,17 @@ import (
 	"log"
 	"net/url"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -168,10 +170,10 @@ func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, met
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeKnowledgebase())
 
-		d.Set("name", *knowledgeBase.Name)
-		d.Set("description", *knowledgeBase.Description)
-		d.Set("core_language", *knowledgeBase.CoreLanguage)
-		d.Set("published", *knowledgeBase.Published)
+		resourcedata.SetNillableValue(d, "name", knowledgeBase.Name)
+		resourcedata.SetNillableValue(d, "description", knowledgeBase.Description)
+		resourcedata.SetNillableValue(d, "core_language", knowledgeBase.CoreLanguage)
+		resourcedata.SetNillableValue(d, "published", knowledgeBase.Published)
 		log.Printf("Read knowledge base %s %s", d.Id(), *knowledgeBase.Name)
 		return cc.CheckState()
 	})
