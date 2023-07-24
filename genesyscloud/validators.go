@@ -74,7 +74,7 @@ func ValidateDateTime(date interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // Validates a country code is in format ISO 3166-1 alpha-2
-func validateCountryCode(code interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateCountryCode(code interface{}, _ cty.Path) diag.Diagnostics {
 	countryCode := code.(string)
 	if len(countryCode) == 2 {
 		return nil

@@ -8,11 +8,12 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func ResourceRoutingSmsAddress() *schema.Resource {
@@ -62,7 +63,7 @@ func ResourceRoutingSmsAddress() *schema.Resource {
 				Required:         true,
 				ForceNew:         true,
 				Type:             schema.TypeString,
-				ValidateDiagFunc: validateCountryCode,
+				ValidateDiagFunc: ValidateCountryCode,
 			},
 			`auto_correct_address`: {
 				Description: `This is used when the address is created. If the value is not set or true, then the system will, if necessary, auto-correct the address you provide. Set this value to false if the system should not auto-correct the address.`,

@@ -111,6 +111,18 @@ func IsStatus404(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 	return false
 }
 
+func IsStatus404ByInt(respCode int, additionalCodes ...int) bool {
+
+	if respCode == http.StatusNotFound ||
+		respCode == http.StatusRequestTimeout ||
+		respCode == http.StatusGone ||
+		IsAdditionalCode(respCode, additionalCodes...) {
+		return true
+	}
+
+	return false
+}
+
 func IsStatus400(resp *platformclientv2.APIResponse, additionalCodes ...int) bool {
 	if resp != nil {
 		if resp.StatusCode == http.StatusBadRequest ||
