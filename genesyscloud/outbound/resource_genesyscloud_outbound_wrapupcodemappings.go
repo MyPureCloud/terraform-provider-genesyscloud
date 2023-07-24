@@ -7,14 +7,15 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func getOutboundWrapupCodeMappings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -45,7 +46,7 @@ func OutboundWrapupCodeMappingsExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
-func resourceOutboundWrapUpCodeMappings() *schema.Resource {
+func ResourceOutboundWrapUpCodeMappings() *schema.Resource {
 	return &schema.Resource{
 		Description:   `Genesys Cloud Outbound Wrap-up Code Mappings`,
 		CreateContext: gcloud.CreateWithPooledClient(createOutboundWrapUpCodeMappings),
@@ -151,7 +152,7 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Wrap-up Code Mappings: %s", err))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOutboundWrapUpCodeMappings())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings())
 
 		// Match new random ordering of list returned from API
 		if sdkWrapupCodeMappings.DefaultSet != nil {

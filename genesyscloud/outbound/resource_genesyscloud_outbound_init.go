@@ -5,13 +5,13 @@ import (
 )
 
 func SetRegistrar(l registrar.Registrar) {
-	
+
 	l.RegisterDataSource("genesyscloud_outbound_callabletimeset", dataSourceOutboundCallabletimeset())
 	l.RegisterDataSource("genesyscloud_outbound_attempt_limit", DataSourceOutboundAttemptLimit())
 	l.RegisterDataSource("genesyscloud_outbound_callanalysisresponseset", dataSourceOutboundCallAnalysisResponseSet())
 	l.RegisterDataSource("genesyscloud_outbound_campaign", dataSourceOutboundCampaign())
 	l.RegisterDataSource("genesyscloud_outbound_campaignrule", dataSourceOutboundCampaignRule())
-	
+
 	l.RegisterDataSource("genesyscloud_outbound_messagingcampaign", dataSourceOutboundMessagingcampaign())
 	l.RegisterDataSource("genesyscloud_outbound_contactlistfilter", dataSourceOutboundContactListFilter())
 	l.RegisterDataSource("genesyscloud_outbound_sequence", dataSourceOutboundSequence())
@@ -25,7 +25,7 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_outbound_messagingcampaign", ResourceOutboundMessagingCampaign())
 	l.RegisterResource("genesyscloud_outbound_sequence", ResourceOutboundSequence())
 	l.RegisterResource("genesyscloud_outbound_settings", ResourceOutboundSettings())
-	l.RegisterResource("genesyscloud_outbound_wrapupcodemappings", resourceOutboundWrapUpCodeMappings())
+	l.RegisterResource("genesyscloud_outbound_wrapupcodemappings", ResourceOutboundWrapUpCodeMappings())
 	l.RegisterResource("genesyscloud_outbound_dnclist", ResourceOutboundDncList())
 
 	l.RegisterExporter("genesyscloud_outbound_callanalysisresponseset", OutboundCallAnalysisResponseSetExporter())
@@ -38,5 +38,5 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_outbound_campaignrule", OutboundCampaignRuleExporter())
 	l.RegisterExporter("genesyscloud_outbound_settings", OutboundSettingsExporter())
 	l.RegisterExporter("genesyscloud_outbound_wrapupcodemappings", OutboundWrapupCodeMappingsExporter())
-		
+
 }

@@ -7,10 +7,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -130,6 +131,7 @@ func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, nam
 
 	for k, _ := range result {
 		for _, pattern := range newFilters {
+
 			match, _ := regexp.MatchString(pattern, result[k].Name)
 			if !match {
 				newResourceMap[k] = result[k]

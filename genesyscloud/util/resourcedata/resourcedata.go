@@ -1,6 +1,7 @@
 package resourcedata
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -21,6 +22,11 @@ func SetMapValueIfNotNil[T any](targetMap map[string]interface{}, key string, va
 }
 
 func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
+
+	if key == "associated_value_field" {
+		fmt.Printf("I am the associated_value_field ")
+	}
+
 	if value != nil {
 		d.Set(key, *value)
 	} else {
