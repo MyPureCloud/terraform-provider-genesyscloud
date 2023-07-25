@@ -327,6 +327,7 @@ func OutboundRulesetExporter() *resourceExporter.ResourceExporter {
 		},
 		JsonEncodeAttributes: []string{"rules.actions.properties.skills"},
 	 	CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"rules.actions.properties": {ResolverFunc: resourceExporter.RuleSetPropertyResolver},
 	 		"rules.actions.properties.skills": {ResolverFunc: resourceExporter.RuleSetSkillPropertyResolver},
 		},
 	}
