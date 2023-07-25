@@ -56,7 +56,7 @@ var (
 			},
 			`actions`: {
 				Description: `The list of actions to be taken if the conditions are true.`,
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeList,
 				Elem:        outboundrulesetdialeractionResource,
 			},
