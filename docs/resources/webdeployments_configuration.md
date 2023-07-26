@@ -50,7 +50,7 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
   cobrowse {
     enabled             = true
     allow_agent_control = true
-    channels            = ["Webmessaging", "Voice]
+    channels            = ["Webmessaging", "Voice"]
     mask_selectors      = [".my-class", "#my-id"]
     readonly_selectors  = [".my-class", "#my-id"]
   }
