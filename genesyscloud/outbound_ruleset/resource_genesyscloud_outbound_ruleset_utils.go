@@ -1,9 +1,22 @@
 package outbound_ruleset
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
+
+func getOutboundRulesetFromResourceData(d *schema.ResourceData) platformclientv2.Ruleset {
+	name := d.Get("name").(string)
+
+	return platformclientv2.Ruleset{
+		Name:        &name,
+		ContactList: gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
+		Queue:       gcloud.BuildSdkDomainEntityRef(d, "queue_id"),
+		Rules:       buildSdkoutboundrulesetDialerruleSlice(d.Get("rules").([]interface{})),
+	}
+}
 
 func buildSdkoutboundrulesetContactcolumntodataactionfieldmappingSlice(contactcolumntodataactionfieldmapping *schema.Set) *[]platformclientv2.Contactcolumntodataactionfieldmapping {
 	if contactcolumntodataactionfieldmapping == nil {

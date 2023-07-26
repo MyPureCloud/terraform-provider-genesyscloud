@@ -2,35 +2,35 @@ package outbound_ruleset
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
-func DataSourceOutboundRuleset() *schema.Resource {
-	return &schema.Resource{
-		Description: `Data source for Genesys Cloud Outbound Ruleset. Select an Outbound Ruleset by name.`,
-
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundRulesetRead),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: `Outbound Ruleset name.`,
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-}
-
+// dataSourceOutboundRulesetRead retrieves by name the id in question
 func dataSourceOutboundRulesetRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundAPIProxy.ConfigureProxyApiInstance(sdkConfig)
+	proxy := newOutboundRulesetProxy(sdkConfig)
+
 	name := d.Get("name").(string)
-	return outboundAPIProxy.ReadOutboundRulesetsData(ctx, outboundAPIProxy,d, name)	
+
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+		rulesetId, retryable, err := proxy.getOutboundRulesetIdByName(ctx, name)
+
+		if err != nil && !retryable {
+			return resource.NonRetryableError(fmt.Errorf("Error ruleset %s: %s", name, err))
+		}
+
+		if retryable {
+			return resource.RetryableError(fmt.Errorf("No ruleset found with name %s", name))
+		}
+
+		d.SetId(rulesetId)
+		return nil
+	})
 }
