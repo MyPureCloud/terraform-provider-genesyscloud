@@ -121,10 +121,13 @@ var (
 				Computed:    true,
 			},
 			"channels": {
-				Description:  "List of channels through which cobrowse is available (for now only Webmessaging and Voice)",
-				Type:         schema.TypeList,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Webmessaging", "Voice"}, false),
+				Description: "List of channels through which cobrowse is available (for now only Webmessaging and Voice)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validation.StringInSlice([]string{"Webmessaging", "Voice"}, false),
+				},
 			},
 			"mask_selectors": {
 				Description: "List of CSS selectors which should be masked when screen sharing is active",
