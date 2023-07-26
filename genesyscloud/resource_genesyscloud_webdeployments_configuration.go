@@ -12,11 +12,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -118,6 +119,12 @@ var (
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
+			},
+			"channels": {
+				Description: "List of channels through which cobrowse is available (for now only Webmessaging and Voice)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"mask_selectors": {
 				Description: "List of CSS selectors which should be masked when screen sharing is active",
@@ -657,12 +664,14 @@ func readCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesett
 
 	enabled, _ := cfg["enabled"].(bool)
 	allowAgentControl, _ := cfg["allow_agent_control"].(bool)
+	channels := lists.InterfaceListToStrings(cfg["channels"].([]interface{}))
 	maskSelectors := lists.InterfaceListToStrings(cfg["mask_selectors"].([]interface{}))
 	readonlySelectors := lists.InterfaceListToStrings(cfg["readonly_selectors"].([]interface{}))
 
 	return &platformclientv2.Cobrowsesettings{
 		Enabled:           &enabled,
 		AllowAgentControl: &allowAgentControl,
+		Channels:          &channels,
 		MaskSelectors:     &maskSelectors,
 		ReadonlySelectors: &readonlySelectors,
 	}
@@ -910,6 +919,7 @@ func flattenCobrowseSettings(cobrowseSettings *platformclientv2.Cobrowsesettings
 	return []interface{}{map[string]interface{}{
 		"enabled":             cobrowseSettings.Enabled,
 		"allow_agent_control": cobrowseSettings.AllowAgentControl,
+		"channels":            cobrowseSettings.Channels,
 		"mask_selectors":      cobrowseSettings.MaskSelectors,
 		"readonly_selectors":  cobrowseSettings.ReadonlySelectors,
 	}}
