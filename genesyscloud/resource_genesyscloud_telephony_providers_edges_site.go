@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 	"strings"
+	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -15,8 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/leekchan/timeutil"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists" 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func ResourceSite() *schema.Resource {
@@ -314,8 +315,8 @@ func validateMediaRegions(regions *[]string, sdkConfig *platformclientv2.Configu
 
 	for _, region := range *regions {
 		if region != *homeRegion &&
-			!lists.StringInSlice(region, *coreRegions) &&
-			!lists.StringInSlice(region, *satRegions) {
+			!lists.ItemInSlice(region, *coreRegions) &&
+			!lists.ItemInSlice(region, *satRegions) {
 			return fmt.Errorf("region %s is not a valid media region.  please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions.", regions)
 		}
 
