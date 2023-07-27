@@ -114,8 +114,8 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 
-		// The /api/v2/externalcontacts/contacts endpoint can only retrieve 10K records total.
-		// We put a constraint in make sure we never pull then 10,000 records.
+		// The /api/v2/externalcontacts/contacts endpoint can only retrieve 1K records total.
+		// We put a constraint in make sure we never pull then 1,000 records.
 		if pageNum > 10 {
 			fmt.Printf("*******************************************************\n")
 			fmt.Printf("*              Warning                                *\n")
