@@ -144,8 +144,8 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
 Optional:
 
 - `allow_agent_control` (Boolean) Whether agent can take control over customer's screen or not
-- `enabled` (Boolean) Whether or not cobrowse is enabled
 - `channels` (List of String) List of channels through which cobrowse is available (for now only Webmessaging and Voice)
+- `enabled` (Boolean) Whether or not cobrowse is enabled
 - `mask_selectors` (List of String) List of CSS selectors which should be masked when screen sharing is active
 - `readonly_selectors` (List of String) List of CSS selectors which should be read-only when screen sharing is active
 
