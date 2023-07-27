@@ -14,27 +14,106 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
-// ScriptsProxy contains all of the method used to interact with the Genesys Scripts SDK
-type ScriptsProxy struct {
-	clientConfig *platformclientv2.Configuration
-	scriptsApi   *platformclientv2.ScriptsApi
-	basePath     string
-	accessToken  string
+/*
+The genesyscloud_scripts_proxy.go file contains all of the logic associated with calling the Genesys cloud API for scripts.
+*/
+var internalProxy *scriptsProxy
+
+type getAllPublishedScriptsFunc func(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, error)
+type publishScriptFunc func(ctx context.Context, p *scriptsProxy, scriptId string) error
+type getScriptByNameFunc func(ctx context.Context, p *scriptsProxy, scriptName string) ([]platformclientv2.Script, error)
+type verifyScriptUploadSuccessFunc func(ctx context.Context, p *scriptsProxy, body []byte) (bool, error)
+type scriptWasUploadedSuccessfullyFunc func(ctx context.Context, p *scriptsProxy, uploadId string) (bool, error)
+type getScriptExportUrlFunc func(ctx context.Context, p *scriptsProxy, scriptId string) (string, error)
+type deleteScriptFunc func(ctx context.Context, p *scriptsProxy, scriptId string) error
+type getScriptByIdFunc func(ctx context.Context, p *scriptsProxy, scriptId string) (script *platformclientv2.Script, statusCode int, err error)
+type getPublishedScriptsByNameFunc func(ctx context.Context, p *scriptsProxy, name string) (*[]platformclientv2.Script, error)
+
+// scriptsProxy contains all of the method used to interact with the Genesys Scripts SDK
+type scriptsProxy struct {
+	clientConfig                      *platformclientv2.Configuration
+	scriptsApi                        *platformclientv2.ScriptsApi
+	basePath                          string
+	accessToken                       string
+	getAllScriptsAttr                 getAllPublishedScriptsFunc
+	publishScriptAttr                 publishScriptFunc
+	getScriptByNameAttr               getScriptByNameFunc
+	verifyScriptUploadSuccessAttr     verifyScriptUploadSuccessFunc
+	scriptWasUploadedSuccessfullyAttr scriptWasUploadedSuccessfullyFunc
+	getScriptExportUrlAttr            getScriptExportUrlFunc
+	deleteScriptAttr                  deleteScriptFunc
+	getScriptByIdAttr                 getScriptByIdFunc
+	getPublishedScriptsByNameAttr     getPublishedScriptsByNameFunc
 }
 
-// NewScriptsProxy initializes the Scripts proxy with all of the data needed to communicate with Genesys Cloud
-func NewScriptsProxy(clientConfig *platformclientv2.Configuration) *ScriptsProxy {
+// getScriptsProxy acts as a singleton to for the internalProxy.  It also ensures
+// that we can still proxy our tests by directly setting internalProxy package variable
+func getScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy {
+	if internalProxy == nil {
+		internalProxy = newscriptsProxy(clientConfig)
+	}
+
+	return internalProxy
+}
+
+// newscriptsProxy initializes the Scripts proxy with all of the data needed to communicate with Genesys Cloud
+func newscriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy {
 	scriptsAPI := platformclientv2.NewScriptsApiWithConfig(clientConfig)
-	return &ScriptsProxy{
-		clientConfig: clientConfig,
-		scriptsApi:   scriptsAPI,
-		basePath:     strings.Replace(scriptsAPI.Configuration.BasePath, "api", "apps", -1),
-		accessToken:  scriptsAPI.Configuration.AccessToken,
+	return &scriptsProxy{
+		clientConfig:                      clientConfig,
+		scriptsApi:                        scriptsAPI,
+		basePath:                          strings.Replace(scriptsAPI.Configuration.BasePath, "api", "apps", -1),
+		accessToken:                       scriptsAPI.Configuration.AccessToken,
+		getAllScriptsAttr:                 getAllPublishedScriptsFn,
+		publishScriptAttr:                 publishScriptFn,
+		getScriptByNameAttr:               getScriptsByNameFn,
+		verifyScriptUploadSuccessAttr:     verifyScriptUploadSuccessFn,
+		scriptWasUploadedSuccessfullyAttr: scriptWasUploadedSuccessfullyFn,
+		getScriptExportUrlAttr:            getScriptExportUrlFn,
+		deleteScriptAttr:                  deleteScriptFn,
+		getScriptByIdAttr:                 getScriptByIdFn,
+		getPublishedScriptsByNameAttr:     getPublishedScriptsByNameFn,
 	}
 }
 
-// publishScript will publish the script after it has been successfully upload
-func (p *ScriptsProxy) publishScript(scriptId string) error {
+func (p *scriptsProxy) getAllPublishedScripts(ctx context.Context) (*[]platformclientv2.Script, error) {
+	return p.getAllScriptsAttr(ctx, p)
+}
+
+func (p *scriptsProxy) publishScript(ctx context.Context, scriptId string) error {
+	return p.publishScriptAttr(ctx, p, scriptId)
+}
+
+func (p *scriptsProxy) getScriptByName(ctx context.Context, scriptName string) ([]platformclientv2.Script, error) {
+	return p.getScriptByNameAttr(ctx, p, scriptName)
+}
+
+func (p *scriptsProxy) verifyScriptUploadSuccess(ctx context.Context, body []byte) (bool, error) {
+	return p.verifyScriptUploadSuccessAttr(ctx, p, body)
+}
+
+func (p *scriptsProxy) scriptWasUploadedSuccessfully(ctx context.Context, uploadId string) (bool, error) {
+	return p.scriptWasUploadedSuccessfullyAttr(ctx, p, uploadId)
+}
+
+func (p *scriptsProxy) getScriptExportUrl(ctx context.Context, scriptId string) (string, error) {
+	return p.getScriptExportUrlAttr(ctx, p, scriptId)
+}
+
+func (p *scriptsProxy) deleteScript(ctx context.Context, scriptId string) error {
+	return p.deleteScriptAttr(ctx, p, scriptId)
+}
+
+func (p *scriptsProxy) getScriptById(ctx context.Context, scriptId string) (script *platformclientv2.Script, statusCode int, err error) {
+	return p.getScriptByIdAttr(ctx, p, scriptId)
+}
+
+func (p *scriptsProxy) getPublishedScriptsByName(ctx context.Context, name string) (*[]platformclientv2.Script, error) {
+	return p.getPublishedScriptsByNameAttr(ctx, p, name)
+}
+
+// publishScriptFn will publish the script after it has been successfully upload
+func publishScriptFn(ctx context.Context, p *scriptsProxy, scriptId string) error {
 	publishScriptBody := &platformclientv2.Publishscriptrequestdata{
 		ScriptId: &scriptId,
 	}
@@ -46,8 +125,8 @@ func (p *ScriptsProxy) publishScript(scriptId string) error {
 	return nil
 }
 
-// getAllPublishedScripts returns all published scripts within a Genesys Cloud instance
-func (p *ScriptsProxy) getAllPublishedScripts(ctx context.Context) (*[]platformclientv2.Script, error) {
+// getAllPublishedScriptsFn returns all published scripts within a Genesys Cloud instance
+func getAllPublishedScriptsFn(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, error) {
 	var allScripts []platformclientv2.Script
 	pageSize := 50
 	for pageNum := 1; ; pageNum++ {
@@ -88,8 +167,8 @@ func (p *ScriptsProxy) getAllPublishedScripts(ctx context.Context) (*[]platformc
 	return &allScripts, nil
 }
 
-// Retrieves all scripts instances that matrch the name passed in
-func (p *ScriptsProxy) getScriptsByName(scriptName string) ([]platformclientv2.Script, error) {
+// getScriptsByNameFn Retrieves all scripts instances that matrch the name passed in
+func getScriptsByNameFn(ctx context.Context, p *scriptsProxy, scriptName string) ([]platformclientv2.Script, error) {
 	var scripts []platformclientv2.Script
 
 	log.Printf("Retrieving scripts with name '%s'", scriptName)
@@ -116,7 +195,7 @@ func (p *ScriptsProxy) getScriptsByName(scriptName string) ([]platformclientv2.S
 }
 
 // createScriptFormData creates the form data attributes to create a script in Genesys Cloud
-func (p *ScriptsProxy) createScriptFormData(filePath, scriptName string) (map[string]io.Reader, error) {
+func (p *scriptsProxy) createScriptFormData(filePath, scriptName string) (map[string]io.Reader, error) {
 	fileReader, _, err := files.DownloadOrOpenFile(filePath)
 	if err != nil {
 		return nil, err
@@ -128,7 +207,7 @@ func (p *ScriptsProxy) createScriptFormData(filePath, scriptName string) (map[st
 }
 
 // uploadScriptFile uploads a script file to S3
-func (p *ScriptsProxy) uploadScriptFile(filePath string, scriptName string, substitutions map[string]interface{}) ([]byte, error) {
+func (p *scriptsProxy) uploadScriptFile(filePath string, scriptName string, substitutions map[string]interface{}) ([]byte, error) {
 	formData, err := p.createScriptFormData(filePath, scriptName)
 	if err != nil {
 		return nil, err
@@ -142,14 +221,14 @@ func (p *ScriptsProxy) uploadScriptFile(filePath string, scriptName string, subs
 	return resp, err
 }
 
-// verifyScriptFile checks to see if a file has successfully uploaded
-func (p *ScriptsProxy) verifyScriptUploadSuccess(body []byte) (bool, error) {
+// verifyScriptFileFn checks to see if a file has successfully uploaded
+func verifyScriptUploadSuccessFn(ctx context.Context, p *scriptsProxy, body []byte) (bool, error) {
 	uploadId := p.getUploadIdFromBody(body)
 
 	maxRetries := 3
 	for i := 1; i < maxRetries; i++ {
 		time.Sleep(2 * time.Second)
-		isUploadSuccess, err := p.scriptWasUploadedSuccessfully(uploadId)
+		isUploadSuccess, err := p.scriptWasUploadedSuccessfully(ctx, uploadId)
 		if err != nil {
 			return false, err
 		}
@@ -164,7 +243,7 @@ func (p *ScriptsProxy) verifyScriptUploadSuccess(body []byte) (bool, error) {
 }
 
 // getUploadIdFromBody retrieves the upload Id from the json file being uploade
-func (p *ScriptsProxy) getUploadIdFromBody(body []byte) string {
+func (p *scriptsProxy) getUploadIdFromBody(body []byte) string {
 	var (
 		jsonData interface{}
 		uploadId string
@@ -179,8 +258,8 @@ func (p *ScriptsProxy) getUploadIdFromBody(body []byte) string {
 	return uploadId
 }
 
-// scriptWasUploadedSuccessfully checks the Genesys Cloud API to see if the script was successfully uploaded
-func (p *ScriptsProxy) scriptWasUploadedSuccessfully(uploadId string) (bool, error) {
+// scriptWasUploadedSuccessfullyFn checks the Genesys Cloud API to see if the script was successfully uploaded
+func scriptWasUploadedSuccessfullyFn(ctx context.Context, p *scriptsProxy, uploadId string) (bool, error) {
 
 	data, resp, err := p.scriptsApi.GetScriptsUploadStatus(uploadId, false)
 	if err != nil {
@@ -194,8 +273,8 @@ func (p *ScriptsProxy) scriptWasUploadedSuccessfully(uploadId string) (bool, err
 	return *data.Succeeded, nil
 }
 
-// getScriptExportUrl retrieves the export URL for a targeted script
-func (p *ScriptsProxy) getScriptExportUrl(scriptId string) (string, error) {
+// getScriptExportUrlFn retrieves the export URL for a targeted script
+func getScriptExportUrlFn(ctx context.Context, p *scriptsProxy, scriptId string) (string, error) {
 	var (
 		body platformclientv2.Exportscriptrequest
 	)
@@ -212,8 +291,8 @@ func (p *ScriptsProxy) getScriptExportUrl(scriptId string) (string, error) {
 	return *data.Url, nil
 }
 
-// deleteScript deletes a script from Genesys Cloud
-func (p *ScriptsProxy) deleteScript(ctx context.Context, scriptId string) error {
+// deleteScriptFn deletes a script from Genesys Cloud
+func deleteScriptFn(ctx context.Context, p *scriptsProxy, scriptId string) error {
 	fullPath := p.scriptsApi.Configuration.BasePath + "/api/v2/scripts/" + scriptId
 	r, _ := http.NewRequest(http.MethodDelete, fullPath, nil)
 	r.Header.Set("Authorization", "Bearer "+p.scriptsApi.Configuration.AccessToken)
@@ -236,8 +315,8 @@ func (p *ScriptsProxy) deleteScript(ctx context.Context, scriptId string) error 
 	return nil
 }
 
-// getScriptById retrieves a script by Id
-func (p *ScriptsProxy) getScriptById(scriptId string) (script *platformclientv2.Script, statusCode int, err error) {
+// getScriptByIdFn  retrieves a script by Id
+func getScriptByIdFn(ctx context.Context, p *scriptsProxy, scriptId string) (script *platformclientv2.Script, statusCode int, err error) {
 	script, resp, err := p.scriptsApi.GetScript(scriptId)
 
 	if err != nil {
@@ -250,8 +329,8 @@ func (p *ScriptsProxy) getScriptById(scriptId string) (script *platformclientv2.
 	return script, 0, nil
 }
 
-// getsPublishedScriptsByName returns all of the published scripts that match a name.  Note:  Genesys Cloud allows two script to have the same name and published so we have to return all of the published scripts and let the consumer sort it out.
-func (p *ScriptsProxy) getPublishedScriptsByName(name string) (*[]platformclientv2.Script, error) {
+// getsPublishedScriptsByNameFn returns all of the published scripts that match a name.  Note:  Genesys Cloud allows two script to have the same name and published so we have to return all of the published scripts and let the consumer sort it out.
+func getPublishedScriptsByNameFn(ctx context.Context, p *scriptsProxy, name string) (*[]platformclientv2.Script, error) {
 	const pageSize = 100
 	var allPublishedScripts []platformclientv2.Script
 

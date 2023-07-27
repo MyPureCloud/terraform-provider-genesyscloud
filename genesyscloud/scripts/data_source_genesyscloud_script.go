@@ -12,17 +12,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+/*
+DataSource for the Scripts resource
+*/
+
 // dataSourceScriptRead provides the main terraform code needed to read a script resource by name
 func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
-	scriptsProxy := NewScriptsProxy(sdkConfig)
+	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	// Query for scripts by name. Retry in case new script is not yet indexed by search.
 	// As script names are non-unique, fail in case of multiple results.
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
-		scripts, err := scriptsProxy.getPublishedScriptsByName(name)
+		scripts, err := scriptsProxy.getPublishedScriptsByName(ctx, name)
 
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error requesting script %s: %s", name, err))

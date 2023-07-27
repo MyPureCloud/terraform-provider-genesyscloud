@@ -10,6 +10,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+/*
+Test cases for Scripts Datasource
+*/
 func TestAccDataSourceScript(t *testing.T) {
 	var (
 		scriptDataSource = "script-data"

@@ -15,6 +15,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+   Testcases for the resources schema
+*/
+
 func getTestDataPath(elem ...string) string {
 	basePath := filepath.Join("../..", "test", "data")
 	subPath := filepath.Join(elem...)

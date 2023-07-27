@@ -23,14 +23,14 @@ import (
 // createScript providers the Terraform resource logic for creating a Script object
 func createScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	scriptsProxy := NewScriptsProxy(sdkConfig)
+	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	filePath := d.Get("filepath").(string)
 	scriptName := d.Get("script_name").(string)
 	substitutions := d.Get("substitutions").(map[string]interface{})
 
 	log.Printf("Creating script %s", scriptName)
-	exists, err := scriptExistsWithName(scriptsProxy, scriptName)
+	exists, err := scriptExistsWithName(ctx, scriptsProxy, scriptName)
 	if err != nil {
 		return diag.Errorf("%v", err)
 	}
@@ -44,15 +44,15 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 		return diag.Errorf("%v", err)
 	}
 
-	success, err := scriptsProxy.verifyScriptUploadSuccess(resp)
+	success, err := scriptsProxy.verifyScriptUploadSuccess(ctx, resp)
 	if err != nil {
 		return diag.Errorf("%v", err)
 	} else if !success {
 		return diag.Errorf("Script '%s' failed to upload successfully.", scriptName)
 	}
 
-	// Retrieve script ID using getScriptsByName function
-	sdkScripts, err := scriptsProxy.getScriptsByName(scriptName)
+	// Retrieve script ID using getScriptByName function
+	sdkScripts, err := scriptsProxy.getScriptByName(ctx, scriptName)
 	if err != nil {
 		return diag.Errorf("%v", err)
 	}
@@ -64,7 +64,7 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 	}
 
 	scriptId := *sdkScripts[0].Id
-	if err := scriptsProxy.publishScript(scriptId); err != nil {
+	if err := scriptsProxy.publishScript(ctx, scriptId); err != nil {
 		return diag.Errorf("script %s with id id %s was not successfully published due to %s", scriptName, scriptId, err)
 	}
 
@@ -77,10 +77,10 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 // readScript contains all of the logic needed to read resource data from Genesys Cloud
 func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	scriptsProxy := NewScriptsProxy(sdkConfig)
+	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
-		script, statusCode, err := scriptsProxy.getScriptById(d.Id())
+		script, statusCode, err := scriptsProxy.getScriptById(ctx, d.Id())
 		if statusCode == http.StatusNotFound {
 			return resource.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 		}
@@ -103,7 +103,7 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 // deleteScript contains all of the logic needed to delete a resource from Genesys Cloud
 func deleteScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	scriptsProxy := NewScriptsProxy(sdkConfig)
+	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	scriptId := d.Id()
 	err := scriptsProxy.deleteScript(ctx, scriptId)
@@ -116,8 +116,8 @@ func deleteScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 }
 
 // scriptExistsWithName is a helper method to determine if a script already exists with the name the user is trying create a script with
-func scriptExistsWithName(scriptsProxy *ScriptsProxy, scriptName string) (bool, error) {
-	sdkScripts, err := scriptsProxy.getScriptsByName(scriptName)
+func scriptExistsWithName(ctx context.Context, scriptsProxy *scriptsProxy, scriptName string) (bool, error) {
+	sdkScripts, err := scriptsProxy.getScriptByName(ctx, scriptName)
 	if err != nil {
 		return true, err
 	}
@@ -129,7 +129,7 @@ func scriptExistsWithName(scriptsProxy *ScriptsProxy, scriptName string) (bool, 
 
 // getAllScripts returns all of the published scripts
 func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	scriptsProxy := NewScriptsProxy(clientConfig)
+	scriptsProxy := getScriptsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	scripts, err := scriptsProxy.getAllPublishedScripts(ctx)
@@ -147,8 +147,7 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 // ScriptResolver is used to download all Genesys Cloud scripts from Genesys Cloud
 func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-
-	scriptsProxy := NewScriptsProxy(sdkConfig)
+	scriptsProxy := getScriptsProxy(sdkConfig)
 
 	exportFileName := fmt.Sprintf("script-%s.json", scriptId)
 
@@ -156,8 +155,8 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
 	}
-
-	url, err := scriptsProxy.getScriptExportUrl(scriptId)
+	ctx := context.Background()
+	url, err := scriptsProxy.getScriptExportUrl(ctx, scriptId)
 	if err != nil {
 		return err
 	}
