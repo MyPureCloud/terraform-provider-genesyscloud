@@ -79,6 +79,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					generateWebDeploymentConfigCobrowseSettings(
 						trueValue,
 						trueValue,
+						[]string{strconv.Quote("Webmessaging")},
 						[]string{strconv.Quote("selector-one")},
 						[]string{strconv.Quote("selector-one")},
 					),
@@ -102,6 +103,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", trueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.0", "Webmessaging"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.0", "selector-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "1"),
@@ -150,6 +153,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					generateWebDeploymentConfigCobrowseSettings(
 						falseValue,
 						falseValue,
+						[]string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")},
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 					),
@@ -173,6 +177,9 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", falseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", falseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "2"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "2"),
 					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
 					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
@@ -325,15 +332,16 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 	`, name, description, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbMaskSelectors []string, cbReadonlySelectors []string) string {
+func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string) string {
 	return fmt.Sprintf(`
 	cobrowse {
 		enabled = %s
 		allow_agent_control = %s
+		channels = [ %s ]
 		mask_selectors = [ %s ]
 		readonly_selectors = [ %s ]
 	}
-`, cbEnabled, cbAllowAgentControl, strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "))
+`, cbEnabled, cbAllowAgentControl, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "))
 }
 
 func verifyConfigurationDestroyed(state *terraform.State) error {
