@@ -116,7 +116,7 @@ Optional:
 
 - `agent_wrapup_field` (String) The input field from the data action that the agentWrapup will be passed to for this condition. Valid for a wrapup dataActionBehavior.
 - `call_analysis_result_field` (String) The input field from the data action that the callAnalysisResult will be passed to for this condition. Valid for a wrapup dataActionBehavior.
-- `contact_column_to_data_action_field_mappings` (Block Set) A list of mappings defining which contact data fields will be passed to which data action input fields for this condition. Valid for a dataActionBehavior. (see [below for nested schema](#nestedblock--rules--actions--contact_column_to_data_action_field_mappings))
+- `contact_column_to_data_action_field_mappings` (Block List) A list of mappings defining which contact data fields will be passed to which data action input fields for this condition. Valid for a dataActionBehavior. (see [below for nested schema](#nestedblock--rules--actions--contact_column_to_data_action_field_mappings))
 - `contact_id_field` (String) The input field from the data action that the contactId will be passed to for this condition. Valid for a dataActionBehavior.
 - `data_action_id` (String) The Data Action to use for this action. Required for a dataActionBehavior.
 - `properties` (Map of String) A map of key-value pairs pertinent to the DialerAction. Different types of DialerActions require different properties. MODIFY_CONTACT_ATTRIBUTE with an updateOption of SET takes a contact column as the key and accepts any value. SCHEDULE_CALLBACK takes a key 'callbackOffset' that specifies how far in the future the callback should be scheduled, in minutes. SET_CALLER_ID takes two keys: 'callerAddress', which should be the caller id phone number, and 'callerName'. For either key, you can also specify a column on the contact to get the value from. To do this, specify 'contact.Column', where 'Column' is the name of the contact column from which to get the value. SET_SKILLS takes a key 'skills' with an array of skill ids wrapped into a string (Example: {'skills': '['skillIdHere']'} ).
@@ -141,13 +141,13 @@ Optional:
 - `attribute_name` (String) An attribute name associated with this Condition. Required for a contactAttributeCondition.
 - `call_analysis_result_field` (String) The input field from the data action that the callAnalysisResult will be passed to for this condition. Valid for a wrapup dataActionCondition.
 - `codes` (List of String) List of wrap-up code identifiers. Required for a wrapupCondition.
-- `contact_column_to_data_action_field_mappings` (Block Set) A list of mappings defining which contact data fields will be passed to which data action input fields for this condition. Valid for a dataActionCondition. (see [below for nested schema](#nestedblock--rules--conditions--contact_column_to_data_action_field_mappings))
+- `contact_column_to_data_action_field_mappings` (Block List) A list of mappings defining which contact data fields will be passed to which data action input fields for this condition. Valid for a dataActionCondition. (see [below for nested schema](#nestedblock--rules--conditions--contact_column_to_data_action_field_mappings))
 - `contact_id_field` (String) The input field from the data action that the contactId will be passed to for this condition. Valid for a dataActionCondition.
 - `data_action_id` (String) The Data Action to use for this condition. Required for a dataActionCondition.
 - `data_not_found_resolution` (Boolean) The result of this condition if the data action returns a result indicating there was no data. Required for a DataActionCondition.
 - `inverted` (Boolean) If true, inverts the result of evaluating this Condition. Default is false.
 - `operator` (String) An operation with which to evaluate the Condition. Not used for a DataActionCondition.
-- `predicates` (Block Set) A list of predicates defining the comparisons to use for this condition. Required for a dataActionCondition. (see [below for nested schema](#nestedblock--rules--conditions--predicates))
+- `predicates` (Block List) A list of predicates defining the comparisons to use for this condition. Required for a dataActionCondition. (see [below for nested schema](#nestedblock--rules--conditions--predicates))
 - `property` (String) A value associated with the property type of this Condition. Required for a contactPropertyCondition.
 - `property_type` (String) The type of the property associated with this Condition. Required for a contactPropertyCondition.
 - `type` (String) The type of the condition.

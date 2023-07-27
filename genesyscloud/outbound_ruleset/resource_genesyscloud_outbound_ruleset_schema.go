@@ -18,8 +18,10 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(resourceName, OutboundRulesetExporter())
 }
 
-var (
-	outboundrulesetcontactcolumntodataactionfieldmappingResource = &schema.Resource{
+// ResourceOutboundRuleset registers the genesyscloud_outbound_ruleset resource with Terraform
+func ResourceOutboundRuleset() *schema.Resource {
+
+	outboundrulesetcontactcolumntodataactionfieldmappingResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`contact_column_name`: {
 				Description: `The name of a contact column whose data will be passed to the data action`,
@@ -34,7 +36,7 @@ var (
 		},
 	}
 
-	outboundrulesetdataactionconditionpredicateResource = &schema.Resource{
+	outboundrulesetdataactionconditionpredicateResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`output_field`: {
 				Description: `The name of an output field from the data action's output to use for this condition`,
@@ -64,10 +66,6 @@ var (
 			},
 		},
 	}
-)
-
-// ResourceOutboundRuleset registers the genesyscloud_outbound_ruleset resource with Terraform
-func ResourceOutboundRuleset() *schema.Resource {
 
 	outboundrulesetconditionResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -151,13 +149,13 @@ func ResourceOutboundRuleset() *schema.Resource {
 			`contact_column_to_data_action_field_mappings`: {
 				Description: `A list of mappings defining which contact data fields will be passed to which data action input fields for this condition. Valid for a dataActionCondition.`,
 				Optional:    true,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Elem:        outboundrulesetcontactcolumntodataactionfieldmappingResource,
 			},
 			`predicates`: {
 				Description: `A list of predicates defining the comparisons to use for this condition. Required for a dataActionCondition.`,
 				Optional:    true,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Elem:        outboundrulesetdataactionconditionpredicateResource,
 			},
 		},
@@ -198,7 +196,7 @@ func ResourceOutboundRuleset() *schema.Resource {
 			`contact_column_to_data_action_field_mappings`: {
 				Description: `A list of mappings defining which contact data fields will be passed to which data action input fields for this condition. Valid for a dataActionBehavior.`,
 				Optional:    true,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Elem:        outboundrulesetcontactcolumntodataactionfieldmappingResource,
 			},
 			`contact_id_field`: {

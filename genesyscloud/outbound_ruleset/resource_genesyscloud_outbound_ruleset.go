@@ -73,18 +73,9 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundRuleset())
 
 		resourcedata.SetNillableValue(d, "name", ruleset.Name)
-		// resourcedata.SetNillableValue(d, "contact_list_id", ruleset.ContactList)
-		// resourcedata.SetNillableValue(d, "queue_id", ruleset.Queue)
-		//resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "rules", ruleset.Rules, flattenRules)
-		if ruleset.ContactList != nil && ruleset.ContactList.Id != nil {
-			d.Set("contact_list_id", *ruleset.ContactList.Id)
-		}
-		if ruleset.Queue != nil && ruleset.Queue.Id != nil {
-			d.Set("queue_id", *ruleset.Queue.Id)
-		}
-		if ruleset.Rules != nil {
-			d.Set("rules", flattenSdkoutboundrulesetDialerruleSlice(*ruleset.Rules))
-		}
+		resourcedata.SetNillableReference(d, "contact_list_id", ruleset.ContactList)
+		resourcedata.SetNillableReference(d, "queue_id", ruleset.Queue)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "rules", ruleset.Rules, flattenRulesetRules)
 
 		log.Printf("Read Outbound Ruleset %s %s", d.Id(), *ruleset.Name)
 		return cc.CheckState()

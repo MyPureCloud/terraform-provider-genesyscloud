@@ -2,6 +2,7 @@ package outbound_ruleset
 
 import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
@@ -14,62 +15,44 @@ func getOutboundRulesetFromResourceData(d *schema.ResourceData) platformclientv2
 		Name:        &name,
 		ContactList: gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
 		Queue:       gcloud.BuildSdkDomainEntityRef(d, "queue_id"),
-		Rules:       buildSdkoutboundrulesetDialerruleSlice(d.Get("rules").([]interface{})),
+		Rules:       buildRulesetRules(d.Get("rules").([]interface{})),
 	}
 }
 
-func buildSdkoutboundrulesetContactcolumntodataactionfieldmappingSlice(contactcolumntodataactionfieldmapping *schema.Set) *[]platformclientv2.Contactcolumntodataactionfieldmapping {
-	if contactcolumntodataactionfieldmapping == nil {
-		return nil
-	}
-	sdkContactcolumntodataactionfieldmappingSlice := make([]platformclientv2.Contactcolumntodataactionfieldmapping, 0)
-	contactcolumntodataactionfieldmappingList := contactcolumntodataactionfieldmapping.List()
-	for _, configcontactcolumntodataactionfieldmapping := range contactcolumntodataactionfieldmappingList {
-		var sdkContactcolumntodataactionfieldmapping platformclientv2.Contactcolumntodataactionfieldmapping
-		contactcolumntodataactionfieldmappingMap := configcontactcolumntodataactionfieldmapping.(map[string]interface{})
-		if contactColumnName := contactcolumntodataactionfieldmappingMap["contact_column_name"].(string); contactColumnName != "" {
-			sdkContactcolumntodataactionfieldmapping.ContactColumnName = &contactColumnName
+// buildRulesetRules maps a []interface{} into a Genesys Cloud *[]platformclientv2.Dialerrule
+func buildRulesetRules(rules []interface{}) *[]platformclientv2.Dialerrule {
+	rulesSlice := make([]platformclientv2.Dialerrule, 0)
+	for _, rule := range rules {
+		var sdkRule platformclientv2.Dialerrule
+		ruleMap := rule.(map[string]interface{})
+
+		if name := ruleMap["name"].(string); name != "" {
+			sdkRule.Name = &name
 		}
-		if dataActionField := contactcolumntodataactionfieldmappingMap["data_action_field"].(string); dataActionField != "" {
-			sdkContactcolumntodataactionfieldmapping.DataActionField = &dataActionField
+		sdkRule.Order = platformclientv2.Int(ruleMap["order"].(int))
+		if category := ruleMap["category"].(string); category != "" {
+			sdkRule.Category = &category
+		}
+		if conditions := ruleMap["conditions"]; conditions != nil {
+			sdkRule.Conditions = buildRulesetConditions(conditions.([]interface{}))
+		}
+		if actions := ruleMap["actions"]; actions != nil {
+			sdkRule.Actions = buildRulesetActions(actions.([]interface{}))
 		}
 
-		sdkContactcolumntodataactionfieldmappingSlice = append(sdkContactcolumntodataactionfieldmappingSlice, sdkContactcolumntodataactionfieldmapping)
+		rulesSlice = append(rulesSlice, sdkRule)
 	}
-	return &sdkContactcolumntodataactionfieldmappingSlice
+
+	return &rulesSlice
 }
 
-func buildSdkoutboundrulesetDataactionconditionpredicateSlice(dataactionconditionpredicate *schema.Set) *[]platformclientv2.Dataactionconditionpredicate {
-	if dataactionconditionpredicate == nil {
-		return nil
-	}
-	sdkDataactionconditionpredicateSlice := make([]platformclientv2.Dataactionconditionpredicate, 0)
-	dataactionconditionpredicateList := dataactionconditionpredicate.List()
-	for _, configdataactionconditionpredicate := range dataactionconditionpredicateList {
-		var sdkDataactionconditionpredicate platformclientv2.Dataactionconditionpredicate
-		dataactionconditionpredicateMap := configdataactionconditionpredicate.(map[string]interface{})
-		if outputField := dataactionconditionpredicateMap["output_field"].(string); outputField != "" {
-			sdkDataactionconditionpredicate.OutputField = &outputField
-		}
-		if outputOperator := dataactionconditionpredicateMap["output_operator"].(string); outputOperator != "" {
-			sdkDataactionconditionpredicate.OutputOperator = &outputOperator
-		}
-		if comparisonValue := dataactionconditionpredicateMap["comparison_value"].(string); comparisonValue != "" {
-			sdkDataactionconditionpredicate.ComparisonValue = &comparisonValue
-		}
-		sdkDataactionconditionpredicate.Inverted = platformclientv2.Bool(dataactionconditionpredicateMap["inverted"].(bool))
-		sdkDataactionconditionpredicate.OutputFieldMissingResolution = platformclientv2.Bool(dataactionconditionpredicateMap["output_field_missing_resolution"].(bool))
-
-		sdkDataactionconditionpredicateSlice = append(sdkDataactionconditionpredicateSlice, sdkDataactionconditionpredicate)
-	}
-	return &sdkDataactionconditionpredicateSlice
-}
-
-func buildSdkoutboundrulesetConditionSlice(conditionList []interface{}) *[]platformclientv2.Condition {
-	sdkConditionSlice := make([]platformclientv2.Condition, 0)
-	for _, configcondition := range conditionList {
+// buildRulesetConditions maps a []interface{} into a Genesys Cloud *[]platformclientv2.Condition
+func buildRulesetConditions(conditions []interface{}) *[]platformclientv2.Condition {
+	conditionSlice := make([]platformclientv2.Condition, 0)
+	for _, conditions := range conditions {
 		var sdkCondition platformclientv2.Condition
-		conditionMap := configcondition.(map[string]interface{})
+		conditionMap := conditions.(map[string]interface{})
+
 		if varType := conditionMap["type"].(string); varType != "" {
 			sdkCondition.VarType = &varType
 		}
@@ -108,196 +91,181 @@ func buildSdkoutboundrulesetConditionSlice(conditionList []interface{}) *[]platf
 		if agentWrapupField := conditionMap["agent_wrapup_field"].(string); agentWrapupField != "" {
 			sdkCondition.AgentWrapupField = &agentWrapupField
 		}
-		if contactColumnToDataActionFieldMappings := conditionMap["contact_column_to_data_action_field_mappings"]; contactColumnToDataActionFieldMappings != nil {
-			sdkCondition.ContactColumnToDataActionFieldMappings = buildSdkoutboundrulesetContactcolumntodataactionfieldmappingSlice(contactColumnToDataActionFieldMappings.(*schema.Set))
+		if fieldMappings := conditionMap["contact_column_to_data_action_field_mappings"]; fieldMappings != nil {
+			sdkCondition.ContactColumnToDataActionFieldMappings = buildRulesetContactcolumntodataactionfieldmappings(fieldMappings.([]interface{}))
 		}
 		if predicates := conditionMap["predicates"]; predicates != nil {
-			sdkCondition.Predicates = buildSdkoutboundrulesetDataactionconditionpredicateSlice(predicates.(*schema.Set))
+			sdkCondition.Predicates = buildPredicates(predicates.([]interface{}))
 		}
 
-		sdkConditionSlice = append(sdkConditionSlice, sdkCondition)
+		conditionSlice = append(conditionSlice, sdkCondition)
 	}
-	return &sdkConditionSlice
+
+	return &conditionSlice
 }
 
-func buildSdkoutboundrulesetDialeractionSlice(dialeractionList []interface{}) *[]platformclientv2.Dialeraction {
-	sdkDialeractionSlice := make([]platformclientv2.Dialeraction, 0)
-	for _, configdialeraction := range dialeractionList {
-		var sdkDialeraction platformclientv2.Dialeraction
-		dialeractionMap := configdialeraction.(map[string]interface{})
-		if varType := dialeractionMap["type"].(string); varType != "" {
-			sdkDialeraction.VarType = &varType
+// buildRulesetActions maps a []interface{} into a Genesys Cloud *[]platformclientv2.Dialeraction
+func buildRulesetActions(actions []interface{}) *[]platformclientv2.Dialeraction {
+	actionsSlice := make([]platformclientv2.Dialeraction, 0)
+	for _, action := range actions {
+		var sdkAction platformclientv2.Dialeraction
+		actionMap := action.(map[string]interface{})
+
+		if varType := actionMap["type"].(string); varType != "" {
+			sdkAction.VarType = &varType
 		}
-		if actionTypeName := dialeractionMap["action_type_name"].(string); actionTypeName != "" {
-			sdkDialeraction.ActionTypeName = &actionTypeName
+		if actionTypeName := actionMap["action_type_name"].(string); actionTypeName != "" {
+			sdkAction.ActionTypeName = &actionTypeName
 		}
-		if updateOption := dialeractionMap["update_option"].(string); updateOption != "" {
-			sdkDialeraction.UpdateOption = &updateOption
+		if updateOption := actionMap["update_option"].(string); updateOption != "" {
+			sdkAction.UpdateOption = &updateOption
 		}
-		if properties := dialeractionMap["properties"].(map[string]interface{}); properties != nil {
+		if properties := actionMap["properties"].(map[string]interface{}); properties != nil {
 			sdkProperties := map[string]string{}
 			for k, v := range properties {
 				sdkProperties[k] = v.(string)
 			}
-			sdkDialeraction.Properties = &sdkProperties
+			sdkAction.Properties = &sdkProperties
 		}
-		sdkDialeraction.DataAction = &platformclientv2.Domainentityref{Id: platformclientv2.String(dialeractionMap["data_action_id"].(string))}
-		if contactColumnToDataActionFieldMappings := dialeractionMap["contact_column_to_data_action_field_mappings"]; contactColumnToDataActionFieldMappings != nil {
-			sdkDialeraction.ContactColumnToDataActionFieldMappings = buildSdkoutboundrulesetContactcolumntodataactionfieldmappingSlice(contactColumnToDataActionFieldMappings.(*schema.Set))
+		sdkAction.DataAction = &platformclientv2.Domainentityref{Id: platformclientv2.String(actionMap["data_action_id"].(string))}
+		if fieldMappings := actionMap["contact_column_to_data_action_field_mappings"]; fieldMappings != nil {
+			sdkAction.ContactColumnToDataActionFieldMappings = buildRulesetContactcolumntodataactionfieldmappings(fieldMappings.([]interface{}))
 		}
-		if contactIdField := dialeractionMap["contact_id_field"].(string); contactIdField != "" {
-			sdkDialeraction.ContactIdField = &contactIdField
+		if contactIdField := actionMap["contact_id_field"].(string); contactIdField != "" {
+			sdkAction.ContactIdField = &contactIdField
 		}
-		if callAnalysisResultField := dialeractionMap["call_analysis_result_field"].(string); callAnalysisResultField != "" {
-			sdkDialeraction.CallAnalysisResultField = &callAnalysisResultField
+		if callAnalysisResultField := actionMap["call_analysis_result_field"].(string); callAnalysisResultField != "" {
+			sdkAction.CallAnalysisResultField = &callAnalysisResultField
 		}
-		if agentWrapupField := dialeractionMap["agent_wrapup_field"].(string); agentWrapupField != "" {
-			sdkDialeraction.AgentWrapupField = &agentWrapupField
+		if agentWrapupField := actionMap["agent_wrapup_field"].(string); agentWrapupField != "" {
+			sdkAction.AgentWrapupField = &agentWrapupField
 		}
 
-		sdkDialeractionSlice = append(sdkDialeractionSlice, sdkDialeraction)
+		actionsSlice = append(actionsSlice, sdkAction)
 	}
-	return &sdkDialeractionSlice
+	
+	return &actionsSlice
 }
 
-func buildSdkoutboundrulesetDialerruleSlice(dialerruleList []interface{}) *[]platformclientv2.Dialerrule {
-	sdkDialerruleSlice := make([]platformclientv2.Dialerrule, 0)
-	for _, configdialerrule := range dialerruleList {
-		var sdkDialerrule platformclientv2.Dialerrule
-		dialerruleMap := configdialerrule.(map[string]interface{})
-		if name := dialerruleMap["name"].(string); name != "" {
-			sdkDialerrule.Name = &name
+// buildRulesetContactcolumntodataactionfieldmappings maps a []interface{} into a Genesys Cloud *[]platformclientv2.Contactcolumntodataactionfieldmapping
+func buildRulesetContactcolumntodataactionfieldmappings(fieldmappings []interface{}) *[]platformclientv2.Contactcolumntodataactionfieldmapping {
+	fieldmappingsSlice := make([]platformclientv2.Contactcolumntodataactionfieldmapping, 0)
+	for _, fieldmapping := range fieldmappings {
+		var sdkFieldmapping platformclientv2.Contactcolumntodataactionfieldmapping
+		fieldmappingMap := fieldmapping.(map[string]interface{})
+
+		if contactColumnName := fieldmappingMap["contact_column_name"].(string); contactColumnName != "" {
+			sdkFieldmapping.ContactColumnName = &contactColumnName
 		}
-		sdkDialerrule.Order = platformclientv2.Int(dialerruleMap["order"].(int))
-		if category := dialerruleMap["category"].(string); category != "" {
-			sdkDialerrule.Category = &category
-		}
-		if conditions := dialerruleMap["conditions"]; conditions != nil {
-			sdkDialerrule.Conditions = buildSdkoutboundrulesetConditionSlice(conditions.([]interface{}))
-		}
-		if actions := dialerruleMap["actions"]; actions != nil {
-			sdkDialerrule.Actions = buildSdkoutboundrulesetDialeractionSlice(actions.([]interface{}))
+		if dataActionField := fieldmappingMap["data_action_field"].(string); dataActionField != "" {
+			sdkFieldmapping.DataActionField = &dataActionField
 		}
 
-		sdkDialerruleSlice = append(sdkDialerruleSlice, sdkDialerrule)
+		fieldmappingsSlice = append(fieldmappingsSlice, sdkFieldmapping)
 	}
-	return &sdkDialerruleSlice
+
+	return &fieldmappingsSlice
 }
 
-func flattenSdkoutboundrulesetContactcolumntodataactionfieldmappingSlice(contactcolumntodataactionfieldmappings []platformclientv2.Contactcolumntodataactionfieldmapping) *schema.Set {
-	if len(contactcolumntodataactionfieldmappings) == 0 {
+// buildPredicates maps a []interface{} into a Genesys Cloud *[]platformclientv2.Dataactionconditionpredicate
+func buildPredicates(predicates []interface{}) *[]platformclientv2.Dataactionconditionpredicate {
+	predicatesSlice := make([]platformclientv2.Dataactionconditionpredicate, 0)
+	for _, predicate := range predicates {
+		var sdkPredicate platformclientv2.Dataactionconditionpredicate
+		predicateMap := predicate.(map[string]interface{})
+
+		if outputField := predicateMap["output_field"].(string); outputField != "" {
+			sdkPredicate.OutputField = &outputField
+		}
+		if outputOperator := predicateMap["output_operator"].(string); outputOperator != "" {
+			sdkPredicate.OutputOperator = &outputOperator
+		}
+		if comparisonValue := predicateMap["comparison_value"].(string); comparisonValue != "" {
+			sdkPredicate.ComparisonValue = &comparisonValue
+		}
+		sdkPredicate.Inverted = platformclientv2.Bool(predicateMap["inverted"].(bool))
+		sdkPredicate.OutputFieldMissingResolution = platformclientv2.Bool(predicateMap["output_field_missing_resolution"].(bool))
+
+		predicatesSlice = append(predicatesSlice, sdkPredicate)
+	}
+
+	return &predicatesSlice
+}
+
+// flattenRulesetRule maps a Genesys Cloud []platformclientv2.Dialerrule into a []interface{}
+func flattenRulesetRules(rules *[]platformclientv2.Dialerrule) []interface{} {
+	if len(*rules) == 0 {
 		return nil
 	}
 
-	contactcolumntodataactionfieldmappingSet := schema.NewSet(schema.HashResource(outboundrulesetcontactcolumntodataactionfieldmappingResource), []interface{}{})
-	for _, contactcolumntodataactionfieldmapping := range contactcolumntodataactionfieldmappings {
-		contactcolumntodataactionfieldmappingMap := make(map[string]interface{})
+	var dialerruleList []interface{}
+	for _, rule := range *rules {
+		ruleMap := make(map[string]interface{})
 
-		if contactcolumntodataactionfieldmapping.ContactColumnName != nil {
-			contactcolumntodataactionfieldmappingMap["contact_column_name"] = *contactcolumntodataactionfieldmapping.ContactColumnName
-		}
-		if contactcolumntodataactionfieldmapping.DataActionField != nil {
-			contactcolumntodataactionfieldmappingMap["data_action_field"] = *contactcolumntodataactionfieldmapping.DataActionField
-		}
+		resourcedata.SetMapValueIfNotNil(ruleMap, "name", rule.Name)
+		resourcedata.SetMapValueIfNotNil(ruleMap, "order", rule.Order)
+		resourcedata.SetMapValueIfNotNil(ruleMap, "category", rule.Category)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(ruleMap, "conditions", rule.Conditions, flattenRulesetRuleCondition)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(ruleMap, "actions", rule.Actions, flattenRulesetRuleAction)
 
-		contactcolumntodataactionfieldmappingSet.Add(contactcolumntodataactionfieldmappingMap)
+		dialerruleList = append(dialerruleList, ruleMap)
 	}
 
-	return contactcolumntodataactionfieldmappingSet
+	return dialerruleList
 }
 
-func flattenSdkoutboundrulesetDataactionconditionpredicateSlice(dataactionconditionpredicates []platformclientv2.Dataactionconditionpredicate) *schema.Set {
-	if len(dataactionconditionpredicates) == 0 {
+// flattenRulesetRuleAction maps a Genesys Cloud []platformclientv2.Dialeraction into a []interface{}
+func flattenRulesetRuleAction(actions *[]platformclientv2.Dialeraction) []interface{} {
+	if len(*actions) == 0 {
 		return nil
 	}
 
-	dataactionconditionpredicateSet := schema.NewSet(schema.HashResource(outboundrulesetdataactionconditionpredicateResource), []interface{}{})
-	for _, dataactionconditionpredicate := range dataactionconditionpredicates {
-		dataactionconditionpredicateMap := make(map[string]interface{})
+	var actionList []interface{}
+	for _, action := range *actions {
+		actionMap := make(map[string]interface{})
 
-		if dataactionconditionpredicate.OutputField != nil {
-			dataactionconditionpredicateMap["output_field"] = *dataactionconditionpredicate.OutputField
-		}
-		if dataactionconditionpredicate.OutputOperator != nil {
-			dataactionconditionpredicateMap["output_operator"] = *dataactionconditionpredicate.OutputOperator
-		}
-		if dataactionconditionpredicate.ComparisonValue != nil {
-			dataactionconditionpredicateMap["comparison_value"] = *dataactionconditionpredicate.ComparisonValue
-		}
-		if dataactionconditionpredicate.Inverted != nil {
-			dataactionconditionpredicateMap["inverted"] = *dataactionconditionpredicate.Inverted
-		}
-		if dataactionconditionpredicate.OutputFieldMissingResolution != nil {
-			dataactionconditionpredicateMap["output_field_missing_resolution"] = *dataactionconditionpredicate.OutputFieldMissingResolution
-		}
+		resourcedata.SetMapValueIfNotNil(actionMap, "type", action.VarType)
+		resourcedata.SetMapValueIfNotNil(actionMap, "action_type_name", action.ActionTypeName)
+		resourcedata.SetMapValueIfNotNil(actionMap, "update_option", action.UpdateOption)
+		resourcedata.SetMapValueIfNotNil(actionMap, "contact_id_field", action.ContactIdField)
+		resourcedata.SetMapValueIfNotNil(actionMap, "call_analysis_result_field", action.CallAnalysisResultField)
+		resourcedata.SetMapValueIfNotNil(actionMap, "agent_wrapup_field", action.AgentWrapupField)
+		resourcedata.SetMapReferenceValueIfNotNil(actionMap, "data_action_id", action.DataAction)
+		resourcedata.SetMapStringMapValueIfNotNil(actionMap, "properties", action.Properties)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionMap, "contact_column_to_data_action_field_mappings", action.ContactColumnToDataActionFieldMappings, flattenRulesetContactcolumntodataactionfieldmapping)
 
-		dataactionconditionpredicateSet.Add(dataactionconditionpredicateMap)
+		actionList = append(actionList, actionMap)
 	}
 
-	return dataactionconditionpredicateSet
+	return actionList
 }
 
-func flattenSdkoutboundrulesetConditionSlice(conditions []platformclientv2.Condition) []interface{} {
-	if len(conditions) == 0 {
+// flattenRulesetRuleCondition maps a Genesys Cloud []platformclientv2.Condition into a []interface{}
+func flattenRulesetRuleCondition(conditions *[]platformclientv2.Condition) []interface{} {
+	if len(*conditions) == 0 {
 		return nil
 	}
 
 	var conditionList []interface{}
-	for _, condition := range conditions {
+	for _, condition := range *conditions {
 		conditionMap := make(map[string]interface{})
 
-		if condition.VarType != nil {
-			conditionMap["type"] = *condition.VarType
-		}
-		if condition.Inverted != nil {
-			conditionMap["inverted"] = *condition.Inverted
-		}
-		if condition.AttributeName != nil {
-			conditionMap["attribute_name"] = *condition.AttributeName
-		}
-		if condition.Value != nil {
-			conditionMap["value"] = *condition.Value
-		}
-		if condition.ValueType != nil {
-			conditionMap["value_type"] = *condition.ValueType
-		}
-		if condition.Operator != nil {
-			conditionMap["operator"] = *condition.Operator
-		}
-		if condition.Codes != nil {
-			codes := make([]string, 0)
-			for _, v := range *condition.Codes {
-				codes = append(codes, v)
-			}
-			conditionMap["codes"] = codes
-		}
-		if condition.Property != nil {
-			conditionMap["property"] = *condition.Property
-		}
-		if condition.PropertyType != nil {
-			conditionMap["property_type"] = *condition.PropertyType
-		}
-		if condition.DataAction != nil {
-			conditionMap["data_action_id"] = *condition.DataAction.Id
-		}
-		if condition.DataNotFoundResolution != nil {
-			conditionMap["data_not_found_resolution"] = *condition.DataNotFoundResolution
-		}
-		if condition.ContactIdField != nil {
-			conditionMap["contact_id_field"] = *condition.ContactIdField
-		}
-		if condition.CallAnalysisResultField != nil {
-			conditionMap["call_analysis_result_field"] = *condition.CallAnalysisResultField
-		}
-		if condition.AgentWrapupField != nil {
-			conditionMap["agent_wrapup_field"] = *condition.AgentWrapupField
-		}
-		if condition.ContactColumnToDataActionFieldMappings != nil {
-			conditionMap["contact_column_to_data_action_field_mappings"] = flattenSdkoutboundrulesetContactcolumntodataactionfieldmappingSlice(*condition.ContactColumnToDataActionFieldMappings)
-		}
-		if condition.Predicates != nil {
-			conditionMap["predicates"] = flattenSdkoutboundrulesetDataactionconditionpredicateSlice(*condition.Predicates)
-		}
+		resourcedata.SetMapValueIfNotNil(conditionMap, "type", condition.VarType)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "inverted", condition.Inverted)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "attribute_name", condition.AttributeName)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "value", condition.Value)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "value_type", condition.ValueType)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "operator", condition.Operator)
+		resourcedata.SetMapStringArrayValueIfNotNil(conditionMap, "codes", condition.Codes)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "property", condition.Property)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "property_type", condition.PropertyType)
+		resourcedata.SetMapReferenceValueIfNotNil(conditionMap, "data_action_id", condition.DataAction)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "data_not_found_resolution", condition.DataNotFoundResolution)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "contact_id_field", condition.ContactIdField)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "call_analysis_result_field", condition.CallAnalysisResultField)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "agent_wrapup_field", condition.AgentWrapupField)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionMap, "contact_column_to_data_action_field_mappings", condition.ContactColumnToDataActionFieldMappings, flattenRulesetContactcolumntodataactionfieldmapping)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionMap, "predicates", condition.Predicates, flattenRulesetPredicate)
 
 		conditionList = append(conditionList, conditionMap)
 	}
@@ -305,80 +273,43 @@ func flattenSdkoutboundrulesetConditionSlice(conditions []platformclientv2.Condi
 	return conditionList
 }
 
-func flattenSdkoutboundrulesetDialeractionSlice(dialeractions []platformclientv2.Dialeraction) []interface{} {
-	if len(dialeractions) == 0 {
+// flattenRulesetContactcolumntodataactionfieldmapping maps a Genesys Cloud []platformclientv2.Contactcolumntodataactionfieldmapping into a []interface{}
+func flattenRulesetContactcolumntodataactionfieldmapping(fieldmappings *[]platformclientv2.Contactcolumntodataactionfieldmapping) []interface{} {
+	if len(*fieldmappings) == 0 {
 		return nil
 	}
 
-	var dialeractionList []interface{}
-	for _, dialeraction := range dialeractions {
-		dialeractionMap := make(map[string]interface{})
+	var fieldmappingsList []interface{}
+	for _, fieldmapping := range *fieldmappings {
+		fieldmappingMap := make(map[string]interface{})
 
-		if dialeraction.VarType != nil {
-			dialeractionMap["type"] = *dialeraction.VarType
-		}
-		if dialeraction.ActionTypeName != nil {
-			dialeractionMap["action_type_name"] = *dialeraction.ActionTypeName
-		}
-		if dialeraction.UpdateOption != nil {
-			dialeractionMap["update_option"] = *dialeraction.UpdateOption
-		}
-		if dialeraction.Properties != nil {
-			results := make(map[string]interface{})
-			for k, v := range *dialeraction.Properties {
-				results[k] = v
-			}
-			dialeractionMap["properties"] = results
-		}
-		if dialeraction.DataAction != nil {
-			dialeractionMap["data_action_id"] = *dialeraction.DataAction.Id
-		}
-		if dialeraction.ContactColumnToDataActionFieldMappings != nil {
-			dialeractionMap["contact_column_to_data_action_field_mappings"] = flattenSdkoutboundrulesetContactcolumntodataactionfieldmappingSlice(*dialeraction.ContactColumnToDataActionFieldMappings)
-		}
-		if dialeraction.ContactIdField != nil {
-			dialeractionMap["contact_id_field"] = *dialeraction.ContactIdField
-		}
-		if dialeraction.CallAnalysisResultField != nil {
-			dialeractionMap["call_analysis_result_field"] = *dialeraction.CallAnalysisResultField
-		}
-		if dialeraction.AgentWrapupField != nil {
-			dialeractionMap["agent_wrapup_field"] = *dialeraction.AgentWrapupField
-		}
+		resourcedata.SetMapValueIfNotNil(fieldmappingMap, "contact_column_name", fieldmapping.ContactColumnName)
+		resourcedata.SetMapValueIfNotNil(fieldmappingMap, "data_action_field", fieldmapping.DataActionField)
 
-		dialeractionList = append(dialeractionList, dialeractionMap)
+		fieldmappingsList = append(fieldmappingsList, fieldmappingMap)
 	}
 
-	return dialeractionList
+	return fieldmappingsList
 }
 
-func flattenSdkoutboundrulesetDialerruleSlice(dialerrules []platformclientv2.Dialerrule) []interface{} {
-	if len(dialerrules) == 0 {
+// flattenRulesetPredicate maps a Genesys Cloud []platformclientv2.Dataactionconditionpredicate into a []interface{}
+func flattenRulesetPredicate(predicates *[]platformclientv2.Dataactionconditionpredicate) []interface{} {
+	if len(*predicates) == 0 {
 		return nil
 	}
 
-	var dialerruleList []interface{}
-	for _, dialerrule := range dialerrules {
-		dialerruleMap := make(map[string]interface{})
+	var predicateList []interface{}
+	for _, predicate := range *predicates {
+		predicateMap := make(map[string]interface{})
 
-		if dialerrule.Name != nil {
-			dialerruleMap["name"] = *dialerrule.Name
-		}
-		if dialerrule.Order != nil {
-			dialerruleMap["order"] = *dialerrule.Order
-		}
-		if dialerrule.Category != nil {
-			dialerruleMap["category"] = *dialerrule.Category
-		}
-		if dialerrule.Conditions != nil {
-			dialerruleMap["conditions"] = flattenSdkoutboundrulesetConditionSlice(*dialerrule.Conditions)
-		}
-		if dialerrule.Actions != nil {
-			dialerruleMap["actions"] = flattenSdkoutboundrulesetDialeractionSlice(*dialerrule.Actions)
-		}
+		resourcedata.SetMapValueIfNotNil(predicateMap, "output_field", predicate.OutputField)
+		resourcedata.SetMapValueIfNotNil(predicateMap, "output_operator", predicate.OutputOperator)
+		resourcedata.SetMapValueIfNotNil(predicateMap, "comparison_value", predicate.ComparisonValue)
+		resourcedata.SetMapValueIfNotNil(predicateMap, "inverted", predicate.Inverted)
+		resourcedata.SetMapValueIfNotNil(predicateMap, "output_field_missing_resolution", predicate.OutputFieldMissingResolution)
 
-		dialerruleList = append(dialerruleList, dialerruleMap)
+		predicateList = append(predicateList, predicateMap)
 	}
 
-	return dialerruleList
+	return predicateList
 }
