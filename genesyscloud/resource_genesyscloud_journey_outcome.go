@@ -11,13 +11,14 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -235,12 +236,13 @@ func flattenJourneyOutcome(d *schema.ResourceData, journeyOutcome *platformclien
 	resourcedata.SetNillableValue(d, "is_positive", journeyOutcome.IsPositive)
 	resourcedata.SetNillableValue(d, "context", lists.FlattenAsList(journeyOutcome.Context, flattenContext))
 	resourcedata.SetNillableValue(d, "journey", lists.FlattenAsList(journeyOutcome.Journey, flattenJourney))
+
 	resourcedata.SetNillableValue(d, "associated_value_field", lists.FlattenAsList(journeyOutcome.AssociatedValueField, flattenAssociatedValueField))
 }
 
 func flattenAssociatedValueField(associatedValueField *platformclientv2.Associatedvaluefield) map[string]interface{} {
 	associatedValueFieldMap := make(map[string]interface{})
-	associatedValueFieldMap["dataType"] = associatedValueField.DataType
+	associatedValueFieldMap["data_type"] = associatedValueField.DataType
 	associatedValueFieldMap["name"] = associatedValueField.Name
 	return associatedValueFieldMap
 }

@@ -8,32 +8,23 @@ import (
 	"os"
 	"path"
 
-
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/go-cty/cty"
 
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_tf_export", ResourceTfExport())
-	
+
 }
-
-// func GetRegistrarresources() {
-// 	providerResources , providerDataSources := registrar.GetResources()
-// 	log.Println("providerResources")
-// 	log.Println(providerResources)
-// 	log.Println(providerDataSources)
-// }
-
-
 
 func ResourceTfExport() *schema.Resource {
 	return &schema.Resource{
