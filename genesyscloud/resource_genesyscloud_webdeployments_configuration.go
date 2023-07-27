@@ -335,13 +335,14 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 			"languages": {
 				Description: "A list of languages supported on the configuration.",
 				Type:        schema.TypeList,
-				Optional:    true,
+				Required:    true,
+				MinItems:    1,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"default_language": {
 				Description: "The default language to use for the configuration.",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			"status": {
 				Description: "The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.",
