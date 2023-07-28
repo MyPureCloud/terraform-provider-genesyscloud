@@ -12,14 +12,15 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -1332,7 +1333,7 @@ func validateMapCommTypes(val interface{}, _ cty.Path) diag.Diagnostics {
 	commTypes := []string{"CALL", "CALLBACK", "CHAT", "COBROWSE", "EMAIL", "MESSAGE", "SOCIAL_EXPRESSION", "VIDEO", "SCREENSHARE"}
 	m := val.(map[string]interface{})
 	for k := range m {
-		if !lists.StringInSlice(k, commTypes) {
+		if !lists.ItemInSlice(k, commTypes) {
 			return diag.Errorf("%s is an invalid communication type key.", k)
 		}
 	}

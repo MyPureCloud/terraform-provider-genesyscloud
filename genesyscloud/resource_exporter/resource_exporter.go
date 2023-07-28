@@ -11,8 +11,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists" 
 )
 
 var resourceExporters map[string]*ResourceExporter
@@ -169,15 +170,15 @@ func (r *ResourceExporter) ContainsNestedRefAttrs(attribute string) ([]string, b
 }
 
 func (r *ResourceExporter) AllowForZeroValues(attribute string) bool {
-	return lists.StringInSlice(attribute, r.AllowZeroValues)
+	return lists.ItemInSlice(attribute, r.AllowZeroValues)
 }
 
 func (r *ResourceExporter) IsJsonEncodable(attribute string) bool {
-	return lists.StringInSlice(attribute, r.JsonEncodeAttributes)
+	return lists.ItemInSlice(attribute, r.JsonEncodeAttributes)
 }
 
 func (r *ResourceExporter) IsAttributeE164(attribute string) bool {
-	return lists.StringInSlice(attribute, r.E164Numbers)
+	return lists.ItemInSlice(attribute, r.E164Numbers)
 }
 
 func (r *ResourceExporter) AddExcludedAttribute(attribute string) {
@@ -219,6 +220,7 @@ func GetResourceExporters() map[string]*ResourceExporter {
 	}
 	return exportCopy
 }
+
 //terraform-provider-genesyscloud/genesyscloud/tfexporter
 func GetAvailableExporterTypes() []string {
 	exporters := GetResourceExporters()
@@ -266,11 +268,11 @@ func SanitizeResourceName(inputName string) string {
 func RegisterExporter(exporterName string, resourceExporter *ResourceExporter) {
 	resourceExporterMapMutex.Lock()
 	defer resourceExporterMapMutex.Unlock()
-	resourceExporters[exporterName] = resourceExporter	
+	resourceExporters[exporterName] = resourceExporter
 }
 
 func SetRegisterExporter(resources map[string]*ResourceExporter) {
 	resourceExporterMapMutex.Lock()
 	defer resourceExporterMapMutex.Unlock()
-	resourceExporters = resources	
+	resourceExporters = resources
 }

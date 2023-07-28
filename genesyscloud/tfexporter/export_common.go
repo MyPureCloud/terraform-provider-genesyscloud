@@ -36,7 +36,7 @@ const (
 func IncludeFilterByResourceType(exports map[string]*resourceExporter.ResourceExporter, filter []string) map[string]*resourceExporter.ResourceExporter {
 	if len(filter) > 0 {
 		for resType := range exports {
-			if !lists.StringInSlice(resType, formatFilter(filter)) {
+			if !lists.ItemInSlice(resType, formatFilter(filter)) {
 				delete(exports, resType)
 			}
 		}
@@ -184,7 +184,7 @@ func determineVarValue(s *schema.Schema) interface{} {
 }
 
 func resolveReference(refSettings *resourceExporter.RefAttrSettings, refID string, exporters map[string]*resourceExporter.ResourceExporter, exportingState bool) string {
-	if lists.StringInSlice(refID, refSettings.AltValues) {
+	if lists.ItemInSlice(refID, refSettings.AltValues) {
 		// This is not actually a reference to another object. Keep the value
 		return refID
 	}

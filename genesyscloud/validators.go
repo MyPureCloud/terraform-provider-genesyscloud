@@ -176,7 +176,7 @@ func ValidateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 			}
 		}
 
-		if !lists.StringInSlice(v, valid) || !lists.SubStringInSlice(v, valid) {
+		if !lists.ItemInSlice(v, valid) || !lists.SubStringInSlice(v, valid) {
 			errors = append(errors, fmt.Errorf("string %s not in slice", v))
 			return warnings, errors
 		}

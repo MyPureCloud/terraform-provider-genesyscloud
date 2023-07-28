@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists" 
 )
 
 const (
@@ -28,12 +29,11 @@ const (
 // The factory function will be invoked for every Terraform CLI command executed
 // to create a provider server to which the CLI can reattach.
 
-
-func GetProviderFactories (providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) (map[string]func() (*schema.Provider, error)) {
+func GetProviderFactories(providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) map[string]func() (*schema.Provider, error) {
 	return map[string]func() (*schema.Provider, error){
 		"genesyscloud": func() (*schema.Provider, error) {
-			provider := New("0.1.0",providerResources, providerDataSources)()
-			return provider,nil
+			provider := New("0.1.0", providerResources, providerDataSources)()
+			return provider, nil
 		},
 	}
 }
@@ -200,7 +200,7 @@ func validateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 			}
 			if arr, ok := val.([]interface{}); ok {
 				// Property is an array. Check if string value exists in array.
-				if lists.StringInSlice(jsonValue, lists.InterfaceListToStrings(arr)) {
+				if lists.ItemInSlice(jsonValue, lists.InterfaceListToStrings(arr)) {
 					return nil
 				}
 				return fmt.Errorf("JSON array property for resourceState %s.%s does not contain expected %s", resourceName, jsonProp, jsonValue)
@@ -352,70 +352,3 @@ func randString(length int) string {
 
 	return string(s)
 }
-
-
-
-
-
-
-
-// func DeleteLocationWithNumber(emergencyNumber string) error {
-// 	sdkConfig := platformclientv2.GetDefaultConfiguration()
-// 	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
-
-// 	for pageNum := 1; ; pageNum++ {
-// 		const pageSize = 100
-// 		locations, _, getErr := locationsAPI.GetLocations(pageSize, pageNum, nil, "")
-// 		if getErr != nil {
-// 			return getErr
-// 		}
-
-// 		if locations.Entities == nil || len(*locations.Entities) == 0 {
-// 			break
-// 		}
-
-// 		for _, location := range *locations.Entities {
-// 			if location.EmergencyNumber != nil {
-// 				if strings.Contains(*location.EmergencyNumber.E164, emergencyNumber) {
-// 					err := deleteSiteWithLocationId(*location.Id)
-// 					if err != nil {
-// 						return err
-// 					}
-// 					_, err = locationsAPI.DeleteLocation(*location.Id)
-// 					time.Sleep(30 * time.Second)
-// 					return err
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return nil
-// }
-
-// func deleteSiteWithLocationId(locationId string) error {
-// 	sdkConfig := platformclientv2.GetDefaultConfiguration()
-// 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-// 	for pageNum := 1; ; pageNum++ {
-// 		const pageSize = 100
-// 		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false)
-// 		if getErr != nil {
-// 			return getErr
-// 		}
-
-// 		if sites.Entities == nil || len(*sites.Entities) == 0 {
-// 			return nil
-// 		}
-
-// 		for _, site := range *sites.Entities {
-// 			if site.Location != nil && *site.Location.Id == locationId {
-// 				_, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(*site.Id)
-// 				if err != nil {
-// 					return err
-// 				}
-// 				time.Sleep(8 * time.Second)
-// 				break
-// 			}
-// 		}
-// 	}
-// }
-
