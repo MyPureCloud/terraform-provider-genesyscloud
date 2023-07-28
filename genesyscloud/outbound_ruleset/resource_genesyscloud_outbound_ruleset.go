@@ -75,7 +75,7 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValue(d, "name", ruleset.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", ruleset.ContactList)
 		resourcedata.SetNillableReference(d, "queue_id", ruleset.Queue)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "rules", ruleset.Rules, flattenRulesetRules)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "rules", ruleset.Rules, flattenDialerrules)
 
 		log.Printf("Read Outbound Ruleset %s %s", d.Id(), *ruleset.Name)
 		return cc.CheckState()
