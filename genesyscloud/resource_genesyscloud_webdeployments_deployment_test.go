@@ -16,8 +16,8 @@ import (
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName        = "Test Deployment " + randString(8)
-		deploymentDescription = "Test Deployment description " + randString(32)
+		deploymentName        = "Test Deployment " + RandString(8)
+		deploymentDescription = "Test Deployment description " + RandString(32)
 		fullResourceName      = "genesyscloud_webdeployments_deployment.basic"
 	)
 
@@ -49,10 +49,10 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName   = "Test Deployment " + randString(8)
+		deploymentName   = "Test Deployment " + RandString(8)
 		fullResourceName = "genesyscloud_webdeployments_deployment.basicWithAllowedDomains"
-		firstDomain      = "genesys-" + randString(8) + ".com"
-		secondDomain     = "genesys-" + randString(8) + ".com"
+		firstDomain      = "genesys-" + RandString(8) + ".com"
+		secondDomain     = "genesys-" + RandString(8) + ".com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -92,7 +92,7 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName             = "Test Deployment " + randString(8)
+		deploymentName             = "Test Deployment " + RandString(8)
 		fullDeploymentResourceName = "genesyscloud_webdeployments_deployment.versioning"
 		fullConfigResourceName     = "genesyscloud_webdeployments_configuration.minimal"
 	)

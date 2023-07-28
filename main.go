@@ -15,6 +15,7 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
+	webdeploymentsConfiguration "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
@@ -86,6 +87,7 @@ func registerResources() {
 	obContactList.SetRegistrar(reg_instance)
 	scripts.SetRegistrar(reg_instance)
 	externalContacts.SetRegistrar(reg_instance)
+	webdeploymentsConfiguration.SetRegistrar(reg_instance)
 	resourceExporter.SetRegisterExporter(resourceExporters)
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.

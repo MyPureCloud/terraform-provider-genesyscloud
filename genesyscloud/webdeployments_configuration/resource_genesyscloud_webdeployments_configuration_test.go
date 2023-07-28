@@ -1,4 +1,4 @@
-package genesyscloud
+package webdeployments_configuration
 
 import (
 	"fmt"
@@ -14,20 +14,27 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+)
+
+const (
+	trueValue  = "true"
+	falseValue = "false"
 )
 
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 	t.Parallel()
 	var (
-		configName               = "Test Configuration " + randString(8)
-		configDescription        = "Test Configuration description " + randString(32)
+		configName               = "Test Configuration " + gcloud.RandString(8)
+		configDescription        = "Test Configuration description " + gcloud.RandString(32)
 		updatedConfigDescription = configDescription + " Updated"
 		fullResourceName         = "genesyscloud_webdeployments_configuration.basic"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: basicConfigurationResource(configName, configDescription),
@@ -67,8 +74,8 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 	t.Parallel()
 	var (
-		configName        = "Test Configuration " + randString(8)
-		configDescription = "Test Configuration description " + randString(32)
+		configName        = "Test Configuration " + gcloud.RandString(8)
+		configDescription = "Test Configuration description " + gcloud.RandString(32)
 		fullResourceName  = "genesyscloud_webdeployments_configuration.complex"
 
 		cobrowseChannels       = []string{"Webmessaging"}
@@ -83,8 +90,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: complexConfigurationResource(
@@ -195,11 +202,11 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					//ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"), // TODO: uncomment these lines when cobrowse.channels has been implemented
 					//ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "2"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
+					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
+					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "2"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
+					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
+					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", trueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
@@ -256,13 +263,14 @@ func isCoBrowseChannelsFeatureImplemented() bool {
 	clientSecret := os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET")
 	config := platformclientv2.GetDefaultConfiguration()
 	if err := config.AuthorizeClientCredentials(clientId, clientSecret); err != nil {
+		log.Printf("Failed to authorize client credentials grant: %v", err)
 		return false
 	}
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(config)
 
-	name := "test name " + uuid.NewString()
-	languages := []string{"en-us"}
+	name := "test config " + uuid.NewString()
 	defaultLang := "en-us"
+	languages := []string{defaultLang}
 	channels := []string{"Voice"}
 
 	configurationVersion := &platformclientv2.Webdeploymentconfigurationversion{
@@ -412,7 +420,7 @@ func verifyConfigurationDestroyed(state *terraform.State) error {
 
 		_, response, err := api.GetWebdeploymentsConfigurationVersionsDraft(rs.Primary.ID)
 
-		if IsStatus404(response) {
+		if gcloud.IsStatus404(response) {
 			continue
 		}
 

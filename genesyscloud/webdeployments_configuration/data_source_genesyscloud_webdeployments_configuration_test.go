@@ -1,23 +1,25 @@
-package genesyscloud
+package webdeployments_configuration
 
 import (
 	"fmt"
 	"testing"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceWebDeploymentsConfiguration(t *testing.T) {
 	var (
-		configurationName        = "Basic Configuration " + randString(8)
+		configurationName        = "Basic Configuration " + gcloud.RandString(8)
 		configurationDescription = "Basic config description"
 		fullResourceName         = "genesyscloud_webdeployments_configuration.basic"
 		fullDataSourceName       = "data.genesyscloud_webdeployments_configuration.basic-data"
 		resourceNameReference    = fullResourceName + ".name"
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Search by name

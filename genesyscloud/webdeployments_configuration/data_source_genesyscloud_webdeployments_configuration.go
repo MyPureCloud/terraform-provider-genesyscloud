@@ -1,4 +1,4 @@
-package genesyscloud
+package webdeployments_configuration
 
 import (
 	"context"
@@ -9,34 +9,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
-func dataSourceWebDeploymentsConfiguration() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Web Deployments Configurations. Select a configuration by name.",
-		ReadContext: ReadWithPooledClient(dataSourceConfigurationRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "The name of the configuration",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"version": {
-				Description: "The version of the configuration.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-		},
-	}
-}
-
 func dataSourceConfigurationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	name := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		configs, _, err := api.GetWebdeploymentsConfigurations(false)
 
 		if err != nil {

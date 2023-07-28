@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists" 
 )
 
 const (
@@ -28,12 +29,11 @@ const (
 // The factory function will be invoked for every Terraform CLI command executed
 // to create a provider server to which the CLI can reattach.
 
-
-func GetProviderFactories (providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) (map[string]func() (*schema.Provider, error)) {
+func GetProviderFactories(providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) map[string]func() (*schema.Provider, error) {
 	return map[string]func() (*schema.Provider, error){
 		"genesyscloud": func() (*schema.Provider, error) {
-			provider := New("0.1.0",providerResources, providerDataSources)()
-			return provider,nil
+			provider := New("0.1.0", providerResources, providerDataSources)()
+			return provider, nil
 		},
 	}
 }
@@ -340,7 +340,7 @@ func GenerateSubstitutionsMap(substitutions map[string]string) string {
 %s}`, substitutionsStr)
 }
 
-func randString(length int) string {
+func RandString(length int) string {
 	rand.Seed(time.Now().UnixNano())
 
 	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
@@ -352,12 +352,6 @@ func randString(length int) string {
 
 	return string(s)
 }
-
-
-
-
-
-
 
 // func DeleteLocationWithNumber(emergencyNumber string) error {
 // 	sdkConfig := platformclientv2.GetDefaultConfiguration()
@@ -418,4 +412,3 @@ func randString(length int) string {
 // 		}
 // 	}
 // }
-

@@ -10,7 +10,7 @@ import (
 
 func TestAccDataSourceWebDeploymentsDeployment(t *testing.T) {
 	var (
-		deploymentName        = "BasicDeployment" + randString(8)
+		deploymentName        = "BasicDeployment" + RandString(8)
 		deploymentDescription = "Basic Deployment description"
 		fullResourceName      = "genesyscloud_webdeployments_deployment.basic"
 		fullDataSourceName    = "data.genesyscloud_webdeployments_deployment.basic-data"
