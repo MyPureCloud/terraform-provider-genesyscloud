@@ -11,6 +11,10 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
+/*
+   The data_source_genesyscloud_outbound_ruleset.go contains the data source implementation
+   for the resource.
+*/
 
 // dataSourceOutboundRulesetRead retrieves by name the id in question
 func dataSourceOutboundRulesetRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

@@ -8,6 +8,12 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_outbound_ruleset_utils.go file contains various helper methods to marshal
+and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
+*/
+
+// getOutboundRulesetFromResourceData maps data from schema ResourceData object to a platformclientv2.Ruleset
 func getOutboundRulesetFromResourceData(d *schema.ResourceData) platformclientv2.Ruleset {
 	name := d.Get("name").(string)
 

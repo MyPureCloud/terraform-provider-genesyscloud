@@ -10,6 +10,11 @@ import (
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
+/*
+   The genesyscloud_outbound_ruleset_init_test.go file is used to initialize the data sources and resources
+   used in testing the outbound_ruleset resource.
+*/
+
 // providerDataSources holds a map of all registered datasources
 var providerDataSources map[string]*schema.Resource
 

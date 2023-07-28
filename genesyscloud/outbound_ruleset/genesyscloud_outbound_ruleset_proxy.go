@@ -8,6 +8,12 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+The genesyscloud_outbound_ruleset_proxy.go file contains the proxy structures and methods that interact
+with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
+out during testing.
+*/
+
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *outboundRulesetProxy
 
@@ -67,7 +73,7 @@ func (p *outboundRulesetProxy) getAllOutboundRuleset(ctx context.Context) (*[]pl
 }
 
 // getOutboundRulesetById returns a single Genesys Cloud Outbound Ruleset by Id
-func (p *outboundRulesetProxy) getOutboundRulesetById(ctx context.Context, rulesetId string) (*platformclientv2.Ruleset, int, error) {
+func (p *outboundRulesetProxy) getOutboundRulesetById(ctx context.Context, rulesetId string) (ruleset *platformclientv2.Ruleset, statusCode int, err error) {
 	return p.getOutboundRulesetByIdAttr(ctx, p, rulesetId)
 }
 
@@ -82,7 +88,7 @@ func (p *outboundRulesetProxy) updateOutboundRuleset(ctx context.Context, rulese
 }
 
 // deleteOutboundRuleset deletes a Genesys Cloud Outbound Ruleset by Id
-func (p *outboundRulesetProxy) deleteOutboundRuleset(ctx context.Context, rulesetId string) (int, error) {
+func (p *outboundRulesetProxy) deleteOutboundRuleset(ctx context.Context, rulesetId string) (statusCode int, err error) {
 	return p.deleteOutboundRulesetAttr(ctx, p, rulesetId)
 }
 
@@ -122,7 +128,7 @@ func getAllOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy) (*[]p
 }
 
 // getOutboundRulesetByIdFn is an implementation of the function to get a Genesys Cloud Outbound Ruleset by Id
-func getOutboundRulesetByIdFn(ctx context.Context, p *outboundRulesetProxy, rulesetId string) (*platformclientv2.Ruleset, int, error) {
+func getOutboundRulesetByIdFn(ctx context.Context, p *outboundRulesetProxy, rulesetId string) (ruleset *platformclientv2.Ruleset, statusCode int, err error) {
 	ruleset, resp, err := p.outboundApi.GetOutboundRuleset(rulesetId)
 	if err != nil {
 		return nil, resp.StatusCode, fmt.Errorf("Failed to ruleset by id %s: %s", rulesetId, err)
@@ -169,7 +175,7 @@ func updateOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy, rules
 }
 
 // deleteOutboundRulesetFn is an implementation function for deleting a Genesys Cloud Outbound Rulesets
-func deleteOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy, rulesetId string) (int, error) {
+func deleteOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy, rulesetId string) (statusCode int, err error) {
 	resp, err := p.outboundApi.DeleteOutboundRuleset(rulesetId)
 	if err != nil {
 		return resp.StatusCode, fmt.Errorf("Failed to delete ruleset: %s", err)

@@ -9,7 +9,7 @@ import (
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -78,12 +78,12 @@ func registerResources() {
 	reg_instance := &RegisterInstance{}
 
 	pat.SetRegistrar(reg_instance)
-	obs.SetRegistrar(reg_instance)
 
 	ob.SetRegistrar(reg_instance)
 	gcloud.SetRegistrar(reg_instance)
 	obAttemptLimit.SetRegistrar(reg_instance)
 	obContactList.SetRegistrar(reg_instance)
+	obRuleset.SetRegistrar(reg_instance)
 	scripts.SetRegistrar(reg_instance)
 	externalContacts.SetRegistrar(reg_instance)
 	resourceExporter.SetRegisterExporter(resourceExporters)

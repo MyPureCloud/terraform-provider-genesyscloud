@@ -18,6 +18,9 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
+/*
+The resource_genesyscloud_outbound_ruleset.go contains all of the methods that perform the core logic for a resource.
+*/
 
 // getAllAuthOutboundRulesets retrieves all of the outbound rulesets via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {

@@ -9,6 +9,14 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
+/*
+resource_genesyscloud_outbound_ruleset_schema.go holds four functions within it:
+
+1.  The registration code that registers the Datasource, Resource and Exporter for the package.
+2.  The resource schema definitions for the outbound_ruleset resource.
+3.  The datasource schema definitions for the outbound_ruleset datasource.
+4.  The resource exporter configuration for the outbound_ruleset exporter.
+*/
 const resourceName = "genesyscloud_outbound_ruleset"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
