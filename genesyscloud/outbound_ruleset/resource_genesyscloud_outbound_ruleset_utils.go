@@ -35,12 +35,8 @@ func buildDialerules(rules []interface{}) *[]platformclientv2.Dialerrule {
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkRule.Name, ruleMap, "name")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkRule.Category, ruleMap, "category")
 		sdkRule.Order = platformclientv2.Int(ruleMap["order"].(int))
-		if conditions := ruleMap["conditions"]; conditions != nil {
-			sdkRule.Conditions = buildConditions(conditions.([]interface{}))
-		}
-		if actions := ruleMap["actions"]; actions != nil {
-			sdkRule.Actions = buildDialeractions(actions.([]interface{}))
-		}
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Conditions, ruleMap, "conditions", buildConditions)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Actions, ruleMap, "actions", buildDialeractions)
 
 		rulesSlice = append(rulesSlice, sdkRule)
 	}
@@ -61,11 +57,7 @@ func buildConditions(conditions []interface{}) *[]platformclientv2.Condition {
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.Value, conditionMap, "value")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.ValueType, conditionMap, "value_type")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.Operator, conditionMap, "operator")
-		codes := make([]string, 0)
-		for _, v := range conditionMap["codes"].([]interface{}) {
-			codes = append(codes, v.(string))
-		}
-		sdkCondition.Codes = &codes
+		resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkCondition.Codes, conditionMap, "codes")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.Property, conditionMap, "property")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.PropertyType, conditionMap, "property_type")
 		sdkCondition.DataAction = &platformclientv2.Domainentityref{Id: platformclientv2.String(conditionMap["data_action_id"].(string))}
@@ -73,12 +65,8 @@ func buildConditions(conditions []interface{}) *[]platformclientv2.Condition {
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.ContactIdField, conditionMap, "contact_id_field")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.CallAnalysisResultField, conditionMap, "call_analysis_result_field")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.AgentWrapupField, conditionMap, "agent_wrapup_field")
-		if fieldMappings := conditionMap["contact_column_to_data_action_field_mappings"]; fieldMappings != nil {
-			sdkCondition.ContactColumnToDataActionFieldMappings = buildContactcolumntodataactionfieldmappings(fieldMappings.([]interface{}))
-		}
-		if predicates := conditionMap["predicates"]; predicates != nil {
-			sdkCondition.Predicates = buildDataactionconditionpredicates(predicates.([]interface{}))
-		}
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCondition.ContactColumnToDataActionFieldMappings, conditionMap, "contact_column_to_data_action_field_mappings", buildContactcolumntodataactionfieldmappings)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCondition.Predicates, conditionMap, "predicates", buildDataactionconditionpredicates)
 
 		conditionSlice = append(conditionSlice, sdkCondition)
 	}
@@ -96,17 +84,9 @@ func buildDialeractions(actions []interface{}) *[]platformclientv2.Dialeraction 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAction.VarType, actionMap, "type")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAction.ActionTypeName, actionMap, "action_type_name")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAction.UpdateOption, actionMap, "update_option")
-		if properties := actionMap["properties"].(map[string]interface{}); properties != nil {
-			sdkProperties := map[string]string{}
-			for k, v := range properties {
-				sdkProperties[k] = v.(string)
-			}
-			sdkAction.Properties = &sdkProperties
-		}
+		resourcedata.BuildSDKStringMapValueIfNotNil(&sdkAction.Properties, actionMap, "properties")
 		sdkAction.DataAction = &platformclientv2.Domainentityref{Id: platformclientv2.String(actionMap["data_action_id"].(string))}
-		if fieldMappings := actionMap["contact_column_to_data_action_field_mappings"]; fieldMappings != nil {
-			sdkAction.ContactColumnToDataActionFieldMappings = buildContactcolumntodataactionfieldmappings(fieldMappings.([]interface{}))
-		}
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkAction.ContactColumnToDataActionFieldMappings, actionMap, "contact_column_to_data_action_field_mappings", buildContactcolumntodataactionfieldmappings)
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAction.ContactIdField, actionMap, "contact_id_field")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAction.CallAnalysisResultField, actionMap, "call_analysis_result_field")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAction.AgentWrapupField, actionMap, "agent_wrapup_field")

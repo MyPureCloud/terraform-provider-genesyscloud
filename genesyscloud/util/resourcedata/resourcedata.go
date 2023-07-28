@@ -17,10 +17,37 @@ const (
 
 // Use these functions to read properties from the schema and set it on in a map in build function
 
-// This function will read a map and set a property on an object if the value exists
-func BuildSDKStringValueIfNotNil(field **string, targetMap map[string]interface{}, key string){
+// This function will read a map and set the string property on an object if the value exists
+func BuildSDKStringValueIfNotNil(field **string, targetMap map[string]interface{}, key string) {
 	if value := targetMap[key].(string); value != "" {
 		*field = &value
+	}
+}
+
+// This function will read a map and use the provided function to read the nested values if the value exists
+func BuildSDKInterfaceArrayValueIfNotNil[T any](field **T, targetMap map[string]interface{}, key string, f func([]interface{}) *T) {
+	if values := targetMap[key]; values != nil {
+		*field = f(values.([]interface{}))
+	}
+}
+
+// This function will read a map and set the string[] property on an object if the value exists
+func BuildSDKStringArrayValueIfNotNil(field **[]string, targetMap map[string]interface{}, key string) {
+	array := make([]string, 0)
+	for _, v := range targetMap[key].([]interface{}) {
+		array = append(array, v.(string))
+	}
+	*field = &array
+}
+
+// This function will read a map and set the map[string][string] property on an object if the value exists
+func BuildSDKStringMapValueIfNotNil(field **map[string]string, targetMap map[string]interface{}, key string) {
+	if values := targetMap[key].(map[string]interface{}); values != nil {
+		valueMap := map[string]string{}
+		for k, v := range values {
+			valueMap[k] = v.(string)
+		}
+		*field = &valueMap
 	}
 }
 
@@ -64,7 +91,7 @@ func SetMapValueIfNotNil[T any](targetMap map[string]interface{}, key string, va
 func SetMapInterfaceArrayWithFuncIfNotNil[T any](targetMap map[string]interface{}, key string, value *T, f func(*T) []interface{}) {
 	if value != nil {
 		targetMap[key] = f(value)
-	} 
+	}
 }
 
 // Use these functions to read values for an object and set them on the schema
