@@ -15,6 +15,15 @@ const (
 	DateParseFormat = "2006-01-02"
 )
 
+// Use these functions to read properties from the schema and set it on in a map in build function
+
+// This function will read a map and set a property on an object if the value exists
+func BuildSDKStringValueIfNotNil(field **string, targetMap map[string]interface{}, key string){
+	if value := targetMap[key].(string); value != "" {
+		*field = &value
+	}
+}
+
 // Use these functions to read properties of objects inside flatten functions
 
 // This function will read the value of a string array property and set it in a map
