@@ -16,6 +16,11 @@ import (
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
+/*
+The resource_genesyscloud_outbound_ruleset_test.go contains all of the test cases for running the resource
+tests for outbound_ruleset.
+*/
+
 const falseValue = "false"
 const trueValue = "true"
 const nullValue = "null"

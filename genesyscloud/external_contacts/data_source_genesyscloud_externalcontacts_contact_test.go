@@ -11,7 +11,7 @@ import (
 )
 
 /*
-Test Class for the External Contacts Data Souce
+Test Class for the External Contacts Data Source
 */
 func TestAccDataSourceExternalContacts(t *testing.T) {
 	var (

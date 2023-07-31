@@ -41,6 +41,25 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 
 	return nil
 }
+/*
+For resource_genesyscloud_outbound_ruleset, there is a property called properties which is a map of stings. 
+When exporting outbound rulesets, if one of the keys in the map is set to an empty string it will be ignored 
+by the export process. Example: properties = {"contact.Attempts" = ""}. 
+
+During the export process the value associated with the key is set to nil.
+This custom exporter checks if a key has a value of nil and if it does sets it to an empty string so it is exported.
+*/
+func RuleSetPropertyResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
+	if properties, ok := configMap["properties"].(map[string]interface{}); ok {
+		for key, value := range properties {
+			if value == nil {
+				properties[key] = ""
+			}
+		}
+	}
+
+	return nil
+}
 
 /*
 This property takes a key 'skills' with an array of skill ids wrapped into a string (Example: {'skills': '['skillIdHere']'} ).
