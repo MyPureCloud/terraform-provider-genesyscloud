@@ -221,4 +221,10 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_webdeployments_configuration", WebDeploymentConfigurationExporter())
 	l.RegisterExporter("genesyscloud_webdeployments_deployment", WebDeploymentExporter())
 	l.RegisterExporter("genesyscloud_widget_deployment", WidgetDeploymentExporter())
+
+	l.RegisterExporter("genesyscloud_knowledge_v1_document", KnowledgeDocumentExporterV1())
+    l.RegisterExporter("genesyscloud_knowledge_document_variation", KnowledgeDocumentVariationExporter())
+    l.RegisterExporter("genesyscloud_knowledge_label", KnowledgeLabelExporter())
+    l.RegisterExporter("genesyscloud_knowledge_v1_category", KnowledgeCategoryExporterV1())
+
 }

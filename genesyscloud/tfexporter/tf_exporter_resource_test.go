@@ -5,6 +5,8 @@ import (
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	outbound_attempt_limit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	outbound_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+    pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
+    obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"testing"
 
@@ -191,7 +193,16 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_webdeployments_deployment", gcloud.WebDeploymentExporter())
 	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
 
-	resourceExporter.SetRegisterExporter(resourceExporters)
+    RegisterExporter("genesyscloud_knowledge_v1_document", gcloud.KnowledgeDocumentExporterV1())
+    RegisterExporter("genesyscloud_knowledge_document_variation", gcloud.KnowledgeDocumentVariationExporter())
+    RegisterExporter("genesyscloud_knowledge_label", gcloud.KnowledgeLabelExporter())
+    RegisterExporter("genesyscloud_knowledge_v1_category", gcloud.KnowledgeCategoryExporterV1())
+
+    RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
+    RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())
+
+  
+    resourceExporter.SetRegisterExporter(resourceExporters)
 }
 
 func RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {

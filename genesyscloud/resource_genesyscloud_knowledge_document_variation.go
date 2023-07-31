@@ -268,7 +268,7 @@ func getAllKnowledgeDocumentVariations(_ context.Context, clientConfig *platform
 	return resources, nil
 }
 
-func knowledgeDocumentVariationExporter() *resourceExporter.ResourceExporter {
+func KnowledgeDocumentVariationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeDocumentVariations),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
