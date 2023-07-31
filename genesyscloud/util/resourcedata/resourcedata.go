@@ -69,7 +69,7 @@ func SetMapStringMapValueIfNotNil(targetMap map[string]interface{}, key string, 
 		for k, v := range *valueList {
 			results[k] = v
 		}
-		targetMap["properties"] = results
+		targetMap[key] = results
 	}
 }
 

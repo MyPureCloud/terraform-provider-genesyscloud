@@ -30,7 +30,10 @@ func buildDialerules(rules []interface{}) *[]platformclientv2.Dialerrule {
 	rulesSlice := make([]platformclientv2.Dialerrule, 0)
 	for _, rule := range rules {
 		var sdkRule platformclientv2.Dialerrule
-		ruleMap := rule.(map[string]interface{})
+		ruleMap, ok := rule.(map[string]interface{})
+		if !ok {
+			continue
+		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkRule.Name, ruleMap, "name")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkRule.Category, ruleMap, "category")
@@ -49,7 +52,10 @@ func buildConditions(conditions []interface{}) *[]platformclientv2.Condition {
 	conditionSlice := make([]platformclientv2.Condition, 0)
 	for _, conditions := range conditions {
 		var sdkCondition platformclientv2.Condition
-		conditionMap := conditions.(map[string]interface{})
+		conditionMap, ok := conditions.(map[string]interface{})
+		if !ok {
+			continue
+		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.VarType, conditionMap, "type")
 		sdkCondition.Inverted = platformclientv2.Bool(conditionMap["inverted"].(bool))
@@ -79,7 +85,10 @@ func buildDialeractions(actions []interface{}) *[]platformclientv2.Dialeraction 
 	actionsSlice := make([]platformclientv2.Dialeraction, 0)
 	for _, action := range actions {
 		var sdkAction platformclientv2.Dialeraction
-		actionMap := action.(map[string]interface{})
+		actionMap, ok := action.(map[string]interface{})
+		if !ok {
+			continue
+		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAction.VarType, actionMap, "type")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAction.ActionTypeName, actionMap, "action_type_name")
@@ -93,7 +102,7 @@ func buildDialeractions(actions []interface{}) *[]platformclientv2.Dialeraction 
 
 		actionsSlice = append(actionsSlice, sdkAction)
 	}
-	
+
 	return &actionsSlice
 }
 
@@ -102,7 +111,10 @@ func buildContactcolumntodataactionfieldmappings(fieldmappings []interface{}) *[
 	fieldmappingsSlice := make([]platformclientv2.Contactcolumntodataactionfieldmapping, 0)
 	for _, fieldmapping := range fieldmappings {
 		var sdkFieldmapping platformclientv2.Contactcolumntodataactionfieldmapping
-		fieldmappingMap := fieldmapping.(map[string]interface{})
+		fieldmappingMap, ok := fieldmapping.(map[string]interface{})
+		if !ok {
+			continue
+		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkFieldmapping.ContactColumnName, fieldmappingMap, "contact_column_name")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkFieldmapping.DataActionField, fieldmappingMap, "data_action_field")
@@ -118,7 +130,10 @@ func buildDataactionconditionpredicates(predicates []interface{}) *[]platformcli
 	predicatesSlice := make([]platformclientv2.Dataactionconditionpredicate, 0)
 	for _, predicate := range predicates {
 		var sdkPredicate platformclientv2.Dataactionconditionpredicate
-		predicateMap := predicate.(map[string]interface{})
+		predicateMap, ok := predicate.(map[string]interface{})
+		if !ok {
+			continue
+		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkPredicate.OutputField, predicateMap, "output_field")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkPredicate.OutputOperator, predicateMap, "output_operator")
