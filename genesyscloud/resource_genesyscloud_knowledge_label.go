@@ -109,7 +109,7 @@ func getAllKnowledgeLabelEntities(knowledgeAPI platformclientv2.KnowledgeApi, kn
 	return &entities, nil
 }
 
-func knowledgeLabelExporter() *resourceExporter.ResourceExporter {
+func KnowledgeLabelExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeLabels),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
