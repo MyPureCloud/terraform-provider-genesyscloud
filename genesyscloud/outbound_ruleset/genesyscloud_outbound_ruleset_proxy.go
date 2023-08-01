@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
+	"strings"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -131,6 +133,11 @@ func getAllOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy) (*[]p
 func getOutboundRulesetByIdFn(ctx context.Context, p *outboundRulesetProxy, rulesetId string) (ruleset *platformclientv2.Ruleset, statusCode int, err error) {
 	ruleset, resp, err := p.outboundApi.GetOutboundRuleset(rulesetId)
 	if err != nil {
+		//This is an API that throws an error on a 404 instead of just returning a 404.
+		if strings.Contains(fmt.Sprintf("%s", err), "API Error: 404") {
+			return nil, http.StatusNotFound, nil
+
+		}
 		return nil, 0, fmt.Errorf("Failed to retrieve ruleset by id %s: %s", rulesetId, err)
 	}
 
