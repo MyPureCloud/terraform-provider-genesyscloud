@@ -8,6 +8,8 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"testing"
 
+	obw "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -105,7 +107,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_sequence"] = ob.ResourceOutboundSequence()
 	providerResources["genesyscloud_outbound_dnclist"] = ob.ResourceOutboundDncList()
 	providerResources["genesyscloud_outbound_campaignrule"] = ob.ResourceOutboundCampaignRule()
-	providerResources["genesyscloud_outbound_wrapupcodemappings"] = ob.ResourceOutboundWrapUpCodeMappings()
+	providerResources["genesyscloud_outbound_wrapupcodemappings"] = obw.ResourceOutboundWrapUpCodeMappings()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_responsemanagement_response"] = gcloud.ResourceResponsemanagementResponse()
 	providerResources["genesyscloud_routing_sms_address"] = gcloud.ResourceRoutingSmsAddress()
@@ -161,7 +163,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_dnclist", ob.OutboundDncListExporter())
 	RegisterExporter("genesyscloud_outbound_campaignrule", ob.OutboundCampaignRuleExporter())
 	RegisterExporter("genesyscloud_outbound_settings", ob.OutboundSettingsExporter())
-	RegisterExporter("genesyscloud_outbound_wrapupcodemappings", ob.OutboundWrapupCodeMappingsExporter())
+	RegisterExporter("genesyscloud_outbound_wrapupcodemappings", obw.OutboundWrapupCodeMappingsExporter())
 	RegisterExporter("genesyscloud_quality_forms_evaluation", gcloud.EvaluationFormExporter())
 	RegisterExporter("genesyscloud_quality_forms_survey", gcloud.SurveyFormExporter())
 	RegisterExporter("genesyscloud_recording_media_retention_policy", gcloud.MediaRetentionPolicyExporter())

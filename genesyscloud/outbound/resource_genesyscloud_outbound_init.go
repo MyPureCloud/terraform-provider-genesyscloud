@@ -25,7 +25,7 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_outbound_messagingcampaign", ResourceOutboundMessagingCampaign())
 	l.RegisterResource("genesyscloud_outbound_sequence", ResourceOutboundSequence())
 	l.RegisterResource("genesyscloud_outbound_settings", ResourceOutboundSettings())
-	l.RegisterResource("genesyscloud_outbound_wrapupcodemappings", ResourceOutboundWrapUpCodeMappings())
+
 	l.RegisterResource("genesyscloud_outbound_dnclist", ResourceOutboundDncList())
 
 	l.RegisterExporter("genesyscloud_outbound_callanalysisresponseset", OutboundCallAnalysisResponseSetExporter())
@@ -37,6 +37,4 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_outbound_dnclist", OutboundDncListExporter())
 	l.RegisterExporter("genesyscloud_outbound_campaignrule", OutboundCampaignRuleExporter())
 	l.RegisterExporter("genesyscloud_outbound_settings", OutboundSettingsExporter())
-	l.RegisterExporter("genesyscloud_outbound_wrapupcodemappings", OutboundWrapupCodeMappingsExporter())
-
 }

@@ -70,6 +70,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/mypurecloud/platform-client-sdk-go/platformclientv2 v0.0.0-20210318180203-499669b8db42
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
