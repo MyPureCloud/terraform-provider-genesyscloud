@@ -96,6 +96,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_webdeployments_configuration"] = gcloud.ResourceWebDeploymentConfiguration()
 	providerResources["genesyscloud_webdeployments_deployment"] = gcloud.ResourceWebDeployment()
 	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
+	providerResources["genesyscloud_processautomation_trigger"] = pat.ResourceProcessAutomationTrigger()
 
 	providerResources["genesyscloud_outbound_attempt_limit"] = outbound_attempt_limit.ResourceOutboundAttemptLimit()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = ob.ResourceOutboundCallAnalysisResponseSet()
