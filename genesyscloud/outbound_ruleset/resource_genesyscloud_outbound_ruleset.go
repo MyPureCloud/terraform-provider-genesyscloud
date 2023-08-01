@@ -114,12 +114,16 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 	return gcloud.WithRetries(ctx, 1800*time.Second, func() *resource.RetryError {
 		_, respCode, err := proxy.getOutboundRulesetById(ctx, d.Id())
+
+		//Now that I am checking for th error string of API 404 and there is no error, I need to move the isStatus404
+		//moved out of the code
+		if gcloud.IsStatus404ByInt(respCode) {
+			// Outbound Ruleset deleted
+			log.Printf("Deleted Outbound Ruleset %s", d.Id())
+			return nil
+		}
+
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
-				// Outbound Ruleset deleted
-				log.Printf("Deleted Outbound Ruleset %s", d.Id())
-				return nil
-			}
 			return resource.NonRetryableError(fmt.Errorf("Error deleting Outbound Ruleset %s: %s", d.Id(), err))
 		}
 
