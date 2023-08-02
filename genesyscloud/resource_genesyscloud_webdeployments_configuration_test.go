@@ -2,11 +2,15 @@ package genesyscloud
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
@@ -66,7 +70,17 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		configName        = "Test Configuration " + randString(8)
 		configDescription = "Test Configuration description " + randString(32)
 		fullResourceName  = "genesyscloud_webdeployments_configuration.complex"
+
+		channels       = []string{strconv.Quote("Webmessaging")}
+		channelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
 	)
+
+	if !isCoBrowseChannelsFeatureImplemented() {
+		channels = nil
+		channelsUpdate = nil
+	} else {
+		t.Log("The cobrowse.channels feature has been implemented. Please uncomment appropriate the resource tests.")
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
@@ -79,7 +93,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					generateWebDeploymentConfigCobrowseSettings(
 						trueValue,
 						trueValue,
-						[]string{strconv.Quote("Webmessaging")},
+						channels,
 						[]string{strconv.Quote("selector-one")},
 						[]string{strconv.Quote("selector-one")},
 					),
@@ -103,8 +117,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", trueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", trueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.0", "Webmessaging"),
+					//resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "1") // TODO: uncomment lines when channels feature has been implemented
+					//resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.0", "Webmessaging"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.0", "selector-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "1"),
@@ -153,7 +167,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					generateWebDeploymentConfigCobrowseSettings(
 						falseValue,
 						falseValue,
-						[]string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")},
+						channelsUpdate,
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 					),
@@ -177,9 +191,9 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", falseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", falseValue),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "2"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
+					//resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "2"),
+					//ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"), // TODO: uncomment lines when channels feature has been implemented
+					//ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "2"),
 					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
 					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
@@ -233,11 +247,56 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 	})
 }
 
+/*
+ Function to check if cobrowse channels feature is implemented.
+ As it stands, it is not. Once it has been, this function can be removed
+*/
+func isCoBrowseChannelsFeatureImplemented() bool {
+	clientId := os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID")
+	clientSecret := os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET")
+	config := platformclientv2.GetDefaultConfiguration()
+	if err := config.AuthorizeClientCredentials(clientId, clientSecret); err != nil {
+		log.Printf("Failed to authorize client credentials grant: %v", err)
+		return false
+	}
+	api := platformclientv2.NewWebDeploymentsApiWithConfig(config)
+
+	name := "test config " + uuid.NewString()
+	defaultLang := "en-us"
+	languages := []string{defaultLang}
+	channels := []string{"Voice"}
+
+	configurationVersion := &platformclientv2.Webdeploymentconfigurationversion{
+		Name:            &name,
+		Languages:       &languages,
+		DefaultLanguage: &defaultLang,
+		Cobrowse: &platformclientv2.Cobrowsesettings{
+			Channels: &channels,
+		},
+	}
+
+	data, _, err := api.PostWebdeploymentsConfigurations(*configurationVersion)
+	if err != nil {
+		return false
+	}
+
+	// cleanup
+	time.Sleep(2 * time.Second)
+	_, err = api.DeleteWebdeploymentsConfiguration(*data.Id)
+	if err != nil {
+		log.Printf("Failed to delete webdeployment configuration %s: %v", *data.Id, err)
+	}
+
+	return true
+}
+
 func basicConfigurationResource(name, description string) string {
 	return fmt.Sprintf(`
 	resource "genesyscloud_webdeployments_configuration" "basic" {
-		name = "%s"
-		description = "%s"
+		name             = "%s"
+		description      = "%s"
+		languages        = [ "en-us", "ja" ]
+		default_language = "en-us"
 	}
 	`, name, description)
 }
