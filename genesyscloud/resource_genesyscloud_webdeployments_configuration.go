@@ -734,6 +734,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 func determineLatestVersion(ctx context.Context, api *platformclientv2.WebDeploymentsApi, configurationId string) string {
 	version := ""
+	draft := "DRAFT"
 	_ = WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		versions, resp, getErr := api.GetWebdeploymentsConfigurationVersions(configurationId)
 		if getErr != nil {
@@ -741,13 +742,13 @@ func determineLatestVersion(ctx context.Context, api *platformclientv2.WebDeploy
 				return resource.RetryableError(fmt.Errorf("Failed to determine latest version %s", getErr))
 			}
 			log.Printf("Failed to determine latest version. Defaulting to DRAFT. Details: %s", getErr)
-			version = "draft"
+			version = draft
 			return resource.NonRetryableError(fmt.Errorf("Failed to determine latest version %s", getErr))
 		}
 
 		maxVersion := 0
 		for _, v := range *versions.Entities {
-			if *v.Version == "DRAFT" {
+			if *v.Version == draft {
 				continue
 			}
 			APIVersion, err := strconv.Atoi(*v.Version)
@@ -761,10 +762,10 @@ func determineLatestVersion(ctx context.Context, api *platformclientv2.WebDeploy
 		}
 
 		if maxVersion == 0 {
-			version = "draft"
+			version = draft
+		} else {
+			version = strconv.Itoa(maxVersion)
 		}
-
-		version = strconv.Itoa(maxVersion)
 
 		return nil
 	})
