@@ -15,13 +15,12 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
-
-
 
 var (
 	target = &schema.Resource{
@@ -51,7 +50,7 @@ attributes in the matchCriteria object being listed as JsonNode in the swagger d
 A JsonNode is a placeholder type with no nested values which creates problems in Go
 because it can't properly determine a type for the value/values field.
 */
-func resourceProcessAutomationTrigger() *schema.Resource {
+func ResourceProcessAutomationTrigger() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Process Automation Trigger`,
 
@@ -194,7 +193,7 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 			return resource.NonRetryableError(fmt.Errorf("Failed to process read automation trigger %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceProcessAutomationTrigger())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger())
 
 		if trigger.Name != nil {
 			d.Set("name", *trigger.Name)

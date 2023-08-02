@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
+	"strings"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -131,10 +133,15 @@ func getAllOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy) (*[]p
 func getOutboundRulesetByIdFn(ctx context.Context, p *outboundRulesetProxy, rulesetId string) (ruleset *platformclientv2.Ruleset, statusCode int, err error) {
 	ruleset, resp, err := p.outboundApi.GetOutboundRuleset(rulesetId)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("Failed to ruleset by id %s: %s", rulesetId, err)
+		//This is an API that throws an error on a 404 instead of just returning a 404.
+		if strings.Contains(fmt.Sprintf("%s", err), "API Error: 404") {
+			return nil, http.StatusNotFound, nil
+
+		}
+		return nil, 0, fmt.Errorf("Failed to retrieve ruleset by id %s: %s", rulesetId, err)
 	}
 
-	return ruleset, 0, nil
+	return ruleset, resp.StatusCode, nil
 }
 
 // getOutboundRulesetIdBySearchFn is an implementation of the function to get a Genesys Cloud Outbound Ruleset by name
@@ -161,7 +168,7 @@ func getOutboundRulesetIdByNameFn(ctx context.Context, p *outboundRulesetProxy, 
 
 // updateOutboundRulesetFn is an implementation of the function to update a Genesys Cloud Outbound Rulesets
 func updateOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy, rulesetId string, ruleset *platformclientv2.Ruleset) (*platformclientv2.Ruleset, error) {
-	outboundRuleset , _, err := getOutboundRulesetByIdFn(ctx, p, rulesetId)
+	outboundRuleset, _, err := getOutboundRulesetByIdFn(ctx, p, rulesetId)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to ruleset by id %s: %s", rulesetId, err)
 	}

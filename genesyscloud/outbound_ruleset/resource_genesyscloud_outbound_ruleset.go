@@ -10,12 +10,13 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 /*
@@ -32,7 +33,7 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 		return nil, diag.Errorf("Failed to get ruleset: %v", err)
 	}
 
-	for _, ruleset := range *rulesets{
+	for _, ruleset := range *rulesets {
 		log.Printf("Dealing with ruleset id : %s", *ruleset.Id)
 		resources[*ruleset.Id] = &resourceExporter.ResourceMeta{Name: *ruleset.Id}
 	}
@@ -44,7 +45,7 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := newOutboundRulesetProxy(sdkConfig)
-	
+
 	outboundRuleset := getOutboundRulesetFromResourceData(d)
 
 	ruleset, err := proxy.createOutboundRuleset(ctx, &outboundRuleset)
@@ -65,7 +66,7 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Reading Outbound Ruleset %s", d.Id())
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
-		ruleset, respCode, getErr := proxy.getOutboundRulesetById(ctx,d.Id())
+		ruleset, respCode, getErr := proxy.getOutboundRulesetById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
 				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Ruleset %s: %s", d.Id(), getErr))
@@ -89,7 +90,7 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 func updateOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := newOutboundRulesetProxy(sdkConfig)
-	
+
 	outboundRuleset := getOutboundRulesetFromResourceData(d)
 
 	ruleset, err := proxy.updateOutboundRuleset(ctx, d.Id(), &outboundRuleset)
@@ -112,13 +113,17 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	return gcloud.WithRetries(ctx, 1800*time.Second, func() *resource.RetryError {
-		_, respCode, err := proxy.getOutboundRulesetById(ctx,d.Id())
+		_, respCode, err := proxy.getOutboundRulesetById(ctx, d.Id())
+
+		//Now that I am checking for th error string of API 404 and there is no error, I need to move the isStatus404
+		//moved out of the code
+		if gcloud.IsStatus404ByInt(respCode) {
+			// Outbound Ruleset deleted
+			log.Printf("Deleted Outbound Ruleset %s", d.Id())
+			return nil
+		}
+
 		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
-				// Outbound Ruleset deleted
-				log.Printf("Deleted Outbound Ruleset %s", d.Id())
-				return nil
-			}
 			return resource.NonRetryableError(fmt.Errorf("Error deleting Outbound Ruleset %s: %s", d.Id(), err))
 		}
 
