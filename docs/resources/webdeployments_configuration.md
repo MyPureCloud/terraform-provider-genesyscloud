@@ -121,15 +121,15 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
 
 ### Required
 
+- `default_language` (String) The default language to use for the configuration.
+- `languages` (List of String) A list of languages supported on the configuration.
 - `name` (String) Deployment name
 
 ### Optional
 
 - `cobrowse` (Block List, Max: 1) Settings concerning cobrowse (see [below for nested schema](#nestedblock--cobrowse))
-- `default_language` (String) The default language to use for the configuration.
 - `description` (String) Deployment description
 - `journey_events` (Block List, Max: 1) Settings concerning journey events (see [below for nested schema](#nestedblock--journey_events))
-- `languages` (List of String) A list of languages supported on the configuration.
 - `messenger` (Block List, Max: 1) Settings concerning messenger (see [below for nested schema](#nestedblock--messenger))
 - `status` (String) The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.
 
