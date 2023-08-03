@@ -21,9 +21,21 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-
-
 var (
+	workflowTargetSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"dataFormat": {
+				Description: "What format the data should be sent to the workflow in.",
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"Json",
+					"TopLevelPrimitives",
+				}, false),
+			},
+		},
+	}
 	target = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"type": {
@@ -38,6 +50,14 @@ var (
 				Description: "Id of the target the trigger is configured to hit",
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+			"workflowTargetSettings": {
+				Description: "Special settings related to workflow target invocation",
+				Type:        schema.TypeSet,
+				Required:    false,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        workflowTargetSettings,
 			},
 		},
 	}
@@ -329,10 +349,22 @@ func buildTarget(d *schema.ResourceData) *Target {
 			targetType := targetMap["type"].(string)
 			id := targetMap["id"].(string)
 
-			return &Target{
+			target := &Target{
 				Type: &targetType,
 				Id:   &id,
 			}
+
+			if workflowTargetSettingsInput, ok := d.Get("workflowTargetSettings").([]interface{}); ok && len(workflowTargetSettingsInput) > 0 {
+				workflowTargetSettingsMap, ok := workflowTargetSettingsInput[0].(map[string]interface{})
+				if ok {
+					dataFormat := workflowTargetSettingsMap["dataFormat"].(string)
+					target.WorkflowTargetSettings = &WorkflowTargetSettings{
+						DataFormat: &dataFormat,
+					}
+				}
+			}
+
+			return target
 		}
 	}
 
@@ -349,6 +381,7 @@ func flattenTarget(inputTarget *Target) *schema.Set {
 	flattendedTarget := make(map[string]interface{})
 	flattendedTarget["id"] = *inputTarget.Id
 	flattendedTarget["type"] = *inputTarget.Type
+	flattendedTarget["workflowTargetSettings"] = *inputTarget.WorkflowTargetSettings
 	targetSet.Add(flattendedTarget)
 
 	return targetSet
