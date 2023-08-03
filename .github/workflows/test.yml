@@ -71,7 +71,7 @@ jobs:
       timeout-minutes: 80
       env:
         TF_ACC: "1"
-        TF_LOG: "INFO"
+        TF_LOG: "DEBUG"
         TF_LOG_PATH: "../test.log"
         TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
 
