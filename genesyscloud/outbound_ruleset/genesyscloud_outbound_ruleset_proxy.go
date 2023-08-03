@@ -135,7 +135,7 @@ func getOutboundRulesetByIdFn(ctx context.Context, p *outboundRulesetProxy, rule
 	if err != nil {
 		//This is an API that throws an error on a 404 instead of just returning a 404.
 		if strings.Contains(fmt.Sprintf("%s", err), "API Error: 404") {
-			return nil, http.StatusNotFound, nil
+			return nil, http.StatusNotFound, err
 
 		}
 		return nil, 0, fmt.Errorf("Failed to retrieve ruleset by id %s: %s", rulesetId, err)
