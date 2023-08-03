@@ -24,7 +24,7 @@ import (
 var (
 	workflowTargetSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"dataFormat": {
+			"data_format": {
 				Description: "What format the data should be sent to the workflow in.",
 				Type:        schema.TypeString,
 				Required:    false,
@@ -51,7 +51,7 @@ var (
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"workflowTargetSettings": {
+			"workflow_target_settings": {
 				Description: "Special settings related to workflow target invocation",
 				Type:        schema.TypeSet,
 				Required:    false,
@@ -354,10 +354,10 @@ func buildTarget(d *schema.ResourceData) *Target {
 				Id:   &id,
 			}
 
-			if workflowTargetSettingsInput, ok := d.Get("workflowTargetSettings").([]interface{}); ok && len(workflowTargetSettingsInput) > 0 {
+			if workflowTargetSettingsInput, ok := d.Get("workflow_target_settings").([]interface{}); ok && len(workflowTargetSettingsInput) > 0 {
 				workflowTargetSettingsMap, ok := workflowTargetSettingsInput[0].(map[string]interface{})
 				if ok {
-					dataFormat := workflowTargetSettingsMap["dataFormat"].(string)
+					dataFormat := workflowTargetSettingsMap["data_format"].(string)
 					target.WorkflowTargetSettings = &WorkflowTargetSettings{
 						DataFormat: &dataFormat,
 					}
@@ -381,7 +381,10 @@ func flattenTarget(inputTarget *Target) *schema.Set {
 	flattendedTarget := make(map[string]interface{})
 	flattendedTarget["id"] = *inputTarget.Id
 	flattendedTarget["type"] = *inputTarget.Type
-	flattendedTarget["workflowTargetSettings"] = *inputTarget.WorkflowTargetSettings
+
+	if inputTarget.WorkflowTargetSettings != nil {
+		flattendedTarget["workflow_target_settings"] = *inputTarget.WorkflowTargetSettings
+	}
 	targetSet.Add(flattendedTarget)
 
 	return targetSet
