@@ -354,13 +354,13 @@ func buildTarget(d *schema.ResourceData) *Target {
 				Id:   &id,
 			}
 
-			if workflowTargetSettingsInput, ok := d.Get("workflow_target_settings").([]interface{}); ok && len(workflowTargetSettingsInput) > 0 {
-				workflowTargetSettingsMap, ok := workflowTargetSettingsInput[0].(map[string]interface{})
-				if ok {
-					dataFormat := workflowTargetSettingsMap["data_format"].(string)
-					target.WorkflowTargetSettings = &WorkflowTargetSettings{
-						DataFormat: &dataFormat,
-					}
+			workflowTargetSettingsInput := targetMap["workflow_target_settings"].(*schema.Set).List()
+			workflowTargetSettingsInputMap := workflowTargetSettingsInput[0].(map[string]interface{})
+
+			if len(workflowTargetSettingsInput) > 0 {
+				dataFormat := workflowTargetSettingsInputMap["data_format"].(string)
+				target.WorkflowTargetSettings = &WorkflowTargetSettings{
+					DataFormat: &dataFormat,
 				}
 			}
 
