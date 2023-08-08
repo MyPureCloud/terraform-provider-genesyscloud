@@ -257,7 +257,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Updating group %s", name)
-		group, resp, putErr := groupsAPI.PutGroup(d.Id(), platformclientv2.Groupupdate{
+		_, resp, putErr := groupsAPI.PutGroup(d.Id(), platformclientv2.Groupupdate{
 			Version:      group.Version,
 			Name:         &name,
 			Description:  &description,
@@ -405,15 +405,18 @@ func setExtensionOrNumberBasedOnDisplay(d *schema.ResourceData, addressMap map[s
 	display := strings.Trim(*address.Display, "()")
 	schemaAddresses := d.Get("addresses").([]interface{})
 	for _, a := range schemaAddresses {
-		if aMap, ok := a.(map[string]interface{}); ok {
-			aType, _ := aMap["type"].(string)
-			if aType == *address.VarType {
-				if ext, _ := aMap["extension"]; ext != "" {
-					addressMap["extension"] = display
-				} else if number, _ := aMap["number"]; number != "" {
-					addressMap["number"] = display
-				}
-			}
+		currentAddress, ok := a.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		aType, _ := currentAddress["type"].(string)
+		if aType != *address.VarType {
+			continue
+		}
+		if ext, _ := currentAddress["extension"]; ext != "" {
+			addressMap["extension"] = display
+		} else if number, _ := currentAddress["number"]; number != "" {
+			addressMap["number"] = display
 		}
 	}
 }
