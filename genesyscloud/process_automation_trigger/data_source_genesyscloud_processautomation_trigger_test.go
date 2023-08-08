@@ -15,12 +15,13 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 		triggerResource1 = "test-trigger1"
 		triggerResource2 = "test-trigger2"
 
-		triggerName1     = "Terraform trigger1-" + uuid.NewString()
-		topicName1       = "v2.detail.events.conversation.{id}.customer.end"
-		enabled1         = "true"
-		targetType1      = "Workflow"
-		eventTtlSeconds1 = "60"
-		description1     = "description 1"
+		triggerName1              = "Terraform trigger1-" + uuid.NewString()
+		topicName1                = "v2.detail.events.conversation.{id}.customer.end"
+		enabled1                  = "true"
+		targetType1               = "Workflow"
+		eventTtlSeconds1          = "60"
+		description1              = "description 1"
+		workflowTargetDataFormat1 = "Json"
 
 		flowResource1 = "test_flow1"
 		filePath1     = "../../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
@@ -110,8 +111,11 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 					fmt.Sprintf(`target {
                         id = %s
                         type = "%s"
+						workflow_target_settings {
+							data_format = "%s"
+						}
                     }
-                    `, "genesyscloud_flow."+flowResource1+".id", targetType1),
+                    `, "genesyscloud_flow."+flowResource1+".id", targetType1, workflowTargetDataFormat1),
 					matchCriteria,
 					eventTtlSeconds1,
 					description1,

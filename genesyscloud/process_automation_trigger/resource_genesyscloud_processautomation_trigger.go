@@ -383,7 +383,12 @@ func flattenTarget(inputTarget *Target) *schema.Set {
 	flattendedTarget["type"] = *inputTarget.Type
 
 	if inputTarget.WorkflowTargetSettings != nil {
-		flattendedTarget["workflow_target_settings"] = *inputTarget.WorkflowTargetSettings
+		worklfowTargetSettingsSet := schema.NewSet(schema.HashResource(target), []interface{}{})
+		flattendedWorkflowTargetSettings := make(map[string]interface{})
+		flattendedWorkflowTargetSettings["data_format"] = *inputTarget.WorkflowTargetSettings.DataFormat
+		worklfowTargetSettingsSet.Add(flattendedWorkflowTargetSettings)
+
+		flattendedTarget["workflow_target_settings"] = worklfowTargetSettingsSet
 	}
 	targetSet.Add(flattendedTarget)
 
