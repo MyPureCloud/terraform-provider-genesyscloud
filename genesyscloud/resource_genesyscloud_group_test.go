@@ -83,6 +83,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 		addrPhone1     = "+13174269078"
 		addrPhone2     = "+441434634996"
 		addrPhoneExt   = "4321"
+		addrPhoneExt2  = "4320"
 		typeGroupRing  = "GROUPRING"
 		typeGroupPhone = "GROUPPHONE"
 	)
@@ -97,7 +98,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					groupResource1,
 					groupName,
 					generateGroupAddress(
-						addrPhone1,
+						strconv.Quote(addrPhone1),
 						typeGroupRing,
 						nullValue, // No extension
 					),
@@ -109,28 +110,62 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 				),
 			},
 			{
-				// Update phone number, type, and extension
+				// Update phone number & type
 				Config: generateBasicGroupResource(
 					groupResource1,
 					groupName,
 					generateGroupAddress(
-						addrPhone2,
+						strconv.Quote(addrPhone2),
 						typeGroupPhone,
-						strconv.Quote(addrPhoneExt),
+						nullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.number", addrPhone2),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.type", typeGroupPhone),
+				),
+			},
+			{
+				// Remove number and set extension
+				Config: generateBasicGroupResource(
+					groupResource1,
+					groupName,
+					generateGroupAddress(
+						nullValue,
+						typeGroupPhone,
+						strconv.Quote(addrPhoneExt),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.type", typeGroupPhone),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.extension", addrPhoneExt),
 				),
 			},
 			{
+				// Update the extension
+				Config: generateBasicGroupResource(
+					groupResource1,
+					groupName,
+					generateGroupAddress(
+						nullValue,
+						typeGroupPhone,
+						strconv.Quote(addrPhoneExt2),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.type", typeGroupPhone),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "addresses.0.extension", addrPhoneExt2),
+				),
+			},
+			{
 				// Import/Read
-				ResourceName:      "genesyscloud_group." + groupResource1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_group." + groupResource1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"addresses"},
 			},
 		},
 		CheckDestroy: testVerifyGroupsDestroyed,
@@ -296,7 +331,7 @@ func generateGroupResource(
 
 func generateGroupAddress(number string, phoneType string, extension string) string {
 	return fmt.Sprintf(`addresses {
-				number = "%s"
+				number = %s
 				type = "%s"
                 extension = %s
 			}
