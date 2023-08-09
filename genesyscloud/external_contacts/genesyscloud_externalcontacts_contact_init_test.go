@@ -14,10 +14,10 @@ import (
    Please make sure you register ALL resources and data sources your test cases will use.
 */
 
-// providerDataSources holds a map of all registered resources
+// providerDataSources holds a map of all registered datasources
 var providerDataSources map[string]*schema.Resource
 
-// providerResources holds a map of all registered datasources.
+// providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
@@ -55,7 +55,7 @@ func initTestresources() {
 
 }
 
-// TestMain is a "setup" function called by the testing framework when run the
+// TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
 	// Run setup function before starting the test suite for external_contacts package
 	initTestresources()

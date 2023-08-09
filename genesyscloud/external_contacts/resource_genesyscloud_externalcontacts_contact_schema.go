@@ -14,7 +14,7 @@ resource_genesyscloud_externalcontacts_contacts_schema.go should hold four types
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
 2.  The resource schema definitions for the externalcontacts_contacts resource.
 3.  The datasource schema definitions for the externalcontacts_contacts datasource.
-4.  The resource exporter configuration for the externalcontacts_contacts configuration.
+4.  The resource exporter configuration for the externalcontacts_contacts exporter.
 */
 const resourceName = "genesyscloud_externalcontacts_contact"
 

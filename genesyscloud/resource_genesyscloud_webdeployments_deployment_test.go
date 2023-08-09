@@ -131,9 +131,12 @@ func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 }
 
 func basicDeploymentResource(name, description string) string {
+	minimalConfigName := "Minimal Config " + uuid.NewString()
 	return fmt.Sprintf(`
 	resource "genesyscloud_webdeployments_configuration" "minimal" {
-		name = "Minimal Config"
+		name             = "%s"
+		languages        = ["en-us"]
+		default_language = "en-us"
 	}
 
 	resource "genesyscloud_webdeployments_deployment" "basic" {
@@ -145,7 +148,7 @@ func basicDeploymentResource(name, description string) string {
 			version = "${genesyscloud_webdeployments_configuration.minimal.version}"
 		}
 	}
-	`, name, description)
+	`, minimalConfigName, name, description)
 }
 
 func deploymentResourceWithAllowedDomains(t *testing.T, name string, allowedDomains ...string) string {
@@ -157,7 +160,9 @@ func deploymentResourceWithAllowedDomains(t *testing.T, name string, allowedDoma
 
 	return fmt.Sprintf(`
 	resource "genesyscloud_webdeployments_configuration" "minimal" {
-		name = "%s"
+		name             = "%s"
+		languages        = ["en-us"]
+		default_language = "en-us"
 	}
 
 	resource "genesyscloud_webdeployments_deployment" "basicWithAllowedDomains" {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
@@ -30,10 +31,13 @@ func TestAccDataSourceWebDeploymentsDeployment(t *testing.T) {
 }
 
 func basicDeploymentDataSource(deploymentName string, deploymentDescr string) string {
+	minimalConfigName := "Minimal Config " + uuid.NewString()
 	return fmt.Sprintf(`
 
 	resource "genesyscloud_webdeployments_configuration" "minimal" {
-		name = "Minimal Config"
+		name             = "%s"
+		languages        = ["en-us"]
+		default_language = "en-us"
 	}
 
 	resource "genesyscloud_webdeployments_deployment" "basic" {
@@ -50,5 +54,5 @@ func basicDeploymentDataSource(deploymentName string, deploymentDescr string) st
 		depends_on=[genesyscloud_webdeployments_deployment.basic]
 		name = "%s"
 	}
-	`, deploymentName, deploymentDescr, deploymentName)
+	`, minimalConfigName, deploymentName, deploymentDescr, deploymentName)
 }

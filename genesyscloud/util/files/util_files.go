@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -43,8 +42,6 @@ func NewS3Uploader(reader io.Reader, formData map[string]io.Reader, substitution
 		presignedUrl:  presignedUrl,
 		client:        *c,
 	}
-
-	log.Printf("%#v\n", s3Uploader)
 	return s3Uploader
 }
 

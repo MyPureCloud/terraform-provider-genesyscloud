@@ -52,7 +52,7 @@ type externalContactsContactsProxy struct {
 	updateExternalContactAttr        updateExternalContactFunc
 }
 
-// newScriptsProxy initializes the Scripts proxy with all of the data needed to communicate with Genesys Cloud
+// newExternalContactsContactsProxy initializes the External Contacts proxy with all of the data needed to communicate with Genesys Cloud
 func newExternalContactsContactsProxy(clientConfig *platformclientv2.Configuration) *externalContactsContactsProxy {
 	api := platformclientv2.NewExternalContactsApiWithConfig(clientConfig)
 	return &externalContactsContactsProxy{
@@ -157,7 +157,7 @@ func createExternalContactFn(ctx context.Context, p *externalContactsContactsPro
 	return contact, nil
 }
 
-// deleteExternalContactsFn is an implementation function for deleting a Gensys Cloud External Contact
+// deleteExternalContactsFn is an implementation function for deleting a Genesys Cloud External Contact
 func deleteExternalContactsFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string) (int, error) {
 	_, resp, err := p.externalContactsApi.DeleteExternalcontactsContact(externalContactId)
 	if err != nil {

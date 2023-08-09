@@ -5,7 +5,7 @@ import (
 )
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource("genesyscloud_processautomation_trigger", resourceProcessAutomationTrigger())
+	regInstance.RegisterResource("genesyscloud_processautomation_trigger", ResourceProcessAutomationTrigger())
 	regInstance.RegisterDataSource("genesyscloud_processautomation_trigger", dataSourceProcessAutomationTrigger())
 	regInstance.RegisterExporter("genesyscloud_processautomation_trigger", ProcessAutomationTriggerExporter())
 }

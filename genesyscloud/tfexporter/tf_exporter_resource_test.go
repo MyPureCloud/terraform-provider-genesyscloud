@@ -5,6 +5,8 @@ import (
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	outbound_attempt_limit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	outbound_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"testing"
 
@@ -96,6 +98,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_webdeployments_configuration"] = gcloud.ResourceWebDeploymentConfiguration()
 	providerResources["genesyscloud_webdeployments_deployment"] = gcloud.ResourceWebDeployment()
 	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
+	providerResources["genesyscloud_processautomation_trigger"] = pat.ResourceProcessAutomationTrigger()
 
 	providerResources["genesyscloud_outbound_attempt_limit"] = outbound_attempt_limit.ResourceOutboundAttemptLimit()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = ob.ResourceOutboundCallAnalysisResponseSet()
@@ -192,6 +195,14 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_webdeployments_configuration", gcloud.WebDeploymentConfigurationExporter())
 	RegisterExporter("genesyscloud_webdeployments_deployment", gcloud.WebDeploymentExporter())
 	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
+
+	RegisterExporter("genesyscloud_knowledge_v1_document", gcloud.KnowledgeDocumentExporterV1())
+	RegisterExporter("genesyscloud_knowledge_document_variation", gcloud.KnowledgeDocumentVariationExporter())
+	RegisterExporter("genesyscloud_knowledge_label", gcloud.KnowledgeLabelExporter())
+	RegisterExporter("genesyscloud_knowledge_v1_category", gcloud.KnowledgeCategoryExporterV1())
+
+	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
+	RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }

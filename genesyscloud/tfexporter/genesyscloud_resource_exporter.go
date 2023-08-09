@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -21,8 +22,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -42,8 +43,8 @@ var (
 	attributesDecoded = make(map[string]string)
 
 	providerDataSources map[string]*schema.Resource
-	providerResources map[string]*schema.Resource
-	resourceExporters map[string]*resourceExporter.ResourceExporter
+	providerResources   map[string]*schema.Resource
+	resourceExporters   map[string]*resourceExporter.ResourceExporter
 )
 
 type unresolvableAttributeInfo struct {
@@ -112,18 +113,18 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 }
 
 func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
-	
-	if(providerResources == nil){
-		providerResources , providerDataSources = r_registrar.GetResources()
+
+	if providerResources == nil {
+		providerResources, providerDataSources = r_registrar.GetResources()
 	}
-	
+
 	gre := &GenesysCloudResourceExporter{
 		exportAsHCL:         d.Get("export_as_hcl").(bool),
 		logPermissionErrors: d.Get("log_permission_errors").(bool),
 		filterType:          filterType,
 		includeStateFile:    d.Get("include_state_file").(bool),
 		version:             meta.(*gcloud.ProviderMeta).Version,
-		provider:            gcloud.New(meta.(*gcloud.ProviderMeta).Version,providerResources,providerDataSources)(),
+		provider:            gcloud.New(meta.(*gcloud.ProviderMeta).Version, providerResources, providerDataSources)(),
 		d:                   d,
 		ctx:                 ctx,
 		meta:                meta,
@@ -800,19 +801,11 @@ func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema
 }
 
 func removeZeroValues(key string, val interface{}, configMap gcloud.JsonMap) {
-	switch val.(type) {
-	case string:
-		if val.(string) == "" {
-			configMap[key] = nil
-		}
-	case int:
-		if val.(int) == 0 {
-			configMap[key] = nil
-		}
-	case float64:
-		if val.(float64) == 0 {
-			configMap[key] = nil
-		}
+	if val == nil || reflect.TypeOf(val).String() == "bool" {
+		return
+	}
+	if reflect.ValueOf(val).IsZero() {
+		configMap[key] = nil
 	}
 }
 

@@ -180,7 +180,7 @@ func getAllKnowledgeV1DocumentEntities(knowledgeAPI platformclientv2.KnowledgeAp
 	return &entities, nil
 }
 
-func knowledgeDocumentExporterV1() *resourceExporter.ResourceExporter {
+func KnowledgeDocumentExporterV1() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: GetAllWithPooledClient(getAllKnowledgeDocumentsV1),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
