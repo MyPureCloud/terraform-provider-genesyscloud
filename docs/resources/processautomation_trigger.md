@@ -74,12 +74,12 @@ Required:
 
 Optional:
 
-- `workflow_target_settings` (Block Set, Max: 1) Special settings related to workflow target invocation (see [below for nested schema](#nestedblock--target--workflow_target_settings))
+- `workflow_target_settings` (Block Set, Max: 1) Optional config for the target. Until the feature gets enabled will always operate in TopLevelPrimitives mode. (see [below for nested schema](#nestedblock--target--workflow_target_settings))
 
 <a id="nestedblock--target--workflow_target_settings"></a>
 ### Nested Schema for `target.workflow_target_settings`
 
 Optional:
 
-- `data_format` (String) What format the data should be sent to the workflow in.
+- `data_format` (String) The data format to use when invoking target.
 
