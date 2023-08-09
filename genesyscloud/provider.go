@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
-	"os"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -33,10 +33,8 @@ func init() {
 
 }
 
-
-
 // New initializes the provider schema
-func New(version string,providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) func() *schema.Provider {
+func New(version string, providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) func() *schema.Provider {
 	return func() *schema.Provider {
 
 		/*
@@ -282,7 +280,7 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 		},
 		ResponseLogHook: func(response *http.Response) {
 			if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-				log.Printf("Response %s", response.Status)
+				log.Printf("Response %s for request:%s %s", response.Status, response.Request.Method, response.Request.URL)
 			}
 		},
 	}
@@ -305,7 +303,6 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 	// Create new config
 	sdkConfig := platformclientv2.GetDefaultConfiguration()
 
-	
 	sdkConfig.BasePath = GetRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
 
 	err := sdkConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
@@ -315,4 +312,3 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 
 	return sdkConfig, nil
 }
-
