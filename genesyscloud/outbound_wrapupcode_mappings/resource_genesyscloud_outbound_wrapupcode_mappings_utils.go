@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
-// Mapping objects and flags lists come back ordered differently than what is defined by the user in their config
+// flattenOutboundWrapupCodeMappings maps objects and flags lists come back ordered differently than what is defined by the user in their config
 // To avoid plan not empty errors, this function:
 // checks that the maps/lists from the schema & sdk returned data are equivalent before returning the data in it's original order.
 func flattenOutboundWrapupCodeMappings(d *schema.ResourceData, sdkWrapupcodemapping *platformclientv2.Wrapupcodemapping) []interface{} {
@@ -49,6 +49,7 @@ func flattenOutboundWrapupCodeMappings(d *schema.ResourceData, sdkWrapupcodemapp
 	return mappings
 }
 
+// buildWrapupCodeMappings builds the list of wrapupcode mappings from the schema object
 func buildWrapupCodeMappings(d *schema.ResourceData) *map[string][]string {
 	wrapupCodeMappings := make(map[string][]string, 0)
 	if mappings := d.Get("mappings").([]interface{}); mappings != nil && len(mappings) > 0 {

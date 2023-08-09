@@ -13,13 +13,13 @@ import (
 
 const resourceName = "genesyscloud_outbound_wrapupcodemappings"
 
+// SetRegistrar registers the resource objects and the exporter.  Note:  There is no datasource implementation
 func SetRegistrar(l registrar.Registrar) {
-
 	l.RegisterResource(resourceName, ResourceOutboundWrapUpCodeMappings())
 	l.RegisterExporter(resourceName, OutboundWrapupCodeMappingsExporter())
-
 }
 
+// OutboundWrapupCodeMappingsExporter() returns the exporter used for exporting the outbound wrapping codes
 func OutboundWrapupCodeMappingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getOutboundWrapupCodeMappings),
@@ -31,6 +31,7 @@ func OutboundWrapupCodeMappingsExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
+// ResourceOutboundWrapUpCodeMappings returns the schema definition for outbound wrappings
 func ResourceOutboundWrapUpCodeMappings() *schema.Resource {
 	return &schema.Resource{
 		Description:   `Genesys Cloud Outbound Wrap-up Code Mappings`,

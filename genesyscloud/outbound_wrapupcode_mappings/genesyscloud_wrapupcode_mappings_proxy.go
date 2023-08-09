@@ -19,6 +19,7 @@ type outboundWrapupCodeMappingsProxy struct {
 	updateOutboundWrapUpCodeMappingsAttr updateOutboundWrapUpCodeMappingsFunc
 }
 
+// newOutboundWrapupCodeMappingsProxy is a constructor to create a new outboundWrapupCodeMappingsProxy struct instance
 func newOutboundWrapupCodeMappingsProxy(clientConfig *platformclientv2.Configuration) *outboundWrapupCodeMappingsProxy {
 	api := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 	return &outboundWrapupCodeMappingsProxy{
@@ -26,14 +27,10 @@ func newOutboundWrapupCodeMappingsProxy(clientConfig *platformclientv2.Configura
 		outboundApi:                          api,
 		getAllOutboundWrapupCodeMappingsAttr: getAllOutboundWrapupCodeMappingsFn,
 		updateOutboundWrapUpCodeMappingsAttr: updateOutboundWrapUpCodeMappingsFn,
-		// createExternalContactAttr:        createExternalContactFn,
-		// getExternalContactByIdAttr:       getExternalContactByIdFn,
-		// deleteExternalContactByIdAttr:    deleteExternalContactsFn,
-		// getExternalContactIdBySearchAttr: getExternalContactIdBySearchFn,
-		// updateExternalContactAttr:        updateExternalContactFn,
 	}
 }
 
+// etOutboundWrapupCodeMappingsProxy is a singleton method to return a single instance outboundWrapupCodeMappingsProxy
 func getOutboundWrapupCodeMappingsProxy(clientConfig *platformclientv2.Configuration) *outboundWrapupCodeMappingsProxy {
 	if internalProxy == nil {
 		internalProxy = newOutboundWrapupCodeMappingsProxy(clientConfig)
@@ -42,18 +39,23 @@ func getOutboundWrapupCodeMappingsProxy(clientConfig *platformclientv2.Configura
 	return internalProxy
 }
 
+// getAllOutboundWrapupCodeMapping returns all of the outbound mapping.  This is the struct implementation that should be consumed by everypne.
 func (p *outboundWrapupCodeMappingsProxy) getAllOutboundWrapupCodeMappings(ctx context.Context) (wrapupcodeMappings *platformclientv2.Wrapupcodemapping, resp *platformclientv2.APIResponse, err error) {
 	return p.getAllOutboundWrapupCodeMappingsAttr(ctx, p)
 }
+
+// updateOutboundWrapUpCodeMapping updates the outbound mappings.  This is the struct implementation that should be consumed by everyone.
 func (p *outboundWrapupCodeMappingsProxy) updateOutboundWrapUpCodeMappings(ctx context.Context, outBoundWrapupCodes platformclientv2.Wrapupcodemapping) (updatedWrapupCodeMappings *platformclientv2.Wrapupcodemapping, response *platformclientv2.APIResponse, err error) {
 	return p.updateOutboundWrapUpCodeMappingsAttr(ctx, p, &outBoundWrapupCodes)
 }
 
+// getAllOutboundWrapupCodeMappingsFn( is the implementation of the getAllOutboundWrapupCodeMappings call
 func getAllOutboundWrapupCodeMappingsFn(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (wrapupcodeMappings *platformclientv2.Wrapupcodemapping, resp *platformclientv2.APIResponse, err error) {
 	wrapupcodemappings, resp, err := p.outboundApi.GetOutboundWrapupcodemappings()
 	return wrapupcodemappings, resp, err
 }
 
+// updateOutboundWrapUpCodeMappingsFn is the implementation of the updateOutboundWrapUpCodeMappings call
 func updateOutboundWrapUpCodeMappingsFn(ctx context.Context, p *outboundWrapupCodeMappingsProxy, outBoundWrapupCodes *platformclientv2.Wrapupcodemapping) (updatedWrapupCodeMappings *platformclientv2.Wrapupcodemapping, resp *platformclientv2.APIResponse, err error) {
 	w, resp, err := p.outboundApi.PutOutboundWrapupcodemappings(*outBoundWrapupCodes)
 	if err != nil {

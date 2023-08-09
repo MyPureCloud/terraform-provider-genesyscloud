@@ -18,6 +18,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+// getOutboundWrapupCodeMappings is used by the exporter to return all wrapupcode mappings
 func getOutboundWrapupCodeMappings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getOutboundWrapupCodeMappingsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -35,12 +36,14 @@ func getOutboundWrapupCodeMappings(ctx context.Context, clientConfig *platformcl
 	return resources, nil
 }
 
+// createOutboundWrapUpCodeMappings is used to create the Terraform backing state associated with an outbound wrapup code mapping
 func createOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("Creating Outbound Wrap-up Code Mappings")
 	d.SetId("wrapupcodemappings")
 	return updateOutboundWrapUpCodeMappings(ctx, d, meta)
 }
 
+// updateOutboundWrapUpCodeMappings is sued to update the Terraform backing state associated with an outbound wrapup code mapping
 func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
@@ -72,6 +75,7 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 	return readOutboundWrapUpCodeMappings(ctx, d, meta)
 }
 
+// readOutboundWrapUpCodeMappings reads the current state of the outboundwrapupcode mapping object
 func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
@@ -112,6 +116,7 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 	})
 }
 
+// deleteOutboundWrapUpCodeMappings This a no up to satisfy the deletion of outbound wrapping resource
 func deleteOutboundWrapUpCodeMappings(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	// Does not delete the wrap-up code mappings. This resource will just no longer manage them.
 	return nil
