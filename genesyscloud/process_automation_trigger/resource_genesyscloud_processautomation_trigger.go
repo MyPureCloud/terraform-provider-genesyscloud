@@ -25,7 +25,7 @@ var (
 	workflowTargetSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"data_format": {
-				Description: "What format the data should be sent to the workflow in.",
+				Description: "The data format to use when invoking target.",
 				Type:        schema.TypeString,
 				Required:    false,
 				Optional:    true,
@@ -52,7 +52,7 @@ var (
 				Required:    true,
 			},
 			"workflow_target_settings": {
-				Description: "Special settings related to workflow target invocation",
+				Description: "Optional config for the target. Until the feature gets enabled will always operate in TopLevelPrimitives mode.",
 				Type:        schema.TypeSet,
 				Required:    false,
 				Optional:    true,
@@ -359,6 +359,9 @@ func buildTarget(d *schema.ResourceData) *Target {
 			if len(workflowTargetSettingsInput) > 0 {
 				workflowTargetSettingsInputMap := workflowTargetSettingsInput[0].(map[string]interface{})
 				dataFormat := workflowTargetSettingsInputMap["data_format"].(string)
+				if dataFormat == "" {
+					return target
+				}
 				target.WorkflowTargetSettings = &WorkflowTargetSettings{
 					DataFormat: &dataFormat,
 				}
