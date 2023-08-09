@@ -355,9 +355,9 @@ func buildTarget(d *schema.ResourceData) *Target {
 			}
 
 			workflowTargetSettingsInput := targetMap["workflow_target_settings"].(*schema.Set).List()
-			workflowTargetSettingsInputMap := workflowTargetSettingsInput[0].(map[string]interface{})
 
 			if len(workflowTargetSettingsInput) > 0 {
+				workflowTargetSettingsInputMap := workflowTargetSettingsInput[0].(map[string]interface{})
 				dataFormat := workflowTargetSettingsInputMap["data_format"].(string)
 				target.WorkflowTargetSettings = &WorkflowTargetSettings{
 					DataFormat: &dataFormat,

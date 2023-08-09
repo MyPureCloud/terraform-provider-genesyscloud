@@ -138,7 +138,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "description", description1),
 					validateTargetFlowId("genesyscloud_flow."+flowResource1, "genesyscloud_processautomation_trigger."+triggerResource1),
 					validateTargetType("genesyscloud_processautomation_trigger."+triggerResource1, targetType1),
-					validateTargetDataFormat("genesyscloud_processautomation_trigger."+triggerResource1, workflowTargetSettingsDataFormat1),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "target.0.workflow_target_settings.0.data_format", workflowTargetSettingsDataFormat1),
 					testAccCheckMatchCriteria("genesyscloud_processautomation_trigger."+triggerResource1, matchCriteria1),
 				),
 			},
@@ -174,7 +174,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "description", description2),
 					validateTargetFlowId("genesyscloud_flow."+flowResource1, "genesyscloud_processautomation_trigger."+triggerResource1),
 					validateTargetType("genesyscloud_processautomation_trigger."+triggerResource1, targetType1),
-					validateTargetDataFormat("genesyscloud_processautomation_trigger."+triggerResource1, workflowTargetSettingsDataFormat1),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "target.0.workflow_target_settings.0.data_format", workflowTargetSettingsDataFormat1),
 					testAccCheckMatchCriteria("genesyscloud_processautomation_trigger."+triggerResource1, matchCriteria2),
 				),
 			},
@@ -224,7 +224,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "description", description1),
 					validateTargetFlowId("genesyscloud_flow."+flowResource1, "genesyscloud_processautomation_trigger."+triggerResource1),
 					validateTargetType("genesyscloud_processautomation_trigger."+triggerResource1, targetType1),
-					validateTargetDataFormat("genesyscloud_processautomation_trigger."+triggerResource1, workflowTargetSettingsDataFormat2),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "target.0.workflow_target_settings.0.data_format", workflowTargetSettingsDataFormat2),
 					testAccCheckMatchCriteria("genesyscloud_processautomation_trigger."+triggerResource1, matchCriteria1),
 				),
 			},
@@ -260,7 +260,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "description", description2),
 					validateTargetFlowId("genesyscloud_flow."+flowResource1, "genesyscloud_processautomation_trigger."+triggerResource1),
 					validateTargetType("genesyscloud_processautomation_trigger."+triggerResource1, targetType1),
-					validateTargetDataFormat("genesyscloud_processautomation_trigger."+triggerResource1, workflowTargetSettingsDataFormat2),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource1, "target.0.workflow_target_settings.0.data_format", workflowTargetSettingsDataFormat2),
 					testAccCheckMatchCriteria("genesyscloud_processautomation_trigger."+triggerResource1, matchCriteria2),
 				),
 			},
@@ -364,21 +364,6 @@ func validateTargetType(triggerResourceName string, typeVal string) resource.Tes
 
 		if typeVal != triggerResource.Primary.Attributes["target."+strconv.Itoa(0)+".type"] {
 			return fmt.Errorf("Type in trigger target was not created correctly. Expect: %s, Actual: %s", typeVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(0)+".type"])
-		}
-
-		return nil
-	}
-}
-
-func validateTargetDataFormat(triggerResourceName string, dataFormatVal string) resource.TestCheckFunc {
-	return func(state *terraform.State) error {
-		triggerResource, ok := state.RootModule().Resources[triggerResourceName]
-		if !ok {
-			return fmt.Errorf("Failed to find trigger %s in state", triggerResourceName)
-		}
-
-		if dataFormatVal != triggerResource.Primary.Attributes["target."+strconv.Itoa(0)+".workflow_target_settings."+strconv.Itoa(0)+".data_format"] {
-			return fmt.Errorf("Type in trigger workflow target settings data format was not created correctly. Expect: %s, Actual: %s", dataFormatVal, triggerResource.Primary.Attributes["target."+strconv.Itoa(0)+".workflow_target_settings.data_format"])
 		}
 
 		return nil
