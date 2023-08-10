@@ -409,13 +409,13 @@ func setExtensionOrNumberBasedOnDisplay(d *schema.ResourceData, addressMap map[s
 		if !ok {
 			continue
 		}
-		aType, _ := currentAddress["type"].(string)
-		if aType != *address.VarType {
+		addressType, _ := currentAddress["type"].(string)
+		if addressType != *address.VarType {
 			continue
 		}
-		if ext, _ := currentAddress["extension"]; ext != "" {
+		if ext, _ := currentAddress["extension"].(string); ext != "" {
 			addressMap["extension"] = display
-		} else if number, _ := currentAddress["number"]; number != "" {
+		} else if number, _ := currentAddress["number"].(string); number != "" {
 			addressMap["number"] = display
 		}
 	}
