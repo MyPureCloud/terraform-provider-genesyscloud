@@ -23,6 +23,20 @@ import (
 )
 
 var (
+	workflowTargetSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"data_format": {
+				Description: "The data format to use when invoking target.",
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"Json",
+					"TopLevelPrimitives",
+				}, false),
+			},
+		},
+	}
 	target = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"type": {
@@ -37,6 +51,14 @@ var (
 				Description: "Id of the target the trigger is configured to hit",
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+			"workflow_target_settings": {
+				Description: "Optional config for the target. Until the feature gets enabled will always operate in TopLevelPrimitives mode.",
+				Type:        schema.TypeSet,
+				Required:    false,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        workflowTargetSettings,
 			},
 		},
 	}
@@ -328,10 +350,25 @@ func buildTarget(d *schema.ResourceData) *Target {
 			targetType := targetMap["type"].(string)
 			id := targetMap["id"].(string)
 
-			return &Target{
+			target := &Target{
 				Type: &targetType,
 				Id:   &id,
 			}
+
+			workflowTargetSettingsInput := targetMap["workflow_target_settings"].(*schema.Set).List()
+
+			if len(workflowTargetSettingsInput) > 0 {
+				workflowTargetSettingsInputMap := workflowTargetSettingsInput[0].(map[string]interface{})
+				dataFormat := workflowTargetSettingsInputMap["data_format"].(string)
+				if dataFormat == "" {
+					return target
+				}
+				target.WorkflowTargetSettings = &WorkflowTargetSettings{
+					DataFormat: &dataFormat,
+				}
+			}
+
+			return target
 		}
 	}
 
@@ -348,6 +385,15 @@ func flattenTarget(inputTarget *Target) *schema.Set {
 	flattendedTarget := make(map[string]interface{})
 	flattendedTarget["id"] = *inputTarget.Id
 	flattendedTarget["type"] = *inputTarget.Type
+
+	if inputTarget.WorkflowTargetSettings != nil {
+		worklfowTargetSettingsSet := schema.NewSet(schema.HashResource(target), []interface{}{})
+		flattendedWorkflowTargetSettings := make(map[string]interface{})
+		flattendedWorkflowTargetSettings["data_format"] = *inputTarget.WorkflowTargetSettings.DataFormat
+		worklfowTargetSettingsSet.Add(flattendedWorkflowTargetSettings)
+
+		flattendedTarget["workflow_target_settings"] = worklfowTargetSettingsSet
+	}
 	targetSet.Add(flattendedTarget)
 
 	return targetSet
