@@ -46,6 +46,23 @@ var (
 		},
 	}
 
+	homeScreen = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"enabled": {
+				Description: "Whether or not home screen is enabled",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"logo_url": {
+				Description: "URL for custom logo to appear in home screen",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
+
 	fileUploadMode = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"file_types": {
@@ -95,6 +112,13 @@ var (
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        launcherButtonSettings,
+			},
+			"home_screen": {
+				Description: "The settings for the home screen",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        homeScreen,
 			},
 			"file_upload": {
 				Description: "File upload settings for messenger",
@@ -627,6 +651,20 @@ func readMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengerse
 		}
 	}
 
+	if screens, ok := cfg["home_screen"].([]interface{}); ok && len(screens) > 0 {
+		if screen, ok := screens[0].(map[string]interface{}); ok {
+			enabled, enabledOk := screen["enabled"].(bool)
+			logoUrl, logoUrlOk := screen["logo_url"].(string)
+
+			if enabledOk && logoUrlOk {
+				messengerSettings.HomeScreen = &platformclientv2.Messengerhomescreen{
+					Enabled: &enabled,
+					LogoUrl: &logoUrl,
+				}
+			}
+		}
+	}
+
 	if fileUploads, ok := cfg["file_upload"].([]interface{}); ok && len(fileUploads) > 0 {
 		fileUpload := fileUploads[0].(map[string]interface{})
 		if modesCfg, ok := fileUpload["mode"].([]interface{}); ok && len(modesCfg) > 0 {
@@ -912,6 +950,7 @@ func flattenMessengerSettings(messengerSettings *platformclientv2.Messengersetti
 		"enabled":         messengerSettings.Enabled,
 		"styles":          flattenStyles(messengerSettings.Styles),
 		"launcher_button": flattenLauncherButton(messengerSettings.LauncherButton),
+		"home_screen":     flattenHomeScreen(messengerSettings.HomeScreen),
 		"file_upload":     flattenFileUpload(messengerSettings.FileUpload),
 	}}
 }
@@ -947,6 +986,17 @@ func flattenLauncherButton(settings *platformclientv2.Launcherbuttonsettings) []
 
 	return []interface{}{map[string]interface{}{
 		"visibility": settings.Visibility,
+	}}
+}
+
+func flattenHomeScreen(settings *platformclientv2.Messengerhomescreen) []interface{} {
+	if settings == nil {
+		return nil
+	}
+
+	return []interface{}{map[string]interface{}{
+		"enabled":  settings.Enabled,
+		"logo_url": settings.LogoUrl,
 	}}
 }
 
