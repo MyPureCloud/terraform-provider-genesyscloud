@@ -12,7 +12,7 @@ import (
 	"time"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -62,7 +62,6 @@ func ResourceFlow() *schema.Resource {
 
 		CreateContext: CreateWithPooledClient(createFlow),
 		ReadContext:   ReadWithPooledClient(readFlow),
-		UpdateContext: UpdateWithPooledClient(updateFlow),
 		DeleteContext: DeleteWithPooledClient(deleteFlow),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -74,30 +73,29 @@ func ResourceFlow() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: ValidatePath,
+				ForceNew:     true,
 			},
 			"file_content_hash": {
 				Description: "Hash value of the YAML file content. Used to detect changes.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"substitutions": {
 				Description: "A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.",
 				Type:        schema.TypeMap,
 				Optional:    true,
+				ForceNew:    true,
 			},
 			"force_unlock": {
 				Description: `Will perform a force unlock on an architect flow before beginning the publication process.  NOTE: The force unlock publishes the 'draft'
 				              architect flow and then publishes the flow named in this resource. This mirrors the behavior found in the archy CLI tool.`,
 				Type:     schema.TypeBool,
 				Optional: true,
+				ForceNew: true,
 			},
 		},
 	}
-}
-
-func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("Creating flow")
-	return updateFlow(ctx, d, meta)
 }
 
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -139,9 +137,11 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 	return false
 }
 
-func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	log.Printf("Creating flow")
 
 	//Check to see if we need to force and unlock on an architect flow
 	if isForceUnlockEnabled(d) {
