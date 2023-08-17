@@ -8,6 +8,9 @@ import (
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/user"
+
+	//"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -73,7 +76,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_oauth_client"] = gcloud.ResourceOAuthClient()
 	providerResources["genesyscloud_outbound_settings"] = ob.ResourceOutboundSettings()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
-	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
+	providerResources["genesyscloud_user"] = user.ResourceUser()
 	providerResources["genesyscloud_responsemanagement_library"] = gcloud.ResourceResponsemanagementLibrary()
 	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
 	providerResources["genesyscloud_routing_email_route"] = gcloud.ResourceRoutingEmailRoute()
@@ -189,7 +192,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_telephony_providers_edges_phonebasesettings", gcloud.PhoneBaseSettingsExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_trunkbasesettings", gcloud.TrunkBaseSettingsExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_trunk", gcloud.TrunkExporter())
-	RegisterExporter("genesyscloud_user", gcloud.UserExporter())
+	RegisterExporter("genesyscloud_user", user.UserExporter())
 	RegisterExporter("genesyscloud_user_roles", gcloud.UserRolesExporter())
 	RegisterExporter("genesyscloud_webdeployments_configuration", gcloud.WebDeploymentConfigurationExporter())
 	RegisterExporter("genesyscloud_webdeployments_deployment", gcloud.WebDeploymentExporter())

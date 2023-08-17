@@ -47,7 +47,7 @@ func getHomeDivisionID() (string, diag.Diagnostics) {
 	return homeDivID, nil
 }
 
-func updateObjectDivision(d *schema.ResourceData, objType string, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+func UpdateObjectDivision(d *schema.ResourceData, objType string, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
 	if d.HasChange("division_id") {
 		authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 		divisionID := d.Get("division_id").(string)

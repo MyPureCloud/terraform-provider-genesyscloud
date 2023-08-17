@@ -35,7 +35,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			{
 				// Create user with 1 role in default division
 				// Also add employee role reference as new user's automatically get this role
-				Config: GenerateBasicUserResource(
+				Config: generateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -58,7 +58,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			},
 			{
 				// Create another role and division and add to the user
-				Config: GenerateBasicUserResource(
+				Config: generateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -83,7 +83,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove a role from the user and modify division
-				Config: GenerateBasicUserResource(
+				Config: generateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -102,7 +102,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove all roles from the user
-				Config: GenerateBasicUserResource(
+				Config: generateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,

@@ -30,7 +30,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 1 user and 1 group
 			{
-				Config: GenerateBasicUserResource(
+				Config: generateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -48,11 +48,11 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 2 users and 2 groups
 			{
-				Config: GenerateBasicUserResource(
+				Config: generateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource2,
 					email2,
 					userName2,
@@ -81,7 +81,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 1 user
 			{
-				Config: GenerateBasicUserResource(
+				Config: generateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -94,11 +94,11 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 2 users
 			{
-				Config: GenerateBasicUserResource(
+				Config: generateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource2,
 					email2,
 					userName2,

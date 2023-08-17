@@ -25,11 +25,11 @@ func TestAccResourceRoutingUtilization(t *testing.T) {
 			{
 				// Create
 				Config: generateRoutingUtilizationResource(
-					generateRoutingUtilMediaType("call", maxCapacity1, falseValue),
-					generateRoutingUtilMediaType("callback", maxCapacity1, falseValue),
-					generateRoutingUtilMediaType("chat", maxCapacity1, falseValue),
-					generateRoutingUtilMediaType("email", maxCapacity1, falseValue),
-					generateRoutingUtilMediaType("message", maxCapacity1, falseValue),
+					GenerateRoutingUtilMediaType("call", maxCapacity1, falseValue),
+					GenerateRoutingUtilMediaType("callback", maxCapacity1, falseValue),
+					GenerateRoutingUtilMediaType("chat", maxCapacity1, falseValue),
+					GenerateRoutingUtilMediaType("email", maxCapacity1, falseValue),
+					GenerateRoutingUtilMediaType("message", maxCapacity1, falseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity1),
@@ -52,11 +52,11 @@ func TestAccResourceRoutingUtilization(t *testing.T) {
 			{
 				// Update with a new max capacities and interruptible media types
 				Config: generateRoutingUtilizationResource(
-					generateRoutingUtilMediaType("call", maxCapacity2, trueValue, strconv.Quote(utilTypeEmail)),
-					generateRoutingUtilMediaType("callback", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
-					generateRoutingUtilMediaType("chat", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
-					generateRoutingUtilMediaType("email", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
-					generateRoutingUtilMediaType("message", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
+					GenerateRoutingUtilMediaType("call", maxCapacity2, trueValue, strconv.Quote(utilTypeEmail)),
+					GenerateRoutingUtilMediaType("callback", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
+					GenerateRoutingUtilMediaType("chat", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
+					GenerateRoutingUtilMediaType("email", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
+					GenerateRoutingUtilMediaType("message", maxCapacity2, trueValue, strconv.Quote(utilTypeCall)),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity2),
@@ -84,19 +84,6 @@ func TestAccResourceRoutingUtilization(t *testing.T) {
 			},
 		},
 	})
-}
-
-func generateRoutingUtilMediaType(
-	mediaType string,
-	maxCapacity string,
-	includeNonAcd string,
-	interruptTypes ...string) string {
-	return fmt.Sprintf(`%s {
-		maximum_capacity = %s
-		include_non_acd = %s
-		interruptible_media_types = [%s]
-	}
-	`, mediaType, maxCapacity, includeNonAcd, strings.Join(interruptTypes, ","))
 }
 
 func generateRoutingUtilizationResource(mediaTypes ...string) string {

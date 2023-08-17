@@ -12,6 +12,7 @@ import (
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
@@ -135,7 +136,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Generate a user and export it
-				Config: gcloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
@@ -143,7 +144,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 			},
 			{
 				// Generate a user and export it
-				Config: gcloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
@@ -165,7 +166,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 			},
 			{
 				// Generate a queue as well and export it
-				Config: gcloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
@@ -205,7 +206,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 			},
 			{
 				// Export all trunk base settings as well
-				Config: gcloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
@@ -254,11 +255,11 @@ func TestAccResourceTfExportByName(t *testing.T) {
 			},
 			{
 				// Export all trunk base settings as well
-				Config: gcloud.GenerateBasicUserResource(
+				Config: user.GenerateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + gcloud.GenerateBasicUserResource(
+				) + user.GenerateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,

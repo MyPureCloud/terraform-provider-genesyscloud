@@ -1,8 +1,9 @@
-package genesyscloud
+package user
 
 import (
 	"context"
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -11,27 +12,8 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
-func dataSourceUser() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Users. Select a user by email or name.",
-		ReadContext: ReadWithPooledClient(dataSourceUserRead),
-		Schema: map[string]*schema.Schema{
-			"email": {
-				Description: "User email.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"name": {
-				Description: "User name.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-}
-
 func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	exactSearchType := "EXACT"
@@ -55,7 +37,7 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 	}
 
 	// Retry in case user is not yet indexed
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		users, _, getErr := usersAPI.PostUsersSearch(platformclientv2.Usersearchrequest{
 			SortBy:    &emailField,
 			SortOrder: &sortOrderAsc,

@@ -4,18 +4,21 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func UserRolesExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
+		//TODO Need to fix
 		GetResourcesFunc: GetAllWithPooledClient(getAllUsers),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"user_id":            {RefType: "genesyscloud_user"},
@@ -102,4 +105,85 @@ func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 func deleteUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// Does not delete users or roles. This resource will just no longer manage roles.
 	return nil
+}
+
+// TODO - This is actually also use in the users function.  Will need to refactor
+func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
+
+	// Newly created resources often aren't returned unless there's a delay
+	time.Sleep(5 * time.Second)
+
+	errorChan := make(chan error)
+	wgDone := make(chan bool)
+	// Cancel remaining goroutines if an error occurs
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		// get all inactive users
+		for pageNum := 1; ; pageNum++ {
+			const pageSize = 100
+			users, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "inactive")
+			if getErr != nil {
+				select {
+				case <-ctx.Done():
+				case errorChan <- getErr:
+				}
+				cancel()
+				return
+			}
+
+			if users.Entities == nil || len(*users.Entities) == 0 {
+				break
+			}
+
+			for _, user := range *users.Entities {
+				resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
+			}
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		// get all active users
+		for pageNum := 1; ; pageNum++ {
+			const pageSize = 100
+			users, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "active")
+			if getErr != nil {
+				select {
+				case <-ctx.Done():
+				case errorChan <- getErr:
+				}
+				cancel()
+				return
+			}
+
+			if users.Entities == nil || len(*users.Entities) == 0 {
+				break
+			}
+
+			for _, user := range *users.Entities {
+				resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
+			}
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(wgDone)
+	}()
+
+	// Wait until either WaitGroup is done or an error is received
+	select {
+	case <-wgDone:
+		return resources, nil
+	case err := <-errorChan:
+		return nil, diag.Errorf("Failed to get page of users: %v", err)
+	}
 }

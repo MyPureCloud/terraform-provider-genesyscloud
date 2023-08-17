@@ -160,11 +160,11 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					groupName,
 					generateGroupOwners("genesyscloud_user."+userResource1+".id"),
 					generateGroupMembers("genesyscloud_user."+userResource2+".id"),
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
@@ -184,11 +184,11 @@ func TestAccResourceGroupMembers(t *testing.T) {
 						"genesyscloud_user."+userResource1+".id",
 						"genesyscloud_user."+userResource2+".id",
 					),
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
@@ -208,11 +208,11 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					generateGroupMembers(
 						"genesyscloud_user."+userResource1+".id",
 					),
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource1,
 					userEmail1,
 					userName1,
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,
@@ -229,7 +229,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 					groupName,
 					generateGroupOwners("genesyscloud_user."+userResource2+".id"),
 					"member_ids = []",
-				) + GenerateBasicUserResource(
+				) + generateBasicUserResource(
 					userResource2,
 					userEmail2,
 					userName2,

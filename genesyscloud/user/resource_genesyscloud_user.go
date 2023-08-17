@@ -1,439 +1,59 @@
-package genesyscloud
+package user
 
 import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
+
+const falseValue = "false"
+const trueValue = "true"
+const nullValue = "null"
 
 var (
-	contactTypeEmail = "EMAIL"
+	utilizationMediaTypes = map[string]string{
+		"call":     "call",
+		"callback": "callback",
+		"chat":     "chat",
+		"email":    "email",
+		"message":  "message",
+	}
 
-	phoneNumberResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"number": {
-				Description:      "Phone number. Phone number must be in an E.164 number format.",
-				Type:             schema.TypeString,
-				Optional:         true,
-				ValidateDiagFunc: ValidatePhoneNumber,
-			},
-			"media_type": {
-				Description:  "Media type of phone number (SMS | PHONE).",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "PHONE",
-				ValidateFunc: validation.StringInSlice([]string{"PHONE", "SMS"}, false),
-			},
-			"type": {
-				Description:  "Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE | OTHER).",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "WORK",
-				ValidateFunc: validation.StringInSlice([]string{"WORK", "WORK2", "WORK3", "WORK4", "HOME", "MOBILE", "OTHER"}, false),
-			},
-			"extension": {
-				Description: "Phone number extension",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-	otherEmailResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"address": {
-				Description: "Email address.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"type": {
-				Description:  "Type of email address (WORK | HOME).",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "WORK",
-				ValidateFunc: validation.StringInSlice([]string{"WORK", "HOME"}, false),
-			},
-		},
-	}
-	userSkillResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"skill_id": {
-				Description: "ID of routing skill.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"proficiency": {
-				Description:  "Rating from 0.0 to 5.0 on how competent an agent is for a particular skill. It is used when a queue is set to 'Best available skills' mode to allow acd interactions to target agents with higher proficiency ratings.",
-				Type:         schema.TypeFloat,
-				Required:     true,
-				ValidateFunc: validation.FloatBetween(0, 5),
-			},
-		},
-	}
-	userLanguageResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"language_id": {
-				Description: "ID of routing language.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"proficiency": {
-				Description:  "Proficiency is a rating from 0 to 5 on how competent an agent is for a particular language. It is used when a queue is set to 'Best available language' mode to allow acd interactions to target agents with higher proficiency ratings.",
-				Type:         schema.TypeInt, // The API accepts a float, but the backend rounds to the nearest int
-				Required:     true,
-				ValidateFunc: validation.IntBetween(0, 5),
-			},
-		},
-	}
-	userLocationResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"location_id": {
-				Description: "ID of location.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"notes": {
-				Description: "Optional description on the user's location.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
+	contactTypeEmail = "EMAIL"
 )
 
+// getAllUsers is used to retrieve all of the users currently in the Genesys Cloud platform
 func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	userProxy := getUserProxy(sdkConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
-	// Newly created resources often aren't returned unless there's a delay
-	time.Sleep(5 * time.Second)
+	users, err := userProxy.getAllUserScripts(ctx)
 
-	errorChan := make(chan error)
-	wgDone := make(chan bool)
-	// Cancel remaining goroutines if an error occurs
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		// get all inactive users
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			users, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "inactive")
-			if getErr != nil {
-				select {
-				case <-ctx.Done():
-				case errorChan <- getErr:
-				}
-				cancel()
-				return
-			}
-
-			if users.Entities == nil || len(*users.Entities) == 0 {
-				break
-			}
-
-			for _, user := range *users.Entities {
-				resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
-			}
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		// get all active users
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			users, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "active")
-			if getErr != nil {
-				select {
-				case <-ctx.Done():
-				case errorChan <- getErr:
-				}
-				cancel()
-				return
-			}
-
-			if users.Entities == nil || len(*users.Entities) == 0 {
-				break
-			}
-
-			for _, user := range *users.Entities {
-				resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
-			}
-		}
-	}()
-
-	go func() {
-		wg.Wait()
-		close(wgDone)
-	}()
-
-	// Wait until either WaitGroup is done or an error is received
-	select {
-	case <-wgDone:
-		return resources, nil
-	case err := <-errorChan:
-		return nil, diag.Errorf("Failed to get page of users: %v", err)
+	if err != nil {
+		return nil, diag.Errorf("%v", err)
 	}
-}
 
-func UserExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllUsers),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"manager":                       {RefType: "genesyscloud_user"},
-			"division_id":                   {RefType: "genesyscloud_auth_division"},
-			"routing_skills.skill_id":       {RefType: "genesyscloud_routing_skill"},
-			"routing_languages.language_id": {RefType: "genesyscloud_routing_language"},
-			"locations.location_id":         {RefType: "genesyscloud_location"},
-		},
-		RemoveIfMissing: map[string][]string{
-			"routing_skills":    {"skill_id"},
-			"routing_languages": {"language_id"},
-			"locations":         {"location_id"},
-		},
-		AllowZeroValues: []string{"routing_skills.proficiency", "routing_languages.proficiency"},
+	for _, user := range *users {
+		resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
 	}
-}
 
-func ResourceUser() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud User",
-
-		CreateContext: CreateWithPooledClient(createUser),
-		ReadContext:   ReadWithPooledClient(readUser),
-		UpdateContext: UpdateWithPooledClient(updateUser),
-		DeleteContext: DeleteWithPooledClient(deleteUser),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"email": {
-				Description: "User's primary email and username.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"name": {
-				Description: "User's full name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"password": {
-				Description: "User's password. If specified, this is only set on user create.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Sensitive:   true,
-			},
-			"state": {
-				Description:  "User's state (active | inactive). Default is 'active'.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "active",
-				ValidateFunc: validation.StringInSlice([]string{"active", "inactive"}, false),
-			},
-			"division_id": {
-				Description: "The division to which this user will belong. If not set, the home division will be used.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"department": {
-				Description: "User's department.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"title": {
-				Description: "User's title.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"manager": {
-				Description: "User ID of this user's manager.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"acd_auto_answer": {
-				Description: "Enable ACD auto-answer.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"routing_skills": {
-				Description: "Skills and proficiencies for this user. If not set, this resource will not manage user skills.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem:        userSkillResource,
-			},
-			"routing_languages": {
-				Description: "Languages and proficiencies for this user. If not set, this resource will not manage user languages.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem:        userLanguageResource,
-			},
-			"locations": {
-				Description: "The user placement at each site location. If not set, this resource will not manage user locations.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem:        userLocationResource,
-			},
-			"addresses": {
-				Description: "The address settings for this user. If not set, this resource will not manage addresses.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"other_emails": {
-							Description: "Other Email addresses for this user.",
-							Type:        schema.TypeSet,
-							Optional:    true,
-							Elem:        otherEmailResource,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-						},
-						"phone_numbers": {
-							Description: "Phone number addresses for this user.",
-							Type:        schema.TypeSet,
-							Optional:    true,
-							Set:         phoneNumberHash,
-							Elem:        phoneNumberResource,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-						},
-					},
-				},
-			},
-			"profile_skills": {
-				Description: "Profile skills for this user. If not set, this resource will not manage profile skills.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"certifications": {
-				Description: "Certifications for this user. If not set, this resource will not manage certifications.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"employer_info": {
-				Description: "The employer info for this user. If not set, this resource will not manage employer info.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"official_name": {
-							Description: "User's official name.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"employee_id": {
-							Description: "Employee ID.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"employee_type": {
-							Description:  "Employee type (Full-time | Part-time | Contractor).",
-							Type:         schema.TypeString,
-							Optional:     true,
-							ValidateFunc: validation.StringInSlice([]string{"Full-time", "Part-time", "Contractor"}, false),
-						},
-						"date_hire": {
-							Description:      "Hiring date. Dates must be an ISO-8601 string. For example: yyyy-MM-dd.",
-							Type:             schema.TypeString,
-							Optional:         true,
-							ValidateDiagFunc: validateDate,
-						},
-					},
-				},
-			},
-			"routing_utilization": {
-				Description: "The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"call": {
-							Description: "Call media settings. If not set, this reverts to the default media type settings.",
-							Type:        schema.TypeList,
-							MaxItems:    1,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
-						},
-						"callback": {
-							Description: "Callback media settings. If not set, this reverts to the default media type settings.",
-							Type:        schema.TypeList,
-							MaxItems:    1,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
-						},
-						"message": {
-							Description: "Message media settings. If not set, this reverts to the default media type settings.",
-							Type:        schema.TypeList,
-							MaxItems:    1,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
-						},
-						"email": {
-							Description: "Email media settings. If not set, this reverts to the default media type settings.",
-							Type:        schema.TypeList,
-							MaxItems:    1,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
-						},
-						"chat": {
-							Description: "Chat media settings. If not set, this reverts to the default media type settings.",
-							Type:        schema.TypeList,
-							MaxItems:    1,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
-						},
-					},
-				},
-			},
-		},
-	}
+	return resources, nil
 }
 
 func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -447,7 +67,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	manager := d.Get("manager").(string)
 	acdAutoAnswer := d.Get("acd_auto_answer").(bool)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	addresses, addrErr := buildSdkAddresses(d)
@@ -473,20 +93,11 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Creating user %s", email)
-	user, resp, err := usersAPI.PostUsers(createUser)
-	if err != nil {
-		if resp != nil && resp.Error != nil && (*resp.Error).Code == "general.conflict" {
-			// Check for a deleted user
-			id, diagErr := getDeletedUserId(email, usersAPI)
-			if diagErr != nil {
-				return diagErr
-			}
-			if id != nil {
-				d.SetId(*id)
-				return restoreDeletedUser(ctx, d, meta, usersAPI)
-			}
-		}
-		return diag.Errorf("Failed to create user %s: %s", email, err)
+
+	//Fixme
+	user, diagnostics, done := createUser(ctx, d, meta, usersAPI, createUser, email)
+	if done {
+		return diagnostics
 	}
 
 	d.SetId(*user.Id)
@@ -538,11 +149,11 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 }
 
 func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Reading user %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{
 			// Expands
 			"skills",
@@ -554,7 +165,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}, "", "")
 
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				return resource.RetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
 			}
 			return resource.NonRetryableError(fmt.Errorf("Failed to read user %s: %s", d.Id(), getErr))
@@ -618,7 +229,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	manager := d.Get("manager").(string)
 	acdAutoAnswer := d.Get("acd_auto_answer").(bool)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	addresses, err := buildSdkAddresses(d)
@@ -655,7 +266,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return patchErr
 	}
 
-	diagErr := updateObjectDivision(d, "USER", sdkConfig)
+	diagErr := gcloud.UpdateObjectDivision(d, "USER", sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -687,11 +298,11 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	email := d.Get("email").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting user %s", email)
-	err := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	err := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		_, resp, err := usersAPI.DeleteUser(d.Id())
 		if err != nil {
@@ -706,7 +317,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	// Verify user in deleted state and search index has been updated
-	return WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
 		id, err := getDeletedUserId(email, usersAPI)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error searching for deleted user %s: %v", email, err))
@@ -716,66 +327,6 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 		return nil
 	})
-}
-
-func patchUser(id string, update platformclientv2.Updateuser, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
-	return patchUserWithState(id, "", update, usersAPI)
-}
-
-func patchUserWithState(id string, state string, update platformclientv2.Updateuser, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
-	return RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		currentUser, _, getErr := usersAPI.GetUser(id, nil, "", state)
-		if getErr != nil {
-			return nil, diag.Errorf("Failed to read user %s: %s", id, getErr)
-		}
-
-		update.Version = currentUser.Version
-		_, resp, patchErr := usersAPI.PatchUser(id, update)
-		if patchErr != nil {
-			return resp, diag.Errorf("Failed to update user %s: %v", id, patchErr)
-		}
-		return nil, nil
-	})
-}
-
-func getDeletedUserId(email string, usersAPI *platformclientv2.UsersApi) (*string, diag.Diagnostics) {
-	exactType := "EXACT"
-	results, _, getErr := usersAPI.PostUsersSearch(platformclientv2.Usersearchrequest{
-		Query: &[]platformclientv2.Usersearchcriteria{
-			{
-				Fields:  &[]string{"email"},
-				Value:   &email,
-				VarType: &exactType,
-			},
-			{
-				Fields:  &[]string{"state"},
-				Values:  &[]string{"deleted"},
-				VarType: &exactType,
-			},
-		},
-	})
-	if getErr != nil {
-		return nil, diag.Errorf("Failed to search for user %s: %s", email, getErr)
-	}
-	if results.Results != nil && len(*results.Results) > 0 {
-		// User found
-		return (*results.Results)[0].Id, nil
-	}
-	return nil, nil
-}
-
-func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interface{}, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
-	email := d.Get("email").(string)
-	state := d.Get("state").(string)
-
-	log.Printf("Restoring deleted user %s", email)
-	patchErr := patchUserWithState(d.Id(), "deleted", platformclientv2.Updateuser{
-		State: &state,
-	}, usersAPI)
-	if patchErr != nil {
-		return patchErr
-	}
-	return updateUser(ctx, d, meta)
 }
 
 func phoneNumberHash(val interface{}) int {
@@ -1045,7 +596,7 @@ func flattenUserEmployerInfo(empInfo *platformclientv2.Employerinfo) []interface
 func readUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
 	settings, resp, getErr := usersAPI.GetRoutingUserUtilization(d.Id())
 	if getErr != nil {
-		if IsStatus404(resp) {
+		if gcloud.IsStatus404(resp) {
 			d.SetId("") // User doesn't exist
 			return nil
 		}
@@ -1089,7 +640,7 @@ func updateUserSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersAp
 				})
 			}
 
-			return RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			return gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				_, resp, err := usersAPI.PutUserRoutingskillsBulk(d.Id(), sdkSkills)
 				if err != nil {
 					return resp, diag.Errorf("Failed to update skills for user %s: %s", d.Id(), err)
@@ -1129,7 +680,7 @@ func updateUserLanguages(d *schema.ResourceData, usersAPI *platformclientv2.User
 			if len(oldLangIds) > 0 {
 				langsToRemove := lists.SliceDifference(oldLangIds, newLangIds)
 				for _, langID := range langsToRemove {
-					diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+					diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 						resp, err := usersAPI.DeleteUserRoutinglanguage(d.Id(), langID)
 						if err != nil {
 							return resp, diag.Errorf("Failed to remove language from user %s: %s", d.Id(), err)
@@ -1205,7 +756,7 @@ func updateUserRoutingLanguages(
 		}
 
 		if len(updateChunk) > 0 {
-			diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				_, resp, err := api.PatchUserRoutinglanguagesBulk(userID, updateChunk)
 				if err != nil {
 					return resp, diag.Errorf("Failed to update languages for user %s: %s", userID, err)
@@ -1224,7 +775,7 @@ func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.
 	if d.HasChange("profile_skills") {
 		if profileSkills := d.Get("profile_skills"); profileSkills != nil {
 			profileSkills := lists.SetToStringList(profileSkills.(*schema.Set))
-			diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				_, resp, err := usersAPI.PutUserProfileskills(d.Id(), *profileSkills)
 				if err != nil {
 					return resp, diag.Errorf("Failed to update profile skills for user %s: %s", d.Id(), err)
@@ -1331,10 +882,10 @@ func flattenUserCertifications(certs *[]string) *schema.Set {
 
 // Basic user with minimum required fields
 func GenerateBasicUserResource(resourceID string, email string, name string) string {
-	return generateUserResource(resourceID, email, name, nullValue, nullValue, nullValue, nullValue, nullValue, "", "")
+	return GenerateUserResource(resourceID, email, name, nullValue, nullValue, nullValue, nullValue, nullValue, "", "")
 }
 
-func generateUserResource(
+func GenerateUserResource(
 	resourceID string,
 	email string,
 	name string,
@@ -1357,4 +908,46 @@ func generateUserResource(
 		certifications = [%s]
 	}
 	`, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
+}
+
+func flattenUtilizationSetting(settings platformclientv2.Mediautilization) []interface{} {
+	settingsMap := make(map[string]interface{})
+	if settings.MaximumCapacity != nil {
+		settingsMap["maximum_capacity"] = *settings.MaximumCapacity
+	}
+	if settings.InterruptableMediaTypes != nil {
+		settingsMap["interruptible_media_types"] = lists.StringListToSet(*settings.InterruptableMediaTypes)
+	}
+	if settings.IncludeNonAcd != nil {
+		settingsMap["include_non_acd"] = *settings.IncludeNonAcd
+	}
+	return []interface{}{settingsMap}
+}
+
+func getSdkUtilizationTypes() []string {
+	types := make([]string, 0, len(utilizationMediaTypes))
+	for t := range utilizationMediaTypes {
+		types = append(types, t)
+	}
+	sort.Strings(types)
+	return types
+}
+
+func buildSdkMediaUtilization(settings []interface{}) platformclientv2.Mediautilization {
+	settingsMap := settings[0].(map[string]interface{})
+
+	maxCapacity := settingsMap["maximum_capacity"].(int)
+	includeNonAcd := settingsMap["include_non_acd"].(bool)
+
+	// Optional
+	interruptableMediaTypes := &[]string{}
+	if types, ok := settingsMap["interruptible_media_types"]; ok {
+		interruptableMediaTypes = lists.SetToStringList(types.(*schema.Set))
+	}
+
+	return platformclientv2.Mediautilization{
+		MaximumCapacity:         &maxCapacity,
+		IncludeNonAcd:           &includeNonAcd,
+		InterruptableMediaTypes: interruptableMediaTypes,
+	}
 }

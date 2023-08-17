@@ -50,7 +50,7 @@ func validateExtensionPool(number interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // Validates a date string is in the format yyyy-MM-dd
-func validateDate(date interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateDate(date interface{}, _ cty.Path) diag.Diagnostics {
 	if dateStr, ok := date.(string); ok {
 		_, err := time.Parse(resourcedata.DateParseFormat, dateStr)
 		if err != nil {

@@ -851,7 +851,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("Error updating queue %s: %s", name, err)
 	}
 
-	diagErr = updateObjectDivision(d, "QUEUE", sdkConfig)
+	diagErr = UpdateObjectDivision(d, "QUEUE", sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}

@@ -10,10 +10,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func getAllRoutingSkills(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -147,4 +148,13 @@ func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 
 		return resource.RetryableError(fmt.Errorf("Routing skill %s still exists", d.Id()))
 	})
+}
+
+func GenerateRoutingSkillResource(
+	resourceID string,
+	name string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
+		name = "%s"
+	}
+	`, resourceID, name)
 }

@@ -3,7 +3,11 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
+
+	//"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
+
+	//"terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"

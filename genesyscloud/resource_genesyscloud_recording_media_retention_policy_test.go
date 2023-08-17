@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -947,7 +948,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					generateRoutingLanguageResource(languageResource1, languageName) +
+					GenerateRoutingLanguageResource(languageResource1, languageName) +
 					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					GenerateFlowResource(
 						flowResource1,
@@ -1054,7 +1055,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					generateRoutingLanguageResource(languageResource1, languageName) +
+					GenerateRoutingLanguageResource(languageResource1, languageName) +
 					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					GenerateFlowResource(
 						flowResource1,
@@ -1161,7 +1162,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					generateRoutingLanguageResource(languageResource1, languageName) +
+					GenerateRoutingLanguageResource(languageResource1, languageName) +
 					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					GenerateFlowResource(
 						flowResource1,
@@ -1268,7 +1269,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
 					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					generateRoutingLanguageResource(languageResource1, languageName) +
+					GenerateRoutingLanguageResource(languageResource1, languageName) +
 					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					GenerateFlowResource(
 						flowResource1,
@@ -2339,4 +2340,13 @@ func generateAssignSurveys(assignSurveys *[]Surveyassignment) string {
 	}
 
 	return assignSurveysString
+}
+
+func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }

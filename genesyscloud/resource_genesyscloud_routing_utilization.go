@@ -10,13 +10,14 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -249,4 +250,17 @@ func buildSdkMediaUtilization(settings []interface{}) platformclientv2.Mediautil
 		IncludeNonAcd:           &includeNonAcd,
 		InterruptableMediaTypes: interruptableMediaTypes,
 	}
+}
+
+func GenerateRoutingUtilMediaType(
+	mediaType string,
+	maxCapacity string,
+	includeNonAcd string,
+	interruptTypes ...string) string {
+	return fmt.Sprintf(`%s {
+		maximum_capacity = %s
+		include_non_acd = %s
+		interruptible_media_types = [%s]
+	}
+	`, mediaType, maxCapacity, includeNonAcd, strings.Join(interruptTypes, ","))
 }
