@@ -111,14 +111,27 @@ func (p *externalContactsContactsProxy) updateExternalContact(ctx context.Contex
 func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsProxy) (*[]platformclientv2.Externalcontact, error) {
 	var allExternalContacts []platformclientv2.Externalcontact
 
-	externalContacts, _, err := p.externalContactsApi.GetExternalcontactsScanContacts(100, "")
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get external contacts: %v", err)
-	}
+	cursor := ""
+	for {
+		externalContacts, _, err := p.externalContactsApi.GetExternalcontactsScanContacts(10, cursor)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get external contacts: %v", err)
+		}
 
-	for _, externalContact := range *externalContacts.Entities {
-		log.Printf("Dealing with external contact id : %s", *externalContact.Id)
-		allExternalContacts = append(allExternalContacts, externalContact)
+		if externalContacts.Entities == nil || len(*externalContacts.Entities) == 0 {
+			break
+		}
+
+		for _, externalContact := range *externalContacts.Entities {
+			log.Printf("Dealing with external contact id : %s", *externalContact.Id)
+			allExternalContacts = append(allExternalContacts, externalContact)
+		}
+
+		log.Println(*externalContacts)
+		if externalContacts.Cursors.After == nil {
+			break
+		}
+		cursor = *externalContacts.Cursors.After
 	}
 
 	return &allExternalContacts, nil
