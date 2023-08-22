@@ -113,7 +113,7 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 
 	cursor := ""
 	for {
-		externalContacts, _, err := p.externalContactsApi.GetExternalcontactsScanContacts(10, cursor)
+		externalContacts, _, err := p.externalContactsApi.GetExternalcontactsScanContacts(100, cursor)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get external contacts: %v", err)
 		}
