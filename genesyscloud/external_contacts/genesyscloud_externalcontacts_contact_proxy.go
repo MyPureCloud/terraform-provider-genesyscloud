@@ -128,7 +128,7 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 		}
 
 		log.Println(*externalContacts)
-		if externalContacts.Cursors.After == nil {
+		if externalContacts.Cursors == nil || externalContacts.Cursors.After == nil {
 			break
 		}
 		cursor = *externalContacts.Cursors.After
