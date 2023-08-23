@@ -288,6 +288,8 @@ func updateFile(filepath, content string) {
 	file.WriteString(content)
 }
 
+// setFileContentHashToNil This operation is required after a flow update fails because we want Terraform to detect changes
+// in the file content hash and re-attempt an update, should the user re-run terraform apply without making changes to the file contents
 func setFileContentHashToNil(d *schema.ResourceData) {
 	_ = d.Set("file_content_hash", nil)
 }
