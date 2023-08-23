@@ -95,11 +95,6 @@ func ResourceFlow() *schema.Resource {
 	}
 }
 
-func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("Creating flow")
-	return updateFlow(ctx, d, meta)
-}
-
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
@@ -137,6 +132,11 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 		return true
 	}
 	return false
+}
+
+func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("Creating flow")
+	return updateFlow(ctx, d, meta)
 }
 
 func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
