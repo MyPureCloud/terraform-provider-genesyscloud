@@ -9,7 +9,8 @@ import (
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	obwm "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -75,22 +76,22 @@ type RegisterInstance struct {
 
 func registerResources() {
 
-	reg_instance := &RegisterInstance{}
+	regInstance := &RegisterInstance{}
 
-	pat.SetRegistrar(reg_instance)
+	pat.SetRegistrar(regInstance)            //Registering process automation triggers
+	obs.SetRegistrar(regInstance)            //Resistering outbound ruleset
+	ob.SetRegistrar(regInstance)             //Registering outbound
+	obwm.SetRegistrar(regInstance)           //Registering outbound wrapup code mappings
+	gcloud.SetRegistrar(regInstance)         //Registering genesyscloud
+	obAttemptLimit.SetRegistrar(regInstance) //Registering outbound attempt limit
+	obContactList.SetRegistrar(regInstance)  //Registering outbound contact list
+	scripts.SetRegistrar(regInstance)        //Registering Scripts
 
-	ob.SetRegistrar(reg_instance)
-	gcloud.SetRegistrar(reg_instance)
-	obAttemptLimit.SetRegistrar(reg_instance)
-	obContactList.SetRegistrar(reg_instance)
-	obRuleset.SetRegistrar(reg_instance)
-	scripts.SetRegistrar(reg_instance)
-	externalContacts.SetRegistrar(reg_instance)
-	resourceExporter.SetRegisterExporter(resourceExporters)
+	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
+	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
-	//tfexp.GetRegistrarresources()
-	tfexp.SetRegistrar(reg_instance)
+	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
 
 }

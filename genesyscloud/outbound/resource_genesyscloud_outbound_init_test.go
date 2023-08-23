@@ -34,7 +34,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_messagingcampaign"] = ResourceOutboundMessagingCampaign()
 	providerResources["genesyscloud_outbound_sequence"] = ResourceOutboundSequence()
 	providerResources["genesyscloud_outbound_settings"] = ResourceOutboundSettings()
-	providerResources["genesyscloud_outbound_wrapupcodemappings"] = ResourceOutboundWrapUpCodeMappings()
+
 	providerResources["genesyscloud_outbound_dnclist"] = ResourceOutboundDncList()
 
 	// external package dependencies for outbound
