@@ -28,6 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_user"] = ResourceUser()
 	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
 	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
+	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 
 }
 

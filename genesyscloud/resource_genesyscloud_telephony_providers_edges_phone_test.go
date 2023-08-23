@@ -47,7 +47,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		userDepartment = "Development"
 	)
 
-	user1 := generateUserResource(
+	user1 := GenerateUserResource(
 		userRes1,
 		userEmail1,
 		userName1,
@@ -60,7 +60,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		"",        // No certs
 	)
 
-	user2 := generateUserResource(
+	user2 := GenerateUserResource(
 		userRes2,
 		userEmail2,
 		userName2,

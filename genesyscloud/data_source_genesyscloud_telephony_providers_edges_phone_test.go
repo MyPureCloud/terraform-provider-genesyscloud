@@ -33,7 +33,7 @@ func TestAccDataSourcePhone(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateOrganizationMe() + generateUserResource(
+				Config: generateOrganizationMe() + GenerateUserResource(
 					userRes1,
 					userEmail1,
 					userName1,
@@ -98,10 +98,10 @@ func generatePhoneDataSource(
 // Duplicate of the user.GenerateUserResource() method.  Keeping this as we are working through refactoring
 // Basic user with minimum required fields
 func generateBasicUserResource(resourceID string, email string, name string) string {
-	return generateUserResource(resourceID, email, name, nullValue, nullValue, nullValue, nullValue, nullValue, "", "")
+	return GenerateUserResource(resourceID, email, name, nullValue, nullValue, nullValue, nullValue, nullValue, "", "")
 }
 
-func generateUserResource(
+func GenerateUserResource(
 	resourceID string,
 	email string,
 	name string,

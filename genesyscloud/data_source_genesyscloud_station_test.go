@@ -33,7 +33,7 @@ func TestAccDataSourceStation(t *testing.T) {
 		stationDataRes = "station1234"
 	)
 
-	config := generateOrganizationMe() + generateUserResource(
+	config := generateOrganizationMe() + GenerateUserResource(
 		userRes1,
 		userEmail1,
 		userName1,
