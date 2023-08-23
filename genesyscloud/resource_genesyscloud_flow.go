@@ -58,7 +58,7 @@ func FlowExporter() *resourceExporter.ResourceExporter {
 
 func ResourceFlow() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud Flow`,
+		Description: `Genesys Cloud Architect Flow. Note: Changing any field in this resource will cause the current flow to be dropped and recreated with a new ID.`,
 
 		CreateContext: CreateWithPooledClient(createFlow),
 		ReadContext:   ReadWithPooledClient(readFlow),

@@ -2,11 +2,11 @@
 page_title: "genesyscloud_flow Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Flow
+  Genesys Cloud Architect Flow. Note: Changing any field in this resource will cause the current flow to be dropped and recreated with a new ID.
 ---
 # genesyscloud_flow (Resource)
 
-Genesys Cloud Flow
+Genesys Cloud Architect Flow. Note: Changing any field in this resource will cause the current flow to be dropped and recreated with a new ID.
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
