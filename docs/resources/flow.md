@@ -61,7 +61,7 @@ resource "genesyscloud_flow" "flow" {
 ### Required
 
 - `file_content_hash` (String) Hash value of the YAML file content. Used to detect changes.
-- `filepath` (String) YAML file path for flow configuration.
+- `filepath` (String) YAML file path for flow configuration. Note: Changing the flow name will result in the creation of a new flow with a new GUID, while the original flow will persist in your org.
 
 ### Optional
 

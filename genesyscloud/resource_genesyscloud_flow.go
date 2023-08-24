@@ -61,6 +61,7 @@ func ResourceFlow() *schema.Resource {
 		Description: `Genesys Cloud Flow`,
 
 		CreateContext: CreateWithPooledClient(createFlow),
+		UpdateContext: UpdateWithPooledClient(updateFlow),
 		ReadContext:   ReadWithPooledClient(readFlow),
 		DeleteContext: DeleteWithPooledClient(deleteFlow),
 		Importer: &schema.ResourceImporter{
@@ -69,30 +70,26 @@ func ResourceFlow() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"filepath": {
-				Description:  "YAML file path for flow configuration.",
+				Description:  "YAML file path for flow configuration. Note: Changing the flow name will result in the creation of a new flow with a new GUID, while the original flow will persist in your org.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: ValidatePath,
-				ForceNew:     true,
 			},
 			"file_content_hash": {
 				Description: "Hash value of the YAML file content. Used to detect changes.",
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 			},
 			"substitutions": {
 				Description: "A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.",
 				Type:        schema.TypeMap,
 				Optional:    true,
-				ForceNew:    true,
 			},
 			"force_unlock": {
 				Description: `Will perform a force unlock on an architect flow before beginning the publication process.  NOTE: The force unlock publishes the 'draft'
 				              architect flow and then publishes the flow named in this resource. This mirrors the behavior found in the archy CLI tool.`,
 				Type:     schema.TypeBool,
 				Optional: true,
-				ForceNew: true,
 			},
 		},
 	}
@@ -138,15 +135,21 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 }
 
 func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("Creating flow")
+	return updateFlow(ctx, d, meta)
+}
+
+func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	log.Printf("Creating flow")
+	log.Printf("Updating flow")
 
 	//Check to see if we need to force and unlock on an architect flow
 	if isForceUnlockEnabled(d) {
 		err := forceUnlockFlow(d.Id(), sdkConfig)
 		if err != nil {
+			setFileContentHashToNil(d)
 			return diag.Errorf("Failed to unlock targeted flow %s with error %s", d.Id(), err)
 		}
 	}
@@ -154,10 +157,12 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	flowJob, response, err := architectAPI.PostFlowsJobs()
 
 	if err != nil {
+		setFileContentHashToNil(d)
 		return diag.Errorf("Failed to update job %s", err)
 	}
 
 	if err == nil && response.Error != nil {
+		setFileContentHashToNil(d)
 		return diag.Errorf("Failed to register job. %s", err)
 	}
 
@@ -170,12 +175,14 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	reader, _, err := files.DownloadOrOpenFile(filePath)
 	if err != nil {
+		setFileContentHashToNil(d)
 		return diag.Errorf(err.Error())
 	}
 
 	s3Uploader := files.NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
 	_, err = s3Uploader.Upload()
 	if err != nil {
+		setFileContentHashToNil(d)
 		return diag.Errorf(err.Error())
 	}
 
@@ -209,10 +216,12 @@ func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	})
 
 	if retryErr != nil {
+		setFileContentHashToNil(d)
 		return retryErr
 	}
 
 	if flowID == "" {
+		setFileContentHashToNil(d)
 		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
 	}
 
@@ -279,4 +288,10 @@ func updateFile(filepath, content string) {
 	defer file.Close()
 
 	file.WriteString(content)
+}
+
+// setFileContentHashToNil This operation is required after a flow update fails because we want Terraform to detect changes
+// in the file content hash and re-attempt an update, should the user re-run terraform apply without making changes to the file contents
+func setFileContentHashToNil(d *schema.ResourceData) {
+	_ = d.Set("file_content_hash", nil)
 }
