@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -176,9 +177,9 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		deployment, resp, err := api.PostWebdeploymentsDeployments(inputDeployment)
 		if err != nil {
 			if IsStatus400(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
+				return retry.RetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
 		}
 
 		d.SetId(*deployment.Id)
@@ -204,16 +205,16 @@ func waitForDeploymentToBeActive(ctx context.Context, api *platformclientv2.WebD
 		deployment, resp, err := api.GetWebdeploymentsDeployment(id)
 		if err != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
+				return retry.RetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
+			return retry.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
 		}
 
 		if *deployment.Status == "Active" {
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Web deployment %s not active yet. Status: %s", id, *deployment.Status))
+		return retry.RetryableError(fmt.Errorf("Web deployment %s not active yet. Status: %s", id, *deployment.Status))
 	})
 }
 
@@ -226,9 +227,9 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 		deployment, resp, getErr := api.GetWebdeploymentsDeployment(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeployment())
@@ -307,9 +308,9 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		_, resp, err := api.PutWebdeploymentsDeployment(d.Id(), inputDeployment)
 		if err != nil {
 			if IsStatus400(resp) {
-				return resource.RetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
+				return retry.RetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
 		}
 
 		return nil
@@ -347,10 +348,10 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 				log.Printf("Deleted web deployment %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting web deployment %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting web deployment %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Web deployment %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Web deployment %s still exists", d.Id()))
 	})
 }
 

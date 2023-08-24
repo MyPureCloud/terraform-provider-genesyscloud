@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceIntegrationActionRead(ctx context.Context, d *schema.ResourceData
 			integrationAction, _, getErr := integrationAPI.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", actionName, "", "", "")
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("failed to get page of integration actions: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("failed to get page of integration actions: %s", getErr))
 			}
 
 			if integrationAction.Entities == nil || len(*integrationAction.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no integration actions found with name: %s", actionName))
+				return retry.RetryableError(fmt.Errorf("no integration actions found with name: %s", actionName))
 			}
 
 			for _, action := range *integrationAction.Entities {

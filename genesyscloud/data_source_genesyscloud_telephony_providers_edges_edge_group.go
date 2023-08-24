@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -44,11 +45,11 @@ func dataSourceEdgeGroupRead(ctx context.Context, d *schema.ResourceData, m inte
 			edgeGroup, _, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroups(pageSize, pageNum, name, "", managed)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting edge group %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting edge group %s: %s", name, getErr))
 			}
 
 			if edgeGroup.Entities == nil || len(*edgeGroup.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No edge group found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No edge group found with name %s", name))
 			}
 
 			d.SetId(*(*edgeGroup.Entities)[0].Id)

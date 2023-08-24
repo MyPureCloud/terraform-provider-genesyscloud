@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -35,11 +36,11 @@ func dataSourceTrunkBaseSettingsRead(ctx context.Context, d *schema.ResourceData
 			trunkBaseSettings, _, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, name)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting trunk base settings %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting trunk base settings %s: %s", name, getErr))
 			}
 
 			if trunkBaseSettings.Entities == nil || len(*trunkBaseSettings.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No trunkBaseSettings found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No trunkBaseSettings found with name %s", name))
 			}
 
 			for _, trunkBaseSetting := range *trunkBaseSettings.Entities {

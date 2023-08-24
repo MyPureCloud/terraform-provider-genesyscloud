@@ -2,6 +2,7 @@ package process_automation_trigger
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"fmt"
 	"log"
@@ -210,9 +211,9 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to process read automation trigger %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to process read automation trigger %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger())
@@ -336,7 +337,7 @@ func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 				log.Printf("process automation trigger already deleted %s", d.Id())
 				return nil
 			}
-			return resource.RetryableError(fmt.Errorf("process automation trigger %s still exists", d.Id()))
+			return retry.RetryableError(fmt.Errorf("process automation trigger %s still exists", d.Id()))
 		}
 		return nil
 	})

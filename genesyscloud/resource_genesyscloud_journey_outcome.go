@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"regexp"
 	"time"
@@ -162,9 +163,9 @@ func readJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interf
 		journeyOutcome, resp, getErr := journeyApi.GetJourneyOutcome(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("failed to read journey outcome %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read journey outcome %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("failed to read journey outcome %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read journey outcome %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcome())
@@ -222,10 +223,10 @@ func deleteJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 				log.Printf("Deleted journey outcome %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting journey outcome %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting journey outcome %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("journey outcome %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("journey outcome %s still exists", d.Id()))
 	})
 }
 

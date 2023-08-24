@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -101,9 +102,9 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if getErr != nil {
 			if IsStatus404(resp) {
 				createIdpOkta(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Okta: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta())
@@ -188,8 +189,8 @@ func deleteIdpOkta(ctx context.Context, _ *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP Okta")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Okta: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Okta: %s", err))
 		}
-		return resource.RetryableError(fmt.Errorf("IDP Okta still exists"))
+		return retry.RetryableError(fmt.Errorf("IDP Okta still exists"))
 	})
 }

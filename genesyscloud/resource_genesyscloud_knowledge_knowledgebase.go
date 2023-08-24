@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/url"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -163,9 +164,9 @@ func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, met
 		knowledgeBase, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebase(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeKnowledgebase())
@@ -236,9 +237,9 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 				log.Printf("Deleted Knowledge base %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting knowledge base %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting knowledge base %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Knowledge base %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Knowledge base %s still exists", d.Id()))
 	})
 }

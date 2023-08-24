@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -41,11 +42,11 @@ func dataSourceEmployeeperformanceExternalmetricsDefinitionRead(ctx context.Cont
 			const pageSize = 100
 			sdkexternalmetricdefinitionlisting, _, getErr := gamificationApi.GetEmployeeperformanceExternalmetricsDefinitions(pageSize, pageNum)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting Employeeperformance Externalmetrics Definition %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting Employeeperformance Externalmetrics Definition %s: %s", name, getErr))
 			}
 
 			if sdkexternalmetricdefinitionlisting.Entities == nil || len(*sdkexternalmetricdefinitionlisting.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No Employeeperformance Externalmetrics Definition found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No Employeeperformance Externalmetrics Definition found with name %s", name))
 			}
 
 			for _, entity := range *sdkexternalmetricdefinitionlisting.Entities {

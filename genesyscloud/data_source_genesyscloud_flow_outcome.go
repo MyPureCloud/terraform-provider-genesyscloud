@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceFlowOutcomeRead(ctx context.Context, d *schema.ResourceData, m in
 			outcomes, _, getErr := archAPI.GetFlowsOutcomes(pageNum, pageSize, "", "", nil, name, "", "", nil)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting outcomes %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting outcomes %s: %s", name, getErr))
 			}
 
 			if outcomes.Entities == nil || len(*outcomes.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No outcomes found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No outcomes found with name %s", name))
 			}
 
 			d.SetId(*(*outcomes.Entities)[0].Id)

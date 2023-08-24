@@ -3,13 +3,14 @@ package outbound
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 func dataSourceOutboundCampaign() *schema.Resource {
@@ -42,11 +43,11 @@ func dataSourceOutboundCampaignRead(ctx context.Context, d *schema.ResourceData,
 			const pageSize = 100
 			sdkcampaignentitylisting, _, getErr := outboundApi.GetOutboundCampaigns(pageSize, pageNum, "", "", []string{}, "", "", "", "", "", []string{}, "", "")
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("error requesting Outbound Campaign %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("error requesting Outbound Campaign %s: %s", name, getErr))
 			}
 
 			if sdkcampaignentitylisting.Entities == nil || len(*sdkcampaignentitylisting.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no Outbound Campaign found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("no Outbound Campaign found with name %s", name))
 			}
 
 			for _, entity := range *sdkcampaignentitylisting.Entities {

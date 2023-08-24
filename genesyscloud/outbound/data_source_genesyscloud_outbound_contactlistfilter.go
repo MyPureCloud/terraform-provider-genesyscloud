@@ -3,13 +3,14 @@ package outbound
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 func dataSourceOutboundContactListFilter() *schema.Resource {
@@ -36,10 +37,10 @@ func dataSourceOutboundContactListFilterRead(ctx context.Context, d *schema.Reso
 		const pageSize = 100
 		contactListFilters, _, getErr := outboundAPI.GetOutboundContactlistfilters(pageSize, pageNum, true, "", name, "", "", "")
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("error requesting contact list filter %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("error requesting contact list filter %s: %s", name, getErr))
 		}
 		if contactListFilters.Entities == nil || len(*contactListFilters.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("no contact list filters found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("no contact list filters found with name %s", name))
 		}
 		contactListFilter := (*contactListFilters.Entities)[0]
 		d.SetId(*contactListFilter.Id)

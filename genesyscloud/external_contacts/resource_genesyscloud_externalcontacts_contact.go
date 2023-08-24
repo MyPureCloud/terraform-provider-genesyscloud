@@ -3,6 +3,7 @@ package external_contacts
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -82,9 +83,9 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		externalContact, respCode, getErr := ep.getExternalContactById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
-				return resource.RetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read external contact %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContact())
@@ -144,7 +145,7 @@ func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 		_, respCode, err := ep.getExternalContactById(ctx, d.Id())
 
 		if err == nil {
-			return resource.NonRetryableError(fmt.Errorf("Error deleting external contact %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting external contact %s: %s", d.Id(), err))
 		}
 		if gcloud.IsStatus404ByInt(respCode) {
 			// Success  : External contact deleted
@@ -152,6 +153,6 @@ func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("External contact %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("External contact %s still exists", d.Id()))
 	})
 }

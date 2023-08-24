@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -99,9 +100,9 @@ func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta inter
 		language, resp, getErr := routingApi.GetRoutingLanguage(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read language %s: %s", d.Id(), getErr))
 		}
 
 		if language.State != nil && *language.State == "deleted" {
@@ -137,7 +138,7 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 				log.Printf("Deleted Routing language %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Routing language %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing language %s: %s", d.Id(), err))
 		}
 
 		if routingLanguage.State != nil && *routingLanguage.State == "deleted" {
@@ -146,6 +147,6 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Routing language %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Routing language %s still exists", d.Id()))
 	})
 }

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceScheduleGroupRead(ctx context.Context, d *schema.ResourceData, m 
 		const pageSize = 100
 		scheduleGroups, _, getErr := archAPI.GetArchitectSchedulegroups(pageNum, pageSize, "", "", name, "", nil)
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting schedule group %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting schedule group %s: %s", name, getErr))
 		}
 
 		if scheduleGroups.Entities == nil || len(*scheduleGroups.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No schedule groups found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No schedule groups found with name %s", name))
 		}
 
 		scheduleGroup := (*scheduleGroups.Entities)[0]

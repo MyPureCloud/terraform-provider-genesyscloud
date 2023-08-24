@@ -3,17 +3,15 @@ package outbound
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
-
-
 
 func DataSourceOutboundAttemptLimit() *schema.Resource {
 	return &schema.Resource{
@@ -39,10 +37,10 @@ func dataSourceOutboundAttemptLimitRead(ctx context.Context, d *schema.ResourceD
 		const pageSize = 100
 		attemptLimits, _, getErr := outboundAPI.GetOutboundAttemptlimits(pageSize, pageNum, true, "", name, "", "")
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("error requesting attempt limit %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("error requesting attempt limit %s: %s", name, getErr))
 		}
 		if attemptLimits.Entities == nil || len(*attemptLimits.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("no attempt limits found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("no attempt limits found with name %s", name))
 		}
 		attemptLimit := (*attemptLimits.Entities)[0]
 		d.SetId(*attemptLimit.Id)

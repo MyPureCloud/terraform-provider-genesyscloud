@@ -3,9 +3,10 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
-	"time"
 	"strings"
+	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -188,9 +189,9 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 		location, resp, getErr := locationsAPI.GetLocation(d.Id(), nil)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read location %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read location %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read location %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read location %s: %s", d.Id(), getErr))
 		}
 
 		if location.State != nil && *location.State == "deleted" {
@@ -300,7 +301,7 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 				log.Printf("Deleted location %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting location %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting location %s: %s", d.Id(), err))
 		}
 
 		if location.State != nil && *location.State == "deleted" {
@@ -309,7 +310,7 @@ func deleteLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Location %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Location %s still exists", d.Id()))
 	})
 }
 

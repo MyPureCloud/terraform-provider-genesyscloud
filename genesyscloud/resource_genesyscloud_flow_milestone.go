@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -153,9 +154,9 @@ func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interfa
 		sdkflowmilestone, resp, getErr := architectApi.GetFlowsMilestone(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Flow Milestone %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Flow Milestone %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Flow Milestone %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Flow Milestone %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone())
@@ -200,9 +201,9 @@ func deleteFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 				log.Printf("Deleted Flow Milestone %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Flow Milestone %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Flow Milestone %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Flow Milestone %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Flow Milestone %s still exists", d.Id()))
 	})
 }

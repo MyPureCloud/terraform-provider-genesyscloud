@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/http"
 	"strings"
@@ -238,9 +239,9 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		action, resp, getErr := sdkGetIntegrationAction(d.Id(), integAPI)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
 		}
 
 		// Retrieve config request/response templates
@@ -250,7 +251,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 				d.SetId("")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read request template for integration action %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read request template for integration action %s: %s", d.Id(), getErr))
 		}
 
 		successTemp, resp, getErr := sdkGetIntegrationActionTemplate(d.Id(), "successtemplate.vm", integAPI)
@@ -259,7 +260,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 				d.SetId("")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read success template for integration action %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read success template for integration action %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction())
@@ -296,7 +297,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
 			input, err := flattenActionContract(*action.Contract.Input.InputSchema)
 			if err != nil {
-				return resource.NonRetryableError(fmt.Errorf("%v", err))
+				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
 			d.Set("contract_input", input)
 		} else {
@@ -306,7 +307,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		if action.Contract != nil && action.Contract.Output != nil && action.Contract.Output.SuccessSchema != nil {
 			output, err := flattenActionContract(*action.Contract.Output.SuccessSchema)
 			if err != nil {
-				return resource.NonRetryableError(fmt.Errorf("%v", err))
+				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
 			d.Set("contract_output", output)
 		} else {
@@ -392,9 +393,9 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Integration action %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting integration action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting integration action %s: %s", d.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("Integration action %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Integration action %s still exists", d.Id()))
 	})
 }
 

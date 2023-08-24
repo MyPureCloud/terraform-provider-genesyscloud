@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/url"
 	"strings"
@@ -182,10 +183,10 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 		knowledgeLabel, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr))
 			}
 			log.Printf("%s", getErr)
-			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge label %s: %s", knowledgeLabelId, getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeLabel())
@@ -255,10 +256,10 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 				log.Printf("Deleted knowledge label %s", knowledgeLabelId)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting knowledge label %s: %s", knowledgeLabelId, err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting knowledge label %s: %s", knowledgeLabelId, err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Knowledge label %s still exists", knowledgeLabelId))
+		return retry.RetryableError(fmt.Errorf("Knowledge label %s still exists", knowledgeLabelId))
 	})
 }
 

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 			const pageSize = 100
 			queues, _, getErr := routingAPI.GetRoutingQueues(pageNum, pageSize, name, "", nil, nil, nil, false)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting queue %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting queue %s: %s", name, getErr))
 			}
 
 			if queues.Entities == nil || len(*queues.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No routing queues found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No routing queues found with name %s", name))
 			}
 
 			for _, queue := range *queues.Entities {

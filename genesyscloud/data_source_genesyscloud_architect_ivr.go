@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceIvrRead(ctx context.Context, d *schema.ResourceData, m interface{
 		const pageSize = 100
 		ivrs, _, getErr := archAPI.GetArchitectIvrs(pageNum, pageSize, "", "", name, "", "")
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting IVR %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting IVR %s: %s", name, getErr))
 		}
 
 		if ivrs.Entities == nil || len(*ivrs.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No IVRs found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No IVRs found with name %s", name))
 		}
 
 		ivr := (*ivrs.Entities)[0]

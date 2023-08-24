@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -62,11 +63,11 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 			Query:     &[]platformclientv2.Usersearchcriteria{searchCriteria},
 		})
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting users: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting users: %s", getErr))
 		}
 
 		if users.Results == nil || len(*users.Results) == 0 {
-			return resource.RetryableError(fmt.Errorf("No users found with search criteria %v", searchCriteria))
+			return retry.RetryableError(fmt.Errorf("No users found with search criteria %v", searchCriteria))
 		}
 
 		// Select first user in the list

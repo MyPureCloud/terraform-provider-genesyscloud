@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/http"
 	"net/url"
@@ -608,9 +609,9 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue())
@@ -771,13 +772,13 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		members, err := flattenQueueMembers(d.Id(), routingAPI)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", err))
+			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
 		d.Set("members", members)
 
 		wrapupCodes, err := flattenQueueWrapupCodes(d.Id(), routingAPI)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", err))
+			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
 		d.Set("wrapup_codes", wrapupCodes)
 
@@ -895,9 +896,9 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Queue %s deleted", name)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting queue %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting queue %s: %s", d.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("Queue %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Queue %s still exists", d.Id()))
 	})
 }
 

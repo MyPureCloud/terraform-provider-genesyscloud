@@ -3,6 +3,7 @@ package outbound
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
@@ -377,7 +378,7 @@ func updateOutboundCampaignStatus(d *schema.ResourceData, outboundApi *platformc
 			(*campaign.CampaignStatus != "on" && newCampaignStatus == "on")) {
 		campaign.CampaignStatus = &newCampaignStatus
 		log.Printf("Updating Outbound Campaign %s status to %s", *campaign.Name, newCampaignStatus)
-		diagErr := gcloud.RetryWhen( gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			// Get current Outbound Campaign version
 			outboundCampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
 			if getErr != nil {
@@ -506,12 +507,12 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		sdkcampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
 		}
 		if *sdkcampaign.CampaignStatus == "stopping" {
-			return resource.RetryableError(fmt.Errorf("Outbound Campaign still stopping %s", d.Id()))
+			return retry.RetryableError(fmt.Errorf("Outbound Campaign still stopping %s", d.Id()))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign())
@@ -649,10 +650,10 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted Outbound Campaign %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Outbound Campaign %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Campaign %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Outbound Campaign %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Outbound Campaign %s still exists", d.Id()))
 	})
 }
 

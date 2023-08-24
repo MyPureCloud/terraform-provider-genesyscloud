@@ -3,6 +3,7 @@ package outbound
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -12,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
@@ -317,9 +318,9 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Setting: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings())

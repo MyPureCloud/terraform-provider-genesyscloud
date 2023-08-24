@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -45,11 +46,11 @@ func dataSourceExtensionPoolRead(ctx context.Context, d *schema.ResourceData, m 
 			extensionPools, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "")
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("error requesting list of extension pools: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("error requesting list of extension pools: %s", getErr))
 			}
 
 			if extensionPools.Entities == nil || len(*extensionPools.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no extension pools found with start phone number: %s and end phone number: %s", extensionPoolStartPhoneNumber, extensionPoolEndPhoneNumber))
+				return retry.RetryableError(fmt.Errorf("no extension pools found with start phone number: %s and end phone number: %s", extensionPoolStartPhoneNumber, extensionPoolEndPhoneNumber))
 			}
 
 			for _, extensionPool := range *extensionPools.Entities {

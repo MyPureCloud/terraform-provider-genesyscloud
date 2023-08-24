@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"time"
@@ -287,9 +288,9 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 				if IsStatus404(resp) {
 					// Domain not found, so route also does not exist
 					d.SetId("")
-					return resource.RetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
+					return retry.RetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
 				}
-				return resource.NonRetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
+				return retry.NonRetryableError(fmt.Errorf("Failed to read routing email route %s: %s", d.Id(), getErr))
 			}
 
 			if routes.Entities == nil || len(*routes.Entities) == 0 {
@@ -465,9 +466,9 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Routing email domain route %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Routing email domain route %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing email domain route %s: %s", d.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("Routing email domain route %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Routing email domain route %s still exists", d.Id()))
 	})
 }
 

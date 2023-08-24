@@ -3,9 +3,10 @@ package outbound_attempt_limit
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
-	"time"
 	"strings"
+	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -14,10 +15,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
-
 
 var (
 	recallSettings = &schema.Resource{
@@ -255,9 +255,9 @@ func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta 
 		sdkAttemptLimits, resp, getErr := outboundApi.GetOutboundAttemptlimit(d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("failed to read Outbound Attempt Limit %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read Outbound Attempt Limit %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Attempt Limit %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Attempt Limit %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundAttemptLimit())
@@ -311,10 +311,10 @@ func deleteOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 				log.Printf("Deleted Outbound Attempt Limit %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting Outbound Attempt Limit %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Attempt Limit %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Outbound Attempt Limit %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Outbound Attempt Limit %s still exists", d.Id()))
 	})
 }
 

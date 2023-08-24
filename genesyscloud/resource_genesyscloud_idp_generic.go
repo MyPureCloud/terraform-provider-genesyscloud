@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -139,9 +140,9 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 		if getErr != nil {
 			if IsStatus404(resp) {
 				createIdpGeneric(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGeneric())
@@ -266,8 +267,8 @@ func deleteIdpGeneric(ctx context.Context, _ *schema.ResourceData, meta interfac
 				log.Printf("Deleted IDP Generic")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Generic: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Generic: %s", err))
 		}
-		return resource.RetryableError(fmt.Errorf("IDP Generic still exists"))
+		return retry.RetryableError(fmt.Errorf("IDP Generic still exists"))
 	})
 }

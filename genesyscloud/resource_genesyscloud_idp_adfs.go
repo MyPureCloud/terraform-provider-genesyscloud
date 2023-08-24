@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -105,9 +106,9 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if getErr != nil {
 			if IsStatus404(resp) {
 				createIdpAdfs(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpAdfs())
@@ -200,8 +201,8 @@ func deleteIdpAdfs(ctx context.Context, _ *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP ADFS")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP ADFS: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP ADFS: %s", err))
 		}
-		return resource.RetryableError(fmt.Errorf("IDP ADFS still exists"))
+		return retry.RetryableError(fmt.Errorf("IDP ADFS still exists"))
 	})
 }

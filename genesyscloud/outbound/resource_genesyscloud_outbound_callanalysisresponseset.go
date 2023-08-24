@@ -3,6 +3,7 @@ package outbound
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"time"
@@ -14,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
@@ -264,9 +265,9 @@ func readOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.Resource
 		sdkResponseSet, resp, getErr := outboundApi.GetOutboundCallanalysisresponseset(d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Call Analysis Response Set %s: %s", d.Id(), getErr))
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallAnalysisResponseSet())
 		if sdkResponseSet.Name != nil {
@@ -307,10 +308,10 @@ func deleteOutboundCallAnalysisResponseSet(ctx context.Context, d *schema.Resour
 				log.Printf("Deleted Outbound Call Analysis Response Set %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting Outbound Call Analysis Response Set %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Call Analysis Response Set %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Outbound Call Analysis Response Set %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Outbound Call Analysis Response Set %s still exists", d.Id()))
 	})
 }
 

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceScheduleRead(ctx context.Context, d *schema.ResourceData, m inter
 			schedule, _, getErr := archAPI.GetArchitectSchedules(pageNum, pageSize, "", "", name, nil)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting schedule %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting schedule %s: %s", name, getErr))
 			}
 
 			if schedule.Entities == nil || len(*schedule.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No schedule found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No schedule found with name %s", name))
 			}
 
 			d.SetId(*(*schedule.Entities)[0].Id)

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -165,9 +166,9 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 		phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings())
@@ -183,7 +184,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 		if phoneBaseSettings.Properties != nil {
 			properties, err := flattenBaseSettingsProperties(phoneBaseSettings.Properties)
 			if err != nil {
-				return resource.NonRetryableError(fmt.Errorf("%v", err))
+				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
 			d.Set("properties", properties)
 		}
@@ -220,7 +221,7 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Phone base settings %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Phone base settings %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Phone base settings %s: %s", d.Id(), err))
 		}
 
 		if phoneBaseSettings.State != nil && *phoneBaseSettings.State == "deleted" {
@@ -229,7 +230,7 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Phone base settings %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Phone base settings %s still exists", d.Id()))
 	})
 }
 
@@ -244,9 +245,9 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 			phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, "")
 			if getErr != nil {
 				if IsStatus404(resp) {
-					return resource.RetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
+					return retry.RetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
 				}
-				return resource.NonRetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
+				return retry.NonRetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
 			}
 
 			if phoneBaseSettings.Entities == nil || len(*phoneBaseSettings.Entities) == 0 {

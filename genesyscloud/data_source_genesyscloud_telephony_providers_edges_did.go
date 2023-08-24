@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceDidRead(ctx context.Context, d *schema.ResourceData, m interface{
 			dids, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesDids(100, pageNum, "", "", didPhoneNumber, "", "", nil)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("error requesting list of DIDs: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("error requesting list of DIDs: %s", getErr))
 			}
 
 			if dids.Entities == nil || len(*dids.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no DIDs found"))
+				return retry.RetryableError(fmt.Errorf("no DIDs found"))
 			}
 
 			for _, did := range *dids.Entities {

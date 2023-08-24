@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -48,10 +49,10 @@ func dataSourceResponseManagamentResponseAssetRead(ctx context.Context, d *schem
 	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		responseData, _, getErr := respManagementApi.PostResponsemanagementResponseassetsSearch(body, nil)
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting response asset %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting response asset %s: %s", name, getErr))
 		}
 		if responseData.Results == nil || len(*responseData.Results) == 0 {
-			return resource.RetryableError(fmt.Errorf("No response asset found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No response asset found with name %s", name))
 		}
 		asset := (*responseData.Results)[0]
 		d.SetId(*asset.Id)

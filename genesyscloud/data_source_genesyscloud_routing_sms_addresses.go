@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -41,11 +42,11 @@ func dataSourceRoutingSmsAddressRead(ctx context.Context, d *schema.ResourceData
 			const pageSize = 100
 			sdksmsaddressentitylisting, _, getErr := routingApi.GetRoutingSmsAddresses(pageSize, pageNum)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting Routing Sms Address %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting Routing Sms Address %s: %s", name, getErr))
 			}
 
 			if sdksmsaddressentitylisting.Entities == nil || len(*sdksmsaddressentitylisting.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No Routing Sms Address found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No Routing Sms Address found with name %s", name))
 			}
 
 			for _, entity := range *sdksmsaddressentitylisting.Entities {

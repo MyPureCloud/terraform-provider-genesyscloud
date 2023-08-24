@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -76,9 +77,9 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 		roles, resp, err := readSubjectRoles(d.Id(), authAPI)
 		if err != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))
 		}
 
 		d.Set("roles", roles)

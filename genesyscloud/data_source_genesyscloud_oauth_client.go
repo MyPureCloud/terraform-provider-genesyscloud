@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -36,11 +37,11 @@ func dataSourceOAuthClientRead(ctx context.Context, d *schema.ResourceData, m in
 		for pageNum := 1; ; pageNum++ {
 			oauths, _, getErr := oauthAPI.GetOauthClients()
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting oauth client %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting oauth client %s: %s", name, getErr))
 			}
 
 			if oauths.Entities == nil || len(*oauths.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No oauth clients found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No oauth clients found with name %s", name))
 			}
 
 			for _, oauth := range *oauths.Entities {

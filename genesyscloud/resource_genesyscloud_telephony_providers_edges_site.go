@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"time"
@@ -410,7 +411,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	diagErr = WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
 		diagErr = updateSiteOutboundRoutes(d, edgesAPI)
 		if diagErr != nil {
-			return resource.RetryableError(fmt.Errorf(fmt.Sprintf("%v", diagErr), d.Id()))
+			return retry.RetryableError(fmt.Errorf(fmt.Sprintf("%v", diagErr), d.Id()))
 		}
 		return nil
 	})
@@ -431,9 +432,9 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		currentSite, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite())
@@ -614,7 +615,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				time.Sleep(8 * time.Second)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting site %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting site %s: %s", d.Id(), err))
 		}
 
 		if site.State != nil && *site.State == "deleted" {
@@ -626,7 +627,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Site %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Site %s still exists", d.Id()))
 	})
 }
 
@@ -921,7 +922,7 @@ func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Tele
 			d.SetId("") // Site doesn't exist
 			return nil
 		}
-		return resource.NonRetryableError(fmt.Errorf("Failed to read number plans for site %s: %s", d.Id(), getErr))
+		return retry.NonRetryableError(fmt.Errorf("Failed to read number plans for site %s: %s", d.Id(), getErr))
 	}
 
 	dNumberPlans := make([]interface{}, 0)
@@ -990,7 +991,7 @@ func readSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.T
 		const pageSize = 100
 		outboundRouteEntityListing, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), pageSize, pageNum, "", "", "")
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err))
 		}
 		if outboundRouteEntityListing.Entities == nil || len(*outboundRouteEntityListing.Entities) == 0 {
 			break

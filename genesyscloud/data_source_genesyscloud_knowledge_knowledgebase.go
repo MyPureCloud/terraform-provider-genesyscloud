@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -46,16 +47,16 @@ func dataSourceKnowledgeKnowledgebaseRead(ctx context.Context, d *schema.Resourc
 		unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), name, coreLanguage, false, "", "")
 
 		if getPublishedErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getPublishedErr))
+			return retry.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getPublishedErr))
 		}
 		if getUnpublishedErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getUnpublishedErr))
+			return retry.NonRetryableError(fmt.Errorf("error requesting knowledge base %s: %s", name, getUnpublishedErr))
 		}
 
 		noPublishedEntities := publishedKnowledgeBases.Entities == nil || len(*publishedKnowledgeBases.Entities) == 0
 		noUnpublishedEntities := unpublishedKnowledgeBases.Entities == nil || len(*unpublishedKnowledgeBases.Entities) == 0
 		if noPublishedEntities && noUnpublishedEntities {
-			return resource.RetryableError(fmt.Errorf("no knowledge bases found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("no knowledge bases found with name %s", name))
 		}
 
 		// prefer published knowledge base

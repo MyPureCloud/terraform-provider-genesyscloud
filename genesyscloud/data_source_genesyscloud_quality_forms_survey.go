@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceQualityFormsSurveyRead(ctx context.Context, d *schema.ResourceDat
 			forms, _, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", name, "desc")
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting survey forms %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting survey forms %s: %s", name, getErr))
 			}
 
 			if forms.Entities == nil || len(*forms.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No survey forms found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No survey forms found with name %s", name))
 			}
 
 			d.SetId(*(*forms.Entities)[0].Id)

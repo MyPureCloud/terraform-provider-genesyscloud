@@ -3,6 +3,7 @@ package outbound
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -186,9 +187,9 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 		sdkcallabletimeset, resp, getErr := outboundApi.GetOutboundCallabletimeset(d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallabletimeset())
@@ -231,10 +232,10 @@ func deleteOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 				log.Printf("Deleted Outbound Callabletimeset %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Outbound Callabletimeset %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Callabletimeset %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Outbound Callabletimeset %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Outbound Callabletimeset %s still exists", d.Id()))
 	})
 }
 

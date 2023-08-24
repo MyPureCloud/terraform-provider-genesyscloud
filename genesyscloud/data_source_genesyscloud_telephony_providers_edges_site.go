@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -43,11 +44,11 @@ func dataSourceSiteRead(ctx context.Context, d *schema.ResourceData, m interface
 			const pageSize = 50
 			sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", name, "", managed)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting site %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting site %s: %s", name, getErr))
 			}
 
 			if sites.Entities == nil || len(*sites.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No sites found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No sites found with name %s", name))
 			}
 
 			for _, site := range *sites.Entities {

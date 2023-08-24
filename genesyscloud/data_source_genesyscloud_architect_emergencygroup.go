@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceEmergencyGroupRead(ctx context.Context, d *schema.ResourceData, m
 		const pageSize = 100
 		emergencyGroups, _, getErr := archAPI.GetArchitectEmergencygroups(pageNum, pageSize, "", "", name)
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting emergency group %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting emergency group %s: %s", name, getErr))
 		}
 
 		if emergencyGroups.Entities == nil || len(*emergencyGroups.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No emergency groups found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No emergency groups found with name %s", name))
 		}
 
 		emergencyGroup := (*emergencyGroups.Entities)[0]

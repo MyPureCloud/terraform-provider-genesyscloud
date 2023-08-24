@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"testing"
 	"time"
 
@@ -72,10 +73,10 @@ func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error 
 				if IsStatus404(resp) {
 					continue
 				}
-				return resource.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
+				return retry.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
 			}
 
-			return resource.RetryableError(fmt.Errorf("Library %s still exists", rs.Primary.ID))
+			return retry.RetryableError(fmt.Errorf("Library %s still exists", rs.Primary.ID))
 		}
 		return nil
 	})

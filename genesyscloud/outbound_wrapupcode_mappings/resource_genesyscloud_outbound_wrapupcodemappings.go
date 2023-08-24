@@ -3,6 +3,7 @@ package outbound_wrapupcode_mappings
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -86,9 +87,9 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 		sdkWrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Wrap-up Code Mappings: %s", err))
+				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Wrap-up Code Mappings: %s", err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Wrap-up Code Mappings: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Wrap-up Code Mappings: %s", err))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings())

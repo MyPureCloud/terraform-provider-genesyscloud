@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -38,11 +39,11 @@ func dataSourceUserPromptRead(ctx context.Context, d *schema.ResourceData, m int
 		const pageSize = 100
 		prompts, _, getErr := architectApi.GetArchitectPrompts(pageNum, pageSize, nameArr, "", "", "", "")
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting user prompts %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting user prompts %s: %s", name, getErr))
 		}
 
 		if prompts.Entities == nil || len(*prompts.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No user prompts found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No user prompts found with name %s", name))
 		}
 
 		prompt := (*prompts.Entities)[0]

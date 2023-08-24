@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -117,9 +118,9 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 		extensionPool, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesExtensionpool(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Extension pool %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Extension pool %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Extension pool %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Extension pool %s: %s", d.Id(), getErr))
 		}
 
 		if extensionPool.State != nil && *extensionPool.State == "deleted" {
@@ -184,7 +185,7 @@ func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 				log.Printf("Deleted Extension pool %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Extension pool %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Extension pool %s: %s", d.Id(), err))
 		}
 
 		if extensionPool.State != nil && *extensionPool.State == "deleted" {
@@ -193,6 +194,6 @@ func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Extension pool %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Extension pool %s still exists", d.Id()))
 	})
 }

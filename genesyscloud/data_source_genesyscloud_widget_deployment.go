@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -36,11 +37,11 @@ func dataSourceWidgetDeploymentRead(ctx context.Context, d *schema.ResourceData,
 		widgetDeployments, _, getErr := widgetAPI.GetWidgetsDeployments()
 
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting widget deployment %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting widget deployment %s: %s", name, getErr))
 		}
 
 		if widgetDeployments.Entities == nil || len(*widgetDeployments.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No widget deployment found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No widget deployment found with name %s", name))
 		}
 
 		for _, widgetDeployment := range *widgetDeployments.Entities {
@@ -50,6 +51,6 @@ func dataSourceWidgetDeploymentRead(ctx context.Context, d *schema.ResourceData,
 			}
 		}
 
-		return resource.NonRetryableError(fmt.Errorf("Unable to locate widget deployment name %s. It does not exist", name))
+		return retry.NonRetryableError(fmt.Errorf("Unable to locate widget deployment name %s. It does not exist", name))
 	})
 }

@@ -3,13 +3,14 @@ package outbound
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 func dataSourceOutboundCallabletimeset() *schema.Resource {
@@ -38,10 +39,10 @@ func dataSourceOutboundCallabletimesetRead(ctx context.Context, d *schema.Resour
 
 			timesets, _, getErr := outboundAPI.GetOutboundCallabletimesets(pageSize, pageNum, true, "", "", "", "")
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("error requesting callable timeset %s: %s", timesetName, getErr))
+				return retry.NonRetryableError(fmt.Errorf("error requesting callable timeset %s: %s", timesetName, getErr))
 			}
 			if timesets.Entities == nil || len(*timesets.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no callable timeset found with timesetName %s", timesetName))
+				return retry.RetryableError(fmt.Errorf("no callable timeset found with timesetName %s", timesetName))
 			}
 
 			for _, timeset := range *timesets.Entities {

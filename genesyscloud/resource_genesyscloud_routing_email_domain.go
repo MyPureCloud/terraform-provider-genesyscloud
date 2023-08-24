@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"time"
@@ -132,9 +133,9 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 		domain, resp, getErr := routingAPI.GetRoutingEmailDomain(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read routing email domain %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain())
@@ -216,10 +217,10 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted Routing email domain %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Routing email domain %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing email domain %s: %s", d.Id(), err))
 		}
 
 		routingAPI.DeleteRoutingEmailDomain(d.Id())
-		return resource.RetryableError(fmt.Errorf("Routing email domain %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Routing email domain %s still exists", d.Id()))
 	})
 }

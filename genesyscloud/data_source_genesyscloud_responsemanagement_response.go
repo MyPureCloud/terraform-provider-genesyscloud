@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -47,11 +48,11 @@ func dataSourceResponsemanagementResponseRead(ctx context.Context, d *schema.Res
 			const pageSize = 100
 			sdkresponseentitylisting, _, getErr := responseManagementApi.GetResponsemanagementResponses(library, pageNum, pageSize, "")
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting Responsemanagement Response %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting Responsemanagement Response %s: %s", name, getErr))
 			}
 
 			if sdkresponseentitylisting.Entities == nil || len(*sdkresponseentitylisting.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No Responsemanagement Response found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No Responsemanagement Response found with name %s", name))
 			}
 
 			for _, entity := range *sdkresponseentitylisting.Entities {

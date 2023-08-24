@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -45,11 +46,11 @@ func dataSourceDidPoolRead(ctx context.Context, d *schema.ResourceData, m interf
 			didPools, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("error requesting list of DID pools: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("error requesting list of DID pools: %s", getErr))
 			}
 
 			if didPools.Entities == nil || len(*didPools.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no DID pools found with start phone number: %s and end phone number: %s", didPoolStartPhoneNumber, didPoolEndPhoneNumber))
+				return retry.RetryableError(fmt.Errorf("no DID pools found with start phone number: %s and end phone number: %s", didPoolStartPhoneNumber, didPoolEndPhoneNumber))
 			}
 
 			for _, didPool := range *didPools.Entities {

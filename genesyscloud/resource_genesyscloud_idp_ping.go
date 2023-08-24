@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -106,9 +107,9 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if getErr != nil {
 			if IsStatus404(resp) {
 				createIdpPing(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Ping: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpPing())
@@ -201,8 +202,8 @@ func deleteIdpPing(ctx context.Context, _ *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP Ping")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Ping: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Ping: %s", err))
 		}
-		return resource.RetryableError(fmt.Errorf("IDP Ping still exists"))
+		return retry.RetryableError(fmt.Errorf("IDP Ping still exists"))
 	})
 }

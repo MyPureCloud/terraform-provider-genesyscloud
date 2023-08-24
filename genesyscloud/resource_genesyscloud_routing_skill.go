@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -99,9 +100,9 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 		skill, resp, getErr := routingAPI.GetRoutingSkill(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read skill %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read skill %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read skill %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read skill %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill())
@@ -136,7 +137,7 @@ func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 				log.Printf("Deleted Routing skill %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Routing skill %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Routing skill %s: %s", d.Id(), err))
 		}
 
 		if routingSkill.State != nil && *routingSkill.State == "deleted" {
@@ -145,6 +146,6 @@ func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Routing skill %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Routing skill %s still exists", d.Id()))
 	})
 }

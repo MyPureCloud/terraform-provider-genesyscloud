@@ -3,6 +3,7 @@ package consistency_checker
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"reflect"
 	"strconv"
 	"strings"
@@ -241,7 +242,7 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 				vv := v.New
 				if c.d.HasChange(k) {
 					if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
-						return resource.RetryableError(&consistencyError{
+						return retry.RetryableError(&consistencyError{
 							key:      k,
 							oldValue: c.originalState[k],
 							newValue: c.d.Get(k),
@@ -250,7 +251,7 @@ func (c *consistencyCheck) CheckState() *resource.RetryError {
 				}
 			} else {
 				if c.d.HasChange(k) {
-					return resource.RetryableError(&consistencyError{
+					return retry.RetryableError(&consistencyError{
 						key:      k,
 						oldValue: c.originalState[k],
 						newValue: c.d.Get(k),

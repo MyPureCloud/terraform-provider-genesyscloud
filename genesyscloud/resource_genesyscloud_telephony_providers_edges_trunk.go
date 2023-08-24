@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -166,9 +167,9 @@ func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		trunk, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunk(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunk())
@@ -218,9 +219,9 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 			trunks, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
 			if getErr != nil {
 				if IsStatus404(resp) {
-					return resource.RetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
+					return retry.RetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
 				}
-				return resource.NonRetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
+				return retry.NonRetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
 			}
 
 			if trunks.Entities == nil || len(*trunks.Entities) == 0 {

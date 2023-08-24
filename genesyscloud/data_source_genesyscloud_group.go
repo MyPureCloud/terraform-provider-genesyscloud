@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -44,11 +45,11 @@ func dataSourceGroupRead(ctx context.Context, d *schema.ResourceData, m interfac
 			Query: &[]platformclientv2.Groupsearchcriteria{searchCriteria},
 		})
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting group %s: %s", nameStr, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting group %s: %s", nameStr, getErr))
 		}
 
 		if *groups.Total == 0 {
-			return resource.RetryableError(fmt.Errorf("No groups found with search criteria %v ", searchCriteria))
+			return retry.RetryableError(fmt.Errorf("No groups found with search criteria %v ", searchCriteria))
 		}
 
 		// Select first group in the list

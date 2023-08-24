@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 		for pageNum := 1; ; pageNum++ {
 			flows, _, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, false, "", "", nil)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s", name, getErr))
 			}
 
 			if flows.Entities == nil || len(*flows.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No flows found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No flows found with name %s", name))
 			}
 
 			for _, entity := range *flows.Entities {

@@ -3,9 +3,10 @@ package outbound_contact_list
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
-	"time"
 	"strings"
+	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -15,8 +16,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -318,9 +319,9 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 		sdkContactList, resp, getErr := outboundApi.GetOutboundContactlist(d.Id(), false, false)
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("failed to read Outbound Contact List %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read Outbound Contact List %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Contact List %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Contact List %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactList())
@@ -396,10 +397,10 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 				log.Printf("Deleted Outbound Contact List %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting Outbound Contact List %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Contact List %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Outbound Contact List %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Outbound Contact List %s still exists", d.Id()))
 	})
 }
 
@@ -579,7 +580,6 @@ func GeneratePhoneColumnsBlock(columnName, columnType, callableTimeColumn string
 	}
 `, columnName, columnType, callableTimeColumn)
 }
-
 
 func GenerateOutboundContactList(
 	resourceId string,

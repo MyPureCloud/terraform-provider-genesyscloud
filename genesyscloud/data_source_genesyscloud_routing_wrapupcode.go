@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -36,11 +37,11 @@ func dataSourceRoutingWrapupcodeRead(ctx context.Context, d *schema.ResourceData
 			wrapCode, _, getErr := routingAPI.GetRoutingWrapupcodes(100, pageNum, "", "", []string{}, name, []string{})
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting wrap-up code %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting wrap-up code %s: %s", name, getErr))
 			}
 
 			if wrapCode.Entities == nil || len(*wrapCode.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No wrap-up code found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No wrap-up code found with name %s", name))
 			}
 
 			d.SetId(*(*wrapCode.Entities)[0].Id)

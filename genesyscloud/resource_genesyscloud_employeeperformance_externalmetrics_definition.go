@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -182,9 +183,9 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 		sdkexternalmetricdefinition, resp, getErr := gamificationApi.GetEmployeeperformanceExternalmetricsDefinition(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition())
@@ -237,9 +238,9 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 				log.Printf("Deleted Employeeperformance Externalmetrics Definition %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Employeeperformance Externalmetrics Definition %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Employeeperformance Externalmetrics Definition %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Employeeperformance Externalmetrics Definition %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Employeeperformance Externalmetrics Definition %s still exists", d.Id()))
 	})
 }

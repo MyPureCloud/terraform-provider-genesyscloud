@@ -3,6 +3,7 @@ package outbound
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
@@ -194,9 +195,9 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 		sdkcampaignsequence, resp, getErr := outboundApi.GetOutboundSequence(d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSequence())
@@ -244,9 +245,9 @@ func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted Outbound Sequence %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Outbound Sequence %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Sequence %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Outbound Sequence %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Outbound Sequence %s still exists", d.Id()))
 	})
 }

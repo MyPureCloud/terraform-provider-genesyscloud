@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -254,9 +255,9 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		currentPhone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone())
@@ -296,11 +297,11 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 		const pageNum = 1
 		stations, _, getErr := stationsAPI.GetStations(pageSize, pageNum, "", "", "", userId, "", "")
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting stations: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting stations: %s", getErr))
 		}
 
 		if stations.Entities == nil || len(*stations.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No stations found with userID %v", userId))
+			return retry.RetryableError(fmt.Errorf("No stations found with userID %v", userId))
 		}
 
 		stationId = *(*stations.Entities)[0].Id
@@ -431,7 +432,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Deleted Phone %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Phone %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Phone %s: %s", d.Id(), err))
 		}
 
 		if phone.State != nil && *phone.State == "deleted" {
@@ -441,7 +442,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Phone %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Phone %s still exists", d.Id()))
 	})
 }
 

@@ -3,6 +3,7 @@ package scripts
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -29,15 +30,15 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 		scripts, err := scriptsProxy.getPublishedScriptsByName(ctx, name)
 
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting script %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting script %s: %s", name, err))
 		}
 
 		if len(*scripts) == 0 {
-			return resource.RetryableError(fmt.Errorf("No scripts found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No scripts found with name %s", name))
 		}
 
 		if len(*scripts) > 1 {
-			return resource.NonRetryableError(fmt.Errorf("Ambiguous script name: %s", name))
+			return retry.NonRetryableError(fmt.Errorf("Ambiguous script name: %s", name))
 		}
 
 		script := (*scripts)[0]

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceFlowMilestoneRead(ctx context.Context, d *schema.ResourceData, m 
 			milestone, _, getErr := archAPI.GetFlowsMilestones(pageNum, pageSize, "", "", nil, name, "", "", nil)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting milestone %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting milestone %s: %s", name, getErr))
 			}
 
 			if milestone.Entities == nil || len(*milestone.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No milestone found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No milestone found with name %s", name))
 			}
 
 			d.SetId(*(*milestone.Entities)[0].Id)

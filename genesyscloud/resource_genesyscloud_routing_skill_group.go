@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/http"
 	"strings"
@@ -368,20 +369,20 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to retrieve skill groups %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to retrieve skill groups %s", err))
 		}
 
 		if err == nil && response.Error != nil && response.StatusCode != http.StatusNotFound {
-			return resource.NonRetryableError(fmt.Errorf("Failed to retrieve skill groups. %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to retrieve skill groups. %s", err))
 		}
 
 		err = json.Unmarshal(response.RawBody, &skillGroupPayload)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to unmarshal skill groups. %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to unmarshal skill groups. %s", err))
 		}
 
 		if err == nil && IsStatus404(response) {
-			return resource.RetryableError(fmt.Errorf("Failed to read skill groups %s: %s", d.Id(), err))
+			return retry.RetryableError(fmt.Errorf("Failed to read skill groups %s: %s", d.Id(), err))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkillGroup())
@@ -392,7 +393,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		skillConditionsBytes, err := json.Marshal(skillGroupPayload["skillConditions"])
 
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to unmarshal skill groups conditions. %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to unmarshal skill groups conditions. %s", err))
 		}
 
 		skillConditions := string(skillConditionsBytes)
@@ -423,7 +424,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 
 		apiMemberDivisionIds, diagErr := readSkillGroupMemberDivisionIds(d, routingAPI)
 		if diagErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
 		var schemaMemberDivisionIds []string
@@ -493,9 +494,9 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 				log.Printf("Deleted skills group %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting skill group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting skill group %s: %s", d.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("Skill group %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Skill group %s still exists", d.Id()))
 	})
 }
 

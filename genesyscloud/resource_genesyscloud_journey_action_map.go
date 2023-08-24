@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -431,9 +432,9 @@ func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta inte
 		actionMap, resp, getErr := journeyApi.GetJourneyActionmap(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("failed to read journey action map %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read journey action map %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("failed to read journey action map %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read journey action map %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyActionMap())
@@ -492,10 +493,10 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted journey action map %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting journey action map %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting journey action map %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("journey action map %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("journey action map %s still exists", d.Id()))
 	})
 }
 

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -40,12 +41,12 @@ func dataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceDat
 			domains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting email domain %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting email domain %s: %s", name, getErr))
 			}
 
 			//// No record found, keep trying for X seconds as this might an eventual consistency problem
 			if domains.Entities == nil || len(*domains.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No email domains found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No email domains found with name %s", name))
 			}
 
 			// Once I get a result, cycle through until we find a name that matches

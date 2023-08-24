@@ -3,6 +3,7 @@ package scripts
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/http"
 	"os"
@@ -82,11 +83,11 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		script, statusCode, err := scriptsProxy.getScriptById(ctx, d.Id())
 		if statusCode == http.StatusNotFound {
-			return resource.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+			return retry.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 		}
 
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceScript())

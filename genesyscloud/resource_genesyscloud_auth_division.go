@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -120,9 +121,9 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 		division, resp, getErr := authAPI.GetAuthorizationDivision(d.Id(), false)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthDivision())
@@ -193,8 +194,8 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 				log.Printf("Deleted division %s", name)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting division %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting division %s: %s", name, err))
 		}
-		return resource.RetryableError(fmt.Errorf("Division %s still exists", name))
+		return retry.RetryableError(fmt.Errorf("Division %s still exists", name))
 	})
 }

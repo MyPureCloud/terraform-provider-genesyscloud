@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.Resource
 			const pageSize = 100
 			journeyActionTemplates, _, getErr := journeyApi.GetJourneyActiontemplates(pageNum, pageSize, "", "", "", nil, "")
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("failed to get page of journey action template: %v", getErr))
+				return retry.NonRetryableError(fmt.Errorf("failed to get page of journey action template: %v", getErr))
 			}
 
 			if journeyActionTemplates.Entities == nil || len(*journeyActionTemplates.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no journey action template found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("no journey action template found with name %s", name))
 			}
 
 			for _, actionTemplate := range *journeyActionTemplates.Entities {
@@ -53,6 +54,6 @@ func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.Resource
 
 			pageCount = *journeyActionTemplates.PageCount
 		}
-		return resource.RetryableError(fmt.Errorf("no journey action template found with name %s", name))
+		return retry.RetryableError(fmt.Errorf("no journey action template found with name %s", name))
 	})
 }

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceJourneyActionMapRead(ctx context.Context, d *schema.ResourceData,
 			const pageSize = 100
 			journeyActionMaps, _, getErr := journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("failed to get page of journey action maps: %v", getErr))
+				return retry.NonRetryableError(fmt.Errorf("failed to get page of journey action maps: %v", getErr))
 			}
 
 			if journeyActionMaps.Entities == nil || len(*journeyActionMaps.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no journey action map found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("no journey action map found with name %s", name))
 			}
 
 			for _, actionMap := range *journeyActionMaps.Entities {
@@ -53,6 +54,6 @@ func dataSourceJourneyActionMapRead(ctx context.Context, d *schema.ResourceData,
 
 			pageCount = *journeyActionMaps.PageCount
 		}
-		return resource.RetryableError(fmt.Errorf("no journey action map found with name %s", name))
+		return retry.RetryableError(fmt.Errorf("no journey action map found with name %s", name))
 	})
 }

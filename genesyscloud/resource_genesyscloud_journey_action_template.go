@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -349,9 +350,9 @@ func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i
 		actionTemplate, resp, getErr := journeyApi.GetJourneyActiontemplate(data.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, data, i, ResourceJourneyActionTemplate())
 		flattenActionTemplate(data, actionTemplate)
@@ -398,9 +399,9 @@ func deleteJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 				log.Printf("Deleted Journey Action Template %s", data.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting journey action template %s: %s", data.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting journey action template %s: %s", data.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("journey action template %s still exists", data.Id()))
+		return retry.RetryableError(fmt.Errorf("journey action template %s still exists", data.Id()))
 	})
 }
 

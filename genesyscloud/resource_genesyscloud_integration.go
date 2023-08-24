@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -186,9 +187,9 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		currentIntegration, resp, getErr := integrationAPI.GetIntegration(d.Id(), pageSize, pageNum, "", nil, "", "")
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
 		}
 
 		d.Set("integration_type", *currentIntegration.IntegrationType.Id)
@@ -202,7 +203,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		integrationConfig, _, err := integrationAPI.GetIntegrationConfigCurrent(*currentIntegration.Id)
 
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to read config of integration %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read config of integration %s: %s", d.Id(), getErr))
 		}
 
 		d.Set("config", flattenIntegrationConfig(integrationConfig))
@@ -262,9 +263,9 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 				log.Printf("Deleted Integration %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting integration %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting integration %s: %s", d.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("Integration %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Integration %s still exists", d.Id()))
 	})
 }
 

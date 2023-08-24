@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourcePhoneRead(ctx context.Context, d *schema.ResourceData, m interfac
 			phone, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", name, "", "", nil, nil)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting phone %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting phone %s: %s", name, getErr))
 			}
 
 			if phone.Entities == nil || len(*phone.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No phone found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No phone found with name %s", name))
 			}
 
 			d.SetId(*(*phone.Entities)[0].Id)

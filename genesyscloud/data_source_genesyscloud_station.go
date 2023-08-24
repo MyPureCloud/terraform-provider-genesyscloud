@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -36,11 +37,11 @@ func dataSourceStationRead(ctx context.Context, d *schema.ResourceData, m interf
 		const pageNum = 1
 		stations, _, getErr := stationsAPI.GetStations(pageSize, pageNum, "", stationName, "", "", "", "")
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting station %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting station %s", getErr))
 		}
 
 		if stations.Entities == nil || len(*stations.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No stations found"))
+			return retry.RetryableError(fmt.Errorf("No stations found"))
 		}
 
 		d.SetId(*(*stations.Entities)[0].Id)

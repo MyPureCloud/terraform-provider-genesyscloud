@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -157,9 +158,9 @@ func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interf
 		emergencyGroup, resp, getErr := architectApi.GetArchitectEmergencygroup(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectEmergencyGroup())
@@ -252,7 +253,7 @@ func deleteEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 				log.Printf("Deleted emergency group %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting emergency group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting emergency group %s: %s", d.Id(), err))
 		}
 
 		if emergencyGroup.State != nil && *emergencyGroup.State == "deleted" {
@@ -261,7 +262,7 @@ func deleteEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("emergency group %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("emergency group %s still exists", d.Id()))
 	})
 }
 

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m i
 		const pageNum = 1
 		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, name)
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting division %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting division %s: %s", name, getErr))
 		}
 
 		if divisions.Entities == nil || len(*divisions.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No authorization divisions found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No authorization divisions found with name %s", name))
 		}
 
 		division := (*divisions.Entities)[0]

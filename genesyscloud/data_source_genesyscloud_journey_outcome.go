@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceJourneyOutcomeRead(ctx context.Context, d *schema.ResourceData, m
 			const pageSize = 100
 			journeyOutcomes, _, getErr := journeyApi.GetJourneyOutcomes(pageNum, pageSize, "", nil, nil, "")
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("failed to get page of journey outcomes: %v", getErr))
+				return retry.NonRetryableError(fmt.Errorf("failed to get page of journey outcomes: %v", getErr))
 			}
 
 			if journeyOutcomes.Entities == nil || len(*journeyOutcomes.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no journey outcome found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("no journey outcome found with name %s", name))
 			}
 
 			for _, journeyOutcome := range *journeyOutcomes.Entities {
@@ -53,6 +54,6 @@ func dataSourceJourneyOutcomeRead(ctx context.Context, d *schema.ResourceData, m
 
 			pageCount = *journeyOutcomes.PageCount
 		}
-		return resource.RetryableError(fmt.Errorf("no journey outcome found with name %s", name))
+		return retry.RetryableError(fmt.Errorf("no journey outcome found with name %s", name))
 	})
 }

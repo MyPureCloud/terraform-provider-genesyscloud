@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -319,9 +320,9 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 		sdkresponse, resp, getErr := responseManagementApi.GetResponsemanagementResponse(d.Id(), "")
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Responsemanagement Response %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementResponse())
@@ -384,10 +385,10 @@ func deleteResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 				log.Printf("Deleted Responsemanagement Response %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Responsemanagement Response %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Responsemanagement Response %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Responsemanagement Response %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Responsemanagement Response %s still exists", d.Id()))
 	})
 }
 

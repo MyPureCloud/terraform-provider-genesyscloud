@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"net/http"
 	"time"
 
@@ -36,11 +37,11 @@ func dataSourceDeploymentRead(ctx context.Context, d *schema.ResourceData, m int
 		deployments, resp, err := api.GetWebdeploymentsDeployments([]string{})
 
 		if err != nil && resp.StatusCode == http.StatusNotFound {
-			return resource.RetryableError(fmt.Errorf("No web deployment record found %s: %s. Correlation id: %s", name, err, resp.CorrelationID))
+			return retry.RetryableError(fmt.Errorf("No web deployment record found %s: %s. Correlation id: %s", name, err, resp.CorrelationID))
 		}
 
 		if err != nil && resp.StatusCode != http.StatusNotFound {
-			return resource.NonRetryableError(fmt.Errorf("Error retrieving web deployment %s: %s. Correlation id: %s", name, err, resp.CorrelationID))
+			return retry.NonRetryableError(fmt.Errorf("Error retrieving web deployment %s: %s. Correlation id: %s", name, err, resp.CorrelationID))
 		}
 
 		for _, deployment := range *deployments.Entities {
@@ -50,6 +51,6 @@ func dataSourceDeploymentRead(ctx context.Context, d *schema.ResourceData, m int
 			}
 		}
 
-		return resource.NonRetryableError(fmt.Errorf("No web deployment was found with the name %s", name))
+		return retry.NonRetryableError(fmt.Errorf("No web deployment was found with the name %s", name))
 	})
 }

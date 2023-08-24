@@ -3,13 +3,13 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -164,9 +164,9 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 		scheduleGroup, resp, getErr := archAPI.GetArchitectSchedulegroup(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectScheduleGroups())
@@ -267,7 +267,7 @@ func deleteArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 				log.Printf("Deleted schedule group %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting schedule group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting schedule group %s: %s", d.Id(), err))
 		}
 
 		if scheduleGroup.State != nil && *scheduleGroup.State == "deleted" {
@@ -276,6 +276,6 @@ func deleteArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Schedule group %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Schedule group %s still exists", d.Id()))
 	})
 }

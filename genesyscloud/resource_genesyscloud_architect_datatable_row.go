@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"sync"
@@ -154,9 +155,9 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 		row, resp, getErr := archAPI.GetFlowsDatatableRow(tableId, keyStr, false)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatableRow())
@@ -168,7 +169,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 
 		valueBytes, err := json.Marshal(*row)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to marshal row map %v: %v", *row, err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to marshal row map %v: %v", *row, err))
 		}
 		d.Set("properties_json", string(valueBytes))
 
@@ -229,9 +230,9 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 				log.Printf("Deleted datatable row %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting datatable row %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting datatable row %s: %s", d.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("Datatable row %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Datatable row %s still exists", d.Id()))
 	})
 }
 

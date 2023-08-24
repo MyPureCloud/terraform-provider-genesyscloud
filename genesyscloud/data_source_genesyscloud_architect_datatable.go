@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func DataSourceArchitectDatatableRead(ctx context.Context, d *schema.ResourceDat
 		const pageSize = 100
 		datatables, _, getErr := archAPI.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, name)
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting architect datatable %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting architect datatable %s: %s", name, getErr))
 		}
 
 		if datatables.Entities == nil || len(*datatables.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No architect datatable found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No architect datatable found with name %s", name))
 		}
 
 		datatable := (*datatables.Entities)[0]

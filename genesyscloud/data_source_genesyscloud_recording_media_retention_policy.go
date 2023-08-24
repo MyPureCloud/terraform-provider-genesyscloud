@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceRecordingMediaRetentionPolicyRead(ctx context.Context, d *schema.
 			policy, _, getErr := recordingAPI.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", nil, "", "", name, true, false, false, 0)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting media retention policy %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting media retention policy %s: %s", name, getErr))
 			}
 
 			if policy.Entities == nil || len(*policy.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No media retention policy found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No media retention policy found with name %s", name))
 			}
 
 			d.SetId(*(*policy.Entities)[0].Id)

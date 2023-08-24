@@ -3,13 +3,14 @@ package outbound
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 func dataSourceOutboundCallAnalysisResponseSet() *schema.Resource {
@@ -36,10 +37,10 @@ func dataSourceOutboundCallAnalysisReponseSetRead(ctx context.Context, d *schema
 		const pageSize = 100
 		responseSets, _, getErr := outboundAPI.GetOutboundCallanalysisresponsesets(pageSize, pageNum, true, "", name, "", "")
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("error requesting call analysis response set %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("error requesting call analysis response set %s: %s", name, getErr))
 		}
 		if responseSets.Entities == nil || len(*responseSets.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("no call analysis response sets found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("no call analysis response sets found with name %s", name))
 		}
 		responseSet := (*responseSets.Entities)[0]
 		d.SetId(*responseSet.Id)

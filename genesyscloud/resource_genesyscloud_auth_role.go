@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -239,9 +240,9 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), false, nil)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthRole())
@@ -337,9 +338,9 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 				log.Printf("Deleted role %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting role %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting role %s: %s", d.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("Role %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Role %s still exists", d.Id()))
 	})
 }
 

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.Resource
 			integrationCredentials, _, getErr := integrationAPI.GetIntegrationsCredentials(pageNum, pageSize)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("failed to get page of integration credentials: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("failed to get page of integration credentials: %s", getErr))
 			}
 
 			if integrationCredentials.Entities == nil || len(*integrationCredentials.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no integration credentials found with name: %s", credName))
+				return retry.RetryableError(fmt.Errorf("no integration credentials found with name: %s", credName))
 			}
 
 			for _, credential := range *integrationCredentials.Entities {

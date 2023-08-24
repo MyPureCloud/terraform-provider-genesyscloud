@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -129,10 +130,10 @@ func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 				if IsStatus404(resp) {
 					continue
 				}
-				return resource.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
+				return retry.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
 			}
 
-			return resource.RetryableError(fmt.Errorf("Routing email domain %s still exists", rs.Primary.ID))
+			return retry.RetryableError(fmt.Errorf("Routing email domain %s still exists", rs.Primary.ID))
 		}
 		return nil
 	})

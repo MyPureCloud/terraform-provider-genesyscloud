@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"time"
@@ -203,9 +204,9 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		group, resp, getErr := groupsAPI.GetGroup(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read group %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup())
@@ -226,7 +227,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		members, err := readGroupMembers(d.Id(), groupsAPI)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", err))
+			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
 		d.Set("member_ids", members)
 
@@ -308,7 +309,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Group %s deleted", name)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting group %s: %s", d.Id(), err))
 		}
 
 		if group.State != nil && *group.State == "deleted" {
@@ -316,7 +317,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Group %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Group %s still exists", d.Id()))
 	})
 }
 

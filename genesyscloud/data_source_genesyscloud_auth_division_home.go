@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -40,7 +41,7 @@ func dataSourceAuthDivisionHomeRead(ctx context.Context, d *schema.ResourceData,
 	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		division, _, getErr := authAPI.GetAuthorizationDivisionsHome()
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting division: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting division: %s", getErr))
 		}
 
 		d.SetId(*division.Id)

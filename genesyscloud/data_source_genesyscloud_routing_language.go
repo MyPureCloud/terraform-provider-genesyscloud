@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceRoutingLanguageRead(ctx context.Context, d *schema.ResourceData, 
 			const pageSize = 50
 			languages, _, getErr := routingAPI.GetRoutingLanguages(pageSize, pageNum, "", name, nil)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting language %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting language %s: %s", name, getErr))
 			}
 
 			if languages.Entities == nil || len(*languages.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No routing languages found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No routing languages found with name %s", name))
 			}
 
 			for _, language := range *languages.Entities {

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -101,9 +102,9 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 		if getErr != nil {
 			if IsStatus404(resp) {
 				createIdpOkta(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read IDP Onelogin: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IDP Onelogin: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Onelogin: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Onelogin: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOnelogin())
@@ -188,8 +189,8 @@ func deleteIdpOnelogin(ctx context.Context, _ *schema.ResourceData, meta interfa
 				log.Printf("Deleted IDP Onelogin")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Onelogin: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Onelogin: %s", err))
 		}
-		return resource.RetryableError(fmt.Errorf("IDP Onelogin still exists"))
+		return retry.RetryableError(fmt.Errorf("IDP Onelogin still exists"))
 	})
 }

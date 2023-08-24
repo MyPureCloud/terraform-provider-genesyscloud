@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"io"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"path"
 	"path/filepath"
 	"time"
-	"os"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -21,8 +22,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	files "terraform-provider-genesyscloud/genesyscloud/util/files"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	files "terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 type PromptAudioData struct {
@@ -878,9 +879,9 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 		userPrompt, resp, getErr := architectAPI.GetArchitectPrompt(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt())
@@ -919,7 +920,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 					}
 				}
 				if !isTranscoded {
-					return resource.RetryableError(fmt.Errorf("prompt file not transcoded"))
+					return retry.RetryableError(fmt.Errorf("prompt file not transcoded"))
 				}
 			}
 		}
@@ -982,9 +983,9 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 				log.Printf("Deleted user prompt %s", name)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting user prompt %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting user prompt %s: %s", name, err))
 		}
-		return resource.RetryableError(fmt.Errorf("User prompt %s still exists", name))
+		return retry.RetryableError(fmt.Errorf("User prompt %s still exists", name))
 	})
 }
 

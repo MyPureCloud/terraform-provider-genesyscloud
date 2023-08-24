@@ -3,13 +3,14 @@ package outbound
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 func dataSourceOutboundDncList() *schema.Resource {
@@ -36,10 +37,10 @@ func dataSourceOutboundDncListRead(ctx context.Context, d *schema.ResourceData, 
 		const pageSize = 100
 		dncLists, _, getErr := outboundAPI.GetOutboundDnclists(false, false, pageSize, pageNum, true, "", name, "", []string{}, "", "")
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("error requesting dnc lists %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("error requesting dnc lists %s: %s", name, getErr))
 		}
 		if dncLists.Entities == nil || len(*dncLists.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("no dnc lists found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("no dnc lists found with name %s", name))
 		}
 		dncList := (*dncLists.Entities)[0]
 		d.SetId(*dncList.Id)

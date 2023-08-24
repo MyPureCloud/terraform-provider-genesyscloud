@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -106,9 +107,9 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 		if getErr != nil {
 			if IsStatus404(resp) {
 				createIdpGsuite(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP GSuite: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite())
@@ -201,8 +202,8 @@ func deleteIdpGsuite(ctx context.Context, _ *schema.ResourceData, meta interface
 				log.Printf("Deleted IDP GSuite")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP GSuite: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP GSuite: %s", err))
 		}
-		return resource.RetryableError(fmt.Errorf("IDP GSuite still exists"))
+		return retry.RetryableError(fmt.Errorf("IDP GSuite still exists"))
 	})
 }

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -114,9 +115,9 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 		if getErr != nil {
 			if IsStatus404(resp) {
 				//createRoutingSettings(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings())
@@ -127,11 +128,11 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		if diagErr := readRoutingSettingsContactCenter(d, routingAPI); diagErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
 		if diagErr := readRoutingSettingsTranscription(d, routingAPI); diagErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
 		log.Printf("Read Routing Setting")

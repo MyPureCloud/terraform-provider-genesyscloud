@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strconv"
 	"time"
@@ -273,9 +274,9 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 		evaluationForm, resp, getErr := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read evaluation form %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEvaluationForm())
@@ -368,10 +369,10 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 				log.Printf("Deleted evaluation form %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting evaluation form %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting evaluation form %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Evaluation form %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Evaluation form %s still exists", d.Id()))
 	})
 }
 

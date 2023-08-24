@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -43,16 +44,16 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 		unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", false, "", "")
 
 		if getPublishedErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getPublishedErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getPublishedErr))
 		}
 		if getUnpublishedErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getUnpublishedErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getUnpublishedErr))
 		}
 
 		noPublishedEntities := publishedKnowledgeBases.Entities == nil || len(*publishedKnowledgeBases.Entities) == 0
 		noUnpublishedEntities := unpublishedKnowledgeBases.Entities == nil || len(*unpublishedKnowledgeBases.Entities) == 0
 		if noPublishedEntities && noUnpublishedEntities {
-			return resource.RetryableError(fmt.Errorf("no knowledge bases found with name %s", knowledgeBaseName))
+			return retry.RetryableError(fmt.Errorf("no knowledge bases found with name %s", knowledgeBaseName))
 		}
 
 		// prefer published knowledge base
@@ -61,7 +62,7 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 				knowledgeLabels, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), name, false)
 
 				if getErr != nil {
-					return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge label %s: %s", name, getErr))
+					return retry.NonRetryableError(fmt.Errorf("Failed to get knowledge label %s: %s", name, getErr))
 				}
 
 				for _, knowledgeLabel := range *knowledgeLabels.Entities {
@@ -79,7 +80,7 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 				knowledgeLabels, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLabels(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), name, false)
 
 				if getErr != nil {
-					return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge label %s: %s", name, getErr))
+					return retry.NonRetryableError(fmt.Errorf("Failed to get knowledge label %s: %s", name, getErr))
 				}
 
 				for _, knowledgeLabel := range *knowledgeLabels.Entities {

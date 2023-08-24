@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m inter
 		const pageNum = 1
 		roles, _, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", name, nil, nil, false, nil)
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting role %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting role %s: %s", name, getErr))
 		}
 
 		if roles.Entities == nil || len(*roles.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No authorization roles found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No authorization roles found with name %s", name))
 		}
 
 		role := (*roles.Entities)[0]

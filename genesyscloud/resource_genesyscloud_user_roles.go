@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
@@ -74,7 +75,7 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
 		roles, _, err := readSubjectRoles(d.Id(), authAPI)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", err))
+			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUserRoles())
 		d.Set("roles", roles)

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -44,11 +45,11 @@ func dataSourceLocationRead(ctx context.Context, d *schema.ResourceData, m inter
 			Query: &[]platformclientv2.Locationsearchcriteria{searchCriteria},
 		})
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting location %s: %s", nameStr, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting location %s: %s", nameStr, getErr))
 		}
 
 		if *locations.Total == 0 {
-			return resource.RetryableError(fmt.Errorf("No locations found with search criteria %v ", searchCriteria))
+			return retry.RetryableError(fmt.Errorf("No locations found with search criteria %v ", searchCriteria))
 		}
 
 		// Select first location in the list

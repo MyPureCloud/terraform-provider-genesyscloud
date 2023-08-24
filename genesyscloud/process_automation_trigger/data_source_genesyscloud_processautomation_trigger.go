@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"net/http"
 	"time"
 
@@ -49,11 +50,11 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 			processAutomationTriggers, _, getErr := getAllProcessAutomationTriggers(path, integrationAPI)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("failed to get page of process automation triggers: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("failed to get page of process automation triggers: %s", getErr))
 			}
 
 			if processAutomationTriggers.Entities == nil || len(*processAutomationTriggers.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no process automation triggers found with name: %s", triggerName))
+				return retry.RetryableError(fmt.Errorf("no process automation triggers found with name: %s", triggerName))
 			}
 
 			for _, trigger := range *processAutomationTriggers.Entities {
@@ -64,7 +65,7 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 			}
 
 			if processAutomationTriggers.NextUri == nil {
-				return resource.NonRetryableError(fmt.Errorf("no process automation triggers found with name: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("no process automation triggers found with name: %s", getErr))
 			}
 
 			path = integrationAPI.Configuration.BasePath + *processAutomationTriggers.NextUri

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
@@ -101,9 +102,9 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 		if getErr != nil {
 			if IsStatus404(resp) {
 				createIdpSalesforce(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpSalesforce())
@@ -188,8 +189,8 @@ func deleteIdpSalesforce(ctx context.Context, _ *schema.ResourceData, meta inter
 				log.Printf("Deleted Salesforce Ping")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Salesforce: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Salesforce: %s", err))
 		}
-		return resource.RetryableError(fmt.Errorf("IDP Salesforce still exists"))
+		return retry.RetryableError(fmt.Errorf("IDP Salesforce still exists"))
 	})
 }

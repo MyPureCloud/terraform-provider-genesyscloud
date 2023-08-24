@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -397,7 +398,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 					if retryErr != nil {
 						if !IsStatus404(retryResp) {
 							log.Printf("%s", retryErr)
-							return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, retryErr))
+							return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, retryErr))
 						}
 					} else {
 						publishedVariation = retryVariation
@@ -405,17 +406,17 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 				} else {
 					log.Printf("%s", publishedErr)
-					return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr))
+					return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr))
 				}
 			}
 
 			draftVariation, resp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 			if draftErr != nil {
 				if IsStatus404(resp) {
-					return resource.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
+					return retry.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
 				}
 				log.Printf("%s", draftErr)
-				return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
+				return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
 			}
 
 			if publishedVariation != nil && publishedVariation.DateModified != nil && publishedVariation.DateModified.After(*draftVariation.DateModified) {
@@ -427,10 +428,10 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 			variation, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, documentState)
 			if getErr != nil {
 				if IsStatus404(resp) {
-					return resource.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, getErr))
+					return retry.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, getErr))
 				}
 				log.Printf("%s", getErr)
-				return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, getErr))
 			}
 
 			knowledgeDocumentVariation = variation
@@ -556,10 +557,10 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 				log.Printf("Deleted knowledge document variation %s", documentVariationId)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting knowledge document variation %s: %s", documentVariationId, err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting knowledge document variation %s: %s", documentVariationId, err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Knowledge document variation %s still exists", documentVariationId))
+		return retry.RetryableError(fmt.Errorf("Knowledge document variation %s still exists", documentVariationId))
 	})
 }
 

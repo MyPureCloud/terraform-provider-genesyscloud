@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/http"
 	"os"
@@ -103,9 +104,9 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		flow, resp, err := architectAPI.GetFlow(d.Id(), false)
 		if err != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 		}
 
 		log.Printf("Read flow %s %s", d.Id(), *flow.Name)
@@ -192,18 +193,18 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	retryErr := WithRetries(ctx, 16*time.Minute, func() *resource.RetryError {
 		flowJob, response, err := architectAPI.GetFlowsJob(jobId, []string{"messages"})
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
+			return retry.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 		}
 
 		if *flowJob.Status == "Failure" {
 			if flowJob.Messages == nil {
-				return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, no tracing messages available.", jobId))
+				return retry.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, no tracing messages available.", jobId))
 			}
 			messages := make([]string, 0)
 			for _, m := range *flowJob.Messages {
 				messages = append(messages, *m.Text)
 			}
-			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v ", jobId, strings.Join(messages, "\n\n")))
+			return retry.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v ", jobId, strings.Join(messages, "\n\n")))
 		}
 
 		if *flowJob.Status == "Success" {
@@ -212,7 +213,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 
 		time.Sleep(15 * time.Second) // Wait 15 seconds for next retry
-		return resource.RetryableError(fmt.Errorf("Job (%s) could not finish in 16 minutes and timed out ", jobId))
+		return retry.RetryableError(fmt.Errorf("Job (%s) could not finish in 16 minutes and timed out ", jobId))
 	})
 
 	if retryErr != nil {
@@ -252,9 +253,9 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				return nil
 			}
 			if resp.StatusCode == http.StatusConflict {
-				return resource.RetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
 		}
 		return nil
 	})

@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -81,9 +82,9 @@ func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, me
 		sdktrustrequest, resp, getErr := organizationAuthorizationApi.GetOrgauthorizationPairing(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Orgauthorization Pairing %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Orgauthorization Pairing %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Orgauthorization Pairing %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Orgauthorization Pairing %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, resourceOrgauthorizationPairing())

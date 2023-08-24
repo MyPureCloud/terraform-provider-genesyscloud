@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -37,11 +38,11 @@ func dataSourceTrunkRead(ctx context.Context, d *schema.ResourceData, m interfac
 			trunks, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting trunk %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting trunk %s: %s", name, getErr))
 			}
 
 			if trunks.Entities == nil || len(*trunks.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No trunk found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No trunk found with name %s", name))
 			}
 
 			for _, trunk := range *trunks.Entities {

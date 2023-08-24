@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"sort"
 	"strings"
@@ -153,9 +154,9 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 		settings, resp, getErr := routingAPI.GetRoutingUtilization()
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Routing Utilization: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkill())

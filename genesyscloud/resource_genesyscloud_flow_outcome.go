@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -150,9 +151,9 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 		sdkflowoutcome, resp, getErr := architectApi.GetFlowsOutcome(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Flow Outcome %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Flow Outcome %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Flow Outcome %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Flow Outcome %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowOutcome())
