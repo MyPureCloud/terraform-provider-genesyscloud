@@ -143,6 +143,8 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
+	log.Printf("Updating flow")
+
 	//Check to see if we need to force and unlock on an architect flow
 	if isForceUnlockEnabled(d) {
 		err := forceUnlockFlow(d.Id(), sdkConfig)
