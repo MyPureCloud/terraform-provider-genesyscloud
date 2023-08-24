@@ -625,10 +625,8 @@ func buildDocumentText(textIn map[string]interface{}) *platformclientv2.Document
 			Text: &textString,
 		}
 		if marks, ok := text["marks"].(*schema.Set); ok {
-			if marks.Len() > 0 {
-				markArr := lists.SetToStringList(marks)
-				textOut.Marks = markArr
-			}
+			markArr := lists.SetToStringList(marks)
+			textOut.Marks = markArr
 		}
 		if hyperlink, ok := text["hyperlink"].(string); ok {
 			if len(hyperlink) > 0 {
@@ -745,7 +743,7 @@ func flattenDocumentText(textIn platformclientv2.Documenttext) []interface{} {
 	if textIn.Text != nil {
 		textOut["text"] = *textIn.Text
 	}
-	if textIn.Marks != nil && len(*textIn.Marks) > 0 {
+	if textIn.Marks != nil {
 		markSet := lists.StringListToSet(*textIn.Marks)
 		textOut["marks"] = markSet
 	}
