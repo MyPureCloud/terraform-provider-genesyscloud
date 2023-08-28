@@ -14,6 +14,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
+	simpleRoutingQueue "terraform-provider-genesyscloud/genesyscloud/simple_routing_queue"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -86,6 +87,7 @@ func registerResources() {
 	obRuleset.SetRegistrar(reg_instance)
 	scripts.SetRegistrar(reg_instance)
 	externalContacts.SetRegistrar(reg_instance)
+	simpleRoutingQueue.SetRegistrar(reg_instance)
 	resourceExporter.SetRegisterExporter(resourceExporters)
 
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
