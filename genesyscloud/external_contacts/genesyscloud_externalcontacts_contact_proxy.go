@@ -123,11 +123,9 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 		}
 
 		for _, externalContact := range *externalContacts.Entities {
-			log.Printf("Dealing with external contact id : %s", *externalContact.Id)
 			allExternalContacts = append(allExternalContacts, externalContact)
 		}
 
-		log.Println(*externalContacts)
 		if externalContacts.Cursors == nil || externalContacts.Cursors.After == nil {
 			break
 		}
@@ -191,7 +189,6 @@ func getExternalContactIdBySearchFn(ctx context.Context, p *externalContactsCont
 
 // updateExternalContactFn is an implementation of the function to update a Genesys Cloud external contact
 func updateExternalContactFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, error) {
-
 	externalContact, _, err := p.externalContactsApi.PutExternalcontactsContact(externalContactId, *externalContact)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to update external contact: %s", err)
