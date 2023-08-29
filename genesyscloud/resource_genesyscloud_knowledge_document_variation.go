@@ -13,11 +13,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -629,7 +630,9 @@ func buildDocumentText(textIn map[string]interface{}) *platformclientv2.Document
 			textOut.Marks = markArr
 		}
 		if hyperlink, ok := text["hyperlink"].(string); ok {
-			textOut.Hyperlink = &hyperlink
+			if len(hyperlink) > 0 {
+				textOut.Hyperlink = &hyperlink
+			}
 		}
 		return &textOut
 	}
@@ -656,7 +659,9 @@ func buildDocumentImage(imageIn map[string]interface{}) *platformclientv2.Docume
 			Url: &url,
 		}
 		if hyperlink, ok := image["hyperlink"].(string); ok {
-			imageOut.Hyperlink = &hyperlink
+			if len(hyperlink) > 0 {
+				imageOut.Hyperlink = &hyperlink
+			}
 		}
 		return &imageOut
 	}
@@ -743,7 +748,7 @@ func flattenDocumentText(textIn platformclientv2.Documenttext) []interface{} {
 		markSet := lists.StringListToSet(*textIn.Marks)
 		textOut["marks"] = markSet
 	}
-	if textIn.Hyperlink != nil {
+	if textIn.Hyperlink != nil && len(*textIn.Hyperlink) > 0 {
 		textOut["hyperlink"] = *textIn.Hyperlink
 	}
 
@@ -837,7 +842,7 @@ func flattenDocumentImage(imageIn platformclientv2.Documentbodyimage) []interfac
 	if imageIn.Url != nil {
 		imageOut["url"] = *imageIn.Url
 	}
-	if imageIn.Hyperlink != nil {
+	if imageIn.Hyperlink != nil && len(*imageIn.Hyperlink) > 0 {
 		imageOut["hyperlink"] = *imageIn.Hyperlink
 	}
 

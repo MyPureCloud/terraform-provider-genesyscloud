@@ -3,10 +3,12 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -720,6 +722,24 @@ func readCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesett
 	}
 }
 
+// featureNotImplemented checks the response object to find out if the request failed because a feature is not yet
+// implemented in the org that it was ran against. If true, we can pass back the field name and give more context
+// in the final error message.
+func featureNotImplemented(response *platformclientv2.APIResponse) (bool, string) {
+	if response.Error == nil || response.Error.Details == nil || len(response.Error.Details) == 0 {
+		return false, ""
+	}
+	for _, err := range response.Error.Details {
+		if err.FieldName == nil {
+			continue
+		}
+		if strings.Contains(*err.ErrorCode, "feature is not yet implemented") {
+			return true, *err.FieldName
+		}
+	}
+	return false, ""
+}
+
 func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name, inputCfg := readWebDeploymentConfigurationFromResourceData(d)
 
@@ -731,10 +751,15 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	diagErr := WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
 		configuration, resp, err := api.PostWebdeploymentsConfigurations(*inputCfg)
 		if err != nil {
-			if IsStatus400(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to create web deployment configuration %s: %s", name, err))
+			var extraErrorInfo string
+			featureIsNotImplemented, fieldName := featureNotImplemented(resp)
+			if featureIsNotImplemented {
+				extraErrorInfo = fmt.Sprintf("Feature '%s' is not yet implemented", fieldName)
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to create web deployment configuration %s: %s", name, err))
+			if IsStatus400(resp) {
+				return resource.RetryableError(fmt.Errorf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo))
+			}
+			return resource.NonRetryableError(fmt.Errorf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo))
 		}
 		d.SetId(*configuration.Id)
 		d.Set("status", configuration.Status)

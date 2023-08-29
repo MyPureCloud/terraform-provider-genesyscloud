@@ -111,25 +111,9 @@ func (p *externalContactsContactsProxy) updateExternalContact(ctx context.Contex
 func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsProxy) (*[]platformclientv2.Externalcontact, error) {
 	var allExternalContacts []platformclientv2.Externalcontact
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-
-		// The /api/v2/externalcontacts/contacts endpoint can only retrieve 1K records total.
-		// We put a constraint in make sure we never pull then 1,000 records.
-		if pageNum > 10 {
-			fmt.Printf("*******************************************************\n")
-			fmt.Printf("*              Warning                                *\n")
-			fmt.Printf("*******************************************************\n")
-			fmt.Printf("*                                                     *\n")
-			fmt.Printf("* The External Contacts API can only retrieve 1,000   *\n")
-			fmt.Printf("* records. Capping the number of External Contacts    *\n")
-			fmt.Printf("* exported to 1,000.                                  *\n")
-			fmt.Printf("*                                                     *\n")
-			fmt.Printf("*******************************************************\n")
-			return &allExternalContacts, nil
-		}
-
-		externalContacts, _, err := p.externalContactsApi.GetExternalcontactsContacts(pageSize, pageNum, "", "", nil)
+	cursor := ""
+	for {
+		externalContacts, _, err := p.externalContactsApi.GetExternalcontactsScanContacts(100, cursor)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get external contacts: %v", err)
 		}
@@ -139,9 +123,13 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 		}
 
 		for _, externalContact := range *externalContacts.Entities {
-			log.Printf("Dealing with external contact id : %s", *externalContact.Id)
 			allExternalContacts = append(allExternalContacts, externalContact)
 		}
+
+		if externalContacts.Cursors == nil || externalContacts.Cursors.After == nil {
+			break
+		}
+		cursor = *externalContacts.Cursors.After
 	}
 
 	return &allExternalContacts, nil
@@ -201,7 +189,6 @@ func getExternalContactIdBySearchFn(ctx context.Context, p *externalContactsCont
 
 // updateExternalContactFn is an implementation of the function to update a Genesys Cloud external contact
 func updateExternalContactFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string, externalContact *platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, error) {
-
 	externalContact, _, err := p.externalContactsApi.PutExternalcontactsContact(externalContactId, *externalContact)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to update external contact: %s", err)
