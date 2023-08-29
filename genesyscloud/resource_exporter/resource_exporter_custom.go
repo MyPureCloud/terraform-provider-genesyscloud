@@ -1,9 +1,9 @@
 package resource_exporter
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
-	"encoding/json"
 )
 
 /*
@@ -41,10 +41,11 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 
 	return nil
 }
+
 /*
-For resource_genesyscloud_outbound_ruleset, there is a property called properties which is a map of stings. 
-When exporting outbound rulesets, if one of the keys in the map is set to an empty string it will be ignored 
-by the export process. Example: properties = {"contact.Attempts" = ""}. 
+For resource_genesyscloud_outbound_ruleset, there is a property called properties which is a map of stings.
+When exporting outbound rulesets, if one of the keys in the map is set to an empty string it will be ignored
+by the export process. Example: properties = {"contact.Attempts" = ""}.
 
 During the export process the value associated with the key is set to nil.
 This custom exporter checks if a key has a value of nil and if it does sets it to an empty string so it is exported.
@@ -71,31 +72,31 @@ This customer custom router will look at the skills array if present and resolve
 func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
 
 	if exporter, ok := exporters["genesyscloud_routing_skill"]; ok {
-			skillIDs := configMap["skills"].(string)
+		skillIDs := configMap["skills"].(string)
 
-			if len(skillIDs) == 0 {
-					return nil
-			} else {
-					sanitisedSkillIds := []string{}
-					skillIDs = skillIDs[1 : len(skillIDs)-1]
-					skillIdList := strings.Split(skillIDs, ",")
-					exportId := ""
+		if len(skillIDs) == 0 {
+			return nil
+		} else {
+			sanitisedSkillIds := []string{}
+			skillIDs = skillIDs[1 : len(skillIDs)-1]
+			skillIdList := strings.Split(skillIDs, ",")
+			exportId := ""
 
-					// Trim the double quotes from each element in the array
-					for i := 0; i < len(skillIdList); i++ {
-							skillIdList[i] = strings.Trim(skillIdList[i], "\"")
-					}
-
-					for _, skillId := range skillIdList {
-							exportId = (*exporter.SanitizedResourceMap[skillId]).Name
-							sanitisedSkillIds = append(sanitisedSkillIds, fmt.Sprintf("${genesyscloud_routing_skill.%s.id}", exportId))
-					}
-
-					jsonData, _ := json.Marshal(sanitisedSkillIds)
-					configMap["skills"] = string(jsonData)
+			// Trim the double quotes from each element in the array
+			for i := 0; i < len(skillIdList); i++ {
+				skillIdList[i] = strings.Trim(skillIdList[i], "\"")
 			}
+
+			for _, skillId := range skillIdList {
+				exportId = (*exporter.SanitizedResourceMap[skillId]).Name
+				sanitisedSkillIds = append(sanitisedSkillIds, fmt.Sprintf("${genesyscloud_routing_skill.%s.id}", exportId))
+			}
+
+			jsonData, _ := json.Marshal(sanitisedSkillIds)
+			configMap["skills"] = string(jsonData)
+		}
 	} else {
-			return fmt.Errorf("unable to locate genesyscloud_routing_skill in the exporters array.")
+		return fmt.Errorf("unable to locate genesyscloud_routing_skill in the exporters array.")
 	}
 	return nil
 }
@@ -104,4 +105,3 @@ func FileContentHashResolver(configMap map[string]interface{}, filepath string) 
 	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256(var.%s)}`, filepath)
 	return nil
 }
-

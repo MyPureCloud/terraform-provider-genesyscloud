@@ -3,10 +3,11 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -15,7 +16,6 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
@@ -200,7 +200,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 	log.Printf("Reading group %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		group, resp, getErr := groupsAPI.GetGroup(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -302,7 +302,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return nil, nil
 	})
 
-	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		group, resp, err := groupsAPI.GetGroup(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {

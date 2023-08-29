@@ -4,22 +4,24 @@ import (
 	"fmt"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
 )
 
 var falseValue = "false"
+
 func TestAccDataSourceCallAnalysisResponseSet(t *testing.T) {
 	var (
 		resourceId      = "cars"
 		responseSetName = "Test CAR " + uuid.NewString()
 		dataSourceId    = "cars_data"
 	)
-	
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundCallAnalysisResponseSetResource(

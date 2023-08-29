@@ -3,11 +3,11 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -33,7 +33,7 @@ func dataSourceOAuthClientRead(ctx context.Context, d *schema.ResourceData, m in
 	name := d.Get("name").(string)
 
 	// Find first non-deleted oauth client by name. Retry in case new oauth client is not yet indexed by search
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			oauths, _, getErr := oauthAPI.GetOauthClients()
 			if getErr != nil {

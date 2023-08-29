@@ -3,17 +3,18 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func ResourceResponsemanagementLibrary() *schema.Resource {
@@ -131,7 +132,7 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("Reading Responsemanagement Library %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdklibrary, resp, getErr := responseManagementApi.GetResponsemanagementLibrary(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -167,7 +168,7 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 		return diagErr
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := responseManagementApi.GetResponsemanagementLibrary(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {

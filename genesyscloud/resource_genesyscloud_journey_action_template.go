@@ -3,7 +3,6 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -11,13 +10,15 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/typeconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -346,7 +347,7 @@ func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
 	journeyApi := journeyApiConfig(i)
 	log.Printf("Reading Journey Action Template %s", data.Id())
-	return WithRetriesForRead(ctx, data, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, data, func() *retry.RetryError {
 		actionTemplate, resp, getErr := journeyApi.GetJourneyActiontemplate(data.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -392,7 +393,7 @@ func deleteJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	if _, err := journeyApi.DeleteJourneyActiontemplate(data.Id(), true); err != nil {
 		return diag.Errorf("Failed to delete journey action template with name %s: %s", name, err)
 	}
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := journeyApi.GetJourneyActiontemplate(data.Id())
 		if err != nil {
 			if IsStatus404(resp) {

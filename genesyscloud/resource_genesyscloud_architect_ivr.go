@@ -3,19 +3,19 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/proxies/architect_api"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 const maxDnisPerRequest = 50
@@ -177,7 +177,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	log.Printf("Reading IVR config %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		ivrConfig, resp, getErr := architectIvrProxy.GetArchitectIvr(architectIvrProxy, d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -307,7 +307,7 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		return diag.Errorf("Failed to delete IVR config %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		ivr, resp, err := architectIvrProxy.GetArchitectIvr(architectIvrProxy, d.Id())
 		if err != nil {
 			if IsStatus404(resp) {

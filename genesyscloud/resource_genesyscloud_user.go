@@ -3,22 +3,23 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -543,7 +544,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
 	log.Printf("Reading user %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{
 			// Expands
 			"skills",
@@ -707,7 +708,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	// Verify user in deleted state and search index has been updated
-	return WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		id, err := getDeletedUserId(email, usersAPI)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error searching for deleted user %s: %v", email, err))

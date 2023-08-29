@@ -3,20 +3,21 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -270,7 +271,7 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 	log.Printf("Reading evaluation form %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		evaluationForm, resp, getErr := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -361,7 +362,7 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Failed to delete evaluation form %s: %v", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {

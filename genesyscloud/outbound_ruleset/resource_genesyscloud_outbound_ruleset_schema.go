@@ -1,8 +1,8 @@
 package outbound_ruleset
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -317,9 +317,9 @@ func OutboundRulesetExporter() *resourceExporter.ResourceExporter {
 			},
 		},
 		JsonEncodeAttributes: []string{"rules.actions.properties.skills"},
-	 	CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"rules.actions.properties": {ResolverFunc: resourceExporter.RuleSetPropertyResolver},
-	 		"rules.actions.properties.skills": {ResolverFunc: resourceExporter.RuleSetSkillPropertyResolver},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"rules.actions.properties":        {ResolverFunc: resourceExporter.RuleSetPropertyResolver},
+			"rules.actions.properties.skills": {ResolverFunc: resourceExporter.RuleSetSkillPropertyResolver},
 		},
 	}
 }

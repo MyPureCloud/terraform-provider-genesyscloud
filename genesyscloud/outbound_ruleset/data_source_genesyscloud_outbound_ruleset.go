@@ -3,11 +3,11 @@ package outbound_ruleset
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -25,7 +25,7 @@ func dataSourceOutboundRulesetRead(ctx context.Context, d *schema.ResourceData, 
 
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		rulesetId, retryable, err := proxy.getOutboundRulesetIdByName(ctx, name)
 
 		if err != nil && !retryable {

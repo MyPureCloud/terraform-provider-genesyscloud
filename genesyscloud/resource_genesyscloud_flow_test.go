@@ -3,7 +3,6 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -24,7 +25,7 @@ import (
 func lockFlow(flowName string, flowType string) {
 	archAPI := platformclientv2.NewArchitectApi()
 	ctx := context.Background()
-	WithRetries(ctx, 5*time.Second, func() *resource.RetryError {
+	WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			flows, _, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, flowName, "", "", "", "", "", "", "", false, false, "", "", nil)

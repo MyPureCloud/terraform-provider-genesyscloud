@@ -3,9 +3,10 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -63,7 +64,7 @@ func generateResponseManagementLibraryResource(
 func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error {
 	responseAPI := platformclientv2.NewResponseManagementApi()
 
-	diagErr := WithRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "genesyscloud_responsemanagement_library" {
 				continue

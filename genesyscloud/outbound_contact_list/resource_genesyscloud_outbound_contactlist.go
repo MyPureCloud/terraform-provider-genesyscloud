@@ -3,21 +3,22 @@ package outbound_contact_list
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 var (
@@ -315,7 +316,7 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Reading Outbound Contact List %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkContactList, resp, getErr := outboundApi.GetOutboundContactlist(d.Id(), false, false)
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
@@ -389,7 +390,7 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := outboundApi.GetOutboundContactlist(d.Id(), false, false)
 		if err != nil {
 			if gcloud.IsStatus404(resp) {

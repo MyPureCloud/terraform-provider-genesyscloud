@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -174,7 +173,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		inputDeployment.Flow = flow
 	}
 
-	diagErr := WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		deployment, resp, err := api.PostWebdeploymentsDeployments(inputDeployment)
 		if err != nil {
 			if IsStatus400(resp) {
@@ -203,7 +202,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func waitForDeploymentToBeActive(ctx context.Context, api *platformclientv2.WebDeploymentsApi, id string) diag.Diagnostics {
-	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		deployment, resp, err := api.GetWebdeploymentsDeployment(id)
 		if err != nil {
 			if IsStatus404(resp) {
@@ -225,7 +224,7 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading web deployment %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		deployment, resp, getErr := api.GetWebdeploymentsDeployment(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -306,7 +305,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		inputDeployment.Flow = flow
 	}
 
-	diagErr := WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := api.PutWebdeploymentsDeployment(d.Id(), inputDeployment)
 		if err != nil {
 			if IsStatus400(resp) {
@@ -343,7 +342,7 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to delete web deployment %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := api.GetWebdeploymentsDeployment(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {

@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -18,7 +19,6 @@ import (
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
@@ -605,7 +605,7 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -888,7 +888,7 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	// re-populating the queue after the delete. Otherwise it may not expire for a minute.
 	time.Sleep(5 * time.Second)
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := routingAPI.GetRoutingQueue(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {

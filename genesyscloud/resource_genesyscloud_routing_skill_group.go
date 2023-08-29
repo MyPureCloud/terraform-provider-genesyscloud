@@ -4,13 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -363,7 +362,7 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading skills group %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 
 		skillGroupPayload := make(map[string]interface{})
 		response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
@@ -484,7 +483,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diag.Errorf("Failed to delete skills group %s: %s", d.Id(), err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		log.Printf("Deleting skills group %s", name)
 		response, err := apiClient.CallAPI(path, "DELETE", nil, headerParams, nil, nil, "", nil)
 

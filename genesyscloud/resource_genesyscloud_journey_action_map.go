@@ -3,9 +3,10 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
@@ -14,13 +15,13 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -428,7 +429,7 @@ func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta inte
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 
 	log.Printf("Reading journey action map %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		actionMap, resp, getErr := journeyApi.GetJourneyActionmap(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -485,7 +486,7 @@ func deleteJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.Errorf("Failed to delete journey action map with display name %s: %s", displayName, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := journeyApi.GetJourneyActionmap(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {

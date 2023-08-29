@@ -2,6 +2,7 @@ package process_automation_trigger
 
 import (
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"fmt"
@@ -9,7 +10,6 @@ import (
 
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -207,7 +207,7 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("Reading process automation trigger %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
@@ -329,7 +329,7 @@ func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Deleting process automation trigger %s", name)
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		resp, err := deleteProcessAutomationTrigger(d.Id(), integAPI)
 
 		if err != nil {

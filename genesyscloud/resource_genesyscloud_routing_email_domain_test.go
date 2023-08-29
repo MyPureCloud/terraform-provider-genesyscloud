@@ -3,11 +3,12 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"math/rand"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -120,7 +121,7 @@ func generateRoutingEmailDomainResource(
 func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
 
-	diagErr := WithRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "genesyscloud_routing_email_domain" {
 				continue

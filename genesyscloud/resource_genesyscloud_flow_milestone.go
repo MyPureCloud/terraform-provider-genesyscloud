@@ -3,17 +3,18 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func getAllFlowMilestones(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -150,7 +151,7 @@ func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	log.Printf("Reading Flow Milestone %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkflowmilestone, resp, getErr := architectApi.GetFlowsMilestone(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -193,7 +194,7 @@ func deleteFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 		return diagErr
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := architectApi.GetFlowsMilestone(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {

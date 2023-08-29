@@ -3,8 +3,9 @@ package outbound_wrapupcode_mappings
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -13,7 +14,6 @@ import (
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
@@ -83,7 +83,7 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Reading Outbound Wrap-up Code Mappings")
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkWrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
 			if gcloud.IsStatus404(resp) {

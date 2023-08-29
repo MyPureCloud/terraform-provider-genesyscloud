@@ -5,21 +5,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -235,7 +235,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading integration action %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		action, resp, getErr := sdkGetIntegrationAction(d.Id(), integAPI)
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -385,7 +385,7 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete Integration action %s: %s", d.Id(), err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := sdkGetIntegrationAction(d.Id(), integAPI)
 		if err != nil {
 			if IsStatus404(resp) {

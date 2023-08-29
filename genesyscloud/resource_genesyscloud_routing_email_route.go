@@ -3,19 +3,19 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -279,7 +279,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 
 	// The normal GET route API has a long cache TTL (5 minutes) which can result in stale data.
 	// This can be bypassed by issuing a domain query instead.
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		var route *platformclientv2.Inboundroute
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
@@ -458,7 +458,7 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete email route %s: %s", d.Id(), err)
 	}
 
-	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := routingAPI.GetRoutingEmailDomainRoute(domainID, d.Id())
 		if err != nil {
 			if IsStatus404(resp) {

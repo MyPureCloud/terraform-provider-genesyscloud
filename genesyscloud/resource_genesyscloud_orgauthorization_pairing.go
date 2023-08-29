@@ -3,15 +3,16 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func resourceOrgauthorizationPairing() *schema.Resource {
@@ -78,7 +79,7 @@ func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading Orgauthorization Pairing %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdktrustrequest, resp, getErr := organizationAuthorizationApi.GetOrgauthorizationPairing(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {

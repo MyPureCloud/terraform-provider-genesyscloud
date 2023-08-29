@@ -3,9 +3,10 @@ package outbound_ruleset
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -15,7 +16,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -66,7 +66,7 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 
 	log.Printf("Reading Outbound Ruleset %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		ruleset, respCode, getErr := proxy.getOutboundRulesetById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
@@ -113,7 +113,7 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.Errorf("Failed to delete ruleset %s: %s", d.Id(), err)
 	}
 
-	return gcloud.WithRetries(ctx, 1800*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 1800*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getOutboundRulesetById(ctx, d.Id())
 
 		//Now that I am checking for th error string of API 404 and there is no error, I need to move the isStatus404

@@ -3,19 +3,20 @@ package outbound
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -183,7 +184,7 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading Outbound Callabletimeset %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkcallabletimeset, resp, getErr := outboundApi.GetOutboundCallabletimeset(d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
@@ -224,7 +225,7 @@ func deleteOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := outboundApi.GetOutboundCallabletimeset(d.Id())
 		if err != nil {
 			if gcloud.IsStatus404(resp) {

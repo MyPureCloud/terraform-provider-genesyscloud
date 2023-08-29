@@ -3,15 +3,15 @@ package consistency_checker
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"reflect"
 	"strconv"
 	"strings"
 	"sync"
 	"unsafe"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/google/go-cmp/cmp"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -201,7 +201,7 @@ func (c *consistencyCheck) isComputed(key string) bool {
 	return resourceSchema[k].Computed
 }
 
-func (c *consistencyCheck) CheckState() *resource.RetryError {
+func (c *consistencyCheck) CheckState() *retry.RetryError {
 	if c.isEmptyState == nil {
 		panic("consistencyCheck must be initialized with NewConsistencyCheck")
 	}

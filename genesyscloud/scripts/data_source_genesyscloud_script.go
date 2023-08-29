@@ -3,13 +3,13 @@ package scripts
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -26,7 +26,7 @@ func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Query for scripts by name. Retry in case new script is not yet indexed by search.
 	// As script names are non-unique, fail in case of multiple results.
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		scripts, err := scriptsProxy.getPublishedScriptsByName(ctx, name)
 
 		if err != nil {

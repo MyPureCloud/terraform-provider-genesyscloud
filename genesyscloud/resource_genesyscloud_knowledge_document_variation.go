@@ -3,14 +3,14 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -379,7 +379,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 	}
 
 	log.Printf("Reading knowledge document variation %s", documentVariationId)
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		var knowledgeDocumentVariation *platformclientv2.Documentvariation
 		/*
 		 * If the published flag is not set, get both published and draft variation and choose the most recent
@@ -549,7 +549,7 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		}
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		// The DELETE resource for knowledge document variations only removes draft variations. So set the documentState param to "Draft" for the check
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 		if err != nil {

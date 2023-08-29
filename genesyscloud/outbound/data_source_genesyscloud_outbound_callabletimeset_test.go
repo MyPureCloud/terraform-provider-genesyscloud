@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
 )
 
 func TestAccDataSourceOutboundCallableTimeset(t *testing.T) {
@@ -16,11 +17,10 @@ func TestAccDataSourceOutboundCallableTimeset(t *testing.T) {
 		callabeTimesetName = "Callable timeset " + uuid.NewString()
 		timeZone           = "Africa/Abidjan"
 	)
-	
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundCallabletimeset(

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,15 +14,17 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	files "terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 type PromptAudioData struct {
@@ -875,7 +876,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading User Prompt %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		userPrompt, resp, getErr := architectAPI.GetArchitectPrompt(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -975,7 +976,7 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 	log.Printf("Deleted user prompt %s", name)
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := architectApi.GetArchitectPrompt(d.Id())
 		if err != nil {
 			if resp != nil && resp.StatusCode == 404 {

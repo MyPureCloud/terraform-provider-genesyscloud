@@ -3,11 +3,11 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -40,7 +40,7 @@ func dataSourceGroupRead(ctx context.Context, d *schema.ResourceData, m interfac
 		Fields:  &[]string{nameField},
 	}
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		groups, _, getErr := groupsAPI.PostGroupsSearch(platformclientv2.Groupsearchrequest{
 			Query: &[]platformclientv2.Groupsearchcriteria{searchCriteria},
 		})

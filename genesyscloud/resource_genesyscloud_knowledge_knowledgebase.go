@@ -3,14 +3,13 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	"net/url"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -160,7 +159,7 @@ func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, met
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge base %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		knowledgeBase, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebase(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
@@ -229,7 +228,7 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("Failed to delete knowledge base %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebase(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {
