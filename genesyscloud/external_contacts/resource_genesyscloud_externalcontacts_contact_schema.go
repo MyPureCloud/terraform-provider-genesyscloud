@@ -33,7 +33,7 @@ func ResourceExternalContact() *schema.Resource {
 				Description: "Display string of the phone number.",
 				Type:        schema.TypeString,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return formatPhoneNumber(old) == formatPhoneNumber(new)
+					return hashFormattedPhoneNumber(old) == hashFormattedPhoneNumber(new)
 				},
 				Optional: true,
 				Computed: true,
