@@ -291,8 +291,8 @@ func flattenSdkFacebookScopedId(facebookScopedid *[]platformclientv2.Facebooksco
 	return []interface{}{facebookScopedidInterface}
 }
 
-// formatPhoneNumber formats a given string to E164 format
-func formatPhoneNumber(val string) int {
+// formatPhoneNumber formats a given string to E164 format and hashes it for comparison
+func hashFormattedPhoneNumber(val string) int {
 	formattedNumber := ""
 
 	number, err := phonenumbers.Parse(val, "US")
