@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -94,7 +95,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if err != nil {
 		if resp != nil && resp.Error != nil && (*resp.Error).Code == "general.conflict" {
 			// Check for a deleted user
-			id, diagErr := getDeletedUserId(email, usersAPI)
+			id, diagErr := getDeletedUserId(ctx, sdkConfig, email)
 			if diagErr != nil {
 				return diagErr
 			}
@@ -185,28 +186,14 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("division_id", *currentUser.Division.Id)
 		d.Set("state", *currentUser.State)
 
-		if currentUser.Department != nil {
-			d.Set("department", *currentUser.Department)
-		} else {
-			d.Set("department", nil)
-		}
-
-		if currentUser.Title != nil {
-			d.Set("title", *currentUser.Title)
-		} else {
-			d.Set("title", nil)
-		}
+		resourcedata.SetNillableValue(d, "department", currentUser.Department)
+		resourcedata.SetNillableValue(d, "title", currentUser.Title)
+		resourcedata.SetNillableValue(d, "acd_auto_answer", currentUser.AcdAutoAnswer)
 
 		if currentUser.Manager != nil {
 			d.Set("manager", *(*currentUser.Manager).Id)
 		} else {
 			d.Set("manager", nil)
-		}
-
-		if currentUser.AcdAutoAnswer != nil {
-			d.Set("acd_auto_answer", *currentUser.AcdAutoAnswer)
-		} else {
-			d.Set("acd_auto_answer", nil)
 		}
 
 		d.Set("addresses", flattenUserAddresses(d, currentUser.Addresses))
@@ -217,7 +204,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("certifications", flattenUserCertifications(currentUser.Certifications))
 		d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
 
-		if diagErr := readUserRoutingUtilization(d, usersAPI); diagErr != nil {
+		if diagErr := readUserRoutingUtilization(ctx, sdkConfig, d); diagErr != nil {
 			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
@@ -256,6 +243,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
+	//TODO stopped here
 	patchErr := patchUser(d.Id(), platformclientv2.Updateuser{
 		Name:           &name,
 		Email:          &email,
@@ -324,7 +312,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	// Verify user in deleted state and search index has been updated
 	return gcloud.WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
-		id, err := getDeletedUserId(email, usersAPI)
+		id, err := getDeletedUserId(ctx, sdkConfig, email)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error searching for deleted user %s: %v", email, err))
 		}
@@ -355,30 +343,16 @@ func patchUserWithState(id string, state string, update platformclientv2.Updateu
 	})
 }
 
-func getDeletedUserId(email string, usersAPI *platformclientv2.UsersApi) (*string, diag.Diagnostics) {
-	exactType := "EXACT"
-	results, _, getErr := usersAPI.PostUsersSearch(platformclientv2.Usersearchrequest{
-		Query: &[]platformclientv2.Usersearchcriteria{
-			{
-				Fields:  &[]string{"email"},
-				Value:   &email,
-				VarType: &exactType,
-			},
-			{
-				Fields:  &[]string{"state"},
-				Values:  &[]string{"deleted"},
-				VarType: &exactType,
-			},
-		},
-	})
-	if getErr != nil {
-		return nil, diag.Errorf("Failed to search for user %s: %s", email, getErr)
+func getDeletedUserId(ctx context.Context, sdkConfig *platformclientv2.Configuration, email string) (*string, diag.Diagnostics) {
+	userProxy := getUserProxy(sdkConfig)
+
+	userId, err := userProxy.getDeletedUser(ctx, email)
+
+	if err != nil {
+		return nil, diag.Errorf("Failed to search for user %s: %s", email, err)
 	}
-	if results.Results != nil && len(*results.Results) > 0 {
-		// User found
-		return (*results.Results)[0].Id, nil
-	}
-	return nil, nil
+
+	return userId, nil
 }
 
 func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interface{}, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
@@ -395,8 +369,9 @@ func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interf
 	return updateUser(ctx, d, meta)
 }
 
-func readUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
-	settings, resp, getErr := usersAPI.GetRoutingUserUtilization(d.Id())
+func readUserRoutingUtilization(ctx context.Context, sdkConfig *platformclientv2.Configuration, d *schema.ResourceData) diag.Diagnostics {
+	userProxy := getUserProxy(sdkConfig)
+	settings, resp, getErr := userProxy.getRoutingUserUtilization(ctx, d.Id())
 	if getErr != nil {
 		if gcloud.IsStatus404(resp) {
 			d.SetId("") // User doesn't exist

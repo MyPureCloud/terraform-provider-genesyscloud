@@ -19,8 +19,10 @@ type getUserRoutingLanguagesFunc func(ctx context.Context, p *userProxy, userId 
 type deleteUserRoutinglanguageFunc func(ctx context.Context, p *userProxy, userId string, langId string) (*platformclientv2.APIResponse, error)
 type updateUserRoutinglanguagesBulkFunc func(ctx context.Context, p *userProxy, userId string, userRoutingLanguages []platformclientv2.Userroutinglanguagepost) (*platformclientv2.APIResponse, error)
 type updateUserRoutingskillsBulkFunc func(ctx context.Context, p *userProxy, userId string, skdSkills []platformclientv2.Userroutingskillpost) (*platformclientv2.APIResponse, error)
+type getRoutingUserUtilizationFunc func(ctx context.Context, p *userProxy, userId string) (*platformclientv2.Agentmaxutilization, *platformclientv2.APIResponse, error)
+type getDeletedUserFunc func(ctx context.Context, p *userProxy, email string) (*string, error)
 
-// userProxy contains all of the method used to interact with the Genesys Scripts SDK
+// userProxy contains all of the method used to interact with the Genesys Users API in the SKD
 type userProxy struct {
 	clientConfig                       *platformclientv2.Configuration
 	usersApi                           *platformclientv2.UsersApi
@@ -34,6 +36,8 @@ type userProxy struct {
 	deleteUserRoutinglanguageAttr      deleteUserRoutinglanguageFunc
 	updateUserRoutinglanguagesBulkAttr updateUserRoutinglanguagesBulkFunc
 	updateUserRoutingskillsBulkAttr    updateUserRoutingskillsBulkFunc
+	getRoutingUserUtilizationAttr      getRoutingUserUtilizationFunc
+	getDeletedUserAttr                 getDeletedUserFunc
 }
 
 // getUserProxy acts as a singleton to for the internalProxy.  It also ensures
@@ -63,6 +67,8 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 		deleteUserRoutinglanguageAttr:      deleteUserRoutingLanguageFN,
 		updateUserRoutinglanguagesBulkAttr: updateUserRoutinglanguagesBulkFN,
 		updateUserRoutingskillsBulkAttr:    updateUserRoutingskillsBulkFN,
+		getRoutingUserUtilizationAttr:      getRoutingUserUtilizationFN,
+		getDeletedUserAttr:                 getDeletedUserFN,
 	}
 }
 func (p *userProxy) getAllUsers(ctx context.Context) (*[]platformclientv2.User, error) {
@@ -95,6 +101,14 @@ func (p *userProxy) updateUserRoutinglanguages(ctx context.Context, userId strin
 
 func (p *userProxy) updateUserRoutingSkills(ctx context.Context, userId string, sdkSkills []platformclientv2.Userroutingskillpost) (*platformclientv2.APIResponse, error) {
 	return p.updateUserRoutingskillsBulkAttr(ctx, p, userId, sdkSkills)
+}
+
+func (p *userProxy) getRoutingUserUtilization(ctx context.Context, userId string) (*platformclientv2.Agentmaxutilization, *platformclientv2.APIResponse, error) {
+	return p.getRoutingUserUtilizationAttr(ctx, p, userId)
+}
+
+func (p *userProxy) getDeletedUser(ctx context.Context, email string) (*string, error) {
+	return p.getDeletedUserAttr(ctx, p, email)
 }
 
 func getAllUsersFN(ctx context.Context, p *userProxy) (*[]platformclientv2.User, error) {
@@ -222,4 +236,36 @@ func updateUserRoutinglanguagesBulkFN(ctx context.Context, p *userProxy, userId 
 func updateUserRoutingskillsBulkFN(ctx context.Context, p *userProxy, userId string, sdkSkills []platformclientv2.Userroutingskillpost) (*platformclientv2.APIResponse, error) {
 	_, resp, err := p.usersApi.PutUserRoutingskillsBulk(userId, sdkSkills)
 	return resp, err
+}
+
+func getRoutingUserUtilizationFN(ctx context.Context, p *userProxy, userId string) (*platformclientv2.Agentmaxutilization, *platformclientv2.APIResponse, error) {
+	return p.usersApi.GetRoutingUserUtilization(userId)
+}
+
+func getDeletedUserFN(ctx context.Context, p *userProxy, email string) (*string, error) {
+	exactType := "EXACT"
+	results, _, getErr := p.usersApi.PostUsersSearch(platformclientv2.Usersearchrequest{
+		Query: &[]platformclientv2.Usersearchcriteria{
+			{
+				Fields:  &[]string{"email"},
+				Value:   &email,
+				VarType: &exactType,
+			},
+			{
+				Fields:  &[]string{"state"},
+				Values:  &[]string{"deleted"},
+				VarType: &exactType,
+			},
+		},
+	})
+
+	if getErr != nil {
+		return nil, fmt.Errorf("Failed to search for user %s: %s", email, getErr)
+	}
+
+	if results.Results != nil && len(*results.Results) > 0 {
+		// User found
+		return (*results.Results)[0].Id, nil
+	}
+	return nil, nil
 }
