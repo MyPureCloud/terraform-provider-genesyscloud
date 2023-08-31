@@ -3,11 +3,12 @@ package tfexporter
 import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
-	outbound_attempt_limit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
-	outbound_contact_list "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	outboundAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"testing"
 
 	obw "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
@@ -17,16 +18,15 @@ import (
 
 // had to do an init here since manual function call in export_test will not work since exporter already loaded
 // at ValidateFunc: gcloud.ValidateSubStringInSlice(gcloud.GetAvailableExporterTypes()),
-func initTestresources() {
+func initTestResources() {
 	resourceExporters = make(map[string]*resourceExporter.ResourceExporter)
 	providerResources = make(map[string]*schema.Resource)
 
-	reg_instance := &registerTestInstance{}
+	regInstance := &registerTestInstance{}
 
-	// register exporters first and then resources. Since there is a depedency of exporters on Resources
-	reg_instance.registerTestExporters()
-	reg_instance.registerTestResources()
-
+	// register exporters first and then resources. Since there is a dependency of exporters on Resources
+	regInstance.registerTestExporters()
+	regInstance.registerTestResources()
 }
 
 type registerTestInstance struct {
@@ -100,11 +100,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
 	providerResources["genesyscloud_processautomation_trigger"] = pat.ResourceProcessAutomationTrigger()
 
-	providerResources["genesyscloud_outbound_attempt_limit"] = outbound_attempt_limit.ResourceOutboundAttemptLimit()
+	providerResources["genesyscloud_outbound_attempt_limit"] = outboundAttemptLimit.ResourceOutboundAttemptLimit()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = ob.ResourceOutboundCallAnalysisResponseSet()
 	providerResources["genesyscloud_outbound_callabletimeset"] = ob.ResourceOutboundCallabletimeset()
 	providerResources["genesyscloud_outbound_campaign"] = ob.ResourceOutboundCampaign()
-	providerResources["genesyscloud_outbound_contact_list"] = outbound_contact_list.ResourceOutboundContactList()
+	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = ob.ResourceOutboundContactListFilter()
 	providerResources["genesyscloud_outbound_messagingcampaign"] = ob.ResourceOutboundMessagingCampaign()
 	providerResources["genesyscloud_outbound_sequence"] = ob.ResourceOutboundSequence()
@@ -113,7 +113,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_wrapupcodemappings"] = obw.ResourceOutboundWrapUpCodeMappings()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_responsemanagement_response"] = gcloud.ResourceResponsemanagementResponse()
-	providerResources["genesyscloud_routing_sms_address"] = gcloud.ResourceRoutingSmsAddress()
+	providerResources["genesyscloud_routing_sms_address"] = routingSmsAddress.ResourceRoutingSmsAddress()
 	providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
 
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
@@ -155,11 +155,11 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_knowledge_category", gcloud.KnowledgeCategoryExporter())
 	RegisterExporter("genesyscloud_location", gcloud.LocationExporter())
 	RegisterExporter("genesyscloud_oauth_client", gcloud.OauthClientExporter())
-	RegisterExporter("genesyscloud_outbound_attempt_limit", outbound_attempt_limit.OutboundAttemptLimitExporter())
+	RegisterExporter("genesyscloud_outbound_attempt_limit", outboundAttemptLimit.OutboundAttemptLimitExporter())
 	RegisterExporter("genesyscloud_outbound_callanalysisresponseset", ob.OutboundCallAnalysisResponseSetExporter())
 	RegisterExporter("genesyscloud_outbound_callabletimeset", ob.OutboundCallableTimesetExporter())
 	RegisterExporter("genesyscloud_outbound_campaign", ob.OutboundCampaignExporter())
-	RegisterExporter("genesyscloud_outbound_contact_list", outbound_contact_list.OutboundContactListExporter())
+	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactList.OutboundContactListExporter())
 	RegisterExporter("genesyscloud_outbound_contactlistfilter", ob.OutboundContactListFilterExporter())
 	RegisterExporter("genesyscloud_outbound_messagingcampaign", ob.OutboundMessagingcampaignExporter())
 	RegisterExporter("genesyscloud_outbound_sequence", ob.OutboundSequenceExporter())
@@ -179,7 +179,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_routing_settings", gcloud.RoutingSettingsExporter())
 	RegisterExporter("genesyscloud_routing_skill", gcloud.RoutingSkillExporter())
 	RegisterExporter("genesyscloud_routing_skill_group", gcloud.ResourceSkillGroupExporter())
-	RegisterExporter("genesyscloud_routing_sms_address", gcloud.RoutingSmsAddressExporter())
+	RegisterExporter("genesyscloud_routing_sms_address", routingSmsAddress.RoutingSmsAddressExporter())
 	RegisterExporter("genesyscloud_routing_utilization", gcloud.RoutingUtilizationExporter())
 	RegisterExporter("genesyscloud_routing_wrapupcode", gcloud.RoutingWrapupCodeExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", gcloud.TelephonyDidPoolExporter())
@@ -213,7 +213,7 @@ func RegisterExporter(exporterName string, resourceExporter *resourceExporter.Re
 
 func TestMain(m *testing.M) {
 	// Run setup function before starting the test suite for TfExport
-	initTestresources()
+	initTestResources()
 
 	// Run the test suite
 	m.Run()

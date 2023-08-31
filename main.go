@@ -14,6 +14,7 @@ import (
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 
@@ -86,6 +87,7 @@ func registerResources() {
 	obAttemptLimit.SetRegistrar(regInstance) //Registering outbound attempt limit
 	obContactList.SetRegistrar(regInstance)  //Registering outbound contact list
 	scripts.SetRegistrar(regInstance)        //Registering Scripts
+	smsAddresses.SetRegistrar(regInstance)
 
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
