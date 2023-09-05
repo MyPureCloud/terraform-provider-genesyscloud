@@ -7,14 +7,16 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func ResourceOutboundSequence() *schema.Resource {
@@ -190,13 +192,13 @@ func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Reading Outbound Sequence %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkcampaignsequence, resp, getErr := outboundApi.GetOutboundSequence(d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Sequence %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSequence())
@@ -236,7 +238,7 @@ func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := outboundApi.GetOutboundSequence(d.Id())
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
@@ -244,9 +246,9 @@ func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted Outbound Sequence %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Outbound Sequence %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Outbound Sequence %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Outbound Sequence %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Outbound Sequence %s still exists", d.Id()))
 	})
 }

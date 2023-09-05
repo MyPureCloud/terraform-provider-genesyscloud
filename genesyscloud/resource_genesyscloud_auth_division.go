@@ -6,13 +6,15 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -116,13 +118,13 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	log.Printf("Reading division %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		division, resp, getErr := authAPI.GetAuthorizationDivision(d.Id(), false)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read division %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthDivision())
@@ -185,7 +187,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.Errorf("Failed to delete division %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, resp, err := authAPI.GetAuthorizationDivision(d.Id(), false)
 		if err != nil {
 			if IsStatus404(resp) {
@@ -193,8 +195,8 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 				log.Printf("Deleted division %s", name)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting division %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting division %s: %s", name, err))
 		}
-		return resource.RetryableError(fmt.Errorf("Division %s still exists", name))
+		return retry.RetryableError(fmt.Errorf("Division %s still exists", name))
 	})
 }

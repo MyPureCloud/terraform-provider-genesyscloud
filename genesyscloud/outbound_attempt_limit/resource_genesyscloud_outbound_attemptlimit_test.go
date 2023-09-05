@@ -5,12 +5,13 @@ import (
 	"strings"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // func init() {
@@ -19,7 +20,7 @@ import (
 // }
 
 func TestAccResourceOutboundAttemptLimit(t *testing.T) {
-	
+
 	t.Parallel()
 	var (
 		resourceId = "attempt_limit"

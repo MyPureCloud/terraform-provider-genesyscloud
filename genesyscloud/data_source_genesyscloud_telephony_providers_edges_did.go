@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -32,16 +33,16 @@ func dataSourceDidRead(ctx context.Context, d *schema.ResourceData, m interface{
 
 	didPhoneNumber := d.Get("phone_number").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			dids, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesDids(100, pageNum, "", "", didPhoneNumber, "", "", nil)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("error requesting list of DIDs: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("error requesting list of DIDs: %s", getErr))
 			}
 
 			if dids.Entities == nil || len(*dids.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no DIDs found"))
+				return retry.RetryableError(fmt.Errorf("no DIDs found"))
 			}
 
 			for _, did := range *dids.Entities {

@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -31,17 +32,17 @@ func dataSourceJourneySegmentRead(ctx context.Context, d *schema.ResourceData, m
 
 	name := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		pageCount := 1 // Needed because of broken journey common paging
 		for pageNum := 1; pageNum <= pageCount; pageNum++ {
 			const pageSize = 100
 			journeySegments, _, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("failed to get page of journey segments: %v", getErr))
+				return retry.NonRetryableError(fmt.Errorf("failed to get page of journey segments: %v", getErr))
 			}
 
 			if journeySegments.Entities == nil || len(*journeySegments.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no journey segment found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("no journey segment found with name %s", name))
 			}
 
 			for _, journeySegment := range *journeySegments.Entities {
@@ -53,6 +54,6 @@ func dataSourceJourneySegmentRead(ctx context.Context, d *schema.ResourceData, m
 
 			pageCount = *journeySegments.PageCount
 		}
-		return resource.RetryableError(fmt.Errorf("no journey segment found with name %s", name))
+		return retry.RetryableError(fmt.Errorf("no journey segment found with name %s", name))
 	})
 }

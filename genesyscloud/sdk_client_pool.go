@@ -5,10 +5,11 @@ import (
 	"log"
 	"sync"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 // SDKClientPool holds a pool of client configs for the Genesys Cloud SDK. One should be

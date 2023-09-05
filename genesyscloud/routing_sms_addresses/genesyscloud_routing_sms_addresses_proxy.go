@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 

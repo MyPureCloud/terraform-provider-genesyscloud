@@ -21,8 +21,7 @@ var providerDataSources map[string]*schema.Resource
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
-
-type registerTestInstance struct{
+type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
 	datasourceMapMutex sync.RWMutex
 }
@@ -30,20 +29,20 @@ type registerTestInstance struct{
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_ruleset"] = ResourceOutboundRuleset()
-	providerResources["genesyscloud_routing_queue"] =  gcloud.ResourceRoutingQueue()
+	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
-	providerDataSources["genesyscloud_outbound_ruleset"] =  DataSourceOutboundRuleset()
+	providerDataSources["genesyscloud_outbound_ruleset"] = DataSourceOutboundRuleset()
 	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
 }
 
 // initTestresources initializes all test resources and data sources.
 func initTestresources() {
 	providerDataSources = make(map[string]*schema.Resource)
-    providerResources = make(map[string]*schema.Resource)
-	
+	providerResources = make(map[string]*schema.Resource)
+
 	reg_instance := &registerTestInstance{}
 
 	reg_instance.registerTestResources()

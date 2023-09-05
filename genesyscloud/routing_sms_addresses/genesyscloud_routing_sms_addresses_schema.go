@@ -1,10 +1,11 @@
 package genesyscloud
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // SetRegistrar registers all the resources, data sources and exporters in the package

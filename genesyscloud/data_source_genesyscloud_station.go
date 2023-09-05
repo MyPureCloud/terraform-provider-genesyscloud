@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -31,16 +32,16 @@ func dataSourceStationRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	stationName := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 50
 		const pageNum = 1
 		stations, _, getErr := stationsAPI.GetStations(pageSize, pageNum, "", stationName, "", "", "", "")
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting station %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting station %s", getErr))
 		}
 
 		if stations.Entities == nil || len(*stations.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No stations found"))
+			return retry.RetryableError(fmt.Errorf("No stations found"))
 		}
 
 		d.SetId(*(*stations.Entities)[0].Id)

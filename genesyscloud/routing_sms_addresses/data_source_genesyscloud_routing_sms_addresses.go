@@ -6,8 +6,9 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -17,13 +18,13 @@ func dataSourceRoutingSmsAddressRead(ctx context.Context, d *schema.ResourceData
 	name := d.Get("name").(string)
 
 	log.Printf("Searching for routing sms address with name '%s'", name)
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		smsAddressId, retryable, err := smsAddressProxy.getSmsAddressIdByName(name, ctx)
 		if err != nil && !retryable {
-			return resource.NonRetryableError(err)
+			return retry.NonRetryableError(err)
 		}
 		if retryable {
-			return resource.RetryableError(err)
+			return retry.RetryableError(err)
 		}
 		d.SetId(smsAddressId)
 		return nil

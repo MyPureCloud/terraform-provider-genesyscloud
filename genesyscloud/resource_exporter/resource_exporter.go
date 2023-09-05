@@ -221,7 +221,7 @@ func GetResourceExporters() map[string]*ResourceExporter {
 	return exportCopy
 }
 
-//terraform-provider-genesyscloud/genesyscloud/tfexporter
+// terraform-provider-genesyscloud/genesyscloud/tfexporter
 func GetAvailableExporterTypes() []string {
 	exporters := GetResourceExporters()
 	types := make([]string, len(exporters))

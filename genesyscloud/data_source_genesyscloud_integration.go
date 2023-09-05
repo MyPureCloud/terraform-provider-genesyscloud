@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -31,17 +32,17 @@ func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m in
 
 	integrationName := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			integrations, _, getErr := integrationAPI.GetIntegrations(pageSize, pageNum, "", nil, "", "")
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("failed to get page of integrations: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("failed to get page of integrations: %s", getErr))
 			}
 
 			if integrations.Entities == nil || len(*integrations.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no integrations found with name: %s", integrationName))
+				return retry.RetryableError(fmt.Errorf("no integrations found with name: %s", integrationName))
 			}
 
 			for _, integration := range *integrations.Entities {

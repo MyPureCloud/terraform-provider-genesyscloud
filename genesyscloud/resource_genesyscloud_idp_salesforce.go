@@ -6,15 +6,16 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func getAllIdpSalesforce(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -96,14 +97,14 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	log.Printf("Reading IDP Salesforce")
 
-	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		salesforce, resp, getErr := idpAPI.GetIdentityprovidersSalesforce()
 		if getErr != nil {
 			if IsStatus404(resp) {
 				createIdpSalesforce(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Salesforce: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpSalesforce())
@@ -180,7 +181,7 @@ func deleteIdpSalesforce(ctx context.Context, _ *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to delete IDP Salesforce: %s", err)
 	}
 
-	return WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersSalesforce()
 		if err != nil {
 			if IsStatus404(resp) {
@@ -188,8 +189,8 @@ func deleteIdpSalesforce(ctx context.Context, _ *schema.ResourceData, meta inter
 				log.Printf("Deleted Salesforce Ping")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Salesforce: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Salesforce: %s", err))
 		}
-		return resource.RetryableError(fmt.Errorf("IDP Salesforce still exists"))
+		return retry.RetryableError(fmt.Errorf("IDP Salesforce still exists"))
 	})
 }

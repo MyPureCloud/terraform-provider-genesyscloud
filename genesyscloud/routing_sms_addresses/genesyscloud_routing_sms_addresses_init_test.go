@@ -1,9 +1,10 @@
 package genesyscloud
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (

@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -36,16 +37,16 @@ func dataSourceEmployeeperformanceExternalmetricsDefinitionRead(ctx context.Cont
 
 	name := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			sdkexternalmetricdefinitionlisting, _, getErr := gamificationApi.GetEmployeeperformanceExternalmetricsDefinitions(pageSize, pageNum)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting Employeeperformance Externalmetrics Definition %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting Employeeperformance Externalmetrics Definition %s: %s", name, getErr))
 			}
 
 			if sdkexternalmetricdefinitionlisting.Entities == nil || len(*sdkexternalmetricdefinitionlisting.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No Employeeperformance Externalmetrics Definition found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No Employeeperformance Externalmetrics Definition found with name %s", name))
 			}
 
 			for _, entity := range *sdkexternalmetricdefinitionlisting.Entities {

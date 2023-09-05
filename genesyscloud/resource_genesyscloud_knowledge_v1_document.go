@@ -8,17 +8,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -425,13 +427,13 @@ func readKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta i
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		knowledgeDocument, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument())
@@ -513,7 +515,7 @@ func deleteKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("Failed to delete Knowledge document %s: %s", knowledgeDocumentId, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLanguageDocument(knowledgeDocumentId, knowledgeBaseId, languageCode)
 		if err != nil {
 			if IsStatus404(resp) {
@@ -521,9 +523,9 @@ func deleteKnowledgeDocumentV1(ctx context.Context, d *schema.ResourceData, meta
 				log.Printf("Deleted Knowledge document %s", knowledgeDocumentId)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Knowledge document %s: %s", knowledgeDocumentId, err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Knowledge document %s: %s", knowledgeDocumentId, err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Knowledge document %s still exists", knowledgeDocumentId))
+		return retry.RetryableError(fmt.Errorf("Knowledge document %s still exists", knowledgeDocumentId))
 	})
 }

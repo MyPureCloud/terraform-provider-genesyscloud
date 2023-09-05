@@ -8,12 +8,13 @@ import (
 	"strings"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -29,7 +30,7 @@ func generatePhoneColumnNoTypeBlock(columnName string) string {
 
 func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	t.Parallel()
-	
+
 	var (
 		resourceId            = "campaign1"
 		name                  = "Test Campaign " + uuid.NewString()
@@ -189,7 +190,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: referencedResources + generateOutboundCampaign(
@@ -515,7 +516,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 	// Test campaign_status can be turned on in a second run after first run's initial creation in off state, and then back off again
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: referencedResources + fmt.Sprintf(`
@@ -644,7 +645,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 	// Test campaign_status can be turned on at time of creation as well
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Create resources for outbound campaign
 			{
@@ -778,7 +779,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: referencedResources +

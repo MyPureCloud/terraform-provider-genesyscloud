@@ -6,15 +6,17 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -329,13 +331,13 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Reading Outbound Campaign Rule %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkCampaignRule, resp, getErr := outboundApi.GetOutboundCampaignrule(d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("failed to read Outbound Campaign Rule %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read Outbound Campaign Rule %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Campaign Rule %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Campaign Rule %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaignRule())
@@ -391,7 +393,7 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := outboundApi.GetOutboundCampaignrule(d.Id())
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
@@ -399,10 +401,10 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 				log.Printf("Deleted Outbound Campaign Rule %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting Outbound Campaign Rule %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Campaign Rule %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Outbound Campaign Rule %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Outbound Campaign Rule %s still exists", d.Id()))
 	})
 }
 

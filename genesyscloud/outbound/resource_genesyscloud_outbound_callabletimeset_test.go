@@ -3,16 +3,17 @@ package outbound
 import (
 	"fmt"
 	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
 )
 
 func TestAccResourceOutboundCallabletimeset(t *testing.T) {
-	
+
 	var (
 		resourceId = "callable-time-set"
 		name1      = "Test Callable time set" + uuid.NewString()
@@ -45,7 +46,7 @@ func TestAccResourceOutboundCallabletimeset(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create

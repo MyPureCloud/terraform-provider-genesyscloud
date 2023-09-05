@@ -3,8 +3,9 @@ package resource_exporter
 import (
 	"testing"
 
-	"github.com/google/uuid"
 	"encoding/json"
+
+	"github.com/google/uuid"
 )
 
 type customMemberGroupTest struct {
@@ -16,8 +17,8 @@ type customMemberGroupTest struct {
 }
 
 type propertyGroupTest struct {
-	Skills        string
-	SkillName string
+	Skills               string
+	SkillName            string
 	ExporterResourceType string
 	ExpectedResult       string
 }
@@ -79,45 +80,45 @@ func TestRuleSetPropertyGroup(t *testing.T) {
 
 	jsonData, err := json.Marshal([]string{uuid})
 	if err != nil {
-			t.Errorf("Received an unexpected error converting json:  %v", err)
+		t.Errorf("Received an unexpected error converting json:  %v", err)
 	}
 	jsonString := string(jsonData)
 
 	testResults := []*propertyGroupTest{
-			&propertyGroupTest{Skills: jsonString, SkillName: "test_skill_name", ExporterResourceType: "genesyscloud_routing_skill", ExpectedResult: "[\"${genesyscloud_routing_skill.test_skill_name.id}\"]"},
+		&propertyGroupTest{Skills: jsonString, SkillName: "test_skill_name", ExporterResourceType: "genesyscloud_routing_skill", ExpectedResult: "[\"${genesyscloud_routing_skill.test_skill_name.id}\"]"},
 	}
 
 	for _, testResult := range testResults {
-			configMap := make(map[string]interface{})
-			exporters := make(map[string]*ResourceExporter)
+		configMap := make(map[string]interface{})
+		exporters := make(map[string]*ResourceExporter)
 
-			//Make the config map object
-			configMap["skills"] = testResult.Skills
+		//Make the config map object
+		configMap["skills"] = testResult.Skills
 
-			//Create an exporter
-			skillSanitizedResourceMap := make(map[string]*ResourceMeta)
-			skillSanitizedResourceMap[uuid] = &ResourceMeta{Name: testResult.SkillName}
+		//Create an exporter
+		skillSanitizedResourceMap := make(map[string]*ResourceMeta)
+		skillSanitizedResourceMap[uuid] = &ResourceMeta{Name: testResult.SkillName}
 
-			firstResourceExport := &ResourceExporter{
-					SanitizedResourceMap: skillSanitizedResourceMap,
-			}
-			exporters[testResult.ExporterResourceType] = firstResourceExport
+		firstResourceExport := &ResourceExporter{
+			SanitizedResourceMap: skillSanitizedResourceMap,
+		}
+		exporters[testResult.ExporterResourceType] = firstResourceExport
 
-			//Pre-Check to make sure the member_group_id has been set to the GUID I have at the start of the test
-			if configMap["skills"] != testResult.Skills {
-					t.Errorf("The skills set in the config map was %v,but  wanted %v", configMap["skills"], testResult.Skills)
-			}
+		//Pre-Check to make sure the member_group_id has been set to the GUID I have at the start of the test
+		if configMap["skills"] != testResult.Skills {
+			t.Errorf("The skills set in the config map was %v,but  wanted %v", configMap["skills"], testResult.Skills)
+		}
 
-			//Invoke the resolver
-			err := RuleSetSkillPropertyResolver(configMap, exporters)
+		//Invoke the resolver
+		err := RuleSetSkillPropertyResolver(configMap, exporters)
 
-			if err != nil {
-					t.Errorf("Received an unexpected error while calling RuleSetSkillPropertyResolver:  %v", err)
-			}
+		if err != nil {
+			t.Errorf("Received an unexpected error while calling RuleSetSkillPropertyResolver:  %v", err)
+		}
 
-			if configMap["skills"].(string) != testResult.ExpectedResult {
-					t.Errorf("The skills set in the config map was %v,but  wanted %v", configMap["skills"], testResult.ExpectedResult)
-			}
+		if configMap["skills"].(string) != testResult.ExpectedResult {
+			t.Errorf("The skills set in the config map was %v,but  wanted %v", configMap["skills"], testResult.ExpectedResult)
+		}
 	}
 
 }
