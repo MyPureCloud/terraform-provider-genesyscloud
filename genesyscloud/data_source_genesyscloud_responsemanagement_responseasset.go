@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -45,13 +46,13 @@ func dataSourceResponseManagamentResponseAssetRead(ctx context.Context, d *schem
 	sdkConfig := m.(*ProviderMeta).ClientConfig
 	respManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		responseData, _, getErr := respManagementApi.PostResponsemanagementResponseassetsSearch(body, nil)
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting response asset %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting response asset %s: %s", name, getErr))
 		}
 		if responseData.Results == nil || len(*responseData.Results) == 0 {
-			return resource.RetryableError(fmt.Errorf("No response asset found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No response asset found with name %s", name))
 		}
 		asset := (*responseData.Results)[0]
 		d.SetId(*asset.Id)

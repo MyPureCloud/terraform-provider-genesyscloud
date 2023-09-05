@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -39,17 +40,17 @@ func dataSourceExtensionPoolRead(ctx context.Context, d *schema.ResourceData, m 
 	extensionPoolStartPhoneNumber := d.Get("start_number").(string)
 	extensionPoolEndPhoneNumber := d.Get("end_number").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			extensionPools, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "")
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("error requesting list of extension pools: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("error requesting list of extension pools: %s", getErr))
 			}
 
 			if extensionPools.Entities == nil || len(*extensionPools.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no extension pools found with start phone number: %s and end phone number: %s", extensionPoolStartPhoneNumber, extensionPoolEndPhoneNumber))
+				return retry.RetryableError(fmt.Errorf("no extension pools found with start phone number: %s and end phone number: %s", extensionPoolStartPhoneNumber, extensionPoolEndPhoneNumber))
 			}
 
 			for _, extensionPool := range *extensionPools.Entities {

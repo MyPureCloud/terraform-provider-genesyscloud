@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
+
 /*
    The data_source_genesyscloud_outbound_ruleset.go contains the data source implementation
    for the resource.
@@ -23,15 +25,15 @@ func dataSourceOutboundRulesetRead(ctx context.Context, d *schema.ResourceData, 
 
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		rulesetId, retryable, err := proxy.getOutboundRulesetIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return resource.NonRetryableError(fmt.Errorf("Error ruleset %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error ruleset %s: %s", name, err))
 		}
 
 		if retryable {
-			return resource.RetryableError(fmt.Errorf("No ruleset found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No ruleset found with name %s", name))
 		}
 
 		d.SetId(rulesetId)

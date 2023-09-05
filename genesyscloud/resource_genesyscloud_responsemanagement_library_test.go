@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -62,7 +64,7 @@ func generateResponseManagementLibraryResource(
 func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error {
 	responseAPI := platformclientv2.NewResponseManagementApi()
 
-	diagErr := WithRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "genesyscloud_responsemanagement_library" {
 				continue
@@ -72,10 +74,10 @@ func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error 
 				if IsStatus404(resp) {
 					continue
 				}
-				return resource.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
+				return retry.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
 			}
 
-			return resource.RetryableError(fmt.Errorf("Library %s still exists", rs.Primary.ID))
+			return retry.RetryableError(fmt.Errorf("Library %s still exists", rs.Primary.ID))
 		}
 		return nil
 	})

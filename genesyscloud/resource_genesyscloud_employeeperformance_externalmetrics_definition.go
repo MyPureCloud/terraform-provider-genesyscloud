@@ -6,14 +6,16 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func ResourceEmployeeperformanceExternalmetricsDefinition() *schema.Resource {
@@ -178,13 +180,13 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 
 	log.Printf("Reading Employeeperformance Externalmetrics Definition %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkexternalmetricdefinition, resp, getErr := gamificationApi.GetEmployeeperformanceExternalmetricsDefinition(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Employeeperformance Externalmetrics Definition %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition())
@@ -229,7 +231,7 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 		return diagErr
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := gamificationApi.GetEmployeeperformanceExternalmetricsDefinition(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {
@@ -237,9 +239,9 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 				log.Printf("Deleted Employeeperformance Externalmetrics Definition %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Employeeperformance Externalmetrics Definition %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Employeeperformance Externalmetrics Definition %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Employeeperformance Externalmetrics Definition %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Employeeperformance Externalmetrics Definition %s still exists", d.Id()))
 	})
 }

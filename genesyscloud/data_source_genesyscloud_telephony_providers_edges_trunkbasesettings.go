@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -29,17 +30,17 @@ func dataSourceTrunkBaseSettingsRead(ctx context.Context, d *schema.ResourceData
 
 	name := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			trunkBaseSettings, _, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, name)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting trunk base settings %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting trunk base settings %s: %s", name, getErr))
 			}
 
 			if trunkBaseSettings.Entities == nil || len(*trunkBaseSettings.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No trunkBaseSettings found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No trunkBaseSettings found with name %s", name))
 			}
 
 			for _, trunkBaseSetting := range *trunkBaseSettings.Entities {

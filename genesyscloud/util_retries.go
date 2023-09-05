@@ -7,17 +7,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
-func WithRetries(ctx context.Context, timeout time.Duration, method func() *resource.RetryError) diag.Diagnostics {
-	err := diag.FromErr(resource.RetryContext(ctx, timeout, method))
+func WithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
+	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
 	if err != nil && strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
@@ -26,12 +27,12 @@ func WithRetries(ctx context.Context, timeout time.Duration, method func() *reso
 	return err
 }
 
-func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func() *resource.RetryError) diag.Diagnostics {
+func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
 	return WithRetriesForReadCustomTimeout(ctx, 5*time.Minute, d, method)
 }
 
-func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *resource.RetryError) diag.Diagnostics {
-	err := diag.FromErr(resource.RetryContext(ctx, timeout, method))
+func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
+	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
 	if err != nil {
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
 			// Set ID empty if the object isn't found after the specified timeout

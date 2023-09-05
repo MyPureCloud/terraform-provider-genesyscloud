@@ -7,15 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -160,13 +160,13 @@ func readArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading schedule group %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		scheduleGroup, resp, getErr := archAPI.GetArchitectSchedulegroup(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read schedule group %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectScheduleGroups())
@@ -259,7 +259,7 @@ func deleteArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("Failed to delete schedule group %s: %s", d.Id(), err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		scheduleGroup, resp, err := archAPI.GetArchitectSchedulegroup(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {
@@ -267,7 +267,7 @@ func deleteArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 				log.Printf("Deleted schedule group %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting schedule group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting schedule group %s: %s", d.Id(), err))
 		}
 
 		if scheduleGroup.State != nil && *scheduleGroup.State == "deleted" {
@@ -276,6 +276,6 @@ func deleteArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Schedule group %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Schedule group %s still exists", d.Id()))
 	})
 }

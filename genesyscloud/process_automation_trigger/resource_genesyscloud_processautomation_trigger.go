@@ -3,12 +3,13 @@ package process_automation_trigger
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"fmt"
 	"log"
 
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -206,13 +207,13 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("Reading process automation trigger %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read process automation trigger %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to process read automation trigger %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to process read automation trigger %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger())
@@ -328,7 +329,7 @@ func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Deleting process automation trigger %s", name)
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		resp, err := deleteProcessAutomationTrigger(d.Id(), integAPI)
 
 		if err != nil {
@@ -336,7 +337,7 @@ func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 				log.Printf("process automation trigger already deleted %s", d.Id())
 				return nil
 			}
-			return resource.RetryableError(fmt.Errorf("process automation trigger %s still exists", d.Id()))
+			return retry.RetryableError(fmt.Errorf("process automation trigger %s still exists", d.Id()))
 		}
 		return nil
 	})

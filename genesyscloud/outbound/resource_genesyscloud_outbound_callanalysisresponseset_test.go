@@ -6,12 +6,13 @@ import (
 	"strings"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
@@ -34,11 +35,10 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 		outboundFlowName     = "Terraform Test Flow " + uuid.NewString()
 		outboundFlowFilePath = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 	)
-	
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundCallAnalysisResponseSetResource(

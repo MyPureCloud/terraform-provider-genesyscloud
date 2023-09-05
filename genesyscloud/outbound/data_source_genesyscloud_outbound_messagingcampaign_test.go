@@ -6,20 +6,22 @@ import (
 	"strconv"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 var trueValue = "true"
+
 /*
 This test can only pass in a test org because it requires an active provisioned sms phone number
 Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone number in test orgs only.
 */
 func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
-	
+
 	var (
 		resourceId          = "campaign"
 		dataSourceId        = "campaign_data"
@@ -101,7 +103,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: contactListResource +

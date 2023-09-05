@@ -5,16 +5,17 @@ import (
 	"strconv"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 )
 
 func TestAccResourceOutboundContactListBasic(t *testing.T) {
-	
+
 	t.Parallel()
 	var (
 		resourceId                = "contact-list"
@@ -42,7 +43,7 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateOutboundContactList(
@@ -349,7 +350,6 @@ func generateEmailColumnsBlock(columnName, columnType, contactableTimeColumn str
 	}
 `, columnName, columnType, contactableTimeColumn)
 }
-
 
 func testVerifyContactListDestroyed(state *terraform.State) error {
 	outboundAPI := platformclientv2.NewOutboundApi()

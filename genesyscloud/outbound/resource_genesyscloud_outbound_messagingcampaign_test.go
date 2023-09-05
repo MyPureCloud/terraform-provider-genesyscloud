@@ -9,11 +9,12 @@ import (
 	"testing"
 	"time"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
 
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
@@ -23,7 +24,7 @@ This test can only pass in a test org because it requires an active provisioned 
 Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone number in test orgs only.
 */
 func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
-	
+
 	t.Parallel()
 	var (
 		// Contact list
@@ -123,7 +124,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: dncListResource +

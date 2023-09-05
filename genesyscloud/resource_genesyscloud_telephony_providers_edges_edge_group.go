@@ -6,14 +6,16 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
 func ResourceEdgeGroup() *schema.Resource {
@@ -163,7 +165,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		return diag.Errorf("Failed to delete edge group: %s", err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		edgeGroup, resp, err := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
 		if err != nil {
 			if IsStatus404(resp) {
@@ -171,7 +173,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 				log.Printf("Deleted Edge group %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Edge group %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Edge group %s: %s", d.Id(), err))
 		}
 
 		if edgeGroup.State != nil && *edgeGroup.State == "deleted" {
@@ -180,7 +182,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Edge group %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Edge group %s still exists", d.Id()))
 	})
 }
 
@@ -189,13 +191,13 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading edge group %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		edgeGroup, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEdgeGroup())

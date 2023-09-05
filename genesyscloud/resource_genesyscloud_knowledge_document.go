@@ -10,13 +10,14 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -74,7 +75,6 @@ func getAllKnowledgeDocuments(_ context.Context, clientConfig *platformclientv2.
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
-	
 	// get published knowledge bases
 	publishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, true)
 	if err != nil {
@@ -112,7 +112,7 @@ func getAllKnowledgeDocumentEntities(knowledgeAPI platformclientv2.KnowledgeApi,
 	)
 
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	
+
 	const pageSize = 100
 	// prepare base url
 	resourcePath := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s/documents", url.PathEscape(*knowledgeBase.Id))
@@ -400,13 +400,13 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		knowledgeDocument, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument())
@@ -418,7 +418,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 
 		flattenedDocument, err := flattenKnowledgeDocument(knowledgeDocument, knowledgeAPI, knowledgeBaseId)
 		if err != nil {
-			return resource.NonRetryableError(err)
+			return retry.NonRetryableError(err)
 		}
 		d.Set("knowledge_document", flattenedDocument)
 
@@ -488,7 +488,7 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete Knowledge document %s: %s", knowledgeDocumentId, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		state := "Draft"
 		if d.Get("published").(bool) == true {
 			state = "Published"
@@ -501,9 +501,9 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Knowledge document %s", knowledgeDocumentId)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Knowledge document %s: %s", knowledgeDocumentId, err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Knowledge document %s: %s", knowledgeDocumentId, err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Knowledge document %s still exists", knowledgeDocumentId))
+		return retry.RetryableError(fmt.Errorf("Knowledge document %s still exists", knowledgeDocumentId))
 	})
 }
