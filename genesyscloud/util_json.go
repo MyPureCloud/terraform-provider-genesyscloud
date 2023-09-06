@@ -9,6 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// SuppressDiffFunc for properties that will accept JSON strings
+// Any null property in the 'new' json is removed(deeply) prior to deep comparison
 func suppressEquivalentJsonDiffs(k, old, new string, d *schema.ResourceData) bool {
 	if old == new {
 		return true
@@ -24,7 +26,41 @@ func suppressEquivalentJsonDiffs(k, old, new string, d *schema.ResourceData) boo
 		return false
 	}
 
-	return jsonBytesEqual(ob.Bytes(), nb.Bytes())
+	var nbi interface{}
+	if err := json.Unmarshal(nb.Bytes(), &nbi); err != nil {
+		return false
+	}
+	jsonDeepDelNullProperties(nbi)
+
+	nbClean, err := json.Marshal(nbi)
+	if err != nil {
+		return false
+	}
+
+	return jsonBytesEqual(ob.Bytes(), nbClean)
+}
+
+// Recursively go through decoded JSON map and remove any property that is null.
+// Parameter can also be an array(slice) like in JSON but will only traverse for
+// further map/slice elements. ie null elements in slices are not removed.
+func jsonDeepDelNullProperties(o interface{}) {
+	ov := reflect.ValueOf(o)
+	switch ov.Kind() {
+	case reflect.Slice:
+		for _, n := range o.([]any) {
+			jsonDeepDelNullProperties(n)
+		}
+	case reflect.Map:
+		for key, value := range o.(map[string]interface{}) {
+			if value == nil {
+				delete(o.(map[string]interface{}), key)
+			}
+			v1 := reflect.ValueOf(value)
+			if v1.Kind() == reflect.Map {
+				jsonDeepDelNullProperties(value)
+			}
+		}
+	}
 }
 
 func jsonBytesEqual(b1, b2 []byte) bool {
