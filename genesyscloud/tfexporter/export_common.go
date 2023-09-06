@@ -86,7 +86,7 @@ func FilterResourceByName(result resourceExporter.ResourceIDMetaMap, name string
 func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap {
 	newFilters := make([]string, 0)
 	for _, f := range filter {
-		if strings.Contains(f, "::") {
+		if strings.Contains(f, "::") && strings.Split(f, "::")[0] == name {
 			i := strings.Index(f, "::")
 			regexStr := f[i+2:]
 			newFilters = append(newFilters, regexStr)
@@ -113,10 +113,9 @@ func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, nam
 }
 
 func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap {
-
 	newFilters := make([]string, 0)
 	for _, f := range filter {
-		if strings.Contains(f, "::") {
+		if strings.Contains(f, "::") && strings.Split(f, "::")[0] == name {
 			i := strings.Index(f, "::")
 			regexStr := f[i+2:]
 			newFilters = append(newFilters, regexStr)
