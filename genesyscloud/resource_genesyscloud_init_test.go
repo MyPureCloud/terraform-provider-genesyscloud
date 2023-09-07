@@ -85,7 +85,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_skill"] = ResourceRoutingSkill()
 	providerResources["genesyscloud_routing_skill_group"] = ResourceRoutingSkillGroup()
-	providerResources["genesyscloud_routing_sms_address"] = ResourceRoutingSmsAddress()
 	providerResources["genesyscloud_routing_settings"] = ResourceRoutingSettings()
 	providerResources["genesyscloud_routing_utilization"] = ResourceRoutingUtilization()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
@@ -156,7 +155,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_routing_settings"] = dataSourceRoutingSettings()
 	providerDataSources["genesyscloud_routing_skill"] = dataSourceRoutingSkill()
 	providerDataSources["genesyscloud_routing_skill_group"] = dataSourceRoutingSkillGroup()
-	providerDataSources["genesyscloud_routing_sms_address"] = dataSourceRoutingSmsAddress()
 	providerDataSources["genesyscloud_routing_email_domain"] = dataSourceRoutingEmailDomain()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 

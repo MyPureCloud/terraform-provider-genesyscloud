@@ -12,7 +12,6 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -757,9 +756,9 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 				extraErrorInfo = fmt.Sprintf("Feature '%s' is not yet implemented", fieldName)
 			}
 			if IsStatus400(resp) {
-				return resource.RetryableError(fmt.Errorf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo))
+				return retry.RetryableError(fmt.Errorf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo))
 			}
-			return resource.NonRetryableError(fmt.Errorf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo))
+			return retry.NonRetryableError(fmt.Errorf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo))
 		}
 		d.SetId(*configuration.Id)
 		d.Set("status", configuration.Status)

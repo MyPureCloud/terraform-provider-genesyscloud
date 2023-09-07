@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -24,8 +25,8 @@ func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -77,8 +78,8 @@ func TestAccResourceRoutingSmsAddressesTestOrg(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -122,7 +123,7 @@ func testVerifySmsAddressDestroyed(state *terraform.State) error {
 		address, resp, err := routingAPI.GetRoutingSmsAddress(rs.Primary.ID)
 		if address != nil {
 			return fmt.Errorf("address (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// Address not found as expected
 			continue
 		} else {
