@@ -87,7 +87,7 @@ func registerResources() {
 	obAttemptLimit.SetRegistrar(regInstance) //Registering outbound attempt limit
 	obContactList.SetRegistrar(regInstance)  //Registering outbound contact list
 	scripts.SetRegistrar(regInstance)        //Registering Scripts
-	smsAddresses.SetRegistrar(regInstance)
+	smsAddresses.SetRegistrar(regInstance)   //Registering routing sms addresses
 
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
