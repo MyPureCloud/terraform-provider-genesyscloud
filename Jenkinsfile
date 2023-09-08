@@ -14,7 +14,7 @@ pipeline {
       }
 
       steps {
-        withCredentials([file(credentialsId: 'TERRAFORM_GPG', variable: 'terraform_gpg_private_key'),
+        withCredentials([file(credentialsId: 'TERRAFORM_GPG', variable: 'terraform_gpg_private_key')],
                  writeFile file: '/tmp/terraform_gpg_secret.as', text: readFile('terraform_gpg_private_key')
                  // file(credentialsId: 'TERRAFORM_GPG', variable: 'terraform_gpg_private_key')]) {
                  //    sh "ls -al secret.asc"
