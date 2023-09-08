@@ -16,7 +16,7 @@ pipeline {
       steps {
         withCredentials([file(credentialsId: 'TERRAFORM_GPG', variable: 'terraform_gpg_private_key'),
                  file(credentialsId: 'TERRAFORM_GPG', variable: 'terraform_gpg_private_key')]) {
-                    sh "ls -al $terraform_gpg_private_key"
+                    sh "ls -al *"
                     sh "cp \$terraform_gpg_private_key /tmp/terraform_gpg_secret.asc & chmod 755 /tmp/terraform_gpg_secret.asc"
                     sh "./addCredToConfig.sh"
                     sh "rm -f secret.asc"
