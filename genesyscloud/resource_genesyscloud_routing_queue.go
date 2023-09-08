@@ -534,6 +534,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	skillEvaluationMethod := d.Get("skill_evaluation_method").(string)
 	autoAnswerOnly := d.Get("auto_answer_only").(bool)
 	enableTranscription := d.Get("enable_transcription").(bool)
+	suppressInQueueCallRecording := d.Get("suppress_in_queue_call_recording").(bool)
 	enableManualAssignment := d.Get("enable_manual_assignment").(bool)
 	callingPartyName := d.Get("calling_party_name").(string)
 	callingPartyNumber := d.Get("calling_party_number").(string)
@@ -552,28 +553,29 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	createQueue := platformclientv2.Createqueuerequest{
-		Name:                       &name,
-		Description:                &description,
-		MediaSettings:              buildSdkMediaSettings(d),
-		RoutingRules:               buildSdkRoutingRules(d),
-		Bullseye:                   buildSdkBullseyeSettings(d),
-		ConditionalGroupRouting:    conditionalGroupRouting,
-		AcwSettings:                buildSdkAcwSettings(d),
-		SkillEvaluationMethod:      &skillEvaluationMethod,
-		QueueFlow:                  BuildSdkDomainEntityRef(d, "queue_flow_id"),
-		EmailInQueueFlow:           BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
-		MessageInQueueFlow:         BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
-		WhisperPrompt:              BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
-		AutoAnswerOnly:             &autoAnswerOnly,
-		CallingPartyName:           &callingPartyName,
-		CallingPartyNumber:         &callingPartyNumber,
-		DefaultScripts:             buildSdkDefaultScriptsMap(d),
-		OutboundMessagingAddresses: buildSdkQueueMessagingAddresses(d),
-		OutboundEmailAddress:       buildSdkQueueEmailAddress(d),
-		EnableTranscription:        &enableTranscription,
-		EnableManualAssignment:     &enableManualAssignment,
-		DirectRouting:              buildSdkDirectRouting(d),
-		MemberGroups:               &memberGroups,
+		Name:                         &name,
+		Description:                  &description,
+		MediaSettings:                buildSdkMediaSettings(d),
+		RoutingRules:                 buildSdkRoutingRules(d),
+		Bullseye:                     buildSdkBullseyeSettings(d),
+		ConditionalGroupRouting:      conditionalGroupRouting,
+		AcwSettings:                  buildSdkAcwSettings(d),
+		SkillEvaluationMethod:        &skillEvaluationMethod,
+		QueueFlow:                    BuildSdkDomainEntityRef(d, "queue_flow_id"),
+		EmailInQueueFlow:             BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
+		MessageInQueueFlow:           BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
+		WhisperPrompt:                BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
+		AutoAnswerOnly:               &autoAnswerOnly,
+		CallingPartyName:             &callingPartyName,
+		CallingPartyNumber:           &callingPartyNumber,
+		DefaultScripts:               buildSdkDefaultScriptsMap(d),
+		OutboundMessagingAddresses:   buildSdkQueueMessagingAddresses(d),
+		OutboundEmailAddress:         buildSdkQueueEmailAddress(d),
+		EnableTranscription:          &enableTranscription,
+		SuppressInQueueCallRecording: &suppressInQueueCallRecording,
+		EnableManualAssignment:       &enableManualAssignment,
+		DirectRouting:                buildSdkDirectRouting(d),
+		MemberGroups:                 &memberGroups,
 	}
 
 	if divisionID != "" {
@@ -727,6 +729,12 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("enable_transcription", nil)
 		}
 
+		if currentQueue.SuppressInQueueCallRecording != nil {
+			d.Set("suppress_in_queue_call_recording", *currentQueue.SuppressInQueueCallRecording)
+		} else {
+			d.Set("suppress_in_queue_call_recording", nil)
+		}
+
 		if currentQueue.EnableManualAssignment != nil {
 			d.Set("enable_manual_assignment", *currentQueue.EnableManualAssignment)
 		} else {
@@ -803,6 +811,7 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	skillEvaluationMethod := d.Get("skill_evaluation_method").(string)
 	autoAnswerOnly := d.Get("auto_answer_only").(bool)
 	enableTranscription := d.Get("enable_transcription").(bool)
+	suppressInQueueCallRecording := d.Get("suppress_in_queue_call_recording").(bool)
 	enableManualAssignment := d.Get("enable_manual_assignment").(bool)
 	callingPartyName := d.Get("calling_party_name").(string)
 	callingPartyNumber := d.Get("calling_party_number").(string)
@@ -824,28 +833,29 @@ func updateQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	log.Printf("Updating queue %s", name)
 
 	_, _, err := routingAPI.PutRoutingQueue(d.Id(), platformclientv2.Queuerequest{
-		Name:                       &name,
-		Description:                &description,
-		MediaSettings:              buildSdkMediaSettings(d),
-		RoutingRules:               buildSdkRoutingRules(d),
-		Bullseye:                   buildSdkBullseyeSettings(d),
-		ConditionalGroupRouting:    conditionalGroupRouting,
-		AcwSettings:                buildSdkAcwSettings(d),
-		SkillEvaluationMethod:      &skillEvaluationMethod,
-		QueueFlow:                  BuildSdkDomainEntityRef(d, "queue_flow_id"),
-		EmailInQueueFlow:           BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
-		MessageInQueueFlow:         BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
-		WhisperPrompt:              BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
-		AutoAnswerOnly:             &autoAnswerOnly,
-		CallingPartyName:           &callingPartyName,
-		CallingPartyNumber:         &callingPartyNumber,
-		DefaultScripts:             buildSdkDefaultScriptsMap(d),
-		OutboundMessagingAddresses: buildSdkQueueMessagingAddresses(d),
-		OutboundEmailAddress:       buildSdkQueueEmailAddress(d),
-		EnableTranscription:        &enableTranscription,
-		EnableManualAssignment:     &enableManualAssignment,
-		DirectRouting:              buildSdkDirectRouting(d),
-		MemberGroups:               &memberGroups,
+		Name:                         &name,
+		Description:                  &description,
+		MediaSettings:                buildSdkMediaSettings(d),
+		RoutingRules:                 buildSdkRoutingRules(d),
+		Bullseye:                     buildSdkBullseyeSettings(d),
+		ConditionalGroupRouting:      conditionalGroupRouting,
+		AcwSettings:                  buildSdkAcwSettings(d),
+		SkillEvaluationMethod:        &skillEvaluationMethod,
+		QueueFlow:                    BuildSdkDomainEntityRef(d, "queue_flow_id"),
+		EmailInQueueFlow:             BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
+		MessageInQueueFlow:           BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
+		WhisperPrompt:                BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
+		AutoAnswerOnly:               &autoAnswerOnly,
+		CallingPartyName:             &callingPartyName,
+		CallingPartyNumber:           &callingPartyNumber,
+		DefaultScripts:               buildSdkDefaultScriptsMap(d),
+		OutboundMessagingAddresses:   buildSdkQueueMessagingAddresses(d),
+		OutboundEmailAddress:         buildSdkQueueEmailAddress(d),
+		EnableTranscription:          &enableTranscription,
+		SuppressInQueueCallRecording: &suppressInQueueCallRecording,
+		EnableManualAssignment:       &enableManualAssignment,
+		DirectRouting:                buildSdkDirectRouting(d),
+		MemberGroups:                 &memberGroups,
 	})
 
 	if err != nil {
@@ -1786,6 +1796,7 @@ func GenerateRoutingQueueResource(
 	callingPartyName string,
 	callingPartyNumber string,
 	enableTranscription string,
+	suppressInQueueCallRecording string,
 	enableManualAssignment string,
 	nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
@@ -1811,6 +1822,7 @@ func GenerateRoutingQueueResource(
 		callingPartyName,
 		callingPartyNumber,
 		enableTranscription,
+		suppressInQueueCallRecording,
 		enableManualAssignment,
 		strings.Join(nestedBlocks, "\n"))
 }
