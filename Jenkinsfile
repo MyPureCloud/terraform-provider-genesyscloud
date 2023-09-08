@@ -19,7 +19,7 @@ pipeline {
                     sh "ls -al secret.asc"
                     sh "cp \$terraform_gpg_private_key /tmp/terraform_gpg_secret.asc & chmod 755 /tmp/terraform_gpg_secret.asc"
                     sh "./addCredToConfig.sh"
-                    sh "rm -f secret.asc"
+                    //sh "rm -f secret.asc"
         }
 
         sh './getgoreleaser.sh release --clean --timeout 45m --parallelism 3'
