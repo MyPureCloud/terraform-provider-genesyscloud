@@ -5,6 +5,9 @@ resource "genesyscloud_processautomation_trigger" "example-trigger" {
   target {
     id   = data.genesyscloud_flow.workflow-trigger.id
     type = "Workflow"
+    workflow_target_settings {
+      data_format = "TopLevelPrimitives"
+    }
   }
   match_criteria = jsonencode([
     {

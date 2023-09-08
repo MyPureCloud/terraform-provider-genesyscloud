@@ -6,16 +6,18 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func getAllOutboundDncLists(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -276,13 +278,13 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkDncList, resp, getErr := outboundApi.GetOutboundDnclist(d.Id(), false, false)
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound DNC list %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList())
@@ -338,7 +340,7 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := outboundApi.GetOutboundDnclist(d.Id(), false, false)
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
@@ -346,10 +348,10 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 				log.Printf("Deleted Outbound DNC list %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting Outbound DNC list %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound DNC list %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Outbound DNC list %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Outbound DNC list %s still exists", d.Id()))
 	})
 }
 

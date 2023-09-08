@@ -6,15 +6,16 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func getAllIdpAdfs(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -100,14 +101,14 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	idpAPI := platformclientv2.NewIdentityProviderApiWithConfig(sdkConfig)
 
 	log.Printf("Reading IDP ADFS")
-	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		adfs, resp, getErr := idpAPI.GetIdentityprovidersAdfs()
 		if getErr != nil {
 			if IsStatus404(resp) {
 				createIdpAdfs(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP ADFS: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpAdfs())
@@ -192,7 +193,7 @@ func deleteIdpAdfs(ctx context.Context, _ *schema.ResourceData, meta interface{}
 		return diag.Errorf("Failed to delete IDP ADFS: %s", err)
 	}
 
-	return WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersAdfs()
 		if err != nil {
 			if IsStatus404(resp) {
@@ -200,8 +201,8 @@ func deleteIdpAdfs(ctx context.Context, _ *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP ADFS")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP ADFS: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP ADFS: %s", err))
 		}
-		return resource.RetryableError(fmt.Errorf("IDP ADFS still exists"))
+		return retry.RetryableError(fmt.Errorf("IDP ADFS still exists"))
 	})
 }

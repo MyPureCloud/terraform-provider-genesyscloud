@@ -8,6 +8,10 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     launcher_button {
       visibility = "OnDemand"
     }
+    home_screen {
+      enabled  = true
+      logo_url = "https://my-domain/images/my-logo.png"
+    }
     styles {
       primary_color = "#B0B0B0"
     }

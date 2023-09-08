@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	
+
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 

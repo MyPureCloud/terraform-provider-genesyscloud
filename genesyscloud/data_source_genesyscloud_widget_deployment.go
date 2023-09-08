@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -32,15 +33,15 @@ func dataSourceWidgetDeploymentRead(ctx context.Context, d *schema.ResourceData,
 	name := d.Get("name").(string)
 
 	// Query widget by name. Retry in case search has not yet indexed the widget.
-	return WithRetries(ctx, 5*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
 		widgetDeployments, _, getErr := widgetAPI.GetWidgetsDeployments()
 
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting widget deployment %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting widget deployment %s: %s", name, getErr))
 		}
 
 		if widgetDeployments.Entities == nil || len(*widgetDeployments.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No widget deployment found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No widget deployment found with name %s", name))
 		}
 
 		for _, widgetDeployment := range *widgetDeployments.Entities {
@@ -50,6 +51,6 @@ func dataSourceWidgetDeploymentRead(ctx context.Context, d *schema.ResourceData,
 			}
 		}
 
-		return resource.NonRetryableError(fmt.Errorf("Unable to locate widget deployment name %s. It does not exist", name))
+		return retry.NonRetryableError(fmt.Errorf("Unable to locate widget deployment name %s. It does not exist", name))
 	})
 }

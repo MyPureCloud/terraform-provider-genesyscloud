@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -38,16 +39,16 @@ func dataSourceSiteRead(ctx context.Context, d *schema.ResourceData, m interface
 	name := d.Get("name").(string)
 	managed := d.Get("managed").(bool)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 50
 			sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", name, "", managed)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting site %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting site %s: %s", name, getErr))
 			}
 
 			if sites.Entities == nil || len(*sites.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No sites found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No sites found with name %s", name))
 			}
 
 			for _, site := range *sites.Entities {

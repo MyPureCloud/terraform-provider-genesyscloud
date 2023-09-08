@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -26,16 +27,16 @@ func dataSourceExternalContactsContactRead(ctx context.Context, d *schema.Resour
 	ep := newExternalContactsContactsProxy(sdkConfig)
 
 	search := d.Get("search").(string)
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 
 		contactId, retryable, err := ep.getExternalContactIdBySearch(ctx, search)
 
 		if err != nil && !retryable {
-			return resource.NonRetryableError(fmt.Errorf("Error searching exteral contact %s: %s", search, err))
+			return retry.NonRetryableError(fmt.Errorf("Error searching exteral contact %s: %s", search, err))
 		}
 
 		if retryable {
-			return resource.RetryableError(fmt.Errorf("No external contact found with search %s", search))
+			return retry.RetryableError(fmt.Errorf("No external contact found with search %s", search))
 		}
 
 		d.SetId(contactId)

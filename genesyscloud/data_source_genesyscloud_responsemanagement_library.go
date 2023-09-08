@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -36,16 +37,16 @@ func dataSourceResponsemanagementLibraryRead(ctx context.Context, d *schema.Reso
 
 	name := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			sdklibraryentitylisting, _, getErr := responseManagementApi.GetResponsemanagementLibraries(pageNum, pageSize, "", "")
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting Responsemanagement Library %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting Responsemanagement Library %s: %s", name, getErr))
 			}
 
 			if sdklibraryentitylisting.Entities == nil || len(*sdklibraryentitylisting.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No Responsemanagement Library found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No Responsemanagement Library found with name %s", name))
 			}
 
 			for _, entity := range *sdklibraryentitylisting.Entities {

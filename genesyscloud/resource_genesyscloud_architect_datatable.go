@@ -11,15 +11,16 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -167,13 +168,13 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("Reading datatable %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		datatable, resp, getErr := sdkGetArchitectDatatable(d.Id(), "schema", archAPI)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read datatable %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read datatable %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read datatable %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read datatable %s: %s", d.Id(), getErr))
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable())
 		d.Set("name", *datatable.Name)
@@ -248,7 +249,7 @@ func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to delete datatable %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := archAPI.GetFlowsDatatable(d.Id(), "")
 		if err != nil {
 			if IsStatus404(resp) {
@@ -256,9 +257,9 @@ func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted datatable row %s", name)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting datatable row %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting datatable row %s: %s", name, err))
 		}
-		return resource.RetryableError(fmt.Errorf("Datatable row %s still exists", name))
+		return retry.RetryableError(fmt.Errorf("Datatable row %s still exists", name))
 	})
 }
 

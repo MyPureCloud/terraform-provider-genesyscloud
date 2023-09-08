@@ -9,14 +9,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 // Row IDs structured as {table-id}/{key-value}
@@ -150,13 +151,13 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 
 	log.Printf("Reading Datatable Row %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		row, resp, getErr := archAPI.GetFlowsDatatableRow(tableId, keyStr, false)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Datatable Row %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatableRow())
@@ -168,7 +169,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 
 		valueBytes, err := json.Marshal(*row)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to marshal row map %v: %v", *row, err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to marshal row map %v: %v", *row, err))
 		}
 		d.Set("properties_json", string(valueBytes))
 
@@ -221,7 +222,7 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 		return diag.Errorf("Failed to delete Datatable Row %s: %s", d.Id(), err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := archAPI.GetFlowsDatatableRow(tableId, keyStr, false)
 		if err != nil {
 			if IsStatus404(resp) {
@@ -229,9 +230,9 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 				log.Printf("Deleted datatable row %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting datatable row %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting datatable row %s: %s", d.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("Datatable row %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Datatable row %s still exists", d.Id()))
 	})
 }
 

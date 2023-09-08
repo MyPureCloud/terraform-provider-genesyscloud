@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -41,7 +42,7 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 
 	triggerName := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		// create path
 		path := integrationAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
 
@@ -49,11 +50,11 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 			processAutomationTriggers, _, getErr := getAllProcessAutomationTriggers(path, integrationAPI)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("failed to get page of process automation triggers: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("failed to get page of process automation triggers: %s", getErr))
 			}
 
 			if processAutomationTriggers.Entities == nil || len(*processAutomationTriggers.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no process automation triggers found with name: %s", triggerName))
+				return retry.RetryableError(fmt.Errorf("no process automation triggers found with name: %s", triggerName))
 			}
 
 			for _, trigger := range *processAutomationTriggers.Entities {
@@ -64,7 +65,7 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 			}
 
 			if processAutomationTriggers.NextUri == nil {
-				return resource.NonRetryableError(fmt.Errorf("no process automation triggers found with name: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("no process automation triggers found with name: %s", getErr))
 			}
 
 			path = integrationAPI.Configuration.BasePath + *processAutomationTriggers.NextUri

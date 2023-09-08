@@ -8,14 +8,15 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -250,13 +251,13 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading phone %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentPhone, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhone(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone())
@@ -291,16 +292,16 @@ func assignUserToWebRtcPhone(ctx context.Context, sdkConfig *platformclientv2.Co
 	stationId := ""
 	stationIsAssociated := false
 
-	retryErr := WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	retryErr := WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		const pageNum = 1
 		stations, _, getErr := stationsAPI.GetStations(pageSize, pageNum, "", "", "", userId, "", "")
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting stations: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting stations: %s", getErr))
 		}
 
 		if stations.Entities == nil || len(*stations.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("No stations found with userID %v", userId))
+			return retry.RetryableError(fmt.Errorf("No stations found with userID %v", userId))
 		}
 
 		stationId = *(*stations.Entities)[0].Id
@@ -423,7 +424,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("Failed to delete phone: %s", err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		phone, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhone(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {
@@ -431,7 +432,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Deleted Phone %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting Phone %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting Phone %s: %s", d.Id(), err))
 		}
 
 		if phone.State != nil && *phone.State == "deleted" {
@@ -441,7 +442,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Phone %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Phone %s still exists", d.Id()))
 	})
 }
 

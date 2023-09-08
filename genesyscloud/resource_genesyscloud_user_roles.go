@@ -7,11 +7,13 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func UserRolesExporter() *resourceExporter.ResourceExporter {
@@ -71,10 +73,10 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Reading roles for user %s", d.Id())
 	d.Set("user_id", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		roles, _, err := readSubjectRoles(d.Id(), authAPI)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", err))
+			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUserRoles())
 		d.Set("roles", roles)

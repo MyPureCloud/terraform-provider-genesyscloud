@@ -6,15 +6,16 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func getAllIdpOnelogin(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -96,14 +97,14 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading IDP Onelogin")
 
-	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		onelogin, resp, getErr := idpAPI.GetIdentityprovidersOnelogin()
 		if getErr != nil {
 			if IsStatus404(resp) {
 				createIdpOkta(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read IDP Onelogin: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IDP Onelogin: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Onelogin: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Onelogin: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOnelogin())
@@ -180,7 +181,7 @@ func deleteIdpOnelogin(ctx context.Context, _ *schema.ResourceData, meta interfa
 		return diag.Errorf("Failed to delete IDP Onelogin: %s", err)
 	}
 
-	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersOnelogin()
 		if err != nil {
 			if IsStatus404(resp) {
@@ -188,8 +189,8 @@ func deleteIdpOnelogin(ctx context.Context, _ *schema.ResourceData, meta interfa
 				log.Printf("Deleted IDP Onelogin")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Onelogin: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Onelogin: %s", err))
 		}
-		return resource.RetryableError(fmt.Errorf("IDP Onelogin still exists"))
+		return retry.RetryableError(fmt.Errorf("IDP Onelogin still exists"))
 	})
 }

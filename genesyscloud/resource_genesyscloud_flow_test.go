@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -23,16 +25,16 @@ import (
 func lockFlow(flowName string, flowType string) {
 	archAPI := platformclientv2.NewArchitectApi()
 	ctx := context.Background()
-	WithRetries(ctx, 5*time.Second, func() *resource.RetryError {
+	WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			flows, _, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, flowName, "", "", "", "", "", "", "", false, false, "", "", nil)
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s", flowName, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s", flowName, getErr))
 			}
 
 			if flows.Entities == nil || len(*flows.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No flows found with name %s", flowName))
+				return retry.RetryableError(fmt.Errorf("No flows found with name %s", flowName))
 			}
 
 			for _, entity := range *flows.Entities {
@@ -40,7 +42,7 @@ func lockFlow(flowName string, flowType string) {
 					flow, response, err := archAPI.PostFlowsActionsCheckout(*entity.Id)
 
 					if err != nil || response.Error != nil {
-						return resource.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s", flowName, getErr))
+						return retry.NonRetryableError(fmt.Errorf("Error requesting flow %s: %s", flowName, getErr))
 					}
 
 					log.Printf("Flow (%s) with FlowName: %s has been locked Flow resource after checkout: %v\n", *flow.Id, flowName, *flow.LockedClient.Name)
