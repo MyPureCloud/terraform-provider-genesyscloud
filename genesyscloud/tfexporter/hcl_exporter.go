@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
@@ -21,18 +22,18 @@ type HCLExporter struct {
 	unresolvedAttrs            []unresolvableAttributeInfo
 	providerSource             string
 	version                    string
-	filePath                   string
-	tfVarsFilePath             string
+	dirPath                    string
+	splitFilesByResource       bool
 }
 
-func NewHClExporter(resourceTypeHCLBlocksSlice [][]byte, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, filePath string, tfVarsFilePath string) *HCLExporter {
+func NewHClExporter(resourceTypeHCLBlocksSlice [][]byte, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, dirPath string, splitFilesByResource bool) *HCLExporter {
 	hclExporter := &HCLExporter{
 		resourceTypeHCLBlocksSlice: resourceTypeHCLBlocksSlice,
 		unresolvedAttrs:            unresolvedAttrs,
 		providerSource:             providerSource,
 		version:                    version,
-		filePath:                   filePath,
-		tfVarsFilePath:             tfVarsFilePath,
+		dirPath:                    dirPath,
+		splitFilesByResource:       splitFilesByResource,
 	}
 	return hclExporter
 }
@@ -47,7 +48,7 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 		"source":  zclconfCty.StringVal(h.providerSource),
 		"version": zclconfCty.StringVal(h.version),
 	}))
-	terraformHCLBlock = fmt.Sprintf("%s", rootFile.Bytes())
+	terraformHCLBlock = string(rootFile.Bytes())
 
 	if len(h.resourceTypeHCLBlocksSlice) > 0 {
 		// prepend terraform block
@@ -87,12 +88,21 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 		}
 
 		h.resourceTypeHCLBlocksSlice = append(h.resourceTypeHCLBlocksSlice, [][]byte{mFile.Bytes()}...)
-		if err := writeTfVars(tfVars, h.tfVarsFilePath); err != nil {
+		tfVarsFilePath := filepath.Join(h.dirPath, defaultTfVarsFile)
+		if tfVarsFilePath == "" {
+			return diag.Errorf("Failed to create tfvars file path %s", tfVarsFilePath)
+		}
+		if err := writeTfVars(tfVars, tfVarsFilePath); err != nil {
 			return err
 		}
 	}
 
-	return writeHCLToFile(h.resourceTypeHCLBlocksSlice, h.filePath)
+	hclFilePath := filepath.Join(h.dirPath, defaultTfHCLFile)
+	if hclFilePath == "" {
+		return diag.Errorf("Failed to create file path %s", hclFilePath)
+	}
+
+	return writeHCLToFile(h.resourceTypeHCLBlocksSlice, hclFilePath)
 }
 
 func postProcessHclBytes(resource []byte) []byte {

@@ -2,6 +2,7 @@ package tfexporter
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -214,7 +215,22 @@ func sanitizeE164Number(number string) string {
 	return number
 }
 
+// Get a string path to the target export file
 func getFilePath(d *schema.ResourceData, filename string) (string, diag.Diagnostics) {
+	directory, diagErr := getDirPath(d)
+	if diagErr != nil {
+		return "", diagErr
+	}
+
+	path := filepath.Join(directory, filename)
+	if path == "" {
+		return "", diag.Errorf("Failed to create file path with directory %s", directory)
+	}
+	return path, nil
+}
+
+// Get a string path to the target export directory
+func getDirPath(d *schema.ResourceData) (string, diag.Diagnostics) {
 	directory := d.Get("directory").(string)
 	if strings.HasPrefix(directory, "~") {
 		homeDir, err := os.UserHomeDir()
@@ -227,9 +243,20 @@ func getFilePath(d *schema.ResourceData, filename string) (string, diag.Diagnost
 		return "", diag.FromErr(err)
 	}
 
-	path := filepath.Join(directory, filename)
-	if path == "" {
-		return "", diag.Errorf("Failed to create file path with directory %s", directory)
+	return directory, nil
+}
+
+// Checks if a directory path is empty
+func isDirEmpty(path string) (bool, diag.Diagnostics) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, diag.FromErr(err)
 	}
-	return path, nil
+	defer f.Close()
+
+	_, err = f.Readdirnames(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, diag.FromErr(err)
 }

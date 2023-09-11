@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"path/filepath"
 	"strings"
+
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -18,18 +20,18 @@ type JsonExporter struct {
 	unresolvedAttrs      []unresolvableAttributeInfo
 	providerSource       string
 	version              string
-	filePath             string
-	tfVarsFilePath       string
+	dirPath              string
+	splitFilesByResource bool
 }
 
-func NewJsonExporter(resourceTypeJSONMaps map[string]map[string]gcloud.JsonMap, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, filePath string, tfVarsFilePath string) *JsonExporter {
+func NewJsonExporter(resourceTypeJSONMaps map[string]map[string]gcloud.JsonMap, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, dirPath string, splitFilesByResource bool) *JsonExporter {
 	jsonExporter := &JsonExporter{
 		resourceTypeJSONMaps: resourceTypeJSONMaps,
 		unresolvedAttrs:      unresolvedAttrs,
 		providerSource:       providerSource,
 		version:              version,
-		filePath:             filePath,
-		tfVarsFilePath:       tfVarsFilePath,
+		dirPath:              dirPath,
+		splitFilesByResource: splitFilesByResource,
 	}
 	return jsonExporter
 }
@@ -73,12 +75,21 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 		}
 		rootJSONObject["variable"] = variable
 
-		if err := writeTfVars(tfVars, j.tfVarsFilePath); err != nil {
+		tfVarsFilePath := filepath.Join(j.dirPath, defaultTfVarsFile)
+		if tfVarsFilePath == "" {
+			return diag.Errorf("Failed to create tfvars file path %s", tfVarsFilePath)
+		}
+		if err := writeTfVars(tfVars, tfVarsFilePath); err != nil {
 			return err
 		}
 	}
 
-	return writeConfig(rootJSONObject, j.filePath)
+	jsonFilePath := filepath.Join(j.dirPath, defaultTfJSONFile)
+	if jsonFilePath == "" {
+		return diag.Errorf("Failed to create file path %s", jsonFilePath)
+	}
+
+	return writeConfig(rootJSONObject, jsonFilePath)
 }
 
 func getDecodedData(jsonString string, currAttr string) (string, error) {

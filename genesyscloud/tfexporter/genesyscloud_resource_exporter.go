@@ -61,12 +61,12 @@ type GenesysCloudResourceExporter struct {
 	resourceFilter        ExporterResourceFilter
 	filterList            *[]string
 	exportAsHCL           bool
+	splitFilesByResource  bool
 	logPermissionErrors   bool
 	includeStateFile      bool
 	version               string
 	provider              *schema.Provider
-	exportFilePath        string
-	tfVarsFilePath        string
+	exportDirPath         string
 	exporters             *map[string]*resourceExporter.ResourceExporter
 	resources             []resourceInfo
 	resourceTypeHCLBlocks [][]byte
@@ -119,18 +119,19 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 	}
 
 	gre := &GenesysCloudResourceExporter{
-		exportAsHCL:         d.Get("export_as_hcl").(bool),
-		logPermissionErrors: d.Get("log_permission_errors").(bool),
-		filterType:          filterType,
-		includeStateFile:    d.Get("include_state_file").(bool),
-		version:             meta.(*gcloud.ProviderMeta).Version,
-		provider:            gcloud.New(meta.(*gcloud.ProviderMeta).Version, providerResources, providerDataSources)(),
-		d:                   d,
-		ctx:                 ctx,
-		meta:                meta,
+		exportAsHCL:          d.Get("export_as_hcl").(bool),
+		splitFilesByResource: d.Get("split_files_by_resource").(bool),
+		logPermissionErrors:  d.Get("log_permission_errors").(bool),
+		filterType:           filterType,
+		includeStateFile:     d.Get("include_state_file").(bool),
+		version:              meta.(*gcloud.ProviderMeta).Version,
+		provider:             gcloud.New(meta.(*gcloud.ProviderMeta).Version, providerResources, providerDataSources)(),
+		d:                    d,
+		ctx:                  ctx,
+		meta:                 meta,
 	}
 
-	err := gre.setUpExportFilePaths()
+	err := gre.setUpExportDirPath()
 	if err != nil {
 		return nil, err
 	}
@@ -178,23 +179,10 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	return nil
 }
 
-// SetupExportFilePaths determines whether we creating an HCL or JSON file and then returns the paths for these type of file
-func (g *GenesysCloudResourceExporter) setUpExportFilePaths() (diagErr diag.Diagnostics) {
-	log.Printf("Setting up file paths for export")
-	var defaultFileName string
+func (g *GenesysCloudResourceExporter) setUpExportDirPath() (diagErr diag.Diagnostics) {
+	log.Printf("Setting up export directory path")
 
-	if g.exportAsHCL {
-		defaultFileName = defaultTfHCLFile
-	} else {
-		defaultFileName = defaultTfJSONFile
-	}
-
-	g.exportFilePath, diagErr = getFilePath(g.d, defaultFileName)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	g.tfVarsFilePath, diagErr = getFilePath(g.d, defaultTfVarsFile)
+	g.exportDirPath, diagErr = getDirPath(g.d)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -383,10 +371,10 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 
 	var err diag.Diagnostics
 	if g.exportAsHCL {
-		hclExporter := NewHClExporter(g.resourceTypeHCLBlocks, g.unresolvedAttrs, providerSource, g.version, g.exportFilePath, g.tfVarsFilePath)
+		hclExporter := NewHClExporter(g.resourceTypeHCLBlocks, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
 		err = hclExporter.exportHCLConfig()
 	} else {
-		jsonExporter := NewJsonExporter(g.resourceTypeMaps, g.unresolvedAttrs, providerSource, g.version, g.exportFilePath, g.tfVarsFilePath)
+		jsonExporter := NewJsonExporter(g.resourceTypeMaps, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
 		err = jsonExporter.exportJSONConfig()
 	}
 	if err != nil {
