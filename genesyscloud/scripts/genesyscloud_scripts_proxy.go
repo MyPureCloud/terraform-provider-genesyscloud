@@ -11,7 +11,7 @@ import (
 	files "terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 )
 
 /*

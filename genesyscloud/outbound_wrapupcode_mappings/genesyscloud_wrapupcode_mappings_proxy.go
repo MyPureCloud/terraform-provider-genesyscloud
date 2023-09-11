@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 )
 
 var internalProxy *outboundWrapupCodeMappingsProxy
