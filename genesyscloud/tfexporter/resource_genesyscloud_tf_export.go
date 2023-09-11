@@ -176,16 +176,16 @@ func readTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) diag
 }
 
 // Delete everything (files and subdirectories) inside the export directory
+// not including the directory itself
 func deleteTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	exportPath := d.Id()
-	err := filepath.Walk(exportPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		return os.RemoveAll(path)
-	})
+	dir, err := os.ReadDir(exportPath)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	for _, d := range dir {
+		os.RemoveAll(filepath.Join(exportPath, d.Name()))
+	}
+
 	return nil
 }
