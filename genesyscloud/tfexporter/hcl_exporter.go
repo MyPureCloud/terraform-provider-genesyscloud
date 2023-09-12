@@ -98,6 +98,10 @@ func createHCLProviderBlock(providerSource string, version string) []byte {
 		"source":  zclconfCty.StringVal(providerSource),
 		"version": zclconfCty.StringVal(version),
 	}))
+
+	// side effect assign to terraformHCLBlock. This is for testing.
+	terraformHCLBlock = string(rootFile.Bytes())
+
 	return rootFile.Bytes()
 }
 
