@@ -16,10 +16,14 @@ import (
 )
 
 const (
-	defaultTfJSONFile  = "genesyscloud.tf.json"
-	defaultTfHCLFile   = "genesyscloud.tf"
-	defaultTfVarsFile  = "terraform.tfvars"
-	defaultTfStateFile = "terraform.tfstate"
+	defaultTfJSONFile          = "genesyscloud.tf.json"
+	defaultTfHCLFile           = "genesyscloud.tf"
+	defaultTfHCLProviderFile   = "provider.tf"
+	defaultTfJSONProviderFile  = "provider.tf.json"
+	defaultTfHCLVariablesFile  = "variables.tf"
+	defaultTfJSONVariablesFile = "variables.tf.json"
+	defaultTfVarsFile          = "terraform.tfvars"
+	defaultTfStateFile         = "terraform.tfstate"
 )
 
 // Common Exporter interface to abstract away whether we are using HCL or JSON as our exporter

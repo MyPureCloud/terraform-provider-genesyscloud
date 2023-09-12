@@ -41,8 +41,40 @@ func NewHClExporter(resourceTypesHCLBlocks map[string]resourceHCLBlock, unresolv
 
 func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 	if h.splitFilesByResource {
-		// exportToMultipleHCLFiles
+		// Multiple files export
+
+		// Provider file
+		providerBlock := createHCLProviderBlock(h.providerSource, h.version)
+		providerHCLFilePath := filepath.Join(h.dirPath, defaultTfHCLProviderFile)
+		if providerHCLFilePath == "" {
+			return diag.Errorf("Failed to create file path %s", providerHCLFilePath)
+		}
+		if diagErr := writeHCLToFile([][]byte{providerBlock}, providerHCLFilePath); diagErr != nil {
+			return diagErr
+		}
+
+		// Variables file
+		variablesBlock := createHCLVariablesBlock(h.unresolvedAttrs)
+		variablesHCLFilePath := filepath.Join(h.dirPath, defaultTfHCLVariablesFile)
+		if variablesHCLFilePath == "" {
+			return diag.Errorf("Failed to create file path %s", variablesHCLFilePath)
+		}
+		if diagErr := writeHCLToFile([][]byte{variablesBlock}, variablesHCLFilePath); diagErr != nil {
+			return diagErr
+		}
+
+		// Resource files
+		for resType, resBlock := range h.resourceTypesHCLBlocks {
+			resourceHCLFilePath := filepath.Join(h.dirPath, fmt.Sprintf("%s.%s", resType, "tf"))
+			if resourceHCLFilePath == "" {
+				return diag.Errorf("Failed to create file path %s", resourceHCLFilePath)
+			}
+			if diagErr := writeHCLToFile(resBlock, resourceHCLFilePath); diagErr != nil {
+				return diagErr
+			}
+		}
 	} else {
+		// Single file export
 		providerBlock := createHCLProviderBlock(h.providerSource, h.version)
 		variablesBlock := createHCLVariablesBlock(h.unresolvedAttrs)
 		allBlockSlice := make([][]byte, 0)
@@ -62,7 +94,7 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 		}
 	}
 
-	// tfvars file creation
+	// Optional tfvars file creation for unresolved attributes
 	if len(h.unresolvedAttrs) > 0 {
 		tfVars := make(map[string]interface{})
 		keys := make(map[string]string)

@@ -3,7 +3,8 @@ package tfexporter
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"math/rand"
 	"os"
 	"path"
 	"path/filepath"
@@ -31,9 +32,10 @@ const trueValue = "true"
 const nullValue = "null"
 
 type UserExport struct {
-	Email string `json:"email"`
-	Name  string `json:"name"`
-	State string `json:"state"`
+	Email        string `json:"email"`
+	Name         string `json:"name"`
+	State        string `json:"state"`
+	ResourceName string `-`
 }
 
 type QueueExport struct {
@@ -351,6 +353,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByType(t *testing.T) {
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[2].ResourceName),
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[3].ResourceName),
 			},
+			falseValue,
 		)
 
 	resource.Test(t, resource.TestCase{
@@ -404,6 +407,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[2].ResourceName),
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[3].ResourceName),
 			},
+			falseValue,
 		)
 
 	resource.Test(t, resource.TestCase{
@@ -466,6 +470,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[0].ResourceName),
 				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[1].ResourceName),
 			},
+			falseValue,
 		)
 
 	resource.Test(t, resource.TestCase{
@@ -524,6 +529,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[3].ResourceName),
 				strconv.Quote("genesyscloud_routing_queue." + queueResources[4].ResourceName),
 			},
+			falseValue,
 		)
 
 	resource.Test(t, resource.TestCase{
@@ -590,6 +596,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[1].ResourceName),
 				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[2].ResourceName),
 			},
+			falseValue,
 		)
 
 	resource.Test(t, resource.TestCase{
@@ -1067,6 +1074,84 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 	})
 }
 
+// TestAccResourceTfExportSplitFilesAsHCL will create 2 queues, 2 wrap up codes, and 2 users.
+// The exporter will be run in split mode so 3 resource tfs should be created as well as a provider.tf
+func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
+	var (
+		exportTestDir     = "../.terraform" + uuid.NewString()
+		exportResource    = "test-export-split"
+		uniquePostfix     = randString(7)
+		expectedFilesPath = []string{
+			filepath.Join(exportTestDir, "genesyscloud_routing_queue.tf"),
+			filepath.Join(exportTestDir, "genesyscloud_user.tf"),
+			filepath.Join(exportTestDir, "genesyscloud_routing_wrapupcode.tf"),
+			filepath.Join(exportTestDir, "provider.tf"),
+		}
+
+		queueResources = []QueueExport{
+			{ResourceName: "test-queue-1", Name: "test-queue-1-" + uniquePostfix, Description: "This is a test queue", AcwTimeoutMs: 200000},
+			{ResourceName: "test-queue-2", Name: "test-queue-1-" + uniquePostfix, Description: "This is a test queue too", AcwTimeoutMs: 200000},
+		}
+
+		userResources = []UserExport{
+			{ResourceName: "test-user-1", Name: "test-user-1", Email: "-test-user-1@test.com-" + uniquePostfix, State: "active"},
+			{ResourceName: "test-user-2", Name: "test-user-2", Email: "-test-user-2@test.com-" + uniquePostfix, State: "active"},
+		}
+
+		wrapupCodeResources = []WrapupcodeExport{
+			{ResourceName: "test-wrapupcode-1", Name: "-test-wrapupcode-1-" + uniquePostfix},
+			{ResourceName: "test-wrapupcode-2", Name: "-test-wrapupcode-2-" + uniquePostfix},
+		}
+	)
+	defer os.RemoveAll(exportTestDir)
+
+	queueResourceDef := buildQueueResources(queueResources)
+	userResourcesDef := buildUserResources(userResources)
+	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources)
+	config := queueResourceDef + wrapupcodeResourceDef + userResourcesDef +
+		generateTfExportByIncludeFilterResources(
+			exportResource,
+			exportTestDir,
+			trueValue,
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue::" + uniquePostfix + "$"),
+				strconv.Quote("genesyscloud_user::" + uniquePostfix + "$"),
+				strconv.Quote("genesyscloud_routing_wrapupcode::" + uniquePostfix + "$"),
+			},
+			[]string{
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_queue." + queueResources[1].ResourceName),
+				strconv.Quote("genesyscloud_user." + userResources[0].ResourceName),
+				strconv.Quote("genesyscloud_user." + userResources[1].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[0].ResourceName),
+				strconv.Quote("genesyscloud_routing_wrapupcode." + wrapupCodeResources[1].ResourceName),
+			},
+			trueValue,
+		)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					validateFileCreated(expectedFilesPath[0]),
+					validateFileCreated(expectedFilesPath[1]),
+					validateFileCreated(expectedFilesPath[2]),
+					validateFileCreated(expectedFilesPath[3]),
+					// testQueueExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", resourceExporter.SanitizeResourceName(queueResources[0].Name), queueResources[0]),
+					// testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", resourceExporter.SanitizeResourceName(wrapupCodeResources[0].Name), wrapupCodeResources[0]),
+					// testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", resourceExporter.SanitizeResourceName(wrapupCodeResources[1].Name), wrapupCodeResources[1]),
+					// testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", resourceExporter.SanitizeResourceName(wrapupCodeResources[2].Name), wrapupCodeResources[2]),
+					// testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "-(dev|test)$"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
 func removeTerraformProviderBlock(export string) string {
 	return strings.Replace(export, terraformHCLBlock, "", -1)
 }
@@ -1172,7 +1257,7 @@ func testQueueExportEqual(filePath, resourceType, name string, expectedQueue Que
 // testQueueExportMatchesRegEx tests to see if all of the queues retrieved in the export match the regex passed into it.
 func testQueueExportMatchesRegEx(filePath, resourceType, regEx string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		tfExport, err := ioutil.ReadFile(filePath)
+		tfExport, err := os.ReadFile(filePath)
 		if err != nil {
 			return err
 		}
@@ -1233,7 +1318,7 @@ func testWrapupcodeExportEqual(filePath, resourceType, name string, expectedWrap
 
 func testQueueExportExcludesRegEx(filePath, resourceType, regEx string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		tfExport, err := ioutil.ReadFile(filePath)
+		tfExport, err := os.ReadFile(filePath)
 		if err != nil {
 			return err
 		}
@@ -1281,7 +1366,7 @@ func testTrunkBaseSettingsExport(filePath, resourceType string) resource.TestChe
 }
 
 func getResourceDefinition(filePath, resourceType string) (map[string]*json.RawMessage, error) {
-	tfExport, err := ioutil.ReadFile(filePath)
+	tfExport, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -1477,14 +1562,16 @@ func generateTfExportByIncludeFilterResources(
 	includeState string,
 	items []string,
 	dependencies []string,
+	splitByResource string,
 ) string {
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
 		directory = "%s"
 		include_state_file = %s
 		include_filter_resources = [%s]
 		depends_on = [%s]
+		split_files_by_resource = %s
 	}
-	`, resourceID, directory, includeState, strings.Join(items, ","), strings.Join(dependencies, ","))
+	`, resourceID, directory, includeState, strings.Join(items, ","), strings.Join(dependencies, ","), splitByResource)
 }
 
 func generateTfExportByExcludeFilterResources(
@@ -1493,6 +1580,7 @@ func generateTfExportByExcludeFilterResources(
 	includeState string,
 	items []string,
 	dependencies []string,
+	splitByResource string,
 ) string {
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
 		directory = "%s"
@@ -1500,13 +1588,14 @@ func generateTfExportByExcludeFilterResources(
 		exclude_filter_resources = [%s]
 		log_permission_errors=true
 		depends_on=[%s]
+		split_files_by_resource = %s
 	}
-	`, resourceID, directory, includeState, strings.Join(items, ","), strings.Join(dependencies, ","))
+	`, resourceID, directory, includeState, strings.Join(items, ","), strings.Join(dependencies, ","), splitByResource)
 }
 
 func getExportedFileContents(filename string, result *string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		d, err := ioutil.ReadFile(filename)
+		d, err := os.ReadFile(filename)
 		if err != nil {
 			return fmt.Errorf("error reading file: %v\n", err)
 		}
@@ -1567,7 +1656,7 @@ func validateConfigFile(path string) resource.TestCheckFunc {
 		}
 		defer jsonFile.Close()
 
-		byteValue, _ := ioutil.ReadAll(jsonFile)
+		byteValue, _ := io.ReadAll(jsonFile)
 
 		var result map[string]interface{}
 		err = json.Unmarshal([]byte(byteValue), &result)
@@ -1624,6 +1713,19 @@ func buildQueueResources(queueExports []QueueExport) string {
 	return queueResourceDefinitions
 }
 
+func buildUserResources(userExports []UserExport) string {
+	userResourceDefinitions := ""
+	for _, userExport := range userExports {
+		userResourceDefinitions = userResourceDefinitions + gcloud.GenerateBasicUserResource(
+			userExport.ResourceName,
+			userExport.Email,
+			userExport.Name,
+		)
+	}
+
+	return userResourceDefinitions
+}
+
 func buildWrapupcodeResources(wrapupcodeExports []WrapupcodeExport) string {
 	wrapupcodeesourceDefinitions := ""
 	for _, wrapupcodeExport := range wrapupcodeExports {
@@ -1634,4 +1736,16 @@ func buildWrapupcodeResources(wrapupcodeExports []WrapupcodeExport) string {
 	}
 
 	return wrapupcodeesourceDefinitions
+}
+
+// Returns random string. Helpful for regex export testing as unique prefix or postfix
+func randString(length int) string {
+	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+	s := make([]rune, length)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+
+	return string(s)
 }
