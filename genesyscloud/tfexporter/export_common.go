@@ -260,3 +260,7 @@ func isDirEmpty(path string) (bool, diag.Diagnostics) {
 	}
 	return false, diag.FromErr(err)
 }
+
+func createUnresolvedAttrKey(attr unresolvableAttributeInfo) string {
+	return fmt.Sprintf("%s_%s_%s", attr.ResourceType, attr.ResourceName, attr.Name)
+}

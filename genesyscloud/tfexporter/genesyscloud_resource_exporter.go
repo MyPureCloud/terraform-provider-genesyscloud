@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"hash/fnv"
-	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -55,26 +54,26 @@ type unresolvableAttributeInfo struct {
 }
 
 type GenesysCloudResourceExporter struct {
-	configExporter        Exporter
-	filterType            ExporterFilterType
-	resourceTypeFilter    ExporterResourceTypeFilter
-	resourceFilter        ExporterResourceFilter
-	filterList            *[]string
-	exportAsHCL           bool
-	splitFilesByResource  bool
-	logPermissionErrors   bool
-	includeStateFile      bool
-	version               string
-	provider              *schema.Provider
-	exportDirPath         string
-	exporters             *map[string]*resourceExporter.ResourceExporter
-	resources             []resourceInfo
-	resourceTypeHCLBlocks [][]byte
-	resourceTypeMaps      map[string]map[string]gcloud.JsonMap
-	unresolvedAttrs       []unresolvableAttributeInfo
-	d                     *schema.ResourceData
-	ctx                   context.Context
-	meta                  interface{}
+	configExporter         Exporter
+	filterType             ExporterFilterType
+	resourceTypeFilter     ExporterResourceTypeFilter
+	resourceFilter         ExporterResourceFilter
+	filterList             *[]string
+	exportAsHCL            bool
+	splitFilesByResource   bool
+	logPermissionErrors    bool
+	includeStateFile       bool
+	version                string
+	provider               *schema.Provider
+	exportDirPath          string
+	exporters              *map[string]*resourceExporter.ResourceExporter
+	resources              []resourceInfo
+	resourceTypesHCLBlocks map[string]resourceHCLBlock
+	resourceTypeMaps       map[string]map[string]gcloud.JsonMap
+	unresolvedAttrs        []unresolvableAttributeInfo
+	d                      *schema.ResourceData
+	ctx                    context.Context
+	meta                   interface{}
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -301,7 +300,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics {
 	log.Printf("Build Genesys Cloud Resources Map")
 	g.resourceTypeMaps = make(map[string]map[string]gcloud.JsonMap)
-	g.resourceTypeHCLBlocks = make([][]byte, 0)
+	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock, 0)
 	g.unresolvedAttrs = make([]unresolvableAttributeInfo, 0)
 
 	for _, resource := range g.resources {
@@ -337,7 +336,10 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 		}
 
 		if g.exportAsHCL {
-			g.resourceTypeHCLBlocks = append(g.resourceTypeHCLBlocks, instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
+			if _, ok := g.resourceTypesHCLBlocks[resource.Type]; !ok {
+				g.resourceTypesHCLBlocks[resource.Type] = make(resourceHCLBlock, 0)
+			}
+			g.resourceTypesHCLBlocks[resource.Type] = append(g.resourceTypesHCLBlocks[resource.Type], instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
 		}
 
 		g.resourceTypeMaps[resource.Type][resource.Name] = jsonResult
@@ -371,7 +373,7 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 
 	var err diag.Diagnostics
 	if g.exportAsHCL {
-		hclExporter := NewHClExporter(g.resourceTypeHCLBlocks, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
+		hclExporter := NewHClExporter(g.resourceTypesHCLBlocks, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
 		err = hclExporter.exportHCLConfig()
 	} else {
 		jsonExporter := NewJsonExporter(g.resourceTypeMaps, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
@@ -613,7 +615,7 @@ func correctInterpolatedFileShaFunctions(config string) string {
 }
 
 func writeToFile(bytes []byte, path string) diag.Diagnostics {
-	err := ioutil.WriteFile(path, bytes, os.ModePerm)
+	err := os.WriteFile(path, bytes, os.ModePerm)
 	if err != nil {
 		return diag.Errorf("Error writing file %s: %v", path, err)
 	}

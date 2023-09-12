@@ -56,7 +56,7 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 		tfVars := make(map[string]interface{})
 		variable := make(map[string]gcloud.JsonMap)
 		for _, attr := range j.unresolvedAttrs {
-			key := fmt.Sprintf("%s_%s_%s", attr.ResourceType, attr.ResourceName, attr.Name)
+			key := createUnresolvedAttrKey(attr)
 			variable[key] = make(gcloud.JsonMap)
 			tfVars[key] = make(gcloud.JsonMap)
 			variable[key]["description"] = attr.Schema.Description
