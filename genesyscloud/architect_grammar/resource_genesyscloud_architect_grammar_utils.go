@@ -47,24 +47,22 @@ func buildGrammarLanguages(languages []interface{}) *[]platformclientv2.Grammarl
 }
 
 func buildGrammarLanguageFileMetadata(fileMetadata []interface{}) *platformclientv2.Grammarlanguagefilemetadata {
-	metadataSlice := make([]platformclientv2.Grammarlanguagefilemetadata, 0)
-
-	for _, metadata := range fileMetadata {
-		var sdkMetadata platformclientv2.Grammarlanguagefilemetadata
-		metadataMap, ok := metadata.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.FileName, metadataMap, "file_name")
-		sdkMetadata.FileSizeBytes = platformclientv2.Int(metadataMap["file_size_bytes"].(int))
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.DateUploaded, metadataMap, "date_uploaded")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.FileType, metadataMap, "file_type")
-
-		metadataSlice = append(metadataSlice, sdkMetadata)
+	if fileMetadata == nil || len(fileMetadata) <= 0 {
+		return nil
 	}
 
-	return &metadataSlice
+	var sdkMetadata platformclientv2.Grammarlanguagefilemetadata
+	metadataMap, ok := fileMetadata[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.FileName, metadataMap, "file_name")
+	sdkMetadata.FileSizeBytes = platformclientv2.Int(metadataMap["file_size_bytes"].(int))
+	resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.DateUploaded, metadataMap, "date_uploaded")
+	resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.FileType, metadataMap, "file_type")
+
+	return &sdkMetadata
 }
 
 // flattenGrammarLanguages maps a Genesys Cloud *[]platformclientv2.Grammarlanguage into a []interface{}
@@ -89,22 +87,17 @@ func flattenGrammarLanguages(languages *[]platformclientv2.Grammarlanguage) []in
 	return languageList
 }
 
-func flattenGrammarLanguageFileMetadata(fileMetadata *platformclientv2.Grammarlanguagefilemetadata) interface{} {
-	if len(*fileMetadata) == 0 {
+func flattenGrammarLanguageFileMetadata(fileMetadata *platformclientv2.Grammarlanguagefilemetadata) []interface{} {
+	if fileMetadata == nil {
 		return nil
 	}
 
-	var metadataList []interface{}
-	for _, metadata := range *fileMetadata{
-		metadataMap := make(map[string]interface{})
+	metadataMap := make(map[string]interface{})
 
-		resourcedata.SetMapValueIfNotNil(metadataMap, "file_name", metadata.FileName)
-		resourcedata.SetMapValueIfNotNil(metadataMap, "file_size_bytes", metadata.FileSizeBytes)
-		resourcedata.SetMapValueIfNotNil(metadataMap, "date_uploaded", metadata.DateUploaded)
-		resourcedata.SetMapValueIfNotNil(metadataMap, "file_type", metadata.FileType)
+	resourcedata.SetMapValueIfNotNil(metadataMap, "file_name", fileMetadata.FileName)
+	resourcedata.SetMapValueIfNotNil(metadataMap, "file_size_bytes", fileMetadata.FileSizeBytes)
+	resourcedata.SetMapValueIfNotNil(metadataMap, "date_uploaded", fileMetadata.DateUploaded)
+	resourcedata.SetMapValueIfNotNil(metadataMap, "file_type", fileMetadata.FileType)
 
-		metadataList = append(metadataList, metadataMap)
-	}
-
-	return metadataList
+	return []interface{}{metadataMap}
 }
