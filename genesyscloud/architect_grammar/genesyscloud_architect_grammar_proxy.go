@@ -2,7 +2,9 @@ package architect_grammar
 
 import (
 	"context"
+	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"log"
 )
 
 /*
@@ -91,27 +93,78 @@ func (p *architectGrammarProxy) deleteArchitectGrammar(ctx context.Context, gram
 
 // createArchitectGrammarFn is an implementation function for creating a Genesys Cloud Architect Grammar
 func createArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, error) {
-	return nil, nil
+	grammar, _, err := p.architectApi.PostArchitectGrammars(*grammar)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create grammar: %s", err)
+	}
+
+	return grammar, nil
 }
 
 // getAllArchitectGrammarFn is the implementation for retrieving all Architect Grammars in Genesys Cloud
 func getAllArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy) (*[]platformclientv2.Grammar, error) {
-	return nil, nil
+	var allGrammars []platformclientv2.Grammar
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+
+		grammars, _, err := p.architectApi.GetArchitectGrammars(pageNum, pageSize, "", "", []string{}, "", "", "", true)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get architect grammars: %v", err)
+		}
+
+		if grammars.Entities == nil || len(*grammars.Entities) == 0 {
+			break
+		}
+
+		for _, grammar := range *grammars.Entities {
+			log.Printf("Dealing with grammar id : %s", *grammar.Id)
+			allGrammars = append(allGrammars, grammar)
+		}
+	}
+
+	return &allGrammars, nil
 }
 
 // getArchitectGrammarByIdFn is an implementation of the function to get a Genesys Cloud Architect Grammar by Id
 func getArchitectGrammarByIdFn(ctx context.Context, p *architectGrammarProxy, grammarId string) (grammar *platformclientv2.Grammar, statusCode int, err error) {
-	return nil, 0, nil
+	grammar, resp, err := p.architectApi.GetArchitectGrammar(grammarId, true)
+	if err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve grammar by id %s: %s", grammarId, err)
+	}
+	return grammar, resp.StatusCode, nil
 }
 
 // getArchitectGrammarIdBySearchFn is an implementation of the function to get a Genesys Cloud Architect Grammar by name
 func getArchitectGrammarIdByNameFn(ctx context.Context, p *architectGrammarProxy, name string) (grammarId string, retryable bool, err error) {
-	return "", false, nil
+	const pageNum = 1
+	const pageSize = 100
+	grammars, _, err := p.architectApi.GetArchitectGrammars(pageNum, pageSize, "", "", []string{}, name, "", "", true)
+	if err != nil {
+		return "", false, fmt.Errorf("Error searching architect grammar %s: %s", name, err)
+	}
+
+	if grammars.Entities == nil || len(*grammars.Entities) == 0 {
+		return "", true, fmt.Errorf("No architect grammar found with name %s", name)
+	}
+
+	if len(*grammars.Entities) > 1 {
+		return "", false, fmt.Errorf("Too many values returned in look for architect grammar.  Unable to choose 1 grammar.  Please refine search and continue.")
+	}
+
+	log.Printf("Retrieved the grammar id %s by name %s", *(*grammars.Entities)[0].Id, name)
+	grammar := (*grammars.Entities)[0]
+	return *grammar.Id, false, nil
 }
 
 // updateArchitectGrammarFn is an implementation of the function to update a Genesys Cloud Architect Grammar
 func updateArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, grammarId string, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, error) {
-	return nil, nil
+	grammar, _, err := p.architectApi.PatchArchitectGrammar(grammarId, *grammar)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to update grammar %s: %s", grammarId, err)
+	}
+
+	return grammar, nil
 }
 
 // deleteArchitectGrammarFn is an implementation function for deleting a Genesys Cloud Architect Grammar
