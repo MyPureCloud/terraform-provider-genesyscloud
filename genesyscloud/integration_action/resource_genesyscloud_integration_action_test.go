@@ -1,4 +1,4 @@
-package genesyscloud
+package integration_action
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package genesyscloud
+package integration
 
 import (
 	"context"
@@ -11,20 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
-
-func dataSourceIntegration() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud integration. Select an integration by name",
-		ReadContext: ReadWithPooledClient(dataSourceIntegrationRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "The name of the integration",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
 
 func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*ProviderMeta).ClientConfig
