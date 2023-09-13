@@ -208,7 +208,7 @@ func instanceStateToHCLBlock(resType, resName string, json gcloud.JsonMap) []byt
 
 	addBody(body, json)
 
-	newCopy := strings.Replace(fmt.Sprintf("%s", f.Bytes()), "$${", "${", -1)
+	newCopy := strings.Replace(string(f.Bytes()), "$${", "${", -1)
 	return []byte(newCopy)
 }
 

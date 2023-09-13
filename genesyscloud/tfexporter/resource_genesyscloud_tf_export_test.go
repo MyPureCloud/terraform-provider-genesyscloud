@@ -1353,7 +1353,7 @@ func testQueueExportMatchesRegEx(filePath, resourceType, regEx string) resource.
 			return err
 		}
 
-		for k, _ := range resources {
+		for k := range resources {
 			regEx := regexp.MustCompile(regEx)
 
 			if !regEx.MatchString(k) {
@@ -1414,7 +1414,7 @@ func testQueueExportExcludesRegEx(filePath, resourceType, regEx string) resource
 			return err
 		}
 
-		for k, _ := range resources {
+		for k := range resources {
 			regEx := regexp.MustCompile(regEx)
 
 			if regEx.MatchString(k) {

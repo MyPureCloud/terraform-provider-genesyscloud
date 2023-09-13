@@ -1,7 +1,6 @@
 package tfexporter
 
 import (
-	"fmt"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 )
@@ -14,7 +13,7 @@ type PostProcessHclBytesTestCase struct {
 
 func TestPostProcessHclBytesFunc(t *testing.T) {
 	testCase1 := PostProcessHclBytesTestCase{
-		original: fmt.Sprintf(`
+		original: `
 		resource "example_resource" "example" {
 			file_content_hash = "${filesha256(\"file.json\")}"
 			another_field     = filesha256("file2.json")
@@ -29,8 +28,8 @@ func TestPostProcessHclBytesFunc(t *testing.T) {
 			file_content_hash = filesha256(var.file_path)
 			another_file      = "${filesha256(\"file.json\")}"
 			another_field     = "${var.foo}" 
-		}`),
-		expected: fmt.Sprintf(`
+		}`,
+		expected: `
 		resource "example_resource" "example" {
 			file_content_hash = "${filesha256("file.json")}"
 			another_field     = filesha256("file2.json")
@@ -45,7 +44,7 @@ func TestPostProcessHclBytesFunc(t *testing.T) {
 			file_content_hash = filesha256(var.file_path)
 			another_file      = "${filesha256("file.json")}"
 			another_field     = "${var.foo}" 
-		}`),
+		}`,
 	}
 
 	testCase2 := PostProcessHclBytesTestCase{
@@ -55,20 +54,20 @@ func TestPostProcessHclBytesFunc(t *testing.T) {
 				"hello": "world"
 			})`,
 		},
-		original: fmt.Sprintf(`
+		original: `
 		resource "foo" "bar" {
 			json_data1        = "123"
 			file_content_hash = "${filesha256(\"file.json\")}"
 			json_data2        = "456"
-		}`),
-		expected: fmt.Sprintf(`
+		}`,
+		expected: `
 		resource "foo" "bar" {
 			json_data1        = jsonencode({ "foo": "bar" })
 			file_content_hash = "${filesha256("file.json")}"
 			json_data2        = jsonencode({
 				"hello": "world"
 			})
-		}`),
+		}`,
 	}
 
 	testCases := make([]PostProcessHclBytesTestCase, 0)

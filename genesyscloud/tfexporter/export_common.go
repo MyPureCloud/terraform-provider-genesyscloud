@@ -105,7 +105,7 @@ func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, nam
 	}
 
 	for _, pattern := range newFilters {
-		for k, _ := range result {
+		for k := range result {
 			match, _ := regexp.MatchString(pattern, result[k].Name)
 
 			if match {
@@ -133,7 +133,7 @@ func ExcludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, nam
 
 	newResourceMap := make(resourceExporter.ResourceIDMetaMap)
 
-	for k, _ := range result {
+	for k := range result {
 		for _, pattern := range newFilters {
 
 			match, _ := regexp.MatchString(pattern, result[k].Name)

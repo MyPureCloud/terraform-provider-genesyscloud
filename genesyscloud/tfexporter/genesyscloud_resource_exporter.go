@@ -386,17 +386,6 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) postProcessHclBytes(resource []byte) []byte {
-	resourceStr := string(resource)
-	for placeholderId, val := range attributesDecoded {
-		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
-	}
-
-	resourceStr = correctInterpolatedFileShaFunctions(resourceStr)
-
-	return []byte(resourceStr)
-}
-
 func (g *GenesysCloudResourceExporter) sourceForVersion(version string) string {
 	providerSource := "registry.terraform.io/mypurecloud/genesyscloud"
 	if g.version == "0.1.0" {
