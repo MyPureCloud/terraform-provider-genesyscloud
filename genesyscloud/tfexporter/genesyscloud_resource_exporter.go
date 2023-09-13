@@ -69,7 +69,7 @@ type GenesysCloudResourceExporter struct {
 	exporters              *map[string]*resourceExporter.ResourceExporter
 	resources              []resourceInfo
 	resourceTypesHCLBlocks map[string]resourceHCLBlock
-	resourceTypeMaps       map[string]map[string]gcloud.JsonMap
+	resourceTypesMaps      map[string]resourceJSONMaps
 	unresolvedAttrs        []unresolvableAttributeInfo
 	d                      *schema.ResourceData
 	ctx                    context.Context
@@ -299,7 +299,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 // buildResourceConfigMap Builds a map of all the Terraform resources data returned for each resource
 func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics {
 	log.Printf("Build Genesys Cloud Resources Map")
-	g.resourceTypeMaps = make(map[string]map[string]gcloud.JsonMap)
+	g.resourceTypesMaps = make(map[string]resourceJSONMaps)
 	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock, 0)
 	g.unresolvedAttrs = make([]unresolvableAttributeInfo, 0)
 
@@ -309,11 +309,11 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			return diagErr
 		}
 
-		if g.resourceTypeMaps[resource.Type] == nil {
-			g.resourceTypeMaps[resource.Type] = make(map[string]gcloud.JsonMap)
+		if g.resourceTypesMaps[resource.Type] == nil {
+			g.resourceTypesMaps[resource.Type] = make(resourceJSONMaps)
 		}
 
-		if len(g.resourceTypeMaps[resource.Type][resource.Name]) > 0 {
+		if len(g.resourceTypesMaps[resource.Type][resource.Name]) > 0 {
 			algorithm := fnv.New32()
 			algorithm.Write([]byte(uuid.NewString()))
 			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
@@ -342,7 +342,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			g.resourceTypesHCLBlocks[resource.Type] = append(g.resourceTypesHCLBlocks[resource.Type], instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
 		}
 
-		g.resourceTypeMaps[resource.Type][resource.Name] = jsonResult
+		g.resourceTypesMaps[resource.Type][resource.Name] = jsonResult
 	}
 
 	return nil
@@ -376,7 +376,7 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		hclExporter := NewHClExporter(g.resourceTypesHCLBlocks, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
 		err = hclExporter.exportHCLConfig()
 	} else {
-		jsonExporter := NewJsonExporter(g.resourceTypeMaps, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
+		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
 		err = jsonExporter.exportJSONConfig()
 	}
 	if err != nil {

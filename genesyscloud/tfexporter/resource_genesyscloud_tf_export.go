@@ -94,7 +94,7 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:    true,
 			},
 			"split_files_by_resource": {
-				Description: "Split export files by resource type.",
+				Description: "Split export files by resource type. This will also split the terraform provider and variable declarations into their own files.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,

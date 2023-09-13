@@ -16,6 +16,8 @@ import (
    This file contains all of the functions used to export HCL functions.
 */
 
+const resourceHCLFileExt = "tf"
+
 type resourceHCLBlock [][]byte
 
 type HCLExporter struct {
@@ -40,11 +42,11 @@ func NewHClExporter(resourceTypesHCLBlocks map[string]resourceHCLBlock, unresolv
 }
 
 func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
-	if h.splitFilesByResource {
-		// Multiple files export
+	providerBlock := createHCLProviderBlock(h.providerSource, h.version)
+	variablesBlock := createHCLVariablesBlock(h.unresolvedAttrs)
 
+	if h.splitFilesByResource {
 		// Provider file
-		providerBlock := createHCLProviderBlock(h.providerSource, h.version)
 		providerHCLFilePath := filepath.Join(h.dirPath, defaultTfHCLProviderFile)
 		if providerHCLFilePath == "" {
 			return diag.Errorf("Failed to create file path %s", providerHCLFilePath)
@@ -54,7 +56,6 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 		}
 
 		// Variables file
-		variablesBlock := createHCLVariablesBlock(h.unresolvedAttrs)
 		variablesHCLFilePath := filepath.Join(h.dirPath, defaultTfHCLVariablesFile)
 		if variablesHCLFilePath == "" {
 			return diag.Errorf("Failed to create file path %s", variablesHCLFilePath)
@@ -65,7 +66,7 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 
 		// Resource files
 		for resType, resBlock := range h.resourceTypesHCLBlocks {
-			resourceHCLFilePath := filepath.Join(h.dirPath, fmt.Sprintf("%s.%s", resType, "tf"))
+			resourceHCLFilePath := filepath.Join(h.dirPath, fmt.Sprintf("%s.%s", resType, resourceHCLFileExt))
 			if resourceHCLFilePath == "" {
 				return diag.Errorf("Failed to create file path %s", resourceHCLFilePath)
 			}
@@ -75,8 +76,6 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 		}
 	} else {
 		// Single file export
-		providerBlock := createHCLProviderBlock(h.providerSource, h.version)
-		variablesBlock := createHCLVariablesBlock(h.unresolvedAttrs)
 		allBlockSlice := make([][]byte, 0)
 		allBlockSlice = append(allBlockSlice, providerBlock)
 
