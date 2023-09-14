@@ -2,11 +2,11 @@
 page_title: "genesyscloud_outbound_callabletimeset Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud outbound callabletimeset
+  Genesys Cloud Outbound Callabletimeset
 ---
 # genesyscloud_outbound_callabletimeset (Resource)
 
-Genesys Cloud outbound callabletimeset
+Genesys Cloud Outbound Callabletimeset
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
@@ -57,7 +57,7 @@ resource "genesyscloud_outbound_callabletimeset" "example-callable-time-set" {
 
 ### Required
 
-- `callable_times` (Block Set, Min: 1) The list of CallableTimes for which it is acceptable to place outbound calls. (see [below for nested schema](#nestedblock--callable_times))
+- `callable_times` (Block List, Min: 1) The list of CallableTimes for which it is acceptable to place outbound calls. (see [below for nested schema](#nestedblock--callable_times))
 - `name` (String) The name of the CallableTimeSet.
 
 ### Read-Only
@@ -69,7 +69,7 @@ resource "genesyscloud_outbound_callabletimeset" "example-callable-time-set" {
 
 Required:
 
-- `time_slots` (Block Set, Min: 1) The time intervals for which it is acceptable to place outbound calls. (see [below for nested schema](#nestedblock--callable_times--time_slots))
+- `time_slots` (Block List, Min: 1) The time intervals for which it is acceptable to place outbound calls. (see [below for nested schema](#nestedblock--callable_times--time_slots))
 - `time_zone_id` (String) The time zone for the time slots; for example, Africa/Abidjan
 
 <a id="nestedblock--callable_times--time_slots"></a>
