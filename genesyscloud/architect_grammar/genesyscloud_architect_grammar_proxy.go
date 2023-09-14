@@ -169,5 +169,10 @@ func updateArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 
 // deleteArchitectGrammarFn is an implementation function for deleting a Genesys Cloud Architect Grammar
 func deleteArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, grammarId string) (statusCode int, err error) {
-	return 0, nil
+	_, resp, err := p.architectApi.DeleteArchitectGrammar(grammarId)
+	if err != nil {
+		return resp.StatusCode, fmt.Errorf("Failed to delete grammar: %s", err)
+	}
+
+	return resp.StatusCode, nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"time"
 )
 
 /*
@@ -20,7 +22,20 @@ The resource_genesyscloud_architect_grammar.go contains all of the methods that 
 
 // getAllAuthArchitectGrammar retrieves all of the architect grammars via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthArchitectGrammar(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	return nil, nil
+	proxy := getArchitectGrammarProxy(clientConfig)
+	resources := make(resourceExporter.ResourceIDMetaMap)
+
+	grammars, err := proxy.getAllArchitectGrammar(ctx)
+	if err != nil {
+		return nil, diag.Errorf("Failed to get grammars: %v", err)
+	}
+
+	for _, grammar := range *grammars {
+		log.Printf("Dealing with grammar id : %s", *grammar.Id)
+		resources[*grammar.Id] = &resourceExporter.ResourceMeta{Name: *grammar.Id}
+	}
+
+	return resources, nil
 }
 
 // createArchitectGrammar is used by the architect_grammar resource to create a Genesys cloud architect grammar
@@ -47,13 +62,13 @@ func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Reading Architect Grammar %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		grammar, respCode, getErr := proxy.getArchitectGrammarById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
-				return resource.RetryableError(fmt.Errorf("Failed to read Architect Grammar %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Architect Grammar %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Architect Grammar %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Architect Grammar %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar())
@@ -85,5 +100,26 @@ func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 // deleteArchitectGrammar is used by the architect_grammar resource to delete an architect grammar from Genesys cloud.
 func deleteArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return nil
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	proxy := newArchitectGrammarProxy(sdkConfig)
+
+	_, err := proxy.deleteArchitectGrammar(ctx, d.Id())
+	if err != nil {
+		return diag.Errorf("Failed to delete grammar %s: %s", d.Id(), err)
+	}
+
+	return gcloud.WithRetries(ctx, 180*time.Second, func() *resource.RetryError {
+		_, respCode, err := proxy.getArchitectGrammarById(ctx, d.Id())
+
+		if err != nil {
+			if gcloud.IsStatus404ByInt(respCode) {
+				log.Printf("Deleted Grammar %s", d.Id())
+				return nil
+			}
+
+			return retry.NonRetryableError(fmt.Errorf("Error deleting grammar %s: %s", d.Id(), err))
+		}
+
+		return retry.RetryableError(fmt.Errorf("Grammar %s still exists", d.Id()))
+	})
 }

@@ -59,7 +59,7 @@ func buildGrammarLanguageFileMetadata(fileMetadata []interface{}) *platformclien
 
 	resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.FileName, metadataMap, "file_name")
 	sdkMetadata.FileSizeBytes = platformclientv2.Int(metadataMap["file_size_bytes"].(int))
-	resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.DateUploaded, metadataMap, "date_uploaded")
+	resourcedata.BuildSDKTimeValueIfNotNil(&sdkMetadata.DateUploaded, metadataMap, "date_uploaded")
 	resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.FileType, metadataMap, "file_type")
 
 	return &sdkMetadata
