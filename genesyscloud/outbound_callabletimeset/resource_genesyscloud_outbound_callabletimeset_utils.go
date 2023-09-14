@@ -35,9 +35,7 @@ func buildCampaignTimeSlots(campaignTimeSlots []interface{}) *[]platformclientv2
 		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCampaignTimeSlot.StartTime, campaignTimeSlotsMap, "start_time")
-
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCampaignTimeSlot.StopTime, campaignTimeSlotsMap, "stop_time")
-
 		sdkCampaignTimeSlot.Day = platformclientv2.Int(campaignTimeSlotsMap["day"].(int))
 
 		campaignTimeSlotsSlice = append(campaignTimeSlotsSlice, sdkCampaignTimeSlot)
@@ -57,9 +55,7 @@ func flattenCampaignTimeSlots(campaignTimeSlots *[]platformclientv2.Campaigntime
 		campaignTimeSlotMap := make(map[string]interface{})
 
 		resourcedata.SetMapValueIfNotNil(campaignTimeSlotMap, "start_time", campaignTimeSlot.StartTime)
-
 		resourcedata.SetMapValueIfNotNil(campaignTimeSlotMap, "stop_time", campaignTimeSlot.StopTime)
-
 		resourcedata.SetMapValueIfNotNil(campaignTimeSlotMap, "day", campaignTimeSlot.Day)
 
 		campaignTimeSlotList = append(campaignTimeSlotList, campaignTimeSlotMap)
@@ -99,7 +95,6 @@ func flattenCallableTimes(callableTimes *[]platformclientv2.Callabletime) []inte
 		callableTimeMap := make(map[string]interface{})
 
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(callableTimeMap, "time_slots", callableTime.TimeSlots, flattenCampaignTimeSlots)
-
 		resourcedata.SetMapValueIfNotNil(callableTimeMap, "time_zone_id", callableTime.TimeZoneId)
 
 		callableTimeList = append(callableTimeList, callableTimeMap)
