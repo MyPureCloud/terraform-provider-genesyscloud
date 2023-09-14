@@ -580,6 +580,7 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		createQueue.Division = &platformclientv2.Writabledivision{Id: &divisionID}
 	}
 
+	fmt.Println("Creating queue")
 	log.Printf("Creating queue %s", name)
 	queue, _, err := routingAPI.PostRoutingQueues(createQueue)
 	if err != nil {
@@ -1624,25 +1625,31 @@ func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.Rou
 
 func updateMembersInChunks(queueID string, membersToUpdate []string, remove bool, api *platformclientv2.RoutingApi) diag.Diagnostics {
 	// API restricts member adds/removes to 100 per call
-	const maxBatchSize = 100
-	for i := 0; i < len(membersToUpdate); i += maxBatchSize {
-		end := i + maxBatchSize
-		if end > len(membersToUpdate) {
-			end = len(membersToUpdate)
-		}
-		var updateChunk []platformclientv2.Writableentity
-		for j := i; j < end; j++ {
-			updateChunk = append(updateChunk, platformclientv2.Writableentity{Id: &membersToUpdate[j]})
+	chunkUploaderInstance :=
+		&chunkUploader[string, platformclientv2.Writableentity, platformclientv2.RoutingApi]{
+			id:                 queueID,
+			items:              membersToUpdate,
+			remove:             remove,
+			batchSize:          100,
+			platformApi:        api,
+			chunkProcessorAttr: chunkProcessorFn[string, platformclientv2.Writableentity, platformclientv2.RoutingApi],
+			chunkBuilderAttr:   chunkBuilderFn[string, platformclientv2.Writableentity, platformclientv2.RoutingApi],
 		}
 
-		if len(updateChunk) > 0 {
-			_, err := api.PostRoutingQueueMembers(queueID, updateChunk, remove)
-			if err != nil {
-				return diag.Errorf("Failed to update members in queue %s: %s", queueID, err)
-			}
-		}
+	return ProcessChunksInBatches(chunkUploaderInstance)
+
+}
+
+func chunkProcessorFn[T string, K platformclientv2.Writableentity, U platformclientv2.RoutingApi](updateChunk []platformclientv2.Writableentity, c *chunkUploader[string, platformclientv2.Writableentity, platformclientv2.RoutingApi]) diag.Diagnostics {
+	_, err := c.platformApi.PostRoutingQueueMembers(c.id, updateChunk, c.remove)
+	if err != nil {
+		return diag.Errorf("Failed to update members in queue %s: %s", c.id, err)
 	}
 	return nil
+}
+
+func chunkBuilderFn[T string, K platformclientv2.Writableentity, U platformclientv2.RoutingApi](seq int, updateChunk []platformclientv2.Writableentity, c *chunkUploader[string, platformclientv2.Writableentity, platformclientv2.RoutingApi]) []platformclientv2.Writableentity {
+	return append(updateChunk, platformclientv2.Writableentity{Id: &c.items[seq]})
 }
 
 func updateQueueUserRingNum(queueID string, userID string, ringNum int, api *platformclientv2.RoutingApi) diag.Diagnostics {

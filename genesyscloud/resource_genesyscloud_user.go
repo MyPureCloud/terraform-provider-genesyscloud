@@ -1226,19 +1226,41 @@ func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.
 	if d.HasChange("profile_skills") {
 		if profileSkills := d.Get("profile_skills"); profileSkills != nil {
 			profileSkills := lists.SetToStringList(profileSkills.(*schema.Set))
-			diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-				_, resp, err := usersAPI.PutUserProfileskills(d.Id(), *profileSkills)
-				if err != nil {
-					return resp, diag.Errorf("Failed to update profile skills for user %s: %s", d.Id(), err)
-				}
-				return nil, nil
-			})
-			if diagErr != nil {
-				return diagErr
-			}
+			return updateUserProfileSkillsinChunks(d.Id(), *profileSkills, usersAPI)
 		}
 	}
 	return nil
+}
+
+func updateUserProfileSkillsinChunks(id string, profileSkills []string, api *platformclientv2.UsersApi) diag.Diagnostics {
+
+	chunkUploaderInstance :=
+		&chunkUploader[string, string, platformclientv2.UsersApi]{
+			id:                 id,
+			items:              profileSkills,
+			batchSize:          50,
+			platformApi:        api,
+			chunkProcessorAttr: chunkProfileSkillsProcessorFn[string, string, platformclientv2.UsersApi],
+			chunkBuilderAttr:   chunkProfileSkillsBuilderFn[string, string, platformclientv2.UsersApi],
+		}
+
+	return ProcessChunksInBatches(chunkUploaderInstance)
+
+}
+
+func chunkProfileSkillsProcessorFn[T string, K string, U platformclientv2.UsersApi](updateChunk []string, c *chunkUploader[string, string, platformclientv2.UsersApi]) diag.Diagnostics {
+	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		_, resp, err := c.platformApi.PutUserProfileskills(c.id, updateChunk)
+		if err != nil {
+			return resp, diag.Errorf("Failed to update profile skills for user %s: %s", c.id, err)
+		}
+		return nil, nil
+	})
+	return diagErr
+}
+
+func chunkProfileSkillsBuilderFn[T string, K string, U platformclientv2.UsersApi](seq int, updateChunk []string, c *chunkUploader[string, string, platformclientv2.UsersApi]) []string {
+	return append(updateChunk, c.items[seq])
 }
 
 func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
