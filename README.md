@@ -13,6 +13,12 @@
 2. Enter the repository directory
 3. Build the provider by running `make build`
 
+## Building The Provider on Windows
+
+1. Clone the repository
+2. Enter the repository directory
+3. Build the provider by running `go generate` and once complete run `go build`
+
 ## Using the provider
 
 When using the Terraform CLI, you can run [`terraform init`](https://www.terraform.io/docs/commands/init.html) in the directory containing your provider configuration and Terraform will automatically install the required provider. The Genesys Cloud provider must be configured with an authorized OAuth client ID and secret to call the SDK.
@@ -134,6 +140,11 @@ All new resources must have passing acceptance tests and docs in order to be mer
 ### Using the Provider locally
 
 In order to use a locally compiled version of the provider, the correct binary for your system must be copied to the local `~/.terraform.d/plugins` folder. Run `make sideload` to build the provider and copy it to the correct folder. In your Terraform config file, specify version `0.1.0` and set the provider source to `genesys.com/mypurecloud/genesyscloud`. Run `terraform init` and verify that it finds the local version.
+
+### Using the Provider locally on Windows
+
+In order to use a locally compiled version of the provider, the correct binary for your system must be copied to the local `C:\Users\USERNAMEHERE\AppData\Roaming\terraform.d\plugins\genesys.com\mypurecloud\genesyscloud\0.1.0\windows_amd64` folder. In your Terraform config file, specify version `0.1.0` and set the provider source to `genesys.com/mypurecloud/genesyscloud`. Run `terraform init` and verify that it finds the local version.
+
 
 ### Branches
 
