@@ -2,7 +2,6 @@ package outbound_callabletimeset
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
@@ -25,7 +24,7 @@ The resource_genesyscloud_outbound_callabletimeset.go contains all of the method
 
 // getAllAuthOutboundCallabletimeset retrieves all of the Outbound Callabletimeset via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthOutboundCallabletimesets(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newOutboundCallabletimesetProxy(clientConfig)
+	proxy := getOutboundCallabletimesetProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	callableTimeSets, err := proxy.getAllOutboundCallabletimeset(ctx)
@@ -55,15 +54,6 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	d.SetId(*callableTimeSet.Id)
 	log.Printf("Created Outbound Callabletimeset %s", *callableTimeSet.Id)
 	return readOutboundCallabletimeset(ctx, d, meta)
-}
-
-// Function to format JSON response - Go
-func formatJSON(input any) string {
-	output, err := json.MarshalIndent(input, "", "	")
-	if err != nil {
-		fmt.Println(err)
-	}
-	return string(output)
 }
 
 // readOutboundCallabletimeset is used by the outbound_callabletimeset resource to read an Outbound Callabletimeset from genesys cloud

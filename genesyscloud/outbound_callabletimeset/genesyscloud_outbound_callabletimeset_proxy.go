@@ -131,7 +131,7 @@ func getAllOutboundCallabletimesetFn(ctx context.Context, p *outboundCallabletim
 func getOutboundCallabletimesetByIdFn(ctx context.Context, p *outboundCallabletimesetProxy, id string) (outboundCallabletimeset *platformclientv2.Callabletimeset, statusCode int, err error) {
 	callableTimeSet, resp, err := p.outboundApi.GetOutboundCallabletimeset(id)
 	if err != nil {
-
+		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve callabletimeset by id %s: %s", id, err)
 	}
 
 	return callableTimeSet, resp.StatusCode, nil
