@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -38,13 +39,13 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 
 		callableTimeSetResourceId = "callable_time_set"
 		callableTimeSetName       = "Test CTS " + uuid.NewString()
-		callableTimeSetResource   = generateOutboundCallabletimeset(
+		callableTimeSetResource   = outbound_callabletimeset.generateOutboundCallabletimeset(
 			callableTimeSetResourceId,
 			callableTimeSetName,
-			generateCallableTimesBlock(
+			outbound_callabletimeset.generateCallableTimesBlock(
 				"Europe/Dublin",
-				generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
-				generateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
+				outbound_callabletimeset.generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+				outbound_callabletimeset.generateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
 			),
 		)
 

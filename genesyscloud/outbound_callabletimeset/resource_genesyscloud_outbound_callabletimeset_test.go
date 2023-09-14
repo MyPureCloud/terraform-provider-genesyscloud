@@ -1,4 +1,4 @@
-package outbound
+package outbound_callabletimeset
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ func TestAccResourceOutboundCallabletimeset(t *testing.T) {
 
 	var (
 		resourceId = "callable-time-set"
-		name1      = "Test Callable time set" + uuid.NewString()
+		name1      = "Test Callable time set " + uuid.NewString()
 		timeZone1  = "Africa/Abidjan"
 		timeZone2  = "Europe/Dublin"
 
@@ -58,20 +58,20 @@ func TestAccResourceOutboundCallabletimeset(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_zone_id", timeZone1),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.0.start_time", "07:00:00"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.0.stop_time", "18:00:00"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.0.day", "3"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.1.start_time", "09:30:00"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.1.stop_time", "22:30:00"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.1.day", "5"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_zone_id", timeZone2),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.0.start_time", "05:30:30"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.0.stop_time", "14:45:00"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.0.day", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.1.start_time", "10:15:45"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.1.stop_time", "20:30:00"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.1.day", "6"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_zone_id", timeZone1),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.0.start_time", "07:00:00"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.0.stop_time", "18:00:00"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.0.day", "3"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.1.start_time", "09:30:00"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.1.stop_time", "22:30:00"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.0.time_slots.1.day", "5"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_zone_id", timeZone2),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.0.start_time", "05:30:30"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.0.stop_time", "14:45:00"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.0.day", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.1.start_time", "10:15:45"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.1.stop_time", "20:30:00"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callabletimeset."+resourceId, "callable_times.1.time_slots.1.day", "6"),
 				),
 			},
 			{
