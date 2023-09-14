@@ -25,6 +25,16 @@ func BuildSDKStringValueIfNotNil(field **string, targetMap map[string]interface{
 }
 
 // BuildSDKInterfaceArrayValueIfNotNil will read a map and use the provided function to read the nested values if the value exists
+func BuildSDKTimeValueIfNotNil(time **time.Time, targetMap map[string]interface{}, key string) {
+	var timeValue *string = nil
+	if time != nil {
+		timeAsString := timeutil.Strftime(*time, TimeWriteFormat)
+		timeValue = &timeAsString
+	}
+	BuildSDKStringValueIfNotNil(&timeValue, targetMap, key)
+}
+
+// This function will read a map and use the provided function to read the nested values if the value exists
 func BuildSDKInterfaceArrayValueIfNotNil[T any](field **T, targetMap map[string]interface{}, key string, f func([]interface{}) *T) {
 	if values := targetMap[key]; values != nil {
 		*field = f(values.([]interface{}))
