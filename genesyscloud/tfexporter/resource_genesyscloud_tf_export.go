@@ -3,10 +3,8 @@ package tfexporter
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
-	"path"
+	"path/filepath"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
@@ -95,6 +93,13 @@ func ResourceTfExport() *schema.Resource {
 				Default:     false,
 				ForceNew:    true,
 			},
+			"split_files_by_resource": {
+				Description: "Split export files by resource type. This will also split the terraform provider and variable declarations into their own files.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				ForceNew:    true,
+			},
 			"log_permission_errors": {
 				Description: "Log permission/product issues rather than fail.",
 				Type:        schema.TypeBool,
@@ -128,7 +133,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 			return diagErr
 		}
 
-		d.SetId(gre.exportFilePath)
+		d.SetId(gre.exportDirPath)
 		return nil
 	}
 
@@ -139,7 +144,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 			return diagErr
 		}
 
-		d.SetId(gre.exportFilePath)
+		d.SetId(gre.exportDirPath)
 		return nil
 	}
 
@@ -150,51 +155,36 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diagErr
 	}
 
-	d.SetId(gre.exportFilePath)
+	d.SetId(gre.exportDirPath)
 
 	return nil
 }
 
+// If the output directory doesn't exist or empty, mark the resource for creation.
 func readTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
-	// If the output config file doesn't exist, mark the resource for creation.
 	path := d.Id()
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		d.SetId("")
 		return nil
 	}
+	if isEmpty, diagErr := isDirEmpty(path); isEmpty || diagErr != nil {
+		d.SetId("")
+		return diagErr
+	}
+
 	return nil
 }
 
+// Delete everything (files and subdirectories) inside the export directory
+// not including the directory itself
 func deleteTfExport(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
-	configPath := d.Id()
-	if _, err := os.Stat(configPath); err == nil {
-		log.Printf("Deleting export config %s", configPath)
-		os.Remove(configPath)
+	exportPath := d.Id()
+	dir, err := os.ReadDir(exportPath)
+	if err != nil {
+		return diag.FromErr(err)
 	}
-
-	stateFile, _ := getFilePath(d, defaultTfStateFile)
-	if _, err := os.Stat(stateFile); err == nil {
-		log.Printf("Deleting export state %s", stateFile)
-		os.Remove(stateFile)
-	}
-
-	tfVarsFile, _ := getFilePath(d, defaultTfVarsFile)
-	if _, err := os.Stat(tfVarsFile); err == nil {
-		log.Printf("Deleting export vars %s", tfVarsFile)
-		os.Remove(tfVarsFile)
-	}
-
-	// delete left over folders e.g. prompt audio data
-	dir, _ := getFilePath(d, "")
-	contents, err := ioutil.ReadDir(dir)
-	if err == nil {
-		for _, c := range contents {
-			if c.IsDir() {
-				pathToLeftoverDir := path.Join(dir, c.Name())
-				log.Printf("Deleting leftover directory %s", pathToLeftoverDir)
-				_ = os.RemoveAll(pathToLeftoverDir)
-			}
-		}
+	for _, d := range dir {
+		os.RemoveAll(filepath.Join(exportPath, d.Name()))
 	}
 
 	return nil
