@@ -181,12 +181,12 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			contact_list_id = genesyscloud_outbound_contact_list.%s.id
 		}
 		`, ruleSetResourceId, "tf ruleset "+uuid.NewString(), contactListResourceId,
-	) + outbound_callabletimeset.generateOutboundCallabletimeset(
+	) + outbound_callabletimeset.GenerateOutboundCallabletimeset(
 		callableTimeSetId,
 		"tf timeset "+uuid.NewString(),
-		outbound_callabletimeset.generateCallableTimesBlock(
+		outbound_callabletimeset.GenerateCallableTimesBlock(
 			"Africa/Abidjan",
-			outbound_callabletimeset.generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+			outbound_callabletimeset.GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
 		))
 
 	resource.Test(t, resource.TestCase{

@@ -2,7 +2,6 @@ package outbound_callabletimeset
 
 import (
 	"fmt"
-	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
@@ -22,25 +21,25 @@ func TestAccResourceOutboundCallabletimeset(t *testing.T) {
 
 		name2 = "Test Callable time set" + uuid.NewString()
 
-		timeBlock1 = generateCallableTimesBlock(
+		timeBlock1 = GenerateCallableTimesBlock(
 			timeZone1,
-			generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
-			generateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
+			GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+			GenerateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
 		)
-		timeBlock2 = generateCallableTimesBlock(
+		timeBlock2 = GenerateCallableTimesBlock(
 			timeZone2,
-			generateTimeSlotsBlock("05:30:30", "14:45:00", "1"),
-			generateTimeSlotsBlock("10:15:45", "20:30:00", "6"),
+			GenerateTimeSlotsBlock("05:30:30", "14:45:00", "1"),
+			GenerateTimeSlotsBlock("10:15:45", "20:30:00", "6"),
 		)
-		timeBlock3 = generateCallableTimesBlock(
+		timeBlock3 = GenerateCallableTimesBlock(
 			timeZone1,
-			generateTimeSlotsBlock("09:00:00", "21:30:30", "1"),
-			generateTimeSlotsBlock("10:30:45", "23:00:15", "7"),
+			GenerateTimeSlotsBlock("09:00:00", "21:30:30", "1"),
+			GenerateTimeSlotsBlock("10:30:45", "23:00:15", "7"),
 		)
-		timeBlock4 = generateCallableTimesBlock(
+		timeBlock4 = GenerateCallableTimesBlock(
 			timeZone2,
-			generateTimeSlotsBlock("08:15:15", "20:30:45", "2"),
-			generateTimeSlotsBlock("01:00:00", "12:00:00", "4"),
+			GenerateTimeSlotsBlock("08:15:15", "20:30:45", "2"),
+			GenerateTimeSlotsBlock("01:00:00", "12:00:00", "4"),
 		)
 	)
 
@@ -50,7 +49,7 @@ func TestAccResourceOutboundCallabletimeset(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateOutboundCallabletimeset(
+				Config: GenerateOutboundCallabletimeset(
 					resourceId,
 					name1,
 					timeBlock1,
@@ -76,7 +75,7 @@ func TestAccResourceOutboundCallabletimeset(t *testing.T) {
 			},
 			{
 				// Update with new name and callable times time slots
-				Config: generateOutboundCallabletimeset(
+				Config: GenerateOutboundCallabletimeset(
 					resourceId,
 					name2,
 					timeBlock3,
@@ -109,44 +108,6 @@ func TestAccResourceOutboundCallabletimeset(t *testing.T) {
 		},
 		CheckDestroy: testVerifyCallabletimesetDestroyed,
 	})
-}
-
-func generateOutboundCallabletimeset(
-	resourceId string,
-	name string,
-	nestedBlocks ...string) string {
-
-	return fmt.Sprintf(`
-		resource "genesyscloud_outbound_callabletimeset" "%s"{
-			name = "%s"
-			%s
-		}
-		`, resourceId, name, strings.Join(nestedBlocks, "\n"),
-	)
-}
-
-func generateCallableTimesBlock(
-	timeZoneID string,
-	attrs ...string) string {
-	return fmt.Sprintf(`
-		callable_times {
-			time_zone_id = "%s"
-			%s
-		}
-	`, timeZoneID, strings.Join(attrs, "\n"))
-}
-
-func generateTimeSlotsBlock(
-	startTime string,
-	stopTime string,
-	day string) string {
-	return fmt.Sprintf(`
-		time_slots {
-			start_time = "%s"
-			stop_time = "%s"
-			day = %s
-		}
-	`, startTime, stopTime, day)
 }
 
 func testVerifyCallabletimesetDestroyed(state *terraform.State) error {

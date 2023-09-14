@@ -95,13 +95,13 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 
 		callableTimeSetResourceId = "callable_time_set"
 		callableTimeSetName       = "Test CTS " + uuid.NewString()
-		callableTimeSetResource   = outbound_callabletimeset.generateOutboundCallabletimeset(
+		callableTimeSetResource   = outbound_callabletimeset.GenerateOutboundCallabletimeset(
 			callableTimeSetResourceId,
 			callableTimeSetName,
-			outbound_callabletimeset.generateCallableTimesBlock(
+			outbound_callabletimeset.GenerateCallableTimesBlock(
 				"Europe/Dublin",
-				outbound_callabletimeset.generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
-				outbound_callabletimeset.generateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
+				outbound_callabletimeset.GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+				outbound_callabletimeset.GenerateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
 			),
 		)
 	)
