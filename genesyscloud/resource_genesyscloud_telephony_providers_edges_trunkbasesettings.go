@@ -60,7 +60,7 @@ func ResourceTrunkBaseSettings() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: suppressEquivalentJsonDiffs,
+				DiffSuppressFunc: SuppressEquivalentJsonDiffs,
 			},
 			"trunk_type": {
 				Description:  "The type of this trunk base.Valid values: EXTERNAL, PHONE, EDGE.",

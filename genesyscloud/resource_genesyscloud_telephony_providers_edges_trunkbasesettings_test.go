@@ -139,34 +139,34 @@ func generateTrunkBaseSettingsResourceWithCustomAttrs(
 
 func generateTrunkBaseSettingsProperties(settingsName, trunkMaxDialTimeout, trunkTransportSipDscpValue, trunkMediaDisconnectOnIdleRtp string, trunkMediaCodec []string) string {
 	// A random selection of properties
-	return "properties = " + generateJsonEncodedProperties(
-		generateJsonProperty(
+	return "properties = " + GenerateJsonEncodedProperties(
+		GenerateJsonProperty(
 			"trunk_label", generateJsonObject(
-				generateJsonProperty(
+				GenerateJsonProperty(
 					"value", generateJsonObject(
-						generateJsonProperty("instance", strconv.Quote(settingsName)),
+						GenerateJsonProperty("instance", strconv.Quote(settingsName)),
 					)))),
-		generateJsonProperty(
+		GenerateJsonProperty(
 			"trunk_max_dial_timeout", generateJsonObject(
-				generateJsonProperty(
+				GenerateJsonProperty(
 					"value", generateJsonObject(
-						generateJsonProperty("instance", strconv.Quote(trunkMaxDialTimeout)),
+						GenerateJsonProperty("instance", strconv.Quote(trunkMaxDialTimeout)),
 					)))),
-		generateJsonProperty(
+		GenerateJsonProperty(
 			"trunk_transport_sip_dscp_value", generateJsonObject(
-				generateJsonProperty(
+				GenerateJsonProperty(
 					"value", generateJsonObject(
-						generateJsonProperty("instance", trunkTransportSipDscpValue),
+						GenerateJsonProperty("instance", trunkTransportSipDscpValue),
 					)))),
-		generateJsonProperty(
+		GenerateJsonProperty(
 			"trunk_media_disconnect_on_idle_rtp", generateJsonObject(
-				generateJsonProperty(
+				GenerateJsonProperty(
 					"value", generateJsonObject(
-						generateJsonProperty("instance", trunkMediaDisconnectOnIdleRtp),
+						GenerateJsonProperty("instance", trunkMediaDisconnectOnIdleRtp),
 					)))),
-		generateJsonProperty(
+		GenerateJsonProperty(
 			"trunk_media_codec", generateJsonObject(
-				generateJsonProperty(
+				GenerateJsonProperty(
 					"value", generateJsonObject(
 						generateJsonArrayProperty("instance", strings.Join(trunkMediaCodec, ",")),
 					)))),

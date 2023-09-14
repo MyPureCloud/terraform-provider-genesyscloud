@@ -315,7 +315,7 @@ var (
 				Description:      "Custom fields defined in the schema referenced by the open action type selected.",
 				Type:             schema.TypeString,
 				Optional:         true,
-				DiffSuppressFunc: suppressEquivalentJsonDiffs,
+				DiffSuppressFunc: SuppressEquivalentJsonDiffs,
 			},
 		},
 	}

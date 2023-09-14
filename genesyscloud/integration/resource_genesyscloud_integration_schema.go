@@ -38,14 +38,14 @@ func ResourceIntegration() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: suppressEquivalentJsonDiffs,
+				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
 			},
 			"advanced": {
 				Description:      "Integration advanced config (JSON string).",
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: suppressEquivalentJsonDiffs,
+				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
 			},
 			"credentials": {
 				Description: "Credentials required for the integration. The required keys are indicated in the credentials property of the Integration Type.",

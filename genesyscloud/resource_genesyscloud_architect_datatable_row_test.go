@@ -64,8 +64,8 @@ func TestAccResourceArchitectDatatableRow(t *testing.T) {
 					rowResource1,
 					"genesyscloud_architect_datatable."+tableResource1+".id",
 					keyVal1,
-					generateJsonEncodedProperties(
-						generateJsonProperty(propInt, intVal1), // Most props in state should be default
+					GenerateJsonEncodedProperties(
+						GenerateJsonProperty(propInt, intVal1), // Most props in state should be default
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -83,11 +83,11 @@ func TestAccResourceArchitectDatatableRow(t *testing.T) {
 					rowResource1,
 					"genesyscloud_architect_datatable."+tableResource1+".id",
 					keyVal1,
-					generateJsonEncodedProperties(
-						generateJsonProperty(propInt, intVal1),
-						generateJsonProperty(propStr, strconv.Quote(strVal1)),
-						generateJsonProperty(propBool, falseValue),
-						generateJsonProperty(propNum, numVal1),
+					GenerateJsonEncodedProperties(
+						GenerateJsonProperty(propInt, intVal1),
+						GenerateJsonProperty(propStr, strconv.Quote(strVal1)),
+						GenerateJsonProperty(propBool, falseValue),
+						GenerateJsonProperty(propNum, numVal1),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -105,10 +105,10 @@ func TestAccResourceArchitectDatatableRow(t *testing.T) {
 					rowResource1,
 					"genesyscloud_architect_datatable."+tableResource1+".id",
 					keyVal1,
-					generateJsonEncodedProperties(
-						generateJsonProperty(propInt, intVal2),
-						generateJsonProperty(propStr, strconv.Quote(strVal2)),
-						generateJsonProperty(propNum, numVal2),
+					GenerateJsonEncodedProperties(
+						GenerateJsonProperty(propInt, intVal2),
+						GenerateJsonProperty(propStr, strconv.Quote(strVal2)),
+						GenerateJsonProperty(propNum, numVal2),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(

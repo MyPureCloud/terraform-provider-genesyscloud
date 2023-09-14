@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -47,8 +49,8 @@ func TestAccResourceIntegration(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create without config
@@ -125,11 +127,11 @@ func TestAccResourceIntegration(t *testing.T) {
 						strconv.Quote(inteName2),
 						strconv.Quote(configNotes),
 						"", //Empty credential ID
-						generateJsonEncodedProperties(
-							generateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
-							generateJsonProperty(urlKey, strconv.Quote(propURL)),
-							generateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
-							generateJsonProperty(groupsKey, fmt.Sprintf(`[%s]`, strconv.Quote(fakeGroupID))),
+						gcloud.GenerateJsonEncodedProperties(
+							gcloud.GenerateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
+							gcloud.GenerateJsonProperty(urlKey, strconv.Quote(propURL)),
+							gcloud.GenerateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
+							gcloud.GenerateJsonProperty(groupsKey, fmt.Sprintf(`[%s]`, strconv.Quote(fakeGroupID))),
 						),
 						nullValue,
 					),
@@ -162,11 +164,11 @@ func TestAccResourceIntegration(t *testing.T) {
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
 						"", //Empty credential ID
-						generateJsonEncodedProperties(
-							generateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
-							generateJsonProperty(urlKey, strconv.Quote(propURL)),
-							generateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
-							generateJsonProperty(groupsKey, fmt.Sprintf(`[%s]`, "genesyscloud_group."+groupResource1+".id")),
+						gcloud.GenerateJsonEncodedProperties(
+							gcloud.GenerateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
+							gcloud.GenerateJsonProperty(urlKey, strconv.Quote(propURL)),
+							gcloud.GenerateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
+							gcloud.GenerateJsonProperty(groupsKey, fmt.Sprintf(`[%s]`, "genesyscloud_group."+groupResource1+".id")),
 						),
 						nullValue,
 					),
@@ -190,11 +192,11 @@ func TestAccResourceIntegration(t *testing.T) {
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes2),
 						"", //Empty credentials
-						generateJsonEncodedProperties(
-							generateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
-							generateJsonProperty(urlKey, strconv.Quote(propURL)),
-							generateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
-							generateJsonProperty(groupsKey, "[]"),
+						gcloud.GenerateJsonEncodedProperties(
+							gcloud.GenerateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
+							gcloud.GenerateJsonProperty(urlKey, strconv.Quote(propURL)),
+							gcloud.GenerateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
+							gcloud.GenerateJsonProperty(groupsKey, "[]"),
 						),
 						nullValue,
 					),
@@ -255,8 +257,8 @@ func TestAccResourceIntegration(t *testing.T) {
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
 						generateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
-						generateJsonEncodedProperties(
-							generateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
+						gcloud.GenerateJsonEncodedProperties(
+							gcloud.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),
 						nullValue,
 					),
@@ -286,8 +288,8 @@ func TestAccResourceIntegration(t *testing.T) {
 						strconv.Quote(inteName2),
 						nullValue, // Empty notes
 						generateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
-						generateJsonEncodedProperties(
-							generateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
+						gcloud.GenerateJsonEncodedProperties(
+							gcloud.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),
 						nullValue,
 					),
@@ -382,7 +384,7 @@ func testVerifyIntegrationDestroyed(state *terraform.State) error {
 		integration, resp, err := integrationAPI.GetIntegration(rs.Primary.ID, 100, 1, "", nil, "", "")
 		if integration != nil {
 			return fmt.Errorf("Integration (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// Integration not found as expected
 			continue
 		} else {

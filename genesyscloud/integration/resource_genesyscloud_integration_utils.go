@@ -1,8 +1,11 @@
 package integration
 
 import (
+	"context"
 	"encoding/json"
 	"log"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -10,11 +13,12 @@ import (
 )
 
 // getIntegrationFromResourceData maps data from schema ResourceData object to a platformclientv2.Integration
-func getIntegrationFromResourceData(d *schema.ResourceData) platformclientv2.Integration {
+// this does not include the config
+func getIntegrationFromResourceData(d *schema.ResourceData) *platformclientv2.Integration {
 	intendedState := d.Get("intended_state").(string)
 	integrationType := d.Get("integration_type").(string)
 
-	return platformclientv2.Integration{
+	return &platformclientv2.Integration{
 		IntegrationType: &platformclientv2.Integrationtype{
 			Id: &integrationType,
 		},
@@ -84,11 +88,11 @@ func flattenConfigCredentials(credentials map[string]platformclientv2.Credential
 	return results
 }
 
-func updateIntegrationConfig(d *schema.ResourceData, integrationAPI *platformclientv2.IntegrationsApi) (diag.Diagnostics, string) {
+func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.ResourceData, p *integrationsProxy) (diag.Diagnostics, string) {
 	if d.HasChange("config") {
 		if configInput := d.Get("config").([]interface{}); configInput != nil {
 
-			integrationConfig, _, err := integrationAPI.GetIntegrationConfigCurrent(d.Id())
+			integrationConfig, _, err := p.getIntegrationConfig(ctx, d.Id())
 			if err != nil {
 				return diag.Errorf("Failed to get the integration config for integration %s before updating its config: %s", d.Id(), err), ""
 			}
@@ -123,15 +127,15 @@ func updateIntegrationConfig(d *schema.ResourceData, integrationAPI *platformcli
 				credential = buildConfigCredentials(configMap["credentials"].(map[string]interface{}))
 			}
 
-			diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
 				// Get latest config version
-				integrationConfig, resp, err := integrationAPI.GetIntegrationConfigCurrent(d.Id())
+				integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 				if err != nil {
 					return resp, diag.Errorf("Failed to get the integration config for integration %s before updating its config: %s", d.Id(), err)
 				}
 
-				_, resp, err = integrationAPI.PutIntegrationConfigCurrent(d.Id(), platformclientv2.Integrationconfiguration{
+				_, resp, err = p.updateIntegrationConfig(ctx, d.Id(), &platformclientv2.Integrationconfiguration{
 					Name:        &name,
 					Notes:       &notes,
 					Version:     integrationConfig.Version,

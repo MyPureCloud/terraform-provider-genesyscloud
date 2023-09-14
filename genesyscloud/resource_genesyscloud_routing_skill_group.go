@@ -134,7 +134,7 @@ func ResourceRoutingSkillGroup() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: suppressEquivalentJsonDiffs,
+				DiffSuppressFunc: SuppressEquivalentJsonDiffs,
 			},
 			"member_division_ids": {
 				Description: "The IDs of member divisions to add or remove for this skill group. An empty array means all divisions will be removed, \"*\" means all divisions will be added.",

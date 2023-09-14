@@ -130,40 +130,40 @@ func generatePhoneBaseSettingsResourceWithCustomAttrs(
 
 func generatePhoneBaseSettingsProperties(phoneLabel, phoneMaxLineKeys, phoneMwiEnabled, phoneMwiSubscribe, phoneStandalone string, phoneStations []string) string {
 	// A random selection of properties
-	return "properties = " + generateJsonEncodedProperties(
-		generateJsonProperty(
+	return "properties = " + GenerateJsonEncodedProperties(
+		GenerateJsonProperty(
 			"phone_label", generateJsonObject(
-				generateJsonProperty(
+				GenerateJsonProperty(
 					"value", generateJsonObject(
-						generateJsonProperty("instance", strconv.Quote(phoneLabel)),
+						GenerateJsonProperty("instance", strconv.Quote(phoneLabel)),
 					)))),
-		generateJsonProperty(
+		GenerateJsonProperty(
 			"phone_maxLineKeys", generateJsonObject(
-				generateJsonProperty(
+				GenerateJsonProperty(
 					"value", generateJsonObject(
-						generateJsonProperty("instance", phoneMaxLineKeys),
+						GenerateJsonProperty("instance", phoneMaxLineKeys),
 					)))),
-		generateJsonProperty(
+		GenerateJsonProperty(
 			"phone_mwi_enabled", generateJsonObject(
-				generateJsonProperty(
+				GenerateJsonProperty(
 					"value", generateJsonObject(
-						generateJsonProperty("instance", phoneMwiEnabled),
+						GenerateJsonProperty("instance", phoneMwiEnabled),
 					)))),
-		generateJsonProperty(
+		GenerateJsonProperty(
 			"phone_mwi_subscribe", generateJsonObject(
-				generateJsonProperty(
+				GenerateJsonProperty(
 					"value", generateJsonObject(
-						generateJsonProperty("instance", phoneMwiSubscribe),
+						GenerateJsonProperty("instance", phoneMwiSubscribe),
 					)))),
-		generateJsonProperty(
+		GenerateJsonProperty(
 			"phone_standalone", generateJsonObject(
-				generateJsonProperty(
+				GenerateJsonProperty(
 					"value", generateJsonObject(
-						generateJsonProperty("instance", phoneStandalone),
+						GenerateJsonProperty("instance", phoneStandalone),
 					)))),
-		generateJsonProperty(
+		GenerateJsonProperty(
 			"phone_stations", generateJsonObject(
-				generateJsonProperty(
+				GenerateJsonProperty(
 					"value", generateJsonObject(
 						generateJsonArrayProperty("instance", strings.Join(phoneStations, ",")),
 					)))),

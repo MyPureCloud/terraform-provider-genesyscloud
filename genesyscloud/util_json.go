@@ -11,7 +11,7 @@ import (
 
 // SuppressDiffFunc for properties that will accept JSON strings
 // Any null property in the 'new' json is removed(deeply) prior to deep comparison
-func suppressEquivalentJsonDiffs(k, old, new string, d *schema.ResourceData) bool {
+func SuppressEquivalentJsonDiffs(k, old, new string, d *schema.ResourceData) bool {
 	if old == new {
 		return true
 	}

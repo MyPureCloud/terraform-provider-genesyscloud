@@ -34,11 +34,18 @@ func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Conf
 }
 
 func createIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	intendedState := d.Get("intended_state").(string)
+	integrationType := d.Get("integration_type").(string)
+
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
-	integrationReq := getIntegrationFromResourceData(d)
-	integration, err := ip.createIntegration(ctx, &integrationReq)
+	createIntegrationReq := &platformclientv2.Createintegrationrequest{
+		IntegrationType: &platformclientv2.Integrationtype{
+			Id: &integrationType,
+		},
+	}
+	integration, err := ip.createIntegration(ctx, createIntegrationReq)
 	if err != nil {
 		return diag.Errorf("Failed to create integration: %s", err)
 	}
@@ -46,18 +53,15 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	d.SetId(*integration.Id)
 
 	//Update integration config separately
-	diagErr, name := updateIntegrationConfig(d, integrationAPI)
+	diagErr, name := updateIntegrationConfigFromResourceData(ctx, d, ip)
 	if diagErr != nil {
 		return diagErr
 	}
 
 	// Set attributes that can only be modified in a patch
-	if d.HasChange(
-		"intended_state") {
+	if d.HasChange("intended_state") {
 		log.Printf("Updating additional attributes for integration %s", name)
-		const pageSize = 25
-		const pageNum = 1
-		_, _, patchErr := integrationAPI.PatchIntegration(d.Id(), pageSize, pageNum, "", nil, "", "", platformclientv2.Integration{
+		_, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
 			IntendedState: &intendedState,
 		})
 
@@ -71,17 +75,17 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	ip := getIntegrationsProxy(sdkConfig)
 
 	log.Printf("Reading integration %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		const pageSize = 100
 		const pageNum = 1
-		currentIntegration, resp, getErr := integrationAPI.GetIntegration(d.Id(), pageSize, pageNum, "", nil, "", "")
+		currentIntegration, resp, getErr := ip.getIntegrationById(ctx, d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
@@ -95,7 +99,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		// Use returned ID to get current config, which contains complete configuration
-		integrationConfig, _, err := integrationAPI.GetIntegrationConfigCurrent(*currentIntegration.Id)
+		integrationConfig, _, err := ip.getIntegrationConfig(ctx, *currentIntegration.Id)
 
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("Failed to read config of integration %s: %s", d.Id(), getErr))
@@ -110,23 +114,19 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	intendedState := d.Get("intended_state").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	ip := getIntegrationsProxy(sdkConfig)
 
-	diagErr, name := updateIntegrationConfig(d, integrationAPI)
+	diagErr, name := updateIntegrationConfigFromResourceData(ctx, d, ip)
 	if diagErr != nil {
 		return diagErr
 	}
 
 	if d.HasChange("intended_state") {
-
 		log.Printf("Updating integration %s", name)
-		const pageSize = 25
-		const pageNum = 1
-		_, _, patchErr := integrationAPI.PatchIntegration(d.Id(), pageSize, pageNum, "", nil, "", "", platformclientv2.Integration{
+		_, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
 			IntendedState: &intendedState,
 		})
 		if patchErr != nil {
@@ -139,21 +139,18 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	ip := getIntegrationsProxy(sdkConfig)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
-
-	_, _, err := integrationAPI.DeleteIntegration(d.Id())
+	_, err := ip.deleteIntegration(ctx, d.Id())
 	if err != nil {
 		return diag.Errorf("Failed to delete the integration %s: %s", d.Id(), err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		const pageSize = 100
-		const pageNum = 1
-		_, resp, err := integrationAPI.GetIntegration(d.Id(), pageSize, pageNum, "", nil, "", "")
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		_, resp, err := ip.getIntegrationById(ctx, d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				// Integration deleted
 				log.Printf("Deleted Integration %s", d.Id())
 				return nil

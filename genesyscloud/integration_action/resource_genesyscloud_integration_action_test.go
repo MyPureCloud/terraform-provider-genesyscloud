@@ -239,17 +239,17 @@ func generateJsonSchemaDocStr(properties ...string) string {
 
 	propStrs := []string{}
 	for _, prop := range properties {
-		propStrs = append(propStrs, generateJsonProperty(prop, generateJsonObject(
-			generateJsonProperty(attrType, strconv.Quote(typeStr)),
+		propStrs = append(propStrs, GenerateJsonProperty(prop, generateJsonObject(
+			GenerateJsonProperty(attrType, strconv.Quote(typeStr)),
 		)))
 	}
 	allProps := strings.Join(propStrs, "\n")
 
-	return generateJsonEncodedProperties(
+	return GenerateJsonEncodedProperties(
 		// First field is required
 		generateJsonArrayProperty("required", strconv.Quote(properties[0])),
-		generateJsonProperty(attrType, strconv.Quote(typeObject)),
-		generateJsonProperty(attrProperties, generateJsonObject(
+		GenerateJsonProperty(attrType, strconv.Quote(typeObject)),
+		GenerateJsonProperty(attrProperties, generateJsonObject(
 			allProps,
 		)),
 	)
