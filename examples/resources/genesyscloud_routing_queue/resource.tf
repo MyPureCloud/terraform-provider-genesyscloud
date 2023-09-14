@@ -9,6 +9,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
   whisper_prompt_id                 = data.genesyscloud_architect_user_prompt.whisper.id
   auto_answer_only                  = true
   enable_transcription              = true
+  suppress_in_queue_call_recording  = true
   enable_manual_assignment          = true
   calling_party_name                = "Example Inc."
   outbound_messaging_sms_address_id = "c1bb045e-254d-4316-9d78-cea6849a3db4"

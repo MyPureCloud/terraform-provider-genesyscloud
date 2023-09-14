@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v107/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -66,6 +66,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					nullValue, // No calling party number
 					nullValue, // enable_manual_assignment false
 					nullValue, // enable_transcription false
+					nullValue, // suppress_in_queue_call_recording false
 					GenerateMediaSettings("media_settings_call", alertTimeout1, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, slPercent1, slDuration1),
@@ -85,6 +86,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", falseValue),
 					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
 					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
@@ -109,6 +111,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					strconv.Quote(callingPartyNumber),
 					trueValue, // enable_manual_assignment true
 					trueValue, // enable_transcription true
+					trueValue, // suppress_in_queue_call_recording true
 					GenerateMediaSettings("media_settings_call", alertTimeout2, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_callback", alertTimeout2, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_chat", alertTimeout2, slPercent2, slDuration2),
@@ -130,6 +133,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "calling_party_number", callingPartyNumber),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", trueValue),
 					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
 					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout2, slPercent2, slDuration2),
 					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout2, slPercent2, slDuration2),
@@ -205,6 +209,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					nullValue, // No calling party name
 					nullValue, // No calling party number
 					nullValue, // enable_transcription false
+					nullValue, // suppress_in_queue_call_recording false
 					nullValue, // enable_manual_assignment false
 					GenerateMediaSettings("media_settings_call", alertTimeout1, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, slPercent1, slDuration1),
@@ -233,6 +238,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", falseValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.operator", conditionalGroupRouting1Operator),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.metric", conditionalGroupRouting1Metric),
@@ -274,6 +280,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					nullValue, // No calling party name
 					nullValue, // No calling party number
 					nullValue, // enable_transcription false
+					nullValue, // suppress_in_queue_call_recording false
 					nullValue, // enable_manual_assignment false
 					GenerateMediaSettings("media_settings_call", alertTimeout1, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, slPercent1, slDuration1),
@@ -314,6 +321,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", falseValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.operator", conditionalGroupRouting1Operator),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.metric", conditionalGroupRouting1Metric),
@@ -391,6 +399,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					nullValue, // No calling party name
 					nullValue, // No calling party number
 					nullValue, // enable_transcription false
+					nullValue, // suppress_in_queue_call_recording false
 					nullValue, // enable_manual_assignment false
 					GenerateMediaSettings("media_settings_call", alertTimeout1, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, slPercent1, slDuration1),
@@ -420,6 +429,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", falseValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.operator", conditionalGroupRouting1Operator),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.metric", conditionalGroupRouting1Metric),
@@ -927,6 +937,7 @@ func generateRoutingQueueResource(
 	callingPartyName string,
 	callingPartyNumber string,
 	enableTranscription string,
+	suppressInQueueCallRecording string,
 	enableManualAssignment string,
 	nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
@@ -939,6 +950,7 @@ func generateRoutingQueueResource(
 		calling_party_name = %s
 		calling_party_number = %s
 		enable_transcription = %s
+		suppress_in_queue_call_recording = %s
   		enable_manual_assignment = %s
 		%s
 	}
@@ -952,6 +964,7 @@ func generateRoutingQueueResource(
 		callingPartyName,
 		callingPartyNumber,
 		enableTranscription,
+		suppressInQueueCallRecording,
 		enableManualAssignment,
 		strings.Join(nestedBlocks, "\n"))
 }
