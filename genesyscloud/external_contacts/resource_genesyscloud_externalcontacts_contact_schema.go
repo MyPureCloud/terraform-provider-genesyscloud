@@ -32,7 +32,11 @@ func ResourceExternalContact() *schema.Resource {
 			"display": {
 				Description: "Display string of the phone number.",
 				Type:        schema.TypeString,
-				Optional:    true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return hashFormattedPhoneNumber(old) == hashFormattedPhoneNumber(new)
+				},
+				Optional: true,
+				Computed: true,
 			},
 			"extension": {
 				Description: "Phone extension.",
@@ -48,6 +52,7 @@ func ResourceExternalContact() *schema.Resource {
 				Description:      "Phone number in e164 format.",
 				Type:             schema.TypeString,
 				Optional:         true,
+				Computed:         true,
 				ValidateDiagFunc: gcloud.ValidatePhoneNumber,
 			},
 			"country_code": {
