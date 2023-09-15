@@ -104,7 +104,7 @@ func createOutboundCallabletimesetFn(ctx context.Context, p *outboundCallabletim
 
 // getAllOutboundCallabletimesetFn is the implementation for retrieving all Outbound Callabletimeset in Genesys Cloud
 func getAllOutboundCallabletimesetFn(ctx context.Context, p *outboundCallabletimesetProxy) (*[]platformclientv2.Callabletimeset, error) {
-	var alls []platformclientv2.Callabletimeset
+	var allCallabletimesets []platformclientv2.Callabletimeset
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
@@ -120,11 +120,11 @@ func getAllOutboundCallabletimesetFn(ctx context.Context, p *outboundCallabletim
 
 		for _, callableTimeSet := range *callableTimeSets.Entities {
 			log.Printf("Dealing with callableTimeSet id : %s", *callableTimeSet.Id)
-			alls = append(alls, callableTimeSet)
+			allCallabletimesets = append(allCallabletimesets, callableTimeSet)
 		}
 	}
 
-	return &alls, nil
+	return &allCallabletimesets, nil
 }
 
 // getOutboundCallabletimesetByIdFn is an implementation of the function to get a Genesys Cloud Outbound Callabletimeset by Id
