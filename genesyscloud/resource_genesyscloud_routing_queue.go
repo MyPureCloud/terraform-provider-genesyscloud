@@ -439,7 +439,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "Indicates whether recording in-queue calls is suppressed for this queue.",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
+				Default:     true,
 			},
 			"enable_manual_assignment": {
 				Description: "Indicates whether manual assignment is enabled for this queue.",
