@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -242,12 +243,12 @@ func TestAccResourceIntegration(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{ // Create a credential and use it as reference for the new integration
-				Config: generateCredentialResource(
+				Config: integrationCred.GenerateCredentialResource(
 					credResource1,
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
-					generateCredentialFields(
-						GenerateMapProperty(key1, strconv.Quote(val1)),
+					integrationCred.GenerateCredentialFields(
+						gcloud.GenerateMapProperty(key1, strconv.Quote(val1)),
 					),
 				) + generateIntegrationResource(
 					inteResource2,
@@ -256,7 +257,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
-						GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						gcloud.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
 						gcloud.GenerateJsonEncodedProperties(
 							gcloud.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),
@@ -273,12 +274,12 @@ func TestAccResourceIntegration(t *testing.T) {
 				),
 			},
 			{ // Update integration with credential specified
-				Config: generateCredentialResource(
+				Config: integrationCred.GenerateCredentialResource(
 					credResource1,
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
-					generateCredentialFields(
-						GenerateMapProperty(key1, strconv.Quote(val1)),
+					integrationCred.GenerateCredentialFields(
+						gcloud.GenerateMapProperty(key1, strconv.Quote(val1)),
 					),
 				) + generateIntegrationResource(
 					inteResource2,
@@ -287,7 +288,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName2),
 						nullValue, // Empty notes
-						GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						gcloud.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
 						gcloud.GenerateJsonEncodedProperties(
 							gcloud.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),

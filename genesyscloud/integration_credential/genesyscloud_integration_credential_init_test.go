@@ -7,12 +7,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const (
-	trueValue  = "true"
-	falseValue = "false"
-	nullValue  = "null"
-)
-
 // providerDataSources holds a map of all registered datasources
 var providerDataSources map[string]*schema.Resource
 
