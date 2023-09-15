@@ -1,10 +1,8 @@
-package integration
+package integration_credential
 
 import (
 	"sync"
 	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -31,8 +29,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_integration"] = ResourceIntegration()
-	providerResources["genesyscloud_group"] = gcloud.ResourceGroup()
+	providerResources["genesyscloud_integration_credential"] = ResourceIntegrationCredential()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -40,8 +37,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_integration"] = DataSourceIntegration()
-	providerDataSources["genesyscloud_group"] = gcloud.DataSourceGroup()
+	providerDataSources["genesyscloud_integration_credential"] = DataSourceIntegrationCredential()
 }
 
 // initTestresources initializes all test resources and data sources.
@@ -58,9 +54,9 @@ func initTestresources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for integration package
+	// Run setup function before starting the test suite for integration_credential package
 	initTestresources()
 
-	// Run the test suite for suite for the integration package
+	// Run the test suite for suite for the integration_credential package
 	m.Run()
 }

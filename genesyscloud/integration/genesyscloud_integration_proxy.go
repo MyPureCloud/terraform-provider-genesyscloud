@@ -131,9 +131,7 @@ func getAllIntegrationsFn(ctx context.Context, p *integrationsProxy) (*[]platfor
 			break
 		}
 
-		for _, integration := range *integrations.Entities {
-			allIntegrations = append(allIntegrations, integration)
-		}
+		allIntegrations = append(allIntegrations, *integrations.Entities...)
 	}
 
 	return &allIntegrations, nil
@@ -161,6 +159,8 @@ func getIntegrationByIdFn(ctx context.Context, p *integrationsProxy, integration
 }
 
 func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrationName string) (*platformclientv2.Integration, error) {
+	var foundIntegration *platformclientv2.Integration
+
 	const pageSize = 100
 	for pageNum := 1; ; pageNum++ {
 		integrations, _, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "")
@@ -174,10 +174,16 @@ func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrati
 
 		for _, integration := range *integrations.Entities {
 			if integration.Name != nil && *integration.Name == integrationName {
-				return &integration, nil
+				foundIntegration = &integration
+				break
 			}
 		}
+		if foundIntegration != nil {
+			break
+		}
 	}
+
+	return foundIntegration, nil
 }
 
 func updateIntegrationFn(ctx context.Context, p *integrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, error) {

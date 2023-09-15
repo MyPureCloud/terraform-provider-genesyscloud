@@ -106,20 +106,20 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 						reqUrlTemplate2,
 						reqType2,
 						strconv.Quote(reqTemp),
-						generateMapAttr(
+						GenerateMapAttr(
 							"headers",
-							generateMapProperty(headerKey, strconv.Quote(headerVal1)),
+							GenerateMapProperty(headerKey, strconv.Quote(headerVal1)),
 						),
 					),
 					generateIntegrationActionConfigResponse(
 						strconv.Quote(successTemplate),
-						generateMapAttr(
+						GenerateMapAttr(
 							"translation_map",
-							generateMapProperty(transMapAttr, strconv.Quote(transMapVal1)),
+							GenerateMapProperty(transMapAttr, strconv.Quote(transMapVal1)),
 						),
-						generateMapAttr(
+						GenerateMapAttr(
 							"translation_map_defaults",
-							generateMapProperty(transMapAttr, strconv.Quote(transMapValDefault1)),
+							GenerateMapProperty(transMapAttr, strconv.Quote(transMapValDefault1)),
 						),
 					),
 				),
@@ -157,20 +157,20 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 						reqUrlTemplate2,
 						reqType2,
 						strconv.Quote(reqTemp),
-						generateMapAttr(
+						GenerateMapAttr(
 							"headers",
-							generateMapProperty(headerKey, strconv.Quote(headerVal2)),
+							GenerateMapProperty(headerKey, strconv.Quote(headerVal2)),
 						),
 					),
 					generateIntegrationActionConfigResponse(
 						strconv.Quote(successTemplate),
-						generateMapAttr(
+						GenerateMapAttr(
 							"translation_map",
-							generateMapProperty(transMapAttr, strconv.Quote(transMapVal2)),
+							GenerateMapProperty(transMapAttr, strconv.Quote(transMapVal2)),
 						),
-						generateMapAttr(
+						GenerateMapAttr(
 							"translation_map_defaults",
-							generateMapProperty(transMapAttr, strconv.Quote(transMapValDefault2)),
+							GenerateMapProperty(transMapAttr, strconv.Quote(transMapValDefault2)),
 						),
 					),
 				),

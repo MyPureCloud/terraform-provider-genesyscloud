@@ -30,7 +30,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create group with 1 role in default division
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 				) + generateAuthRoleResource(
@@ -48,7 +48,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 			},
 			{
 				// Create another role and division and add to the group
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 				) + generateAuthRoleResource(
@@ -72,7 +72,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove a role from the group and modify division
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 				) + generateAuthRoleResource(
@@ -90,7 +90,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove all roles from the group
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 				) + generateAuthRoleResource(

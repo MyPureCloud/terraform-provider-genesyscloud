@@ -320,11 +320,11 @@ func generateJsonObject(properties ...string) string {
 	}`, strings.Join(properties, "\n"))
 }
 
-func generateMapProperty(propName string, propValue string) string {
+func GenerateMapProperty(propName string, propValue string) string {
 	return fmt.Sprintf(`%s = %s`, propName, propValue)
 }
 
-func generateMapAttr(name string, properties ...string) string {
+func GenerateMapAttr(name string, properties ...string) string {
 	return fmt.Sprintf(`%s = {
 		%s
 	}

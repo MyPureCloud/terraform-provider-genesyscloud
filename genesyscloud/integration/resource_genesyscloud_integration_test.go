@@ -153,7 +153,7 @@ func TestAccResourceIntegration(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{ // Create a group first and use it as reference for a new integration
-				Config: generateBasicGroupResource(
+				Config: gcloud.GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 				) + generateIntegrationResource(
@@ -247,7 +247,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
 					generateCredentialFields(
-						generateMapProperty(key1, strconv.Quote(val1)),
+						GenerateMapProperty(key1, strconv.Quote(val1)),
 					),
 				) + generateIntegrationResource(
 					inteResource2,
@@ -256,7 +256,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
-						generateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
 						gcloud.GenerateJsonEncodedProperties(
 							gcloud.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),
@@ -278,7 +278,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
 					generateCredentialFields(
-						generateMapProperty(key1, strconv.Quote(val1)),
+						GenerateMapProperty(key1, strconv.Quote(val1)),
 					),
 				) + generateIntegrationResource(
 					inteResource2,
@@ -287,7 +287,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					generateIntegrationConfig(
 						strconv.Quote(inteName2),
 						nullValue, // Empty notes
-						generateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
 						gcloud.GenerateJsonEncodedProperties(
 							gcloud.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),

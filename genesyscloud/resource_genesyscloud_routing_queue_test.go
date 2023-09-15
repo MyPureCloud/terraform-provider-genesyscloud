@@ -251,7 +251,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResourceId,
 					groupName,
 				) +
@@ -1238,7 +1238,7 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 			{
 				// Create
 				Config: generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
-					generateBasicGroupResource(groupResource, groupName) +
+					GenerateBasicGroupResource(groupResource, groupName) +
 					GenerateRoutingQueueResourceBasicWithDepends(
 						queueResource,
 						"genesyscloud_routing_skill_group."+skillGroupResource,

@@ -21,6 +21,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+func Flock() string {
+	return "asdasd"
+}
+
 var (
 	groupPhoneType       = "PHONE"
 	groupAddressResource = &schema.Resource{
@@ -527,4 +531,46 @@ func addGroupMembers(d *schema.ResourceData, membersToAdd []string, groupsAPI *p
 		return diagErr
 	}
 	return nil
+}
+
+func GenerateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
+	return generateGroupResource(resourceID, name, nullValue, nullValue, nullValue, trueValue, nestedBlocks...)
+}
+
+func generateGroupResource(
+	resourceID string,
+	name string,
+	desc string,
+	groupType string,
+	visibility string,
+	rulesVisible string,
+	nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_group" "%s" {
+		name = "%s"
+		description = %s
+		type = %s
+		visibility = %s
+		rules_visible = %s
+        %s
+	}
+	`, resourceID, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
+}
+
+func generateGroupAddress(number string, phoneType string, extension string) string {
+	return fmt.Sprintf(`addresses {
+				number = %s
+				type = "%s"
+                extension = %s
+			}
+			`, number, phoneType, extension)
+}
+
+func generateGroupOwners(userIDs ...string) string {
+	return fmt.Sprintf(`owner_ids = [%s]
+	`, strings.Join(userIDs, ","))
+}
+
+func generateGroupMembers(userIDs ...string) string {
+	return fmt.Sprintf(`member_ids = [%s]
+	`, strings.Join(userIDs, ","))
 }
