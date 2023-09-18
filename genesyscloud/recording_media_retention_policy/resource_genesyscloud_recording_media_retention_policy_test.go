@@ -1,10 +1,11 @@
-package genesyscloud
+package recording_media_retention_policy
 
 import (
 	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -917,7 +918,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanupRoutingEmailDomains()
+	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
@@ -2339,4 +2340,13 @@ func generateAssignSurveys(assignSurveys *[]Surveyassignment) string {
 	}
 
 	return assignSurveysString
+}
+
+func GenerateIntegrationResource(resourceID string, intendedState string, integrationType string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_integration" "%s" {
+        intended_state = %s
+        integration_type = %s
+        %s
+	}
+	`, resourceID, intendedState, integrationType, strings.Join(attrs, "\n"))
 }

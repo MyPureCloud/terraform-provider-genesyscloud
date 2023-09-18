@@ -25,7 +25,7 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanupRoutingEmailDomains()
+	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
@@ -66,7 +66,7 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanupRoutingEmailDomains()
+	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },

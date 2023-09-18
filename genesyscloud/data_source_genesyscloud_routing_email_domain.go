@@ -3,6 +3,8 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -59,4 +61,31 @@ func dataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceDat
 			}
 		}
 	})
+}
+
+func CleanupRoutingEmailDomains() {
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false, "")
+		if getErr != nil {
+			return
+		}
+
+		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
+			return
+		}
+
+		for _, routingEmailDomain := range *routingEmailDomains.Entities {
+			if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
+				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
+				if err != nil {
+					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
+					continue
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
 }
