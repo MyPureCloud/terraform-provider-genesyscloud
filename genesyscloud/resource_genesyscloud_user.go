@@ -13,6 +13,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	chunksProcess "terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -475,6 +476,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Creating user %s", email)
+
 	user, resp, err := usersAPI.PostUsers(createUser)
 	if err != nil {
 		if resp != nil && resp.Error != nil && (*resp.Error).Code == "general.conflict" {
@@ -1075,29 +1077,37 @@ func readUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclient
 }
 
 func updateUserSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
+
+	transformFunc := func(configSkill interface{}) platformclientv2.Userroutingskillpost {
+		skillMap := configSkill.(map[string]interface{})
+		skillID := skillMap["skill_id"].(string)
+		skillProf := skillMap["proficiency"].(float64)
+
+		return platformclientv2.Userroutingskillpost{
+			Id:          &skillID,
+			Proficiency: &skillProf,
+		}
+	}
+
+	chunkProcessor := func(chunk []platformclientv2.Userroutingskillpost) diag.Diagnostics {
+		diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			_, resp, err := usersAPI.PatchUserRoutingskillsBulk(d.Id(), chunk)
+			if err != nil {
+				return resp, diag.Errorf("Failed to update skills for user %s: %s", d.Id(), err)
+			}
+			return nil, nil
+		})
+		if diagErr != nil {
+			return diagErr
+		}
+		return nil
+	}
+
 	if d.HasChange("routing_skills") {
 		if skillsConfig := d.Get("routing_skills"); skillsConfig != nil {
-			sdkSkills := make([]platformclientv2.Userroutingskillpost, 0)
-
 			skillsList := skillsConfig.(*schema.Set).List()
-			for _, configSkill := range skillsList {
-				skillMap := configSkill.(map[string]interface{})
-				skillID := skillMap["skill_id"].(string)
-				skillProf := skillMap["proficiency"].(float64)
-
-				sdkSkills = append(sdkSkills, platformclientv2.Userroutingskillpost{
-					Id:          &skillID,
-					Proficiency: &skillProf,
-				})
-			}
-
-			return RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-				_, resp, err := usersAPI.PutUserRoutingskillsBulk(d.Id(), sdkSkills)
-				if err != nil {
-					return resp, diag.Errorf("Failed to update skills for user %s: %s", d.Id(), err)
-				}
-				return nil, nil
-			})
+			chunks := chunksProcess.ChunkItems(skillsList, transformFunc, 50)
+			return chunksProcess.ProcessChunks(chunks, chunkProcessor)
 		}
 	}
 	return nil
@@ -1191,26 +1201,46 @@ func updateUserRoutingLanguages(
 	api *platformclientv2.UsersApi) diag.Diagnostics {
 	// Bulk API restricts language adds to 50 per call
 	const maxBatchSize = 50
-	for i := 0; i < len(langsToUpdate); i += maxBatchSize {
-		end := i + maxBatchSize
-		if end > len(langsToUpdate) {
-			end = len(langsToUpdate)
-		}
-		var updateChunk []platformclientv2.Userroutinglanguagepost
-		for _, id := range langsToUpdate[i:end] {
-			newProf := float64(langProfs[id])
-			tempId := id
-			updateChunk = append(updateChunk, platformclientv2.Userroutinglanguagepost{
-				Id:          &tempId,
-				Proficiency: &newProf,
-			})
-		}
 
-		if len(updateChunk) > 0 {
+	chunkBuild := func(val string) platformclientv2.Userroutinglanguagepost {
+		newProf := float64(langProfs[val])
+		return platformclientv2.Userroutinglanguagepost{
+			Id:          &val,
+			Proficiency: &newProf,
+		}
+	}
+
+	// Generic call to prepare chunks for the Update. Takes in three args
+	// 1. langsToUpdate 2. The Entity prepare func for the update 3. Chunk Size
+	chunks := chunksProcess.ChunkItems(langsToUpdate, chunkBuild, maxBatchSize)
+	// Closure to process the chunks
+
+	chunkProcessor := func(chunk []platformclientv2.Userroutinglanguagepost) diag.Diagnostics {
+		diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			_, resp, err := api.PatchUserRoutinglanguagesBulk(userID, chunk)
+			if err != nil {
+				return resp, diag.Errorf("Failed to update languages for user %s: %s", userID, err)
+			}
+			return nil, nil
+		})
+		if diagErr != nil {
+			return diagErr
+		}
+		return nil
+	}
+
+	// Genric Function call which takes in the chunks and the processing function
+	return chunksProcess.ProcessChunks(chunks, chunkProcessor)
+}
+
+func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
+	if d.HasChange("profile_skills") {
+		if profileSkills := d.Get("profile_skills"); profileSkills != nil {
+			profileSkills := lists.SetToStringList(profileSkills.(*schema.Set))
 			diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-				_, resp, err := api.PatchUserRoutinglanguagesBulk(userID, updateChunk)
+				_, resp, err := usersAPI.PutUserProfileskills(d.Id(), *profileSkills)
 				if err != nil {
-					return resp, diag.Errorf("Failed to update languages for user %s: %s", userID, err)
+					return resp, diag.Errorf("Failed to update profile skills for user %s: %s", d.Id(), err)
 				}
 				return nil, nil
 			})
@@ -1220,47 +1250,6 @@ func updateUserRoutingLanguages(
 		}
 	}
 	return nil
-}
-
-func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
-	if d.HasChange("profile_skills") {
-		if profileSkills := d.Get("profile_skills"); profileSkills != nil {
-			profileSkills := lists.SetToStringList(profileSkills.(*schema.Set))
-			return updateUserProfileSkillsinChunks(d.Id(), *profileSkills, usersAPI)
-		}
-	}
-	return nil
-}
-
-func updateUserProfileSkillsinChunks(id string, profileSkills []string, api *platformclientv2.UsersApi) diag.Diagnostics {
-
-	chunkUploaderInstance :=
-		&chunkUploader[string, string, platformclientv2.UsersApi]{
-			id:                 id,
-			items:              profileSkills,
-			batchSize:          50,
-			platformApi:        api,
-			chunkProcessorAttr: chunkProfileSkillsProcessorFn[string, string, platformclientv2.UsersApi],
-			chunkBuilderAttr:   chunkProfileSkillsBuilderFn[string, string, platformclientv2.UsersApi],
-		}
-
-	return ProcessChunksInBatches(chunkUploaderInstance)
-
-}
-
-func chunkProfileSkillsProcessorFn[T string, K string, U platformclientv2.UsersApi](updateChunk []string, c *chunkUploader[string, string, platformclientv2.UsersApi]) diag.Diagnostics {
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		_, resp, err := c.platformApi.PutUserProfileskills(c.id, updateChunk)
-		if err != nil {
-			return resp, diag.Errorf("Failed to update profile skills for user %s: %s", c.id, err)
-		}
-		return nil, nil
-	})
-	return diagErr
-}
-
-func chunkProfileSkillsBuilderFn[T string, K string, U platformclientv2.UsersApi](seq int, updateChunk []string, c *chunkUploader[string, string, platformclientv2.UsersApi]) []string {
-	return append(updateChunk, c.items[seq])
 }
 
 func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
