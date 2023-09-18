@@ -6,6 +6,9 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
+	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
+	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -79,15 +82,18 @@ func registerResources() {
 
 	regInstance := &RegisterInstance{}
 
-	pat.SetRegistrar(regInstance)            //Registering process automation triggers
-	obs.SetRegistrar(regInstance)            //Resistering outbound ruleset
-	ob.SetRegistrar(regInstance)             //Registering outbound
-	obwm.SetRegistrar(regInstance)           //Registering outbound wrapup code mappings
-	gcloud.SetRegistrar(regInstance)         //Registering genesyscloud
-	obAttemptLimit.SetRegistrar(regInstance) //Registering outbound attempt limit
-	obContactList.SetRegistrar(regInstance)  //Registering outbound contact list
-	scripts.SetRegistrar(regInstance)        //Registering Scripts
-	smsAddresses.SetRegistrar(regInstance)   //Registering routing sms addresses
+	pat.SetRegistrar(regInstance)               //Registering process automation triggers
+	obs.SetRegistrar(regInstance)               //Resistering outbound ruleset
+	ob.SetRegistrar(regInstance)                //Registering outbound
+	obwm.SetRegistrar(regInstance)              //Registering outbound wrapup code mappings
+	gcloud.SetRegistrar(regInstance)            //Registering genesyscloud
+	obAttemptLimit.SetRegistrar(regInstance)    //Registering outbound attempt limit
+	obContactList.SetRegistrar(regInstance)     //Registering outbound contact list
+	scripts.SetRegistrar(regInstance)           //Registering Scripts
+	smsAddresses.SetRegistrar(regInstance)      //Registering routing sms addresses
+	integration.SetRegistrar(regInstance)       //Registering integrations
+	integrationAction.SetRegistrar(regInstance) //Registering integrations actions
+	integrationCred.SetRegistrar(regInstance)   //Registering integrations credentials
 
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
