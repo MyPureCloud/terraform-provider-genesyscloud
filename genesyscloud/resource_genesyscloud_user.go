@@ -457,6 +457,13 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return addrErr
 	}
 
+	// Check for a deleted user before creating
+	id, _ := getDeletedUserId(email, usersAPI)
+	if id != nil {
+		d.SetId(*id)
+		return restoreDeletedUser(ctx, d, meta, usersAPI)
+	}
+
 	createUser := platformclientv2.Createuser{
 		Email:      &email,
 		Name:       &name,
