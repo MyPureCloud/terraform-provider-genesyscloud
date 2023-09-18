@@ -158,7 +158,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
 					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
 					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
-					generateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
+					GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					generateRoutingLanguageResource(languageResource1, languageName) +
 					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
 					GenerateFlowResource(

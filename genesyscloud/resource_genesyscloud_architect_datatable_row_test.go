@@ -71,10 +71,10 @@ func TestAccResourceArchitectDatatableRow(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_datatable_row."+rowResource1, "key_value", keyVal1),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_datatable_row."+rowResource1, "datatable_id", "genesyscloud_architect_datatable."+tableResource1, "id"),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propInt, intVal1),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propBool, defBool1),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propNum, defNum),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propStr, defStr),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propInt, intVal1),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propBool, defBool1),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propNum, defNum),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propStr, defStr),
 				),
 			},
 			{
@@ -93,10 +93,10 @@ func TestAccResourceArchitectDatatableRow(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_datatable_row."+rowResource1, "key_value", keyVal1),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_datatable_row."+rowResource1, "datatable_id", "genesyscloud_architect_datatable."+tableResource1, "id"),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propInt, intVal1),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propBool, falseValue),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propNum, numVal1),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propStr, strVal1),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propInt, intVal1),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propBool, falseValue),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propNum, numVal1),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propStr, strVal1),
 				),
 			},
 			{
@@ -114,10 +114,10 @@ func TestAccResourceArchitectDatatableRow(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_datatable_row."+rowResource1, "key_value", keyVal1),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_datatable_row."+rowResource1, "datatable_id", "genesyscloud_architect_datatable."+tableResource1, "id"),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propInt, intVal2),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propBool, defBool1),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propNum, numVal2),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propStr, strVal2),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propInt, intVal2),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propBool, defBool1),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propNum, numVal2),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propStr, strVal2),
 				),
 			},
 			{
@@ -132,10 +132,10 @@ func TestAccResourceArchitectDatatableRow(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_datatable_row."+rowResource1, "key_value", keyVal2),
 					resource.TestCheckResourceAttrPair("genesyscloud_architect_datatable_row."+rowResource1, "datatable_id", "genesyscloud_architect_datatable."+tableResource1, "id"),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propInt, intVal2),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propBool, defBool1),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propNum, defNum),
-					validateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propStr, strVal2),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propInt, intVal2),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propBool, defBool1),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propNum, defNum),
+					ValidateValueInJsonAttr("genesyscloud_architect_datatable_row."+rowResource1, "properties_json", propStr, strVal2),
 				),
 			},
 			{

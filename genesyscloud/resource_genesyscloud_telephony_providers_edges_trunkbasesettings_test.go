@@ -141,34 +141,34 @@ func generateTrunkBaseSettingsProperties(settingsName, trunkMaxDialTimeout, trun
 	// A random selection of properties
 	return "properties = " + GenerateJsonEncodedProperties(
 		GenerateJsonProperty(
-			"trunk_label", generateJsonObject(
+			"trunk_label", GenerateJsonObject(
 				GenerateJsonProperty(
-					"value", generateJsonObject(
+					"value", GenerateJsonObject(
 						GenerateJsonProperty("instance", strconv.Quote(settingsName)),
 					)))),
 		GenerateJsonProperty(
-			"trunk_max_dial_timeout", generateJsonObject(
+			"trunk_max_dial_timeout", GenerateJsonObject(
 				GenerateJsonProperty(
-					"value", generateJsonObject(
+					"value", GenerateJsonObject(
 						GenerateJsonProperty("instance", strconv.Quote(trunkMaxDialTimeout)),
 					)))),
 		GenerateJsonProperty(
-			"trunk_transport_sip_dscp_value", generateJsonObject(
+			"trunk_transport_sip_dscp_value", GenerateJsonObject(
 				GenerateJsonProperty(
-					"value", generateJsonObject(
+					"value", GenerateJsonObject(
 						GenerateJsonProperty("instance", trunkTransportSipDscpValue),
 					)))),
 		GenerateJsonProperty(
-			"trunk_media_disconnect_on_idle_rtp", generateJsonObject(
+			"trunk_media_disconnect_on_idle_rtp", GenerateJsonObject(
 				GenerateJsonProperty(
-					"value", generateJsonObject(
+					"value", GenerateJsonObject(
 						GenerateJsonProperty("instance", trunkMediaDisconnectOnIdleRtp),
 					)))),
 		GenerateJsonProperty(
-			"trunk_media_codec", generateJsonObject(
+			"trunk_media_codec", GenerateJsonObject(
 				GenerateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonArrayProperty("instance", strings.Join(trunkMediaCodec, ",")),
+					"value", GenerateJsonObject(
+						GenerateJsonArrayProperty("instance", strings.Join(trunkMediaCodec, ",")),
 					)))),
 	)
 }

@@ -168,7 +168,7 @@ func StrArrayEquals(a, b []string) bool {
 	return true
 }
 
-func validateValueInJsonAttr(resourceName string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
+func ValidateValueInJsonAttr(resourceName string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		resourceState, ok := state.RootModule().Resources[resourceName]
 		if !ok {
@@ -310,11 +310,11 @@ func GenerateJsonProperty(propName string, propValue string) string {
 	return fmt.Sprintf(`"%s" = %s`, propName, propValue)
 }
 
-func generateJsonArrayProperty(propName string, propValues ...string) string {
+func GenerateJsonArrayProperty(propName string, propValues ...string) string {
 	return fmt.Sprintf(`"%s" = [%s]`, propName, strings.Join(propValues, ", "))
 }
 
-func generateJsonObject(properties ...string) string {
+func GenerateJsonObject(properties ...string) string {
 	return fmt.Sprintf(`{
 		%s
 	}`, strings.Join(properties, "\n"))

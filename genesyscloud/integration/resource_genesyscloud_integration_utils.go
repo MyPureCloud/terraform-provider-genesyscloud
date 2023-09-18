@@ -3,7 +3,9 @@ package integration
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"strings"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
@@ -11,20 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
-
-// getIntegrationFromResourceData maps data from schema ResourceData object to a platformclientv2.Integration
-// this does not include the config
-func getIntegrationFromResourceData(d *schema.ResourceData) *platformclientv2.Integration {
-	intendedState := d.Get("intended_state").(string)
-	integrationType := d.Get("integration_type").(string)
-
-	return &platformclientv2.Integration{
-		IntegrationType: &platformclientv2.Integrationtype{
-			Id: &integrationType,
-		},
-		IntendedState: &intendedState,
-	}
-}
 
 func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration) []interface{} {
 	if config == nil {
@@ -166,4 +154,13 @@ func buildConfigCredentials(credentials map[string]interface{}) map[string]platf
 		return results
 	}
 	return results
+}
+
+func GenerateIntegrationResource(resourceID string, intendedState string, integrationType string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_integration" "%s" {
+        intended_state = %s
+        integration_type = %s
+        %s
+	}
+	`, resourceID, intendedState, integrationType, strings.Join(attrs, "\n"))
 }

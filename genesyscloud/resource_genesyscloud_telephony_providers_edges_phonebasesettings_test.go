@@ -132,40 +132,40 @@ func generatePhoneBaseSettingsProperties(phoneLabel, phoneMaxLineKeys, phoneMwiE
 	// A random selection of properties
 	return "properties = " + GenerateJsonEncodedProperties(
 		GenerateJsonProperty(
-			"phone_label", generateJsonObject(
+			"phone_label", GenerateJsonObject(
 				GenerateJsonProperty(
-					"value", generateJsonObject(
+					"value", GenerateJsonObject(
 						GenerateJsonProperty("instance", strconv.Quote(phoneLabel)),
 					)))),
 		GenerateJsonProperty(
-			"phone_maxLineKeys", generateJsonObject(
+			"phone_maxLineKeys", GenerateJsonObject(
 				GenerateJsonProperty(
-					"value", generateJsonObject(
+					"value", GenerateJsonObject(
 						GenerateJsonProperty("instance", phoneMaxLineKeys),
 					)))),
 		GenerateJsonProperty(
-			"phone_mwi_enabled", generateJsonObject(
+			"phone_mwi_enabled", GenerateJsonObject(
 				GenerateJsonProperty(
-					"value", generateJsonObject(
+					"value", GenerateJsonObject(
 						GenerateJsonProperty("instance", phoneMwiEnabled),
 					)))),
 		GenerateJsonProperty(
-			"phone_mwi_subscribe", generateJsonObject(
+			"phone_mwi_subscribe", GenerateJsonObject(
 				GenerateJsonProperty(
-					"value", generateJsonObject(
+					"value", GenerateJsonObject(
 						GenerateJsonProperty("instance", phoneMwiSubscribe),
 					)))),
 		GenerateJsonProperty(
-			"phone_standalone", generateJsonObject(
+			"phone_standalone", GenerateJsonObject(
 				GenerateJsonProperty(
-					"value", generateJsonObject(
+					"value", GenerateJsonObject(
 						GenerateJsonProperty("instance", phoneStandalone),
 					)))),
 		GenerateJsonProperty(
-			"phone_stations", generateJsonObject(
+			"phone_stations", GenerateJsonObject(
 				GenerateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonArrayProperty("instance", strings.Join(phoneStations, ",")),
+					"value", GenerateJsonObject(
+						GenerateJsonArrayProperty("instance", strings.Join(phoneStations, ",")),
 					)))),
 	)
 }

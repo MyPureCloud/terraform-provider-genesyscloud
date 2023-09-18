@@ -14,7 +14,7 @@ func buildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{}
 	returnValue := make(map[string]interface{})
 
 	if properties := d.Get("properties"); properties != nil {
-		inputVal, err := jsonStringToInterface(properties.(string))
+		inputVal, err := JsonStringToInterface(properties.(string))
 		if err != nil {
 			return nil
 		}

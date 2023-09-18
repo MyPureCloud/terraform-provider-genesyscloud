@@ -89,7 +89,7 @@ func interfaceToJson(val interface{}) (string, error) {
 	return string(j), nil
 }
 
-func jsonStringToInterface(jsonStr string) (interface{}, error) {
+func JsonStringToInterface(jsonStr string) (interface{}, error) {
 	var obj interface{}
 	err := json.Unmarshal([]byte(jsonStr), &obj)
 	if err != nil {

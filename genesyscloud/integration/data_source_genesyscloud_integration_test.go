@@ -26,7 +26,7 @@ func TestAccDataSourceIntegration(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create with config
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),

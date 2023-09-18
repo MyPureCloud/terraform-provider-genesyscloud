@@ -3,7 +3,6 @@ package integration
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -55,7 +54,7 @@ func TestAccResourceIntegration(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create without config
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
@@ -72,7 +71,7 @@ func TestAccResourceIntegration(t *testing.T) {
 			},
 			{
 				// Update only name
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
@@ -96,7 +95,7 @@ func TestAccResourceIntegration(t *testing.T) {
 			},
 			{
 				// All nullvalue for config. Nothing should change here.
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
@@ -120,7 +119,7 @@ func TestAccResourceIntegration(t *testing.T) {
 			},
 			{
 				// Update intendedState, name, notes, properties
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID),
@@ -157,7 +156,7 @@ func TestAccResourceIntegration(t *testing.T) {
 				Config: gcloud.GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
-				) + generateIntegrationResource(
+				) + GenerateIntegrationResource(
 					inteResource1,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID),
@@ -185,7 +184,7 @@ func TestAccResourceIntegration(t *testing.T) {
 				),
 			},
 			{ // Remove the group reference and update intendedState and notes
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Change to default value
 					strconv.Quote(typeID),
@@ -213,7 +212,7 @@ func TestAccResourceIntegration(t *testing.T) {
 				),
 			},
 			{ // Update integration name and test Raw JSON string
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Default value
 					strconv.Quote(typeID),
@@ -250,7 +249,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					integrationCred.GenerateCredentialFields(
 						gcloud.GenerateMapProperty(key1, strconv.Quote(val1)),
 					),
-				) + generateIntegrationResource(
+				) + GenerateIntegrationResource(
 					inteResource2,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID2),
@@ -281,7 +280,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					integrationCred.GenerateCredentialFields(
 						gcloud.GenerateMapProperty(key1, strconv.Quote(val1)),
 					),
-				) + generateIntegrationResource(
+				) + GenerateIntegrationResource(
 					inteResource2,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID2),
@@ -313,15 +312,6 @@ func TestAccResourceIntegration(t *testing.T) {
 		},
 		CheckDestroy: testVerifyIntegrationDestroyed,
 	})
-}
-
-func generateIntegrationResource(resourceID string, intendedState string, integrationType string, attrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_integration" "%s" {
-        intended_state = %s
-        integration_type = %s
-        %s
-	}
-	`, resourceID, intendedState, integrationType, strings.Join(attrs, "\n"))
 }
 
 func generateIntegrationConfig(name string, notes string, cred string, props string, adv string) string {

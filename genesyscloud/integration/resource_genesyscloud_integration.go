@@ -81,14 +81,12 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 	log.Printf("Reading integration %s", d.Id())
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		const pageSize = 100
-		const pageNum = 1
 		currentIntegration, resp, getErr := ip.getIntegrationById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read integration %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
 		}
 
 		d.Set("integration_type", *currentIntegration.IntegrationType.Id)
@@ -102,7 +100,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		integrationConfig, _, err := ip.getIntegrationConfig(ctx, *currentIntegration.Id)
 
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Failed to read config of integration %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read config of integration %s: %s", d.Id(), getErr))
 		}
 
 		d.Set("config", flattenIntegrationConfig(integrationConfig))
@@ -155,8 +153,8 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 				log.Printf("Deleted Integration %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting integration %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting integration %s: %s", d.Id(), err))
 		}
-		return retry.RetryableError(fmt.Errorf("Integration %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("integration %s still exists", d.Id()))
 	})
 }

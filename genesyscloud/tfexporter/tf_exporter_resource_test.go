@@ -3,6 +3,8 @@ package tfexporter
 import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
+	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	outboundAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -145,8 +147,8 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_idp_ping", gcloud.IdpPingExporter())
 	RegisterExporter("genesyscloud_idp_salesforce", gcloud.IdpSalesforceExporter())
 	RegisterExporter("genesyscloud_integration", integration.IntegrationExporter())
-	RegisterExporter("genesyscloud_integration_action", gcloud.IntegrationActionExporter())
-	RegisterExporter("genesyscloud_integration_credential", gcloud.CredentialExporter())
+	RegisterExporter("genesyscloud_integration_action", integrationAction.IntegrationActionExporter())
+	RegisterExporter("genesyscloud_integration_credential", integrationCred.IntegrationCredentialExporter())
 	RegisterExporter("genesyscloud_journey_action_map", gcloud.JourneyActionMapExporter())
 	RegisterExporter("genesyscloud_journey_action_template", gcloud.JourneyActionTemplateExporter())
 	RegisterExporter("genesyscloud_journey_outcome", gcloud.JourneyOutcomeExporter())

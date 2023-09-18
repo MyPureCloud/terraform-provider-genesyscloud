@@ -5,6 +5,9 @@ import (
 	"strconv"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -24,12 +27,12 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create without config
-				Config: generateIntegrationResource(
+				Config: integration.GenerateIntegrationResource(
 					integResource1,
 					nullValue,
 					strconv.Quote(integTypeID),
