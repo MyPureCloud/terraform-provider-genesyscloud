@@ -15,6 +15,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	chunksProcess "terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -1624,32 +1625,26 @@ func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.Rou
 }
 
 func updateMembersInChunks(queueID string, membersToUpdate []string, remove bool, api *platformclientv2.RoutingApi) diag.Diagnostics {
+
 	// API restricts member adds/removes to 100 per call
-	chunkUploaderInstance :=
-		&chunkUploader[string, platformclientv2.Writableentity, platformclientv2.RoutingApi]{
-			id:                 queueID,
-			items:              membersToUpdate,
-			remove:             remove,
-			batchSize:          100,
-			platformApi:        api,
-			chunkProcessorAttr: chunkProcessorFn[string, platformclientv2.Writableentity, platformclientv2.RoutingApi],
-			chunkBuilderAttr:   chunkBuilderFn[string, platformclientv2.Writableentity, platformclientv2.RoutingApi],
+	// Generic call to prepare chunks for the Update. Takes in three args
+	// 1. MemberstoUpdate 2. The Entity prepare func for the update 3. Chunk Size
+	chunks := chunksProcess.ChunkItems(membersToUpdate, platformWritableEntityFunc, 100)
+	// Closure to process the chunks
+	chunkProcessor := func(chunk []platformclientv2.Writableentity) diag.Diagnostics {
+		_, err := api.PostRoutingQueueMembers(queueID, chunk, remove)
+		if err != nil {
+			return diag.Errorf("Failed to update members in queue %s: %s", queueID, err)
 		}
-
-	return ProcessChunksInBatches(chunkUploaderInstance)
-
-}
-
-func chunkProcessorFn[T string, K platformclientv2.Writableentity, U platformclientv2.RoutingApi](updateChunk []platformclientv2.Writableentity, c *chunkUploader[string, platformclientv2.Writableentity, platformclientv2.RoutingApi]) diag.Diagnostics {
-	_, err := c.platformApi.PostRoutingQueueMembers(c.id, updateChunk, c.remove)
-	if err != nil {
-		return diag.Errorf("Failed to update members in queue %s: %s", c.id, err)
+		return nil
 	}
-	return nil
+	// Genric Function call which takes in the chunks and the processing function
+	return chunksProcess.ProcessChunks(chunks, chunkProcessor)
+
 }
 
-func chunkBuilderFn[T string, K platformclientv2.Writableentity, U platformclientv2.RoutingApi](seq int, updateChunk []platformclientv2.Writableentity, c *chunkUploader[string, platformclientv2.Writableentity, platformclientv2.RoutingApi]) []platformclientv2.Writableentity {
-	return append(updateChunk, platformclientv2.Writableentity{Id: &c.items[seq]})
+func platformWritableEntityFunc(val string) platformclientv2.Writableentity {
+	return platformclientv2.Writableentity{Id: &val}
 }
 
 func updateQueueUserRingNum(queueID string, userID string, ringNum int, api *platformclientv2.RoutingApi) diag.Diagnostics {

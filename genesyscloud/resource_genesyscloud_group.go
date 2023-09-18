@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -439,8 +440,26 @@ func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.Grou
 				return err
 			}
 
-			membersToRemove := lists.SliceDifference(existingMemberIds, configMemberIds)
-			if err := deleteGroupMembers(d, membersToRemove, groupsAPI); err != nil {
+			maxMembersPerRequest := 50
+			membersToRemoveList := lists.SliceDifference(existingMemberIds, configMemberIds)
+			chunkedMemberIdsDelete := chunks.ChunkBy(membersToRemoveList, maxMembersPerRequest)
+
+			chunkProcessor := func(membersToRemove []string) diag.Diagnostics {
+				if len(membersToRemove) > 0 {
+					if diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+						_, resp, err := groupsAPI.DeleteGroupMembers(d.Id(), strings.Join(membersToRemove, ","))
+						if err != nil {
+							return resp, diag.Errorf("Failed to remove members from group %s: %s", d.Id(), err)
+						}
+						return resp, nil
+					}); diagErr != nil {
+						return diagErr
+					}
+				}
+				return nil
+			}
+
+			if err := chunks.ProcessChunks(chunkedMemberIdsDelete, chunkProcessor); err != nil {
 				return err
 			}
 
@@ -449,7 +468,6 @@ func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.Grou
 				return nil
 			}
 
-			maxMembersPerRequest := 50
 			chunkedMemberIds := lists.ChunkStringSlice(membersToAdd, maxMembersPerRequest)
 			for _, chunk := range chunkedMemberIds {
 				if err := addGroupMembers(d, chunk, groupsAPI); err != nil {
@@ -490,21 +508,6 @@ func getGroupMemberIds(d *schema.ResourceData, groupsAPI *platformclientv2.Group
 		}
 	}
 	return existingMembers, nil
-}
-
-func deleteGroupMembers(d *schema.ResourceData, membersToRemove []string, groupsAPI *platformclientv2.GroupsApi) diag.Diagnostics {
-	if len(membersToRemove) > 0 {
-		if diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			_, resp, err := groupsAPI.DeleteGroupMembers(d.Id(), strings.Join(membersToRemove, ","))
-			if err != nil {
-				return resp, diag.Errorf("Failed to remove members from group %s: %s", d.Id(), err)
-			}
-			return resp, nil
-		}); diagErr != nil {
-			return diagErr
-		}
-	}
-	return nil
 }
 
 func addGroupMembers(d *schema.ResourceData, membersToAdd []string, groupsAPI *platformclientv2.GroupsApi) diag.Diagnostics {
