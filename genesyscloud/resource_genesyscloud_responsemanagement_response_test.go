@@ -90,7 +90,7 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 					name2,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
 					strconv.Quote(interactionTypes[0]),
-					generateJsonSchemaDocStr(substitutionsSchema),
+					GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[0]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
 					generateTextsBlock(
@@ -148,7 +148,7 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 					name2,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource2 + ".id", "genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
 					strconv.Quote(interactionTypes[0]),
-					generateJsonSchemaDocStr(substitutionsSchema),
+					GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[0]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
 					generateTextsBlock(

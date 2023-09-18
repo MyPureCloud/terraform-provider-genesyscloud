@@ -62,10 +62,10 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionName1,
 					actionCateg1,
 					"genesyscloud_integration."+integResource1+".id",
-					nullValue,                             // Secure default (false)
-					nullValue,                             // Timeout default
-					generateJsonSchemaDocStr(inputAttr1),  // contract_input
-					generateJsonSchemaDocStr(outputAttr1), // contract_output
+					nullValue, // Secure default (false)
+					nullValue, // Timeout default
+					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
+					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
 						reqUrlTemplate1,
 						reqType1,
@@ -103,8 +103,8 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					"genesyscloud_integration."+integResource1+".id",
 					nullValue, // Secure default (false)
 					timeout2,
-					generateJsonSchemaDocStr(inputAttr1),  // contract_input
-					generateJsonSchemaDocStr(outputAttr1), // contract_output
+					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
+					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
 						reqUrlTemplate2,
 						reqType2,
@@ -152,10 +152,10 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionName2,
 					actionCateg2,
 					"genesyscloud_integration."+integResource1+".id",
-					trueValue,                             // Secure
-					nullValue,                             // time default
-					generateJsonSchemaDocStr(inputAttr1),  // contract_input
-					generateJsonSchemaDocStr(outputAttr1), // contract_output
+					trueValue, // Secure
+					nullValue, // time default
+					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
+					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
 						reqUrlTemplate2,
 						reqType2,
@@ -232,30 +232,6 @@ func generateIntegrationActionConfigResponse(successTemp string, blocks ...strin
         %s
 	}
 	`, successTemp, strings.Join(blocks, "\n"))
-}
-
-func generateJsonSchemaDocStr(properties ...string) string {
-	attrType := "type"
-	attrProperties := "properties"
-	typeObject := "object"
-	typeStr := "string" // All string props
-
-	propStrs := []string{}
-	for _, prop := range properties {
-		propStrs = append(propStrs, gcloud.GenerateJsonProperty(prop, gcloud.GenerateJsonObject(
-			gcloud.GenerateJsonProperty(attrType, strconv.Quote(typeStr)),
-		)))
-	}
-	allProps := strings.Join(propStrs, "\n")
-
-	return gcloud.GenerateJsonEncodedProperties(
-		// First field is required
-		gcloud.GenerateJsonArrayProperty("required", strconv.Quote(properties[0])),
-		gcloud.GenerateJsonProperty(attrType, strconv.Quote(typeObject)),
-		gcloud.GenerateJsonProperty(attrProperties, gcloud.GenerateJsonObject(
-			allProps,
-		)),
-	)
 }
 
 func testVerifyIntegrationActionDestroyed(state *terraform.State) error {

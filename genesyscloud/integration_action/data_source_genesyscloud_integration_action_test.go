@@ -42,10 +42,10 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 					actionName1,
 					actionCateg1,
 					"genesyscloud_integration."+integResource1+".id",
-					nullValue,                             // Secure default (false)
-					nullValue,                             // Timeout default
-					generateJsonSchemaDocStr(inputAttr1),  // contract_input
-					generateJsonSchemaDocStr(outputAttr1), // contract_output
+					nullValue, // Secure default (false)
+					nullValue, // Timeout default
+					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
+					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
 						reqUrlTemplate1,
 						reqType1,

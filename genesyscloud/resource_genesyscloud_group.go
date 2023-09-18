@@ -21,10 +21,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
-func Flock() string {
-	return "asdasd"
-}
-
 var (
 	groupPhoneType       = "PHONE"
 	groupAddressResource = &schema.Resource{

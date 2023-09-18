@@ -340,6 +340,30 @@ func GenerateSubstitutionsMap(substitutions map[string]string) string {
 %s}`, substitutionsStr)
 }
 
+func GenerateJsonSchemaDocStr(properties ...string) string {
+	attrType := "type"
+	attrProperties := "properties"
+	typeObject := "object"
+	typeStr := "string" // All string props
+
+	propStrs := []string{}
+	for _, prop := range properties {
+		propStrs = append(propStrs, GenerateJsonProperty(prop, GenerateJsonObject(
+			GenerateJsonProperty(attrType, strconv.Quote(typeStr)),
+		)))
+	}
+	allProps := strings.Join(propStrs, "\n")
+
+	return GenerateJsonEncodedProperties(
+		// First field is required
+		GenerateJsonArrayProperty("required", strconv.Quote(properties[0])),
+		GenerateJsonProperty(attrType, strconv.Quote(typeObject)),
+		GenerateJsonProperty(attrProperties, GenerateJsonObject(
+			allProps,
+		)),
+	)
+}
+
 func randString(length int) string {
 	rand.Seed(time.Now().UnixNano())
 
