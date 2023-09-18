@@ -35,7 +35,7 @@ var internalProxy *integrationsProxy
 type getAllIntegrationsFunc func(ctx context.Context, p *integrationsProxy) (*[]platformclientv2.Integration, error)
 type createIntegrationFunc func(ctx context.Context, p *integrationsProxy, integration *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, error)
 type getIntegrationByIdFunc func(ctx context.Context, p *integrationsProxy, integrationId string) (integration *platformclientv2.Integration, response *platformclientv2.APIResponse, err error)
-type getIntegrationByNameFunc func(ctx context.Context, p *integrationsProxy, integrationName string) (*platformclientv2.Integration, error)
+type getIntegrationByNameFunc func(ctx context.Context, p *integrationsProxy, integrationName string) (integration *platformclientv2.Integration, retryable bool, err error)
 type updateIntegrationFunc func(ctx context.Context, p *integrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, error)
 type deleteIntegrationFunc func(ctx context.Context, p *integrationsProxy, integrationId string) (responseCode int, err error)
 type getIntegrationConfigFunc func(ctx context.Context, p *integrationsProxy, integrationId string) (config *platformclientv2.Integrationconfiguration, response *platformclientv2.APIResponse, err error)
@@ -96,7 +96,7 @@ func (p *integrationsProxy) getIntegrationById(ctx context.Context, integrationI
 	return p.getIntegrationByIdAttr(ctx, p, integrationId)
 }
 
-func (p *integrationsProxy) getIntegrationByName(ctx context.Context, integrationName string) (*platformclientv2.Integration, error) {
+func (p *integrationsProxy) getIntegrationByName(ctx context.Context, integrationName string) (*platformclientv2.Integration, bool, error) {
 	return p.getIntegrationByNameAttr(ctx, p, integrationName)
 }
 
@@ -158,18 +158,18 @@ func getIntegrationByIdFn(ctx context.Context, p *integrationsProxy, integration
 	return integration, resp, nil
 }
 
-func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrationName string) (*platformclientv2.Integration, error) {
+func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrationName string) (*platformclientv2.Integration, bool, error) {
 	var foundIntegration *platformclientv2.Integration
 
 	const pageSize = 100
 	for pageNum := 1; ; pageNum++ {
 		integrations, _, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "")
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 
 		if integrations.Entities == nil || len(*integrations.Entities) == 0 {
-			return nil, fmt.Errorf("no integrations found with name: %s", integrationName)
+			return nil, true, fmt.Errorf("no integrations found with name: %s", integrationName)
 		}
 
 		for _, integration := range *integrations.Entities {
@@ -183,7 +183,7 @@ func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrati
 		}
 	}
 
-	return foundIntegration, nil
+	return foundIntegration, false, nil
 }
 
 func updateIntegrationFn(ctx context.Context, p *integrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, error) {

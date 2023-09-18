@@ -13,7 +13,7 @@ var internalProxy *integrationCredsProxy
 type getAllIntegrationCredsFunc func(ctx context.Context, p *integrationCredsProxy) (*[]platformclientv2.Credentialinfo, error)
 type createIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, createCredential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, error)
 type getIntegrationCredByIdFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string) (credential *platformclientv2.Credential, response *platformclientv2.APIResponse, err error)
-type getIntegrationCredByNameFunc func(ctx context.Context, p *integrationCredsProxy, credentialName string) (*platformclientv2.Credentialinfo, error)
+type getIntegrationCredByNameFunc func(ctx context.Context, p *integrationCredsProxy, credentialName string) (credential *platformclientv2.Credentialinfo, retryable bool, err error)
 type updateIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string, credential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, error)
 type deleteIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string) (responseCode int, err error)
 
@@ -67,7 +67,7 @@ func (p *integrationCredsProxy) getIntegrationCredById(ctx context.Context, cred
 	return p.getIntegrationCredByIdAttr(ctx, p, credentialId)
 }
 
-func (p *integrationCredsProxy) getIntegrationCredByName(ctx context.Context, credentialName string) (*platformclientv2.Credentialinfo, error) {
+func (p *integrationCredsProxy) getIntegrationCredByName(ctx context.Context, credentialName string) (*platformclientv2.Credentialinfo, bool, error) {
 	return p.getIntegrationCredByNameAttr(ctx, p, credentialName)
 }
 
@@ -117,7 +117,7 @@ func getIntegrationCredByIdFn(ctx context.Context, p *integrationCredsProxy, cre
 	return credential, resp, nil
 }
 
-func getIntegrationCredByNameFn(ctx context.Context, p *integrationCredsProxy, credentialName string) (*platformclientv2.Credentialinfo, error) {
+func getIntegrationCredByNameFn(ctx context.Context, p *integrationCredsProxy, credentialName string) (*platformclientv2.Credentialinfo, bool, error) {
 	var foundCred *platformclientv2.Credentialinfo
 
 	for pageNum := 1; ; pageNum++ {
@@ -125,11 +125,11 @@ func getIntegrationCredByNameFn(ctx context.Context, p *integrationCredsProxy, c
 		integrationCredentials, _, err := p.integrationsApi.GetIntegrationsCredentials(pageNum, pageSize)
 
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 
 		if integrationCredentials.Entities == nil || len(*integrationCredentials.Entities) == 0 {
-			return nil, fmt.Errorf("no integration credentials found with name: %s", credentialName)
+			return nil, true, fmt.Errorf("no integration credentials found with name: %s", credentialName)
 		}
 
 		for _, credential := range *integrationCredentials.Entities {
@@ -143,7 +143,7 @@ func getIntegrationCredByNameFn(ctx context.Context, p *integrationCredsProxy, c
 		}
 	}
 
-	return foundCred, nil
+	return foundCred, false, nil
 }
 
 func updateIntegrationCredFn(ctx context.Context, p *integrationCredsProxy, credentialId string, credential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, error) {

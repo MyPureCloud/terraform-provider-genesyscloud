@@ -20,9 +20,13 @@ func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.Resource
 	credName := d.Get("name").(string)
 
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		credential, err := ip.getIntegrationCredByName(ctx, credName)
-		if err != nil {
+		credential, retryable, err := ip.getIntegrationCredByName(ctx, credName)
+		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("failed to get integration credential: %s. %s", credential, err))
+		}
+
+		if retryable {
+			return retry.RetryableError(fmt.Errorf("no integration credential found: %s", credName))
 		}
 
 		d.SetId(*credential.Id)

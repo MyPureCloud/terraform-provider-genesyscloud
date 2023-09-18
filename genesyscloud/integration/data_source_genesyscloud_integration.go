@@ -19,9 +19,13 @@ func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m in
 	integrationName := d.Get("name").(string)
 
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		integration, err := ip.getIntegrationByName(ctx, integrationName)
-		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("failed to get integration: %s. %s", integrationName, err))
+		integration, retryable, err := ip.getIntegrationByName(ctx, integrationName)
+		if err != nil && !retryable {
+			return retry.NonRetryableError(fmt.Errorf("failed to get page of integrations: %s. %s", integrationName, err))
+		}
+
+		if retryable {
+			return retry.RetryableError(fmt.Errorf("failed to get integration %s", integrationName))
 		}
 
 		d.SetId(*integration.Id)
