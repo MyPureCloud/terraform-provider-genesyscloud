@@ -33,14 +33,14 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
-				) + generateAuthRoleResource(
+				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
 				) + generateGroupRoles(
 					groupRoleResource,
 					groupResource1,
-					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+					GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1),
@@ -51,19 +51,19 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
-				) + generateAuthRoleResource(
+				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
-				) + generateAuthRoleResource(
+				) + GenerateAuthRoleResource(
 					roleResource2,
 					roleName2,
 					roleDesc,
 				) + generateGroupRoles(
 					groupRoleResource,
 					groupResource1,
-					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
-					generateResourceRoles("genesyscloud_auth_role."+roleResource2+".id", "genesyscloud_auth_division."+divResource+".id"),
+					GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+					GenerateResourceRoles("genesyscloud_auth_role."+roleResource2+".id", "genesyscloud_auth_division."+divResource+".id"),
 				) + generateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1),
@@ -75,14 +75,14 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
-				) + generateAuthRoleResource(
+				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,
 				) + generateGroupRoles(
 					groupRoleResource,
 					groupResource1,
-					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "genesyscloud_auth_division."+divResource+".id"),
+					GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "genesyscloud_auth_division."+divResource+".id"),
 				) + generateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1, "genesyscloud_auth_division."+divResource),
@@ -93,7 +93,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
-				) + generateAuthRoleResource(
+				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc,

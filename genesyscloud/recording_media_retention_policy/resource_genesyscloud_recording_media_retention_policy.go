@@ -42,9 +42,9 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	order := d.Get("order").(int)
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
-	mediaPolicies := buildMediaPolicies(d)
+	mediaPolicies := buildMediaPolicies(d, pp, ctx)
 	conditions := buildConditions(d)
-	actions := buildPolicyActionsFromResource(d)
+	actions := buildPolicyActionsFromResource(d, pp, ctx)
 	policyErrors := buildPolicyErrors(d)
 
 	reqBody := platformclientv2.Policycreate{
@@ -103,13 +103,13 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 			d.Set("enabled", *retentionPolicy.Enabled)
 		}
 		if retentionPolicy.MediaPolicies != nil {
-			d.Set("media_policies", flattenMediaPolicies(retentionPolicy.MediaPolicies))
+			d.Set("media_policies", flattenMediaPolicies(retentionPolicy.MediaPolicies, pp, ctx))
 		}
 		if retentionPolicy.Conditions != nil {
 			d.Set("conditions", flattenConditions(retentionPolicy.Conditions))
 		}
 		if retentionPolicy.Actions != nil {
-			d.Set("actions", flattenPolicyActions(retentionPolicy.Actions))
+			d.Set("actions", flattenPolicyActions(retentionPolicy.Actions, pp, ctx))
 		}
 		if retentionPolicy.PolicyErrors != nil {
 			d.Set("policy_errors", flattenPolicyErrors(retentionPolicy.PolicyErrors))
@@ -128,9 +128,9 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
 
-	mediaPolicies := buildMediaPolicies(d)
+	mediaPolicies := buildMediaPolicies(d, pp, ctx)
 	conditions := buildConditions(d)
-	actions := buildPolicyActionsFromResource(d)
+	actions := buildPolicyActionsFromResource(d, pp, ctx)
 	policyErrors := buildPolicyErrors(d)
 
 	reqBody := platformclientv2.Policy{

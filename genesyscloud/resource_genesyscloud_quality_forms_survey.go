@@ -18,6 +18,35 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+type SurveyFormStruct struct {
+	Name           string
+	Published      bool
+	Disabled       bool
+	ContextId      int
+	Language       string
+	Header         string
+	Footer         string
+	QuestionGroups []SurveyFormQuestionGroupStruct
+}
+
+type SurveyFormQuestionGroupStruct struct {
+	Name                string
+	NaEnabled           bool
+	Questions           []SurveyFormQuestionStruct
+	VisibilityCondition VisibilityConditionStruct
+}
+
+type SurveyFormQuestionStruct struct {
+	Text                  string
+	HelpText              string
+	VarType               string
+	NaEnabled             bool
+	VisibilityCondition   VisibilityConditionStruct
+	AnswerOptions         []AnswerOptionStruct
+	MaxResponseCharacters int
+	ExplanationPrompt     string
+}
+
 var (
 	surveyQuestionGroup = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -567,4 +596,109 @@ func flattenSurveyQuestions(questions *[]platformclientv2.Surveyquestion) []inte
 		questionList = append(questionList, questionMap)
 	}
 	return questionList
+}
+
+func GenerateSurveyFormResource(resourceID string, surveyForm *SurveyFormStruct) string {
+	form := fmt.Sprintf(`resource "genesyscloud_quality_forms_survey" "%s" {
+		name = "%s"
+		published = %v
+		disabled = %v
+        language = "%s"
+        header = "%s"
+        footer = "%s"
+		%s
+        %s
+	}
+	`, resourceID,
+		surveyForm.Name,
+		surveyForm.Published,
+		surveyForm.Disabled,
+		surveyForm.Language,
+		surveyForm.Header,
+		surveyForm.Footer,
+		generateSurveyFormQuestionGroups(&surveyForm.QuestionGroups),
+		generateLifeCycle(),
+	)
+
+	return form
+}
+
+func generateLifeCycle() string {
+	return `
+	lifecycle {
+		ignore_changes = [
+			question_groups[0].questions[0].type,
+			question_groups[0].questions[1].type,
+			question_groups[0].questions[2].type,
+			question_groups[1].questions[0].type,
+			question_groups[1].questions[1].type,
+			question_groups[1].questions[2].type,
+			question_groups[2].questions[0].type,
+			question_groups[2].questions[1].type,
+			question_groups[2].questions[2].type,
+		]
+	}
+	`
+}
+
+func generateSurveyFormQuestions(questions *[]SurveyFormQuestionStruct) string {
+	if questions == nil {
+		return ""
+	}
+
+	questionsString := ""
+
+	for _, question := range *questions {
+		questionString := fmt.Sprintf(`
+        questions {
+            text = "%s"
+            help_text = "%s"
+            type = "%s"
+            na_enabled = %v
+            %s
+            %s
+            max_response_characters = %v
+            explanation_prompt = "%s"
+        }
+        `, question.Text,
+			question.HelpText,
+			question.VarType,
+			question.NaEnabled,
+			GenerateFormVisibilityCondition(&question.VisibilityCondition),
+			GenerateFormAnswerOptions(&question.AnswerOptions),
+			question.MaxResponseCharacters,
+			question.ExplanationPrompt,
+		)
+
+		questionsString += questionString
+	}
+
+	return questionsString
+}
+
+func generateSurveyFormQuestionGroups(questionGroups *[]SurveyFormQuestionGroupStruct) string {
+	if questionGroups == nil {
+		return ""
+	}
+
+	questionGroupsString := ""
+
+	for _, questionGroup := range *questionGroups {
+		questionGroupString := fmt.Sprintf(`
+        question_groups {
+            name = "%s"
+            na_enabled = %v
+            %s
+            %s
+        }
+        `, questionGroup.Name,
+			questionGroup.NaEnabled,
+			generateSurveyFormQuestions(&questionGroup.Questions),
+			GenerateFormVisibilityCondition(&questionGroup.VisibilityCondition),
+		)
+
+		questionGroupsString += questionGroupString
+	}
+
+	return questionGroupsString
 }

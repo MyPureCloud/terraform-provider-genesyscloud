@@ -2,12 +2,16 @@ package recording_media_retention_policy
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -467,13 +471,13 @@ var (
 	roleActions              = make([]string, 0)
 	permissions              = make([]string, 0)
 
-	questionGroupBody1 = []EvaluationFormQuestionGroupStruct{
+	questionGroupBody1 = []gcloud.EvaluationFormQuestionGroupStruct{
 		{
 			Name: questionGroupName,
-			Questions: []EvaluationFormQuestionStruct{
+			Questions: []gcloud.EvaluationFormQuestionStruct{
 				{
 					Text: "question-1",
-					AnswerOptions: []AnswerOptionStruct{
+					AnswerOptions: []gcloud.AnswerOptionStruct{
 						{
 							Text: "yes",
 						},
@@ -485,29 +489,29 @@ var (
 			},
 		},
 	}
-	evaluationFormResourceBody = EvaluationFormStruct{
+	evaluationFormResourceBody = gcloud.EvaluationFormStruct{
 		Name:           evaluationFormName,
 		Published:      true,
 		QuestionGroups: questionGroupBody1,
 	}
 
-	questionGroupBody2 = []surveyFormQuestionGroupStruct{
+	questionGroupBody2 = []gcloud.SurveyFormQuestionGroupStruct{
 		{
-			name: questionGroupName,
-			questions: []surveyFormQuestionStruct{
+			Name: questionGroupName,
+			Questions: []gcloud.SurveyFormQuestionStruct{
 				{
-					text:                  "question-1",
-					varType:               "freeTextQuestion",
-					maxResponseCharacters: 1000,
+					Text:                  "question-1",
+					VarType:               "freeTextQuestion",
+					MaxResponseCharacters: 1000,
 				},
 			},
 		},
 	}
-	surveyFormResourceBody = surveyFormStruct{
-		name:           surveyFormName,
-		language:       "en-US",
-		published:      true,
-		questionGroups: questionGroupBody2,
+	surveyFormResourceBody = gcloud.SurveyFormStruct{
+		Name:           surveyFormName,
+		Language:       "en-US",
+		Published:      true,
+		QuestionGroups: questionGroupBody2,
 	}
 )
 
@@ -914,48 +918,48 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 		domainId  = fmt.Sprintf("terraform%v.com", time.Now().Unix())
 	)
 
-	_, err := AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateRoutingEmailDomainResource(
+				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue, // Subdomain
 					nullValue,
-				) + GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					generateAuthRoleResource(
+				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+					gcloud.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						generateRolePermissions(permissions...),
-						generateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						generateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						gcloud.GenerateRolePermissions(permissions...),
+						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
-					generateUserRoles(
+					gcloud.GenerateUserRoles(
 						userRoleResource1,
 						userResource1,
-						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+						gcloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
-					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
-					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
-					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
-					GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					generateRoutingLanguageResource(languageResource1, languageName) +
-					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					GenerateFlowResource(
+					gcloud.GenerateUserWithCustomAttrs(userResource1, userEmail, userName) +
+					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
+					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
+					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
+					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
+					gcloud.GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						GenerateSubstitutionsMap(map[string]string{
+						gcloud.GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",
@@ -1032,37 +1036,37 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 			},
 			{
 
-				Config: generateRoutingEmailDomainResource(
+				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue, // Subdomain
 					nullValue,
-				) + GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					generateAuthRoleResource(
+				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+					gcloud.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						generateRolePermissions(permissions...),
-						generateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						generateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						gcloud.GenerateRolePermissions(permissions...),
+						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
-					generateUserRoles(
+					gcloud.GenerateUserRoles(
 						userRoleResource1,
 						userResource1,
-						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+						gcloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
-					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
-					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
-					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
-					GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					generateRoutingLanguageResource(languageResource1, languageName) +
-					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					GenerateFlowResource(
+					gcloud.GenerateUserWithCustomAttrs(userResource1, userEmail, userName) +
+					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
+					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
+					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
+					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
+					gcloud.GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						GenerateSubstitutionsMap(map[string]string{
+						gcloud.GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",
@@ -1139,37 +1143,37 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 			},
 			{
 
-				Config: generateRoutingEmailDomainResource(
+				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue, // Subdomain
 					nullValue,
-				) + GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					generateAuthRoleResource(
+				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+					gcloud.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						generateRolePermissions(permissions...),
-						generateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						generateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						gcloud.GenerateRolePermissions(permissions...),
+						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
-					generateUserRoles(
+					gcloud.GenerateUserRoles(
 						userRoleResource1,
 						userResource1,
-						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+						gcloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
-					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
-					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
-					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
-					GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					generateRoutingLanguageResource(languageResource1, languageName) +
-					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					GenerateFlowResource(
+					gcloud.GenerateUserWithCustomAttrs(userResource1, userEmail, userName) +
+					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
+					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
+					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
+					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
+					gcloud.GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						GenerateSubstitutionsMap(map[string]string{
+						gcloud.GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",
@@ -1246,37 +1250,37 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 			},
 			{
 
-				Config: generateRoutingEmailDomainResource(
+				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue, // Subdomain
 					nullValue,
-				) + GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
-					generateAuthRoleResource(
+				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+					gcloud.GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
-						generateRolePermissions(permissions...),
-						generateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
-						generateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
+						gcloud.GenerateRolePermissions(permissions...),
+						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
+						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
-					generateUserRoles(
+					gcloud.GenerateUserRoles(
 						userRoleResource1,
 						userResource1,
-						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+						gcloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
-					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
-					GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
-					generateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
-					GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					generateRoutingLanguageResource(languageResource1, languageName) +
-					GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
-					GenerateFlowResource(
+					gcloud.GenerateUserWithCustomAttrs(userResource1, userEmail, userName) +
+					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
+					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
+					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
+					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
+					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
+					gcloud.GenerateFlowResource(
 						flowResource1,
 						filePath1,
 						"",
 						false,
-						GenerateSubstitutionsMap(map[string]string{
+						gcloud.GenerateSubstitutionsMap(map[string]string{
 							"flow_name":            flowName,
 							"default_language":     "en-us",
 							"greeting":             "Archy says hi!!!",
@@ -1379,7 +1383,7 @@ func testVerifyMediaRetentionPolicyDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Policy (%s) still exists", rs.Primary.ID)
 		}
 
-		if IsStatus404(resp) {
+		if gcloud.IsStatus404(resp) {
 			// Policy not found as expected
 			continue
 		}
@@ -2342,11 +2346,29 @@ func generateAssignSurveys(assignSurveys *[]Surveyassignment) string {
 	return assignSurveysString
 }
 
-func GenerateIntegrationResource(resourceID string, intendedState string, integrationType string, attrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_integration" "%s" {
-        intended_state = %s
-        integration_type = %s
-        %s
+func CleanupRoutingEmailDomains() {
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false, "")
+		if getErr != nil {
+			return
+		}
+
+		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
+			return
+		}
+
+		for _, routingEmailDomain := range *routingEmailDomains.Entities {
+			if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
+				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
+				if err != nil {
+					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
+					continue
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}
 	}
-	`, resourceID, intendedState, integrationType, strings.Join(attrs, "\n"))
 }

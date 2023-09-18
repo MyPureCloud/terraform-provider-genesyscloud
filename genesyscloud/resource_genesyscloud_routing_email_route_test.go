@@ -51,7 +51,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create email domain and basic route
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue,
@@ -75,7 +75,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email route and add a queue, language, and skill
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue,
@@ -83,7 +83,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + generateRoutingLanguageResource(
+				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
 				) + generateRoutingSkillResource(
@@ -130,7 +130,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email reply to true
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue,
@@ -138,7 +138,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + generateRoutingLanguageResource(
+				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
 				) + generateRoutingSkillResource(
@@ -186,7 +186,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email reply to false and set a route id
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue,
@@ -194,7 +194,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + generateRoutingLanguageResource(
+				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
 				) + generateRoutingSkillResource(

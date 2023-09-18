@@ -15,6 +15,7 @@ import (
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	obwm "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
+	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
@@ -94,6 +95,7 @@ func registerResources() {
 	integration.SetRegistrar(regInstance)       //Registering integrations
 	integrationAction.SetRegistrar(regInstance) //Registering integrations actions
 	integrationCred.SetRegistrar(regInstance)   //Registering integrations credentials
+	recMediaRetPolicy.SetRegistrar(regInstance) //Registering recording media retention policies
 
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters

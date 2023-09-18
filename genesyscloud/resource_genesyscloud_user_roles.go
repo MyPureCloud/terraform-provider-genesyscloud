@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
@@ -104,4 +105,12 @@ func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 func deleteUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// Does not delete users or roles. This resource will just no longer manage roles.
 	return nil
+}
+
+func GenerateUserRoles(resourceID string, userResource string, roles ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user_roles" "%s" {
+		user_id = genesyscloud_user.%s.id
+		%s
+	}
+	`, resourceID, userResource, strings.Join(roles, "\n"))
 }

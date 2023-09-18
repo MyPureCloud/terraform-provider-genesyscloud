@@ -120,7 +120,7 @@ func (p *policyProxy) getEvaluationFormRecentVerId(ctx context.Context, formId s
 	return p.getEvaluationFormRecentVerIdAttr(ctx, p, formId)
 }
 
-func (p *policyProxy) getQualityFormsSurveyByNameFunc(ctx context.Context, surveyName string) (*platformclientv2.Publishedsurveyformreference, error) {
+func (p *policyProxy) getQualityFormsSurveyByName(ctx context.Context, surveyName string) (*platformclientv2.Publishedsurveyformreference, error) {
 	return p.getQualityFormsSurveyByNameAttr(ctx, p, surveyName)
 }
 
@@ -226,7 +226,7 @@ func getQualityFormsSurveyByNameFn(ctx context.Context, p *policyProxy, surveyNa
 		return nil, err
 	}
 	if forms.Entities == nil || len(*forms.Entities) == 0 {
-		return nil, fmt.Errorf("No survey forms found with name %s", surveyName)
+		return nil, fmt.Errorf("no survey forms found with name %s", surveyName)
 	}
 
 	surveyFormReference := platformclientv2.Publishedsurveyformreference{Name: &surveyName, ContextId: (*forms.Entities)[0].ContextId}

@@ -3,8 +3,6 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"log"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -15,10 +13,10 @@ import (
 )
 
 // Returns the schema for the routing email domain
-func dataSourceRoutingEmailDomain() *schema.Resource {
+func DataSourceRoutingEmailDomain() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Email Domains. Select an email domain by name",
-		ReadContext: ReadWithPooledClient(dataSourceRoutingEmailDomainRead),
+		ReadContext: ReadWithPooledClient(DataSourceRoutingEmailDomainRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Email domain name.",
@@ -30,7 +28,7 @@ func dataSourceRoutingEmailDomain() *schema.Resource {
 }
 
 // Looks up the data for the Email Domain
-func dataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func DataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
@@ -61,31 +59,4 @@ func dataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceDat
 			}
 		}
 	})
-}
-
-func CleanupRoutingEmailDomains() {
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false, "")
-		if getErr != nil {
-			return
-		}
-
-		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
-			return
-		}
-
-		for _, routingEmailDomain := range *routingEmailDomains.Entities {
-			if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
-				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
-				if err != nil {
-					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
-					continue
-				}
-				time.Sleep(5 * time.Second)
-			}
-		}
-	}
 }
