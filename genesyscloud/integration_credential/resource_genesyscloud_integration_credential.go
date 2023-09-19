@@ -96,9 +96,9 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 		currentCredential, resp, err := ip.getIntegrationCredById(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read credential %s: %s", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("failed to read credential %s: %s", d.Id(), err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read credential %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("failed to read credential %s: %s", d.Id(), err))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCredential())
@@ -156,8 +156,8 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 				log.Printf("Deleted Integration credential %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting credential action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting credential action %s: %s", d.Id(), err))
 		}
-		return retry.RetryableError(fmt.Errorf("Integration credential %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("integration credential %s still exists", d.Id()))
 	})
 }
