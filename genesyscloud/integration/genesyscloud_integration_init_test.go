@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -33,6 +34,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources["genesyscloud_integration"] = ResourceIntegration()
 	providerResources["genesyscloud_group"] = gcloud.ResourceGroup()
+	providerResources["genesyscloud_integration_credential"] = integrationCred.ResourceIntegrationCredential()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -41,7 +43,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources["genesyscloud_integration"] = DataSourceIntegration()
-	providerDataSources["genesyscloud_group"] = gcloud.DataSourceGroup()
 }
 
 // initTestresources initializes all test resources and data sources.

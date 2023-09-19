@@ -453,7 +453,7 @@ var (
 	integrationIntendedState = "ENABLED"
 	flowResource1            = "test-flow-resource-1"
 	flowName                 = "terraform-flow" + uuid.NewString()
-	filePath1                = "../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+	filePath1                = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
 	languageResource1        = "test-language-1"
 	languageName             = "terraform-language" + uuid.NewString()
 	wrapupCodeResource1      = "test-wrapup-code-1"

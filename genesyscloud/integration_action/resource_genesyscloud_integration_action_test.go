@@ -57,7 +57,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					integResource1,
 					nullValue,
 					strconv.Quote(integTypeID),
-				) + integration.GenerateIntegrationResource(
+				) + generateIntegrationActionResource(
 					actionResource1,
 					actionName1,
 					actionCateg1,
