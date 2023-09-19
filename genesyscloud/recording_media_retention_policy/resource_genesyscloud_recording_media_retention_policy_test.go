@@ -19,6 +19,11 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_recording_media_retention_policy_test.go contains all of the test cases for running the resource
+tests for integration_credentials.
+*/
+
 type Mediapolicies struct {
 	CallPolicy    Callmediapolicy
 	ChatPolicy    Chatmediapolicy

@@ -10,6 +10,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+/*
+   The genesyscloud_integration_init_test.go file is used to initialize the data sources and resources
+   used in testing the integration resource.
+
+   Please make sure you register ALL resources and data sources your test cases will use.
+*/
+
 const (
 	trueValue  = "true"
 	falseValue = "false"

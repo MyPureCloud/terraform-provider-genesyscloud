@@ -16,6 +16,27 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_integration.go contains all of the methods that perform the core logic for a resource.
+In general a resource should have a approximately 5 methods in it:
+
+1.  A getAll.... function that the CX as Code exporter will use during the process of exporting Genesys Cloud.
+2.  A create.... function that the resource will use to create a Genesys Cloud object (e.g. genesycloud_integration)
+3.  A read.... function that looks up a single resource.
+4.  An update... function that updates a single resource.
+5.  A delete.... function that deletes a single resource.
+
+Two things to note:
+
+ 1. All code in these methods should be focused on getting data in and out of Terraform.  All code that is used for interacting
+    with a Genesys API should be encapsulated into a proxy class contained within the package.
+
+ 2. In general, to keep this file somewhat manageable, if you find yourself with a number of helper functions move them to a
+
+utils function in the package.  This will keep the code manageable and easy to work through.
+*/
+
+// getAllIntegrations retrieves all of the integrations via Terraform in the Genesys Cloud and is used for the exporter
 func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	ip := getIntegrationsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -33,6 +54,7 @@ func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Conf
 	return resources, nil
 }
 
+// createIntegration is used by the integrations resource to create Genesyscloud integration
 func createIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	intendedState := d.Get("intended_state").(string)
 	integrationType := d.Get("integration_type").(string)
@@ -74,6 +96,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	return readIntegration(ctx, d, meta)
 }
 
+// readIntegration is used by the integration resource to read an integration from genesys cloud.
 func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
@@ -111,6 +134,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 	})
 }
 
+// updateIntegration is used by the integration resource to update an integration in Genesys Cloud
 func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	intendedState := d.Get("intended_state").(string)
 
@@ -136,6 +160,7 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	return readIntegration(ctx, d, meta)
 }
 
+// deleteIntegration is used by the integration resource to delete an integration from Genesys cloud.
 func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)

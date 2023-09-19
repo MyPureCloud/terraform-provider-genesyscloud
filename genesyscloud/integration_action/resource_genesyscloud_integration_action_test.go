@@ -15,6 +15,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_integration_action_test.go contains all of the test cases for running the resource
+tests for integration_actions.
+*/
 func TestAccResourceIntegrationAction(t *testing.T) {
 	var (
 		integResource1 = "test_integration1"

@@ -11,6 +11,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+/*
+Test Class for the Integration Credentials Data Source
+*/
 func TestAccDataSourceIntegrationCredential(t *testing.T) {
 	var (
 		credResource1 = "test_credential_1"

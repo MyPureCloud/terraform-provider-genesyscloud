@@ -10,6 +10,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_integration_action_utils.go file contains various helper methods to marshal
+and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
+
+Note:  Look for opportunities to minimize boilerplate code using functions and Generics
+*/
+
 const (
 	reqTemplateFileName     = "requesttemplate.vm"
 	successTemplateFileName = "successtemplate.vm"
@@ -38,6 +45,7 @@ type IntegrationAction struct {
 	Version       *int                           `json:"version,omitempty"`
 }
 
+// buildSdkActionContract takes the resource data and builds the custom ActionContract from it
 func buildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagnostics) {
 	configInput := d.Get("contract_input").(string)
 	inputVal, err := gcloud.JsonStringToInterface(configInput)
@@ -57,6 +65,7 @@ func buildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagn
 	}, nil
 }
 
+// buildSdkActionConfig takes the resource data and builds the SDK platformclientv2.Actionconfig from it
 func buildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig {
 	ConfigTimeoutSeconds := d.Get("config_timeout_seconds").(int)
 	ActionConfig := &platformclientv2.Actionconfig{
@@ -71,6 +80,7 @@ func buildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig
 	return ActionConfig
 }
 
+// buildSdkActionConfigRequest takes the resource data and builds the SDK platformclientv2.Requestconfig from it
 func buildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Requestconfig {
 	if configRequest := d.Get("config_request"); configRequest != nil {
 		if configList := configRequest.([]interface{}); len(configList) > 0 {
@@ -97,6 +107,7 @@ func buildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Reque
 	return &platformclientv2.Requestconfig{}
 }
 
+// buildSdkActionConfigResponse takes the resource data and builds the SDK platformclientv2.Responseconfig from it
 func buildSdkActionConfigResponse(d *schema.ResourceData) *platformclientv2.Responseconfig {
 	if configResponse := d.Get("config_response"); configResponse != nil {
 		if configList := configResponse.([]interface{}); len(configList) > 0 {
@@ -129,6 +140,7 @@ func buildSdkActionConfigResponse(d *schema.ResourceData) *platformclientv2.Resp
 	return &platformclientv2.Responseconfig{}
 }
 
+// flattenActionContract converts the custom ActionContract into a JSON-encoded string
 func flattenActionContract(schema interface{}) (string, diag.Diagnostics) {
 	if schema == nil {
 		return "", nil
@@ -140,6 +152,7 @@ func flattenActionContract(schema interface{}) (string, diag.Diagnostics) {
 	return string(schemaBytes), nil
 }
 
+// flattenActionConfigRequest converts the platformclientv2.Requestconfig into a map
 func flattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []interface{} {
 	requestMap := make(map[string]interface{})
 	if sdkRequest.RequestUrlTemplate != nil {
@@ -157,6 +170,7 @@ func flattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []int
 	return []interface{}{requestMap}
 }
 
+// flattenActionConfigResponse converts the the platformclientv2.Responseconfig into a map
 func flattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []interface{} {
 	responseMap := make(map[string]interface{})
 	if sdkResponse.TranslationMap != nil {

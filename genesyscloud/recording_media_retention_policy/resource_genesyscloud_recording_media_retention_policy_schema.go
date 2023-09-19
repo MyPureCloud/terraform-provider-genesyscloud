@@ -9,6 +9,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+/*
+The genesyscloud_recording_media_retention_policy_schema.go should hold four types of functions within it:
+
+1.  The registration code that registers the Datasource, Resource and Exporter for the package.
+2.  The resource schema definitions for the genesyscloud_recording_media_retention_policy resource.
+3.  The datasource schema definitions for the genesyscloud_recording_media_retention_policy datasource.
+4.  The resource exporter configuration for the genesyscloud_recording_media_retention_policy exporter.
+*/
+
 const resourceName = "genesyscloud_recording_media_retention_policy"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
@@ -18,6 +27,7 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter(resourceName, MediaRetentionPolicyExporter())
 }
 
+// ResourceMediaRetentionPolicy registers the genesyscloud_recording_media_retention_policy resource with Terraform
 func ResourceMediaRetentionPolicy() *schema.Resource {
 	timeSlot := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -923,6 +933,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 	}
 }
 
+// MediaRetentionPolicyExporter returns the resourceExporter object used to hold the genesyscloud_recording_media_retention_policy exporter's config
 func MediaRetentionPolicyExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllMediaRetentionPolicies),
@@ -1019,6 +1030,7 @@ func MediaRetentionPolicyExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
+// DataSourceRecordingMediaRetentionPolicy registers the genesyscloud_recording_media_retention_policy data source
 func DataSourceRecordingMediaRetentionPolicy() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud media retention policy. Select a policy by name",

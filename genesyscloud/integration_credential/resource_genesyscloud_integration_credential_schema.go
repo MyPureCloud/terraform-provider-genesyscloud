@@ -8,6 +8,14 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
+/*
+resource_genesyscloud_integration_credential_schema.go should hold four types of functions within it:
+
+1.  The registration code that registers the Datasource, Resource and Exporter for the package.
+2.  The resource schema definitions for the integration_credential resource.
+3.  The datasource schema definitions for the integration_credential datasource.
+4.  The resource exporter configuration for the integration_credential exporter.
+*/
 const resourceName = "genesyscloud_integration_credential"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
@@ -17,6 +25,7 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter(resourceName, IntegrationCredentialExporter())
 }
 
+// ResourceIntegrationCredential registers the genesyscloud_integration_credential resource with Terraform
 func ResourceIntegrationCredential() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Credential",
@@ -52,6 +61,7 @@ func ResourceIntegrationCredential() *schema.Resource {
 	}
 }
 
+// IntegrationCredentialExporter returns the resourceExporter object used to hold the genesyscloud_integration_credential exporter's config
 func IntegrationCredentialExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllCredentials),
@@ -62,6 +72,7 @@ func IntegrationCredentialExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
+// DataSourceIntegrationCredential registers the genesyscloud_integration_credential data source
 func DataSourceIntegrationCredential() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud integration credential. Select an integration credential by name",

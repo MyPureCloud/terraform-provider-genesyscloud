@@ -12,6 +12,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+/*
+   The data_source_genesyscloud_integration.go contains the data source implementation
+   for the resource.
+
+   Note:  This code should contain no code for doing the actual lookup in Genesys Cloud.  Instead,
+   it should be added to the _proxy.go file for the class using our proxy pattern.
+*/
+
+// dataSourceIntegrationRead retrieves by name the integration id in question
 func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)

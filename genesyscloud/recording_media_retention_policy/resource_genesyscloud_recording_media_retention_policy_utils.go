@@ -11,6 +11,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_recording_media_retention_policy_utils.go file contains various helper methods to marshal
+and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
+
+Note:  Look for opportunities to minimize boilerplate code using functions and Generics
+*/
+
 type VisibilityConditionStruct struct {
 	CombiningOperation string
 	Predicates         []string

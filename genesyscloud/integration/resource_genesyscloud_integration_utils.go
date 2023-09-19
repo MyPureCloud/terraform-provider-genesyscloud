@@ -14,6 +14,14 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_integration_utils.go file contains various helper methods to marshal
+and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
+
+Note:  Look for opportunities to minimize boilerplate code using functions and Generics
+*/
+
+// flattenIntegrationConfig converts a platformclientv2.Integrationconfiguration into a map and then into single-element array for consumption by Terraform
 func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration) []interface{} {
 	if config == nil {
 		return nil
@@ -64,6 +72,7 @@ func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration)
 	}}
 }
 
+// flattenConfigCredentials converts a map of platformclientv2.Credentialinfo into a map of only the credential IDs for consumption by Terraform
 func flattenConfigCredentials(credentials map[string]platformclientv2.Credentialinfo) map[string]interface{} {
 	if len(credentials) == 0 {
 		return nil
@@ -76,6 +85,8 @@ func flattenConfigCredentials(credentials map[string]platformclientv2.Credential
 	return results
 }
 
+// updateIntegrationConfigFromResourceData takes the integrationsProxy to update updates the config of an integration
+// Returns a diag error and the name of the integration
 func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.ResourceData, p *integrationsProxy) (diag.Diagnostics, string) {
 	if d.HasChange("config") {
 		if configInput := d.Get("config").([]interface{}); configInput != nil {
@@ -144,6 +155,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 	return nil, ""
 }
 
+// buildConfigCredentials takes a map of credential IDs and turns it into a map of platformclientv2.Credentialinfo
 func buildConfigCredentials(credentials map[string]interface{}) map[string]platformclientv2.Credentialinfo {
 	results := make(map[string]platformclientv2.Credentialinfo)
 	if len(credentials) > 0 {
@@ -156,6 +168,7 @@ func buildConfigCredentials(credentials map[string]interface{}) map[string]platf
 	return results
 }
 
+// GenerateIntegrationResource builds the terraform string for creating an integration
 func GenerateIntegrationResource(resourceID string, intendedState string, integrationType string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_integration" "%s" {
         intended_state = %s

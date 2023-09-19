@@ -7,6 +7,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+/*
+   The genesyscloud_integration_credential_init_test.go file is used to initialize the data sources and resources
+   used in testing the integration credential resource.
+
+   Please make sure you register ALL resources and data sources your test cases will use.
+*/
+
 // providerDataSources holds a map of all registered datasources
 var providerDataSources map[string]*schema.Resource
 

@@ -13,6 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+/*
+Test Class for the Recording media Retention Policy Data Source
+*/
 func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 	var (
 		policyResource     = "recording-media-retention-policy"

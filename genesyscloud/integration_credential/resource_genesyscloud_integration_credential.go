@@ -18,6 +18,27 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_integration_credential.go contains all of the methods that perform the core logic for a resource.
+In general a resource should have a approximately 5 methods in it:
+
+1.  A getAll.... function that the CX as Code exporter will use during the process of exporting Genesys Cloud.
+2.  A create.... function that the resource will use to create a Genesys Cloud object (e.g. genesycloud_integration_credential)
+3.  A read.... function that looks up a single resource.
+4.  An update... function that updates a single resource.
+5.  A delete.... function that deletes a single resource.
+
+Two things to note:
+
+ 1. All code in these methods should be focused on getting data in and out of Terraform.  All code that is used for interacting
+    with a Genesys API should be encapsulated into a proxy class contained within the package.
+
+ 2. In general, to keep this file somewhat manageable, if you find yourself with a number of helper functions move them to a
+
+utils function in the package.  This will keep the code manageable and easy to work through.
+*/
+
+// getAllCredentials retrieves all of the integration credentials via Terraform in the Genesys Cloud and is used for the exporter
 func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	ip := getIntegrationCredsProxy(clientConfig)
@@ -37,6 +58,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 	return resources, nil
 }
 
+// createCredential is used by the integration credential resource to create Genesyscloud integration credential
 func createCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
@@ -63,6 +85,7 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	return readCredential(ctx, d, meta)
 }
 
+// readCredential is used by the integration credential resource to read a  credential from genesys cloud.
 func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
@@ -88,6 +111,7 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 	})
 }
 
+// updateCredential is used by the integration credential resource to update a credential in Genesys Cloud
 func updateCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
@@ -114,6 +138,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	return readCredential(ctx, d, meta)
 }
 
+// deleteCredential is used by the integration credential resource to delete a credential from Genesys cloud.
 func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)

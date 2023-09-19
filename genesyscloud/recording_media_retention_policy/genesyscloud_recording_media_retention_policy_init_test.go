@@ -12,6 +12,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+   The genesyscloud_recording_media_retention_policy_init_test.go file is used to initialize the data sources and resources
+   used in testing the integration credential resource.
+
+   Please make sure you register ALL resources and data sources your test cases will use.
+*/
+
 const (
 	trueValue  = "true"
 	falseValue = "false"
@@ -57,11 +64,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[resourceName] = DataSourceRecordingMediaRetentionPolicy()
-	providerDataSources["genesyscloud_routing_email_domain"] = gcloud.DataSourceRoutingEmailDomain()
-	providerDataSources["genesyscloud_routing_queue"] = gcloud.DataSourceRoutingQueue()
-	providerDataSources["genesyscloud_auth_role"] = gcloud.DataSourceAuthRole()
-	providerDataSources["genesyscloud_user"] = gcloud.DataSourceUser()
-	providerDataSources["genesyscloud_quality_forms_evaluation"] = gcloud.DataSourceQualityFormsEvaluations()
 }
 
 // initTestresources initializes all test resources and data sources.

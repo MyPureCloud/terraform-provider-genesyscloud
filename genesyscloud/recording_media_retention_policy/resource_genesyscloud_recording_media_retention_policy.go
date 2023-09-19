@@ -18,6 +18,27 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_recording_media_retention_policy.go contains all of the methods that perform the core logic for a resource.
+In general a resource should have a approximately 5 methods in it:
+
+1.  A getAll.... function that the CX as Code exporter will use during the process of exporting Genesys Cloud.
+2.  A create.... function that the resource will use to create a Genesys Cloud object (e.g. genesyscloud_recording_media_retention_policy)
+3.  A read.... function that looks up a single resource.
+4.  An update... function that updates a single resource.
+5.  A delete.... function that deletes a single resource.
+
+Two things to note:
+
+ 1. All code in these methods should be focused on getting data in and out of Terraform.  All code that is used for interacting
+    with a Genesys API should be encapsulated into a proxy class contained within the package.
+
+ 2. In general, to keep this file somewhat manageable, if you find yourself with a number of helper functions move them to a
+
+utils function in the package.  This will keep the code manageable and easy to work through.
+*/
+
+// getAllMediaRetentionPolicies retrieves all of the recording media retention policies via Terraform in the Genesys Cloud and is used for the exporter
 func getAllMediaRetentionPolicies(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	pp := getPolicyProxy(clientConfig)
@@ -34,6 +55,7 @@ func getAllMediaRetentionPolicies(ctx context.Context, clientConfig *platformcli
 	return resources, nil
 }
 
+// createMediaRetentionPolicy is used by the recording media retention policy resource to create Genesyscloud a media retention policy
 func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	pp := getPolicyProxy(sdkConfig)
@@ -74,6 +96,7 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	return readMediaRetentionPolicy(ctx, d, meta)
 }
 
+// readMediaRetentionPolicy is used by the recording media retention policy resource to read a media retention policy from genesys cloud.
 func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	pp := getPolicyProxy(sdkConfig)
@@ -119,6 +142,7 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 	})
 }
 
+// updateMediaRetentionPolicy is used by the recording media retention policy resource to update a media retention policy in Genesys Cloud
 func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	pp := getPolicyProxy(sdkConfig)
@@ -154,6 +178,7 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	return readMediaRetentionPolicy(ctx, d, meta)
 }
 
+// deleteMediaRetentionPolicy is used by the recording media retention policy resource to delete a media retention policy from Genesys cloud.
 func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
