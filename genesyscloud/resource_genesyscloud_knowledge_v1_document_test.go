@@ -5,11 +5,11 @@ package genesyscloud
 // 	"strings"
 // 	"testing"
 
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
-)
+// 	"github.com/google/uuid"
+// 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+// 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+// 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+// )
 
 // func TestAccResourceKnowledgeV1DocumentBasic(t *testing.T) {
 // t.Skip("Skipping v1 knowledge tests since the test org is using v2")
