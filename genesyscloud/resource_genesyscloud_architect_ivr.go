@@ -8,14 +8,14 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/proxies/architect_api"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
-
 )
 
 const maxDnisPerRequest = 50
@@ -177,13 +177,13 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 	architectIvrProxy.ConfigureProxyApiInstance(sdkConfig)
 
 	log.Printf("Reading IVR config %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		ivrConfig, resp, getErr := architectIvrProxy.GetArchitectIvr(architectIvrProxy, d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr))
 		}
 
 		if ivrConfig.State != nil && *ivrConfig.State == "deleted" {
@@ -307,7 +307,7 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		return diag.Errorf("Failed to delete IVR config %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		ivr, resp, err := architectIvrProxy.GetArchitectIvr(architectIvrProxy, d.Id())
 		if err != nil {
 			if IsStatus404(resp) {
@@ -315,7 +315,7 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 				log.Printf("Deleted IVR config %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IVR config %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IVR config %s: %s", d.Id(), err))
 		}
 
 		if ivr.State != nil && *ivr.State == "deleted" {
@@ -324,6 +324,6 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("IVR config %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("IVR config %s still exists", d.Id()))
 	})
 }

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -17,7 +19,6 @@ import (
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
@@ -485,7 +486,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Elem:        directRoutingResource,
 			},
 			"skill_groups": {
-				Description: "List of skill group ids assigned to the queue",
+				Description: "List of skill group ids assigned to the queue.",
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -584,13 +585,13 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading queue %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentQueue, resp, getErr := routingAPI.GetRoutingQueue(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read queue %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue())
@@ -749,17 +750,17 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("direct_routing", nil)
 		}
 
-		members, err := flattenQueueMembers(d.Id(), routingAPI)
-		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", err))
-		}
-		d.Set("members", members)
-
 		wrapupCodes, err := flattenQueueWrapupCodes(d.Id(), routingAPI)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", err))
+			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
 		d.Set("wrapup_codes", wrapupCodes)
+
+		members, err := flattenQueueMembers(d.Id(), "user", routingAPI)
+		if err != nil {
+			return retry.NonRetryableError(fmt.Errorf("%v", err))
+		}
+		d.Set("members", members)
 
 		skillgroup := "SKILLGROUP"
 		team := "TEAM"
@@ -867,7 +868,7 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	// re-populating the queue after the delete. Otherwise it may not expire for a minute.
 	time.Sleep(5 * time.Second)
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := routingAPI.GetRoutingQueue(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {
@@ -875,9 +876,9 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Queue %s deleted", name)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting queue %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting queue %s: %s", d.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("Queue %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Queue %s still exists", d.Id()))
 	})
 }
 
@@ -1520,7 +1521,7 @@ func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.Rou
 				newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
 			}
 
-			oldSdkUsers, err := getRoutingQueueMembers(d.Id(), routingAPI)
+			oldSdkUsers, err := getRoutingQueueMembers(d.Id(), "", routingAPI)
 			if err != nil {
 				return err
 			}
@@ -1606,12 +1607,12 @@ func updateQueueUserRingNum(queueID string, userID string, ringNum int, api *pla
 	return nil
 }
 
-func getRoutingQueueMembers(queueID string, api *platformclientv2.RoutingApi) ([]platformclientv2.Queuemember, diag.Diagnostics) {
+func getRoutingQueueMembers(queueID string, memberBy string, api *platformclientv2.RoutingApi) ([]platformclientv2.Queuemember, diag.Diagnostics) {
 	const maxPageSize = 100
 
 	var members []platformclientv2.Queuemember
 	for pageNum := 1; ; pageNum++ {
-		users, _, err := sdkGetRoutingQueueMembers(queueID, pageNum, maxPageSize, api)
+		users, _, err := sdkGetRoutingQueueMembers(queueID, memberBy, pageNum, maxPageSize, api)
 		if err != nil {
 			return nil, diag.Errorf("Failed to query users for queue %s: %s", queueID, err)
 		}
@@ -1624,7 +1625,7 @@ func getRoutingQueueMembers(queueID string, api *platformclientv2.RoutingApi) ([
 	}
 }
 
-func sdkGetRoutingQueueMembers(queueID string, pageNumber int, pageSize int, api *platformclientv2.RoutingApi) (*platformclientv2.Queuememberentitylisting, *platformclientv2.APIResponse, error) {
+func sdkGetRoutingQueueMembers(queueID, memberBy string, pageNumber, pageSize int, api *platformclientv2.RoutingApi) (*platformclientv2.Queuememberentitylisting, *platformclientv2.APIResponse, error) {
 	// SDK does not support nil values for boolean query params yet, so we must manually construct this HTTP request for now
 	apiClient := &api.Configuration.APIClient
 
@@ -1650,6 +1651,9 @@ func sdkGetRoutingQueueMembers(queueID string, pageNumber int, pageSize int, api
 
 	queryParams["pageSize"] = apiClient.ParameterToString(pageSize, "")
 	queryParams["pageNumber"] = apiClient.ParameterToString(pageNumber, "")
+	if memberBy != "" {
+		queryParams["memberBy"] = memberBy
+	}
 
 	headerParams["Content-Type"] = "application/json"
 	headerParams["Accept"] = "application/json"
@@ -1666,8 +1670,8 @@ func sdkGetRoutingQueueMembers(queueID string, pageNumber int, pageSize int, api
 	return successPayload, response, err
 }
 
-func flattenQueueMembers(queueID string, api *platformclientv2.RoutingApi) (*schema.Set, diag.Diagnostics) {
-	members, err := getRoutingQueueMembers(queueID, api)
+func flattenQueueMembers(queueID string, memberBy string, api *platformclientv2.RoutingApi) (*schema.Set, diag.Diagnostics) {
+	members, err := getRoutingQueueMembers(queueID, memberBy, api)
 	if err != nil {
 		return nil, err
 	}

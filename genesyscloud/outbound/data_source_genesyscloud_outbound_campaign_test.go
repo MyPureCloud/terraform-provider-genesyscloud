@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
 
@@ -21,7 +22,7 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 		dataSourceId         = "campaign_data"
 		outboundFlowFilePath = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 	)
-	
+
 	// necessary to avoid errors during site creation
 	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
@@ -35,7 +36,7 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -76,5 +77,3 @@ data "genesyscloud_outbound_campaign" "%s" {
 }
 `, id, name, dependsOn)
 }
-
-

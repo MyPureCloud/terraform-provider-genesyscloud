@@ -52,8 +52,6 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 	})
 }
 
-
-
 func testVerifyWrapupcodesDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
 	for _, rs := range state.RootModule().Resources {

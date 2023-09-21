@@ -27,6 +27,9 @@ resource "genesyscloud_processautomation_trigger" "example-trigger" {
   target {
     id   = data.genesyscloud_flow.workflow-trigger.id
     type = "Workflow"
+    workflow_target_settings {
+      data_format = "TopLevelPrimitives"
+    }
   }
   match_criteria = jsonencode([
     {
@@ -68,4 +71,15 @@ Required:
 
 - `id` (String) Id of the target the trigger is configured to hit
 - `type` (String) Type of the target the trigger is configured to hit
+
+Optional:
+
+- `workflow_target_settings` (Block Set, Max: 1) Optional config for the target. Until the feature gets enabled will always operate in TopLevelPrimitives mode. (see [below for nested schema](#nestedblock--target--workflow_target_settings))
+
+<a id="nestedblock--target--workflow_target_settings"></a>
+### Nested Schema for `target.workflow_target_settings`
+
+Optional:
+
+- `data_format` (String) The data format to use when invoking target.
 

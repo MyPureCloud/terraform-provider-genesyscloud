@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -31,17 +32,17 @@ func dataSourceFlowMilestoneRead(ctx context.Context, d *schema.ResourceData, m 
 
 	name := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			milestone, _, getErr := archAPI.GetFlowsMilestones(pageNum, pageSize, "", "", nil, name, "", "", nil)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting milestone %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting milestone %s: %s", name, getErr))
 			}
 
 			if milestone.Entities == nil || len(*milestone.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No milestone found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No milestone found with name %s", name))
 			}
 
 			d.SetId(*(*milestone.Entities)[0].Id)

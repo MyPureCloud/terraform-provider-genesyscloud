@@ -6,16 +6,17 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func getAllIdpGeneric(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -134,14 +135,14 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading IDP Generic")
 
-	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *resource.RetryError {
+	return WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		generic, resp, getErr := idpAPI.GetIdentityprovidersGeneric()
 		if getErr != nil {
 			if IsStatus404(resp) {
 				createIdpGeneric(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read IDP Generic: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGeneric())
@@ -258,7 +259,7 @@ func deleteIdpGeneric(ctx context.Context, _ *schema.ResourceData, meta interfac
 		return diag.Errorf("Failed to delete IDP Generic: %s", err)
 	}
 
-	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := idpAPI.GetIdentityprovidersGeneric()
 		if err != nil {
 			if IsStatus404(resp) {
@@ -266,8 +267,8 @@ func deleteIdpGeneric(ctx context.Context, _ *schema.ResourceData, meta interfac
 				log.Printf("Deleted IDP Generic")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting IDP Generic: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting IDP Generic: %s", err))
 		}
-		return resource.RetryableError(fmt.Errorf("IDP Generic still exists"))
+		return retry.RetryableError(fmt.Errorf("IDP Generic still exists"))
 	})
 }

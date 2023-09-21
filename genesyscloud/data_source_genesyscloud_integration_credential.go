@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -31,17 +32,17 @@ func dataSourceIntegrationCredentialRead(ctx context.Context, d *schema.Resource
 
 	credName := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			integrationCredentials, _, getErr := integrationAPI.GetIntegrationsCredentials(pageNum, pageSize)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("failed to get page of integration credentials: %s", getErr))
+				return retry.NonRetryableError(fmt.Errorf("failed to get page of integration credentials: %s", getErr))
 			}
 
 			if integrationCredentials.Entities == nil || len(*integrationCredentials.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no integration credentials found with name: %s", credName))
+				return retry.RetryableError(fmt.Errorf("no integration credentials found with name: %s", credName))
 			}
 
 			for _, credential := range *integrationCredentials.Entities {

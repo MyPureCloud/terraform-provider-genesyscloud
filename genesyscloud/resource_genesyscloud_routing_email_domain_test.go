@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
@@ -119,7 +121,7 @@ func generateRoutingEmailDomainResource(
 func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
 
-	diagErr := WithRetries(context.Background(), 180*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "genesyscloud_routing_email_domain" {
 				continue
@@ -129,10 +131,10 @@ func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 				if IsStatus404(resp) {
 					continue
 				}
-				return resource.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
+				return retry.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
 			}
 
-			return resource.RetryableError(fmt.Errorf("Routing email domain %s still exists", rs.Primary.ID))
+			return retry.RetryableError(fmt.Errorf("Routing email domain %s still exists", rs.Primary.ID))
 		}
 		return nil
 	})

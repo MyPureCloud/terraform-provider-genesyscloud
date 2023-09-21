@@ -19,9 +19,14 @@ type ProcessAutomationTrigger struct {
 	Description     *string `json:"description,omitempty"`
 }
 
+type WorkflowTargetSettings struct {
+	DataFormat *string `json:"dataFormat,omitempty"`
+}
+
 type Target struct {
-	Type *string `json:"type,omitempty"`
-	Id   *string `json:"id,omitempty"`
+	Type                   *string                 `json:"type,omitempty"`
+	Id                     *string                 `json:"id,omitempty"`
+	WorkflowTargetSettings *WorkflowTargetSettings `json:"workflowTargetSettings,omitempty"`
 }
 
 func (p *ProcessAutomationTrigger) toJSONString() (string, error) {

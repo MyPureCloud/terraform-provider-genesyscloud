@@ -10,15 +10,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -234,13 +235,13 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading integration action %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		action, resp, getErr := sdkGetIntegrationAction(d.Id(), integAPI)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read integration action %s: %s", d.Id(), getErr))
 		}
 
 		// Retrieve config request/response templates
@@ -250,7 +251,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 				d.SetId("")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read request template for integration action %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read request template for integration action %s: %s", d.Id(), getErr))
 		}
 
 		successTemp, resp, getErr := sdkGetIntegrationActionTemplate(d.Id(), "successtemplate.vm", integAPI)
@@ -259,7 +260,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 				d.SetId("")
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read success template for integration action %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read success template for integration action %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction())
@@ -296,7 +297,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
 			input, err := flattenActionContract(*action.Contract.Input.InputSchema)
 			if err != nil {
-				return resource.NonRetryableError(fmt.Errorf("%v", err))
+				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
 			d.Set("contract_input", input)
 		} else {
@@ -306,7 +307,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		if action.Contract != nil && action.Contract.Output != nil && action.Contract.Output.SuccessSchema != nil {
 			output, err := flattenActionContract(*action.Contract.Output.SuccessSchema)
 			if err != nil {
-				return resource.NonRetryableError(fmt.Errorf("%v", err))
+				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
 			d.Set("contract_output", output)
 		} else {
@@ -384,7 +385,7 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete Integration action %s: %s", d.Id(), err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := sdkGetIntegrationAction(d.Id(), integAPI)
 		if err != nil {
 			if IsStatus404(resp) {
@@ -392,9 +393,9 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Integration action %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting integration action %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting integration action %s: %s", d.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("Integration action %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Integration action %s still exists", d.Id()))
 	})
 }
 

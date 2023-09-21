@@ -1,7 +1,3 @@
-
-//The external contacts API will only return 10,000 records. After 10,000 records
-//the API will return a 400. On export, the export process will only return the first
-//10,000 records and then return a warning.
 resource "genesyscloud_externalcontacts_contact" "contact" {
   first_name  = "jean"
   middle_name = "jacques"

@@ -6,14 +6,15 @@ import (
 	"strconv"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
 )
 
 func TestAccDataSourceCampaignRule(t *testing.T) {
 	t.Parallel()
-	
+
 	var (
 		campaignRuleResourceId = "campaign_rule"
 		campaignRuleName       = "test-campaign-rule-" + uuid.NewString()
@@ -62,7 +63,7 @@ func TestAccDataSourceCampaignRule(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`

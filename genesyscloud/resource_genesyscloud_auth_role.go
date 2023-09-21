@@ -6,16 +6,17 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -235,13 +236,13 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Reading role %s", d.Id())
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		role, resp, getErr := authAPI.GetAuthorizationRole(d.Id(), false, nil)
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read role %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthRole())
@@ -329,7 +330,7 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diag.Errorf("Failed to delete role %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := authAPI.GetAuthorizationRole(d.Id(), false, nil)
 		if err != nil {
 			if IsStatus404(resp) {
@@ -337,9 +338,9 @@ func deleteAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 				log.Printf("Deleted role %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting role %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting role %s: %s", d.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("Role %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Role %s still exists", d.Id()))
 	})
 }
 

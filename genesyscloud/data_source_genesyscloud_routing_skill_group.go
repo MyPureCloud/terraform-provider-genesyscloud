@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -35,7 +36,7 @@ func dataSourceRoutingSkillGroupRead(ctx context.Context, d *schema.ResourceData
 	name := d.Get("name").(string)
 
 	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 
@@ -46,25 +47,25 @@ func dataSourceRoutingSkillGroupRead(ctx context.Context, d *schema.ResourceData
 			response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
 
 			if err != nil {
-				return resource.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s, %w", name, err))
+				return retry.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s, %w", name, err))
 			}
 
 			if err == nil && response.Error != nil {
-				return resource.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s %w", name, err))
+				return retry.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s %w", name, err))
 			}
 			if err == nil && response.StatusCode == http.StatusNotFound {
-				return resource.RetryableError(fmt.Errorf("routing skills group not found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("routing skills group not found with name %s", name))
 			}
 
 			allSkillGroups := &AllSkillGroups{}
 
 			err = json.Unmarshal(response.RawBody, &allSkillGroups)
 			if err != nil {
-				return resource.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s %w", name, err))
+				return retry.RetryableError(fmt.Errorf("error encountered while trying to retrieve routing skills group found with name %s %w", name, err))
 			}
 
 			if allSkillGroups.Entities == nil || len(allSkillGroups.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("no routing skills groups found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("no routing skills groups found with name %s", name))
 			}
 
 			for _, skillGroup := range allSkillGroups.Entities {

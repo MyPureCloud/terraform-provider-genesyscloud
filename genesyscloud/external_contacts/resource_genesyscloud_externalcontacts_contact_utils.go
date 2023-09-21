@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/nyaruka/phonenumbers"
 )
 
 /*
@@ -288,4 +289,16 @@ func flattenSdkFacebookScopedId(facebookScopedid *[]platformclientv2.Facebooksco
 		facebookScopedidInterface["scoped_id"] = (*facebookScopedid)[0].ScopedId
 	}
 	return []interface{}{facebookScopedidInterface}
+}
+
+// formatPhoneNumber formats a given string to E164 format and hashes it for comparison
+func hashFormattedPhoneNumber(val string) int {
+	formattedNumber := ""
+
+	number, err := phonenumbers.Parse(val, "US")
+	if err == nil {
+		formattedNumber = phonenumbers.Format(number, phonenumbers.E164)
+	}
+
+	return schema.HashString(formattedNumber)
 }

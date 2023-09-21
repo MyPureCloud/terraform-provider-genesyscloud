@@ -6,16 +6,17 @@ import (
 	"strings"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 func TestAccResourceOutboundContactListFilter(t *testing.T) {
-	
+
 	t.Parallel()
 	var (
 		resourceId            = "contact_list_filter"
@@ -67,7 +68,7 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories:  gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: contactListResource + generateOutboundContactListFilter(

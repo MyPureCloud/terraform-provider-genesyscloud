@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -37,23 +38,23 @@ func dataSourceKnowledgeCategoryRead(ctx context.Context, d *schema.ResourceData
 	name := d.Get("name").(string)
 	knowledgeBaseName := d.Get("knowledge_base_name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		publishedKnowledgeBases, _, getPublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", true, "", "")
 		unpublishedKnowledgeBases, _, getUnpublishedErr := knowledgeAPI.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", false, "", "")
 
 		if getPublishedErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getPublishedErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getPublishedErr))
 		}
 		if getUnpublishedErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getUnpublishedErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to get knowledge base %s: %s", knowledgeBaseName, getUnpublishedErr))
 		}
 
 		noPublishedEntities := publishedKnowledgeBases.Entities == nil || len(*publishedKnowledgeBases.Entities) == 0
 		noUnpublishedEntities := unpublishedKnowledgeBases.Entities == nil || len(*unpublishedKnowledgeBases.Entities) == 0
 		if noPublishedEntities && noUnpublishedEntities {
 
-			return resource.RetryableError(fmt.Errorf("no knowledge bases found with name %s", knowledgeBaseName))
+			return retry.RetryableError(fmt.Errorf("no knowledge bases found with name %s", knowledgeBaseName))
 		}
 
 		// prefer published knowledge base
@@ -62,7 +63,7 @@ func dataSourceKnowledgeCategoryRead(ctx context.Context, d *schema.ResourceData
 				knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", false, name, "", "", false)
 
 				if getErr != nil {
-					return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge category %s: %s", name, getErr))
+					return retry.NonRetryableError(fmt.Errorf("Failed to get knowledge category %s: %s", name, getErr))
 				}
 
 				for _, knowledgeCategory := range *knowledgeCategories.Entities {
@@ -80,7 +81,7 @@ func dataSourceKnowledgeCategoryRead(ctx context.Context, d *schema.ResourceData
 				knowledgeCategories, _, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseCategories(*knowledgeBase.Id, "", "", fmt.Sprintf("%v", pageSize), "", false, name, "", "", false)
 
 				if getErr != nil {
-					return resource.NonRetryableError(fmt.Errorf("Failed to get knowledge category %s: %s", name, getErr))
+					return retry.NonRetryableError(fmt.Errorf("Failed to get knowledge category %s: %s", name, getErr))
 				}
 
 				for _, knowledgeCategory := range *knowledgeCategories.Entities {

@@ -11,11 +11,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -61,8 +62,8 @@ func ResourceFlow() *schema.Resource {
 		Description: `Genesys Cloud Flow`,
 
 		CreateContext: CreateWithPooledClient(createFlow),
-		ReadContext:   ReadWithPooledClient(readFlow),
 		UpdateContext: UpdateWithPooledClient(updateFlow),
+		ReadContext:   ReadWithPooledClient(readFlow),
 		DeleteContext: DeleteWithPooledClient(deleteFlow),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -70,7 +71,7 @@ func ResourceFlow() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"filepath": {
-				Description:  "YAML file path for flow configuration.",
+				Description:  "YAML file path for flow configuration. Note: Changing the flow name will result in the creation of a new flow with a new GUID, while the original flow will persist in your org.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: ValidatePath,
@@ -95,22 +96,17 @@ func ResourceFlow() *schema.Resource {
 	}
 }
 
-func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("Creating flow")
-	return updateFlow(ctx, d, meta)
-}
-
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flow, resp, err := architectAPI.GetFlow(d.Id(), false)
 		if err != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 		}
 
 		log.Printf("Read flow %s %s", d.Id(), *flow.Name)
@@ -139,14 +135,22 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 	return false
 }
 
+func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("Creating flow")
+	return updateFlow(ctx, d, meta)
+}
+
 func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	architectAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	log.Printf("Updating flow")
 
 	//Check to see if we need to force and unlock on an architect flow
 	if isForceUnlockEnabled(d) {
 		err := forceUnlockFlow(d.Id(), sdkConfig)
 		if err != nil {
+			setFileContentHashToNil(d)
 			return diag.Errorf("Failed to unlock targeted flow %s with error %s", d.Id(), err)
 		}
 	}
@@ -154,10 +158,12 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	flowJob, response, err := architectAPI.PostFlowsJobs()
 
 	if err != nil {
+		setFileContentHashToNil(d)
 		return diag.Errorf("Failed to update job %s", err)
 	}
 
 	if err == nil && response.Error != nil {
+		setFileContentHashToNil(d)
 		return diag.Errorf("Failed to register job. %s", err)
 	}
 
@@ -170,33 +176,35 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	reader, _, err := files.DownloadOrOpenFile(filePath)
 	if err != nil {
+		setFileContentHashToNil(d)
 		return diag.Errorf(err.Error())
 	}
 
 	s3Uploader := files.NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
 	_, err = s3Uploader.Upload()
 	if err != nil {
+		setFileContentHashToNil(d)
 		return diag.Errorf(err.Error())
 	}
 
 	// Pre-define here before entering retry function, otherwise it will be overwritten
 	flowID := ""
 
-	retryErr := WithRetries(ctx, 16*time.Minute, func() *resource.RetryError {
+	retryErr := WithRetries(ctx, 16*time.Minute, func() *retry.RetryError {
 		flowJob, response, err := architectAPI.GetFlowsJob(jobId, []string{"messages"})
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
+			return retry.NonRetryableError(fmt.Errorf("Error retrieving job status. JobID: %s, error: %s ", jobId, response.ErrorMessage))
 		}
 
 		if *flowJob.Status == "Failure" {
 			if flowJob.Messages == nil {
-				return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, no tracing messages available.", jobId))
+				return retry.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, no tracing messages available.", jobId))
 			}
 			messages := make([]string, 0)
 			for _, m := range *flowJob.Messages {
 				messages = append(messages, *m.Text)
 			}
-			return resource.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v ", jobId, strings.Join(messages, "\n\n")))
+			return retry.NonRetryableError(fmt.Errorf("Flow publish failed. JobID: %s, tracing messages: %v ", jobId, strings.Join(messages, "\n\n")))
 		}
 
 		if *flowJob.Status == "Success" {
@@ -205,14 +213,16 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 
 		time.Sleep(15 * time.Second) // Wait 15 seconds for next retry
-		return resource.RetryableError(fmt.Errorf("Job (%s) could not finish in 16 minutes and timed out ", jobId))
+		return retry.RetryableError(fmt.Errorf("Job (%s) could not finish in 16 minutes and timed out ", jobId))
 	})
 
 	if retryErr != nil {
+		setFileContentHashToNil(d)
 		return retryErr
 	}
 
 	if flowID == "" {
+		setFileContentHashToNil(d)
 		return diag.Errorf("Failed to get the flowId from Architect Job (%s).", jobId)
 	}
 
@@ -234,7 +244,7 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		resp, err := architectAPI.DeleteFlow(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {
@@ -243,9 +253,9 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				return nil
 			}
 			if resp.StatusCode == http.StatusConflict {
-				return resource.RetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting flow %s: %s", d.Id(), err))
 		}
 		return nil
 	})
@@ -279,4 +289,10 @@ func updateFile(filepath, content string) {
 	defer file.Close()
 
 	file.WriteString(content)
+}
+
+// setFileContentHashToNil This operation is required after a flow update fails because we want Terraform to detect changes
+// in the file content hash and re-attempt an update, should the user re-run terraform apply without making changes to the file contents
+func setFileContentHashToNil(d *schema.ResourceData) {
+	_ = d.Set("file_content_hash", nil)
 }

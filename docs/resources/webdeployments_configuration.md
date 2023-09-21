@@ -33,6 +33,10 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     launcher_button {
       visibility = "OnDemand"
     }
+    home_screen {
+      enabled  = true
+      logo_url = "https://my-domain/images/my-logo.png"
+    }
     styles {
       primary_color = "#B0B0B0"
     }
@@ -224,6 +228,7 @@ Optional:
 
 - `enabled` (Boolean) Whether or not messenger is enabled
 - `file_upload` (Block List, Max: 1) File upload settings for messenger (see [below for nested schema](#nestedblock--messenger--file_upload))
+- `home_screen` (Block List, Max: 1) The settings for the home screen (see [below for nested schema](#nestedblock--messenger--home_screen))
 - `launcher_button` (Block List, Max: 1) The settings for the launcher button (see [below for nested schema](#nestedblock--messenger--launcher_button))
 - `styles` (Block List, Max: 1) The style settings for messenger (see [below for nested schema](#nestedblock--messenger--styles))
 
@@ -242,6 +247,15 @@ Optional:
 - `file_types` (List of String) A list of supported content types for uploading files.Valid values: image/jpeg, image/gif, image/png
 - `max_file_size_kb` (Number) The maximum file size for file uploads in kilobytes. Default is 10240 (10 MB)
 
+
+
+<a id="nestedblock--messenger--home_screen"></a>
+### Nested Schema for `messenger.home_screen`
+
+Optional:
+
+- `enabled` (Boolean) Whether or not home screen is enabled
+- `logo_url` (String) URL for custom logo to appear in home screen
 
 
 <a id="nestedblock--messenger--launcher_button"></a>

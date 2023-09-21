@@ -10,13 +10,15 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/typeconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -345,13 +347,13 @@ func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
 	journeyApi := journeyApiConfig(i)
 	log.Printf("Reading Journey Action Template %s", data.Id())
-	return WithRetriesForRead(ctx, data, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, data, func() *retry.RetryError {
 		actionTemplate, resp, getErr := journeyApi.GetJourneyActiontemplate(data.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Journey Action Template %s: %s", data.Id(), getErr))
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, data, i, ResourceJourneyActionTemplate())
 		flattenActionTemplate(data, actionTemplate)
@@ -391,16 +393,16 @@ func deleteJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	if _, err := journeyApi.DeleteJourneyActiontemplate(data.Id(), true); err != nil {
 		return diag.Errorf("Failed to delete journey action template with name %s: %s", name, err)
 	}
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := journeyApi.GetJourneyActiontemplate(data.Id())
 		if err != nil {
 			if IsStatus404(resp) {
 				log.Printf("Deleted Journey Action Template %s", data.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting journey action template %s: %s", data.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting journey action template %s: %s", data.Id(), err))
 		}
-		return resource.RetryableError(fmt.Errorf("journey action template %s still exists", data.Id()))
+		return retry.RetryableError(fmt.Errorf("journey action template %s still exists", data.Id()))
 	})
 }
 

@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -31,17 +32,17 @@ func dataSourceScheduleRead(ctx context.Context, d *schema.ResourceData, m inter
 
 	name := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		for pageNum := 1; ; pageNum++ {
 			schedule, _, getErr := archAPI.GetArchitectSchedules(pageNum, pageSize, "", "", name, nil)
 
 			if getErr != nil {
-				return resource.NonRetryableError(fmt.Errorf("Error requesting schedule %s: %s", name, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Error requesting schedule %s: %s", name, getErr))
 			}
 
 			if schedule.Entities == nil || len(*schedule.Entities) == 0 {
-				return resource.RetryableError(fmt.Errorf("No schedule found with name %s", name))
+				return retry.RetryableError(fmt.Errorf("No schedule found with name %s", name))
 			}
 
 			d.SetId(*(*schedule.Entities)[0].Id)

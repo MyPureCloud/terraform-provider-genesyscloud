@@ -7,16 +7,17 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -172,13 +173,13 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		inputDeployment.Flow = flow
 	}
 
-	diagErr := WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		deployment, resp, err := api.PostWebdeploymentsDeployments(inputDeployment)
 		if err != nil {
 			if IsStatus400(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
+				return retry.RetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
 		}
 
 		d.SetId(*deployment.Id)
@@ -191,6 +192,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		return diagErr
 	}
 
+	time.Sleep(10 * time.Second)
 	activeError := waitForDeploymentToBeActive(ctx, api, d.Id())
 	if activeError != nil {
 		return diag.Errorf("Web deployment %s did not become active and could not be created", name)
@@ -200,20 +202,20 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func waitForDeploymentToBeActive(ctx context.Context, api *platformclientv2.WebDeploymentsApi, id string) diag.Diagnostics {
-	return WithRetries(ctx, 60*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		deployment, resp, err := api.GetWebdeploymentsDeployment(id)
 		if err != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
+				return retry.RetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
+			return retry.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
 		}
 
 		if *deployment.Status == "Active" {
 			return nil
 		}
 
-		return resource.RetryableError(fmt.Errorf("Web deployment %s not active yet. Status: %s", id, *deployment.Status))
+		return retry.RetryableError(fmt.Errorf("Web deployment %s not active yet. Status: %s", id, *deployment.Status))
 	})
 }
 
@@ -222,13 +224,13 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 
 	log.Printf("Reading web deployment %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		deployment, resp, getErr := api.GetWebdeploymentsDeployment(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeployment())
@@ -303,13 +305,13 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		inputDeployment.Flow = flow
 	}
 
-	diagErr := WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	diagErr := WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := api.PutWebdeploymentsDeployment(d.Id(), inputDeployment)
 		if err != nil {
 			if IsStatus400(resp) {
-				return resource.RetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
+				return retry.RetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
 		}
 
 		return nil
@@ -340,17 +342,17 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to delete web deployment %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := api.GetWebdeploymentsDeployment(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {
 				log.Printf("Deleted web deployment %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting web deployment %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting web deployment %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Web deployment %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Web deployment %s still exists", d.Id()))
 	})
 }
 

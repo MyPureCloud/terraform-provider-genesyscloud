@@ -509,7 +509,6 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 	})
 }
 
-
 func testVerifySitesDestroyed(state *terraform.State) error {
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApi()
 	for _, rs := range state.RootModule().Resources {
@@ -535,8 +534,6 @@ func testVerifySitesDestroyed(state *terraform.State) error {
 	// Success. All sites destroyed
 	return nil
 }
-
-
 
 func generateSiteEdgeAutoUpdateConfig(timeZone, rrule, start, end string) string {
 	return fmt.Sprintf(`edge_auto_update_config {

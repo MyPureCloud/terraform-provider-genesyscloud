@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -55,18 +56,18 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface
 	}
 
 	// Retry in case user is not yet indexed
-	return WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		users, _, getErr := usersAPI.PostUsersSearch(platformclientv2.Usersearchrequest{
 			SortBy:    &emailField,
 			SortOrder: &sortOrderAsc,
 			Query:     &[]platformclientv2.Usersearchcriteria{searchCriteria},
 		})
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("Error requesting users: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Error requesting users: %s", getErr))
 		}
 
 		if users.Results == nil || len(*users.Results) == 0 {
-			return resource.RetryableError(fmt.Errorf("No users found with search criteria %v", searchCriteria))
+			return retry.RetryableError(fmt.Errorf("No users found with search criteria %v", searchCriteria))
 		}
 
 		// Select first user in the list

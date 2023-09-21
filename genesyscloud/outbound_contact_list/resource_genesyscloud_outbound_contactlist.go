@@ -4,19 +4,21 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 	"strings"
+	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 var (
@@ -314,13 +316,13 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Reading Outbound Contact List %s", d.Id())
 
-	return gcloud.WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkContactList, resp, getErr := outboundApi.GetOutboundContactlist(d.Id(), false, false)
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return resource.RetryableError(fmt.Errorf("failed to read Outbound Contact List %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read Outbound Contact List %s: %s", d.Id(), getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("failed to read Outbound Contact List %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Contact List %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactList())
@@ -388,7 +390,7 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		return diagErr
 	}
 
-	return gcloud.WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := outboundApi.GetOutboundContactlist(d.Id(), false, false)
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
@@ -396,10 +398,10 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 				log.Printf("Deleted Outbound Contact List %s", d.Id())
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("error deleting Outbound Contact List %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting Outbound Contact List %s: %s", d.Id(), err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Outbound Contact List %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("Outbound Contact List %s still exists", d.Id()))
 	})
 }
 
@@ -579,7 +581,6 @@ func GeneratePhoneColumnsBlock(columnName, columnType, callableTimeColumn string
 	}
 `, columnName, columnType, callableTimeColumn)
 }
-
 
 func GenerateOutboundContactList(
 	resourceId string,

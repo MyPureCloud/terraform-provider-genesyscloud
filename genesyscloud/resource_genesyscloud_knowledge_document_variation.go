@@ -8,15 +8,17 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 var (
@@ -377,7 +379,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 	}
 
 	log.Printf("Reading knowledge document variation %s", documentVariationId)
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		var knowledgeDocumentVariation *platformclientv2.Documentvariation
 		/*
 		 * If the published flag is not set, get both published and draft variation and choose the most recent
@@ -397,7 +399,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 					if retryErr != nil {
 						if !IsStatus404(retryResp) {
 							log.Printf("%s", retryErr)
-							return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, retryErr))
+							return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, retryErr))
 						}
 					} else {
 						publishedVariation = retryVariation
@@ -405,17 +407,17 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 				} else {
 					log.Printf("%s", publishedErr)
-					return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr))
+					return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr))
 				}
 			}
 
 			draftVariation, resp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 			if draftErr != nil {
 				if IsStatus404(resp) {
-					return resource.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
+					return retry.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
 				}
 				log.Printf("%s", draftErr)
-				return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
+				return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr))
 			}
 
 			if publishedVariation != nil && publishedVariation.DateModified != nil && publishedVariation.DateModified.After(*draftVariation.DateModified) {
@@ -427,10 +429,10 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 			variation, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, documentState)
 			if getErr != nil {
 				if IsStatus404(resp) {
-					return resource.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, getErr))
+					return retry.RetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, getErr))
 				}
 				log.Printf("%s", getErr)
-				return resource.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, getErr))
+				return retry.NonRetryableError(fmt.Errorf("Failed to read knowledge document variation %s: %s", documentVariationId, getErr))
 			}
 
 			knowledgeDocumentVariation = variation
@@ -547,7 +549,7 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		}
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *resource.RetryError {
+	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		// The DELETE resource for knowledge document variations only removes draft variations. So set the documentState param to "Draft" for the check
 		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
 		if err != nil {
@@ -556,10 +558,10 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 				log.Printf("Deleted knowledge document variation %s", documentVariationId)
 				return nil
 			}
-			return resource.NonRetryableError(fmt.Errorf("Error deleting knowledge document variation %s: %s", documentVariationId, err))
+			return retry.NonRetryableError(fmt.Errorf("Error deleting knowledge document variation %s: %s", documentVariationId, err))
 		}
 
-		return resource.RetryableError(fmt.Errorf("Knowledge document variation %s still exists", documentVariationId))
+		return retry.RetryableError(fmt.Errorf("Knowledge document variation %s still exists", documentVariationId))
 	})
 }
 
@@ -628,7 +630,9 @@ func buildDocumentText(textIn map[string]interface{}) *platformclientv2.Document
 			textOut.Marks = markArr
 		}
 		if hyperlink, ok := text["hyperlink"].(string); ok {
-			textOut.Hyperlink = &hyperlink
+			if len(hyperlink) > 0 {
+				textOut.Hyperlink = &hyperlink
+			}
 		}
 		return &textOut
 	}
@@ -655,7 +659,9 @@ func buildDocumentImage(imageIn map[string]interface{}) *platformclientv2.Docume
 			Url: &url,
 		}
 		if hyperlink, ok := image["hyperlink"].(string); ok {
-			imageOut.Hyperlink = &hyperlink
+			if len(hyperlink) > 0 {
+				imageOut.Hyperlink = &hyperlink
+			}
 		}
 		return &imageOut
 	}
@@ -742,7 +748,7 @@ func flattenDocumentText(textIn platformclientv2.Documenttext) []interface{} {
 		markSet := lists.StringListToSet(*textIn.Marks)
 		textOut["marks"] = markSet
 	}
-	if textIn.Hyperlink != nil {
+	if textIn.Hyperlink != nil && len(*textIn.Hyperlink) > 0 {
 		textOut["hyperlink"] = *textIn.Hyperlink
 	}
 
@@ -836,7 +842,7 @@ func flattenDocumentImage(imageIn platformclientv2.Documentbodyimage) []interfac
 	if imageIn.Url != nil {
 		imageOut["url"] = *imageIn.Url
 	}
-	if imageIn.Hyperlink != nil {
+	if imageIn.Hyperlink != nil && len(*imageIn.Hyperlink) > 0 {
 		imageOut["hyperlink"] = *imageIn.Hyperlink
 	}
 

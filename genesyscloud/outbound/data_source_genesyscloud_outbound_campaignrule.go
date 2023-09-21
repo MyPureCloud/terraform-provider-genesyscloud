@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	gcloud "terraform-provider-genesyscloud/genesyscloud" 
 )
 
 func dataSourceOutboundCampaignRule() *schema.Resource {
@@ -33,16 +35,16 @@ func dataSourceCampaignRuleRead(ctx context.Context, d *schema.ResourceData, m i
 	name := d.Get("name").(string)
 
 	// Query campaign rule by name. Retry in case search has not yet indexed the campaign rule.
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageNum = 1
 		const pageSize = 100
 		campaignRules, _, getErr := outboundAPI.GetOutboundCampaignrules(pageSize, pageNum, true, "", name, "", "")
 		if getErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("error requesting campaign rule %s: %s", name, getErr))
+			return retry.NonRetryableError(fmt.Errorf("error requesting campaign rule %s: %s", name, getErr))
 		}
 
 		if campaignRules.Entities == nil || len(*campaignRules.Entities) == 0 {
-			return resource.RetryableError(fmt.Errorf("no campaign rules found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("no campaign rules found with name %s", name))
 		}
 
 		campaignRule := (*campaignRules.Entities)[0]

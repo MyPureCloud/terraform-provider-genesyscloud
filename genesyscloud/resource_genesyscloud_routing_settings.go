@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func ResourceRoutingSettings() *schema.Resource {
@@ -108,15 +110,15 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	log.Printf("Reading setting: %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *resource.RetryError {
+	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		settings, resp, getErr := routingAPI.GetRoutingSettings()
 
 		if getErr != nil {
 			if IsStatus404(resp) {
 				//createRoutingSettings(ctx, d, meta)
-				return resource.RetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
+				return retry.RetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
 			}
-			return resource.NonRetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
+			return retry.NonRetryableError(fmt.Errorf("Failed to read Routing Setting: %s", getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings())
@@ -127,11 +129,11 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		if diagErr := readRoutingSettingsContactCenter(d, routingAPI); diagErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
 		if diagErr := readRoutingSettingsTranscription(d, routingAPI); diagErr != nil {
-			return resource.NonRetryableError(fmt.Errorf("%v", diagErr))
+			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
 		log.Printf("Read Routing Setting")
