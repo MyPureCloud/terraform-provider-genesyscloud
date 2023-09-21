@@ -529,9 +529,8 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-	allPhones, _, _ := edgesAPI.GetTelephonyProvidersEdgesPhones(25, 1, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 
-	for pageNum := 1; pageNum <= *allPhones.PageCount; pageNum++ {
+	for pageNum := 1; pageNum <= 100; pageNum++ {
 		const pageSize = 100
 		phones, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 		if getErr != nil {
