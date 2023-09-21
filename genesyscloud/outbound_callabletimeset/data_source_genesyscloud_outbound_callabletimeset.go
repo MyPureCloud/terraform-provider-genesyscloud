@@ -3,10 +3,10 @@ package outbound_callabletimeset
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -24,15 +24,15 @@ func dataSourceOutboundCallabletimesetRead(ctx context.Context, d *schema.Resour
 
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		callableTimeSetId, retryable, err := proxy.getOutboundCallabletimesetIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return resource.NonRetryableError(fmt.Errorf("Error Outbound Callabletimeset %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("Error Outbound Callabletimeset %s: %s", name, err))
 		}
 
 		if retryable {
-			return resource.RetryableError(fmt.Errorf("No Outbound Callabletimeset found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("No Outbound Callabletimeset found with name %s", name))
 		}
 
 		d.SetId(callableTimeSetId)
