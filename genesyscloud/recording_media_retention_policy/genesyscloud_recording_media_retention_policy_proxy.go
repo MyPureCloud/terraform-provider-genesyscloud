@@ -139,7 +139,7 @@ func getAllPoliciesFn(ctx context.Context, p *policyProxy) (*[]platformclientv2.
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		retentionPolicies, _, err := p.recordingApi.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", []string{}, "", "", "", true, false, false, 365)
+		retentionPolicies, _, err := p.recordingApi.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", []string{}, "", "", "", true, false, false, 0)
 		if err != nil {
 			return nil, err
 		}
