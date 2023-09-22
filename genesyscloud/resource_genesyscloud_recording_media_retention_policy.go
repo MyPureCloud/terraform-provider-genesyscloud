@@ -972,7 +972,7 @@ func getAllMediaRetentionPolicies(_ context.Context, clientConfig *platformclien
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		retentionPolicies, _, getErr := recordingAPI.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", []string{}, "", "", "", true, false, false, 365)
+		retentionPolicies, _, getErr := recordingAPI.GetRecordingMediaretentionpolicies(pageSize, pageNum, "", []string{}, "", "", "", true, false, false, 0)
 
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of media retention policies %v", getErr)
