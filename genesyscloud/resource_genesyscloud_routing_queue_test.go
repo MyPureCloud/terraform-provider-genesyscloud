@@ -692,6 +692,104 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 	})
 }
 
+func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
+	var (
+		queueResourceId = "test-queue"
+		queueName       = "tf test queue" + uuid.NewString()
+
+		user1ResourceId = "user1"
+		user1Name       = "user " + uuid.NewString()
+		user1Email      = "user" + strings.Replace(uuid.NewString(), "-", "", -1) + "@example.com"
+
+		user2ResourceId = "user2"
+		user2Name       = "user " + uuid.NewString()
+		user2Email      = "user" + strings.Replace(uuid.NewString(), "-", "", -1) + "@example.com"
+
+		skillResourceId = "test-skill"
+		skillName       = "Skill " + uuid.NewString()
+
+		skillGroupResourceId = "test-skill-group"
+		skillGroupName       = "tf test skillgroup " + uuid.NewString()
+	)
+
+	skillGroupConfig := fmt.Sprintf(`
+	resource "genesyscloud_routing_skill_group" "%s" {
+		name = "%s"
+		skill_conditions = jsonencode(
+			[
+			  {
+				"routingSkillConditions" : [
+				  {
+					"routingSkill" : "%s",
+					"comparator" : "GreaterThan",
+					"proficiency" : 2,
+					"childConditions" : [{
+					  "routingSkillConditions" : [],
+					  "languageSkillConditions" : [],
+					  "operation" : "And"
+					}]
+				  }
+				],
+				"languageSkillConditions" : [],
+				"operation" : "And"
+			}]
+		)
+	
+		depends_on = [ genesyscloud_routing_skill.%s ]
+	}	
+	`, skillGroupResourceId, skillGroupName, skillName, skillResourceId)
+
+	user2Config := fmt.Sprintf(`
+	resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		routing_skills {
+			skill_id    = genesyscloud_routing_skill.%s.id
+			proficiency = 4.5
+		}
+	}
+	`, user2ResourceId, user2Email, user2Name, skillResourceId)
+
+	/*
+		Assign 1 user to the queue via the members set
+		Assign 1 members based on a skill group
+		Confirm that the length of `skill_groups` and `members` both equal 1
+	*/
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateRoutingSkillResource(
+					skillResourceId,
+					skillName,
+				) + skillGroupConfig + user2Config +
+					GenerateBasicUserResource(
+						user1ResourceId,
+						user1Email,
+						user1Name,
+					) + GenerateRoutingQueueResourceBasic(
+					queueResourceId,
+					queueName,
+					GenerateMemberBlock("genesyscloud_user."+user1ResourceId+".id", nullValue),
+					fmt.Sprintf("skill_groups = [genesyscloud_routing_skill_group.%s.id]", skillGroupResourceId),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceId, "skill_groups.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceId, "members.#", "1"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResourceId,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
+}
+
 func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 	var (
 		queueResource       = "test-queue-wrapup"
