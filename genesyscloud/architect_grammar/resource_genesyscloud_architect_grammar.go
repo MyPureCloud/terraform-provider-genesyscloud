@@ -45,9 +45,21 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 	architectGrammar := getArchitectGrammarFromResourceData(d)
 
+	// Create grammar
+	log.Printf("Creating Architect Grammar %s", *architectGrammar.Name)
 	grammar, err := proxy.createArchitectGrammar(ctx, &architectGrammar)
 	if err != nil {
 		return diag.Errorf("Failed to create grammar: %s", err)
+	}
+
+	var languages []*platformclientv2.Grammarlanguage
+	// Create each language associated with the grammar
+	for _, language := range *architectGrammar.Languages {
+		language, err := proxy.createArchitectGrammarLanguage(ctx, *grammar.Id, &language)
+		if err != nil {
+			return diag.Errorf("Failed to create grammar: %s", err)
+		}
+		languages = append(languages, language)
 	}
 
 	d.SetId(*grammar.Id)
@@ -64,6 +76,7 @@ func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta inte
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		grammar, respCode, getErr := proxy.getArchitectGrammarById(ctx, d.Id())
+
 		if getErr != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Architect Grammar %s: %s", d.Id(), getErr))

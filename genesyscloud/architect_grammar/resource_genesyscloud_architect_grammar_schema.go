@@ -2,6 +2,7 @@ package architect_grammar
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -39,14 +40,16 @@ func ResourceArchitectGrammar() *schema.Resource {
 				Type:        schema.TypeInt,
 			},
 			`date_uploaded`: {
-				Description: "The date the file was uploaded. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z",
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:      "The date the file was uploaded. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z",
+				Optional:         true,
+				Type:             schema.TypeString,
+				ValidateDiagFunc: gcloud.ValidateDateTimeSeconds,
 			},
 			`file_type`: {
-				Description: "The extension of the file",
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  "The extension of the file",
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Gram", "Grxml"}, true),
 			},
 		},
 	}

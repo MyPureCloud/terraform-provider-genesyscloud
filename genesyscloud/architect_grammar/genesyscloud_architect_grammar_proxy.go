@@ -18,6 +18,7 @@ var internalProxy *architectGrammarProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, error)
+type createArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, error)
 type getAllArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy) (*[]platformclientv2.Grammar, error)
 type getArchitectGrammarByIdFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string) (grammar *platformclientv2.Grammar, responseCode int, err error)
 type getArchitectGrammarIdByNameFunc func(ctx context.Context, p *architectGrammarProxy, name string) (grammarId string, retryable bool, err error)
@@ -26,28 +27,30 @@ type deleteArchitectGrammarFunc func(ctx context.Context, p *architectGrammarPro
 
 // architectGrammarProxy contains all of the methods that call genesys cloud APIs.
 type architectGrammarProxy struct {
-	clientConfig                    *platformclientv2.Configuration
-	architectApi                    *platformclientv2.ArchitectApi
-	createArchitectGrammarAttr      createArchitectGrammarFunc
-	getAllArchitectGrammarAttr      getAllArchitectGrammarFunc
-	getArchitectGrammarByIdAttr     getArchitectGrammarByIdFunc
-	getArchitectGrammarIdByNameAttr getArchitectGrammarIdByNameFunc
-	updateArchitectGrammarAttr      updateArchitectGrammarFunc
-	deleteArchitectGrammarAttr      deleteArchitectGrammarFunc
+	clientConfig                       *platformclientv2.Configuration
+	architectApi                       *platformclientv2.ArchitectApi
+	createArchitectGrammarAttr         createArchitectGrammarFunc
+	createArchitectGrammarLanguageAttr createArchitectGrammarLanguageFunc
+	getAllArchitectGrammarAttr         getAllArchitectGrammarFunc
+	getArchitectGrammarByIdAttr        getArchitectGrammarByIdFunc
+	getArchitectGrammarIdByNameAttr    getArchitectGrammarIdByNameFunc
+	updateArchitectGrammarAttr         updateArchitectGrammarFunc
+	deleteArchitectGrammarAttr         deleteArchitectGrammarFunc
 }
 
 // newArchitectGrammarProxy initializes the grammar proxy with all of the data needed to communicate with Genesys Cloud
 func newArchitectGrammarProxy(clientConfig *platformclientv2.Configuration) *architectGrammarProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 	return &architectGrammarProxy{
-		clientConfig:                    clientConfig,
-		architectApi:                    api,
-		createArchitectGrammarAttr:      createArchitectGrammarFn,
-		getAllArchitectGrammarAttr:      getAllArchitectGrammarFn,
-		getArchitectGrammarByIdAttr:     getArchitectGrammarByIdFn,
-		getArchitectGrammarIdByNameAttr: getArchitectGrammarIdByNameFn,
-		updateArchitectGrammarAttr:      updateArchitectGrammarFn,
-		deleteArchitectGrammarAttr:      deleteArchitectGrammarFn,
+		clientConfig:                       clientConfig,
+		architectApi:                       api,
+		createArchitectGrammarAttr:         createArchitectGrammarFn,
+		createArchitectGrammarLanguageAttr: createArchitectGrammarLanguageFn,
+		getAllArchitectGrammarAttr:         getAllArchitectGrammarFn,
+		getArchitectGrammarByIdAttr:        getArchitectGrammarByIdFn,
+		getArchitectGrammarIdByNameAttr:    getArchitectGrammarIdByNameFn,
+		updateArchitectGrammarAttr:         updateArchitectGrammarFn,
+		deleteArchitectGrammarAttr:         deleteArchitectGrammarFn,
 	}
 }
 
@@ -64,6 +67,11 @@ func getArchitectGrammarProxy(clientConfig *platformclientv2.Configuration) *arc
 // createArchitectGrammar creates a Genesys Cloud Architect Grammar
 func (p *architectGrammarProxy) createArchitectGrammar(ctx context.Context, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, error) {
 	return p.createArchitectGrammarAttr(ctx, p, grammar)
+}
+
+// createArchitectGrammarLanguage creates a Genesys Cloud Architect Grammarlanguage for a grammar
+func (p *architectGrammarProxy) createArchitectGrammarLanguage(ctx context.Context, grammarId string, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, error) {
+	return p.createArchitectGrammarLanguageAttr(ctx, p, grammarId, language)
 }
 
 // getAllArchitectGrammar retrieves all Genesys Cloud Architect Grammar
@@ -99,6 +107,16 @@ func createArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 	}
 
 	return grammar, nil
+}
+
+// createArchitectGrammarLanguageFn is an implementation function for creating a Genesys Cloud Architect Grammarlanguage
+func createArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarProxy, grammarId string, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, error) {
+	language, _, err := p.architectApi.PostArchitectGrammarLanguages(grammarId, *language)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create grammar language: %s", err)
+	}
+
+	return language, nil
 }
 
 // getAllArchitectGrammarFn is the implementation for retrieving all Architect Grammars in Genesys Cloud

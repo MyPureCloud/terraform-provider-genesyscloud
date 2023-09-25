@@ -16,6 +16,21 @@ func TestAccResourceArchitectGrammarBasic(t *testing.T) {
 		resourceId   = "grammar" + uuid.NewString()
 		name1        = "Test grammar " + uuid.NewString()
 		description1 = "Test description"
+		language1    = generateGrammarLanguageBlock(
+			"test language name",
+			generateFileVoiceFileMetadataBlock(
+				"voiceFile1",
+				"256",
+				"2023-09-22T15:30:00.123Z",
+				"Gram",
+			),
+			generateFileDtmfFileMetadataBlock(
+				"dtmfFile1",
+				"214",
+				"2023-09-22T15:30:00.123Z",
+				"Gram",
+			),
+		)
 		name2        = "Test grammar " + uuid.NewString()
 		description2 = "A new test description"
 	)
@@ -30,10 +45,16 @@ func TestAccResourceArchitectGrammarBasic(t *testing.T) {
 					resourceId,
 					name1,
 					description1,
+					language1,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "description", description1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.language", "test language name"),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_metadata.0.file_name", "voiceFile1"),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_metadata.0.file_size_bytes", "256"),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_metadata.0.date_uploaded", "2023-09-22T15:30:00.123Z"),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_metadata.0.file_type", "Gram"),
 				),
 			},
 			{
@@ -42,6 +63,7 @@ func TestAccResourceArchitectGrammarBasic(t *testing.T) {
 					resourceId,
 					name2,
 					description2,
+					language1,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name2),
@@ -73,6 +95,50 @@ func generateGrammarResource(
 			%s
 		}
 	`, resourceId, name, description, strings.Join(nestedBlocks, "\n"))
+}
+
+func generateGrammarLanguageBlock(
+	language string,
+	attrs ...string,
+) string {
+	return fmt.Sprintf(`
+		languages {
+			language = "%s"
+			%s
+		}
+	`, language, strings.Join(attrs, "\n"))
+}
+
+func generateFileVoiceFileMetadataBlock(
+	fileName string,
+	fileSizeBytes string,
+	dateUploaded string,
+	fileType string,
+) string {
+	return fmt.Sprintf(`
+		voice_file_metadata {
+			file_name = "%s"
+			file_size_bytes = %s
+			date_uploaded = "%s"
+			file_type = "%s"
+		}
+	`, fileName, fileSizeBytes, dateUploaded, fileType)
+}
+
+func generateFileDtmfFileMetadataBlock(
+	fileName string,
+	fileSizeBytes string,
+	dateUploaded string,
+	fileType string,
+) string {
+	return fmt.Sprintf(`
+		dtmf_file_metadata {
+			file_name = "%s"
+			file_size_bytes = %s
+			date_uploaded = "%s"
+			file_type = "%s"
+		}
+	`, fileName, fileSizeBytes, dateUploaded, fileType)
 }
 
 func testVerifyGrammarDestroyed(state *terraform.State) error {

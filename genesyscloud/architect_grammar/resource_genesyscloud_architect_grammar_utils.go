@@ -59,7 +59,7 @@ func buildGrammarLanguageFileMetadata(fileMetadata []interface{}) *platformclien
 
 	resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.FileName, metadataMap, "file_name")
 	sdkMetadata.FileSizeBytes = platformclientv2.Int(metadataMap["file_size_bytes"].(int))
-	resourcedata.BuildSDKTimeValueIfNotNil(&sdkMetadata.DateUploaded, metadataMap, "date_uploaded")
+	resourcedata.BuildSDKTimeValueIfNotNil(&sdkMetadata.DateUploaded, metadataMap, "date_uploaded", "2006-01-02T15:04:05.000Z")
 	resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.FileType, metadataMap, "file_type")
 
 	return &sdkMetadata
@@ -96,7 +96,13 @@ func flattenGrammarLanguageFileMetadata(fileMetadata *platformclientv2.Grammarla
 
 	resourcedata.SetMapValueIfNotNil(metadataMap, "file_name", fileMetadata.FileName)
 	resourcedata.SetMapValueIfNotNil(metadataMap, "file_size_bytes", fileMetadata.FileSizeBytes)
-	resourcedata.SetMapValueIfNotNil(metadataMap, "date_uploaded", fileMetadata.DateUploaded)
+	resourcedata.SetMapTimeIfNotNil(metadataMap, "date_uploaded", fileMetadata.DateUploaded, "%Y-%m-%dT%H:%M:%S.%f")
+	// Trim the last 3 characters of date_uploaded and replace with a Z if it exists in the map
+	if dateUploaded, ok := metadataMap["date_uploaded"].(string); ok {
+		if len(dateUploaded) >= 3 {
+			metadataMap["date_uploaded"] = dateUploaded[:len(dateUploaded)-3] + "Z"
+		}
+	}
 	resourcedata.SetMapValueIfNotNil(metadataMap, "file_type", fileMetadata.FileType)
 
 	return []interface{}{metadataMap}
