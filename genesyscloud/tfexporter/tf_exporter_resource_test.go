@@ -65,10 +65,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_knowledge_document"] = gcloud.ResourceKnowledgeDocument()
-	providerResources["genesyscloud_knowledge_v1_document"] = gcloud.ResourceKnowledgeDocumentV1()
 	providerResources["genesyscloud_knowledge_document_variation"] = gcloud.ResourceKnowledgeDocumentVariation()
 	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
-	providerResources["genesyscloud_knowledge_v1_category"] = gcloud.ResourceKnowledgeCategoryV1()
 	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_recording_media_retention_policy"] = gcloud.ResourceMediaRetentionPolicy()
@@ -196,10 +194,8 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_webdeployments_deployment", gcloud.WebDeploymentExporter())
 	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
 
-	RegisterExporter("genesyscloud_knowledge_v1_document", gcloud.KnowledgeDocumentExporterV1())
 	RegisterExporter("genesyscloud_knowledge_document_variation", gcloud.KnowledgeDocumentVariationExporter())
 	RegisterExporter("genesyscloud_knowledge_label", gcloud.KnowledgeLabelExporter())
-	RegisterExporter("genesyscloud_knowledge_v1_category", gcloud.KnowledgeCategoryExporterV1())
 
 	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
 	RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())
