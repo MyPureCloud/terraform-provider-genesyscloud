@@ -52,9 +52,13 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 	}
 
 	// Hydrate Cache if empty
+	dataSourceRoutingQueueCache.mutex.Lock()
 	if dataSourceRoutingQueueCache.isEmpty() {
-		dataSourceRoutingQueueCache.hydrateCache()
+		if err := dataSourceRoutingQueueCache.hydrateCache(); err != nil {
+			return diag.FromErr(err)
+		}
 	}
+	dataSourceRoutingQueueCache.mutex.Unlock()
 
 	// Get id from cache
 	name := d.Get("name").(string)
@@ -148,11 +152,7 @@ func getQueueByName(ctx context.Context, routingApi *platformclientv2.RoutingApi
 }
 
 // Hydrate the cache with updated values.
-// Locks it until cache is completely populated
 func (c *DataSourceCache) hydrateCache() error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
 	return c.hydrateCacheFunc(c)
 }
 
