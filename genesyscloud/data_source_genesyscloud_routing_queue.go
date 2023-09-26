@@ -63,9 +63,13 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 		// If not found in cache, try to obtain through SDK call
 		log.Printf("could not find routing queue %v in cache. Will try API to find value", name)
 		queueId, diagErr := getQueueByName(ctx, routingApi, name)
+		if diagErr != nil {
+			return diagErr
+		}
 
 		d.SetId(queueId)
-		return diagErr
+		dataSourceRoutingQueueCache.updateCacheEntry(name, queueId)
+		return nil
 	}
 
 	log.Printf("found queue %v from cache", name)
@@ -115,15 +119,14 @@ func hydrateRoutingQueueCacheFn(c *DataSourceCache) error {
 	return nil
 }
 
-// Get queue by name. This will traverse pages instead of
-// using name filter to avoid backend issue (ref: DEVENGAGE-2153)
+// Get queue by name.
 // Returns the queue id (blank if not found) and diag
 func getQueueByName(ctx context.Context, routingApi *platformclientv2.RoutingApi, name string) (string, diag.Diagnostics) {
 	queueId := ""
 	diag := WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			queues, _, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", "", nil, nil, nil, false)
+			queues, _, getErr := routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, false)
 			if getErr != nil {
 				return retry.NonRetryableError(fmt.Errorf("error requesting queue %s: %s", name, getErr))
 			}
@@ -145,12 +148,27 @@ func getQueueByName(ctx context.Context, routingApi *platformclientv2.RoutingApi
 }
 
 // Hydrate the cache with updated values.
-// Handles the mutex for writing to cache
+// Locks it until cache is completely populated
 func (c *DataSourceCache) hydrateCache() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
 	return c.hydrateCacheFunc(c)
+}
+
+// Adds or updates a cache entry
+func (c *DataSourceCache) updateCacheEntry(key string, val string) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.cache == nil {
+		return fmt.Errorf("cache is not initialized")
+	}
+	c.cache[key] = val
+
+	log.Printf("updated cache entry [%v] to value: %v", key, val)
+
+	return nil
 }
 
 // Returns true if the cache is empty
