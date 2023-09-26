@@ -581,7 +581,6 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		createQueue.Division = &platformclientv2.Writabledivision{Id: &divisionID}
 	}
 
-	fmt.Println("Creating queue")
 	log.Printf("Creating queue %s", name)
 	queue, _, err := routingAPI.PostRoutingQueues(createQueue)
 	if err != nil {
@@ -1629,17 +1628,20 @@ func updateMembersInChunks(queueID string, membersToUpdate []string, remove bool
 	// API restricts member adds/removes to 100 per call
 	// Generic call to prepare chunks for the Update. Takes in three args
 	// 1. MemberstoUpdate 2. The Entity prepare func for the update 3. Chunk Size
-	chunks := chunksProcess.ChunkItems(membersToUpdate, platformWritableEntityFunc, 100)
-	// Closure to process the chunks
-	chunkProcessor := func(chunk []platformclientv2.Writableentity) diag.Diagnostics {
-		_, err := api.PostRoutingQueueMembers(queueID, chunk, remove)
-		if err != nil {
-			return diag.Errorf("Failed to update members in queue %s: %s", queueID, err)
+	if len(membersToUpdate) > 0 {
+		chunks := chunksProcess.ChunkItems(membersToUpdate, platformWritableEntityFunc, 100)
+		// Closure to process the chunks
+		chunkProcessor := func(chunk []platformclientv2.Writableentity) diag.Diagnostics {
+			_, err := api.PostRoutingQueueMembers(queueID, chunk, remove)
+			if err != nil {
+				return diag.Errorf("Failed to update members in queue %s: %s", queueID, err)
+			}
+			return nil
 		}
-		return nil
+		// Genric Function call which takes in the chunks and the processing function
+		return chunksProcess.ProcessChunks(chunks, chunkProcessor)
 	}
-	// Genric Function call which takes in the chunks and the processing function
-	return chunksProcess.ProcessChunks(chunks, chunkProcessor)
+	return nil
 
 }
 

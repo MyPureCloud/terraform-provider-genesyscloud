@@ -50,7 +50,6 @@ func TestChunkItems(t *testing.T) {
 		{8, 10, 12},
 		{14, 16, 18},
 	}
-
 	chunks := ChunkItems(items, mapBuilder, chunkSize)
 
 	if !reflect.DeepEqual(chunks, expectedChunks) {
