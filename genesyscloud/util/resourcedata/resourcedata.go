@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 )
 
 const (

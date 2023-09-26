@@ -4,7 +4,7 @@ import (
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 )
 
 // flattenOutboundWrapupCodeMappings maps objects and flags lists come back ordered differently than what is defined by the user in their config

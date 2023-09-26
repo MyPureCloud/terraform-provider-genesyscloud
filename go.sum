@@ -250,8 +250,8 @@ github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
-github.com/mypurecloud/platform-client-sdk-go/v105 v105.0.0 h1:uRyobq6Sm9VvBxXOh1J6hQqY5mXdzGKvgMf08M4lcnQ=
-github.com/mypurecloud/platform-client-sdk-go/v105 v105.0.0/go.mod h1:8AM1Gtr5W0I4w60iBpJomjicsydCcgydPR0uPqXPR6E=
+github.com/mypurecloud/platform-client-sdk-go/v109 v109.0.1 h1:KEvIWe1EPfxbpN+jyQRaTUcmznBDfJbd0Wy7eXxUSyY=
+github.com/mypurecloud/platform-client-sdk-go/v109 v109.0.1/go.mod h1:qvk7b7aYU1TbbVFkEZCFnPI092VMnal2omZ8cRG2/Vk=
 github.com/nyaruka/phonenumbers v1.1.8 h1:mjFu85FeoH2Wy18aOMUvxqi1GgAqiQSJsa/cCC5yu2s=
 github.com/nyaruka/phonenumbers v1.1.8/go.mod h1:DC7jZd321FqUe+qWSNcHi10tyIyGNXGcNbfkPvdp1Vs=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
