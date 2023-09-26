@@ -1,10 +1,16 @@
 package architect_grammar
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"io"
 	"log"
+	"mime/multipart"
+	"net/http"
+	"path/filepath"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 /*
@@ -24,6 +30,7 @@ type getArchitectGrammarByIdFunc func(ctx context.Context, p *architectGrammarPr
 type getArchitectGrammarIdByNameFunc func(ctx context.Context, p *architectGrammarProxy, name string) (grammarId string, retryable bool, err error)
 type updateArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, error)
 type deleteArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string) (responseCode int, err error)
+type uploadArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string, grammar *platformclientv2.Grammar) (responseCode int, err error)
 
 // architectGrammarProxy contains all of the methods that call genesys cloud APIs.
 type architectGrammarProxy struct {
@@ -36,6 +43,7 @@ type architectGrammarProxy struct {
 	getArchitectGrammarIdByNameAttr    getArchitectGrammarIdByNameFunc
 	updateArchitectGrammarAttr         updateArchitectGrammarFunc
 	deleteArchitectGrammarAttr         deleteArchitectGrammarFunc
+	uploadArchitectGrammarAttr         uploadArchitectGrammarFunc
 }
 
 // newArchitectGrammarProxy initializes the grammar proxy with all of the data needed to communicate with Genesys Cloud
@@ -51,6 +59,7 @@ func newArchitectGrammarProxy(clientConfig *platformclientv2.Configuration) *arc
 		getArchitectGrammarIdByNameAttr:    getArchitectGrammarIdByNameFn,
 		updateArchitectGrammarAttr:         updateArchitectGrammarFn,
 		deleteArchitectGrammarAttr:         deleteArchitectGrammarFn,
+		uploadArchitectGrammarAttr:         uploadArchitectGrammarFn,
 	}
 }
 
@@ -97,6 +106,11 @@ func (p *architectGrammarProxy) updateArchitectGrammar(ctx context.Context, gram
 // deleteArchitectGrammar deletes a Genesys Cloud Architect Grammar by Id
 func (p *architectGrammarProxy) deleteArchitectGrammar(ctx context.Context, grammarId string) (statusCode int, err error) {
 	return p.deleteArchitectGrammarAttr(ctx, p, grammarId)
+}
+
+// deleteArchitectGrammar deletes a Genesys Cloud Architect Grammar by Id
+func (p *architectGrammarProxy) uploadArchitectGrammar(ctx context.Context, grammarId string, grammar *platformclientv2.Grammar) (statusCode int, err error) {
+	return p.uploadArchitectGrammarAttr(ctx, p, grammarId, grammar)
 }
 
 // createArchitectGrammarFn is an implementation function for creating a Genesys Cloud Architect Grammar
@@ -193,4 +207,60 @@ func deleteArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 	}
 
 	return resp.StatusCode, nil
+}
+
+// deleteArchitectGrammarFn is an implementation function for deleting a Genesys Cloud Architect Grammar
+func uploadArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest) error {
+	uploadResponse, _, err := p.architectApi.PostArchitectGrammarLanguageFilesVoice(grammarId, languageCode, *uploadBody)
+	if err != nil {
+		return fmt.Errorf("Failed to get language file presignedUri: %s", err)
+	}
+
+	reader, file, err := files.DownloadOrOpenFile(*filename)
+	if file != nil {
+		defer file.Close()
+	}
+	if err != nil {
+		return err
+	}
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", filepath.Base(*filename))
+	if err != nil {
+		return err
+	}
+
+	if file != nil {
+		io.Copy(part, file)
+	} else {
+		io.Copy(part, reader)
+	}
+	io.Copy(part, file)
+	writer.Close()
+
+	request, err := http.NewRequest(http.MethodPut, *uploadResponse.Url, body)
+	if err != nil {
+		return err
+	}
+
+	for key, value := range *uploadResponse.Headers {
+		request.Header.Add(key, value)
+	}
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	content, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Content of upload: %s", content)
+
+	return nil
 }

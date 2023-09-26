@@ -35,6 +35,12 @@ func getAllAuthArchitectGrammar(ctx context.Context, clientConfig *platformclien
 		resources[*grammar.Id] = &resourceExporter.ResourceMeta{Name: *grammar.Id}
 	}
 
+	// Upload grammar file
+	resp, err := proxy.uploadGrammarFile()
+
+	// Verify upload
+	success, err := proxy.verifyGrammarFileUpload()
+
 	return resources, nil
 }
 

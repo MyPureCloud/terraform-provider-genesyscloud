@@ -24,14 +24,17 @@ func BuildSDKStringValueIfNotNil(field **string, targetMap map[string]interface{
 	}
 }
 
-// BuildSDKInterfaceArrayValueIfNotNil will read a map and use the provided function to read the nested values if the value exists
-func BuildSDKTimeValueIfNotNil(time **time.Time, targetMap map[string]interface{}, key string) {
-	var timeValue *string = nil
-	if time != nil {
-		timeAsString := timeutil.Strftime(*time, TimeWriteFormat)
-		timeValue = &timeAsString
+
+// This function will read a map and set the time property on an object if the value exists
+func BuildSDKTimeValueIfNotNil(sdkTime **time.Time, targetMap map[string]interface{}, key string, timeFormat string) {
+	if timeStr := targetMap[key].(string); timeStr != "" {
+		timeValue, err := time.Parse(timeFormat, timeStr)
+		if err != nil {
+			log.Printf("Unable to create time %s", timeStr)
+			return
+		}
+		*sdkTime = &timeValue
 	}
-	BuildSDKStringValueIfNotNil(&timeValue, targetMap, key)
 }
 
 // This function will read a map and use the provided function to read the nested values if the value exists
@@ -97,7 +100,18 @@ func SetMapValueIfNotNil[T any](targetMap map[string]interface{}, key string, va
 	}
 }
 
+
 // SetMapInterfaceArrayWithFuncIfNotNil will read the values in a nested resource using the provided function and set it in a map
+func SetMapTimeIfNotNil(targetMap map[string]interface{}, key string, value *time.Time, timeFormat string) {
+	var timeValue *string = nil
+	if value != nil {
+		timeStr := timeutil.Strftime(value, timeFormat)
+		timeValue = &timeStr
+	}
+	SetMapValueIfNotNil(targetMap, key, timeValue)
+}
+
+// This function will read the values in a nested resource using the provided function and set it in a map
 func SetMapInterfaceArrayWithFuncIfNotNil[T any](targetMap map[string]interface{}, key string, value *T, f func(*T) []interface{}) {
 	if value != nil {
 		targetMap[key] = f(value)
