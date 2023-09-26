@@ -51,14 +51,9 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 		dataSourceRoutingQueueCache = NewDataSourceCache(sdkConfig, hydrateRoutingQueueCacheFn)
 	}
 
-	// Hydrate Cache if empty
-	dataSourceRoutingQueueCache.mutex.Lock()
-	if dataSourceRoutingQueueCache.isEmpty() {
-		if err := dataSourceRoutingQueueCache.hydrateCache(); err != nil {
-			return diag.FromErr(err)
-		}
+	if err := dataSourceRoutingQueueCache.hydrateCacheIfEmpty(); err != nil {
+		return diag.FromErr(err)
 	}
-	dataSourceRoutingQueueCache.mutex.Unlock()
 
 	// Get id from cache
 	name := d.Get("name").(string)
@@ -72,7 +67,9 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 		}
 
 		d.SetId(queueId)
-		dataSourceRoutingQueueCache.updateCacheEntry(name, queueId)
+		if err := dataSourceRoutingQueueCache.updateCacheEntry(name, queueId); err != nil {
+			return diag.Errorf("error updating cache: %v", err)
+		}
 		return nil
 	}
 
@@ -81,12 +78,23 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 	return nil
 }
 
+func (c *DataSourceCache) hydrateCacheIfEmpty() error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if c.isEmpty() {
+		if err := c.hydrateCache(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Normalize queue name for keys in the cache
 func normalizeQueueName(queueName string) string {
 	return strings.ToLower(queueName)
 }
 
-// Creates a new data source cache
+// NewDataSourceCache creates a new data source cache
 func NewDataSourceCache(clientConfig *platformclientv2.Configuration, hydrateFn func(*DataSourceCache) error) *DataSourceCache {
 	return &DataSourceCache{
 		cache:            make(map[string]string),
@@ -95,7 +103,7 @@ func NewDataSourceCache(clientConfig *platformclientv2.Configuration, hydrateFn 
 	}
 }
 
-// Function for hydrating the cache with Genesys Cloud routing queues using the SDK
+// hydrateRoutingQueueCacheFn for hydrating the cache with Genesys Cloud routing queues using the SDK
 func hydrateRoutingQueueCacheFn(c *DataSourceCache) error {
 	log.Printf("hydrating cache for data source genesyscloud_routing_queues")
 
@@ -140,7 +148,7 @@ func getQueueByName(ctx context.Context, routingApi *platformclientv2.RoutingApi
 			}
 
 			for _, queue := range *queues.Entities {
-				if queue.Name != nil && *queue.Name == name {
+				if queue.Name != nil && normalizeQueueName(*queue.Name) == normalizeQueueName(name) {
 					queueId = *queue.Id
 					return nil
 				}
