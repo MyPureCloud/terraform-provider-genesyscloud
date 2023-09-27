@@ -6,7 +6,7 @@ import (
 	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 )
 
 type postArchitectIvrFunc func(*ArchitectIvrProxy, platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error)
