@@ -61,7 +61,7 @@ func flattenEvaluationAssignments(assignments *[]platformclientv2.Evaluationassi
 		return nil
 	}
 
-	evaluationAssignments := []interface{}{}
+	evaluationAssignments := make([]interface{}, 0)
 	for _, assignment := range *assignments {
 		assignmentMap := make(map[string]interface{})
 
@@ -175,7 +175,7 @@ func flattenAssignMeteredEvaluations(assignments *[]platformclientv2.Meteredeval
 		return nil
 	}
 
-	meteredAssignments := []interface{}{}
+	meteredAssignments := make([]interface{}, 0)
 	for _, assignment := range *assignments {
 		assignmentMap := make(map[string]interface{})
 		if assignment.Evaluators != nil {
@@ -261,7 +261,7 @@ func flattenAssignMeteredAssignmentByAgent(assignments *[]platformclientv2.Meter
 		return nil
 	}
 
-	meteredAssignments := []interface{}{}
+	meteredAssignments := make([]interface{}, 0)
 	for _, assignment := range *assignments {
 		assignmentMap := make(map[string]interface{})
 		if assignment.Evaluators != nil {
@@ -352,7 +352,7 @@ func flattenAssignCalibrations(assignments *[]platformclientv2.Calibrationassign
 		return nil
 	}
 
-	calibrationAssignments := []interface{}{}
+	calibrationAssignments := make([]interface{}, 0)
 	for _, assignment := range *assignments {
 		assignmentMap := make(map[string]interface{})
 		if assignment.Calibrator != nil {
@@ -438,14 +438,14 @@ func flattenAssignSurveys(assignments *[]platformclientv2.Surveyassignment) []in
 		return nil
 	}
 
-	surveyAssignments := []interface{}{}
+	var surveyAssignments []interface{}
 
 	for _, assignment := range *assignments {
-		assignmentMap := make(map[string]interface{})
-		if assignment.SurveyForm != nil {
+		assignmentMap := make(map[string]interface{}, 0)
+		if assignment.SurveyForm != nil && assignment.SurveyForm.Name != nil {
 			assignmentMap["survey_form_name"] = *assignment.SurveyForm.Name
 		}
-		if assignment.Flow != nil {
+		if assignment.Flow != nil && assignment.Flow.Id != nil {
 			assignmentMap["flow_id"] = *assignment.Flow.Id
 		}
 
@@ -607,7 +607,7 @@ func flattenMediaTranscriptions(transcriptions *[]platformclientv2.Mediatranscri
 		return nil
 	}
 
-	mediaTranscriptions := []interface{}{}
+	mediaTranscriptions := make([]interface{}, 0)
 
 	for _, transcription := range *transcriptions {
 		transcriptionMap := make(map[string]interface{})
@@ -743,7 +743,7 @@ func flattenTimeSlots(slots *[]platformclientv2.Timeslot) []interface{} {
 		return nil
 	}
 
-	slotList := []interface{}{}
+	slotList := make([]interface{}, 0)
 
 	for _, slot := range *slots {
 		slotMap := make(map[string]interface{})
@@ -1653,7 +1653,7 @@ func flattenUserParams(params *[]platformclientv2.Userparam) []interface{} {
 		return nil
 	}
 
-	paramList := []interface{}{}
+	paramList := make([]interface{}, 0)
 
 	for _, param := range *params {
 		paramMap := make(map[string]interface{})
@@ -1707,7 +1707,7 @@ func flattenPolicyErrorMessages(errorMessages *[]platformclientv2.Policyerrormes
 		return nil
 	}
 
-	errorMessageList := []interface{}{}
+	errorMessageList := make([]interface{}, 0)
 
 	for _, errorMessage := range *errorMessages {
 		errorMessageMap := make(map[string]interface{})
