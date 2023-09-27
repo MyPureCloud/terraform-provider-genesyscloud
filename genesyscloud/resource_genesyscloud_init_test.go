@@ -26,7 +26,6 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_telephony_providers_edges_site"] = ResourceSite()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_routing_queue"] = ResourceRoutingQueue()
 	providerResources["genesyscloud_flow"] = ResourceFlow()
@@ -92,7 +91,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_edge_group"] = ResourceEdgeGroup()
 	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = ResourceTelephonyExtensionPool()
 	providerResources["genesyscloud_telephony_providers_edges_phone"] = ResourcePhone()
-	providerResources["genesyscloud_telephony_providers_edges_site"] = ResourceSite()
 	providerResources["genesyscloud_telephony_providers_edges_phonebasesettings"] = ResourcePhoneBaseSettings()
 	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = ResourceTrunkBaseSettings()
 	providerResources["genesyscloud_telephony_providers_edges_trunk"] = ResourceTrunk()
@@ -109,7 +107,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_telephony_providers_edges_site"] = DataSourceSite()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 	providerDataSources["genesyscloud_routing_queue"] = DataSourceRoutingQueue()
 	providerDataSources["genesyscloud_flow"] = DataSourceFlow()
@@ -164,7 +161,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_telephony_providers_edges_did_pool"] = dataSourceDidPool()
 	providerDataSources["genesyscloud_telephony_providers_edges_edge_group"] = dataSourceEdgeGroup()
 	providerDataSources["genesyscloud_telephony_providers_edges_extension_pool"] = dataSourceExtensionPool()
-	providerDataSources["genesyscloud_telephony_providers_edges_site"] = DataSourceSite()
 	providerDataSources["genesyscloud_telephony_providers_edges_linebasesettings"] = dataSourceLineBaseSettings()
 	providerDataSources["genesyscloud_telephony_providers_edges_phone"] = dataSourcePhone()
 	providerDataSources["genesyscloud_telephony_providers_edges_phonebasesettings"] = dataSourcePhoneBaseSettings()

@@ -13,7 +13,6 @@ func SetRegistrar(l registrar.Registrar) {
 
 func registerDataSources(l registrar.Registrar) {
 
-	l.RegisterDataSource("genesyscloud_telephony_providers_edges_site", DataSourceSite())
 	l.RegisterDataSource("genesyscloud_routing_wrapupcode", DataSourceRoutingWrapupcode())
 	l.RegisterDataSource("genesyscloud_routing_queue", DataSourceRoutingQueue())
 	l.RegisterDataSource("genesyscloud_flow", DataSourceFlow())
@@ -67,7 +66,6 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_telephony_providers_edges_did_pool", dataSourceDidPool())
 	l.RegisterDataSource("genesyscloud_telephony_providers_edges_edge_group", dataSourceEdgeGroup())
 	l.RegisterDataSource("genesyscloud_telephony_providers_edges_extension_pool", dataSourceExtensionPool())
-	l.RegisterDataSource("genesyscloud_telephony_providers_edges_site", DataSourceSite())
 	l.RegisterDataSource("genesyscloud_telephony_providers_edges_linebasesettings", dataSourceLineBaseSettings())
 	l.RegisterDataSource("genesyscloud_telephony_providers_edges_phone", dataSourcePhone())
 	l.RegisterDataSource("genesyscloud_telephony_providers_edges_phonebasesettings", dataSourcePhoneBaseSettings())
@@ -81,7 +79,6 @@ func registerDataSources(l registrar.Registrar) {
 func registerResources(l registrar.Registrar) {
 
 	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
-	l.RegisterResource("genesyscloud_telephony_providers_edges_site", ResourceSite())
 	l.RegisterResource("genesyscloud_routing_queue", ResourceRoutingQueue())
 	l.RegisterResource("genesyscloud_flow", ResourceFlow())
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
@@ -144,7 +141,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_telephony_providers_edges_edge_group", ResourceEdgeGroup())
 	l.RegisterResource("genesyscloud_telephony_providers_edges_extension_pool", ResourceTelephonyExtensionPool())
 	l.RegisterResource("genesyscloud_telephony_providers_edges_phone", ResourcePhone())
-	l.RegisterResource("genesyscloud_telephony_providers_edges_site", ResourceSite())
 	l.RegisterResource("genesyscloud_telephony_providers_edges_phonebasesettings", ResourcePhoneBaseSettings())
 	l.RegisterResource("genesyscloud_telephony_providers_edges_trunkbasesettings", ResourceTrunkBaseSettings())
 	l.RegisterResource("genesyscloud_telephony_providers_edges_trunk", ResourceTrunk())
@@ -209,7 +205,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_telephony_providers_edges_edge_group", EdgeGroupExporter())
 	l.RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", TelephonyExtensionPoolExporter())
 	l.RegisterExporter("genesyscloud_telephony_providers_edges_phone", PhoneExporter())
-	l.RegisterExporter("genesyscloud_telephony_providers_edges_site", SiteExporter())
 	l.RegisterExporter("genesyscloud_telephony_providers_edges_phonebasesettings", PhoneBaseSettingsExporter())
 	l.RegisterExporter("genesyscloud_telephony_providers_edges_trunkbasesettings", TrunkBaseSettingsExporter())
 	l.RegisterExporter("genesyscloud_telephony_providers_edges_trunk", TrunkExporter())

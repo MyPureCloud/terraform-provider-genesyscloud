@@ -1,9 +1,11 @@
-package genesyscloud
+package telephony_providers_edges_site
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -23,7 +25,7 @@ func TestAccDataSourceSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,15 +36,15 @@ func TestAccDataSourceSite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	location := GenerateLocationResource(
+	location := gcloud.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		GenerateLocationEmergencyNum(
+		gcloud.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), GenerateLocationAddress(
+		), gcloud.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -51,8 +53,8 @@ func TestAccDataSourceSite(t *testing.T) {
 		))
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSiteResourceWithCustomAttrs(
@@ -87,14 +89,14 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 		name        = "PureCloud Voice - AWS"
 	)
 
-	_, err := AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateSiteDataSource(

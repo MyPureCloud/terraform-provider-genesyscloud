@@ -1,10 +1,12 @@
-package genesyscloud
+package telephony_providers_edges_site
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 	"testing"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -35,7 +37,7 @@ func TestAccResourceSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,15 +48,15 @@ func TestAccResourceSite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	location := GenerateLocationResource(
+	location := gcloud.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		GenerateLocationEmergencyNum(
+		gcloud.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), GenerateLocationAddress(
+		), gcloud.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -63,8 +65,8 @@ func TestAccResourceSite(t *testing.T) {
 		))
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSiteResourceWithCustomAttrs(
@@ -171,7 +173,7 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,15 +184,15 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	location := GenerateLocationResource(
+	location := gcloud.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		GenerateLocationEmergencyNum(
+		gcloud.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), GenerateLocationAddress(
+		), gcloud.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -199,8 +201,8 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		))
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSiteResourceWithCustomAttrs(
@@ -372,7 +374,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -383,15 +385,15 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	location := GenerateLocationResource(
+	location := gcloud.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		GenerateLocationEmergencyNum(
+		gcloud.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), GenerateLocationAddress(
+		), gcloud.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -399,7 +401,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 			"46278",
 		))
 
-	trunkBaseSettings1 := generateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings1 := gcloud.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings1",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -407,7 +409,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings2 := generateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings2 := gcloud.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings2",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -415,7 +417,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings3 := generateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings3 := gcloud.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings3",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -424,8 +426,8 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		false)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSiteResourceWithCustomAttrs(
@@ -523,7 +525,7 @@ func testVerifySitesDestroyed(state *terraform.State) error {
 				continue
 			}
 			return fmt.Errorf("site (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// site not found as expected
 			continue
 		} else {

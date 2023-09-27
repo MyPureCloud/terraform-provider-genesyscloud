@@ -30,7 +30,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTrunkBaseSettingsResourceWithCustomAttrs(
+				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 					trunkBaseSettingsRes,
 					name1,
 					description1,
@@ -59,7 +59,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 			},
 			// Update with new name, description and properties
 			{
-				Config: generateTrunkBaseSettingsResourceWithCustomAttrs(
+				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 					trunkBaseSettingsRes,
 					name2,
 					description2,
@@ -116,25 +116,6 @@ func testVerifyTrunkBaseSettingsDestroyed(state *terraform.State) error {
 	}
 	//Success. TrunkBaseSettings destroyed
 	return nil
-}
-
-func generateTrunkBaseSettingsResourceWithCustomAttrs(
-	trunkBaseSettingsRes,
-	name,
-	description,
-	trunkMetaBaseId,
-	trunkType string,
-	managed bool,
-	otherAttrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "%s" {
-		name = "%s"
-		description = "%s"
-		trunk_meta_base_id = "%s"
-		trunk_type = "%s"
-		managed = %v
-		%s
-	}
-	`, trunkBaseSettingsRes, name, description, trunkMetaBaseId, trunkType, managed, strings.Join(otherAttrs, "\n"))
 }
 
 func generateTrunkBaseSettingsProperties(settingsName, trunkMaxDialTimeout, trunkTransportSipDscpValue, trunkMediaDisconnectOnIdleRtp string, trunkMediaCodec []string) string {
