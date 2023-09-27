@@ -1721,7 +1721,7 @@ func flattenPolicyErrorMessages(errorMessages *[]platformclientv2.Policyerrormes
 			temp := *errorMessage.InsertDate
 			errorMessageMap["insert_date"] = temp.String()
 		}
-		resourcedata.SetMapValueIfNotNil(errorMessageMap, "user_params", errorMessage.UserParams)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(errorMessageMap, "user_params", errorMessage.UserParams, flattenUserParams)
 
 		errorMessageList = append(errorMessageList, errorMessageMap)
 	}
