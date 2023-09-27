@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -113,29 +114,19 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, gcloud.ResourceSurveyForm())
-		if retentionPolicy.Name != nil {
-			d.Set("name", *retentionPolicy.Name)
-		}
-		if retentionPolicy.Order != nil {
-			d.Set("order", *retentionPolicy.Order)
-		}
-		if retentionPolicy.Description != nil {
-			d.Set("description", *retentionPolicy.Description)
-		}
-		if retentionPolicy.Enabled != nil {
-			d.Set("enabled", *retentionPolicy.Enabled)
-		}
+
+		resourcedata.SetNillableValue(d, "name", retentionPolicy.Name)
+		resourcedata.SetNillableValue(d, "order", retentionPolicy.Order)
+		resourcedata.SetNillableValue(d, "description", retentionPolicy.Description)
+		resourcedata.SetNillableValue(d, "enabled", retentionPolicy.Enabled)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditions", retentionPolicy.Conditions, flattenConditions)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "policy_errors", retentionPolicy.PolicyErrors, flattenPolicyErrors)
+
 		if retentionPolicy.MediaPolicies != nil {
 			d.Set("media_policies", flattenMediaPolicies(retentionPolicy.MediaPolicies, pp, ctx))
 		}
-		if retentionPolicy.Conditions != nil {
-			d.Set("conditions", flattenConditions(retentionPolicy.Conditions))
-		}
 		if retentionPolicy.Actions != nil {
 			d.Set("actions", flattenPolicyActions(retentionPolicy.Actions, pp, ctx))
-		}
-		if retentionPolicy.PolicyErrors != nil {
-			d.Set("policy_errors", flattenPolicyErrors(retentionPolicy.PolicyErrors))
 		}
 
 		return cc.CheckState()

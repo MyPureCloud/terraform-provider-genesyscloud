@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 /*
@@ -155,32 +157,22 @@ func flattenActionContract(schema interface{}) (string, diag.Diagnostics) {
 // flattenActionConfigRequest converts the platformclientv2.Requestconfig into a map
 func flattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []interface{} {
 	requestMap := make(map[string]interface{})
-	if sdkRequest.RequestUrlTemplate != nil {
-		requestMap["request_url_template"] = *sdkRequest.RequestUrlTemplate
-	}
-	if sdkRequest.RequestType != nil {
-		requestMap["request_type"] = *sdkRequest.RequestType
-	}
-	if sdkRequest.RequestTemplate != nil {
-		requestMap["request_template"] = *sdkRequest.RequestTemplate
-	}
-	if sdkRequest.Headers != nil {
-		requestMap["headers"] = *sdkRequest.Headers
-	}
+
+	resourcedata.SetMapValueIfNotNil(requestMap, "request_url_template", sdkRequest.RequestUrlTemplate)
+	resourcedata.SetMapValueIfNotNil(requestMap, "request_type", sdkRequest.RequestType)
+	resourcedata.SetMapValueIfNotNil(requestMap, "request_template", sdkRequest.RequestTemplate)
+	resourcedata.SetMapValueIfNotNil(requestMap, "headers", sdkRequest.Headers)
+
 	return []interface{}{requestMap}
 }
 
 // flattenActionConfigResponse converts the the platformclientv2.Responseconfig into a map
 func flattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []interface{} {
 	responseMap := make(map[string]interface{})
-	if sdkResponse.TranslationMap != nil {
-		responseMap["translation_map"] = *sdkResponse.TranslationMap
-	}
-	if sdkResponse.TranslationMapDefaults != nil {
-		responseMap["translation_map_defaults"] = *sdkResponse.TranslationMapDefaults
-	}
-	if sdkResponse.SuccessTemplate != nil {
-		responseMap["success_template"] = *sdkResponse.SuccessTemplate
-	}
+
+	resourcedata.SetMapValueIfNotNil(responseMap, "translation_map", sdkResponse.TranslationMap)
+	resourcedata.SetMapValueIfNotNil(responseMap, "translation_map_defaults", sdkResponse.TranslationMapDefaults)
+	resourcedata.SetMapValueIfNotNil(responseMap, "success_template", sdkResponse.SuccessTemplate)
+
 	return []interface{}{responseMap}
 }

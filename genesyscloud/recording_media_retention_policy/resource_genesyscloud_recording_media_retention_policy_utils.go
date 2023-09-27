@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
 )
@@ -112,18 +114,11 @@ func flattenTimeInterval(timeInterval *platformclientv2.Timeinterval) []interfac
 	}
 
 	timeIntervalMap := make(map[string]interface{})
-	if timeInterval.Months != nil {
-		timeIntervalMap["months"] = *timeInterval.Months
-	}
-	if timeInterval.Weeks != nil {
-		timeIntervalMap["weeks"] = *timeInterval.Weeks
-	}
-	if timeInterval.Days != nil {
-		timeIntervalMap["days"] = *timeInterval.Days
-	}
-	if timeInterval.Hours != nil {
-		timeIntervalMap["hours"] = *timeInterval.Hours
-	}
+
+	resourcedata.SetMapValueIfNotNil(timeIntervalMap, "months", timeInterval.Months)
+	resourcedata.SetMapValueIfNotNil(timeIntervalMap, "weeks", timeInterval.Weeks)
+	resourcedata.SetMapValueIfNotNil(timeIntervalMap, "days", timeInterval.Days)
+	resourcedata.SetMapValueIfNotNil(timeIntervalMap, "hours", timeInterval.Hours)
 
 	return []interface{}{timeIntervalMap}
 }
@@ -190,9 +185,9 @@ func flattenAssignMeteredEvaluations(assignments *[]platformclientv2.Meteredeval
 			}
 			assignmentMap["evaluator_ids"] = evaluatorIds
 		}
-		if assignment.MaxNumberEvaluations != nil {
-			assignmentMap["max_number_evaluations"] = *assignment.MaxNumberEvaluations
-		}
+
+		resourcedata.SetMapValueIfNotNil(assignmentMap, "max_number_evaluations", assignment.MaxNumberEvaluations)
+
 		// if form is present in the response, assign the most recent unpublished version id to align with evaluation form resource behavior for export purposes.
 		if assignment.EvaluationForm != nil {
 			formId := *assignment.EvaluationForm.Id
@@ -205,12 +200,9 @@ func flattenAssignMeteredEvaluations(assignments *[]platformclientv2.Meteredeval
 
 			assignmentMap["evaluation_form_id"] = formId
 		}
-		if assignment.AssignToActiveUser != nil {
-			assignmentMap["assign_to_active_user"] = *assignment.AssignToActiveUser
-		}
-		if assignment.TimeInterval != nil {
-			assignmentMap["time_interval"] = flattenTimeInterval(assignment.TimeInterval)
-		}
+
+		resourcedata.SetMapValueIfNotNil(assignmentMap, "assign_to_active_user", assignment.AssignToActiveUser)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(assignmentMap, "time_interval", assignment.TimeInterval, flattenTimeInterval)
 
 		meteredAssignments = append(meteredAssignments, assignmentMap)
 	}
@@ -279,9 +271,9 @@ func flattenAssignMeteredAssignmentByAgent(assignments *[]platformclientv2.Meter
 			}
 			assignmentMap["evaluator_ids"] = evaluatorIds
 		}
-		if assignment.MaxNumberEvaluations != nil {
-			assignmentMap["max_number_evaluations"] = *assignment.MaxNumberEvaluations
-		}
+
+		resourcedata.SetMapValueIfNotNil(assignmentMap, "max_number_evaluations", assignment.MaxNumberEvaluations)
+
 		// if form is present in the response, assign the most recent unpublished version id to align with evaluation form resource behavior for export purposes.
 		if assignment.EvaluationForm != nil {
 			formId := *assignment.EvaluationForm.Id
@@ -294,12 +286,9 @@ func flattenAssignMeteredAssignmentByAgent(assignments *[]platformclientv2.Meter
 
 			assignmentMap["evaluation_form_id"] = formId
 		}
-		if assignment.TimeInterval != nil {
-			assignmentMap["time_interval"] = flattenTimeInterval(assignment.TimeInterval)
-		}
-		if assignment.TimeZone != nil {
-			assignmentMap["time_zone"] = *assignment.TimeZone
-		}
+
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(assignmentMap, "time_interval", assignment.TimeInterval, flattenTimeInterval)
+		resourcedata.SetMapValueIfNotNil(assignmentMap, "time_zone", assignment.TimeZone)
 
 		meteredAssignments = append(meteredAssignments, assignmentMap)
 	}
@@ -459,15 +448,10 @@ func flattenAssignSurveys(assignments *[]platformclientv2.Surveyassignment) []in
 		if assignment.Flow != nil {
 			assignmentMap["flow_id"] = *assignment.Flow.Id
 		}
-		if assignment.InviteTimeInterval != nil {
-			assignmentMap["invite_time_interval"] = *assignment.InviteTimeInterval
-		}
-		if assignment.SendingUser != nil {
-			assignmentMap["sending_user"] = *assignment.SendingUser
-		}
-		if assignment.SendingDomain != nil {
-			assignmentMap["sending_domain"] = *assignment.SendingDomain
-		}
+
+		resourcedata.SetMapValueIfNotNil(assignmentMap, "invite_time_interval", assignment.InviteTimeInterval)
+		resourcedata.SetMapValueIfNotNil(assignmentMap, "sending_user", assignment.SendingUser)
+		resourcedata.SetMapValueIfNotNil(assignmentMap, "sending_domain", assignment.SendingDomain)
 
 		surveyAssignments = append(surveyAssignments, assignmentMap)
 	}
@@ -499,12 +483,9 @@ func flattenArchiveRetention(archiveRetention *platformclientv2.Archiveretention
 	}
 
 	archiveRetentionMap := make(map[string]interface{})
-	if archiveRetention.Days != nil {
-		archiveRetentionMap["days"] = *archiveRetention.Days
-	}
-	if archiveRetention.StorageMedium != nil {
-		archiveRetentionMap["storage_medium"] = *archiveRetention.StorageMedium
-	}
+
+	resourcedata.SetMapValueIfNotNil(archiveRetentionMap, "days", archiveRetention.Days)
+	resourcedata.SetMapValueIfNotNil(archiveRetentionMap, "storage_medium", archiveRetention.StorageMedium)
 
 	return []interface{}{archiveRetentionMap}
 }
@@ -532,9 +513,8 @@ func flattenDeleteRetention(deleteRetention *platformclientv2.Deleteretention) [
 	}
 
 	deleteRetentionMap := make(map[string]interface{})
-	if deleteRetention.Days != nil {
-		deleteRetentionMap["days"] = *deleteRetention.Days
-	}
+
+	resourcedata.SetMapValueIfNotNil(deleteRetentionMap, "days", deleteRetention.Days)
 
 	return []interface{}{deleteRetentionMap}
 }
@@ -561,12 +541,9 @@ func flattenRetentionDuration(retentionDuration *platformclientv2.Retentiondurat
 	}
 
 	retentionDurationMap := make(map[string]interface{})
-	if retentionDuration.ArchiveRetention != nil {
-		retentionDurationMap["archive_retention"] = flattenArchiveRetention(retentionDuration.ArchiveRetention)
-	}
-	if retentionDuration.DeleteRetention != nil {
-		retentionDurationMap["delete_retention"] = flattenDeleteRetention(retentionDuration.DeleteRetention)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(retentionDurationMap, "archive_retention", retentionDuration.ArchiveRetention, flattenArchiveRetention)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(retentionDurationMap, "delete_retention", retentionDuration.DeleteRetention, flattenDeleteRetention)
 
 	return []interface{}{retentionDurationMap}
 }
@@ -595,15 +572,10 @@ func flattenInitiateScreenRecording(recording *platformclientv2.Initiatescreenre
 	}
 
 	recordingMap := make(map[string]interface{})
-	if recording.RecordACW != nil {
-		recordingMap["record_acw"] = *recording.RecordACW
-	}
-	if recording.ArchiveRetention != nil {
-		recordingMap["archive_retention"] = flattenArchiveRetention(recording.ArchiveRetention)
-	}
-	if recording.DeleteRetention != nil {
-		recordingMap["delete_retention"] = flattenDeleteRetention(recording.DeleteRetention)
-	}
+
+	resourcedata.SetMapValueIfNotNil(recordingMap, "record_acw", recording.RecordACW)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(recordingMap, "archive_retention", recording.ArchiveRetention, flattenArchiveRetention)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(recordingMap, "delete_retention", recording.DeleteRetention, flattenDeleteRetention)
 
 	return []interface{}{recordingMap}
 }
@@ -639,15 +611,10 @@ func flattenMediaTranscriptions(transcriptions *[]platformclientv2.Mediatranscri
 
 	for _, transcription := range *transcriptions {
 		transcriptionMap := make(map[string]interface{})
-		if transcription.DisplayName != nil {
-			transcriptionMap["display_name"] = *transcription.DisplayName
-		}
-		if transcription.TranscriptionProvider != nil {
-			transcriptionMap["transcription_provider"] = *transcription.TranscriptionProvider
-		}
-		if transcription.IntegrationId != nil {
-			transcriptionMap["integration_id"] = *transcription.IntegrationId
-		}
+
+		resourcedata.SetMapValueIfNotNil(transcriptionMap, "display_name", transcription.DisplayName)
+		resourcedata.SetMapValueIfNotNil(transcriptionMap, "transcription_provider", transcription.TranscriptionProvider)
+		resourcedata.SetMapValueIfNotNil(transcriptionMap, "integration_id", transcription.IntegrationId)
 
 		mediaTranscriptions = append(mediaTranscriptions, transcriptionMap)
 	}
@@ -681,9 +648,7 @@ func flattenIntegrationExport(integrationExport *platformclientv2.Integrationexp
 	if integrationExport.Integration != nil {
 		integrationExportMap["integration_id"] = *integrationExport.Integration.Id
 	}
-	if integrationExport.ShouldExportScreenRecordings != nil {
-		integrationExportMap["should_export_screen_recordings"] = *integrationExport.ShouldExportScreenRecordings
-	}
+	resourcedata.SetMapValueIfNotNil(integrationExportMap, "should_export_screen_recordings", integrationExport.ShouldExportScreenRecordings)
 
 	return []interface{}{integrationExportMap}
 }
@@ -724,15 +689,11 @@ func flattenPolicyActions(actions *platformclientv2.Policyactions, pp *policyPro
 	}
 
 	actionsMap := make(map[string]interface{})
-	if actions.RetainRecording != nil {
-		actionsMap["retain_recording"] = *actions.RetainRecording
-	}
-	if actions.DeleteRecording != nil {
-		actionsMap["delete_recording"] = *actions.DeleteRecording
-	}
-	if actions.AlwaysDelete != nil {
-		actionsMap["always_delete"] = *actions.AlwaysDelete
-	}
+
+	resourcedata.SetMapValueIfNotNil(actionsMap, "retain_recording", actions.RetainRecording)
+	resourcedata.SetMapValueIfNotNil(actionsMap, "delete_recording", actions.DeleteRecording)
+	resourcedata.SetMapValueIfNotNil(actionsMap, "always_delete", actions.AlwaysDelete)
+
 	if actions.AssignEvaluations != nil {
 		actionsMap["assign_evaluations"] = flattenEvaluationAssignments(actions.AssignEvaluations, pp, ctx)
 	}
@@ -745,21 +706,12 @@ func flattenPolicyActions(actions *platformclientv2.Policyactions, pp *policyPro
 	if actions.AssignCalibrations != nil {
 		actionsMap["assign_calibrations"] = flattenAssignCalibrations(actions.AssignCalibrations, pp, ctx)
 	}
-	if actions.AssignSurveys != nil {
-		actionsMap["assign_surveys"] = flattenAssignSurveys(actions.AssignSurveys)
-	}
-	if actions.RetentionDuration != nil {
-		actionsMap["retention_duration"] = flattenRetentionDuration(actions.RetentionDuration)
-	}
-	if actions.InitiateScreenRecording != nil {
-		actionsMap["initiate_screen_recording"] = flattenInitiateScreenRecording(actions.InitiateScreenRecording)
-	}
-	if actions.MediaTranscriptions != nil {
-		actionsMap["media_transcriptions"] = flattenMediaTranscriptions(actions.MediaTranscriptions)
-	}
-	if actions.IntegrationExport != nil {
-		actionsMap["integration_export"] = flattenIntegrationExport(actions.IntegrationExport)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionsMap, "assign_surveys", actions.AssignSurveys, flattenAssignSurveys)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionsMap, "retention_duration", actions.RetentionDuration, flattenRetentionDuration)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionsMap, "initiate_screen_recording", actions.InitiateScreenRecording, flattenInitiateScreenRecording)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionsMap, "media_transcriptions", actions.MediaTranscriptions, flattenMediaTranscriptions)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionsMap, "integration_export", actions.IntegrationExport, flattenIntegrationExport)
 
 	return []interface{}{actionsMap}
 }
@@ -795,15 +747,10 @@ func flattenTimeSlots(slots *[]platformclientv2.Timeslot) []interface{} {
 
 	for _, slot := range *slots {
 		slotMap := make(map[string]interface{})
-		if slot.StartTime != nil {
-			slotMap["start_time"] = *slot.StartTime
-		}
-		if slot.StopTime != nil {
-			slotMap["stop_time"] = *slot.StopTime
-		}
-		if slot.Day != nil {
-			slotMap["day"] = *slot.Day
-		}
+
+		resourcedata.SetMapValueIfNotNil(slotMap, "start_time", slot.StartTime)
+		resourcedata.SetMapValueIfNotNil(slotMap, "stop_time", slot.StopTime)
+		resourcedata.SetMapValueIfNotNil(slotMap, "day", slot.Day)
 
 		slotList = append(slotList, slotMap)
 	}
@@ -837,15 +784,10 @@ func flattenTimeAllowed(timeAllowed *platformclientv2.Timeallowed) []interface{}
 	}
 
 	timeAllowedMap := make(map[string]interface{})
-	if timeAllowed.TimeSlots != nil {
-		timeAllowedMap["time_slots"] = flattenTimeSlots(timeAllowed.TimeSlots)
-	}
-	if timeAllowed.TimeZoneId != nil {
-		timeAllowedMap["time_zone_id"] = *timeAllowed.TimeZoneId
-	}
-	if timeAllowed.Empty != nil {
-		timeAllowedMap["empty"] = *timeAllowed.Empty
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(timeAllowedMap, "time_slots", timeAllowed.TimeSlots, flattenTimeSlots)
+	resourcedata.SetMapValueIfNotNil(timeAllowedMap, "time_zone_id", timeAllowed.TimeZoneId)
+	resourcedata.SetMapValueIfNotNil(timeAllowedMap, "empty", timeAllowed.Empty)
 
 	return []interface{}{timeAllowedMap}
 }
@@ -879,18 +821,11 @@ func flattenDurationCondition(durationCondition *platformclientv2.Durationcondit
 	}
 
 	durationConditionMap := make(map[string]interface{})
-	if durationCondition.DurationTarget != nil {
-		durationConditionMap["duration_target"] = *durationCondition.DurationTarget
-	}
-	if durationCondition.DurationOperator != nil {
-		durationConditionMap["duration_operator"] = *durationCondition.DurationOperator
-	}
-	if durationCondition.DurationRange != nil {
-		durationConditionMap["duration_range"] = *durationCondition.DurationRange
-	}
-	if durationCondition.DurationMode != nil {
-		durationConditionMap["duration_mode"] = *durationCondition.DurationMode
-	}
+
+	resourcedata.SetMapValueIfNotNil(durationConditionMap, "duration_target", durationCondition.DurationTarget)
+	resourcedata.SetMapValueIfNotNil(durationConditionMap, "duration_operator", durationCondition.DurationOperator)
+	resourcedata.SetMapValueIfNotNil(durationConditionMap, "duration_range", durationCondition.DurationRange)
+	resourcedata.SetMapValueIfNotNil(durationConditionMap, "duration_mode", durationCondition.DurationMode)
 
 	return []interface{}{durationConditionMap}
 }
@@ -990,12 +925,10 @@ func flattenCallMediaPolicyConditions(conditions *platformclientv2.Callmediapoli
 		}
 		conditionsMap["for_user_ids"] = userIds
 	}
-	if conditions.DateRanges != nil {
-		conditionsMap["date_ranges"] = *conditions.DateRanges
-	}
-	if conditions.Directions != nil {
-		conditionsMap["directions"] = *conditions.Directions
-	}
+
+	resourcedata.SetMapValueIfNotNil(conditionsMap, "date_ranges", conditions.DateRanges)
+	resourcedata.SetMapValueIfNotNil(conditionsMap, "directions", conditions.Directions)
+
 	if conditions.ForQueues != nil {
 		queueIds := make([]string, 0)
 		for _, queue := range *conditions.ForQueues {
@@ -1017,9 +950,8 @@ func flattenCallMediaPolicyConditions(conditions *platformclientv2.Callmediapoli
 		}
 		conditionsMap["language_ids"] = languageIds
 	}
-	if conditions.TimeAllowed != nil {
-		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
 
 	return []interface{}{conditionsMap}
 }
@@ -1112,9 +1044,9 @@ func flattenChatMediaPolicyConditions(conditions *platformclientv2.Chatmediapoli
 		}
 		conditionsMap["for_user_ids"] = userIds
 	}
-	if conditions.DateRanges != nil {
-		conditionsMap["date_ranges"] = *conditions.DateRanges
-	}
+
+	resourcedata.SetMapValueIfNotNil(conditionsMap, "date_ranges", conditions.DateRanges)
+
 	if conditions.ForQueues != nil {
 		queueIds := make([]string, 0)
 		for _, queue := range *conditions.ForQueues {
@@ -1136,12 +1068,9 @@ func flattenChatMediaPolicyConditions(conditions *platformclientv2.Chatmediapoli
 		}
 		conditionsMap["language_ids"] = languageIds
 	}
-	if conditions.TimeAllowed != nil {
-		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
-	}
-	if conditions.Duration != nil {
-		conditionsMap["duration"] = flattenDurationCondition(conditions.Duration)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "duration", conditions.Duration, flattenDurationCondition)
 
 	return []interface{}{conditionsMap}
 }
@@ -1233,9 +1162,9 @@ func flattenEmailMediaPolicyConditions(conditions *platformclientv2.Emailmediapo
 		}
 		conditionsMap["for_user_ids"] = userIds
 	}
-	if conditions.DateRanges != nil {
-		conditionsMap["date_ranges"] = *conditions.DateRanges
-	}
+
+	resourcedata.SetMapValueIfNotNil(conditionsMap, "date_ranges", conditions.DateRanges)
+
 	if conditions.ForQueues != nil {
 		queueIds := make([]string, 0)
 		for _, queue := range *conditions.ForQueues {
@@ -1257,9 +1186,8 @@ func flattenEmailMediaPolicyConditions(conditions *platformclientv2.Emailmediapo
 		}
 		conditionsMap["language_ids"] = languageIds
 	}
-	if conditions.TimeAllowed != nil {
-		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
 
 	return []interface{}{conditionsMap}
 }
@@ -1351,9 +1279,9 @@ func flattenMessageMediaPolicyConditions(conditions *platformclientv2.Messagemed
 		}
 		conditionsMap["for_user_ids"] = userIds
 	}
-	if conditions.DateRanges != nil {
-		conditionsMap["date_ranges"] = *conditions.DateRanges
-	}
+
+	resourcedata.SetMapValueIfNotNil(conditionsMap, "date_ranges", conditions.DateRanges)
+
 	if conditions.ForQueues != nil {
 		queueIds := make([]string, 0)
 		for _, queue := range *conditions.ForQueues {
@@ -1375,9 +1303,8 @@ func flattenMessageMediaPolicyConditions(conditions *platformclientv2.Messagemed
 		}
 		conditionsMap["language_ids"] = languageIds
 	}
-	if conditions.TimeAllowed != nil {
-		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
 
 	return []interface{}{conditionsMap}
 }
@@ -1406,9 +1333,8 @@ func flattenCallMediaPolicy(chatMediaPolicy *platformclientv2.Callmediapolicy, p
 	if chatMediaPolicy.Actions != nil {
 		chatMediaPolicyMap["actions"] = flattenPolicyActions(chatMediaPolicy.Actions, pp, ctx)
 	}
-	if chatMediaPolicy.Conditions != nil {
-		chatMediaPolicyMap["conditions"] = flattenCallMediaPolicyConditions(chatMediaPolicy.Conditions)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(chatMediaPolicyMap, "conditions", chatMediaPolicy.Conditions, flattenCallMediaPolicyConditions)
 
 	return []interface{}{chatMediaPolicyMap}
 }
@@ -1438,9 +1364,8 @@ func flattenChatMediaPolicy(chatMediaPolicy *platformclientv2.Chatmediapolicy, p
 	if chatMediaPolicy.Actions != nil {
 		chatMediaPolicyMap["actions"] = flattenPolicyActions(chatMediaPolicy.Actions, pp, ctx)
 	}
-	if chatMediaPolicy.Conditions != nil {
-		chatMediaPolicyMap["conditions"] = flattenChatMediaPolicyConditions(chatMediaPolicy.Conditions)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(chatMediaPolicyMap, "conditions", chatMediaPolicy.Conditions, flattenChatMediaPolicyConditions)
 
 	return []interface{}{chatMediaPolicyMap}
 }
@@ -1470,9 +1395,8 @@ func flattenEmailMediaPolicy(emailMediaPolicy *platformclientv2.Emailmediapolicy
 	if emailMediaPolicy.Actions != nil {
 		emailMediaPolicyMap["actions"] = flattenPolicyActions(emailMediaPolicy.Actions, pp, ctx)
 	}
-	if emailMediaPolicy.Conditions != nil {
-		emailMediaPolicyMap["conditions"] = flattenEmailMediaPolicyConditions(emailMediaPolicy.Conditions)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(emailMediaPolicyMap, "conditions", emailMediaPolicy.Conditions, flattenEmailMediaPolicyConditions)
 
 	return []interface{}{emailMediaPolicyMap}
 }
@@ -1502,9 +1426,8 @@ func flattenMessageMediaPolicy(messageMediaPolicy *platformclientv2.Messagemedia
 	if messageMediaPolicy.Actions != nil {
 		messageMediaPolicyMap["actions"] = flattenPolicyActions(messageMediaPolicy.Actions, pp, ctx)
 	}
-	if messageMediaPolicy.Conditions != nil {
-		messageMediaPolicyMap["conditions"] = flattenMessageMediaPolicyConditions(messageMediaPolicy.Conditions)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(messageMediaPolicyMap, "conditions", messageMediaPolicy.Conditions, flattenMessageMediaPolicyConditions)
 
 	return []interface{}{messageMediaPolicyMap}
 }
@@ -1648,15 +1571,10 @@ func flattenConditions(conditions *platformclientv2.Policyconditions) []interfac
 		}
 		conditionsMap["for_user_ids"] = userIds
 	}
-	if conditions.Directions != nil {
-		conditionsMap["directions"] = *conditions.Directions
-	}
-	if conditions.DateRanges != nil {
-		conditionsMap["date_ranges"] = *conditions.DateRanges
-	}
-	if conditions.MediaTypes != nil {
-		conditionsMap["media_types"] = *conditions.MediaTypes
-	}
+	resourcedata.SetMapValueIfNotNil(conditionsMap, "directions", conditions.Directions)
+	resourcedata.SetMapValueIfNotNil(conditionsMap, "date_ranges", conditions.DateRanges)
+	resourcedata.SetMapValueIfNotNil(conditionsMap, "media_types", conditions.MediaTypes)
+
 	if conditions.ForQueues != nil {
 		queueIds := make([]string, 0)
 		for _, queue := range *conditions.ForQueues {
@@ -1664,9 +1582,9 @@ func flattenConditions(conditions *platformclientv2.Policyconditions) []interfac
 		}
 		conditionsMap["for_queue_ids"] = queueIds
 	}
-	if conditions.Duration != nil {
-		conditionsMap["duration"] = flattenDurationCondition(conditions.Duration)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "duration", conditions.Duration, flattenDurationCondition)
+
 	if conditions.WrapupCodes != nil {
 		wrapupCodeIds := make([]string, 0)
 		for _, code := range *conditions.WrapupCodes {
@@ -1674,9 +1592,8 @@ func flattenConditions(conditions *platformclientv2.Policyconditions) []interfac
 		}
 		conditionsMap["wrapup_code_ids"] = wrapupCodeIds
 	}
-	if conditions.TimeAllowed != nil {
-		conditionsMap["time_allowed"] = flattenTimeAllowed(conditions.TimeAllowed)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
 
 	return []interface{}{conditionsMap}
 }
@@ -1740,12 +1657,9 @@ func flattenUserParams(params *[]platformclientv2.Userparam) []interface{} {
 
 	for _, param := range *params {
 		paramMap := make(map[string]interface{})
-		if param.Key != nil {
-			paramMap["key"] = *param.Key
-		}
-		if param.Value != nil {
-			paramMap["value"] = *param.Value
-		}
+
+		resourcedata.SetMapValueIfNotNil(paramMap, "key", param.Key)
+		resourcedata.SetMapValueIfNotNil(paramMap, "value", param.Value)
 
 		paramList = append(paramList, paramMap)
 	}
@@ -1797,28 +1711,17 @@ func flattenPolicyErrorMessages(errorMessages *[]platformclientv2.Policyerrormes
 
 	for _, errorMessage := range *errorMessages {
 		errorMessageMap := make(map[string]interface{})
-		if errorMessage.StatusCode != nil {
-			errorMessageMap["status_code"] = *errorMessage.StatusCode
-		}
-		if errorMessage.UserMessage != nil {
-			errorMessageMap["user_message"] = *errorMessage.UserMessage
-		}
-		if errorMessage.UserParamsMessage != nil {
-			errorMessageMap["user_params_message"] = *errorMessage.UserParamsMessage
-		}
-		if errorMessage.ErrorCode != nil {
-			errorMessageMap["error_code"] = *errorMessage.ErrorCode
-		}
-		if errorMessage.CorrelationId != nil {
-			errorMessageMap["correlation_id"] = *errorMessage.CorrelationId
-		}
+
+		resourcedata.SetMapValueIfNotNil(errorMessageMap, "status_code", errorMessage.StatusCode)
+		resourcedata.SetMapValueIfNotNil(errorMessageMap, "user_message", errorMessage.UserMessage)
+		resourcedata.SetMapValueIfNotNil(errorMessageMap, "user_params_message", errorMessage.UserParamsMessage)
+		resourcedata.SetMapValueIfNotNil(errorMessageMap, "error_code", errorMessage.ErrorCode)
+		resourcedata.SetMapValueIfNotNil(errorMessageMap, "correlation_id", errorMessage.CorrelationId)
 		if errorMessage.InsertDate != nil && len(errorMessage.InsertDate.String()) > 0 {
 			temp := *errorMessage.InsertDate
 			errorMessageMap["insert_date"] = temp.String()
 		}
-		if errorMessage.UserParams != nil {
-			errorMessageMap["user_params"] = flattenUserParams(errorMessage.UserParams)
-		}
+		resourcedata.SetMapValueIfNotNil(errorMessageMap, "user_params", errorMessage.UserParams)
 
 		errorMessageList = append(errorMessageList, errorMessageMap)
 	}
@@ -1848,9 +1751,8 @@ func flattenPolicyErrors(policyErrors *platformclientv2.Policyerrors) []interfac
 	}
 
 	policyErrorsMap := make(map[string]interface{})
-	if policyErrors.PolicyErrorMessages != nil {
-		policyErrorsMap["policy_error_messages"] = flattenPolicyErrorMessages(policyErrors.PolicyErrorMessages)
-	}
+
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(policyErrorsMap, "policy_error_messages", policyErrors.PolicyErrorMessages, flattenPolicyErrorMessages)
 
 	return []interface{}{policyErrorsMap}
 }

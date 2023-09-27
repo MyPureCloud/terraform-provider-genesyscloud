@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -137,35 +138,12 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction())
-		if action.Name != nil {
-			d.Set("name", *action.Name)
-		} else {
-			d.Set("name", nil)
-		}
 
-		if action.Category != nil {
-			d.Set("category", *action.Category)
-		} else {
-			d.Set("category", nil)
-		}
-
-		if action.IntegrationId != nil {
-			d.Set("integration_id", *action.IntegrationId)
-		} else {
-			d.Set("integration_id", nil)
-		}
-
-		if action.Secure != nil {
-			d.Set("secure", *action.Secure)
-		} else {
-			d.Set("secure", nil)
-		}
-
-		if action.Config.TimeoutSeconds != nil {
-			d.Set("config_timeout_seconds", *action.Config.TimeoutSeconds)
-		} else {
-			d.Set("config_timeout_seconds", nil)
-		}
+		resourcedata.SetNillableValue(d, "name", action.Name)
+		resourcedata.SetNillableValue(d, "category", action.Category)
+		resourcedata.SetNillableValue(d, "integration_id", action.IntegrationId)
+		resourcedata.SetNillableValue(d, "secure", action.Secure)
+		resourcedata.SetNillableValue(d, "config_timeout_seconds", action.Config.TimeoutSeconds)
 
 		if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
 			input, err := flattenActionContract(*action.Contract.Input.InputSchema)

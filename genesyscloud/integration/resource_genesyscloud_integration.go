@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -113,11 +115,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		d.Set("integration_type", *currentIntegration.IntegrationType.Id)
-		if currentIntegration.IntendedState != nil {
-			d.Set("intended_state", *currentIntegration.IntendedState)
-		} else {
-			d.Set("intended_state", nil)
-		}
+		resourcedata.SetNillableValue(d, "intended_state", currentIntegration.IntendedState)
 
 		// Use returned ID to get current config, which contains complete configuration
 		integrationConfig, _, err := ip.getIntegrationConfig(ctx, *currentIntegration.Id)
