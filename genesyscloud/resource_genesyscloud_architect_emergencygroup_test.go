@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -36,12 +38,12 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateIvrConfigResource(&ivrConfigStruct{
-					resourceID:  ivrResourceID,
-					name:        ivrName,
-					description: "",
-					dnis:        nil,
-					depends_on:  "",
+				Config: archIvr.GenerateIvrConfigResource(&archIvr.IvrConfigStruct{
+					ResourceID:  ivrResourceID,
+					Name:        ivrName,
+					Description: "",
+					Dnis:        nil,
+					DependsOn:   "",
 				}) + GenerateFlowResource(
 					flowResource,
 					flowFilePath,
@@ -69,12 +71,12 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateIvrConfigResource(&ivrConfigStruct{
-					resourceID:  ivrResourceID,
-					name:        ivrName,
-					description: "",
-					dnis:        nil,
-					depends_on:  "",
+				Config: archIvr.GenerateIvrConfigResource(&archIvr.IvrConfigStruct{
+					ResourceID:  ivrResourceID,
+					Name:        ivrName,
+					Description: "",
+					Dnis:        nil,
+					DependsOn:   "",
 				}) + GenerateFlowResource(
 					flowResource,
 					flowFilePath,
@@ -91,7 +93,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 					"flow",
 					"genesyscloud_flow."+flowResource,
 					flowName,
-				) + generateIvrDataSource(
+				) + archIvr.GenerateIvrDataSource(
 					"ivr",
 					strconv.Quote(ivrName),
 					"genesyscloud_architect_ivr."+ivrResourceID,

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
@@ -16,6 +17,8 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
+	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
+	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -88,6 +91,9 @@ func registerResources() {
 	obContactList.SetRegistrar(regInstance)  //Registering outbound contact list
 	scripts.SetRegistrar(regInstance)        //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)   //Registering routing sms addresses
+	did.SetRegistrar(regInstance)            //Registering telephony did
+	didPool.SetRegistrar(regInstance)        //Registering telephony did pools
+	archIvr.SetRegistrar(regInstance)        //Registering architect ivr
 
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters

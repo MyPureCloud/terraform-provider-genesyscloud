@@ -1,16 +1,16 @@
 package genesyscloud
 
 import (
+	"context"
 	"fmt"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"strconv"
+	"strings"
+	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
+	"testing"
 )
 
 type phoneConfig struct {
@@ -182,34 +182,6 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 	})
 }
 
-func deleteDidPoolWithNumber(number string) error {
-	//sdkConfig := m.(*ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		didPools, _, getErr := edgesAPI.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
-		if getErr != nil {
-			return getErr
-		}
-
-		if didPools.Entities == nil || len(*didPools.Entities) == 0 {
-			break
-		}
-
-		for _, didPool := range *didPools.Entities {
-			if (didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == number) ||
-				(didPool.EndPhoneNumber != nil && *didPool.EndPhoneNumber == number) {
-				if _, err := edgesAPI.DeleteTelephonyProvidersEdgesDidpool(*didPool.Id); err != nil {
-					return err
-				}
-				time.Sleep(5 * time.Second)
-			}
-		}
-	}
-	return nil
-}
-
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	t.Parallel()
 	didPoolResource1 := "test-didpool1"
@@ -217,9 +189,12 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 	if _, err := AuthorizeSdk(); err != nil {
 		t.Fatal(err)
 	}
-	if err := deleteDidPoolWithNumber(number); err != nil {
-		t.Fatal(err)
-	}
+	defer func() {
+		ctx := context.TODO()
+		if err := didPool.DeleteDidPoolWithStartAndEndNumber(ctx, number, number); err != nil {
+			t.Log(err)
+		}
+	}()
 	lineAddresses := []string{number}
 	phoneRes := "phone_standalone1234"
 	name1 := "test-phone-standalone_" + uuid.NewString()
@@ -277,13 +252,13 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		[]string{},
 	)
 
-	config := generateDidPoolResource(&didPoolStruct{
-		didPoolResource1,
-		lineAddresses[0],
-		lineAddresses[0],
-		nullValue, // No description
-		nullValue, // No comments
-		nullValue, // No provider
+	config := didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
+		ResourceID:       didPoolResource1,
+		StartPhoneNumber: lineAddresses[0],
+		EndPhoneNumber:   lineAddresses[0],
+		Description:      nullValue, // No description
+		Comments:         nullValue, // No comments
+		PoolProvider:     nullValue, // No provider
 	})
 
 	config += generatePhoneBaseSettingsResourceWithCustomAttrs(

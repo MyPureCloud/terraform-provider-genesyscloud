@@ -1,16 +1,9 @@
 //go:build unit
 // +build unit
 
-package architect_api
+package architect_ivr
 
-import (
-	"fmt"
-	"strings"
-	"testing"
-
-	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
-)
+import "github.com/google/uuid"
 
 func TestUploadIvrDnisChunksSuccess(t *testing.T) {
 	var (
@@ -23,15 +16,15 @@ func TestUploadIvrDnisChunksSuccess(t *testing.T) {
 		Dnis: &dnis,
 	}
 
-	architectIvrProxy := NewArchitectIvrProxy()
+	architectIvrProxy := newArchitectIvrProxy(nil)
 	architectIvrProxy.maxDnisPerRequest = maxDnisPerRequest
 
-	architectIvrProxy.GetArchitectIvr = createMockGetIvrFunc(ivrId, nil, nil)
-	architectIvrProxy.putArchitectIvrBasic = createMockPutIvrFunc(nil)
-	architectIvrProxy.postArchitectIvrBasic = createMockPostIvrFunc(ivrId, nil)
+	architectIvrProxy.getArchitectIvrAttr = createMockGetIvrFunc(ivrId, nil, nil)
+	architectIvrProxy.updateArchitectIvrBasicAttr = createMockPutIvrFunc(nil)
+	architectIvrProxy.createArchitectIvrBasicAttr = createMockPostIvrFunc(ivrId, nil)
 
 	t.Log("Testing Post Ivr function")
-	ivr, _, err := architectIvrProxy.PostArchitectIvr(architectIvrProxy, *ivr)
+	ivr, _, err := architectIvrProxy.createArchitectIvr(nil, *ivr)
 	if err != nil {
 		t.Errorf("Expected error to be nil, got '%v'", err)
 	}
@@ -48,7 +41,7 @@ func TestUploadIvrDnisChunksSuccess(t *testing.T) {
 	}
 
 	t.Log("Testing Put Ivr function")
-	ivr, _, err = architectIvrProxy.PutArchitectIvr(architectIvrProxy, ivrId, *ivr)
+	ivr, _, err = architectIvrProxy.updateArchitectIvr(nil, ivrId, *ivr)
 	if err != nil {
 		t.Errorf("Expected error to be nil, got '%v'", err)
 	}
@@ -63,8 +56,8 @@ func TestUploadIvrDnisChunksSuccess(t *testing.T) {
 
 type architectIvrUploadErrorTestData struct {
 	mockGetFunction  getArchitectIvrFunc
-	mockPutFunction  putArchitectIvrFunc
-	mockPostFunction postArchitectIvrFunc
+	mockPutFunction  updateArchitectIvrFunc
+	mockPostFunction createArchitectIvrFunc
 	mockError        error
 }
 
@@ -82,7 +75,7 @@ func TestUploadIvrDnisChunksError(t *testing.T) {
 		Dnis: &dnis,
 	}
 
-	architectProxy := NewArchitectIvrProxy()
+	architectProxy := newArchitectIvrProxy(nil)
 	architectProxy.maxDnisPerRequest = maxDnisPerRequest
 
 	testCases := []architectIvrUploadErrorTestData{
@@ -108,11 +101,11 @@ func TestUploadIvrDnisChunksError(t *testing.T) {
 
 	t.Log("Testing error handling on proxy.PostArchitectIvr")
 	for _, test := range testCases {
-		architectProxy.GetArchitectIvr = test.mockGetFunction
-		architectProxy.postArchitectIvrBasic = test.mockPostFunction
-		architectProxy.putArchitectIvrBasic = test.mockPutFunction
+		architectProxy.getArchitectIvrAttr = test.mockGetFunction
+		architectProxy.createArchitectIvrBasicAttr = test.mockPostFunction
+		architectProxy.updateArchitectIvrBasicAttr = test.mockPutFunction
 
-		_, _, err := architectProxy.PostArchitectIvr(architectProxy, ivr)
+		_, _, err := architectProxy.createArchitectIvr(nil, ivr)
 		if err == nil {
 			t.Errorf("Expected non nil error")
 		}
@@ -126,11 +119,11 @@ func TestUploadIvrDnisChunksError(t *testing.T) {
 		if test.mockError == mockPostError {
 			continue
 		}
-		architectProxy.GetArchitectIvr = test.mockGetFunction
-		architectProxy.postArchitectIvrBasic = test.mockPostFunction
-		architectProxy.putArchitectIvrBasic = test.mockPutFunction
+		architectProxy.getArchitectIvrAttr = test.mockGetFunction
+		architectProxy.createArchitectIvrBasicAttr = test.mockPostFunction
+		architectProxy.updateArchitectIvrBasicAttr = test.mockPutFunction
 
-		_, _, err := architectProxy.PutArchitectIvr(architectProxy, ivrId, ivr)
+		_, _, err := architectProxy.updateArchitectIvr(nil, ivrId, ivr)
 		if err == nil {
 			t.Errorf("Expected non nil error")
 		}
@@ -141,7 +134,7 @@ func TestUploadIvrDnisChunksError(t *testing.T) {
 }
 
 func createMockGetIvrFunc(ivrId string, dnis []string, err error) getArchitectIvrFunc {
-	return func(*ArchitectIvrProxy, string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	return func(context.Context, *architectIvrProxy, string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		if err != nil {
 			return nil, nil, err
 		}
@@ -153,8 +146,8 @@ func createMockGetIvrFunc(ivrId string, dnis []string, err error) getArchitectIv
 	}
 }
 
-func createMockPostIvrFunc(ivrId string, err error) postArchitectIvrFunc {
-	return func(a *ArchitectIvrProxy, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+func createMockPostIvrFunc(ivrId string, err error) createArchitectIvrFunc {
+	return func(ctx context.Context, p *architectIvrProxy, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		if err != nil {
 			return nil, nil, err
 		}
@@ -163,8 +156,8 @@ func createMockPostIvrFunc(ivrId string, err error) postArchitectIvrFunc {
 	}
 }
 
-func createMockPutIvrFunc(err error) putArchitectIvrFunc {
-	return func(a *ArchitectIvrProxy, id string, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+func createMockPutIvrFunc(err error) updateArchitectIvrFunc {
+	return func(ctx context.Context, p *architectIvrProxy, id string, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		if err != nil {
 			return nil, nil, err
 		}

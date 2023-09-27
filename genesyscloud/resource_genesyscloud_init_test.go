@@ -37,7 +37,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_flow"] = ResourceFlow()
 	providerResources["genesyscloud_flow_milestone"] = ResourceFlowMilestone()
 	providerResources["genesyscloud_flow_outcome"] = ResourceFlowOutcome()
-	providerResources["genesyscloud_architect_ivr"] = ResourceArchitectIvrConfig()
 	providerResources["genesyscloud_architect_schedules"] = ResourceArchitectSchedules()
 	providerResources["genesyscloud_architect_schedulegroups"] = ResourceArchitectScheduleGroups()
 	providerResources["genesyscloud_architect_user_prompt"] = ResourceArchitectUserPrompt()
@@ -86,7 +85,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_settings"] = ResourceRoutingSettings()
 	providerResources["genesyscloud_routing_utilization"] = ResourceRoutingUtilization()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = ResourceTelephonyDidPool()
 	providerResources["genesyscloud_telephony_providers_edges_edge_group"] = ResourceEdgeGroup()
 	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = ResourceTelephonyExtensionPool()
 	providerResources["genesyscloud_telephony_providers_edges_phone"] = ResourcePhone()
@@ -115,7 +113,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
 
 	providerDataSources["genesyscloud_architect_datatable"] = DataSourceArchitectDatatable()
-	providerDataSources["genesyscloud_architect_ivr"] = DataSourceArchitectIvr()
 	providerDataSources["genesyscloud_architect_emergencygroup"] = DataSourceArchitectEmergencyGroup()
 	providerDataSources["genesyscloud_architect_schedules"] = DataSourceSchedule()
 	providerDataSources["genesyscloud_architect_schedulegroups"] = DataSourceArchitectScheduleGroups()
@@ -158,8 +155,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 	providerDataSources["genesyscloud_station"] = dataSourceStation()
 	providerDataSources["genesyscloud_user"] = dataSourceUser()
-	providerDataSources["genesyscloud_telephony_providers_edges_did"] = dataSourceDid()
-	providerDataSources["genesyscloud_telephony_providers_edges_did_pool"] = dataSourceDidPool()
 	providerDataSources["genesyscloud_telephony_providers_edges_edge_group"] = dataSourceEdgeGroup()
 	providerDataSources["genesyscloud_telephony_providers_edges_extension_pool"] = dataSourceExtensionPool()
 	providerDataSources["genesyscloud_telephony_providers_edges_site"] = DataSourceSite()
@@ -174,8 +169,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 }
 
-func init_test_resources() {
-
+func initTestResources() {
 	if sdkConfig, err = AuthorizeSdk(); err != nil {
 		log.Fatal(err)
 	}
@@ -183,18 +177,16 @@ func init_test_resources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
-	reg_instance := &registerTestInstance{}
+	regInstance := &registerTestInstance{}
 
-	reg_instance.registerTestDataSources()
-	reg_instance.registerTestResources()
-
+	regInstance.registerTestDataSources()
+	regInstance.registerTestResources()
 }
 
 func TestMain(m *testing.M) {
 	// Run setup function before starting the test suite for resources in GenesysCloud Parent Package.
-	init_test_resources()
+	initTestResources()
 
 	// Run the test suite
 	m.Run()
-
 }
