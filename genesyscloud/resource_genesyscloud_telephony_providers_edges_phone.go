@@ -530,9 +530,18 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	for pageNum := 1; pageNum <= 100; pageNum++ {
+	phones, _, _ := edgesAPI.GetTelephonyProvidersEdgesPhones(1, 100, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+
+	for pageNum := 1; pageNum <= *phones.PageCount; pageNum++ {
 		const pageSize = 100
-		phones, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+		phones, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+
+		// This endpoint will throw a 400 if the page number limit is reached. The limit can be less that the total number of pages
+		if resp != nil && resp.StatusCode == 400 {
+			log.Println("Maximum number of entities returned")
+			break
+		}
+
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of phones: %v", getErr)
 		}
