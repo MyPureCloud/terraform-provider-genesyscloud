@@ -16,6 +16,7 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
+	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 
@@ -80,6 +81,7 @@ func registerResources() {
 
 	regInstance := &RegisterInstance{}
 
+	edgePhone.SetRegistrar(regInstance)      //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)       //Registering telephony providers edges site
 	pat.SetRegistrar(regInstance)            //Registering process automation triggers
 	obs.SetRegistrar(regInstance)            //Resistering outbound ruleset

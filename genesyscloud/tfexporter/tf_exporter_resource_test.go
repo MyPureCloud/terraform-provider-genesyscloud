@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	obw "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
+	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -90,7 +91,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = gcloud.ResourceTelephonyDidPool()
 	providerResources["genesyscloud_telephony_providers_edges_edge_group"] = gcloud.ResourceEdgeGroup()
 	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = gcloud.ResourceTelephonyExtensionPool()
-	providerResources["genesyscloud_telephony_providers_edges_phone"] = gcloud.ResourcePhone()
+	providerResources["genesyscloud_telephony_providers_edges_phone"] = edgePhone.ResourcePhone()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
 	providerResources["genesyscloud_telephony_providers_edges_phonebasesettings"] = gcloud.ResourcePhoneBaseSettings()
 	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = gcloud.ResourceTrunkBaseSettings()
@@ -186,7 +187,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", gcloud.TelephonyDidPoolExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_edge_group", gcloud.EdgeGroupExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", gcloud.TelephonyExtensionPoolExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_phone", gcloud.PhoneExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_phone", edgePhone.PhoneExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_site", edgeSite.SiteExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_phonebasesettings", gcloud.PhoneBaseSettingsExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_trunkbasesettings", gcloud.TrunkBaseSettingsExporter())

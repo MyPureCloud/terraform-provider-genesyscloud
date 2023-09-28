@@ -11,15 +11,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 )
 
-type didPoolStruct struct {
-	resourceID       string
-	startPhoneNumber string
-	endPhoneNumber   string
-	description      string
-	comments         string
-	poolProvider     string
-}
-
 func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
 	didPoolStartPhoneNumber1 := "+14175540014"
@@ -44,7 +35,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateDidPoolResource(&didPoolStruct{
+				Config: GenerateDidPoolResource(&DidPoolStruct{
 					didPoolResource1,
 					didPoolStartPhoneNumber1,
 					didPoolEndPhoneNumber1,
@@ -61,7 +52,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateDidPoolResource(&didPoolStruct{
+				Config: GenerateDidPoolResource(&DidPoolStruct{
 					didPoolResource1,
 					didPoolStartPhoneNumber1,
 					didPoolEndPhoneNumber1,
@@ -111,22 +102,6 @@ func deleteDidPoolWithStartNumber(startNumber string) error {
 	}
 
 	return nil
-}
-
-func generateDidPoolResource(didPool *didPoolStruct) string {
-	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_did_pool" "%s" {
-		start_phone_number = "%s"
-		end_phone_number = "%s"
-		description = %s
-		comments = %s
-		pool_provider = %s
-	}
-	`, didPool.resourceID,
-		didPool.startPhoneNumber,
-		didPool.endPhoneNumber,
-		didPool.description,
-		didPool.comments,
-		didPool.poolProvider)
 }
 
 func testVerifyDidPoolsDestroyed(state *terraform.State) error {

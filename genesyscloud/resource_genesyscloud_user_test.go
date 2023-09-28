@@ -40,7 +40,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateUserResource(
+				Config: GenerateUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -68,7 +68,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateUserResource(
+				Config: GenerateUserResource(
 					userResource1,
 					email2,
 					userName2,
@@ -95,7 +95,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 			},
 			{
 				// Create another user and set manager as existing user
-				Config: generateUserResource(
+				Config: GenerateUserResource(
 					userResource1,
 					email2,
 					userName2,
@@ -106,7 +106,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 					falseValue, // AcdAutoAnswer
 					strconv.Quote(profileSkill2),
 					strconv.Quote(cert2),
-				) + generateUserResource(
+				) + GenerateUserResource(
 					userResource2,
 					email3,
 					userName1,
@@ -129,7 +129,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 			},
 			{
 				// Remove manager and update profile skills/certs
-				Config: generateUserResource(
+				Config: GenerateUserResource(
 					userResource2,
 					email3,
 					userName1,

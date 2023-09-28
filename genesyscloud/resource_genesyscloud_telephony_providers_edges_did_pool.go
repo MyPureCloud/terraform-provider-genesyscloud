@@ -18,6 +18,15 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 )
 
+type DidPoolStruct struct {
+	ResourceID       string
+	StartPhoneNumber string
+	EndPhoneNumber   string
+	Description      string
+	Comments         string
+	PoolProvider     string
+}
+
 func getAllDidPools(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	telephonyAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
@@ -229,4 +238,20 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 		return retry.RetryableError(fmt.Errorf("DID pool %s still exists", d.Id()))
 	})
+}
+
+func GenerateDidPoolResource(didPool *DidPoolStruct) string {
+	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_did_pool" "%s" {
+		start_phone_number = "%s"
+		end_phone_number = "%s"
+		description = %s
+		comments = %s
+		pool_provider = %s
+	}
+	`, didPool.ResourceID,
+		didPool.StartPhoneNumber,
+		didPool.EndPhoneNumber,
+		didPool.Description,
+		didPool.Comments,
+		didPool.PoolProvider)
 }

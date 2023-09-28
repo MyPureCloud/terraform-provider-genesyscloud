@@ -37,7 +37,7 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateDidPoolResource(&didPoolStruct{
+				Config: GenerateDidPoolResource(&DidPoolStruct{
 					didPoolRes,
 					didPoolStartPhoneNumber,
 					didPoolEndPhoneNumber,

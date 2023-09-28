@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 )
 
-func dataSourceOrganizationsMe() *schema.Resource {
+func DataSourceOrganizationsMe() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud current organization",
 		ReadContext: ReadWithPooledClient(dataSourceOrganizationsMeRead),
@@ -106,4 +106,10 @@ func dataSourceOrganizationsMeRead(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	return nil
+}
+
+func GenerateOrganizationMe() string {
+	return `
+data "genesyscloud_organizations_me" "me" {}
+`
 }

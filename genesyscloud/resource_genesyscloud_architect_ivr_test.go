@@ -87,7 +87,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 			},
 			{
 				// Update with new DNIS
-				Config: generateDidPoolResource(&didPoolStruct{
+				Config: GenerateDidPoolResource(&DidPoolStruct{
 					didPoolResource1,
 					ivrConfigDnis[0],
 					ivrConfigDnis[1],
@@ -180,7 +180,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 					divName2,
 					nullValue, // No description
 					nullValue, // Not home division
-				) + generateDidPoolResource(&didPoolStruct{
+				) + GenerateDidPoolResource(&DidPoolStruct{
 					didPoolResource1,
 					ivrConfigDnis[0],
 					ivrConfigDnis[1],
@@ -255,7 +255,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 
 	allNumbers := createStringArrayOfPhoneNumbers(startNumber, endNumber)
 
-	didPoolResource := generateDidPoolResource(&didPoolStruct{
+	didPoolResource := GenerateDidPoolResource(&DidPoolStruct{
 		didPoolResourceId,
 		startNumberStr,
 		endNumberStr,

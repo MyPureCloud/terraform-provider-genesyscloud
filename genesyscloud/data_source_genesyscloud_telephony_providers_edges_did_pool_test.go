@@ -3,8 +3,10 @@ package genesyscloud
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 )
 
 func TestAccDataSourceDidPoolBasic(t *testing.T) {
@@ -31,7 +33,7 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateDidPoolResource(&didPoolStruct{
+				Config: GenerateDidPoolResource(&DidPoolStruct{
 					didPoolRes,
 					didPoolStartPhoneNumber,
 					didPoolEndPhoneNumber,
@@ -63,4 +65,32 @@ func generateDidPoolDataSource(
 		depends_on=[%s]
 	}
 	`, resourceID, startPhoneNumber, endPhoneNumber, dependsOnResource)
+}
+
+func deleteDidPoolWithNumber(number string) error {
+	//sdkConfig := m.(*ProviderMeta).ClientConfig
+	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		didPools, _, getErr := edgesAPI.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
+		if getErr != nil {
+			return getErr
+		}
+
+		if didPools.Entities == nil || len(*didPools.Entities) == 0 {
+			break
+		}
+
+		for _, didPool := range *didPools.Entities {
+			if (didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == number) ||
+				(didPool.EndPhoneNumber != nil && *didPool.EndPhoneNumber == number) {
+				if _, err := edgesAPI.DeleteTelephonyProvidersEdgesDidpool(*didPool.Id); err != nil {
+					return err
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
+	return nil
 }

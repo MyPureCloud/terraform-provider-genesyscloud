@@ -1,9 +1,11 @@
-package genesyscloud
+package telephony_providers_edges_phone
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -29,11 +31,11 @@ func TestAccDataSourcePhone(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateOrganizationMe() + generateUserResource(
+				Config: gcloud.GenerateOrganizationMe() + gcloud.GenerateUserResource(
 					userRes1,
 					userEmail1,
 					userName1,
@@ -44,12 +46,12 @@ func TestAccDataSourcePhone(t *testing.T) {
 					nullValue, // Default acdAutoAnswer
 					"",        // No profile skills
 					"",        // No certs
-				) + generatePhoneBaseSettingsResourceWithCustomAttrs(
+				) + gcloud.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					phoneBaseSettingsName,
 					"phoneBaseSettings description",
 					"inin_webrtc_softphone.json",
-				) + generatePhoneResourceWithCustomAttrs(&phoneConfig{
+				) + GeneratePhoneResourceWithCustomAttrs(&PhoneConfig{
 					phoneRes,
 					name1,
 					stateActive,
