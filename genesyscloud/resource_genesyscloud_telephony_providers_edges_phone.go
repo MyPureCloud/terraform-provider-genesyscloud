@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
@@ -537,7 +538,7 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 		phones, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 
 		// This endpoint will throw a 400 if the page number limit is reached. The limit can be less that the total number of pages
-		if resp != nil && resp.StatusCode == 400 {
+		if resp != nil && resp.StatusCode == http.StatusBadRequest {
 			log.Println("Maximum number of entities returned")
 			break
 		}
