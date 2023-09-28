@@ -39,10 +39,12 @@ func getStationProxy(clientConfig *platformclientv2.Configuration) *stationProxy
 	return internalProxy
 }
 
+// getStationIdByName retrieves a Genesys Cloud Station ID by Name
 func (p *stationProxy) getStationIdByName(ctx context.Context, stationName string) (stationId string, retryable bool, err error) {
 	return p.getStationIdByNameAttr(ctx, p, stationName)
 }
 
+// getStationIdByNameFn is an implementation function for retrieving a Station Id by Name
 func getStationIdByNameFn(ctx context.Context, p *stationProxy, stationName string) (stationId string, retryable bool, err error) {
 	const pageSize = 50
 	const pageNum = 1

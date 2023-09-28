@@ -145,9 +145,9 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		currentSite, resp, err := sp.getSiteById(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), err))
+				return retry.RetryableError(fmt.Errorf("failed to read site %s: %s", d.Id(), err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("failed to read site %s: %s", d.Id(), err))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite())
@@ -302,7 +302,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			log.Printf("Site already deleted %s", d.Id())
 			return nil
 		}
-		return diag.Errorf("Failed to delete site: %s %s", d.Id(), err)
+		return diag.Errorf("failed to delete site: %s %s", d.Id(), err)
 	}
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -316,7 +316,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				time.Sleep(8 * time.Second)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting site %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting site %s: %s", d.Id(), err))
 		}
 
 		if site.State != nil && *site.State == "deleted" {
@@ -328,6 +328,6 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Site %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("site %s still exists", d.Id()))
 	})
 }

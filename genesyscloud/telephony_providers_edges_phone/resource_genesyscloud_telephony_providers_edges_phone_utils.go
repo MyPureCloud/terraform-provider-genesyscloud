@@ -13,6 +13,7 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -132,33 +133,15 @@ func flattenPhoneCapabilities(capabilities *platformclientv2.Phonecapabilities) 
 	}
 
 	capabilitiesMap := make(map[string]interface{})
-	if capabilities.Provisions != nil {
-		capabilitiesMap["provisions"] = *capabilities.Provisions
-	}
-	if capabilities.Registers != nil {
-		capabilitiesMap["registers"] = *capabilities.Registers
-	}
-	if capabilities.DualRegisters != nil {
-		capabilitiesMap["dual_registers"] = *capabilities.DualRegisters
-	}
-	if capabilities.HardwareIdType != nil {
-		capabilitiesMap["hardware_id_type"] = *capabilities.HardwareIdType
-	}
-	if capabilities.AllowReboot != nil {
-		capabilitiesMap["allow_reboot"] = *capabilities.AllowReboot
-	}
-	if capabilities.NoRebalance != nil {
-		capabilitiesMap["no_rebalance"] = *capabilities.NoRebalance
-	}
-	if capabilities.NoCloudProvisioning != nil {
-		capabilitiesMap["no_cloud_provisioning"] = *capabilities.NoCloudProvisioning
-	}
-	if capabilities.MediaCodecs != nil {
-		capabilitiesMap["media_codecs"] = *capabilities.MediaCodecs
-	}
-	if capabilities.Cdm != nil {
-		capabilitiesMap["cdm"] = *capabilities.Cdm
-	}
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "provisions", capabilities.Provisions)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "registers", capabilities.Registers)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "dual_registers", capabilities.DualRegisters)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "hardware_id_type", capabilities.HardwareIdType)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "allow_reboot", capabilities.AllowReboot)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "no_rebalance", capabilities.NoRebalance)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "no_cloud_provisioning", capabilities.NoCloudProvisioning)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "media_codecs", capabilities.MediaCodecs)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "cdm", capabilities.Cdm)
 
 	return []interface{}{capabilitiesMap}
 }
@@ -221,7 +204,7 @@ func getLineIdByPhoneId(ctx context.Context, pp *phoneProxy, phoneId string) (st
 	if phone.Lines != nil && len(*phone.Lines) > 0 {
 		return *(*phone.Lines)[0].Id, nil
 	}
-	return "", fmt.Errorf("Could not access line ID for phone %s", phoneId)
+	return "", fmt.Errorf("could not access line ID for phone %s", phoneId)
 }
 
 func buildSdkCapabilities(d *schema.ResourceData) *platformclientv2.Phonecapabilities {
@@ -313,13 +296,13 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 
 		phone, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhone(rs.Primary.ID)
 		if phone != nil {
-			return fmt.Errorf("Phone (%s) still exists", rs.Primary.ID)
+			return fmt.Errorf("phone (%s) still exists", rs.Primary.ID)
 		} else if gcloud.IsStatus404(resp) {
 			// Phone not found as expected
 			continue
 		} else {
 			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+			return fmt.Errorf("unexpected error: %s", err)
 		}
 	}
 	//Success. Phone destroyed

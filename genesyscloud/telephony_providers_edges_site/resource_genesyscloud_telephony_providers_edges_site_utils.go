@@ -11,6 +11,7 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,7 +33,7 @@ func validateMediaRegions(regions *[]string, sp *siteProxy, ctx context.Context)
 		if region != *homeRegion &&
 			!lists.ItemInSlice(region, *coreRegions) &&
 			!lists.ItemInSlice(region, *satRegions) {
-			return fmt.Errorf("region %s is not a valid media region.  please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions.", regions)
+			return fmt.Errorf("region %s is not a valid media region.  please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions", regions)
 		}
 
 	}
@@ -107,25 +108,11 @@ func updateSiteNumberPlans(d *schema.ResourceData, sp *siteProxy, ctx context.Co
 				npMap := np.(map[string]interface{})
 				numberPlanFromTf := platformclientv2.Numberplan{}
 
-				if name := npMap["name"].(string); name != "" {
-					numberPlanFromTf.Name = &name
-				}
-
-				if matchType := npMap["match_type"].(string); matchType != "" {
-					numberPlanFromTf.MatchType = &matchType
-				}
-
-				if matchFormat := npMap["match_format"].(string); matchFormat != "" {
-					numberPlanFromTf.Match = &matchFormat
-				}
-
-				if normalizedFormat := npMap["normalized_format"].(string); normalizedFormat != "" {
-					numberPlanFromTf.NormalizedFormat = &normalizedFormat
-				}
-
-				if classification := npMap["classification"].(string); classification != "" {
-					numberPlanFromTf.Classification = &classification
-				}
+				resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Name, npMap, "name")
+				resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.MatchType, npMap, "match_type")
+				resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Match, npMap, "match_format")
+				resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.NormalizedFormat, npMap, "normalized_format")
+				resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Classification, npMap, "classification")
 
 				if numbers, ok := npMap["numbers"].([]interface{}); ok && len(numbers) > 0 {
 					sdkNumbers := make([]platformclientv2.Number, 0)
@@ -222,12 +209,9 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, sp *siteProxy, ctx context
 				orMap := or.(map[string]interface{})
 				outboundRouteFromTf := platformclientv2.Outboundroutebase{}
 
-				if name := orMap["name"].(string); name != "" {
-					outboundRouteFromTf.Name = &name
-				}
-				if description := orMap["description"].(string); description != "" {
-					outboundRouteFromTf.Description = &description
-				}
+				resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Name, orMap, "name")
+				resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Description, orMap, "description")
+
 				if classificationTypes, ok := orMap["classification_types"].([]interface{}); ok && len(classificationTypes) > 0 {
 					cts := make([]string, 0)
 					for _, classificationType := range classificationTypes {
@@ -238,9 +222,8 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, sp *siteProxy, ctx context
 				if enabled, ok := orMap["enabled"].(bool); ok {
 					outboundRouteFromTf.Enabled = &enabled
 				}
-				if distribution := orMap["distribution"].(string); distribution != "" {
-					outboundRouteFromTf.Distribution = &distribution
-				}
+				resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Distribution, orMap, "distribution")
+
 				if externalTrunkBaseIds, ok := orMap["external_trunk_base_ids"].([]interface{}); ok && len(externalTrunkBaseIds) > 0 {
 					ids := make([]platformclientv2.Domainentityref, 0)
 					for _, externalTrunkBaseId := range externalTrunkBaseIds {
@@ -321,7 +304,7 @@ func readSiteNumberPlans(d *schema.ResourceData, sp *siteProxy, ctx context.Cont
 			d.SetId("") // Site doesn't exist
 			return nil
 		}
-		return retry.NonRetryableError(fmt.Errorf("Failed to read number plans for site %s: %s", d.Id(), err))
+		return retry.NonRetryableError(fmt.Errorf("failed to read number plans for site %s: %s", d.Id(), err))
 	}
 
 	dNumberPlans := make([]interface{}, 0)
@@ -334,18 +317,10 @@ func readSiteNumberPlans(d *schema.ResourceData, sp *siteProxy, ctx context.Cont
 			dNumberPlan := make(map[string]interface{})
 			dNumberPlan["name"] = *numberPlan.Name
 
-			if numberPlan.Match != nil {
-				dNumberPlan["match_format"] = *numberPlan.Match
-			}
-			if numberPlan.NormalizedFormat != nil {
-				dNumberPlan["normalized_format"] = *numberPlan.NormalizedFormat
-			}
-			if numberPlan.Classification != nil {
-				dNumberPlan["classification"] = *numberPlan.Classification
-			}
-			if numberPlan.MatchType != nil {
-				dNumberPlan["match_type"] = *numberPlan.MatchType
-			}
+			resourcedata.SetMapValueIfNotNil(dNumberPlan, "match_format", numberPlan.Match)
+			resourcedata.SetMapValueIfNotNil(dNumberPlan, "normalized_format", numberPlan.NormalizedFormat)
+			resourcedata.SetMapValueIfNotNil(dNumberPlan, "classification", numberPlan.Classification)
+			resourcedata.SetMapValueIfNotNil(dNumberPlan, "match_type", numberPlan.MatchType)
 
 			if numberPlan.Numbers != nil {
 				numbers := make([]interface{}, 0)
@@ -387,7 +362,7 @@ func readSiteNumberPlans(d *schema.ResourceData, sp *siteProxy, ctx context.Cont
 func readSiteOutboundRoutes(d *schema.ResourceData, sp *siteProxy, ctx context.Context) *retry.RetryError {
 	outboundRoutes, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
-		return retry.NonRetryableError(fmt.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err))
+		return retry.NonRetryableError(fmt.Errorf("failed to get outbound routes for site %s: %s", d.Id(), err))
 	}
 
 	dOutboundRoutes := make([]interface{}, 0)
@@ -397,21 +372,10 @@ func readSiteOutboundRoutes(d *schema.ResourceData, sp *siteProxy, ctx context.C
 			dOutboundRoute := make(map[string]interface{})
 			dOutboundRoute["name"] = *outboundRoute.Name
 
-			if outboundRoute.Description != nil {
-				dOutboundRoute["description"] = *outboundRoute.Description
-			}
-
-			if outboundRoute.ClassificationTypes != nil {
-				dOutboundRoute["classification_types"] = *outboundRoute.ClassificationTypes
-			}
-
-			if outboundRoute.Enabled != nil {
-				dOutboundRoute["enabled"] = *outboundRoute.Enabled
-			}
-
-			if outboundRoute.Distribution != nil {
-				dOutboundRoute["distribution"] = *outboundRoute.Distribution
-			}
+			resourcedata.SetMapValueIfNotNil(dOutboundRoute, "description", outboundRoute.Description)
+			resourcedata.SetMapValueIfNotNil(dOutboundRoute, "classification_types", outboundRoute.ClassificationTypes)
+			resourcedata.SetMapValueIfNotNil(dOutboundRoute, "enabled", outboundRoute.Enabled)
+			resourcedata.SetMapValueIfNotNil(dOutboundRoute, "distribution", outboundRoute.Distribution)
 
 			if len(*outboundRoute.ExternalTrunkBases) > 0 {
 				externalTrunkBaseIds := make([]string, 0)
@@ -457,12 +421,12 @@ func buildSdkEdgeAutoUpdateConfig(d *schema.ResourceData) (*platformclientv2.Edg
 
 			start, err := time.Parse("2006-01-02T15:04:05.000000", startStr)
 			if err != nil {
-				return nil, fmt.Errorf("Failed to parse date %s: %s", startStr, err)
+				return nil, fmt.Errorf("failed to parse date %s: %s", startStr, err)
 			}
 
 			end, err := time.Parse("2006-01-02T15:04:05.000000", endStr)
 			if err != nil {
-				return nil, fmt.Errorf("Failed to parse date %s: %s", end, err)
+				return nil, fmt.Errorf("failed to parse date %s: %s", end, err)
 			}
 
 			return &platformclientv2.Edgeautoupdateconfig{

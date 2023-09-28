@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -40,6 +41,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 	providerResources["genesyscloud_telephony_providers_edges_phonebasesettings"] = gcloud.ResourcePhoneBaseSettings()
+	providerResources["genesyscloud_telephony_providers_edges_phone"] = edgePhone.ResourcePhone()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

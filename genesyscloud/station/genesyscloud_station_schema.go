@@ -14,6 +14,7 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterDataSource(resourceName, DataSourceStation())
 }
 
+// DataSourceStation registers the genesyscloud_station data source
 func DataSourceStation() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Stations. Select a station by name.",
