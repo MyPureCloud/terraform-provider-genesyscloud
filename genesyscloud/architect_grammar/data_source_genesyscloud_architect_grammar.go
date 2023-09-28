@@ -3,13 +3,12 @@ package architect_grammar
 import (
 	"context"
 	"fmt"
+	genesyscloud2 "terraform-provider-genesyscloud/genesyscloud"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
 /*
@@ -19,12 +18,12 @@ import (
 
 // dataSourceArchitectGrammarRead retrieves by name the id in question
 func dataSourceArchitectGrammarRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	sdkConfig := meta.(*genesyscloud2.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
-	return gcloud.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
+	return genesyscloud2.WithRetries(ctx, 15*time.Second, func() *resource.RetryError {
 		grammarId, retryable, err := proxy.getArchitectGrammarIdByName(ctx, name)
 
 		if err != nil && !retryable {

@@ -7,7 +7,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	genesyscloud2 "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 )
 
@@ -17,27 +18,21 @@ func TestAccResourceArchitectGrammarBasic(t *testing.T) {
 		name1        = "Test grammar " + uuid.NewString()
 		description1 = "Test description"
 		language1    = generateGrammarLanguageBlock(
-			"test language name",
+			"en-us",
 			generateFileVoiceFileMetadataBlock(
-				"voiceFile1",
+				testrunner.GetTestDataPath("resource", "architect_grammar", "voice.grxml"),
 				"256",
 				"2023-09-22T15:30:00.123Z",
-				"Gram",
-			),
-			generateFileDtmfFileMetadataBlock(
-				"dtmfFile1",
-				"214",
-				"2023-09-22T15:30:00.123Z",
-				"Gram",
+				"Grxml",
 			),
 		)
 		name2        = "Test grammar " + uuid.NewString()
-		description2 = "A new test description"
+		description2 = "A new test_data description"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud2.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud2.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create Grammar
@@ -50,11 +45,11 @@ func TestAccResourceArchitectGrammarBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "description", description1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.language", "test language name"),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_metadata.0.file_name", "voiceFile1"),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.language", "en-us"),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_metadata.0.file_name", "../../test_data/data/resource/architect_grammar/voice.grxml"),
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_metadata.0.file_size_bytes", "256"),
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_metadata.0.date_uploaded", "2023-09-22T15:30:00.123Z"),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_metadata.0.file_type", "Gram"),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_metadata.0.file_type", "Grxml"),
 				),
 			},
 			{
@@ -150,7 +145,7 @@ func testVerifyGrammarDestroyed(state *terraform.State) error {
 		grammar, resp, err := architectAPI.GetArchitectGrammar(rs.Primary.ID, false)
 		if grammar != nil {
 			return fmt.Errorf("Grammar (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
+		} else if genesyscloud2.IsStatus404(resp) {
 			// Grammar not found as expected
 			continue
 		} else {

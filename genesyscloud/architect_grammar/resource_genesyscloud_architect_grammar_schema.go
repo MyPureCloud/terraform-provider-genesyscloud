@@ -34,17 +34,6 @@ func ResourceArchitectGrammar() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`file_size_bytes`: {
-				Description: "The size of the file in bytes",
-				Optional:    true,
-				Type:        schema.TypeInt,
-			},
-			`date_uploaded`: {
-				Description:      "The date the file was uploaded. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z",
-				Optional:         true,
-				Type:             schema.TypeString,
-				ValidateDiagFunc: gcloud.ValidateDateTimeSeconds,
-			},
 			`file_type`: {
 				Description:  "The extension of the file",
 				Optional:     true,
@@ -61,24 +50,14 @@ func ResourceArchitectGrammar() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`voice_file_url`: {
-				Description: "The URL to the voice mode file associated with this grammar language",
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`voice_file_metadata`: {
+			`voice_file_data`: {
 				Description: "Additional information about the associated voice file",
 				Optional:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        grammarLanguageFileMetadataResource,
 			},
-			`dtmf_file_url`: {
-				Description: "The URL to the DTMF mode file associated with this grammar language",
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`dtmf_file_metadata`: {
+			`dtmf_file_data`: {
 				Description: "Additional information about the associated dtmf file",
 				Optional:    true,
 				Type:        schema.TypeList,

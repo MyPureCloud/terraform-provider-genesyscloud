@@ -3,7 +3,9 @@ package architect_grammar
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"time"
 )
 
 /*
@@ -35,10 +37,8 @@ func buildGrammarLanguages(languages []interface{}) *[]platformclientv2.Grammarl
 		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkLanguage.Language, languageMap, "language")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkLanguage.VoiceFileUrl, languageMap, "voice_file_url")
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkLanguage.VoiceFileMetadata, languageMap, "voice_file_metadata", buildGrammarLanguageFileMetadata)
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkLanguage.DtmfFileUrl, languageMap, "dtmf_file_url")
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkLanguage.DtmfFileMetadata, languageMap, "dtmf_file_metadata", buildGrammarLanguageFileMetadata)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkLanguage.VoiceFileMetadata, languageMap, "voice_file_data", buildGrammarLanguageFileMetadata)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkLanguage.DtmfFileMetadata, languageMap, "dtmf_file_data", buildGrammarLanguageFileMetadata)
 
 		languagesSlice = append(languagesSlice, sdkLanguage)
 	}
@@ -58,9 +58,17 @@ func buildGrammarLanguageFileMetadata(fileMetadata []interface{}) *platformclien
 	}
 
 	resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.FileName, metadataMap, "file_name")
-	sdkMetadata.FileSizeBytes = platformclientv2.Int(metadataMap["file_size_bytes"].(int))
-	resourcedata.BuildSDKTimeValueIfNotNil(&sdkMetadata.DateUploaded, metadataMap, "date_uploaded", "2006-01-02T15:04:05.000Z")
 	resourcedata.BuildSDKStringValueIfNotNil(&sdkMetadata.FileType, metadataMap, "file_type")
+
+	// Get the current date time, helpful in the UI
+	currentTime := time.Now().UTC()
+	formattedTime := currentTime.Format("2006-01-02T15:04:05.999Z")
+	parsedTime, err := time.Parse("2006-01-02T15:04:05.999Z", formattedTime)
+	if err != nil {
+		log.Printf("Unable to get current date time %s", err)
+	} else {
+		sdkMetadata.DateUploaded = &parsedTime
+	}
 
 	return &sdkMetadata
 }
@@ -76,10 +84,8 @@ func flattenGrammarLanguages(languages *[]platformclientv2.Grammarlanguage) []in
 		languageMap := make(map[string]interface{})
 
 		resourcedata.SetMapValueIfNotNil(languageMap, "language", language.Language)
-		resourcedata.SetMapValueIfNotNil(languageMap, "voice_file_url", language.VoiceFileUrl)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(languageMap, "voice_file_metadata", language.VoiceFileMetadata, flattenGrammarLanguageFileMetadata)
-		resourcedata.SetMapValueIfNotNil(languageMap, "dtmf_file_url", language.DtmfFileUrl)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(languageMap, "dtmf_file_metadata", language.DtmfFileMetadata, flattenGrammarLanguageFileMetadata)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(languageMap, "voice_file_data", language.VoiceFileMetadata, flattenGrammarLanguageFileMetadata)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(languageMap, "dtmf_file_data", language.DtmfFileMetadata, flattenGrammarLanguageFileMetadata)
 
 		languageList = append(languageList, languageMap)
 	}
@@ -95,14 +101,6 @@ func flattenGrammarLanguageFileMetadata(fileMetadata *platformclientv2.Grammarla
 	metadataMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(metadataMap, "file_name", fileMetadata.FileName)
-	resourcedata.SetMapValueIfNotNil(metadataMap, "file_size_bytes", fileMetadata.FileSizeBytes)
-	resourcedata.SetMapTimeIfNotNil(metadataMap, "date_uploaded", fileMetadata.DateUploaded, "%Y-%m-%dT%H:%M:%S.%f")
-	// Trim the last 3 characters of date_uploaded and replace with a Z if it exists in the map
-	if dateUploaded, ok := metadataMap["date_uploaded"].(string); ok {
-		if len(dateUploaded) >= 3 {
-			metadataMap["date_uploaded"] = dateUploaded[:len(dateUploaded)-3] + "Z"
-		}
-	}
 	resourcedata.SetMapValueIfNotNil(metadataMap, "file_type", fileMetadata.FileType)
 
 	return []interface{}{metadataMap}

@@ -32,7 +32,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_architect_grammar"] = DataSourceArchitectGrammar()
 }
 
-// initTestresources initializes all test resources and data sources.
+// initTestresources initializes all test_data resources and data sources.
 func initTestresources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
@@ -43,11 +43,11 @@ func initTestresources() {
 	reg_instance.registerTestDataSources()
 }
 
-// TestMain is a "setup" function called by the testing framework when run the test
+// TestMain is a "setup" function called by the testing framework when run the test_data
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the architect_grammar package
+	// Run setup function before starting the test_data suite for the architect_grammar package
 	initTestresources()
 
-	// Run the test suite for the architect_grammar package
+	// Run the test_data suite for the architect_grammar package
 	m.Run()
 }
