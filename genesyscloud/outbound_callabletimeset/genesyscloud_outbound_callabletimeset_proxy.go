@@ -150,12 +150,19 @@ func getOutboundCallabletimesetIdByNameFn(ctx context.Context, p *outboundCallab
 		return "", true, fmt.Errorf("No Outbound Callabletimeset found with name %s", name)
 	}
 
+	var callableTimeSet platformclientv2.Callabletimeset
 	if len(*callableTimeSets.Entities) > 1 {
+		for _, timeset := range *callableTimeSets.Entities {
+			if timeset.Name != nil && *timeset.Name == name {
+				callableTimeSet = timeset
+			}
+		}
 		return "", false, fmt.Errorf("Too many values returned in look for Outbound Callabletimesets.  Unable to choose 1 Outbound Callabletimeset.  Please refine search and continue.")
+	} else {
+		callableTimeSet = (*callableTimeSets.Entities)[0]
 	}
 
 	log.Printf("Retrieved the callableTimeSet id %s by name %s", *(*callableTimeSets.Entities)[0].Id, name)
-	callableTimeSet := (*callableTimeSets.Entities)[0]
 	return *callableTimeSet.Id, false, nil
 }
 
