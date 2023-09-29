@@ -24,12 +24,6 @@ import (
 )
 
 var (
-	mediaSettingsKeyCall     = "call"
-	mediaSettingsKeyCallback = "callback"
-	mediaSettingsKeyChat     = "chat"
-	mediaSettingsKeyEmail    = "email"
-	mediaSettingsKeyMessage  = "message"
-
 	bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
 	memberGroupResource = &schema.Resource{
