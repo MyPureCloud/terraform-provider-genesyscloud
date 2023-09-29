@@ -192,7 +192,7 @@ func getIntegrationActionsByNameFn(ctx context.Context, p *integrationActionsPro
 	return &actions, nil
 }
 
-// getIntegrationActionsByNameFn is the implementation for getting an integration action by name in Genesys Cloud
+// updateIntegrationActionFn is the implementation for updating an integration action in Genesys Cloud
 func updateIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, actionId string, updateAction *platformclientv2.Updateactioninput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	action, resp, err := p.integrationsApi.PatchIntegrationsAction(actionId, *updateAction)
 	if err != nil {
