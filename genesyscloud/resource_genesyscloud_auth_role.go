@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -527,4 +528,32 @@ func getRoleID(defaultRoleID string, authAPI *platformclientv2.AuthorizationApi)
 	}
 
 	return *(*roles.Entities)[0].Id, nil
+}
+
+func GenerateAuthRoleResource(
+	resourceID string,
+	name string,
+	description string,
+	nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_auth_role" "%s" {
+		name = "%s"
+		description = "%s"
+		%s
+	}
+	`, resourceID, name, description, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateRolePermissions(permissions ...string) string {
+	return fmt.Sprintf(`
+		permissions = [%s]
+	`, strings.Join(permissions, ","))
+}
+
+func GenerateRolePermPolicy(domain string, entityName string, actions ...string) string {
+	return fmt.Sprintf(` permission_policies {
+		domain = "%s"
+		entity_name = "%s"
+		action_set = [%s]
+	}
+	`, domain, entityName, strings.Join(actions, ","))
 }

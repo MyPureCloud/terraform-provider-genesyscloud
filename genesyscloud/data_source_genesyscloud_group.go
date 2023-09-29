@@ -12,7 +12,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 )
 
-func dataSourceGroup() *schema.Resource {
+func DataSourceGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Groups. Select a group by name.",
 		ReadContext: ReadWithPooledClient(dataSourceGroupRead),

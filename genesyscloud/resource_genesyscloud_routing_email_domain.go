@@ -224,3 +224,16 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 		return retry.RetryableError(fmt.Errorf("Routing email domain %s still exists", d.Id()))
 	})
 }
+
+func GenerateRoutingEmailDomainResource(
+	resourceID string,
+	domainID string,
+	subdomain string,
+	fromDomain string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_email_domain" "%s" {
+		domain_id = "%s"
+		subdomain = %s
+        mail_from_domain = %s
+	}
+	`, resourceID, domainID, subdomain, fromDomain)
+}

@@ -34,7 +34,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 					userResource1,
 					email1,
 					userName1,
-				) + generateBasicGroupResource(
+				) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName1,
 				) + fmt.Sprintf(`resource "genesyscloud_orgauthorization_pairing" "%s" {
@@ -56,10 +56,10 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 					userResource2,
 					email2,
 					userName2,
-				) + generateBasicGroupResource(
+				) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName1,
-				) + generateBasicGroupResource(
+				) + GenerateBasicGroupResource(
 					groupResource2,
 					groupName2,
 				) + fmt.Sprintf(`resource "genesyscloud_orgauthorization_pairing" "%s" {
@@ -115,7 +115,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 1 group
 			{
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName1,
 				) + fmt.Sprintf(`resource "genesyscloud_orgauthorization_pairing" "%s" {
@@ -127,10 +127,10 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 			},
 			// 2 groups
 			{
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName1,
-				) + generateBasicGroupResource(
+				) + GenerateBasicGroupResource(
 					groupResource2,
 					groupName2,
 				) + fmt.Sprintf(`resource "genesyscloud_orgauthorization_pairing" "%s" {

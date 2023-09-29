@@ -1,4 +1,4 @@
-package genesyscloud
+package integration_action
 
 import (
 	"fmt"
@@ -6,12 +6,19 @@ import (
 	"strings"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_integration_action_test.go contains all of the test cases for running the resource
+tests for integration_actions.
+*/
 func TestAccResourceIntegrationAction(t *testing.T) {
 	var (
 		integResource1 = "test_integration1"
@@ -45,12 +52,12 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create an integration and an associated action
-				Config: generateIntegrationResource(
+				Config: integration.GenerateIntegrationResource(
 					integResource1,
 					nullValue,
 					strconv.Quote(integTypeID),
@@ -59,10 +66,10 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionName1,
 					actionCateg1,
 					"genesyscloud_integration."+integResource1+".id",
-					nullValue,                             // Secure default (false)
-					nullValue,                             // Timeout default
-					generateJsonSchemaDocStr(inputAttr1),  // contract_input
-					generateJsonSchemaDocStr(outputAttr1), // contract_output
+					nullValue, // Secure default (false)
+					nullValue, // Timeout default
+					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
+					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
 						reqUrlTemplate1,
 						reqType1,
@@ -77,19 +84,19 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_timeout_seconds", "0"),
 					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
-					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "type", "object"),
-					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "properties."+inputAttr1+".type", "string"),
-					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "required", inputAttr1),
-					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "type", "object"),
-					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "properties."+outputAttr1+".type", "string"),
-					validateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "required", outputAttr1),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "type", "object"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "properties."+inputAttr1+".type", "string"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "required", inputAttr1),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "type", "object"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "properties."+outputAttr1+".type", "string"),
+					gcloud.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_output", "required", outputAttr1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_url_template", reqUrlTemplate1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_type", reqType1),
 				),
 			},
 			{
 				// Update action name, category, timeout, and request/response config
-				Config: generateIntegrationResource(
+				Config: integration.GenerateIntegrationResource(
 					integResource1,
 					nullValue,
 					strconv.Quote(integTypeID),
@@ -100,26 +107,26 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					"genesyscloud_integration."+integResource1+".id",
 					nullValue, // Secure default (false)
 					timeout2,
-					generateJsonSchemaDocStr(inputAttr1),  // contract_input
-					generateJsonSchemaDocStr(outputAttr1), // contract_output
+					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
+					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
 						reqUrlTemplate2,
 						reqType2,
 						strconv.Quote(reqTemp),
-						generateMapAttr(
+						gcloud.GenerateMapAttr(
 							"headers",
-							generateMapProperty(headerKey, strconv.Quote(headerVal1)),
+							gcloud.GenerateMapProperty(headerKey, strconv.Quote(headerVal1)),
 						),
 					),
 					generateIntegrationActionConfigResponse(
 						strconv.Quote(successTemplate),
-						generateMapAttr(
+						gcloud.GenerateMapAttr(
 							"translation_map",
-							generateMapProperty(transMapAttr, strconv.Quote(transMapVal1)),
+							gcloud.GenerateMapProperty(transMapAttr, strconv.Quote(transMapVal1)),
 						),
-						generateMapAttr(
+						gcloud.GenerateMapAttr(
 							"translation_map_defaults",
-							generateMapProperty(transMapAttr, strconv.Quote(transMapValDefault1)),
+							gcloud.GenerateMapProperty(transMapAttr, strconv.Quote(transMapValDefault1)),
 						),
 					),
 				),
@@ -140,7 +147,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 			},
 			{
 				// Update config values as well as secure field which should force a new action to be created
-				Config: generateIntegrationResource(
+				Config: integration.GenerateIntegrationResource(
 					integResource1,
 					nullValue,
 					strconv.Quote(integTypeID),
@@ -149,28 +156,28 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionName2,
 					actionCateg2,
 					"genesyscloud_integration."+integResource1+".id",
-					trueValue,                             // Secure
-					nullValue,                             // time default
-					generateJsonSchemaDocStr(inputAttr1),  // contract_input
-					generateJsonSchemaDocStr(outputAttr1), // contract_output
+					trueValue, // Secure
+					nullValue, // time default
+					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
+					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
 						reqUrlTemplate2,
 						reqType2,
 						strconv.Quote(reqTemp),
-						generateMapAttr(
+						gcloud.GenerateMapAttr(
 							"headers",
-							generateMapProperty(headerKey, strconv.Quote(headerVal2)),
+							gcloud.GenerateMapProperty(headerKey, strconv.Quote(headerVal2)),
 						),
 					),
 					generateIntegrationActionConfigResponse(
 						strconv.Quote(successTemplate),
-						generateMapAttr(
+						gcloud.GenerateMapAttr(
 							"translation_map",
-							generateMapProperty(transMapAttr, strconv.Quote(transMapVal2)),
+							gcloud.GenerateMapProperty(transMapAttr, strconv.Quote(transMapVal2)),
 						),
-						generateMapAttr(
+						gcloud.GenerateMapAttr(
 							"translation_map_defaults",
-							generateMapProperty(transMapAttr, strconv.Quote(transMapValDefault2)),
+							gcloud.GenerateMapProperty(transMapAttr, strconv.Quote(transMapValDefault2)),
 						),
 					),
 				),
@@ -231,30 +238,6 @@ func generateIntegrationActionConfigResponse(successTemp string, blocks ...strin
 	`, successTemp, strings.Join(blocks, "\n"))
 }
 
-func generateJsonSchemaDocStr(properties ...string) string {
-	attrType := "type"
-	attrProperties := "properties"
-	typeObject := "object"
-	typeStr := "string" // All string props
-
-	propStrs := []string{}
-	for _, prop := range properties {
-		propStrs = append(propStrs, generateJsonProperty(prop, generateJsonObject(
-			generateJsonProperty(attrType, strconv.Quote(typeStr)),
-		)))
-	}
-	allProps := strings.Join(propStrs, "\n")
-
-	return generateJsonEncodedProperties(
-		// First field is required
-		generateJsonArrayProperty("required", strconv.Quote(properties[0])),
-		generateJsonProperty(attrType, strconv.Quote(typeObject)),
-		generateJsonProperty(attrProperties, generateJsonObject(
-			allProps,
-		)),
-	)
-}
-
 func testVerifyIntegrationActionDestroyed(state *terraform.State) error {
 	integrationAPI := platformclientv2.NewIntegrationsApi()
 	for _, rs := range state.RootModule().Resources {
@@ -265,7 +248,7 @@ func testVerifyIntegrationActionDestroyed(state *terraform.State) error {
 		action, resp, err := integrationAPI.GetIntegrationsAction(rs.Primary.ID, "", false)
 		if action != nil {
 			return fmt.Errorf("Integration action (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// Action not found as expected
 			continue
 		} else {
