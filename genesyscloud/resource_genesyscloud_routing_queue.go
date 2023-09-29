@@ -979,11 +979,10 @@ func flattenMediaSetting(settings platformclientv2.Mediasettings) []interface{} 
 	settingsMap := make(map[string]interface{})
 	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
 
-	// Check if EnableAutoAnswer is not nil before accessing it
 	if settings.EnableAutoAnswer != nil {
 		settingsMap["enable_auto_answer"] = *settings.EnableAutoAnswer
 	} else {
-		settingsMap["enable_auto_answer"] = nil // Set it to nil or some default value if it's nil
+		settingsMap["enable_auto_answer"] = false
 	}
 
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
