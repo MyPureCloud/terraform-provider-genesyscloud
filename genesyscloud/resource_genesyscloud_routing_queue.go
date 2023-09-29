@@ -57,6 +57,12 @@ var (
 				Required:     true,
 				ValidateFunc: validation.IntAtLeast(7),
 			},
+			"enable_auto_answer": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 			"service_level_percentage": {
 				Description:  "The desired Service Level. A float value between 0 and 1.",
 				Type:         schema.TypeFloat,
@@ -939,11 +945,13 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 	settingsMap := settings[0].(map[string]interface{})
 
 	alertingTimeout := settingsMap["alerting_timeout_sec"].(int)
+	enableAutoAnswer := settingsMap["enable_auto_answer"].(bool)
 	serviceLevelPct := settingsMap["service_level_percentage"].(float64)
 	serviceLevelDur := settingsMap["service_level_duration_ms"].(int)
 
 	return &platformclientv2.Mediasettings{
 		AlertingTimeoutSeconds: &alertingTimeout,
+		EnableAutoAnswer:       &enableAutoAnswer,
 		ServiceLevel: &platformclientv2.Servicelevel{
 			Percentage: &serviceLevelPct,
 			DurationMs: &serviceLevelDur,
@@ -970,6 +978,13 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 func flattenMediaSetting(settings platformclientv2.Mediasettings) []interface{} {
 	settingsMap := make(map[string]interface{})
 	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
+
+	if settings.EnableAutoAnswer != nil {
+		settingsMap["enable_auto_answer"] = *settings.EnableAutoAnswer
+	} else {
+		settingsMap["enable_auto_answer"] = false
+	}
+
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
 	return []interface{}{settingsMap}
@@ -1836,13 +1851,14 @@ func GenerateRoutingQueueResourceBasicWithDepends(resourceID string, dependsOn s
 	`, resourceID, dependsOn, name, strings.Join(nestedBlocks, "\n"))
 }
 
-func GenerateMediaSettings(attrName string, alertingTimeout string, slPercent string, slDurationMs string) string {
+func GenerateMediaSettings(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string) string {
 	return fmt.Sprintf(`%s {
 		alerting_timeout_sec = %s
+		enable_auto_answer = %s
 		service_level_percentage = %s
 		service_level_duration_ms = %s
 	}
-	`, attrName, alertingTimeout, slPercent, slDurationMs)
+	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs)
 }
 
 func GenerateRoutingRules(operator string, threshold string, waitSeconds string) string {
