@@ -359,11 +359,11 @@ func ResourceRoutingQueue() *schema.Resource {
 							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
 						},
 						"metric": {
-							Description:  "The queue metric being evaluated. Valid values: EstimatedWaitTime.",
+							Description:  "The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel",
 							Type:         schema.TypeString,
 							Optional:     true,
 							Default:      "EstimatedWaitTime",
-							ValidateFunc: validation.StringInSlice([]string{"EstimatedWaitTime"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"EstimatedWaitTime", "ServiceLevel"}, false),
 						},
 						"condition_value": {
 							Description:  "The limit value, beyond which a rule evaluates as true.",
