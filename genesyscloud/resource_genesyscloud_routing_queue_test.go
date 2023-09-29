@@ -66,13 +66,11 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					nullValue, // No calling party number
 					nullValue, // enable_manual_assignment false
 					nullValue, // enable_transcription false
-					GenerateMediaSettings("media_settings_call", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_callback", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_chat", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_email", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_message", alertTimeout1, slPercent1, slDuration1),
-					GenerateBullseyeSettings(alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource+".id"),
-					GenerateBullseyeSettings(alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource+".id"),
+					GenerateMediaSettings("media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_email", alertTimeout1, trueValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_message", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupName+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResource+".id"),
 					GenerateRoutingRules(routingRuleOpAny, "50", nullValue),
 				),
@@ -86,12 +84,12 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
 					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
-					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, slPercent1, slDuration1),
-					validateBullseyeSettings(queueResource1, 2, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource),
+					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, trueValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateBullseyeSettings(queueResource1, 1, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResource),
 					validateRoutingRules(queueResource1, 0, routingRuleOpAny, "50", "5"),
 				),
 			},
@@ -109,11 +107,11 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					strconv.Quote(callingPartyNumber),
 					trueValue, // enable_manual_assignment true
 					trueValue, // enable_transcription true
-					GenerateMediaSettings("media_settings_call", alertTimeout2, slPercent2, slDuration2),
-					GenerateMediaSettings("media_settings_callback", alertTimeout2, slPercent2, slDuration2),
-					GenerateMediaSettings("media_settings_chat", alertTimeout2, slPercent2, slDuration2),
-					GenerateMediaSettings("media_settings_email", alertTimeout2, slPercent2, slDuration2),
-					GenerateMediaSettings("media_settings_message", alertTimeout2, slPercent2, slDuration2),
+					GenerateMediaSettings("media_settings_call", alertTimeout2, falseValue, slPercent2, slDuration2),
+					GenerateMediaSettings("media_settings_callback", alertTimeout2, falseValue, slPercent2, slDuration2),
+					GenerateMediaSettings("media_settings_chat", alertTimeout2, falseValue, slPercent2, slDuration2),
+					GenerateMediaSettings("media_settings_email", alertTimeout2, falseValue, slPercent2, slDuration2),
+					GenerateMediaSettings("media_settings_message", alertTimeout2, falseValue, slPercent2, slDuration2),
 					GenerateBullseyeSettings(alertTimeout2),
 					GenerateBullseyeSettings(alertTimeout2),
 					GenerateBullseyeSettings(alertTimeout2),
@@ -131,11 +129,11 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", trueValue),
 					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
-					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout2, slPercent2, slDuration2),
-					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout2, slPercent2, slDuration2),
-					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout2, slPercent2, slDuration2),
-					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout2, slPercent2, slDuration2),
-					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout2, slPercent2, slDuration2),
+					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout2, falseValue, slPercent2, slDuration2),
+					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout2, falseValue, slPercent2, slDuration2),
+					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout2, falseValue, slPercent2, slDuration2),
+					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout2, falseValue, slPercent2, slDuration2),
+					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout2, falseValue, slPercent2, slDuration2),
 					validateBullseyeSettings(queueResource1, 3, alertTimeout2, ""),
 					validateRoutingRules(queueResource1, 0, routingRuleOpMeetsThresh, "90", "30"),
 					validateRoutingRules(queueResource1, 1, routingRuleOpAny, "45", "15"),
@@ -206,11 +204,11 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					nullValue, // No calling party number
 					nullValue, // enable_transcription false
 					nullValue, // enable_manual_assignment false
-					GenerateMediaSettings("media_settings_call", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_callback", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_chat", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_email", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_message", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_email", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_message", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateConditionalGroupRoutingRules(
 						nullValue,                              // queue_id (queue_id in the first rule should be omitted)
 						conditionalGroupRouting1Operator,       // operator
@@ -242,11 +240,11 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceId, "id"),
 
 					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
-					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, falseValue, slPercent1, slDuration1),
 				),
 			},
 			{
@@ -275,11 +273,11 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					nullValue, // No calling party number
 					nullValue, // enable_transcription false
 					nullValue, // enable_manual_assignment false
-					GenerateMediaSettings("media_settings_call", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_callback", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_chat", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_email", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_message", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_email", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_message", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateConditionalGroupRoutingRules(
 						nullValue,                              // queue_id (queue_id in the first rule should be omitted)
 						conditionalGroupRouting1Operator,       // operator
@@ -330,11 +328,11 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.1.groups.0.member_group_id", "genesyscloud_group."+groupResourceId, "id"),
 
 					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
-					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, falseValue, slPercent1, slDuration1),
 				),
 			},
 			{
@@ -392,11 +390,11 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					nullValue, // No calling party number
 					nullValue, // enable_transcription false
 					nullValue, // enable_manual_assignment false
-					GenerateMediaSettings("media_settings_call", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_callback", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_chat", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_email", alertTimeout1, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_message", alertTimeout1, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_email", alertTimeout1, falseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_message", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateRoutingRules(routingRuleOpAny, "50", "6"),
 					GenerateConditionalGroupRoutingRules(
 						nullValue,                              // queue_id (queue_id in the first rule should be omitted)
@@ -429,11 +427,11 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceId, "id"),
 
 					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
-					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, falseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, falseValue, slPercent1, slDuration1),
 					validateRoutingRules(queueResource1, 0, routingRuleOpAny, "50", "6"),
 				),
 			},
@@ -988,11 +986,12 @@ func testVerifyQueuesDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func validateMediaSettings(resourceName string, settingsAttr string, alertingTimeout string, slPercent string, slDurationMs string) resource.TestCheckFunc {
+func validateMediaSettings(resourceName, settingsAttr, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs string) resource.TestCheckFunc {
 	return resource.ComposeAggregateTestCheckFunc(
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.alerting_timeout_sec", alertingTimeout),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.service_level_percentage", slPercent),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.service_level_duration_ms", slDurationMs),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, settingsAttr+".0.enable_auto_answer", enableAutoAnswer),
 	)
 }
 
