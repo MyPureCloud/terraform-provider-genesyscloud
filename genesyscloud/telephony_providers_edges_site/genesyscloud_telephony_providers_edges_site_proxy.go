@@ -49,15 +49,17 @@ type getSiteNumberPlansFunc func(ctx context.Context, p *siteProxy, siteId strin
 type updateSiteNumberPlansFunc func(ctx context.Context, p *siteProxy, siteId string, numberPlans *[]platformclientv2.Numberplan) (*[]platformclientv2.Numberplan, *platformclientv2.APIResponse, error)
 
 type getLocationFunc func(ctx context.Context, p *siteProxy, locationId string) (*platformclientv2.Locationdefinition, error)
-
 type getTelephonyMediaregionsFunc func(ctx context.Context, p *siteProxy) (*platformclientv2.Mediaregions, error)
+type setDefaultSiteFunc func(ctx context.Context, p *siteProxy, siteId string) error
+type getDefaultSiteIdFunc func(ctx context.Context, p *siteProxy) (siteId string, err error)
 
 // siteProxy contains all of the methods that call genesys cloud APIs.
 type siteProxy struct {
-	clientConfig *platformclientv2.Configuration
-	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
-	locationsApi *platformclientv2.LocationsApi
-	telephonyApi *platformclientv2.TelephonyApi
+	clientConfig    *platformclientv2.Configuration
+	edgesApi        *platformclientv2.TelephonyProvidersEdgeApi
+	locationsApi    *platformclientv2.LocationsApi
+	telephonyApi    *platformclientv2.TelephonyApi
+	organizationApi *platformclientv2.OrganizationApi
 
 	getAllManagedSitesAttr   getAllManagedSitesFunc
 	getAllUnmanagedSitesAttr getAllUnmanagedSitesFunc
@@ -75,9 +77,10 @@ type siteProxy struct {
 	getSiteNumberPlansAttr    getSiteNumberPlansFunc
 	updateSiteNumberPlansAttr updateSiteNumberPlansFunc
 
-	getLocationAttr getLocationFunc
-
+	getLocationAttr              getLocationFunc
 	getTelephonyMediaregionsAttr getTelephonyMediaregionsFunc
+	setDefaultSiteAttr           setDefaultSiteFunc
+	getDefaultSiteIdAttr         getDefaultSiteIdFunc
 }
 
 // newSiteProxy initializes the Site proxy with all of the data needed to communicate with Genesys Cloud
@@ -85,12 +88,14 @@ func newSiteProxy(clientConfig *platformclientv2.Configuration) *siteProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	locationsApi := platformclientv2.NewLocationsApiWithConfig(clientConfig)
 	telephonyApi := platformclientv2.NewTelephonyApiWithConfig(clientConfig)
+	organizationApi := platformclientv2.NewOrganizationApiWithConfig(clientConfig)
 
 	return &siteProxy{
-		clientConfig: clientConfig,
-		edgesApi:     edgesApi,
-		locationsApi: locationsApi,
-		telephonyApi: telephonyApi,
+		clientConfig:    clientConfig,
+		edgesApi:        edgesApi,
+		locationsApi:    locationsApi,
+		telephonyApi:    telephonyApi,
+		organizationApi: organizationApi,
 
 		getAllManagedSitesAttr:   getAllManagedSitesFn,
 		getAllUnmanagedSitesAttr: getAllUnmanagedSitesFn,
@@ -108,9 +113,10 @@ func newSiteProxy(clientConfig *platformclientv2.Configuration) *siteProxy {
 		getSiteNumberPlansAttr:    getSiteNumberPlansFn,
 		updateSiteNumberPlansAttr: updateSiteNumberPlansFn,
 
-		getLocationAttr: getLocationFn,
-
+		getLocationAttr:              getLocationFn,
 		getTelephonyMediaregionsAttr: getTelephonyMediaregionsFn,
+		setDefaultSiteAttr:           setDefaultSiteFn,
+		getDefaultSiteIdAttr:         getDefaultSiteIdFn,
 	}
 }
 
@@ -196,6 +202,16 @@ func (p *siteProxy) getLocation(ctx context.Context, locationId string) (*platfo
 // getTelephonyMediaregions retrieves the Genesys Cloud media regions
 func (p *siteProxy) getTelephonyMediaregions(ctx context.Context) (*platformclientv2.Mediaregions, error) {
 	return p.getTelephonyMediaregionsAttr(ctx, p)
+}
+
+// setDefaultSite sets a Genesys Cloud Site as the default site for the org
+func (p *siteProxy) setDefaultSite(ctx context.Context, siteId string) error {
+	return p.setDefaultSiteAttr(ctx, p, siteId)
+}
+
+// getDefaultSiteId gets the default Site for the Genesys Cloud org
+func (p *siteProxy) getDefaultSiteId(ctx context.Context) (siteId string, err error) {
+	return p.getDefaultSiteIdAttr(ctx, p)
 }
 
 // getAllManagedSitesFn is an implementation function for retrieving all Genesys Cloud Outbound managed Sites
@@ -407,4 +423,32 @@ func getTelephonyMediaregionsFn(ctx context.Context, p *siteProxy) (*platformcli
 	}
 
 	return telephonyRegions, nil
+}
+
+// setDefaultSiteFn is an implementation function for setting the default Site of a Genesys Cloud org
+func setDefaultSiteFn(ctx context.Context, p *siteProxy, siteId string) error {
+	org, _, err := p.organizationApi.GetOrganizationsMe()
+	if err != nil {
+		return err
+	}
+
+	// Update org details
+	*org.DefaultSiteId = siteId
+
+	_, _, err = p.organizationApi.PutOrganizationsMe(*org)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// getDefaultSiteIdFn is an implementation function for getting the default Site of a Genesys Cloud org
+func getDefaultSiteIdFn(ctx context.Context, p *siteProxy) (string, error) {
+	org, _, err := p.organizationApi.GetOrganizationsMe()
+	if err != nil {
+		return "", err
+	}
+
+	return *org.DefaultSiteId, nil
 }

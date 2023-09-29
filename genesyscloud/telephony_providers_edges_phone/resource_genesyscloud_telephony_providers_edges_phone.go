@@ -131,9 +131,9 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		currentPhone, resp, getErr := pp.getPhoneById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read phone %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read phone %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read phone %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone())

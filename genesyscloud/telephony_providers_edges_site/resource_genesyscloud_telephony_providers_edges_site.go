@@ -52,6 +52,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	mediaModel := d.Get("media_model").(string)
 	description := d.Get("description").(string)
 	mediaRegionsUseLatencyBased := d.Get("media_regions_use_latency_based").(bool)
+	setAsDefault := d.Get("set_as_default_site").(bool)
 	edgeAutoUpdateConfig, err := buildSdkEdgeAutoUpdateConfig(d)
 
 	if err != nil {
@@ -133,6 +134,15 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	log.Printf("Created site %s", *site.Id)
+
+	if setAsDefault {
+		log.Printf("Setting default site to %s", *site.Id)
+		err := sp.setDefaultSite(ctx, *site.Id)
+		if err != nil {
+			return diag.Errorf("unable to set default site to %s. err: %v", *site.Id, err)
+		}
+	}
+
 	return readSite(ctx, d, meta)
 }
 
@@ -182,6 +192,12 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return retryErr
 		}
 
+		defaultSiteId, err := sp.getDefaultSiteId(ctx)
+		if err != nil {
+			return retry.NonRetryableError(fmt.Errorf("failed to get default site id: %v", err))
+		}
+		d.Set("set_as_default_site", defaultSiteId == *currentSite.Id)
+
 		log.Printf("Read site %s %s", d.Id(), *currentSite.Name)
 		return cc.CheckState()
 	})
@@ -196,6 +212,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	mediaModel := d.Get("media_model").(string)
 	description := d.Get("description").(string)
 	mediaRegionsUseLatencyBased := d.Get("media_regions_use_latency_based").(bool)
+	setAsDefault := d.Get("set_as_default_site").(bool)
 	edgeAutoUpdateConfig, err := buildSdkEdgeAutoUpdateConfig(d)
 	primarySites := lists.InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
 	secondarySites := lists.InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
@@ -284,6 +301,14 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	diagErr = updateSiteOutboundRoutes(d, sp, ctx)
 	if diagErr != nil {
 		return diagErr
+	}
+
+	if setAsDefault {
+		log.Printf("Setting default site to %s", *site.Id)
+		err := sp.setDefaultSite(ctx, *site.Id)
+		if err != nil {
+			return diag.Errorf("unable to set default site to %s. err: %v", *site.Id, err)
+		}
 	}
 
 	log.Printf("Updated site %s", *site.Id)

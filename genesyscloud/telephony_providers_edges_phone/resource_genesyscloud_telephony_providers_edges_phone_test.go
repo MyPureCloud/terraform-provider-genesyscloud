@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccResourcePhoneBasic(t *testing.T) {
-	t.Parallel()
 	var (
 		phoneRes    = "phone1234"
 		name1       = "test-phone_" + uuid.NewString()
@@ -64,9 +63,17 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		"",        // No certs
 	)
 
-	config1 := gcloud.GenerateOrganizationMe() +
-		user1 +
-		user2 +
+	_, err := gcloud.AuthorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	siteId, err := edgeSite.GetOrganizationDefaultSiteId()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config1 := gcloud.GenerateOrganizationMe() + user1 + user2 +
 		gcloud.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 			phoneBaseSettingsRes,
 			phoneBaseSettingsName,
@@ -76,7 +83,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		phoneRes,
 		name1,
 		stateActive,
-		"data.genesyscloud_organizations_me.me.default_site_id",
+		fmt.Sprintf("\"%s\"", siteId),
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
 		nil, // no line addresses
 		"genesyscloud_user." + userRes1 + ".id",
@@ -96,9 +103,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 	)
 
 	// Update phone with new user and name
-	config2 := gcloud.GenerateOrganizationMe() +
-		user1 +
-		user2 +
+	config2 := gcloud.GenerateOrganizationMe() + user1 + user2 +
 		gcloud.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 			phoneBaseSettingsRes,
 			phoneBaseSettingsName,
@@ -108,7 +113,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		phoneRes,
 		name2,
 		stateActive,
-		"data.genesyscloud_organizations_me.me.default_site_id",
+		fmt.Sprintf("\"%s\"", siteId),
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
 		nil, // no line addresses
 		"genesyscloud_user." + userRes2 + ".id",
@@ -136,7 +141,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "state", stateActive),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "site_id", "data.genesyscloud_organizations_me.me", "default_site_id"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "site_id", siteId),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "phone_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "line_base_settings_id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "web_rtc_user_id", "genesyscloud_user."+userRes1, "id"),
@@ -156,7 +161,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "state", stateActive),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "site_id", "data.genesyscloud_organizations_me.me", "default_site_id"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "site_id", siteId),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "phone_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "line_base_settings_id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "web_rtc_user_id", "genesyscloud_user."+userRes2, "id"),

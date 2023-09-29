@@ -245,6 +245,12 @@ func ResourceSite() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"set_as_default_site": {
+				Description: `Set this site as the default site for the organization. Only one genesyscloud_telephony_providers_edges_site resource should be set as the default.`,
+				Optional:    true,
+				Default:     false,
+				Type:        schema.TypeBool,
+			},
 		},
 	}
 }
