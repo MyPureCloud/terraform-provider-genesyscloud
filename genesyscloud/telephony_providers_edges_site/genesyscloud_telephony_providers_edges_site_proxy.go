@@ -437,7 +437,7 @@ func setDefaultSiteFn(ctx context.Context, p *siteProxy, siteId string) error {
 
 	_, _, err = p.organizationApi.PutOrganizationsMe(*org)
 	if err != nil {
-		return err
+		return fmt.Errorf("error on setting default site. Make sure only one resource has the `set_as_default_site` set to true. %v", err)
 	}
 
 	return nil
