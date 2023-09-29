@@ -8,11 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -25,12 +24,6 @@ import (
 )
 
 var (
-	mediaSettingsKeyCall     = "call"
-	mediaSettingsKeyCallback = "callback"
-	mediaSettingsKeyChat     = "chat"
-	mediaSettingsKeyEmail    = "email"
-	mediaSettingsKeyMessage  = "message"
-
 	bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
 	memberGroupResource = &schema.Resource{
