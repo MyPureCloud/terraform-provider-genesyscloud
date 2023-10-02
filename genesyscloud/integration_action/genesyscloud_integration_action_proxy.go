@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 /*
