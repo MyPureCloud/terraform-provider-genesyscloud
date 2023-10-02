@@ -27,7 +27,7 @@ func GenerateIvrConfigResource(ivrConfig *IvrConfigStruct) string {
 
 	divisionId := ""
 	if ivrConfig.DivisionId != "" {
-		divisionId = "division_id = " + ivrConfig.DivisionId
+		divisionId = ivrConfig.DivisionId
 	} else {
 		divisionId = "null"
 	}
