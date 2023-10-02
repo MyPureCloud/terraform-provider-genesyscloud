@@ -6,6 +6,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/util/architectlanguages"
 )
 
 /*
@@ -31,14 +32,19 @@ func ResourceArchitectGrammar() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			`file_name`: {
 				Description: "The name of the file as defined by the user",
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			`file_type`: {
 				Description:  "The extension of the file",
-				Optional:     true,
+				Required:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{"Gram", "Grxml"}, true),
+			},
+			"file_content_hash": {
+				Description: "Hash value of the file content. Used to detect changes.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 		},
 	}
@@ -46,19 +52,20 @@ func ResourceArchitectGrammar() *schema.Resource {
 	grammarLangaugeResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`language`: {
-				Description: "",
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  "Language name. (eg. en-us)",
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice(architectlanguages.Languages, false),
 			},
 			`voice_file_data`: {
-				Description: "Additional information about the associated voice file",
+				Description: "Information about the associated voice file",
 				Optional:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        grammarLanguageFileMetadataResource,
 			},
 			`dtmf_file_data`: {
-				Description: "Additional information about the associated dtmf file",
+				Description: "Information about the associated dtmf file",
 				Optional:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,

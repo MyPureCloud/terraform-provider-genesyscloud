@@ -2,7 +2,7 @@ package architect_grammar
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"

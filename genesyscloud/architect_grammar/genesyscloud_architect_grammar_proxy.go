@@ -3,9 +3,8 @@ package architect_grammar
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 	"io"
 	"log"
 	"mime/multipart"
@@ -30,6 +29,7 @@ type getAllArchitectGrammarFunc func(ctx context.Context, p *architectGrammarPro
 type getArchitectGrammarByIdFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string) (grammar *platformclientv2.Grammar, responseCode int, err error)
 type getArchitectGrammarIdByNameFunc func(ctx context.Context, p *architectGrammarProxy, name string) (grammarId string, retryable bool, err error)
 type updateArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, error)
+type updateArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string, languageCode string, language *platformclientv2.Grammarlanguageupdate) (*platformclientv2.Grammarlanguage, error)
 type deleteArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string) (responseCode int, err error)
 type uploadGrammarLanguageFileFunc func(p *architectGrammarProxy, grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest) (err error)
 
@@ -43,6 +43,7 @@ type architectGrammarProxy struct {
 	getArchitectGrammarByIdAttr        getArchitectGrammarByIdFunc
 	getArchitectGrammarIdByNameAttr    getArchitectGrammarIdByNameFunc
 	updateArchitectGrammarAttr         updateArchitectGrammarFunc
+	updateArchitectGrammarLanguageAttr updateArchitectGrammarLanguageFunc
 	deleteArchitectGrammarAttr         deleteArchitectGrammarFunc
 	uploadGrammarLanguageFileAttr      uploadGrammarLanguageFileFunc
 }
@@ -59,6 +60,7 @@ func newArchitectGrammarProxy(clientConfig *platformclientv2.Configuration) *arc
 		getArchitectGrammarByIdAttr:        getArchitectGrammarByIdFn,
 		getArchitectGrammarIdByNameAttr:    getArchitectGrammarIdByNameFn,
 		updateArchitectGrammarAttr:         updateArchitectGrammarFn,
+		updateArchitectGrammarLanguageAttr: updateArchitectGrammarLanguageFn,
 		deleteArchitectGrammarAttr:         deleteArchitectGrammarFn,
 		uploadGrammarLanguageFileAttr:      uploadGrammarLanguageFileFn,
 	}
@@ -102,6 +104,11 @@ func (p *architectGrammarProxy) getArchitectGrammarIdByName(ctx context.Context,
 // updateArchitectGrammar updates a Genesys Cloud Architect Grammar
 func (p *architectGrammarProxy) updateArchitectGrammar(ctx context.Context, grammarId string, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, error) {
 	return p.updateArchitectGrammarAttr(ctx, p, grammarId, grammar)
+}
+
+// updateArchitectGrammarLanguage updates a Genesys Cloud Architect Grammarlanguage for a grammar
+func (p *architectGrammarProxy) updateArchitectGrammarLanguage(ctx context.Context, grammarId string, languageCode string, language *platformclientv2.Grammarlanguageupdate) (*platformclientv2.Grammarlanguage, error) {
+	return p.updateArchitectGrammarLanguageAttr(ctx, p, grammarId, languageCode, language)
 }
 
 // deleteArchitectGrammar deletes a Genesys Cloud Architect Grammar by Id
@@ -200,6 +207,16 @@ func updateArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 	return grammar, nil
 }
 
+// updateArchitectGrammarLanguageFn is an implementation function for updating a Genesys Cloud Architect Grammarlanguage
+func updateArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarProxy, grammarId string, languageCode string, language *platformclientv2.Grammarlanguageupdate) (*platformclientv2.Grammarlanguage, error) {
+	languageSDK, _, err := p.architectApi.PatchArchitectGrammarLanguage(grammarId, languageCode, *language)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to update grammar language: %s", err)
+	}
+
+	return languageSDK, nil
+}
+
 // deleteArchitectGrammarFn is an implementation function for deleting a Genesys Cloud Architect Grammar
 func deleteArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, grammarId string) (statusCode int, err error) {
 	_, resp, err := p.architectApi.DeleteArchitectGrammar(grammarId)
@@ -208,15 +225,6 @@ func deleteArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 	}
 
 	return resp.StatusCode, nil
-}
-
-// Function to format JSON response - Go
-func formatJSON(input any) string {
-	output, err := json.MarshalIndent(input, "", "	")
-	if err != nil {
-		fmt.Println(err)
-	}
-	return string(output)
 }
 
 // uploadGrammarLanguageFileFn is an implementation function for deleting a Genesys Cloud Architect Grammar
