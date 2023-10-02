@@ -22,7 +22,7 @@ func TestAccResourceRoutingLanguageBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingLanguageResource(
+				Config: GenerateRoutingLanguageResource(
 					langResource1,
 					langName1,
 				),
@@ -39,15 +39,6 @@ func TestAccResourceRoutingLanguageBasic(t *testing.T) {
 		},
 		CheckDestroy: testVerifyLanguagesDestroyed,
 	})
-}
-
-func generateRoutingLanguageResource(
-	resourceID string,
-	name string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_language" "%s" {
-		name = "%s"
-	}
-	`, resourceID, name)
 }
 
 func testVerifyLanguagesDestroyed(state *terraform.State) error {

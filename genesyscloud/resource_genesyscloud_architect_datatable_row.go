@@ -106,7 +106,7 @@ func ResourceArchitectDatatableRow() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				DiffSuppressFunc: suppressEquivalentJsonDiffs,
+				DiffSuppressFunc: SuppressEquivalentJsonDiffs,
 			},
 		},
 		CustomizeDiff: customizeDatatableRowDiff,

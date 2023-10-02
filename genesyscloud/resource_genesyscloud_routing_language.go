@@ -150,3 +150,12 @@ func deleteRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 		return retry.RetryableError(fmt.Errorf("Routing language %s still exists", d.Id()))
 	})
 }
+
+func GenerateRoutingLanguageResource(
+	resourceID string,
+	name string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_language" "%s" {
+		name = "%s"
+	}
+	`, resourceID, name)
+}

@@ -1360,3 +1360,12 @@ func generateUserResource(
 	}
 	`, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
 }
+
+func GenerateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
+}

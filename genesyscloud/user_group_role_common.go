@@ -174,7 +174,7 @@ func roleDivPairsToGrants(grantPairs []string) platformclientv2.Roledivisiongran
 }
 
 // Testing common
-func generateResourceRoles(skillID string, divisionIds ...string) string {
+func GenerateResourceRoles(skillID string, divisionIds ...string) string {
 	var divAttr string
 	if len(divisionIds) > 0 {
 		divAttr = "division_ids = [" + strings.Join(divisionIds, ",") + "]"

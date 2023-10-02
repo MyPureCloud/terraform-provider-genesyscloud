@@ -7,12 +7,16 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
+	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
+	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	obwm "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
+	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
@@ -82,18 +86,22 @@ func registerResources() {
 
 	regInstance := &RegisterInstance{}
 
-	pat.SetRegistrar(regInstance)            //Registering process automation triggers
-	obs.SetRegistrar(regInstance)            //Resistering outbound ruleset
-	ob.SetRegistrar(regInstance)             //Registering outbound
-	obwm.SetRegistrar(regInstance)           //Registering outbound wrapup code mappings
-	gcloud.SetRegistrar(regInstance)         //Registering genesyscloud
-	obAttemptLimit.SetRegistrar(regInstance) //Registering outbound attempt limit
-	obContactList.SetRegistrar(regInstance)  //Registering outbound contact list
-	scripts.SetRegistrar(regInstance)        //Registering Scripts
-	smsAddresses.SetRegistrar(regInstance)   //Registering routing sms addresses
-	did.SetRegistrar(regInstance)            //Registering telephony did
-	didPool.SetRegistrar(regInstance)        //Registering telephony did pools
-	archIvr.SetRegistrar(regInstance)        //Registering architect ivr
+	pat.SetRegistrar(regInstance)               //Registering process automation triggers
+	obs.SetRegistrar(regInstance)               //Resistering outbound ruleset
+	ob.SetRegistrar(regInstance)                //Registering outbound
+	obwm.SetRegistrar(regInstance)              //Registering outbound wrapup code mappings
+	gcloud.SetRegistrar(regInstance)            //Registering genesyscloud
+	obAttemptLimit.SetRegistrar(regInstance)    //Registering outbound attempt limit
+	obContactList.SetRegistrar(regInstance)     //Registering outbound contact list
+	scripts.SetRegistrar(regInstance)           //Registering Scripts
+	smsAddresses.SetRegistrar(regInstance)      //Registering routing sms addresses
+	integration.SetRegistrar(regInstance)       //Registering integrations
+	integrationAction.SetRegistrar(regInstance) //Registering integrations actions
+	integrationCred.SetRegistrar(regInstance)   //Registering integrations credentials
+	recMediaRetPolicy.SetRegistrar(regInstance) //Registering recording media retention policies
+	did.SetRegistrar(regInstance)               //Registering telephony did
+	didPool.SetRegistrar(regInstance)           //Registering telephony did pools
+	archIvr.SetRegistrar(regInstance)           //Registering architect ivr
 
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters

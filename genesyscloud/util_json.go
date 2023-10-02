@@ -11,7 +11,7 @@ import (
 
 // SuppressDiffFunc for properties that will accept JSON strings
 // Any null property in the 'new' json is removed(deeply) prior to deep comparison
-func suppressEquivalentJsonDiffs(k, old, new string, d *schema.ResourceData) bool {
+func SuppressEquivalentJsonDiffs(k, old, new string, d *schema.ResourceData) bool {
 	if old == new {
 		return true
 	}
@@ -89,7 +89,7 @@ func interfaceToJson(val interface{}) (string, error) {
 	return string(j), nil
 }
 
-func jsonStringToInterface(jsonStr string) (interface{}, error) {
+func JsonStringToInterface(jsonStr string) (interface{}, error) {
 	var obj interface{}
 	err := json.Unmarshal([]byte(jsonStr), &obj)
 	if err != nil {

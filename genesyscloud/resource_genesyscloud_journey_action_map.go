@@ -315,7 +315,7 @@ var (
 				Description:      "Custom fields defined in the schema referenced by the open action type selected.",
 				Type:             schema.TypeString,
 				Optional:         true,
-				DiffSuppressFunc: suppressEquivalentJsonDiffs,
+				DiffSuppressFunc: SuppressEquivalentJsonDiffs,
 			},
 		},
 	}
@@ -829,7 +829,7 @@ func buildSdkOpenActionFields(openActionFieldsMap map[string]interface{}) *platf
 
 	configurationFieldsString := stringmap.GetNonDefaultValue[string](openActionFieldsMap, "configuration_fields")
 	if configurationFieldsString != nil {
-		configurationFieldsInterface, err := jsonStringToInterface(*configurationFieldsString)
+		configurationFieldsInterface, err := JsonStringToInterface(*configurationFieldsString)
 		if err != nil {
 			log.Printf("Error unmarshalling '%s': %v", "configuration_fields", err)
 		}

@@ -21,7 +21,7 @@ func TestAccDataSourceAuthRole(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateAuthRoleResource(
+				Config: GenerateAuthRoleResource(
 					roleResource,
 					roleName,
 					roleDesc,
