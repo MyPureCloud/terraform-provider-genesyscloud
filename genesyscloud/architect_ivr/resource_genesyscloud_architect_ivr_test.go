@@ -28,9 +28,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 
 	// did pool cleanup
 	defer func() {
-		_, err := gcloud.AuthorizeSdk()
-		if err != nil {
-			t.Log(err)
+		if _, err := gcloud.AuthorizeSdk(); err != nil {
 			return
 		}
 		ctx := context.TODO()
@@ -107,9 +105,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 
 	// did pool cleanup
 	defer func() {
-		_, err := gcloud.AuthorizeSdk()
-		if err != nil {
-			t.Log(err)
+		if _, err := gcloud.AuthorizeSdk(); err != nil {
 			return
 		}
 		ctx := context.TODO()
@@ -240,9 +236,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 
 	// did pool cleanup
 	defer func() {
-		_, err := gcloud.AuthorizeSdk()
-		if err != nil {
-			t.Log(err)
+		if _, err := gcloud.AuthorizeSdk(); err != nil {
 			return
 		}
 		ctx := context.TODO()

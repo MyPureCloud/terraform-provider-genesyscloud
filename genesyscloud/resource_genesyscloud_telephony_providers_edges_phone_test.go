@@ -191,9 +191,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 	}
 	defer func() {
 		ctx := context.TODO()
-		if err := didPool.DeleteDidPoolWithStartAndEndNumber(ctx, number, number); err != nil {
-			t.Log(err)
-		}
+		_ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, number, number)
 	}()
 	lineAddresses := []string{number}
 	phoneRes := "phone_standalone1234"

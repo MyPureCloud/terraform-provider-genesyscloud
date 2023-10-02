@@ -19,16 +19,13 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolStartPhoneNumber1 := "+14175540014"
 	didPoolEndPhoneNumber1 := "+14175540015"
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	// did pool cleanup
 	defer func() {
-		ctx := context.TODO()
-		if err := DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber1, didPoolEndPhoneNumber1); err != nil {
-			t.Log(err)
+		if _, err := gcloud.AuthorizeSdk(); err != nil {
+			return
 		}
+		ctx := context.TODO()
+		_ = DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber1, didPoolEndPhoneNumber1)
 	}()
 
 	didPoolDescription1 := "Test description"

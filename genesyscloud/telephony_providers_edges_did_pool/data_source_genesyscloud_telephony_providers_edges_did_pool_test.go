@@ -17,16 +17,13 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 		didPoolDataRes          = "didPoolData"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	// did pool cleanup
 	defer func() {
-		ctx := context.TODO()
-		if err := DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber); err != nil {
-			t.Log(err)
+		if _, err := gcloud.AuthorizeSdk(); err != nil {
+			return
 		}
+		ctx := context.TODO()
+		_ = DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
 	}()
 
 	resource.Test(t, resource.TestCase{
