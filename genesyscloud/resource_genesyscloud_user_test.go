@@ -874,6 +874,59 @@ func TestAccResourceUserRestore(t *testing.T) {
 	})
 }
 
+func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
+	t.Parallel()
+	var (
+		userResource1 = "test-user"
+		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		userName1     = "Terraform Existing"
+		userName2     = "Terraform Create"
+		stateActive   = "active"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create a basic user
+				Config: GenerateBasicUserResource(
+					userResource1,
+					email1,
+					userName1,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName1),
+				),
+			},
+			{
+				Config: GenerateBasicUserResource(
+					userResource1,
+					email1,
+					userName1,
+				),
+				Destroy: true, // Delete the user
+				Check:   testVerifyUsersDestroyed,
+			},
+			{
+				// Restore the same user email but set a different name
+				Config: GenerateBasicUserResource(
+					userResource1,
+					email1,
+					userName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "state", stateActive),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
 func testVerifyUsersDestroyed(state *terraform.State) error {
 	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {
