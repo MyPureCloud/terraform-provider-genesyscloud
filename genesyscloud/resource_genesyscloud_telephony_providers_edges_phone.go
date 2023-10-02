@@ -532,7 +532,9 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		phones, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+		// unlocks result limit
+		const sortBy = "id"
+		phones, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of phones: %v", getErr)
 		}
