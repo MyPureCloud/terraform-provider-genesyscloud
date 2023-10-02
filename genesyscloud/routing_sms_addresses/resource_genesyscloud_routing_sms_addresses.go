@@ -113,7 +113,7 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 		resourcedata.SetNillableValue(d, "postal_code", sdkSmsAddress.PostalCode)
 		resourcedata.SetNillableValue(d, "country_code", sdkSmsAddress.CountryCode)
 
-		log.Printf("Read Routing Sms Address %s %s", d.Id(), *sdkSmsAddress.Name)
+		log.Printf("Read Routing Sms Address %s", d.Id())
 		return cc.CheckState()
 	})
 }
