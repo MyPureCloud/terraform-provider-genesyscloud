@@ -47,8 +47,8 @@ type IntegrationAction struct {
 	Version       *int                           `json:"version,omitempty"`
 }
 
-// buildSdkActionContract takes the resource data and builds the custom ActionContract from it
-func buildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagnostics) {
+// BuildSdkActionContract takes the resource data and builds the custom ActionContract from it
+func BuildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagnostics) {
 	configInput := d.Get("contract_input").(string)
 	inputVal, err := gcloud.JsonStringToInterface(configInput)
 	if err != nil {
@@ -68,11 +68,11 @@ func buildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagn
 }
 
 // buildSdkActionConfig takes the resource data and builds the SDK platformclientv2.Actionconfig from it
-func buildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig {
+func BuildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig {
 	ConfigTimeoutSeconds := d.Get("config_timeout_seconds").(int)
 	ActionConfig := &platformclientv2.Actionconfig{
-		Request:  buildSdkActionConfigRequest(d),
-		Response: buildSdkActionConfigResponse(d),
+		Request:  BuildSdkActionConfigRequest(d),
+		Response: BuildSdkActionConfigResponse(d),
 	}
 
 	if ConfigTimeoutSeconds > 0 {
@@ -83,7 +83,7 @@ func buildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig
 }
 
 // buildSdkActionConfigRequest takes the resource data and builds the SDK platformclientv2.Requestconfig from it
-func buildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Requestconfig {
+func BuildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Requestconfig {
 	if configRequest := d.Get("config_request"); configRequest != nil {
 		if configList := configRequest.([]interface{}); len(configList) > 0 {
 			configMap := configList[0].(map[string]interface{})
@@ -110,7 +110,7 @@ func buildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Reque
 }
 
 // buildSdkActionConfigResponse takes the resource data and builds the SDK platformclientv2.Responseconfig from it
-func buildSdkActionConfigResponse(d *schema.ResourceData) *platformclientv2.Responseconfig {
+func BuildSdkActionConfigResponse(d *schema.ResourceData) *platformclientv2.Responseconfig {
 	if configResponse := d.Get("config_response"); configResponse != nil {
 		if configList := configResponse.([]interface{}); len(configList) > 0 {
 			configMap := configList[0].(map[string]interface{})
@@ -155,7 +155,7 @@ func flattenActionContract(schema interface{}) (string, diag.Diagnostics) {
 }
 
 // flattenActionConfigRequest converts the platformclientv2.Requestconfig into a map
-func flattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []interface{} {
+func FlattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []interface{} {
 	requestMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(requestMap, "request_url_template", sdkRequest.RequestUrlTemplate)
@@ -166,8 +166,8 @@ func flattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []int
 	return []interface{}{requestMap}
 }
 
-// flattenActionConfigResponse converts the the platformclientv2.Responseconfig into a map
-func flattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []interface{} {
+// FlattenActionConfigResponse converts the the platformclientv2.Responseconfig into a map
+func FlattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []interface{} {
 	responseMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(responseMap, "translation_map", sdkResponse.TranslationMap)

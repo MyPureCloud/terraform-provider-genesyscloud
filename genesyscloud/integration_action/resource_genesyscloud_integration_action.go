@@ -73,7 +73,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Creating integration action %s", name)
 
-	actionContract, diagErr := buildSdkActionContract(d)
+	actionContract, diagErr := BuildSdkActionContract(d)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -85,7 +85,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 			IntegrationId: &integrationId,
 			Secure:        &secure,
 			Contract:      actionContract,
-			Config:        buildSdkActionConfig(d),
+			Config:        BuildSdkActionConfig(d),
 		})
 		if err != nil {
 			return resp, diag.Errorf("Failed to create integration action %s: %s", name, err)
@@ -167,14 +167,14 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 		if action.Config != nil && action.Config.Request != nil {
 			action.Config.Request.RequestTemplate = reqTemp
-			d.Set("config_request", flattenActionConfigRequest(*action.Config.Request))
+			d.Set("config_request", FlattenActionConfigRequest(*action.Config.Request))
 		} else {
 			d.Set("config_request", nil)
 		}
 
 		if action.Config != nil && action.Config.Response != nil {
 			action.Config.Response.SuccessTemplate = successTemp
-			d.Set("config_response", flattenActionConfigResponse(*action.Config.Response))
+			d.Set("config_response", FlattenActionConfigResponse(*action.Config.Response))
 		} else {
 			d.Set("config_response", nil)
 		}
@@ -205,7 +205,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 			Name:     &name,
 			Category: &category,
 			Version:  action.Version,
-			Config:   buildSdkActionConfig(d),
+			Config:   BuildSdkActionConfig(d),
 		})
 		if err != nil {
 			return resp, diag.Errorf("Failed to update integration action %s: %s", name, err)
