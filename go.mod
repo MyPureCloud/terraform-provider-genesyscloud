@@ -12,6 +12,7 @@ require (
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mypurecloud/platform-client-sdk-go/v112 v112.0.0
 	github.com/nyaruka/phonenumbers v1.1.8
+	github.com/rjNemo/underscore v0.6.1
 	github.com/zclconf/go-cty v1.14.0
 	gonum.org/v1/gonum v0.14.0
 )
@@ -22,7 +23,6 @@ require (
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rjNemo/underscore v0.6.1 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
