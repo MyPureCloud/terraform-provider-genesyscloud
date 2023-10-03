@@ -39,7 +39,7 @@ func ResourceArchitectGrammar() *schema.Resource {
 				Description:  "The extension of the file",
 				Required:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"Gram", "Grxml"}, true),
+				ValidateFunc: validation.StringInSlice([]string{"Gram", "Grxml"}, false),
 			},
 			"file_content_hash": {
 				Description: "Hash value of the file content. Used to detect changes.",

@@ -18,18 +18,42 @@ const (
 	Voice
 )
 
-func TestAccResourceArchitectGrammarBasic(t *testing.T) {
+func TestAccResourceArchitectGrammarGrxml(t *testing.T) {
+	var (
+		languageCode1 = "en-us"
+		voiceGrxml1   = generateFilePath("voice-grxml-01.grxml")
+		dtmfGrxml1    = generateFilePath("dtmf-grxml-01.grxml")
+		language1     = generateGrammarLanguageBlock(
+			languageCode1,
+			generateFileVoiceFileDataBlock(
+				voiceGrxml1,
+				"Grxml",
+			),
+			generateFileDtmfFileDataBlock(
+				dtmfGrxml1,
+				"Grxml",
+			),
+		)
+		languageCode2 = "es-ar"
+		voiceGrxml2   = generateFilePath("voice-grxml-02.grxml")
+		dtmfGrxml2    = generateFilePath("dtmf-grxml-02.grxml")
+		language2     = generateGrammarLanguageBlock(
+			languageCode2,
+			generateFileVoiceFileDataBlock(
+				voiceGrxml2,
+				"Grxml",
+			),
+			generateFileDtmfFileDataBlock(
+				dtmfGrxml2,
+				"Grxml",
+			),
+		)
+	)
+
 	var (
 		resourceId   = "grammar" + uuid.NewString()
 		name1        = "Test grammar " + uuid.NewString()
 		description1 = "Test description"
-		language1    = generateGrammarLanguageBlock(
-			"en-us",
-			generateFileVoiceFileDataBlock(
-				"../../test/data/resource/architect_grammar/test-voice-grxml-file.grxml",
-				"Grxml",
-			),
-		)
 		name2        = "Test grammar " + uuid.NewString()
 		description2 = "A new description"
 	)
@@ -49,10 +73,13 @@ func TestAccResourceArchitectGrammarBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "description", description1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.language", "en-us"),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_name", "../../test/data/resource/architect_grammar/test-voice-grxml-file.grxml"),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.language", languageCode1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_name", voiceGrxml1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_type", "Grxml"),
-					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Voice, "../../test/data/resource/architect_grammar/test-voice-grxml-file.grxml"),
+					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Voice, voiceGrxml1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.dtmf_file_data.0.file_name", dtmfGrxml1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.dtmf_file_data.0.file_type", "Grxml"),
+					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Dtmf, dtmfGrxml1),
 				),
 			},
 			{
@@ -61,11 +88,18 @@ func TestAccResourceArchitectGrammarBasic(t *testing.T) {
 					resourceId,
 					name2,
 					description2,
-					language1,
+					language2,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "description", description2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.language", languageCode2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_name", voiceGrxml2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_type", "Grxml"),
+					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Voice, voiceGrxml2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.dtmf_file_data.0.file_name", dtmfGrxml2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.dtmf_file_data.0.file_type", "Grxml"),
+					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Dtmf, dtmfGrxml2),
 				),
 			},
 			{
@@ -179,4 +213,10 @@ func testVerifyGrammarDestroyed(state *terraform.State) error {
 	}
 	// Success. All grammars deleted
 	return nil
+}
+
+func generateFilePath(filename string) string {
+	testFolder := "../../test/data/resource/architect_grammar/"
+
+	return testFolder + filename
 }

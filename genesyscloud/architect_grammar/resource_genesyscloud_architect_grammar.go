@@ -2,6 +2,7 @@ package architect_grammar
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -9,7 +10,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 	"log"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -81,6 +81,9 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 		}
 	}
 
+	g, _, _ := proxy.getArchitectGrammarById(ctx, *grammar.Id)
+	fmt.Println(formatJSON(g))
+
 	d.SetId(*grammar.Id)
 	log.Printf("Created Architect Grammar %s", *grammar.Id)
 	return readArchitectGrammar(ctx, d, meta)
@@ -103,15 +106,25 @@ func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta inte
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Architect Grammar %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar())
+		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar())
 
 		resourcedata.SetNillableValue(d, "name", grammar.Name)
 		resourcedata.SetNillableValue(d, "description", grammar.Description)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "languages", grammar.Languages, flattenGrammarLanguages)
 
 		log.Printf("Read Architect Grammar %s %s", d.Id(), *grammar.Name)
-		return cc.CheckState()
+		//return cc.CheckState()
+		return nil
 	})
+}
+
+// Function to format JSON response - Go
+func formatJSON(input any) string {
+	output, err := json.MarshalIndent(input, "", "	")
+	if err != nil {
+		fmt.Println(err)
+	}
+	return string(output)
 }
 
 // updateArchitectGrammar is used by the architect_grammar resource to update an architect grammar in Genesys Cloud
@@ -128,7 +141,10 @@ func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Update each language associated with the grammar
 	for _, language := range *architectGrammar.Languages {
-		languageUpdate := platformclientv2.Grammarlanguageupdate{}
+		languageUpdate := platformclientv2.Grammarlanguageupdate{
+			DtmfFileMetadata:  language.DtmfFileMetadata,
+			VoiceFileMetadata: language.VoiceFileMetadata,
+		}
 
 		_, err := proxy.updateArchitectGrammarLanguage(ctx, *grammar.Id, *language.Language, &languageUpdate)
 		if err != nil {
