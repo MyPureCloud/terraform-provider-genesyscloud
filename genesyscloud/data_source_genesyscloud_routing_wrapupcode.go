@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func DataSourceRoutingWrapupcode() *schema.Resource {
@@ -34,7 +34,7 @@ func dataSourceRoutingWrapupcodeRead(ctx context.Context, d *schema.ResourceData
 
 	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
-			wrapCode, _, getErr := routingAPI.GetRoutingWrapupcodes(100, pageNum, "", "", []string{}, name, []string{})
+			wrapCode, _, getErr := routingAPI.GetRoutingWrapupcodes(100, pageNum, "", "", name, []string{}, []string{})
 
 			if getErr != nil {
 				return retry.NonRetryableError(fmt.Errorf("Error requesting wrap-up code %s: %s", name, getErr))
