@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -242,6 +241,10 @@ func escapeRune(s string) string {
 // https://www.terraform.io/docs/language/syntax/configuration.html#identifiers
 var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
 
+// Resource names must start with a letter or underscore
+// https://www.terraform.io/docs/language/syntax/configuration.html#identifiers
+var unsafeNameStartingChars = regexp.MustCompile(`[^A-Za-z_]`)
+
 func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
 	for _, meta := range idMetaMap {
 		meta.Name = SanitizeResourceName(meta.Name)
@@ -257,7 +260,7 @@ func SanitizeResourceName(inputName string) string {
 		algorithm.Write([]byte(inputName))
 		name = name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 	}
-	if unicode.IsDigit(rune(name[0])) {
+	if unsafeNameStartingChars.MatchString(string(rune(name[0]))) {
 		// Terraform does not allow names to begin with a number. Prefix with an underscore instead
 		name = "_" + name
 	}

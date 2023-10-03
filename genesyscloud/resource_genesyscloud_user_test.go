@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func TestAccResourceUserBasic(t *testing.T) {
@@ -867,6 +867,59 @@ func TestAccResourceUserRestore(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName2),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
+func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
+	t.Parallel()
+	var (
+		userResource1 = "test-user"
+		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		userName1     = "Terraform Existing"
+		userName2     = "Terraform Create"
+		stateActive   = "active"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create a basic user
+				Config: GenerateBasicUserResource(
+					userResource1,
+					email1,
+					userName1,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName1),
+				),
+			},
+			{
+				Config: GenerateBasicUserResource(
+					userResource1,
+					email1,
+					userName1,
+				),
+				Destroy: true, // Delete the user
+				Check:   testVerifyUsersDestroyed,
+			},
+			{
+				// Restore the same user email but set a different name
+				Config: GenerateBasicUserResource(
+					userResource1,
+					email1,
+					userName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "state", stateActive),
 				),
 			},
 		},

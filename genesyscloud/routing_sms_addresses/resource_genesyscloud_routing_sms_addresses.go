@@ -16,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 const resourceName = "genesyscloud_routing_sms_address"
@@ -113,7 +113,7 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 		resourcedata.SetNillableValue(d, "postal_code", sdkSmsAddress.PostalCode)
 		resourcedata.SetNillableValue(d, "country_code", sdkSmsAddress.CountryCode)
 
-		log.Printf("Read Routing Sms Address %s %s", d.Id(), *sdkSmsAddress.Name)
+		log.Printf("Read Routing Sms Address %s", d.Id())
 		return cc.CheckState()
 	})
 }
