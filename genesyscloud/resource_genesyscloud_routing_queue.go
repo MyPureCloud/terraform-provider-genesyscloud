@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	chunksProcess "terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -1631,26 +1632,29 @@ func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.Rou
 }
 
 func updateMembersInChunks(queueID string, membersToUpdate []string, remove bool, api *platformclientv2.RoutingApi) diag.Diagnostics {
-	// API restricts member adds/removes to 100 per call
-	const maxBatchSize = 100
-	for i := 0; i < len(membersToUpdate); i += maxBatchSize {
-		end := i + maxBatchSize
-		if end > len(membersToUpdate) {
-			end = len(membersToUpdate)
-		}
-		var updateChunk []platformclientv2.Writableentity
-		for j := i; j < end; j++ {
-			updateChunk = append(updateChunk, platformclientv2.Writableentity{Id: &membersToUpdate[j]})
-		}
 
-		if len(updateChunk) > 0 {
-			_, err := api.PostRoutingQueueMembers(queueID, updateChunk, remove)
+	// API restricts member adds/removes to 100 per call
+	// Generic call to prepare chunks for the Update. Takes in three args
+	// 1. MemberstoUpdate 2. The Entity prepare func for the update 3. Chunk Size
+	if len(membersToUpdate) > 0 {
+		chunks := chunksProcess.ChunkItems(membersToUpdate, platformWritableEntityFunc, 100)
+		// Closure to process the chunks
+		chunkProcessor := func(chunk []platformclientv2.Writableentity) diag.Diagnostics {
+			_, err := api.PostRoutingQueueMembers(queueID, chunk, remove)
 			if err != nil {
 				return diag.Errorf("Failed to update members in queue %s: %s", queueID, err)
 			}
+			return nil
 		}
+		// Genric Function call which takes in the chunks and the processing function
+		return chunksProcess.ProcessChunks(chunks, chunkProcessor)
 	}
 	return nil
+
+}
+
+func platformWritableEntityFunc(val string) platformclientv2.Writableentity {
+	return platformclientv2.Writableentity{Id: &val}
 }
 
 func updateQueueUserRingNum(queueID string, userID string, ringNum int, api *platformclientv2.RoutingApi) diag.Diagnostics {
