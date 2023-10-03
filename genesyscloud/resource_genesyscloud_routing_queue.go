@@ -8,11 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -21,16 +20,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 var (
-	mediaSettingsKeyCall     = "call"
-	mediaSettingsKeyCallback = "callback"
-	mediaSettingsKeyChat     = "chat"
-	mediaSettingsKeyEmail    = "email"
-	mediaSettingsKeyMessage  = "message"
-
 	bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 
 	memberGroupResource = &schema.Resource{
@@ -56,6 +49,12 @@ var (
 				Type:         schema.TypeInt,
 				Required:     true,
 				ValidateFunc: validation.IntAtLeast(7),
+			},
+			"enable_auto_answer": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 			"service_level_percentage": {
 				Description:  "The desired Service Level. A float value between 0 and 1.",
@@ -353,11 +352,11 @@ func ResourceRoutingQueue() *schema.Resource {
 							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
 						},
 						"metric": {
-							Description:  "The queue metric being evaluated. Valid values: EstimatedWaitTime.",
+							Description:  "The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel",
 							Type:         schema.TypeString,
 							Optional:     true,
 							Default:      "EstimatedWaitTime",
-							ValidateFunc: validation.StringInSlice([]string{"EstimatedWaitTime"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"EstimatedWaitTime", "ServiceLevel"}, false),
 						},
 						"condition_value": {
 							Description:  "The limit value, beyond which a rule evaluates as true.",
@@ -939,11 +938,13 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 	settingsMap := settings[0].(map[string]interface{})
 
 	alertingTimeout := settingsMap["alerting_timeout_sec"].(int)
+	enableAutoAnswer := settingsMap["enable_auto_answer"].(bool)
 	serviceLevelPct := settingsMap["service_level_percentage"].(float64)
 	serviceLevelDur := settingsMap["service_level_duration_ms"].(int)
 
 	return &platformclientv2.Mediasettings{
 		AlertingTimeoutSeconds: &alertingTimeout,
+		EnableAutoAnswer:       &enableAutoAnswer,
 		ServiceLevel: &platformclientv2.Servicelevel{
 			Percentage: &serviceLevelPct,
 			DurationMs: &serviceLevelDur,
@@ -970,6 +971,13 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 func flattenMediaSetting(settings platformclientv2.Mediasettings) []interface{} {
 	settingsMap := make(map[string]interface{})
 	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
+
+	if settings.EnableAutoAnswer != nil {
+		settingsMap["enable_auto_answer"] = *settings.EnableAutoAnswer
+	} else {
+		settingsMap["enable_auto_answer"] = false
+	}
+
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
 	return []interface{}{settingsMap}
@@ -1836,13 +1844,14 @@ func GenerateRoutingQueueResourceBasicWithDepends(resourceID string, dependsOn s
 	`, resourceID, dependsOn, name, strings.Join(nestedBlocks, "\n"))
 }
 
-func GenerateMediaSettings(attrName string, alertingTimeout string, slPercent string, slDurationMs string) string {
+func GenerateMediaSettings(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string) string {
 	return fmt.Sprintf(`%s {
 		alerting_timeout_sec = %s
+		enable_auto_answer = %s
 		service_level_percentage = %s
 		service_level_duration_ms = %s
 	}
-	`, attrName, alertingTimeout, slPercent, slDurationMs)
+	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs)
 }
 
 func GenerateRoutingRules(operator string, threshold string, waitSeconds string) string {

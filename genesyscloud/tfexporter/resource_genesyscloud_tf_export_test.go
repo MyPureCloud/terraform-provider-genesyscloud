@@ -807,7 +807,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		nullValue,
 		"true",
 		"true",
-		gcloud.GenerateMediaSettings("media_settings_call", alertTimeoutSec, slPercentage, slDurationMs),
+		gcloud.GenerateMediaSettings("media_settings_call", alertTimeoutSec, falseValue, slPercentage, slDurationMs),
 		gcloud.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
 		gcloud.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
 	)

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 var (
@@ -174,7 +174,7 @@ func roleDivPairsToGrants(grantPairs []string) platformclientv2.Roledivisiongran
 }
 
 // Testing common
-func generateResourceRoles(skillID string, divisionIds ...string) string {
+func GenerateResourceRoles(skillID string, divisionIds ...string) string {
 	var divAttr string
 	if len(divisionIds) > 0 {
 		divAttr = "division_ids = [" + strings.Join(divisionIds, ",") + "]"

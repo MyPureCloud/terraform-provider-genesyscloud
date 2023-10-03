@@ -1,16 +1,22 @@
-package genesyscloud
+package integration_credential
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_integration_credential_test.go contains all of the test cases for running the resource
+tests for integration_credentials.
+*/
 func TestAccResourceCredential(t *testing.T) {
 	var (
 		credResource1 = "test_credential_1"
@@ -33,17 +39,17 @@ func TestAccResourceCredential(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateCredentialResource(
+				Config: GenerateCredentialResource(
 					credResource1,
 					strconv.Quote(credName1),
 					strconv.Quote(typeName1),
-					generateCredentialFields(
-						generateMapProperty(key1, strconv.Quote(val1)),
+					GenerateCredentialFields(
+						gcloud.GenerateMapProperty(key1, strconv.Quote(val1)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -54,12 +60,12 @@ func TestAccResourceCredential(t *testing.T) {
 			},
 			{
 				// Update name and value of one field
-				Config: generateCredentialResource(
+				Config: GenerateCredentialResource(
 					credResource1,
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
-					generateCredentialFields(
-						generateMapProperty(key1, strconv.Quote(val1_2)),
+					GenerateCredentialFields(
+						gcloud.GenerateMapProperty(key1, strconv.Quote(val1_2)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -70,13 +76,13 @@ func TestAccResourceCredential(t *testing.T) {
 			},
 			{
 				// Add another field
-				Config: generateCredentialResource(
+				Config: GenerateCredentialResource(
 					credResource1,
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
-					generateCredentialFields(
-						generateMapProperty(key1, strconv.Quote(val1)),
-						generateMapProperty(key2, strconv.Quote(val2)),
+					GenerateCredentialFields(
+						gcloud.GenerateMapProperty(key1, strconv.Quote(val1)),
+						gcloud.GenerateMapProperty(key2, strconv.Quote(val2)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -88,13 +94,13 @@ func TestAccResourceCredential(t *testing.T) {
 			},
 			{
 				// Update second field
-				Config: generateCredentialResource(
+				Config: GenerateCredentialResource(
 					credResource1,
 					strconv.Quote(credName2),
 					strconv.Quote(typeName1),
-					generateCredentialFields(
-						generateMapProperty(key1, strconv.Quote(val1)),
-						generateMapProperty(key2, strconv.Quote(val2_2)),
+					GenerateCredentialFields(
+						gcloud.GenerateMapProperty(key1, strconv.Quote(val1)),
+						gcloud.GenerateMapProperty(key2, strconv.Quote(val2_2)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -113,12 +119,12 @@ func TestAccResourceCredential(t *testing.T) {
 			},
 			{
 				// Create another resource with different type
-				Config: generateCredentialResource(
+				Config: GenerateCredentialResource(
 					credResource2,
 					strconv.Quote(credName1),
 					strconv.Quote(typeName2),
-					generateCredentialFields(
-						generateMapProperty(key3, strconv.Quote(val3)),
+					GenerateCredentialFields(
+						gcloud.GenerateMapProperty(key3, strconv.Quote(val3)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -129,12 +135,12 @@ func TestAccResourceCredential(t *testing.T) {
 			},
 			{
 				// Update name
-				Config: generateCredentialResource(
+				Config: GenerateCredentialResource(
 					credResource2,
 					strconv.Quote(credName2),
 					strconv.Quote(typeName2),
-					generateCredentialFields(
-						generateMapProperty(key3, strconv.Quote(val3)),
+					GenerateCredentialFields(
+						gcloud.GenerateMapProperty(key3, strconv.Quote(val3)),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -155,19 +161,6 @@ func TestAccResourceCredential(t *testing.T) {
 	})
 }
 
-func generateCredentialResource(resourceID string, name string, credentialType string, fields string) string {
-	return fmt.Sprintf(`resource "genesyscloud_integration_credential" "%s" {
-        name = %s
-        credential_type_name = %s
-        %s
-	}
-	`, resourceID, name, credentialType, fields)
-}
-
-func generateCredentialFields(fields ...string) string {
-	return generateMapAttr("fields", fields...)
-}
-
 func testVerifyCredentialDestroyed(state *terraform.State) error {
 	integrationAPI := platformclientv2.NewIntegrationsApi()
 	for _, rs := range state.RootModule().Resources {
@@ -178,7 +171,7 @@ func testVerifyCredentialDestroyed(state *terraform.State) error {
 		credential, resp, err := integrationAPI.GetIntegrationsCredential(rs.Primary.ID)
 		if credential != nil {
 			return fmt.Errorf("Credential (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// Credential not found as expected
 			continue
 		} else {

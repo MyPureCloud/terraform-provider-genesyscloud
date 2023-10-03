@@ -1,14 +1,19 @@
-package genesyscloud
+package integration
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+/*
+Test Class for the Integrations Data Source
+*/
 func TestAccDataSourceIntegration(t *testing.T) {
 
 	var (
@@ -19,12 +24,12 @@ func TestAccDataSourceIntegration(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create with config
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 var (
@@ -55,22 +55,16 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_idp_onelogin"] = ResourceIdpOnelogin()
 	providerResources["genesyscloud_idp_ping"] = ResourceIdpPing()
 	providerResources["genesyscloud_idp_salesforce"] = ResourceIdpSalesforce()
-	providerResources["genesyscloud_integration"] = ResourceIntegration()
-	providerResources["genesyscloud_integration_action"] = ResourceIntegrationAction()
-	providerResources["genesyscloud_integration_credential"] = ResourceCredential()
 	providerResources["genesyscloud_journey_action_map"] = ResourceJourneyActionMap()
 	providerResources["genesyscloud_journey_action_template"] = ResourceJourneyActionTemplate()
 	providerResources["genesyscloud_journey_outcome"] = ResourceJourneyOutcome()
 	providerResources["genesyscloud_journey_segment"] = ResourceJourneySegment()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_knowledge_document"] = ResourceKnowledgeDocument()
-	providerResources["genesyscloud_knowledge_v1_document"] = ResourceKnowledgeDocumentV1()
 	providerResources["genesyscloud_knowledge_document_variation"] = ResourceKnowledgeDocumentVariation()
 	providerResources["genesyscloud_knowledge_category"] = ResourceKnowledgeCategory()
-	providerResources["genesyscloud_knowledge_v1_category"] = ResourceKnowledgeCategoryV1()
 	providerResources["genesyscloud_knowledge_label"] = ResourceKnowledgeLabel()
 	providerResources["genesyscloud_location"] = ResourceLocation()
-	providerResources["genesyscloud_recording_media_retention_policy"] = ResourceMediaRetentionPolicy()
 	providerResources["genesyscloud_oauth_client"] = ResourceOAuthClient()
 
 	providerResources["genesyscloud_orgauthorization_pairing"] = resourceOrgauthorizationPairing()
@@ -122,17 +116,14 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_architect_schedules"] = DataSourceSchedule()
 	providerDataSources["genesyscloud_architect_schedulegroups"] = DataSourceArchitectScheduleGroups()
 	providerDataSources["genesyscloud_architect_user_prompt"] = dataSourceUserPrompt()
-	providerDataSources["genesyscloud_auth_role"] = dataSourceAuthRole()
+	providerDataSources["genesyscloud_auth_role"] = DataSourceAuthRole()
 	providerDataSources["genesyscloud_auth_division"] = dataSourceAuthDivision()
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
 	providerDataSources["genesyscloud_employeeperformance_externalmetrics_definitions"] = dataSourceEmployeeperformanceExternalmetricsDefinition()
 	providerDataSources["genesyscloud_flow"] = DataSourceFlow()
 	providerDataSources["genesyscloud_flow_milestone"] = dataSourceFlowMilestone()
 	providerDataSources["genesyscloud_flow_outcome"] = dataSourceFlowOutcome()
-	providerDataSources["genesyscloud_group"] = dataSourceGroup()
-	providerDataSources["genesyscloud_integration"] = dataSourceIntegration()
-	providerDataSources["genesyscloud_integration_action"] = dataSourceIntegrationAction()
-	providerDataSources["genesyscloud_integration_credential"] = dataSourceIntegrationCredential()
+	providerDataSources["genesyscloud_group"] = DataSourceGroup()
 	providerDataSources["genesyscloud_journey_action_map"] = dataSourceJourneyActionMap()
 	providerDataSources["genesyscloud_journey_action_template"] = dataSourceJourneyActionTemplate()
 	providerDataSources["genesyscloud_journey_outcome"] = dataSourceJourneyOutcome()
@@ -144,9 +135,8 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_oauth_client"] = dataSourceOAuthClient()
 	providerDataSources["genesyscloud_organizations_me"] = dataSourceOrganizationsMe()
 
-	providerDataSources["genesyscloud_quality_forms_evaluation"] = dataSourceQualityFormsEvaluations()
+	providerDataSources["genesyscloud_quality_forms_evaluation"] = DataSourceQualityFormsEvaluations()
 	providerDataSources["genesyscloud_quality_forms_survey"] = dataSourceQualityFormsSurvey()
-	providerDataSources["genesyscloud_recording_media_retention_policy"] = dataSourceRecordingMediaRetentionPolicy()
 	providerDataSources["genesyscloud_responsemanagement_library"] = dataSourceResponsemanagementLibrary()
 	providerDataSources["genesyscloud_responsemanagement_response"] = dataSourceResponsemanagementResponse()
 	providerDataSources["genesyscloud_responsemanagement_responseasset"] = dataSourceResponseManagamentResponseAsset()
@@ -155,11 +145,11 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_routing_settings"] = dataSourceRoutingSettings()
 	providerDataSources["genesyscloud_routing_skill"] = dataSourceRoutingSkill()
 	providerDataSources["genesyscloud_routing_skill_group"] = dataSourceRoutingSkillGroup()
-	providerDataSources["genesyscloud_routing_email_domain"] = dataSourceRoutingEmailDomain()
+	providerDataSources["genesyscloud_routing_email_domain"] = DataSourceRoutingEmailDomain()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 
 	providerDataSources["genesyscloud_station"] = dataSourceStation()
-	providerDataSources["genesyscloud_user"] = dataSourceUser()
+	providerDataSources["genesyscloud_user"] = DataSourceUser()
 	providerDataSources["genesyscloud_telephony_providers_edges_did"] = dataSourceDid()
 	providerDataSources["genesyscloud_telephony_providers_edges_did_pool"] = dataSourceDidPool()
 	providerDataSources["genesyscloud_telephony_providers_edges_edge_group"] = dataSourceEdgeGroup()

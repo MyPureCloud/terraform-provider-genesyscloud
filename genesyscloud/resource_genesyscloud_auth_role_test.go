@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func TestAccResourceAuthRoleDefault(t *testing.T) {
@@ -37,17 +37,17 @@ func TestAccResourceAuthRoleDefault(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Modify default role
-				Config: generateAuthRoleResource(
+				Config: GenerateAuthRoleResource(
 					roleResource2,
 					defaultRoleName,
 					roleDesc1,
 					"default_role_id = "+strconv.Quote(defaultRoleID),
-					generateRolePermissions(strconv.Quote(perm1)),
-					generateRolePermPolicy(directoryDom, userEntity, strconv.Quote(addAction)),
+					GenerateRolePermissions(strconv.Quote(perm1)),
+					GenerateRolePermPolicy(directoryDom, userEntity, strconv.Quote(addAction)),
 					// Keep existing permissions on default role
-					generateRolePermPolicy(authDom, orgTrusteeGroupEntity, strconv.Quote(viewAction)),
-					generateRolePermPolicy(authDom, orgTrusteeUserEntity, strconv.Quote(viewAction)),
-					generateRolePermPolicy(authDom, orgTrustorEntity, strconv.Quote(viewAction)),
+					GenerateRolePermPolicy(authDom, orgTrusteeGroupEntity, strconv.Quote(viewAction)),
+					GenerateRolePermPolicy(authDom, orgTrusteeUserEntity, strconv.Quote(viewAction)),
+					GenerateRolePermPolicy(authDom, orgTrustorEntity, strconv.Quote(viewAction)),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource2, "name", defaultRoleName),
@@ -91,12 +91,12 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateAuthRoleResource(
+				Config: GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc1,
-					generateRolePermissions(strconv.Quote(perm1)),
-					generateRolePermPolicy(directoryDom, userEntity, strconv.Quote(addAction)),
+					GenerateRolePermissions(strconv.Quote(perm1)),
+					GenerateRolePermPolicy(directoryDom, userEntity, strconv.Quote(addAction)),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource1, "name", roleName1),
@@ -107,13 +107,13 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: generateAuthRoleResource(
+				Config: GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc2,
-					generateRolePermissions(strconv.Quote(perm1), strconv.Quote(perm2)),
-					generateRolePermPolicy(directoryDom, userEntity, strconv.Quote(allAction)),
-					generateRolePermPolicy(directoryDom, groupEntity, strconv.Quote(addAction), strconv.Quote(editAction)),
+					GenerateRolePermissions(strconv.Quote(perm1), strconv.Quote(perm2)),
+					GenerateRolePermPolicy(directoryDom, userEntity, strconv.Quote(allAction)),
+					GenerateRolePermPolicy(directoryDom, groupEntity, strconv.Quote(addAction), strconv.Quote(editAction)),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource1, "name", roleName1),
@@ -159,7 +159,7 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create with a scalar condition
-				Config: generateAuthRoleResource(
+				Config: GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc1,
@@ -191,7 +191,7 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 			{
 				// Create a queue and update with a queue condition
 				Config: GenerateRoutingQueueResourceBasic(queueResource1, queueName1) +
-					generateAuthRoleResource(
+					GenerateAuthRoleResource(
 						roleResource1,
 						roleName1,
 						roleDesc1,
@@ -221,7 +221,7 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 			},
 			{
 				// Queue condition without setting a queue_id
-				Config: generateAuthRoleResource(
+				Config: GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc1,
@@ -255,7 +255,7 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 			},
 			{
 				// User condition without setting a user_id
-				Config: generateAuthRoleResource(
+				Config: GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc1,
@@ -289,7 +289,7 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 			},
 			{
 				// VARIABLE condition without setting a value
-				Config: generateAuthRoleResource(
+				Config: GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
 					roleDesc1,
@@ -330,34 +330,6 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 		},
 		CheckDestroy: testVerifyRolesDestroyed,
 	})
-}
-
-func generateAuthRoleResource(
-	resourceID string,
-	name string,
-	description string,
-	nestedBlocks ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_auth_role" "%s" {
-		name = "%s"
-		description = "%s"
-		%s
-	}
-	`, resourceID, name, description, strings.Join(nestedBlocks, "\n"))
-}
-
-func generateRolePermissions(permissions ...string) string {
-	return fmt.Sprintf(`
-		permissions = [%s]
-	`, strings.Join(permissions, ","))
-}
-
-func generateRolePermPolicy(domain string, entityName string, actions ...string) string {
-	return fmt.Sprintf(` permission_policies {
-		domain = "%s"
-		entity_name = "%s"
-		action_set = [%s]
-	}
-	`, domain, entityName, strings.Join(actions, ","))
 }
 
 func generateRolePermPolicyCondition(domain string, entityName string, action string, conj string, terms ...string) string {

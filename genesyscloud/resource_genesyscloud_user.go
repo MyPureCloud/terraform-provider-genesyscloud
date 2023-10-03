@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -455,6 +455,13 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	addresses, addrErr := buildSdkAddresses(d)
 	if addrErr != nil {
 		return addrErr
+	}
+
+	// Check for a deleted user before creating
+	id, _ := getDeletedUserId(email, usersAPI)
+	if id != nil {
+		d.SetId(*id)
+		return restoreDeletedUser(ctx, d, meta, usersAPI)
 	}
 
 	createUser := platformclientv2.Createuser{
@@ -1359,4 +1366,13 @@ func generateUserResource(
 		certifications = [%s]
 	}
 	`, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
+}
+
+func GenerateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }
