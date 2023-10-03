@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func getAllRoutingEmailDomains(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -223,4 +223,17 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 		routingAPI.DeleteRoutingEmailDomain(d.Id())
 		return retry.RetryableError(fmt.Errorf("Routing email domain %s still exists", d.Id()))
 	})
+}
+
+func GenerateRoutingEmailDomainResource(
+	resourceID string,
+	domainID string,
+	subdomain string,
+	fromDomain string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_email_domain" "%s" {
+		domain_id = "%s"
+		subdomain = %s
+        mail_from_domain = %s
+	}
+	`, resourceID, domainID, subdomain, fromDomain)
 }

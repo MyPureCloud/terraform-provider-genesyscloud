@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"
@@ -47,6 +48,61 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 				),
 			},
 		},
+	})
+}
+
+func TestAccDataSourceRoutingQueueCaching(t *testing.T) {
+	var (
+		queue1ResourceId = "queue1"
+		queueName1       = "terraform test queue " + uuid.NewString()
+		queue2ResourceId = "queue2"
+		queueName2       = "terraform test queue " + uuid.NewString()
+		queue3ResourceId = "queue3"
+		queueName3       = "terraform test queue " + uuid.NewString()
+
+		dataSource1Id = "data-1"
+		dataSource2Id = "data-2"
+		dataSource3Id = "data-3"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateRoutingQueueResourceBasic( // queue resource
+					queue1ResourceId,
+					queueName1,
+				) + generateRoutingQueueResourceBasic( // queue resource
+					queue2ResourceId,
+					queueName2,
+				) + generateRoutingQueueResourceBasic( // queue resource
+					queue3ResourceId,
+					queueName3,
+				) + generateRoutingQueueDataSource( // queue data source
+					dataSource1Id,
+					strconv.Quote(queueName1),
+					"genesyscloud_routing_queue."+queue1ResourceId,
+				) + generateRoutingQueueDataSource( // queue data source
+					dataSource2Id,
+					strconv.Quote(queueName2),
+					"genesyscloud_routing_queue."+queue2ResourceId,
+				) + generateRoutingQueueDataSource( // queue data source
+					dataSource3Id,
+					strconv.Quote(queueName3),
+					"genesyscloud_routing_queue."+queue3ResourceId,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue1ResourceId, "id",
+						"data.genesyscloud_routing_queue."+dataSource1Id, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue2ResourceId, "id",
+						"data.genesyscloud_routing_queue."+dataSource2Id, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue3ResourceId, "id",
+						"data.genesyscloud_routing_queue."+dataSource3Id, "id"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
 	})
 }
 

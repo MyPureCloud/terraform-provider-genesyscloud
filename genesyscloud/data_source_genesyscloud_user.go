@@ -9,13 +9,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
-func dataSourceUser() *schema.Resource {
+func DataSourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Users. Select a user by email or name.",
-		ReadContext: ReadWithPooledClient(dataSourceUserRead),
+		ReadContext: ReadWithPooledClient(DataSourceUserRead),
 		Schema: map[string]*schema.Schema{
 			"email": {
 				Description: "User email.",
@@ -31,7 +31,7 @@ func dataSourceUser() *schema.Resource {
 	}
 }
 
-func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func DataSourceUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 

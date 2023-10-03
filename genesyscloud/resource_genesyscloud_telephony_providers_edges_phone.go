@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 var (
@@ -535,7 +535,8 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 
 	for pageNum := 1; pageNum <= *phones.PageCount; pageNum++ {
 		const pageSize = 100
-		phones, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+		const sortBy = "id"
+		phones, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 
 		// This endpoint will throw a 400 if the page number limit is reached. The limit can be less that the total number of pages
 		if resp != nil && resp.StatusCode == http.StatusBadRequest {

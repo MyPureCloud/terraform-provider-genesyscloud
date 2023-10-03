@@ -7,14 +7,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func buildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{} {
 	returnValue := make(map[string]interface{})
 
 	if properties := d.Get("properties"); properties != nil {
-		inputVal, err := jsonStringToInterface(properties.(string))
+		inputVal, err := JsonStringToInterface(properties.(string))
 		if err != nil {
 			return nil
 		}

@@ -151,7 +151,7 @@ Required:
 
 Optional:
 
-- `metric` (String) The queue metric being evaluated. Valid values: EstimatedWaitTime. Defaults to `EstimatedWaitTime`.
+- `metric` (String) The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel Defaults to `EstimatedWaitTime`.
 - `queue_id` (String) The ID of the queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified.
 - `wait_seconds` (Number) The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified. Defaults to `2`.
 
@@ -194,6 +194,10 @@ Required:
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 
+Optional:
+
+- `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+
 
 <a id="nestedblock--media_settings_callback"></a>
 ### Nested Schema for `media_settings_callback`
@@ -203,6 +207,10 @@ Required:
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+
+Optional:
+
+- `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 
 
 <a id="nestedblock--media_settings_chat"></a>
@@ -214,6 +222,10 @@ Required:
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 
+Optional:
+
+- `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+
 
 <a id="nestedblock--media_settings_email"></a>
 ### Nested Schema for `media_settings_email`
@@ -224,6 +236,10 @@ Required:
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 
+Optional:
+
+- `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+
 
 <a id="nestedblock--media_settings_message"></a>
 ### Nested Schema for `media_settings_message`
@@ -233,6 +249,10 @@ Required:
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+
+Optional:
+
+- `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 
 
 <a id="nestedatt--members"></a>
