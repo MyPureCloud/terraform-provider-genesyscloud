@@ -31,7 +31,6 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 	config, err := AuthorizeSdk()
 	if err != nil {
 		t.Skip("failed to authorize client credentials")
-		return
 	}
 
 	// TODO: Create the IVR inside the test config once emergency group has been moved to its own package.
