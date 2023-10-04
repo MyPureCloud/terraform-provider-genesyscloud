@@ -9,7 +9,7 @@ import (
 )
 
 /*
-The genesyscloud_integration_action_proxy.go file contains the proxy structures and methods that interact
+The genesyscloud_integration_custom_auth_action_proxy.go file contains the proxy structures and methods that interact
 with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
 out during testing.
 
@@ -39,7 +39,7 @@ type getIntegrationActionTemplateFunc func(ctx context.Context, p *customAuthAct
 type getIntegrationTypeFunc func(ctx context.Context, p *customAuthActionsProxy, integrationId string) (string, error)
 type getIntegrationCredentialsTypeFunc func(ctx context.Context, p *customAuthActionsProxy, integrationId string) (string, error)
 
-// integrationActionsProxy contains all of the methods that call genesys cloud APIs.
+// customAuthActionsProxy contains all of the methods that call genesys cloud APIs.
 type customAuthActionsProxy struct {
 	clientConfig                           *platformclientv2.Configuration
 	integrationsApi                        *platformclientv2.IntegrationsApi
@@ -51,7 +51,7 @@ type customAuthActionsProxy struct {
 	getIntegrationCredentialsTypeAttr      getIntegrationCredentialsTypeFunc
 }
 
-// newIntegrationActionsProxy initializes the integrationActionsProxy with all of the data needed to communicate with Genesys Cloud
+// newCustomAuthActionsProxy initializes the customAuthActionsProxy with all of the data needed to communicate with Genesys Cloud
 func newCustomAuthActionsProxy(clientConfig *platformclientv2.Configuration) *customAuthActionsProxy {
 	api := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 	return &customAuthActionsProxy{
@@ -66,7 +66,7 @@ func newCustomAuthActionsProxy(clientConfig *platformclientv2.Configuration) *cu
 	}
 }
 
-// getIntegrationActionsProxy acts as a singleton to for the internalProxy.  It also ensures
+// getCustomAuthActionsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getCustomAuthActionsProxy(clientConfig *platformclientv2.Configuration) *customAuthActionsProxy {
 	if internalProxy == nil {
@@ -76,30 +76,37 @@ func getCustomAuthActionsProxy(clientConfig *platformclientv2.Configuration) *cu
 	return internalProxy
 }
 
+// getAllIntegrationCustomAuthActions retrieves all Genesys Cloud Integration Custom Auth Actions
 func (p *customAuthActionsProxy) getAllIntegrationCustomAuthActions(ctx context.Context) (*[]platformclientv2.Action, error) {
 	return p.getAllIntegrationCustomAuthActionsAttr(ctx, p)
 }
 
+// getCustomAuthActionById retrieve a Genesys Cloud Integration Custom Auth Action by ID
 func (p *customAuthActionsProxy) getCustomAuthActionById(ctx context.Context, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	return p.getCustomAuthActionByIdAttr(ctx, p, actionId)
 }
 
+// updateCustomAuthAction updates a Genesys Cloud Integration Custom Auth Action
 func (p *customAuthActionsProxy) updateCustomAuthAction(ctx context.Context, actionId string, updateAction *platformclientv2.Updateactioninput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	return p.updateCustomAuthActionAttr(ctx, p, actionId, updateAction)
 }
 
+// getIntegrationActionTemplate retrieves a Genesys Cloud Integration Action Template
 func (p *customAuthActionsProxy) getIntegrationActionTemplate(ctx context.Context, actionId string, fileName string) (*string, *platformclientv2.APIResponse, error) {
 	return p.getIntegrationActionTemplateAttr(ctx, p, actionId, fileName)
 }
 
+// getIntegrationType retrieves the type of a Genesys Cloud Integration
 func (p *customAuthActionsProxy) getIntegrationType(ctx context.Context, integrationId string) (string, error) {
 	return p.getIntegrationTypeAttr(ctx, p, integrationId)
 }
 
+// getIntegrationCredentialsType retrieves the type of a Genesys Cloud Integration Credential
 func (p *customAuthActionsProxy) getIntegrationCredentialsType(ctx context.Context, integrationId string) (string, error) {
 	return p.getIntegrationCredentialsTypeAttr(ctx, p, integrationId)
 }
 
+// getAllIntegrationCustomAuthActionsFn is the implementation for getting all integration custom auth actions in Genesys Cloud
 func getAllIntegrationCustomAuthActionsFn(ctx context.Context, p *customAuthActionsProxy) (*[]platformclientv2.Action, error) {
 	actions := []platformclientv2.Action{}
 
@@ -125,6 +132,7 @@ func getAllIntegrationCustomAuthActionsFn(ctx context.Context, p *customAuthActi
 	return &actions, nil
 }
 
+// getCustomAuthActionByIdFn is the implementation for getting an integration custom auth actions by id in Genesys Cloud
 func getCustomAuthActionByIdFn(ctx context.Context, p *customAuthActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	action, resp, err := p.integrationsApi.GetIntegrationsAction(actionId, "", true)
 	if err != nil {
@@ -134,6 +142,7 @@ func getCustomAuthActionByIdFn(ctx context.Context, p *customAuthActionsProxy, a
 	return action, resp, nil
 }
 
+// updateCustomAuthActionFn is the implementation for updating an integration custom auth action in Genesys Cloud
 func updateCustomAuthActionFn(ctx context.Context, p *customAuthActionsProxy, actionId string, updateAction *platformclientv2.Updateactioninput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	action, resp, err := p.integrationsApi.PatchIntegrationsAction(actionId, *updateAction)
 	if err != nil {
@@ -152,6 +161,7 @@ func getIntegrationActionTemplateFn(ctx context.Context, p *customAuthActionsPro
 	return template, resp, nil
 }
 
+// getIntegrationTypeFn is the implementation for getting the type of an integration in Genesys Cloud
 func getIntegrationTypeFn(ctx context.Context, p *customAuthActionsProxy, integrationId string) (string, error) {
 	integration, _, err := p.integrationsApi.GetIntegration(integrationId, 1, 1, "", nil, "", "")
 	if err != nil {
@@ -161,6 +171,7 @@ func getIntegrationTypeFn(ctx context.Context, p *customAuthActionsProxy, integr
 	return *integration.IntegrationType.Id, nil
 }
 
+// getIntegrationCredentialsTypeFn is the implementation for getting the type of an integration credential in Genesys Cloud
 func getIntegrationCredentialsTypeFn(ctx context.Context, p *customAuthActionsProxy, integrationId string) (string, error) {
 	integrationConfig, _, err := p.integrationsApi.GetIntegrationConfigCurrent(integrationId)
 	if err != nil {

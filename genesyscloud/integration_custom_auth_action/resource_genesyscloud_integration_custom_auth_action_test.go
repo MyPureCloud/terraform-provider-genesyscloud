@@ -142,7 +142,7 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create an integration and an associated action
+				// Modify the custom auth action of the integration
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("genesyscloud_integration_custom_auth_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),

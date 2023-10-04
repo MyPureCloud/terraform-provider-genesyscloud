@@ -11,8 +11,8 @@ import (
 )
 
 /*
-   The genesyscloud_integration_action_init_test.go file is used to initialize the data sources and resources
-   used in testing the integration action resource.
+   The genesyscloud_integration_custom_auth_action_init_test.go file is used to initialize the data sources
+   and resources used in testing the integration custom auth action resource.
 
    Please make sure you register ALL resources and data sources your test cases will use.
 */

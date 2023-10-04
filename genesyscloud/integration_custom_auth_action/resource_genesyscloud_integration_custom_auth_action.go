@@ -21,11 +21,11 @@ import (
 )
 
 /*
-The resource_genesyscloud_integration_action.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_integration_custom_auth_action.go contains all of the methods that perform the core logic for a resource.
 In general a resource should have a approximately 5 methods in it:
 
 1.  A getAll.... function that the CX as Code exporter will use during the process of exporting Genesys Cloud.
-2.  A create.... function that the resource will use to create a Genesys Cloud object (e.g. genesycloud_integration_action)
+2.  A create.... function that the resource will use to create a Genesys Cloud object (e.g. genesyscloud_integration_custom_auth_action)
 3.  A read.... function that looks up a single resource.
 4.  An update... function that updates a single resource.
 5.  A delete.... function that deletes a single resource.
@@ -40,7 +40,7 @@ Two things to note:
 utils function in the package.  This will keep the code manageable and easy to work through.
 */
 
-// getAllIntegrationActions retrieves all of the integration action via Terraform in the Genesys Cloud and is used for the exporter
+// getAllIntegrationCustomAuthActions retrieves all of the custom auth actions via Terraform in the Genesys Cloud and is used for the exporter
 func getAllIntegrationCustomAuthActions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	cap := getCustomAuthActionsProxy(clientConfig)
@@ -57,7 +57,7 @@ func getAllIntegrationCustomAuthActions(ctx context.Context, clientConfig *platf
 	return resources, nil
 }
 
-// createIntegrationAction is used by the integration actions resource to create Genesyscloud integration action
+// createIntegrationCustomAuthAction is used by the custom auth actions resource to manage the Genesyscloud integration custom auth action
 func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
@@ -75,7 +75,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 	log.Printf("Retrieving the custom auth action of integration %s", integrationId)
 
 	// Retrieve the automatically-generated custom auth action
-	// to set the resource Id
+	// to make sure it exists before updating
 	diagErr := gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		authAction, resp, err := cap.getCustomAuthActionById(ctx, authActionId)
 		if err != nil {
@@ -127,7 +127,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 	return readIntegrationCustomAuthAction(ctx, d, meta)
 }
 
-// readIntegrationAction is used by the integration action resource to read an action from genesys cloud.
+// readIntegrationCustomAuthAction is used by the integration action resource to read a custom auth action from genesys cloud
 func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
@@ -186,7 +186,7 @@ func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData
 	})
 }
 
-// updateIntegrationAction is used by the integration action resource to update an action in Genesys Cloud
+// updateIntegrationCustomAuthAction is used by the integration action resource to update a custom auth in Genesys Cloud
 func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
@@ -224,7 +224,7 @@ func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 	return readIntegrationCustomAuthAction(ctx, d, meta)
 }
 
-// deleteIntegrationAction is used by the integration action resource to delete an action from Genesys cloud.
+// deleteIntegrationCustomAuthAction does not do anything as deleting a custom auth action is not possible
 func deleteIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 

@@ -26,7 +26,8 @@ const (
 )
 
 // BuildSdkCustomAuthActionConfig takes the resource data and builds the SDK platformclientv2.Actionconfig from it
-// This is custom version of the BuildSdkActionConfig because timeoutSeconds is invalid for Custom Auth Actions
+// This is a stripped version of the integrationAction.BuildSdkActionConfig because 'timeoutSeconds'
+// is invalid for Custom Auth Actions
 func BuildSdkCustomAuthActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig {
 	ActionConfig := &platformclientv2.Actionconfig{
 		Request:  integrationAction.BuildSdkActionConfigRequest(d),

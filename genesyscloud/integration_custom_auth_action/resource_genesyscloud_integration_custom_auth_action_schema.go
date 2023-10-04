@@ -10,12 +10,12 @@ import (
 )
 
 /*
-resource_genesyscloud_integration_action_schema.go should hold four types of functions within it:
+resource_genesyscloud_integration_custom_auth_action_schema.go should hold four types of functions within it:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
-2.  The resource schema definitions for the integration_action resource.
-3.  The datasource schema definitions for the integration_action datasource.
-4.  The resource exporter configuration for the integration_action exporter.
+2.  The resource schema definitions for the integration_custom_auth_action resource.
+3.  The datasource schema definitions for the integration_custom_auth_action datasource.
+4.  The resource exporter configuration for the integration_custom_auth_action exporter.
 */
 const resourceName = "genesyscloud_integration_custom_auth_action"
 
@@ -25,7 +25,7 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter(resourceName, IntegrationCustomAuthActionExporter())
 }
 
-// ResourceIntegrationAction registers the genesyscloud_integration_action resource with Terraform
+// ResourceIntegrationCustomAuthAction registers the genesyscloud_integration_custom_auth_action resource with Terraform
 func ResourceIntegrationCustomAuthAction() *schema.Resource {
 	actionConfigRequest := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -122,7 +122,7 @@ func ResourceIntegrationCustomAuthAction() *schema.Resource {
 	}
 }
 
-// IntegrationActionExporter returns the resourceExporter object used to hold the genesyscloud_integration_action exporter's config
+// IntegrationCustomAuthActionExporter returns the resourceExporter object used to hold the genesyscloud_integration_custom_auth_action exporter's config
 func IntegrationCustomAuthActionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllIntegrationCustomAuthActions),
