@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func TestAccResourceTrunkBaseSettings(t *testing.T) {
@@ -139,36 +139,36 @@ func generateTrunkBaseSettingsResourceWithCustomAttrs(
 
 func generateTrunkBaseSettingsProperties(settingsName, trunkMaxDialTimeout, trunkTransportSipDscpValue, trunkMediaDisconnectOnIdleRtp string, trunkMediaCodec []string) string {
 	// A random selection of properties
-	return "properties = " + generateJsonEncodedProperties(
-		generateJsonProperty(
-			"trunk_label", generateJsonObject(
-				generateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonProperty("instance", strconv.Quote(settingsName)),
+	return "properties = " + GenerateJsonEncodedProperties(
+		GenerateJsonProperty(
+			"trunk_label", GenerateJsonObject(
+				GenerateJsonProperty(
+					"value", GenerateJsonObject(
+						GenerateJsonProperty("instance", strconv.Quote(settingsName)),
 					)))),
-		generateJsonProperty(
-			"trunk_max_dial_timeout", generateJsonObject(
-				generateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonProperty("instance", strconv.Quote(trunkMaxDialTimeout)),
+		GenerateJsonProperty(
+			"trunk_max_dial_timeout", GenerateJsonObject(
+				GenerateJsonProperty(
+					"value", GenerateJsonObject(
+						GenerateJsonProperty("instance", strconv.Quote(trunkMaxDialTimeout)),
 					)))),
-		generateJsonProperty(
-			"trunk_transport_sip_dscp_value", generateJsonObject(
-				generateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonProperty("instance", trunkTransportSipDscpValue),
+		GenerateJsonProperty(
+			"trunk_transport_sip_dscp_value", GenerateJsonObject(
+				GenerateJsonProperty(
+					"value", GenerateJsonObject(
+						GenerateJsonProperty("instance", trunkTransportSipDscpValue),
 					)))),
-		generateJsonProperty(
-			"trunk_media_disconnect_on_idle_rtp", generateJsonObject(
-				generateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonProperty("instance", trunkMediaDisconnectOnIdleRtp),
+		GenerateJsonProperty(
+			"trunk_media_disconnect_on_idle_rtp", GenerateJsonObject(
+				GenerateJsonProperty(
+					"value", GenerateJsonObject(
+						GenerateJsonProperty("instance", trunkMediaDisconnectOnIdleRtp),
 					)))),
-		generateJsonProperty(
-			"trunk_media_codec", generateJsonObject(
-				generateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonArrayProperty("instance", strings.Join(trunkMediaCodec, ",")),
+		GenerateJsonProperty(
+			"trunk_media_codec", GenerateJsonObject(
+				GenerateJsonProperty(
+					"value", GenerateJsonObject(
+						GenerateJsonArrayProperty("instance", strings.Join(trunkMediaCodec, ",")),
 					)))),
 	)
 }

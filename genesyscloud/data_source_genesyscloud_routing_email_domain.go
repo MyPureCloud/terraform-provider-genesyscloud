@@ -9,14 +9,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 // Returns the schema for the routing email domain
-func dataSourceRoutingEmailDomain() *schema.Resource {
+func DataSourceRoutingEmailDomain() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Email Domains. Select an email domain by name",
-		ReadContext: ReadWithPooledClient(dataSourceRoutingEmailDomainRead),
+		ReadContext: ReadWithPooledClient(DataSourceRoutingEmailDomainRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Email domain name.",
@@ -28,7 +28,7 @@ func dataSourceRoutingEmailDomain() *schema.Resource {
 }
 
 // Looks up the data for the Email Domain
-func dataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func DataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 

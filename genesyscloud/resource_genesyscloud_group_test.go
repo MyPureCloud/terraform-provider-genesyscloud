@@ -3,13 +3,12 @@ package genesyscloud
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func TestAccResourceGroupBasic(t *testing.T) {
@@ -94,7 +93,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 					generateGroupAddress(
@@ -111,7 +110,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 			},
 			{
 				// Update phone number & type
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 					generateGroupAddress(
@@ -128,7 +127,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 			},
 			{
 				// Remove number and set extension
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 					generateGroupAddress(
@@ -145,7 +144,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 			},
 			{
 				// Update the extension
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
 					generateGroupAddress(
@@ -190,7 +189,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create group with an owner and a member
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource,
 					groupName,
 					generateGroupOwners("genesyscloud_user."+userResource1+".id"),
@@ -211,7 +210,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 			},
 			{
 				// Make the owner a member
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource,
 					groupName,
 					generateGroupOwners("genesyscloud_user."+userResource1+".id"),
@@ -236,7 +235,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 			},
 			{
 				// Remove a member and change the owner
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource,
 					groupName,
 					generateGroupOwners("genesyscloud_user."+userResource2+".id"),
@@ -259,7 +258,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 			},
 			{
 				// Remove all members while deleting the user
-				Config: generateBasicGroupResource(
+				Config: GenerateBasicGroupResource(
 					groupResource,
 					groupName,
 					generateGroupOwners("genesyscloud_user."+userResource2+".id"),
@@ -304,48 +303,6 @@ func testVerifyGroupsDestroyed(state *terraform.State) error {
 	}
 	// Success. All groups destroyed
 	return nil
-}
-
-func generateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
-	return generateGroupResource(resourceID, name, nullValue, nullValue, nullValue, trueValue, nestedBlocks...)
-}
-
-func generateGroupResource(
-	resourceID string,
-	name string,
-	desc string,
-	groupType string,
-	visibility string,
-	rulesVisible string,
-	nestedBlocks ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_group" "%s" {
-		name = "%s"
-		description = %s
-		type = %s
-		visibility = %s
-		rules_visible = %s
-        %s
-	}
-	`, resourceID, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
-}
-
-func generateGroupAddress(number string, phoneType string, extension string) string {
-	return fmt.Sprintf(`addresses {
-				number = %s
-				type = "%s"
-                extension = %s
-			}
-			`, number, phoneType, extension)
-}
-
-func generateGroupOwners(userIDs ...string) string {
-	return fmt.Sprintf(`owner_ids = [%s]
-	`, strings.Join(userIDs, ","))
-}
-
-func generateGroupMembers(userIDs ...string) string {
-	return fmt.Sprintf(`member_ids = [%s]
-	`, strings.Join(userIDs, ","))
 }
 
 func validateGroupMember(groupResourceName string, userResourceName string, attrName string) resource.TestCheckFunc {

@@ -1,17 +1,23 @@
-package genesyscloud
+package integration
 
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
+/*
+The resource_genesyscloud_integration_test.go contains all of the test cases for running the resource
+tests for integrations.
+*/
 func TestAccResourceIntegration(t *testing.T) {
 	var (
 		inteResource1 = "test_integration1"
@@ -47,12 +53,12 @@ func TestAccResourceIntegration(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create without config
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
@@ -69,7 +75,7 @@ func TestAccResourceIntegration(t *testing.T) {
 			},
 			{
 				// Update only name
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
@@ -93,7 +99,7 @@ func TestAccResourceIntegration(t *testing.T) {
 			},
 			{
 				// All nullvalue for config. Nothing should change here.
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
@@ -117,7 +123,7 @@ func TestAccResourceIntegration(t *testing.T) {
 			},
 			{
 				// Update intendedState, name, notes, properties
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID),
@@ -125,11 +131,11 @@ func TestAccResourceIntegration(t *testing.T) {
 						strconv.Quote(inteName2),
 						strconv.Quote(configNotes),
 						"", //Empty credential ID
-						generateJsonEncodedProperties(
-							generateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
-							generateJsonProperty(urlKey, strconv.Quote(propURL)),
-							generateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
-							generateJsonProperty(groupsKey, fmt.Sprintf(`[%s]`, strconv.Quote(fakeGroupID))),
+						gcloud.GenerateJsonEncodedProperties(
+							gcloud.GenerateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
+							gcloud.GenerateJsonProperty(urlKey, strconv.Quote(propURL)),
+							gcloud.GenerateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
+							gcloud.GenerateJsonProperty(groupsKey, fmt.Sprintf(`[%s]`, strconv.Quote(fakeGroupID))),
 						),
 						nullValue,
 					),
@@ -151,10 +157,10 @@ func TestAccResourceIntegration(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{ // Create a group first and use it as reference for a new integration
-				Config: generateBasicGroupResource(
+				Config: gcloud.GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
-				) + generateIntegrationResource(
+				) + GenerateIntegrationResource(
 					inteResource1,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID),
@@ -162,11 +168,11 @@ func TestAccResourceIntegration(t *testing.T) {
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
 						"", //Empty credential ID
-						generateJsonEncodedProperties(
-							generateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
-							generateJsonProperty(urlKey, strconv.Quote(propURL)),
-							generateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
-							generateJsonProperty(groupsKey, fmt.Sprintf(`[%s]`, "genesyscloud_group."+groupResource1+".id")),
+						gcloud.GenerateJsonEncodedProperties(
+							gcloud.GenerateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
+							gcloud.GenerateJsonProperty(urlKey, strconv.Quote(propURL)),
+							gcloud.GenerateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
+							gcloud.GenerateJsonProperty(groupsKey, fmt.Sprintf(`[%s]`, "genesyscloud_group."+groupResource1+".id")),
 						),
 						nullValue,
 					),
@@ -182,7 +188,7 @@ func TestAccResourceIntegration(t *testing.T) {
 				),
 			},
 			{ // Remove the group reference and update intendedState and notes
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Change to default value
 					strconv.Quote(typeID),
@@ -190,11 +196,11 @@ func TestAccResourceIntegration(t *testing.T) {
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes2),
 						"", //Empty credentials
-						generateJsonEncodedProperties(
-							generateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
-							generateJsonProperty(urlKey, strconv.Quote(propURL)),
-							generateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
-							generateJsonProperty(groupsKey, "[]"),
+						gcloud.GenerateJsonEncodedProperties(
+							gcloud.GenerateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
+							gcloud.GenerateJsonProperty(urlKey, strconv.Quote(propURL)),
+							gcloud.GenerateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
+							gcloud.GenerateJsonProperty(groupsKey, "[]"),
 						),
 						nullValue,
 					),
@@ -210,7 +216,7 @@ func TestAccResourceIntegration(t *testing.T) {
 				),
 			},
 			{ // Update integration name and test Raw JSON string
-				Config: generateIntegrationResource(
+				Config: GenerateIntegrationResource(
 					inteResource1,
 					nullValue, //Default value
 					strconv.Quote(typeID),
@@ -240,23 +246,23 @@ func TestAccResourceIntegration(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{ // Create a credential and use it as reference for the new integration
-				Config: generateCredentialResource(
+				Config: integrationCred.GenerateCredentialResource(
 					credResource1,
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
-					generateCredentialFields(
-						generateMapProperty(key1, strconv.Quote(val1)),
+					integrationCred.GenerateCredentialFields(
+						gcloud.GenerateMapProperty(key1, strconv.Quote(val1)),
 					),
-				) + generateIntegrationResource(
+				) + GenerateIntegrationResource(
 					inteResource2,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID2),
 					generateIntegrationConfig(
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
-						generateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
-						generateJsonEncodedProperties(
-							generateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
+						gcloud.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						gcloud.GenerateJsonEncodedProperties(
+							gcloud.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),
 						nullValue,
 					),
@@ -271,23 +277,23 @@ func TestAccResourceIntegration(t *testing.T) {
 				),
 			},
 			{ // Update integration with credential specified
-				Config: generateCredentialResource(
+				Config: integrationCred.GenerateCredentialResource(
 					credResource1,
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
-					generateCredentialFields(
-						generateMapProperty(key1, strconv.Quote(val1)),
+					integrationCred.GenerateCredentialFields(
+						gcloud.GenerateMapProperty(key1, strconv.Quote(val1)),
 					),
-				) + generateIntegrationResource(
+				) + GenerateIntegrationResource(
 					inteResource2,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID2),
 					generateIntegrationConfig(
 						strconv.Quote(inteName2),
 						nullValue, // Empty notes
-						generateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
-						generateJsonEncodedProperties(
-							generateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
+						gcloud.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						gcloud.GenerateJsonEncodedProperties(
+							gcloud.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),
 						nullValue,
 					),
@@ -310,15 +316,6 @@ func TestAccResourceIntegration(t *testing.T) {
 		},
 		CheckDestroy: testVerifyIntegrationDestroyed,
 	})
-}
-
-func generateIntegrationResource(resourceID string, intendedState string, integrationType string, attrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_integration" "%s" {
-        intended_state = %s
-        integration_type = %s
-        %s
-	}
-	`, resourceID, intendedState, integrationType, strings.Join(attrs, "\n"))
 }
 
 func generateIntegrationConfig(name string, notes string, cred string, props string, adv string) string {
@@ -382,7 +379,7 @@ func testVerifyIntegrationDestroyed(state *terraform.State) error {
 		integration, resp, err := integrationAPI.GetIntegration(rs.Primary.ID, 100, 1, "", nil, "", "")
 		if integration != nil {
 			return fmt.Errorf("Integration (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// Integration not found as expected
 			continue
 		} else {

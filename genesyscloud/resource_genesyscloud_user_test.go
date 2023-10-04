@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func TestAccResourceUserBasic(t *testing.T) {
@@ -183,7 +183,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -218,7 +218,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 			},
 			{
 				// Update phone number and other email attributes
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -270,7 +270,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -292,7 +292,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 				),
 			},
 			{
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -314,7 +314,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 				),
 			},
 			{
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -336,7 +336,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 				),
 			},
 			{
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					addrUserResource1,
 					addrEmail1,
 					addrUserName,
@@ -383,7 +383,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 skill
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -395,7 +395,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 			},
 			{
 				// Create another skill and add to the user
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -415,7 +415,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 			},
 			{
 				// Remove a skill from the user and modify proficiency
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -430,7 +430,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 			},
 			{
 				// Remove all skills from the user
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -465,28 +465,28 @@ func TestAccResourceUserLanguages(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 language
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
 					generateUserRoutingLang("genesyscloud_routing_language."+langResource1+".id", proficiency1),
-				) + generateRoutingLanguageResource(langResource1, langName1),
+				) + GenerateRoutingLanguageResource(langResource1, langName1),
 				Check: resource.ComposeTestCheckFunc(
 					validateUserLanguage("genesyscloud_user."+userResource1, "genesyscloud_routing_language."+langResource1, proficiency1),
 				),
 			},
 			{
 				// Create another language and add to the user
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
 					generateUserRoutingLang("genesyscloud_routing_language."+langResource1+".id", proficiency1),
 					generateUserRoutingLang("genesyscloud_routing_language."+langResource2+".id", proficiency2),
-				) + generateRoutingLanguageResource(
+				) + GenerateRoutingLanguageResource(
 					langResource1,
 					langName1,
-				) + generateRoutingLanguageResource(
+				) + GenerateRoutingLanguageResource(
 					langResource2,
 					langName2,
 				),
@@ -497,12 +497,12 @@ func TestAccResourceUserLanguages(t *testing.T) {
 			},
 			{
 				// Remove a language from the user and modify proficiency
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
 					generateUserRoutingLang("genesyscloud_routing_language."+langResource2+".id", proficiency1),
-				) + generateRoutingLanguageResource(
+				) + GenerateRoutingLanguageResource(
 					langResource2,
 					langName2,
 				),
@@ -512,7 +512,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 			},
 			{
 				// Remove all languages from the user
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName1,
@@ -547,7 +547,7 @@ func TestAccResourceUserLocations(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create user with a location
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email,
 					userName,
@@ -564,7 +564,7 @@ func TestAccResourceUserLocations(t *testing.T) {
 			},
 			{
 				// Update with a new location
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email,
 					userName,
@@ -606,7 +606,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -628,7 +628,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 			},
 			{
 				// Update with other attributes
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -650,7 +650,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 			},
 			{
 				// Update all attributes
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -672,7 +672,7 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 			},
 			{
 				// Remove all employer info attributes
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -708,7 +708,7 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create with utilization settings
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -741,7 +741,7 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 			},
 			{
 				// Update utilization settings and set different org-level settings
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -774,7 +774,7 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 			},
 			{
 				// Ensure max capacity can be set to 0
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -807,7 +807,7 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 			},
 			{
 				// Reset to org-level settings by specifying empty routing utilization attribute
-				Config: generateUserWithCustomAttrs(
+				Config: GenerateUserWithCustomAttrs(
 					userResource1,
 					email1,
 					userName,
@@ -867,6 +867,59 @@ func TestAccResourceUserRestore(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
 					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName2),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
+func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
+	t.Parallel()
+	var (
+		userResource1 = "test-user"
+		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		userName1     = "Terraform Existing"
+		userName2     = "Terraform Create"
+		stateActive   = "active"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create a basic user
+				Config: GenerateBasicUserResource(
+					userResource1,
+					email1,
+					userName1,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName1),
+				),
+			},
+			{
+				Config: GenerateBasicUserResource(
+					userResource1,
+					email1,
+					userName1,
+				),
+				Destroy: true, // Delete the user
+				Check:   testVerifyUsersDestroyed,
+			},
+			{
+				// Restore the same user email but set a different name
+				Config: GenerateBasicUserResource(
+					userResource1,
+					email1,
+					userName2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "email", email1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "name", userName2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "state", stateActive),
 				),
 			},
 		},
@@ -985,15 +1038,6 @@ func validateUserUtilizationLevel(userResourceName string, level string) resourc
 
 		return nil
 	}
-}
-
-func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
-		email = "%s"
-		name = "%s"
-		%s
-	}
-	`, resourceID, email, name, strings.Join(attrs, "\n"))
 }
 
 func generateUserAddresses(nestedBlocks ...string) string {

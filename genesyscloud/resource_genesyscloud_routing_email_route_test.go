@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
@@ -43,7 +43,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanupRoutingEmailDomains()
+	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
@@ -51,7 +51,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create email domain and basic route
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue,
@@ -75,7 +75,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email route and add a queue, language, and skill
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue,
@@ -83,7 +83,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + generateRoutingLanguageResource(
+				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
 				) + generateRoutingSkillResource(
@@ -130,7 +130,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email reply to true
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue,
@@ -138,7 +138,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + generateRoutingLanguageResource(
+				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
 				) + generateRoutingSkillResource(
@@ -186,7 +186,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email reply to false and set a route id
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue,
@@ -194,7 +194,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
-				) + generateRoutingLanguageResource(
+				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
 				) + generateRoutingSkillResource(

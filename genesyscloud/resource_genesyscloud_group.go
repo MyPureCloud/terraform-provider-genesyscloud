@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -18,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 var (
@@ -439,8 +440,26 @@ func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.Grou
 				return err
 			}
 
-			membersToRemove := lists.SliceDifference(existingMemberIds, configMemberIds)
-			if err := deleteGroupMembers(d, membersToRemove, groupsAPI); err != nil {
+			maxMembersPerRequest := 50
+			membersToRemoveList := lists.SliceDifference(existingMemberIds, configMemberIds)
+			chunkedMemberIdsDelete := chunks.ChunkBy(membersToRemoveList, maxMembersPerRequest)
+
+			chunkProcessor := func(membersToRemove []string) diag.Diagnostics {
+				if len(membersToRemove) > 0 {
+					if diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+						_, resp, err := groupsAPI.DeleteGroupMembers(d.Id(), strings.Join(membersToRemove, ","))
+						if err != nil {
+							return resp, diag.Errorf("Failed to remove members from group %s: %s", d.Id(), err)
+						}
+						return resp, nil
+					}); diagErr != nil {
+						return diagErr
+					}
+				}
+				return nil
+			}
+
+			if err := chunks.ProcessChunks(chunkedMemberIdsDelete, chunkProcessor); err != nil {
 				return err
 			}
 
@@ -449,7 +468,6 @@ func updateGroupMembers(d *schema.ResourceData, groupsAPI *platformclientv2.Grou
 				return nil
 			}
 
-			maxMembersPerRequest := 50
 			chunkedMemberIds := lists.ChunkStringSlice(membersToAdd, maxMembersPerRequest)
 			for _, chunk := range chunkedMemberIds {
 				if err := addGroupMembers(d, chunk, groupsAPI); err != nil {
@@ -492,21 +510,6 @@ func getGroupMemberIds(d *schema.ResourceData, groupsAPI *platformclientv2.Group
 	return existingMembers, nil
 }
 
-func deleteGroupMembers(d *schema.ResourceData, membersToRemove []string, groupsAPI *platformclientv2.GroupsApi) diag.Diagnostics {
-	if len(membersToRemove) > 0 {
-		if diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			_, resp, err := groupsAPI.DeleteGroupMembers(d.Id(), strings.Join(membersToRemove, ","))
-			if err != nil {
-				return resp, diag.Errorf("Failed to remove members from group %s: %s", d.Id(), err)
-			}
-			return resp, nil
-		}); diagErr != nil {
-			return diagErr
-		}
-	}
-	return nil
-}
-
 func addGroupMembers(d *schema.ResourceData, membersToAdd []string, groupsAPI *platformclientv2.GroupsApi) diag.Diagnostics {
 	if diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Need the current group version to add members
@@ -527,4 +530,46 @@ func addGroupMembers(d *schema.ResourceData, membersToAdd []string, groupsAPI *p
 		return diagErr
 	}
 	return nil
+}
+
+func GenerateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
+	return generateGroupResource(resourceID, name, nullValue, nullValue, nullValue, trueValue, nestedBlocks...)
+}
+
+func generateGroupResource(
+	resourceID string,
+	name string,
+	desc string,
+	groupType string,
+	visibility string,
+	rulesVisible string,
+	nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_group" "%s" {
+		name = "%s"
+		description = %s
+		type = %s
+		visibility = %s
+		rules_visible = %s
+        %s
+	}
+	`, resourceID, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
+}
+
+func generateGroupAddress(number string, phoneType string, extension string) string {
+	return fmt.Sprintf(`addresses {
+				number = %s
+				type = "%s"
+                extension = %s
+			}
+			`, number, phoneType, extension)
+}
+
+func generateGroupOwners(userIDs ...string) string {
+	return fmt.Sprintf(`owner_ids = [%s]
+	`, strings.Join(userIDs, ","))
+}
+
+func generateGroupMembers(userIDs ...string) string {
+	return fmt.Sprintf(`member_ids = [%s]
+	`, strings.Join(userIDs, ","))
 }

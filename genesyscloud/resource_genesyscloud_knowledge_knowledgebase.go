@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -138,7 +138,7 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	log.Printf("Creating knowledge base %s", name)
-	knowledgeBase, _, err := knowledgeAPI.PostKnowledgeKnowledgebases(platformclientv2.Knowledgebase{
+	knowledgeBase, _, err := knowledgeAPI.PostKnowledgeKnowledgebases(platformclientv2.Knowledgebasecreaterequest{
 		Name:         &name,
 		Description:  &description,
 		CoreLanguage: &coreLanguage,
@@ -182,7 +182,6 @@ func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, met
 func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	coreLanguage := d.Get("core_language").(string)
 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
@@ -195,10 +194,9 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 			return resp, diag.Errorf("Failed to read knowledge base %s: %s", d.Id(), getErr)
 		}
 
-		update := platformclientv2.Knowledgebase{
-			Name:         &name,
-			Description:  &description,
-			CoreLanguage: &coreLanguage,
+		update := platformclientv2.Knowledgebaseupdaterequest{
+			Name:        &name,
+			Description: &description,
 		}
 
 		log.Printf("Updating knowledge base %s", name)

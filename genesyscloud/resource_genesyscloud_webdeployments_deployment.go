@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v105/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -203,7 +203,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 func waitForDeploymentToBeActive(ctx context.Context, api *platformclientv2.WebDeploymentsApi, id string) diag.Diagnostics {
 	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-		deployment, resp, err := api.GetWebdeploymentsDeployment(id)
+		deployment, resp, err := api.GetWebdeploymentsDeployment(id, []string{})
 		if err != nil {
 			if IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
@@ -225,7 +225,7 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	log.Printf("Reading web deployment %s", d.Id())
 	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		deployment, resp, getErr := api.GetWebdeploymentsDeployment(d.Id())
+		deployment, resp, getErr := api.GetWebdeploymentsDeployment(d.Id(), []string{})
 		if getErr != nil {
 			if IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
@@ -343,7 +343,7 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := api.GetWebdeploymentsDeployment(d.Id())
+		_, resp, err := api.GetWebdeploymentsDeployment(d.Id(), []string{})
 		if err != nil {
 			if IsStatus404(resp) {
 				log.Printf("Deleted web deployment %s", d.Id())
