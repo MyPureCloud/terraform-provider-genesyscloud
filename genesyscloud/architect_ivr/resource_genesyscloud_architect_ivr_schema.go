@@ -8,7 +8,10 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
-const resourceName = "genesyscloud_architect_ivr"
+const (
+	resourceName      = "genesyscloud_architect_ivr"
+	maxDnisPerRequest = 50
+)
 
 // SetRegistrar registers all resources, data sources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {

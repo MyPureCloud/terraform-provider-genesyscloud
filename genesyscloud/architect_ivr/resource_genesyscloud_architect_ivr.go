@@ -19,8 +19,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
-const maxDnisPerRequest = 50
-
 // getAllIvrConfigs retrieves all architect IVRs and is used for the exporter
 func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -39,48 +37,24 @@ func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Config
 
 // createIvrConfig is used by the resource to create a Genesys Cloud Architect IVR
 func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	name := d.Get("name").(string)
-	description := d.Get("description").(string)
-	openHoursFlowId := gcloud.BuildSdkDomainEntityRef(d, "open_hours_flow_id")
-	closedHoursFlowId := gcloud.BuildSdkDomainEntityRef(d, "closed_hours_flow_id")
-	holidayHoursFlowId := gcloud.BuildSdkDomainEntityRef(d, "holiday_hours_flow_id")
-	scheduleGroupId := gcloud.BuildSdkDomainEntityRef(d, "schedule_group_id")
-	divisionId := d.Get("division_id").(string)
-	dnis := lists.BuildSdkStringList(d, "dnis")
-
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 
-	ivrBody := platformclientv2.Ivr{
-		Name:             &name,
-		OpenHoursFlow:    openHoursFlowId,
-		ClosedHoursFlow:  closedHoursFlowId,
-		HolidayHoursFlow: holidayHoursFlowId,
-		ScheduleGroup:    scheduleGroupId,
-		Dnis:             dnis,
-	}
-
-	if description != "" {
-		ivrBody.Description = &description
-	}
-
-	if divisionId != "" {
-		ivrBody.Division = &platformclientv2.Writabledivision{Id: &divisionId}
-	}
+	ivrBody := buildArchitectIvrFromResourceData(d)
 
 	// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which
 	// would result in the error "Field 'didPoolId' is required and cannot be empty."
 	if ivrBody.Dnis != nil {
 		time.Sleep(3 * time.Second)
 	}
-	log.Printf("Creating IVR config %s", name)
-	ivrConfig, _, err := ap.createArchitectIvr(ctx, ivrBody)
+	log.Printf("Creating IVR config %s", *ivrBody.Name)
+	ivrConfig, _, err := ap.createArchitectIvr(ctx, *ivrBody)
 	if err != nil {
-		return diag.Errorf("Failed to create IVR config %s: %s", name, err)
+		return diag.Errorf("Failed to create IVR config %s: %s", *ivrBody.Name, err)
 	}
 	d.SetId(*ivrConfig.Id)
 
-	log.Printf("Created IVR config %s %s", name, *ivrConfig.Id)
+	log.Printf("Created IVR config %s %s", *ivrBody.Name, *ivrConfig.Id)
 	return readIvrConfig(ctx, d, meta)
 }
 
@@ -147,15 +121,6 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 // updateIvrConfig is used by the resource to update a Genesys Cloud Architect IVR
 func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	name := d.Get("name").(string)
-	description := d.Get("description").(string)
-	openHoursFlowId := gcloud.BuildSdkDomainEntityRef(d, "open_hours_flow_id")
-	closedHoursFlowId := gcloud.BuildSdkDomainEntityRef(d, "closed_hours_flow_id")
-	holidayHoursFlowId := gcloud.BuildSdkDomainEntityRef(d, "holiday_hours_flow_id")
-	scheduleGroupId := gcloud.BuildSdkDomainEntityRef(d, "schedule_group_id")
-	divisionId := d.Get("division_id").(string)
-	dnis := lists.BuildSdkStringList(d, "dnis")
-
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
 
@@ -166,31 +131,16 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 			return resp, diag.Errorf("Failed to read IVR config %s: %s", d.Id(), getErr)
 		}
 
-		ivrBody := platformclientv2.Ivr{
-			Version:          ivr.Version,
-			Name:             &name,
-			OpenHoursFlow:    openHoursFlowId,
-			ClosedHoursFlow:  closedHoursFlowId,
-			HolidayHoursFlow: holidayHoursFlowId,
-			ScheduleGroup:    scheduleGroupId,
-			Dnis:             dnis,
-		}
-
-		if description != "" {
-			ivrBody.Description = &description
-		}
-
-		if divisionId != "" {
-			ivrBody.Division = &platformclientv2.Writabledivision{Id: &divisionId}
-		}
+		ivrBody := buildArchitectIvrFromResourceData(d)
+		ivrBody.Version = ivr.Version
 
 		// It might need to wait for a dependent did_pool to be created to avoid an eventual consistency issue which
 		// would result in the error "Field 'didPoolId' is required and cannot be empty."
 		if ivrBody.Dnis != nil {
 			time.Sleep(3 * time.Second)
 		}
-		log.Printf("Updating IVR config %s", name)
-		_, resp, putErr := ap.updateArchitectIvr(ctx, d.Id(), ivrBody)
+		log.Printf("Updating IVR config %s", *ivrBody.Name)
+		_, resp, putErr := ap.updateArchitectIvr(ctx, d.Id(), *ivrBody)
 
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update IVR config %s: %s", d.Id(), putErr)

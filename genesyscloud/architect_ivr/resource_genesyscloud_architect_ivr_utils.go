@@ -2,8 +2,12 @@ package architect_ivr
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 	"strconv"
 	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 type IvrConfigStruct struct {
@@ -56,4 +60,25 @@ func GenerateIvrDataSource(
 		depends_on=[%s]
 	}
 	`, resourceName, resourceID, name, dependsOnResource)
+}
+
+func buildArchitectIvrFromResourceData(d *schema.ResourceData) *platformclientv2.Ivr {
+	ivrBody := platformclientv2.Ivr{
+		Name:             platformclientv2.String(d.Get("name").(string)),
+		OpenHoursFlow:    gcloud.BuildSdkDomainEntityRef(d, "open_hours_flow_id"),
+		ClosedHoursFlow:  gcloud.BuildSdkDomainEntityRef(d, "closed_hours_flow_id"),
+		HolidayHoursFlow: gcloud.BuildSdkDomainEntityRef(d, "holiday_hours_flow_id"),
+		ScheduleGroup:    gcloud.BuildSdkDomainEntityRef(d, "schedule_group_id"),
+		Dnis:             lists.BuildSdkStringList(d, "dnis"),
+	}
+
+	if description := d.Get("description").(string); description != "" {
+		ivrBody.Description = &description
+	}
+
+	if divisionId := d.Get("division_id").(string); divisionId != "" {
+		ivrBody.Division = &platformclientv2.Writabledivision{Id: &divisionId}
+	}
+
+	return &ivrBody
 }

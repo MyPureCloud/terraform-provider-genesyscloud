@@ -74,7 +74,7 @@ func newArchitectIvrProxy(clientConfig *platformclientv2.Configuration) *archite
 		getAllArchitectIvrsAttr:     getAllArchitectIvrsFn,
 		getArchitectIvrIdByNameAttr: getArchitectIvrIdByNameFn,
 
-		maxDnisPerRequest: 50,
+		maxDnisPerRequest: maxDnisPerRequest,
 
 		createArchitectIvrBasicAttr: createArchitectIvrBasicFn,
 		updateArchitectIvrBasicAttr: updateArchitectIvrBasicFn,
