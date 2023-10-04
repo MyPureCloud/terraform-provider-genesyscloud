@@ -38,7 +38,7 @@ type customAuthActionResourceConfigResponse struct {
 
 /*
 The resource_genesyscloud_integration_action_test.go contains all of the test cases for running the resource
-tests for integration_actions.
+tests for integration_custom_auth_actions.
 */
 func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 	var (
@@ -62,7 +62,6 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 		integTypeID               = "custom-rest-actions"
 		integrationResourceConfig = integration.GenerateIntegrationResource(
 			integResource1,
-			// strconv.Quote("ENABLED"),
 			nullValue,
 			strconv.Quote(integTypeID),
 			integration.GenerateIntegrationConfig(

@@ -21,6 +21,7 @@ const resourceName = "genesyscloud_integration_custom_auth_action"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
+	l.RegisterDataSource(resourceName, DataSourceIntegrationCustomAuthAction())
 	l.RegisterResource(resourceName, ResourceIntegrationCustomAuthAction())
 	l.RegisterExporter(resourceName, IntegrationCustomAuthActionExporter())
 }
@@ -125,9 +126,24 @@ func ResourceIntegrationCustomAuthAction() *schema.Resource {
 // IntegrationCustomAuthActionExporter returns the resourceExporter object used to hold the genesyscloud_integration_custom_auth_action exporter's config
 func IntegrationCustomAuthActionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllIntegrationCustomAuthActions),
+		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllModifiedCustomAuthActions),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"integration_id": {RefType: "genesyscloud_integration"},
+		},
+	}
+}
+
+// DataSourceIntegrationCustomAuthAction registers the genesyscloud_integration_custom_auth_action data source
+func DataSourceIntegrationCustomAuthAction() *schema.Resource {
+	return &schema.Resource{
+		Description: "Data source for Genesys Cloud integration custom auth action. Select the custom auth action by its associated integration's name.",
+		ReadContext: gcloud.ReadWithPooledClient(dataSourceIntegrationCustomAuthActionRead),
+		Schema: map[string]*schema.Schema{
+			"integration_name": {
+				Description: "The name of the integration associated with the custom auth action",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
 		},
 	}
 }

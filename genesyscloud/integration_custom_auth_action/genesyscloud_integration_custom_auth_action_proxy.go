@@ -38,6 +38,7 @@ type updateCustomAuthActionFunc func(ctx context.Context, p *customAuthActionsPr
 type getIntegrationActionTemplateFunc func(ctx context.Context, p *customAuthActionsProxy, actionId string, fileName string) (*string, *platformclientv2.APIResponse, error)
 type getIntegrationTypeFunc func(ctx context.Context, p *customAuthActionsProxy, integrationId string) (string, error)
 type getIntegrationCredentialsTypeFunc func(ctx context.Context, p *customAuthActionsProxy, integrationId string) (string, error)
+type getIntegrationByNameFunc func(ctx context.Context, p *customAuthActionsProxy, integrationName string) (integration *platformclientv2.Integration, retryable bool, err error)
 
 // customAuthActionsProxy contains all of the methods that call genesys cloud APIs.
 type customAuthActionsProxy struct {
@@ -49,6 +50,7 @@ type customAuthActionsProxy struct {
 	getIntegrationActionTemplateAttr       getIntegrationActionTemplateFunc
 	getIntegrationTypeAttr                 getIntegrationTypeFunc
 	getIntegrationCredentialsTypeAttr      getIntegrationCredentialsTypeFunc
+	getIntegrationByNameAttr               getIntegrationByNameFunc
 }
 
 // newCustomAuthActionsProxy initializes the customAuthActionsProxy with all of the data needed to communicate with Genesys Cloud
@@ -63,6 +65,7 @@ func newCustomAuthActionsProxy(clientConfig *platformclientv2.Configuration) *cu
 		getIntegrationActionTemplateAttr:       getIntegrationActionTemplateFn,
 		getIntegrationTypeAttr:                 getIntegrationTypeFn,
 		getIntegrationCredentialsTypeAttr:      getIntegrationCredentialsTypeFn,
+		getIntegrationByNameAttr:               getIntegrationByNameFn,
 	}
 }
 
@@ -104,6 +107,11 @@ func (p *customAuthActionsProxy) getIntegrationType(ctx context.Context, integra
 // getIntegrationCredentialsType retrieves the type of a Genesys Cloud Integration Credential
 func (p *customAuthActionsProxy) getIntegrationCredentialsType(ctx context.Context, integrationId string) (string, error) {
 	return p.getIntegrationCredentialsTypeAttr(ctx, p, integrationId)
+}
+
+// getIntegrationByName gets a Genesys Cloud Integration by name
+func (p *customAuthActionsProxy) getIntegrationByName(ctx context.Context, integrationName string) (*platformclientv2.Integration, bool, error) {
+	return p.getIntegrationByNameAttr(ctx, p, integrationName)
 }
 
 // getAllIntegrationCustomAuthActionsFn is the implementation for getting all integration custom auth actions in Genesys Cloud
@@ -192,4 +200,33 @@ func getIntegrationCredentialsTypeFn(ctx context.Context, p *customAuthActionsPr
 	}
 
 	return *credential.VarType.Name, nil
+}
+
+// getIntegrationByNameFn is the implementation for getting a Genesys Cloud Integration by name
+func getIntegrationByNameFn(ctx context.Context, p *customAuthActionsProxy, integrationName string) (*platformclientv2.Integration, bool, error) {
+	var foundIntegration *platformclientv2.Integration
+
+	const pageSize = 100
+	for pageNum := 1; ; pageNum++ {
+		integrations, _, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "")
+		if err != nil {
+			return nil, false, err
+		}
+
+		if integrations.Entities == nil || len(*integrations.Entities) == 0 {
+			return nil, true, fmt.Errorf("no integrations found with name: %s", integrationName)
+		}
+
+		for _, integration := range *integrations.Entities {
+			if integration.Name != nil && *integration.Name == integrationName {
+				foundIntegration = &integration
+				break
+			}
+		}
+		if foundIntegration != nil {
+			break
+		}
+	}
+
+	return foundIntegration, false, nil
 }

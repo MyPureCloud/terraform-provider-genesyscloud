@@ -40,17 +40,22 @@ Two things to note:
 utils function in the package.  This will keep the code manageable and easy to work through.
 */
 
-// getAllIntegrationCustomAuthActions retrieves all of the custom auth actions via Terraform in the Genesys Cloud and is used for the exporter
-func getAllIntegrationCustomAuthActions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+// getAllModifiedCustomAuthActions retrieves only the custom auth actions that were modified at least
+// once for use in the exporter (version > 1). ie. Unmodified custom auth actions are not to be exported since the defaults
+// are created and managed by Genesys itself based on the Integration configuration.
+func getAllModifiedCustomAuthActions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	cap := getCustomAuthActionsProxy(clientConfig)
 
 	actions, err := cap.getAllIntegrationCustomAuthActions(ctx)
 	if err != nil {
-		return nil, diag.Errorf("Failed to get integration custom auth actions: %v", err)
+		return nil, diag.Errorf("failed to get integration custom auth actions: %v", err)
 	}
 
 	for _, action := range *actions {
+		if *action.Version == 1 {
+			continue
+		}
 		resources[*action.Id] = &resourceExporter.ResourceMeta{Name: *action.Name}
 	}
 

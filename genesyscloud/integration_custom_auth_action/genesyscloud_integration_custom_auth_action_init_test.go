@@ -30,7 +30,8 @@ var providerDataSources map[string]*schema.Resource
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
-	resourceMapMutex sync.RWMutex
+	resourceMapMutex   sync.RWMutex
+	datasourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -43,6 +44,14 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_integration_credential"] = integrationCred.ResourceIntegrationCredential()
 }
 
+// registerTestDataSources registers all data sources used in the tests.
+func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+
+	providerDataSources[resourceName] = DataSourceIntegrationCustomAuthAction()
+}
+
 // initTestresources initializes all test resources and data sources.
 func initTestresources() {
 	providerDataSources = make(map[string]*schema.Resource)
@@ -50,6 +59,7 @@ func initTestresources() {
 
 	reg_instance := &registerTestInstance{}
 
+	reg_instance.registerTestDataSources()
 	reg_instance.registerTestResources()
 }
 
