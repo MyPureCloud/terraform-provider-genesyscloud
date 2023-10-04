@@ -1,11 +1,9 @@
 package genesyscloud
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
-	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	"testing"
 
 	"github.com/google/uuid"
@@ -185,15 +183,22 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	t.Parallel()
-	didPoolResource1 := "test-didpool1"
 	number := "+14175538114"
-	if _, err := AuthorizeSdk(); err != nil {
+	platformConfig, err := AuthorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// TODO: Use did pool resource inside config once cyclic dependency issue is resolved between genesyscloud and did_pools package
+	didPoolId, err := createDidPoolForEdgesPhoneTest(platformConfig, number)
+	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		ctx := context.TODO()
-		_ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, number, number)
+		if err := deleteDidPool(platformConfig, didPoolId); err != nil {
+			t.Logf("failed to delete did pool '%s': %v", didPoolId, err)
+		}
 	}()
+
 	lineAddresses := []string{number}
 	phoneRes := "phone_standalone1234"
 	name1 := "test-phone-standalone_" + uuid.NewString()
@@ -205,7 +210,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 
 	emergencyNumber := "+13173114121"
 	if err := DeleteLocationWithNumber(emergencyNumber); err != nil {
-		t.Fatal(err)
+		t.Log(err)
 	}
 
 	locationConfig := GenerateLocationResource(
@@ -251,16 +256,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		[]string{},
 	)
 
-	config := didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
-		ResourceID:       didPoolResource1,
-		StartPhoneNumber: lineAddresses[0],
-		EndPhoneNumber:   lineAddresses[0],
-		Description:      nullValue, // No description
-		Comments:         nullValue, // No comments
-		PoolProvider:     nullValue, // No provider
-	})
-
-	config += generatePhoneBaseSettingsResourceWithCustomAttrs(
+	config := generatePhoneBaseSettingsResourceWithCustomAttrs(
 		phoneBaseSettingsRes,
 		phoneBaseSettingsName,
 		"phoneBaseSettings description",
@@ -273,7 +269,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
 		lineAddresses,
 		"", // no web rtc user
-		"genesyscloud_telephony_providers_edges_did_pool." + didPoolResource1,
+		"",
 	}, capabilities)
 
 	resource.Test(t, resource.TestCase{
@@ -396,4 +392,27 @@ func generateOrganizationMe() string {
 	return `
 data "genesyscloud_organizations_me" "me" {}
 `
+}
+
+// TODO: Generate DID Pool resource inside test config when edges_phone has been moved to its own package
+// and the cyclic dependency issue is resolved
+func createDidPoolForEdgesPhoneTest(config *platformclientv2.Configuration, number string) (string, error) {
+	api := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(config)
+	body := &platformclientv2.Didpool{
+		StartPhoneNumber: &number,
+		EndPhoneNumber:   &number,
+	}
+	didPool, _, err := api.PostTelephonyProvidersEdgesDidpools(*body)
+	if err != nil {
+		return "", fmt.Errorf("failed to create did pool: %v", err)
+	}
+	return *didPool.Id, nil
+}
+
+func deleteDidPool(config *platformclientv2.Configuration, id string) error {
+	api := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(config)
+	if _, err := api.DeleteTelephonyProvidersEdgesDidpool(id); err != nil {
+		return fmt.Errorf("error deleting did pool: %v", err)
+	}
+	return nil
 }
