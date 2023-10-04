@@ -164,9 +164,27 @@ func deleteArchitectIvrFn(_ context.Context, a *architectIvrProxy, id string) (*
 
 // getAllArchitectIvrsFn is an implementation function for retrieving all Genesys Cloud Architect IVRs
 func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string) (*[]platformclientv2.Ivr, error) {
-	var allIvrs []platformclientv2.Ivr
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
+	var (
+		allIvrs   []platformclientv2.Ivr
+		pageCount int
+	)
+	const pageSize = 100
+
+	ivrs, _, err := a.api.GetArchitectIvrs(1, pageSize, "", "", name, "", "")
+	if err != nil {
+		return nil, fmt.Errorf("error requesting page of architect ivrs: %v", err)
+	}
+	pageCount = *ivrs.PageCount
+
+	if ivrs.Entities != nil && len(*ivrs.Entities) > 0 {
+		allIvrs = append(allIvrs, *ivrs.Entities...)
+	}
+
+	if pageCount < 2 {
+		return &allIvrs, nil
+	}
+
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
 		ivrs, _, err := a.api.GetArchitectIvrs(pageNum, pageSize, "", "", name, "", "")
 		if err != nil {
 			return nil, fmt.Errorf("error requesting page of architect ivrs: %v", err)

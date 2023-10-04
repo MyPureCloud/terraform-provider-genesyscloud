@@ -139,9 +139,28 @@ func deleteTelephonyDidPoolFn(_ context.Context, t *telephonyDidPoolProxy, id st
 
 // getAllTelephonyDidPoolsFn is an implementation function for reading all Genesys Cloud did pools
 func getAllTelephonyDidPoolsFn(_ context.Context, t *telephonyDidPoolProxy) (*[]platformclientv2.Didpool, error) {
-	var allDidPools []platformclientv2.Didpool
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
+	var (
+		allDidPools []platformclientv2.Didpool
+		pageCount   int
+		pageNum     = 1
+	)
+	const pageSize = 100
+
+	didPools, _, getErr := t.telephonyApi.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
+	if getErr != nil {
+		return nil, getErr
+	}
+	pageCount = *didPools.PageCount
+	
+	if didPools.Entities != nil && len(*didPools.Entities) > 0 {
+		allDidPools = append(allDidPools, *didPools.Entities...)
+	}
+
+	if pageCount < 2 {
+		return &allDidPools, nil
+	}
+
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
 		didPools, _, getErr := t.telephonyApi.GetTelephonyProvidersEdgesDidpools(pageSize, pageNum, "", nil)
 		if getErr != nil {
 			return nil, getErr
