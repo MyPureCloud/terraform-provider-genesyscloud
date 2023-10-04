@@ -65,9 +65,7 @@ func (t *telephonyProvidersEdgesDidProxy) getTelephonyProvidersEdgesDidIdByDid(c
 }
 
 // getTelephonyProvidersEdgesDidIdByDidFn is an implementation function for getting a telephony DID ID by DID number.
-func getTelephonyProvidersEdgesDidIdByDidFn(ctx context.Context, t *telephonyProvidersEdgesDidProxy, did string) (string, bool, error) {
-	var allDids []platformclientv2.Did
-
+func getTelephonyProvidersEdgesDidIdByDidFn(_ context.Context, t *telephonyProvidersEdgesDidProxy, did string) (string, bool, error) {
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		dids, _, getErr := t.telephonyApi.GetTelephonyProvidersEdgesDids(pageSize, pageNum, "", "", did, "", "", nil)
@@ -77,14 +75,11 @@ func getTelephonyProvidersEdgesDidIdByDidFn(ctx context.Context, t *telephonyPro
 		if dids.Entities == nil || len(*dids.Entities) == 0 {
 			break
 		}
-		allDids = append(allDids, *dids.Entities...)
-	}
-
-	for _, d := range allDids {
-		if *d.PhoneNumber == did {
-			return did, false, nil
+		for _, entity := range *dids.Entities {
+			if *entity.PhoneNumber == did {
+				return *entity.Id, false, nil
+			}
 		}
 	}
-
 	return "", true, fmt.Errorf("failed to find ID of did number '%s'", did)
 }
