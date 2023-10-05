@@ -246,20 +246,26 @@ var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
 var unsafeNameStartingChars = regexp.MustCompile(`[^A-Za-z_]`)
 
 func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
+	idMetaMapCopy := idMetaMap
 	for _, meta := range idMetaMap {
-		meta.Name = SanitizeResourceName(meta.Name)
+		sanitizedName := SanitizeResourceName(meta.Name)
+		// Append a hash of the original name to ensure uniqueness for names that were sanitized
+		// with a matching pattern
+		if sanitizedName != meta.Name {
+			for _, metaCopy := range idMetaMapCopy {
+				if sanitizedName == metaCopy.Name {
+					algorithm := fnv.New32()
+					algorithm.Write([]byte(meta.Name))
+					sanitizedName = sanitizedName + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+				}
+			}
+			meta.Name = sanitizedName
+		}
 	}
 }
 
 func SanitizeResourceName(inputName string) string {
 	name := unsafeNameChars.ReplaceAllStringFunc(inputName, escapeRune)
-	if name != inputName {
-		// Append a hash of the original name to ensure uniqueness for similar names
-		// and that equivalent names are consistent across orgs
-		algorithm := fnv.New32()
-		algorithm.Write([]byte(inputName))
-		name = name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
-	}
 	if unsafeNameStartingChars.MatchString(string(rune(name[0]))) {
 		// Terraform does not allow names to begin with a number. Prefix with an underscore instead
 		name = "_" + name
