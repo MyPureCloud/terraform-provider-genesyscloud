@@ -79,40 +79,15 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectIvrConfig())
-		d.Set("name", *ivrConfig.Name)
-		d.Set("dnis", lists.StringListToSetOrNil(ivrConfig.Dnis))
+		_ = d.Set("name", *ivrConfig.Name)
+		_ = d.Set("dnis", lists.StringListToSetOrNil(ivrConfig.Dnis))
 
 		resourcedata.SetNillableValue(d, "description", ivrConfig.Description)
-
-		if ivrConfig.OpenHoursFlow != nil {
-			d.Set("open_hours_flow_id", *ivrConfig.OpenHoursFlow.Id)
-		} else {
-			d.Set("open_hours_flow_id", nil)
-		}
-
-		if ivrConfig.ClosedHoursFlow != nil {
-			d.Set("closed_hours_flow_id", *ivrConfig.ClosedHoursFlow.Id)
-		} else {
-			d.Set("closed_hours_flow_id", nil)
-		}
-
-		if ivrConfig.HolidayHoursFlow != nil {
-			d.Set("holiday_hours_flow_id", *ivrConfig.HolidayHoursFlow.Id)
-		} else {
-			d.Set("holiday_hours_flow_id", nil)
-		}
-
-		if ivrConfig.ScheduleGroup != nil {
-			d.Set("schedule_group_id", *ivrConfig.ScheduleGroup.Id)
-		} else {
-			d.Set("schedule_group_id", nil)
-		}
-
-		if ivrConfig.Division != nil && ivrConfig.Division.Id != nil {
-			d.Set("division_id", *ivrConfig.Division.Id)
-		} else {
-			d.Set("division_id", nil)
-		}
+		resourcedata.SetNillableReference(d, "open_hours_flow_id", ivrConfig.OpenHoursFlow)
+		resourcedata.SetNillableReference(d, "closed_hours_flow_id", ivrConfig.ClosedHoursFlow)
+		resourcedata.SetNillableReference(d, "holiday_hours_flow_id", ivrConfig.HolidayHoursFlow)
+		resourcedata.SetNillableReference(d, "schedule_group_id", ivrConfig.ScheduleGroup)
+		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", ivrConfig.Division)
 
 		log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
 		return cc.CheckState()
