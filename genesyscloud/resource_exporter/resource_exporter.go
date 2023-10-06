@@ -246,18 +246,30 @@ var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
 var unsafeNameStartingChars = regexp.MustCompile(`[^A-Za-z_]`)
 
 func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
-	idMetaMapCopy := idMetaMap
+	// Pull out all the original names of the resources for reference later
+	originalResourceNames := make(map[string]string)
+	for k, v := range idMetaMap {
+		originalResourceNames[k] = v.Name
+	}
+
+	// Iterate over the idMetaMap and sanitize the names of each resource
 	for _, meta := range idMetaMap {
 		sanitizedName := SanitizeResourceName(meta.Name)
-		// Append a hash of the original name to ensure uniqueness for names that were sanitized
-		// with a matching pattern
+
+		// If there are more than one resource name that ends up with the same sanitized name,
+		// append a hash of the original name to ensure uniqueness for names to prevent duplicates
 		if sanitizedName != meta.Name {
-			for _, metaCopy := range idMetaMapCopy {
-				if sanitizedName == metaCopy.Name {
-					algorithm := fnv.New32()
-					algorithm.Write([]byte(meta.Name))
-					sanitizedName = sanitizedName + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+			numSeen := 0
+			for _, originalName := range originalResourceNames {
+				originalSanitizedName := SanitizeResourceName(originalName)
+				if sanitizedName == originalSanitizedName {
+					numSeen++
 				}
+			}
+			if numSeen > 1 {
+				algorithm := fnv.New32()
+				algorithm.Write([]byte(meta.Name))
+				sanitizedName = sanitizedName + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 			}
 			meta.Name = sanitizedName
 		}

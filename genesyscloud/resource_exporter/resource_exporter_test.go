@@ -13,7 +13,7 @@ type TestAssertion struct {
 }
 
 func TestSanitizeResourceNames(t *testing.T) {
-	randNumSuffix := "(_[0-9]+)?"
+	randNumSuffix := "_[0-9]+"
 	metaMap := make(ResourceIDMetaMap)
 	metaMap["1"] = &ResourceMeta{Name: "wrapupcodemappings"}
 	metaMap["2"] = &ResourceMeta{Name: "foobar"}
