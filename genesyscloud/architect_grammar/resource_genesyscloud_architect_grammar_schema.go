@@ -110,6 +110,10 @@ func ResourceArchitectGrammar() *schema.Resource {
 func ArchitectGrammarExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthArchitectGrammar),
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: ArchitectGrammarResolver,
+			SubDirectory:              "grammar_files",
+		},
 	}
 }
 

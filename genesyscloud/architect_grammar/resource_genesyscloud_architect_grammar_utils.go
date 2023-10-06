@@ -1,9 +1,16 @@
 package architect_grammar
 
 import (
+	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 	"log"
+	"os"
+	"path"
+	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -104,4 +111,93 @@ func flattenGrammarLanguageFileMetadata(fileMetadata *platformclientv2.Grammarla
 	resourcedata.SetMapValueIfNotNil(metadataMap, "file_type", fileMetadata.FileType)
 
 	return []interface{}{metadataMap}
+}
+
+func ArchitectGrammarResolver(grammarId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	proxy := getArchitectGrammarProxy(sdkConfig)
+
+	fullPath := path.Join(exportDirectory, subDirectory)
+	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	grammar, _, err := proxy.getArchitectGrammarById(ctx, grammarId)
+	if err != nil {
+		return err
+	}
+
+	if grammar.Languages == nil {
+		return nil
+	}
+
+	for _, language := range *grammar.Languages {
+		if language.VoiceFileMetadata != nil && language.VoiceFileUrl != nil {
+			fileType := ""
+			if language.VoiceFileMetadata.FileType != nil {
+				fileType = strings.ToLower(*language.VoiceFileMetadata.FileType)
+			}
+			voiceFileName := fmt.Sprintf("%s-voice-%s.%s", *language.Language, grammarId, fileType)
+			if err := files.DownloadExportFile(fullPath, voiceFileName, *language.VoiceFileUrl); err != nil {
+				return err
+			}
+		}
+
+		if language.DtmfFileMetadata != nil && language.DtmfFileUrl != nil {
+			fileType := ""
+			if language.DtmfFileMetadata.FileType != nil {
+				fileType = strings.ToLower(*language.DtmfFileMetadata.FileType)
+			}
+			dtmfFileName := fmt.Sprintf("%s-dtmf-%s.%s", *language.Language, grammarId, fileType)
+			if err := files.DownloadExportFile(fullPath, dtmfFileName, *language.DtmfFileUrl); err != nil {
+				return err
+			}
+		}
+	}
+	updateFilenamesInExportConfigMap(configMap, grammarId, *grammar.Languages, subDirectory)
+	return nil
+}
+
+func updateFilenamesInExportConfigMap(configMap map[string]interface{}, grammarId string, languagesSdk []platformclientv2.Grammarlanguage, subDir string) {
+	if languagesExporter, ok := configMap["languages"].([]interface{}); ok {
+		// Loop through each language in the exporter map to find current language
+		for _, languageExporter := range languagesExporter {
+			if language, ok := languageExporter.(map[string]interface{}); ok {
+				// Get current language code
+				if languageCode, ok := language["language"].(string); ok {
+					for _, languageSdk := range languagesSdk {
+						// Check if this language in the exporter map is the same as the one we sent in
+						if languageCode == *languageSdk.Language {
+							if voiceFileData, ok := language["voice_file_data"].([]interface{}); ok {
+								setExporterFileData(voiceFileData, grammarId, languageSdk, subDir, "voice")
+							}
+							if dtmfFileData, ok := language["dtmf_file_data"].([]interface{}); ok {
+								setExporterFileData(dtmfFileData, grammarId, languageSdk, subDir, "dtmf")
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+func setExporterFileData(fileDataMap []interface{}, grammarId string, language platformclientv2.Grammarlanguage, subDir string, fileType string) {
+	//Set file name and content hash in the exporter map
+	if fileData, ok := fileDataMap[0].(map[string]interface{}); ok {
+		fileExtension := ""
+		if fileType == "voice" && language.VoiceFileMetadata.FileType != nil {
+			fileExtension = strings.ToLower(*language.VoiceFileMetadata.FileType)
+		} else if fileType == "dtmf" && language.DtmfFileMetadata.FileType != nil {
+			fileExtension = strings.ToLower(*language.DtmfFileMetadata.FileType)
+		}
+
+		fileName := fmt.Sprintf("%s-%s-%s.%s", *language.Language, fileType, grammarId, fileExtension)
+		fileData["file_name"] = path.Join(subDir, fileName)
+		fileData["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDir, fileName))
+		if fileData["file_type"] == nil {
+			fileData["file_type"] = ""
+		}
+	}
 }

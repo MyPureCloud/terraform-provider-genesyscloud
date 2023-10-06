@@ -18,7 +18,7 @@ const (
 	Voice
 )
 
-func TestAccResourceArchitectGrammarGrxml(t *testing.T) {
+func TestAccResourceArchitectGrammarBasic(t *testing.T) {
 	var (
 		languageCode1 = "en-us"
 		voiceGrxml1   = generateFilePath("voice-grxml-01.grxml")
@@ -46,6 +46,32 @@ func TestAccResourceArchitectGrammarGrxml(t *testing.T) {
 			generateFileDtmfFileDataBlock(
 				dtmfGrxml2,
 				"Grxml",
+			),
+		)
+		voiceGram1 = generateFilePath("voice-gram-01.gram")
+		dtmfGram1  = generateFilePath("dtmf-gram-01.gram")
+		voiceGram2 = generateFilePath("voice-gram-01.gram")
+		dtmfGram2  = generateFilePath("dtmf-gram-01.gram")
+		language3  = generateGrammarLanguageBlock(
+			languageCode1,
+			generateFileVoiceFileDataBlock(
+				voiceGram1,
+				"Gram",
+			),
+			generateFileDtmfFileDataBlock(
+				dtmfGram1,
+				"Gram",
+			),
+		)
+		language4 = generateGrammarLanguageBlock(
+			languageCode2,
+			generateFileVoiceFileDataBlock(
+				voiceGram2,
+				"Gram",
+			),
+			generateFileDtmfFileDataBlock(
+				dtmfGram2,
+				"Gram",
 			),
 		)
 	)
@@ -83,25 +109,81 @@ func TestAccResourceArchitectGrammarGrxml(t *testing.T) {
 				),
 			},
 			{
-				// Update Grammar
+				// Add another language
 				Config: generateGrammarResource(
 					resourceId,
 					name2,
 					description2,
+					language1,
 					language2,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "description", description2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.language", languageCode2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_name", voiceGrxml2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.language", languageCode1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_name", voiceGrxml1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_type", "Grxml"),
-					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Voice, voiceGrxml2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.dtmf_file_data.0.file_name", dtmfGrxml2),
+					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Voice, voiceGrxml1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.dtmf_file_data.0.file_name", dtmfGrxml1),
 					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.dtmf_file_data.0.file_type", "Grxml"),
+					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Dtmf, dtmfGrxml1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.1.language", languageCode2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.1.voice_file_data.0.file_name", voiceGrxml2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.1.voice_file_data.0.file_type", "Grxml"),
+					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Voice, voiceGrxml2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.1.dtmf_file_data.0.file_name", dtmfGrxml2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.1.dtmf_file_data.0.file_type", "Grxml"),
 					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Dtmf, dtmfGrxml2),
 				),
 			},
+			{
+				// Update both languages to gram files
+				Config: generateGrammarResource(
+					resourceId,
+					name2,
+					description2,
+					language3,
+					language4,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "description", description2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.language", languageCode1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_name", voiceGram1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_type", "Gram"),
+					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Voice, voiceGram1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.dtmf_file_data.0.file_name", dtmfGram1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.dtmf_file_data.0.file_type", "Gram"),
+					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Dtmf, dtmfGram1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.1.language", languageCode2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.1.voice_file_data.0.file_name", voiceGram2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.1.voice_file_data.0.file_type", "Gram"),
+					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Voice, voiceGram2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.1.dtmf_file_data.0.file_name", dtmfGram2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.1.dtmf_file_data.0.file_type", "Gram"),
+					verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Dtmf, dtmfGram2),
+				),
+			},
+			//{
+			//	// Remove a language language
+			//	Config: generateGrammarResource(
+			//		resourceId,
+			//		name2,
+			//		description2,
+			//		language3,
+			//	),
+			//	Check: resource.ComposeTestCheckFunc(
+			//		resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "name", name2),
+			//		resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "description", description2),
+			//		resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.language", languageCode1),
+			//		resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_name", voiceGram1),
+			//		resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.voice_file_data.0.file_type", "Gram"),
+			//		verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Voice, voiceGram1),
+			//		resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.dtmf_file_data.0.file_name", dtmfGram1),
+			//		resource.TestCheckResourceAttr("genesyscloud_architect_grammar."+resourceId, "languages.0.dtmf_file_data.0.file_type", "Gram"),
+			//		verifyFileUpload("genesyscloud_architect_grammar."+resourceId, "en-us", Dtmf, dtmfGram1),
+			//	),
+			//},
 			{
 				// Read
 				ResourceName:      "genesyscloud_architect_grammar." + resourceId,

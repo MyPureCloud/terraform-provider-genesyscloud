@@ -29,9 +29,9 @@ type getAllArchitectGrammarFunc func(ctx context.Context, p *architectGrammarPro
 type getArchitectGrammarByIdFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string) (grammar *platformclientv2.Grammar, responseCode int, err error)
 type getArchitectGrammarIdByNameFunc func(ctx context.Context, p *architectGrammarProxy, name string) (grammarId string, retryable bool, err error)
 type updateArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, error)
-type updateArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string, languageCode string, language *platformclientv2.Grammarlanguageupdate) (*platformclientv2.Grammarlanguage, error)
+type updateArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string, languageCode string, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, error)
 type deleteArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammarId string) (responseCode int, err error)
-type uploadGrammarLanguageFileFunc func(p *architectGrammarProxy, grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest) (err error)
+type uploadGrammarLanguageFileFunc func(p *architectGrammarProxy, grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest, fileType string) (err error)
 
 // architectGrammarProxy contains all of the methods that call genesys cloud APIs.
 type architectGrammarProxy struct {
@@ -107,7 +107,7 @@ func (p *architectGrammarProxy) updateArchitectGrammar(ctx context.Context, gram
 }
 
 // updateArchitectGrammarLanguage updates a Genesys Cloud Architect Grammarlanguage for a grammar
-func (p *architectGrammarProxy) updateArchitectGrammarLanguage(ctx context.Context, grammarId string, languageCode string, language *platformclientv2.Grammarlanguageupdate) (*platformclientv2.Grammarlanguage, error) {
+func (p *architectGrammarProxy) updateArchitectGrammarLanguage(ctx context.Context, grammarId string, languageCode string, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, error) {
 	return p.updateArchitectGrammarLanguageAttr(ctx, p, grammarId, languageCode, language)
 }
 
@@ -117,8 +117,8 @@ func (p *architectGrammarProxy) deleteArchitectGrammar(ctx context.Context, gram
 }
 
 // deleteArchitectGrammar deletes a Genesys Cloud Architect Grammar by Id
-func (p *architectGrammarProxy) uploadGrammarLanguageFile(grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest) (err error) {
-	return p.uploadGrammarLanguageFileAttr(p, grammarId, languageCode, filename, uploadBody)
+func (p *architectGrammarProxy) uploadGrammarLanguageFile(grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest, fileType string) (err error) {
+	return p.uploadGrammarLanguageFileAttr(p, grammarId, languageCode, filename, uploadBody, fileType)
 }
 
 // createArchitectGrammarFn is an implementation function for creating a Genesys Cloud Architect Grammar
@@ -216,8 +216,24 @@ func updateArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 }
 
 // updateArchitectGrammarLanguageFn is an implementation function for updating a Genesys Cloud Architect Grammarlanguage
-func updateArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarProxy, grammarId string, languageCode string, language *platformclientv2.Grammarlanguageupdate) (*platformclientv2.Grammarlanguage, error) {
-	languageSDK, _, err := p.architectApi.PatchArchitectGrammarLanguage(grammarId, languageCode, *language)
+func updateArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarProxy, grammarId string, languageCode string, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, error) {
+	// Need to check if the language exists, if not, create it
+	_, _, err := p.architectApi.GetArchitectGrammarLanguage(grammarId, languageCode)
+	if err != nil {
+		log.Printf("Laguage %s not found, creating language", languageCode)
+		language, err := p.createArchitectGrammarLanguage(ctx, grammarId, language)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to create grammar language: %s", err)
+		}
+
+		return language, nil
+	}
+
+	languageUpdate := platformclientv2.Grammarlanguageupdate{
+		DtmfFileMetadata:  language.DtmfFileMetadata,
+		VoiceFileMetadata: language.VoiceFileMetadata,
+	}
+	languageSDK, _, err := p.architectApi.PatchArchitectGrammarLanguage(grammarId, languageCode, languageUpdate)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to update grammar language: %s", err)
 	}
@@ -236,10 +252,19 @@ func deleteArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 }
 
 // uploadGrammarLanguageFileFn is an implementation function for deleting a Genesys Cloud Architect Grammar
-func uploadGrammarLanguageFileFn(p *architectGrammarProxy, grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest) error {
-	uploadResponse, _, err := p.architectApi.PostArchitectGrammarLanguageFilesVoice(grammarId, languageCode, *uploadBody)
+func uploadGrammarLanguageFileFn(p *architectGrammarProxy, grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest, fileType string) error {
+	var uploadResponse *platformclientv2.Uploadurlresponse
+	var err error
+	if fileType == "voice" {
+		uploadResponse, _, err = p.architectApi.PostArchitectGrammarLanguageFilesVoice(grammarId, languageCode, *uploadBody)
+	} else if fileType == "dtmf" {
+		uploadResponse, _, err = p.architectApi.PostArchitectGrammarLanguageFilesDtmf(grammarId, languageCode, *uploadBody)
+	} else {
+		return fmt.Errorf("Invalid file type given. Specify either voice of dtmf")
+	}
+
 	if err != nil {
-		return fmt.Errorf("Failed to get language file presignedUri: %s", err)
+		return fmt.Errorf("Failed to get language file presignedUri: %s for file %s", err, *filename)
 	}
 
 	reader, file, err := files.DownloadOrOpenFile(*filename)

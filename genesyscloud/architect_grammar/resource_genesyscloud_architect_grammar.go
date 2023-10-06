@@ -16,7 +16,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_architect_grammar.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_architect_grammar.go contains all the methods that perform the core logic for a resource.
 */
 
 // getAllAuthArchitectGrammar retrieves all of the architect grammars via Terraform in the Genesys Cloud and is used for the exporter
@@ -59,30 +59,27 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 		}
 
 		// Upload grammar voice file
-		if language.VoiceFileMetadata.FileName != nil {
+		if language.VoiceFileMetadata != nil && language.VoiceFileMetadata.FileName != nil {
 			uploadRequest := platformclientv2.Grammarfileuploadrequest{
 				FileType: language.VoiceFileMetadata.FileType,
 			}
-			err = proxy.uploadGrammarLanguageFile(*grammar.Id, *language.Language, language.VoiceFileMetadata.FileName, &uploadRequest)
+			err = proxy.uploadGrammarLanguageFile(*grammar.Id, *language.Language, language.VoiceFileMetadata.FileName, &uploadRequest, "voice")
 			if err != nil {
 				return diag.Errorf("Failed to upload language voice file: %s", err)
 			}
 		}
 
 		// Upload grammar dtmf file
-		if language.DtmfFileMetadata.FileName != nil {
+		if language.DtmfFileMetadata != nil && language.DtmfFileMetadata.FileName != nil {
 			uploadRequest := platformclientv2.Grammarfileuploadrequest{
 				FileType: language.DtmfFileMetadata.FileType,
 			}
-			err = proxy.uploadGrammarLanguageFile(*grammar.Id, *language.Language, language.DtmfFileMetadata.FileName, &uploadRequest)
+			err = proxy.uploadGrammarLanguageFile(*grammar.Id, *language.Language, language.DtmfFileMetadata.FileName, &uploadRequest, "dtmf")
 			if err != nil {
 				return diag.Errorf("Failed to upload language dtmf file: %s", err)
 			}
 		}
 	}
-
-	g, _, _ := proxy.getArchitectGrammarById(ctx, *grammar.Id)
-	fmt.Println(formatJSON(g))
 
 	d.SetId(*grammar.Id)
 	log.Printf("Created Architect Grammar %s", *grammar.Id)
@@ -134,6 +131,8 @@ func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 	architectGrammar := getArchitectGrammarFromResourceData(d)
 
+	// Update grammar
+	log.Printf("Updating Architect Grammar %s", *architectGrammar.Name)
 	grammar, err := proxy.updateArchitectGrammar(ctx, d.Id(), &architectGrammar)
 	if err != nil {
 		return diag.Errorf("Failed to update grammar: %s", err)
@@ -141,33 +140,28 @@ func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 	// Update each language associated with the grammar
 	for _, language := range *architectGrammar.Languages {
-		languageUpdate := platformclientv2.Grammarlanguageupdate{
-			DtmfFileMetadata:  language.DtmfFileMetadata,
-			VoiceFileMetadata: language.VoiceFileMetadata,
-		}
-
-		_, err := proxy.updateArchitectGrammarLanguage(ctx, *grammar.Id, *language.Language, &languageUpdate)
+		_, err := proxy.updateArchitectGrammarLanguage(ctx, *grammar.Id, *language.Language, &language)
 		if err != nil {
 			return diag.Errorf("Failed to update grammar language: %s", err)
 		}
 
 		// Upload grammar voice file
-		if language.VoiceFileMetadata.FileName != nil {
+		if language.VoiceFileMetadata != nil && language.VoiceFileMetadata.FileName != nil {
 			uploadRequest := platformclientv2.Grammarfileuploadrequest{
 				FileType: language.VoiceFileMetadata.FileType,
 			}
-			err = proxy.uploadGrammarLanguageFile(*grammar.Id, *language.Language, language.VoiceFileMetadata.FileName, &uploadRequest)
+			err = proxy.uploadGrammarLanguageFile(*grammar.Id, *language.Language, language.VoiceFileMetadata.FileName, &uploadRequest, "voice")
 			if err != nil {
 				return diag.Errorf("Failed to upload language voice file: %s", err)
 			}
 		}
 
 		// Upload grammar dtmf file
-		if language.DtmfFileMetadata.FileName != nil {
+		if language.DtmfFileMetadata != nil && language.DtmfFileMetadata.FileName != nil {
 			uploadRequest := platformclientv2.Grammarfileuploadrequest{
 				FileType: language.DtmfFileMetadata.FileType,
 			}
-			err = proxy.uploadGrammarLanguageFile(*grammar.Id, *language.Language, language.DtmfFileMetadata.FileName, &uploadRequest)
+			err = proxy.uploadGrammarLanguageFile(*grammar.Id, *language.Language, language.DtmfFileMetadata.FileName, &uploadRequest, "dtmf")
 			if err != nil {
 				return diag.Errorf("Failed to upload language dtmf file: %s", err)
 			}
