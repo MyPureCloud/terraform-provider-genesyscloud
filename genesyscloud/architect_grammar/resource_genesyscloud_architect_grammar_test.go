@@ -6,6 +6,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"io"
+	"net/http"
+	"os"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
@@ -264,16 +267,63 @@ func verifyFileUpload(grammarResourceName string, language string, fileType File
 			if grammarLanguage.DtmfFileUrl == nil {
 				return fmt.Errorf("Dtmf file url not found for file %s", filename)
 			}
+			err := validateFileContent(*grammarLanguage.DtmfFileMetadata, *grammarLanguage.DtmfFileUrl)
+			if err != nil {
+				return err
+			}
 		} else if fileType == Voice {
 			if grammarLanguage.VoiceFileUrl == nil {
 				return fmt.Errorf("Voice file url not found for file %s", filename)
 			}
+			err := validateFileContent(*grammarLanguage.DtmfFileMetadata, *grammarLanguage.DtmfFileUrl)
+			if err != nil {
+				return err
+			}
 		} else {
-			return fmt.Errorf("Unknown language file type")
+			return fmt.Errorf("Unknown language file type. Please specify Voice of Dtmf")
 		}
 
 		return nil
 	}
+}
+
+func validateFileContent(fileData platformclientv2.Grammarlanguagefilemetadata, fileUrl string) error {
+	// Download the language file
+	downloadedFileContent, err := downloadFile(fileUrl)
+	if err != nil {
+		return fmt.Errorf("Error downloading %s: %v\n", fileUrl, err)
+	}
+
+	// Read the content of the local file
+	localFile := *fileData.FileName
+	localFileContent, err := os.ReadFile(localFile)
+	if err != nil {
+		return fmt.Errorf("Error reading %s: %v\n", localFile, err)
+	}
+
+	if string(localFileContent) != downloadedFileContent {
+		return fmt.Errorf("Downloaded file does not match local file")
+	}
+	return nil
+}
+
+func downloadFile(url string) (string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("HTTP request failed with status code: %d", resp.StatusCode)
+	}
+
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
 }
 
 func testVerifyGrammarDestroyed(state *terraform.State) error {

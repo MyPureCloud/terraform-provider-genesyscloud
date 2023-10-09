@@ -44,7 +44,7 @@ func ResourceArchitectGrammar() *schema.Resource {
 			"file_content_hash": {
 				Description: "Hash value of the file content. Used to detect changes.",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 		},
 	}

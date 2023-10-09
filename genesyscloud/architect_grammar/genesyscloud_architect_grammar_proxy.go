@@ -1,16 +1,12 @@
 package architect_grammar
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
-	"io"
 	"log"
-	"mime/multipart"
 	"net/http"
-	"path/filepath"
-	"terraform-provider-genesyscloud/genesyscloud/util/files"
+	"os"
 )
 
 /*
@@ -116,7 +112,7 @@ func (p *architectGrammarProxy) deleteArchitectGrammar(ctx context.Context, gram
 	return p.deleteArchitectGrammarAttr(ctx, p, grammarId)
 }
 
-// deleteArchitectGrammar deletes a Genesys Cloud Architect Grammar by Id
+// uploadGrammarLanguageFile uploads a grammar file to genesys cloud
 func (p *architectGrammarProxy) uploadGrammarLanguageFile(grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest, fileType string) (err error) {
 	return p.uploadGrammarLanguageFileAttr(p, grammarId, languageCode, filename, uploadBody, fileType)
 }
@@ -175,7 +171,7 @@ func getArchitectGrammarByIdFn(ctx context.Context, p *architectGrammarProxy, gr
 	return grammar, resp.StatusCode, nil
 }
 
-// getArchitectGrammarIdBySearchFn is an implementation of the function to get a Genesys Cloud Architect Grammar by name
+// getArchitectGrammarIdByNameFn is an implementation of the function to get a Genesys Cloud Architect Grammar by name
 func getArchitectGrammarIdByNameFn(ctx context.Context, p *architectGrammarProxy, name string) (grammarId string, retryable bool, err error) {
 	const pageNum = 1
 	const pageSize = 100
@@ -251,7 +247,7 @@ func deleteArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 	return resp.StatusCode, nil
 }
 
-// uploadGrammarLanguageFileFn is an implementation function for deleting a Genesys Cloud Architect Grammar
+// uploadGrammarLanguageFileFn is an implementation function for uploading a grammar language file to Genesys cloud
 func uploadGrammarLanguageFileFn(p *architectGrammarProxy, grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest, fileType string) error {
 	var uploadResponse *platformclientv2.Uploadurlresponse
 	var err error
@@ -262,35 +258,17 @@ func uploadGrammarLanguageFileFn(p *architectGrammarProxy, grammarId string, lan
 	} else {
 		return fmt.Errorf("Invalid file type given. Specify either voice of dtmf")
 	}
-
 	if err != nil {
 		return fmt.Errorf("Failed to get language file presignedUri: %s for file %s", err, *filename)
 	}
 
-	reader, file, err := files.DownloadOrOpenFile(*filename)
-	if file != nil {
-		defer file.Close()
-	}
+	file, err := os.Open(*filename)
 	if err != nil {
 		return fmt.Errorf("Failed to find file: %s", err)
 	}
+	defer file.Close()
 
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", filepath.Base(*filename))
-	if err != nil {
-		return err
-	}
-
-	if file != nil {
-		io.Copy(part, file)
-	} else {
-		io.Copy(part, reader)
-	}
-	io.Copy(part, file)
-	writer.Close()
-
-	request, err := http.NewRequest(http.MethodPut, *uploadResponse.Url, body)
+	request, err := http.NewRequest(http.MethodPut, *uploadResponse.Url, file)
 	if err != nil {
 		return err
 	}
@@ -305,11 +283,6 @@ func uploadGrammarLanguageFileFn(p *architectGrammarProxy, grammarId string, lan
 		return err
 	}
 	defer response.Body.Close()
-
-	_, err = io.ReadAll(response.Body)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
