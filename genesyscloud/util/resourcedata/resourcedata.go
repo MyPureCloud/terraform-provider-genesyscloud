@@ -24,8 +24,7 @@ func BuildSDKStringValueIfNotNil(field **string, targetMap map[string]interface{
 	}
 }
 
-
-// This function will read a map and set the time property on an object if the value exists
+// BuildSDKTimeValueIfNotNil will read a map and set the time property on an object if the value exists
 func BuildSDKTimeValueIfNotNil(sdkTime **time.Time, targetMap map[string]interface{}, key string, timeFormat string) {
 	if timeStr := targetMap[key].(string); timeStr != "" {
 		timeValue, err := time.Parse(timeFormat, timeStr)
@@ -37,7 +36,7 @@ func BuildSDKTimeValueIfNotNil(sdkTime **time.Time, targetMap map[string]interfa
 	}
 }
 
-// This function will read a map and use the provided function to read the nested values if the value exists
+// BuildSDKInterfaceArrayValueIfNotNil will read a map and use the provided function to read the nested values if the value exists
 func BuildSDKInterfaceArrayValueIfNotNil[T any](field **T, targetMap map[string]interface{}, key string, f func([]interface{}) *T) {
 	if values := targetMap[key]; values != nil {
 		*field = f(values.([]interface{}))
@@ -100,8 +99,7 @@ func SetMapValueIfNotNil[T any](targetMap map[string]interface{}, key string, va
 	}
 }
 
-
-// SetMapInterfaceArrayWithFuncIfNotNil will read the values in a nested resource using the provided function and set it in a map
+// SetMapTimeIfNotNil will read the values in a nested resource using the provided function and set it in a map
 func SetMapTimeIfNotNil(targetMap map[string]interface{}, key string, value *time.Time, timeFormat string) {
 	var timeValue *string = nil
 	if value != nil {
@@ -111,7 +109,7 @@ func SetMapTimeIfNotNil(targetMap map[string]interface{}, key string, value *tim
 	SetMapValueIfNotNil(targetMap, key, timeValue)
 }
 
-// This function will read the values in a nested resource using the provided function and set it in a map
+// SetMapInterfaceArrayWithFuncIfNotNil will read the values in a nested resource using the provided function and set it in a map
 func SetMapInterfaceArrayWithFuncIfNotNil[T any](targetMap map[string]interface{}, key string, value *T, f func(*T) []interface{}) {
 	if value != nil {
 		targetMap[key] = f(value)
@@ -142,6 +140,15 @@ func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
 func SetNillableValueWithInterfaceArrayWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) []interface{}) {
 	if value != nil {
 		d.Set(key, f(value))
+	} else {
+		d.Set(key, nil)
+	}
+}
+
+// SetNillableValueWithInterfaceArrayWithFuncWithState will read the values in a nested resource using the provided function and set it on the schema
+func SetNillableValueWithInterfaceArrayWithFuncWithState[T any](d *schema.ResourceData, key string, value *T, f func(*schema.ResourceData, *T) []interface{}) {
+	if value != nil {
+		d.Set(key, f(d, value))
 	} else {
 		d.Set(key, nil)
 	}

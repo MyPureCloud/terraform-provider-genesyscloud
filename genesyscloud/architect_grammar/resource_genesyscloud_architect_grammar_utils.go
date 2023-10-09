@@ -81,7 +81,7 @@ func buildGrammarLanguageFileMetadata(fileMetadata []interface{}) *platformclien
 }
 
 // flattenGrammarLanguages maps a Genesys Cloud *[]platformclientv2.Grammarlanguage into a []interface{}
-func flattenGrammarLanguages(languages *[]platformclientv2.Grammarlanguage) []interface{} {
+func flattenGrammarLanguages(d *schema.ResourceData, languages *[]platformclientv2.Grammarlanguage) []interface{} {
 	if len(*languages) == 0 {
 		return nil
 	}
@@ -91,8 +91,12 @@ func flattenGrammarLanguages(languages *[]platformclientv2.Grammarlanguage) []in
 		languageMap := make(map[string]interface{})
 
 		resourcedata.SetMapValueIfNotNil(languageMap, "language", language.Language)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(languageMap, "voice_file_data", language.VoiceFileMetadata, flattenGrammarLanguageFileMetadata)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(languageMap, "dtmf_file_data", language.DtmfFileMetadata, flattenGrammarLanguageFileMetadata)
+		if language.VoiceFileMetadata != nil {
+			languageMap["voice_file_data"] = flattenGrammarLanguageFileMetadata(d, language.VoiceFileMetadata, *language.Language, "voice")
+		}
+		if language.DtmfFileMetadata != nil {
+			languageMap["dtmf_file_data"] = flattenGrammarLanguageFileMetadata(d, language.DtmfFileMetadata, *language.Language, "dtmf")
+		}
 
 		languageList = append(languageList, languageMap)
 	}
@@ -100,7 +104,7 @@ func flattenGrammarLanguages(languages *[]platformclientv2.Grammarlanguage) []in
 	return languageList
 }
 
-func flattenGrammarLanguageFileMetadata(fileMetadata *platformclientv2.Grammarlanguagefilemetadata) []interface{} {
+func flattenGrammarLanguageFileMetadata(d *schema.ResourceData, fileMetadata *platformclientv2.Grammarlanguagefilemetadata, languageCode string, fileType string) []interface{} {
 	if fileMetadata == nil {
 		return nil
 	}
@@ -109,6 +113,30 @@ func flattenGrammarLanguageFileMetadata(fileMetadata *platformclientv2.Grammarla
 
 	resourcedata.SetMapValueIfNotNil(metadataMap, "file_name", fileMetadata.FileName)
 	resourcedata.SetMapValueIfNotNil(metadataMap, "file_type", fileMetadata.FileType)
+	if schemaResource, ok := d.Get("languages").([]interface{}); ok {
+		for _, language := range schemaResource {
+			if languageMap, ok := language.(map[string]interface{}); ok {
+				if fmt.Sprintf("%v", languageMap["language"]) != languageCode {
+					continue
+				}
+				if fileType == "voice" {
+					if voiceData, ok := languageMap["voice_file_data"].([]interface{}); ok {
+						voiceDataMap := voiceData[0].(map[string]interface{})
+						if hash, ok := voiceDataMap["file_content_hash"].(string); ok {
+							metadataMap["file_content_hash"] = hash
+						}
+					}
+				} else if fileType == "dtmf" {
+					if dtmfData, ok := languageMap["dtmf_file_data"].([]interface{}); ok {
+						dtmfDataMap := dtmfData[0].(map[string]interface{})
+						if hash, ok := dtmfDataMap["file_content_hash"].(string); ok {
+							metadataMap["file_content_hash"] = hash
+						}
+					}
+				}
+			}
+		}
+	}
 
 	return []interface{}{metadataMap}
 }

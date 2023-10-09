@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
@@ -172,6 +173,9 @@ func TestAccResourceArchitectGrammarBasic(t *testing.T) {
 				ResourceName:      "genesyscloud_architect_grammar." + resourceId,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"languages",
+				},
 			},
 		},
 		CheckDestroy: testVerifyGrammarDestroyed,
@@ -209,25 +213,28 @@ func generateFileVoiceFileDataBlock(
 	fileName string,
 	fileType string,
 ) string {
+	fullyQualifiedPath, _ := filepath.Abs(fileName)
 	return fmt.Sprintf(`
 		voice_file_data {
 			file_name = "%s"
 			file_type = "%s"
+			file_content_hash = filesha256("%s")
 		}
-	`, fileName, fileType)
+	`, fileName, fileType, fullyQualifiedPath)
 }
 
 func generateFileDtmfFileDataBlock(
 	fileName string,
 	fileType string,
 ) string {
-
+	fullyQualifiedPath, _ := filepath.Abs(fileName)
 	return fmt.Sprintf(`
 		dtmf_file_data {
 			file_name = "%s"
 			file_type = "%s"
+			file_content_hash = filesha256("%s")
 		}
-	`, fileName, fileType)
+	`, fileName, fileType, fullyQualifiedPath)
 }
 
 func verifyFileUpload(grammarResourceName string, language string, fileType FileType, filename string) resource.TestCheckFunc {

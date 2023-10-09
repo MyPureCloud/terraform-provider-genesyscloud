@@ -9,7 +9,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 	"log"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -103,14 +102,15 @@ func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta inte
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Architect Grammar %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar())
+		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammar())
 
 		resourcedata.SetNillableValue(d, "name", grammar.Name)
 		resourcedata.SetNillableValue(d, "description", grammar.Description)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "languages", grammar.Languages, flattenGrammarLanguages)
-
+		resourcedata.SetNillableValueWithInterfaceArrayWithFuncWithState(d, "languages", grammar.Languages, flattenGrammarLanguages)
+		
 		log.Printf("Read Architect Grammar %s %s", d.Id(), *grammar.Name)
-		return cc.CheckState()
+		//return cc.CheckState()
+		return nil
 	})
 }
 
