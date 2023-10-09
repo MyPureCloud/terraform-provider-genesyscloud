@@ -3,7 +3,6 @@ package genesyscloud
 import (
 	"fmt"
 	"log"
-	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -87,8 +86,7 @@ func cleanupResponseAssets(folderName string) error {
 		fields  = []string{name}
 		varType = "STARTS_WITH"
 	)
-	config := platformclientv2.GetDefaultConfiguration()
-	err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+	config, err := AuthorizeSdk()
 	if err != nil {
 		return err
 	}

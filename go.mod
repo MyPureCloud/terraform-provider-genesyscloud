@@ -6,13 +6,14 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.1
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
-	github.com/hashicorp/hcl/v2 v2.18.0
+	github.com/hashicorp/hcl/v2 v2.18.1
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.29.0
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mypurecloud/platform-client-sdk-go/v112 v112.0.0
 	github.com/nyaruka/phonenumbers v1.1.8
-	github.com/zclconf/go-cty v1.14.0
+	github.com/rjNemo/underscore v0.6.1
+	github.com/zclconf/go-cty v1.14.1
 	gonum.org/v1/gonum v0.14.0
 )
 

@@ -127,6 +127,15 @@ func SetNillableReference(d *schema.ResourceData, key string, value *platformcli
 	}
 }
 
+// SetNillableReferenceWritableDivision functions the same as SetNillableReference, but for fields that are type Writabledivision, not Domainentityref
+func SetNillableReferenceWritableDivision(d *schema.ResourceData, key string, value *platformclientv2.Writabledivision) {
+	if value != nil && value.Id != nil {
+		_ = d.Set(key, *value.Id)
+	} else {
+		_ = d.Set(key, nil)
+	}
+}
+
 // SetNillableValue will read a basic type and set it on the schema
 func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
 	if value != nil {

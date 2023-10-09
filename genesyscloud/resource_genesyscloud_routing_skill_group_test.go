@@ -555,12 +555,11 @@ func generateRoutingSkillGroupResourceBasic(
 func testVerifySkillGroupMemberCount(resourceName string, count string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		// Authorize client credentials
-		config := platformclientv2.GetDefaultConfiguration()
-		routingAPI := platformclientv2.NewRoutingApi()
-		err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+		config, err := AuthorizeSdk()
 		if err != nil {
-			return fmt.Errorf("Unexpected error while trying to authorize client in testVerifyAllDivisionsAssigned : %s", err)
+			return fmt.Errorf("unexpected error while trying to authorize client in testVerifyAllDivisionsAssigned : %s", err)
 		}
+		routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
 
 		resourceState, ok := state.RootModule().Resources[resourceName]
 		if !ok {
@@ -696,15 +695,14 @@ func testVerifyAllDivisionsAssigned(resourceName string, attrName string) resour
 
 func testVerifySkillGroupDestroyed(state *terraform.State) error {
 	// Get default config to set config options
-	config := platformclientv2.GetDefaultConfiguration()
-	routingAPI := platformclientv2.NewRoutingApi()
+	config, err := AuthorizeSdk()
+	if err != nil {
+		return fmt.Errorf("unexpected error while trying to authorize client in testVerifySkillGroupDestroyed : %s", err)
+	}
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
 	apiClient := &routingAPI.Configuration.APIClient
 
 	// TODO Once this code has been released into the public API we should fix this and use the SDK
-	err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
-	if err != nil {
-		return fmt.Errorf("Unexpected error while trying to authorize client in testVerifySkillGroupDestroyed : %s", err)
-	}
 
 	headerParams := buildHeaderParams(routingAPI)
 	for _, rs := range state.RootModule().Resources {

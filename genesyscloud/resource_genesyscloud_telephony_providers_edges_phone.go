@@ -530,11 +530,18 @@ func getAllPhones(_ context.Context, sdkConfig *platformclientv2.Configuration) 
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	for pageNum := 1; ; pageNum++ {
+	phones, _, _ := edgesAPI.GetTelephonyProvidersEdgesPhones(1, 100, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+	for _, phone := range *phones.Entities {
+		if phone.State != nil && *phone.State != "deleted" {
+			resources[*phone.Id] = &resourceExporter.ResourceMeta{Name: *phone.Name}
+		}
+	}
+
+	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
 		const pageSize = 100
-		// unlocks result limit
 		const sortBy = "id"
 		phones, _, getErr := edgesAPI.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of phones: %v", getErr)
 		}

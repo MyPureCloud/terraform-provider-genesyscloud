@@ -3,7 +3,6 @@ package outbound
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -105,10 +104,9 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		)
 	)
 
-	config := platformclientv2.GetDefaultConfiguration()
-	err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+	config, err := gcloud.AuthorizeSdk()
 	if err != nil {
-		t.Errorf("error validating client credentials: %v", err)
+		t.Errorf("failed to authorize client: %v", err)
 	}
 	api := platformclientv2.NewRoutingApiWithConfig(config)
 	err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
