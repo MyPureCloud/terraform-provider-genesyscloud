@@ -166,7 +166,7 @@ func getOutboundRulesetIdByNameFn(ctx context.Context, p *outboundRulesetProxy, 
 			}
 		}
 		return "", false, fmt.Errorf("Too many values returned in look for outbound rulesets.  Unable to choose 1 ruleset.  Please refine search and continue.")
-	} else {
+	} else if (*rulesets.Entities)[0].Name == &name {
 		log.Printf("Retrieved the ruleset id %s by name %s", *(*rulesets.Entities)[0].Id, name)
 		ruleset = (*rulesets.Entities)[0]
 	}
