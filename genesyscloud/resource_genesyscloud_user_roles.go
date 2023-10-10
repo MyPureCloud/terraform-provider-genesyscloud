@@ -54,7 +54,7 @@ Terraform expects to manage the resources that are defined in its stack. You can
 			},
 			"roles": {
 				Description: "Roles and their divisions assigned to this user.",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        roleAssignmentResource,
 			},
@@ -80,7 +80,7 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUserRoles())
-		d.Set("roles", roles)
+		_ = d.Set("roles", roles)
 
 		log.Printf("Read roles for user %s", d.Id())
 		return cc.CheckState()
