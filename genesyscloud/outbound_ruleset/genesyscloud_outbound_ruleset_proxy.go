@@ -164,7 +164,7 @@ func getOutboundRulesetIdByNameFn(ctx context.Context, p *outboundRulesetProxy, 
 		if *rulesetSdk.Name == name {
 			log.Printf("Retrieved the ruleset id %s by name %s", *rulesetSdk.Id, name)
 			ruleset = rulesetSdk
-			return *ruleset.Id, true, nil
+			return *ruleset.Id, false, nil
 		}
 	}
 
