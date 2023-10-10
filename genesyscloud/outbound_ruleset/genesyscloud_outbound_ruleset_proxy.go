@@ -169,6 +169,8 @@ func getOutboundRulesetIdByNameFn(ctx context.Context, p *outboundRulesetProxy, 
 	} else if *(*rulesets.Entities)[0].Name == name {
 		log.Printf("Retrieved the ruleset id %s by name %s", *(*rulesets.Entities)[0].Id, name)
 		ruleset = (*rulesets.Entities)[0]
+	} else {
+		return "", false, fmt.Errorf("Unable to find ruleset with name %s", name)
 	}
 
 	return *ruleset.Id, false, nil
