@@ -158,22 +158,17 @@ func getOutboundRulesetIdByNameFn(ctx context.Context, p *outboundRulesetProxy, 
 	}
 
 	var ruleset platformclientv2.Ruleset
-	if len(*rulesets.Entities) > 1 {
-		for _, rulesetSdk := range *rulesets.Entities {
-			if *rulesetSdk.Name == name {
-				log.Printf("Retrieved the ruleset id %s by name %s", *rulesetSdk.Id, name)
-				ruleset = rulesetSdk
-			}
+	entities := *rulesets.Entities
+
+	for _, rulesetSdk := range entities {
+		if *rulesetSdk.Name == name {
+			log.Printf("Retrieved the ruleset id %s by name %s", *rulesetSdk.Id, name)
+			ruleset = rulesetSdk
+			return *ruleset.Id, true, nil
 		}
-		return "", false, fmt.Errorf("Too many values returned in look for outbound rulesets.  Unable to choose 1 ruleset.  Please refine search and continue.")
-	} else if *(*rulesets.Entities)[0].Name == name {
-		log.Printf("Retrieved the ruleset id %s by name %s", *(*rulesets.Entities)[0].Id, name)
-		ruleset = (*rulesets.Entities)[0]
-	} else {
-		return "", false, fmt.Errorf("Unable to find ruleset with name %s", name)
 	}
 
-	return *ruleset.Id, false, nil
+	return "", false, fmt.Errorf("Unable to find ruleset with name %s", name)
 }
 
 // updateOutboundRulesetFn is an implementation of the function to update a Genesys Cloud Outbound Rulesets
