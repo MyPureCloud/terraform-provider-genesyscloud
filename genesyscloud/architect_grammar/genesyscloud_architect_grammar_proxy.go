@@ -181,24 +181,19 @@ func getArchitectGrammarIdByNameFn(ctx context.Context, p *architectGrammarProxy
 	}
 
 	if grammars.Entities == nil || len(*grammars.Entities) == 0 {
-		return "", true, fmt.Errorf("No architect grammar found with name %s", name)
+		return "", true, fmt.Errorf("No architect grammars found with name %s", name)
 	}
 
 	var grammar platformclientv2.Grammar
-	if len(*grammars.Entities) > 1 {
-		for _, grammarSdk := range *grammars.Entities {
-			if *grammarSdk.Name == name {
-				log.Printf("Retrieved the grammar id %s by name %s", *grammarSdk.Id, name)
-				grammar = grammarSdk
-			}
+	for _, grammarSdk := range *grammars.Entities {
+		if *grammarSdk.Name == name {
+			log.Printf("Retrieved the grammar id %s by name %s", *grammarSdk.Id, name)
+			grammar = grammarSdk
+			return *grammar.Id, false, nil
 		}
-		return "", false, fmt.Errorf("Too many values returned in look for architect grammar.  Unable to choose 1 grammar.  Please refine search and continue.")
-	} else {
-		log.Printf("Retrieved the grammar id %s by name %s", *(*grammars.Entities)[0].Id, name)
-		grammar = (*grammars.Entities)[0]
 	}
 
-	return *grammar.Id, false, nil
+	return "", false, fmt.Errorf("Unable to find grammar with name %s", name)
 }
 
 // updateArchitectGrammarFn is an implementation of the function to update a Genesys Cloud Architect Grammar
