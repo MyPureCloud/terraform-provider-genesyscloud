@@ -162,28 +162,34 @@ func ArchitectGrammarResolver(grammarId, exportDirectory, subDirectory string, c
 
 	for _, language := range *grammar.Languages {
 		if language.VoiceFileMetadata != nil && language.VoiceFileUrl != nil {
-			fileType := ""
 			if language.VoiceFileMetadata.FileType != nil {
-				fileType = strings.ToLower(*language.VoiceFileMetadata.FileType)
-			}
-			voiceFileName := fmt.Sprintf("%s-voice-%s.%s", *language.Language, grammarId, fileType)
-			if err := files.DownloadExportFile(fullPath, voiceFileName, *language.VoiceFileUrl); err != nil {
-				return err
+				downloadFiles(grammarId, fullPath, *language.Language, *language.VoiceFileUrl, *language.VoiceFileMetadata.FileType)
+			} else {
+				downloadFiles(grammarId, fullPath, *language.Language, *language.VoiceFileUrl, "")
 			}
 		}
 
 		if language.DtmfFileMetadata != nil && language.DtmfFileUrl != nil {
-			fileType := ""
 			if language.DtmfFileMetadata.FileType != nil {
-				fileType = strings.ToLower(*language.DtmfFileMetadata.FileType)
-			}
-			dtmfFileName := fmt.Sprintf("%s-dtmf-%s.%s", *language.Language, grammarId, fileType)
-			if err := files.DownloadExportFile(fullPath, dtmfFileName, *language.DtmfFileUrl); err != nil {
-				return err
+				downloadFiles(grammarId, fullPath, *language.Language, *language.DtmfFileUrl, *language.DtmfFileMetadata.FileType)
+			} else {
+				downloadFiles(grammarId, fullPath, *language.Language, *language.DtmfFileUrl, "")
 			}
 		}
 	}
 	updateFilenamesInExportConfigMap(configMap, grammarId, *grammar.Languages, subDirectory)
+	return nil
+}
+
+func downloadFiles(grammarId string, fullPath string, languageCode string, fileUrl string, fileTypeSdk string) error {
+	fileType := ""
+	if fileTypeSdk != "" {
+		fileType = strings.ToLower(fileTypeSdk)
+	}
+	dtmfFileName := fmt.Sprintf("%s-dtmf-%s.%s", languageCode, grammarId, fileType)
+	if err := files.DownloadExportFile(fullPath, dtmfFileName, fileUrl); err != nil {
+		return err
+	}
 	return nil
 }
 

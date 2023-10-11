@@ -33,20 +33,20 @@ func (r *registerTestInstance) registerTestDataSources() {
 }
 
 // initTestresources initializes all test_data resources and data sources.
-func initTestresources() {
+func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
-	reg_instance := &registerTestInstance{}
+	regInstance := &registerTestInstance{}
 
-	reg_instance.registerTestResources()
-	reg_instance.registerTestDataSources()
+	regInstance.registerTestResources()
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test_data
 func TestMain(m *testing.M) {
 	// Run setup function before starting the test_data suite for the architect_grammar package
-	initTestresources()
+	initTestResources()
 
 	// Run the test_data suite for the architect_grammar package
 	m.Run()

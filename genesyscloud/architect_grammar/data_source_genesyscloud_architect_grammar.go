@@ -12,7 +12,7 @@ import (
 )
 
 /*
-   The data_source_genesyscloud_grammar_proxy.go contains the data source implementation
+   The data_source_genesyscloud_architect_grammar_proxy.go contains the data source implementation
    for the resource.
 */
 
