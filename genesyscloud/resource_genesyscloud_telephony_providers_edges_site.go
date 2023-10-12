@@ -21,6 +21,46 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
+var outboundRouteSchema = &schema.Resource{
+	Schema: map[string]*schema.Schema{
+		"name": {
+			Description: "The name of the entity.",
+			Type:        schema.TypeString,
+			Required:    true,
+		},
+		"description": {
+			Description: "The resource's description.",
+			Type:        schema.TypeString,
+			Optional:    true,
+		},
+		"classification_types": {
+			Description: "Used to classify this outbound route.",
+			Type:        schema.TypeList,
+			Required:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		"enabled": {
+			Description: "Enable or disable the outbound route",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		"distribution": {
+			Description:  "Valid values: SEQUENTIAL, RANDOM.",
+			Type:         schema.TypeString,
+			Optional:     true,
+			Default:      "SEQUENTIAL",
+			ValidateFunc: validation.StringInSlice([]string{"SEQUENTIAL", "RANDOM"}, false),
+		},
+		"external_trunk_base_ids": {
+			Description: "Trunk base settings of trunkType \"EXTERNAL\". This base must also be set on an edge logical interface for correct routing. The order of the IDs determines the distribution if \"distribution\" is set to \"SEQUENTIAL\"",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+	},
+}
+
 func ResourceSite() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Site",
@@ -181,49 +221,12 @@ func ResourceSite() *schema.Resource {
 				},
 			},
 			"outbound_routes": {
-				Description: "Outbound Routes for the site. The default outbound route will not be delete if routes are specified",
-				Type:        schema.TypeList,
+				Description: "Outbound Routes for the site. The default outbound route will be deleted if routes are specified",
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"name": {
-							Description: "The name of the entity.",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-						"description": {
-							Description: "The resource's description.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"classification_types": {
-							Description: "Used to classify this outbound route.",
-							Type:        schema.TypeList,
-							Required:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-						},
-						"enabled": {
-							Description: "Enable or disable the outbound route",
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Default:     false,
-						},
-						"distribution": {
-							Description:  "Valid values: SEQUENTIAL, RANDOM.",
-							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "SEQUENTIAL",
-							ValidateFunc: validation.StringInSlice([]string{"SEQUENTIAL", "RANDOM"}, false),
-						},
-						"external_trunk_base_ids": {
-							Description: "Trunk base settings of trunkType \"EXTERNAL\". This base must also be set on an edge logical interface for correct routing. The order of the IDs determines the distribution if \"distribution\" is set to \"SEQUENTIAL\"",
-							Type:        schema.TypeList,
-							Optional:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-						},
-					},
-				},
+				ConfigMode:  schema.SchemaConfigModeAttr,
+				Elem:        outboundRouteSchema,
 			},
 			"primary_sites": {
 				Description: `Used for primary phone edge assignment on physical edges only.  List of primary sites the phones can be assigned to. If no primary_sites are defined, the site id for this site will be used as the primary site id.`,
@@ -253,7 +256,7 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (res
 		const pageSize = 100
 		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of sites: %v", getErr)
+			return nil, diag.Errorf("failed to get page of sites: %v", getErr)
 		}
 
 		if sites.Entities == nil || len(*sites.Entities) == 0 {
@@ -272,7 +275,7 @@ func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (res
 		const pageSize = 100
 		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", true)
 		if getErr != nil {
-			return nil, diag.Errorf("Failed to get page of sites: %v", getErr)
+			return nil, diag.Errorf("failed to get page of sites: %v", getErr)
 		}
 
 		if sites.Entities == nil || len(*sites.Entities) == 0 {
@@ -318,7 +321,7 @@ func validateMediaRegions(regions *[]string, sdkConfig *platformclientv2.Configu
 		if region != *homeRegion &&
 			!lists.ItemInSlice(region, *coreRegions) &&
 			!lists.ItemInSlice(region, *satRegions) {
-			return fmt.Errorf("region %s is not a valid media region.  please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions.", regions)
+			return fmt.Errorf("region %s is not a valid media region.  please refer to the Genesys Cloud GET /api/v2/telephony/mediaregions for list of valid regions", regions)
 		}
 
 	}
@@ -346,10 +349,10 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	locationAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 	location, _, err := locationAPI.GetLocation(locationId, nil)
 	if err != nil {
-		return diag.Errorf("Error fetching location with id %v: %v", locationId, err)
+		return diag.Errorf("error fetching location with id %v: %v", locationId, err)
 	}
 	if location.EmergencyNumber == nil {
-		return diag.Errorf("Location with id %v does not have an emergency number", locationId)
+		return diag.Errorf("location with id %v does not have an emergency number", locationId)
 	}
 
 	err = validateMediaRegions(mediaRegions, sdkConfig)
@@ -392,7 +395,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Creating site %s", name)
 	site, _, err = edgesAPI.PostTelephonyProvidersEdgesSites(*site)
 	if err != nil {
-		return diag.Errorf("Failed to create site %s: %s", name, err)
+		return diag.Errorf("failed to create site %s: %s", name, err)
 	}
 
 	d.SetId(*site.Id)
@@ -432,9 +435,9 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		currentSite, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
 		if getErr != nil {
 			if IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read site %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read site %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read site %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite())
@@ -505,10 +508,10 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	locationAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
 	location, _, err := locationAPI.GetLocation(locationId, nil)
 	if err != nil {
-		return diag.Errorf("Error fetching location with id %v: %v", locationId, err)
+		return diag.Errorf("error fetching location with id %v: %v", locationId, err)
 	}
 	if location.EmergencyNumber == nil {
-		return diag.Errorf("Location with id %v does not have an emergency number", locationId)
+		return diag.Errorf("location with id %v does not have an emergency number", locationId)
 	}
 
 	err = validateMediaRegions(mediaRegions, sdkConfig)
@@ -560,14 +563,14 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		// Get current site version
 		currentSite, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesSite(d.Id())
 		if getErr != nil {
-			return resp, diag.Errorf("Failed to read site %s: %s", d.Id(), getErr)
+			return resp, diag.Errorf("failed to read site %s: %s", d.Id(), getErr)
 		}
 		site.Version = currentSite.Version
 
 		log.Printf("Updating site %s", name)
 		site, resp, err = edgesAPI.PutTelephonyProvidersEdgesSite(d.Id(), *site)
 		if err != nil {
-			return resp, diag.Errorf("Failed to update site %s: %s", name, err)
+			return resp, diag.Errorf("failed to update site %s: %s", name, err)
 		}
 		return resp, nil
 	})
@@ -601,7 +604,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			log.Printf("Site already deleted %s", d.Id())
 			return nil
 		}
-		return diag.Errorf("Failed to delete site: %s %s", d.Id(), err)
+		return diag.Errorf("failed to delete site: %s %s", d.Id(), err)
 	}
 
 	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -615,7 +618,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				time.Sleep(8 * time.Second)
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting site %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting site %s: %s", d.Id(), err))
 		}
 
 		if site.State != nil && *site.State == "deleted" {
@@ -627,7 +630,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Site %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("site %s still exists", d.Id()))
 	})
 }
 
@@ -659,11 +662,11 @@ func updatePrimarySecondarySites(d *schema.ResourceData, siteId string, edgesAPI
 	site, resp, err := edgesAPI.GetTelephonyProvidersEdgesSite(siteId)
 
 	if resp.StatusCode != 200 {
-		return diag.Errorf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site.  Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody)
+		return diag.Errorf("unable to retrieve site record after site %s was created, but unable to update the primary or secondary site.  Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody)
 	}
 
 	if err != nil {
-		return diag.Errorf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site.  Err: %s", siteId, err)
+		return diag.Errorf("unable to retrieve site record after site %s was created, but unable to update the primary or secondary site.  Err: %s", siteId, err)
 	}
 
 	if len(primarySites) == 0 && len(secondarySites) > 0 {
@@ -684,11 +687,11 @@ func updatePrimarySecondarySites(d *schema.ResourceData, siteId string, edgesAPI
 	_, resp, err = edgesAPI.PutTelephonyProvidersEdgesSite(siteId, *site)
 
 	if resp.StatusCode != 200 {
-		return diag.Errorf("Site %s was created, but unable to update the primary or secondary site.  Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody)
+		return diag.Errorf("site %s was created, but unable to update the primary or secondary site.  Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody)
 	}
 
 	if err != nil {
-		return diag.Errorf("[Site %s was created, but unable to update the primary or secondary site.  Err: %s", siteId, err)
+		return diag.Errorf("site %s was created, but unable to update the primary or secondary site.  Err: %s", siteId, err)
 	}
 
 	return nil
@@ -758,7 +761,7 @@ func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Te
 
 			numberPlansFromAPI, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(d.Id())
 			if err != nil {
-				return diag.Errorf("Failed to get number plans for site %s: %s", d.Id(), err)
+				return diag.Errorf("failed to get number plans for site %s: %s", d.Id(), err)
 			}
 
 			updatedNumberPlans := make([]platformclientv2.Numberplan, 0)
@@ -794,7 +797,7 @@ func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Te
 					if resp != nil {
 						respString = resp.String()
 					}
-					return resp, diag.Errorf("Failed to update number plans for site %s: %s %s", d.Id(), err, respString)
+					return resp, diag.Errorf("failed to update number plans for site %s: %s %s", d.Id(), err, respString)
 				}
 				return resp, nil
 			})
@@ -809,99 +812,105 @@ func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Te
 }
 
 func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) diag.Diagnostics {
-	if d.HasChange("outbound_routes") {
-		if ors := d.Get("outbound_routes").([]interface{}); ors != nil {
-			outboundRoutesFromTf := make([]platformclientv2.Outboundroutebase, 0)
-			for _, or := range ors {
-				orMap := or.(map[string]interface{})
-				outboundRouteFromTf := platformclientv2.Outboundroutebase{}
+	if !d.HasChange("outbound_routes") {
+		return nil
+	}
+	ors := d.Get("outbound_routes").(*schema.Set)
+	if ors == nil {
+		return nil
+	}
+	orsList := ors.List()
 
-				if name := orMap["name"].(string); name != "" {
-					outboundRouteFromTf.Name = &name
-				}
-				if description := orMap["description"].(string); description != "" {
-					outboundRouteFromTf.Description = &description
-				}
-				if classificationTypes, ok := orMap["classification_types"].([]interface{}); ok && len(classificationTypes) > 0 {
-					cts := make([]string, 0)
-					for _, classificationType := range classificationTypes {
-						cts = append(cts, classificationType.(string))
-					}
-					outboundRouteFromTf.ClassificationTypes = &cts
-				}
-				if enabled, ok := orMap["enabled"].(bool); ok {
-					outboundRouteFromTf.Enabled = &enabled
-				}
-				if distribution := orMap["distribution"].(string); distribution != "" {
-					outboundRouteFromTf.Distribution = &distribution
-				}
-				if externalTrunkBaseIds, ok := orMap["external_trunk_base_ids"].([]interface{}); ok && len(externalTrunkBaseIds) > 0 {
-					ids := make([]platformclientv2.Domainentityref, 0)
-					for _, externalTrunkBaseId := range externalTrunkBaseIds {
-						externalTrunkBaseIdStr := externalTrunkBaseId.(string)
-						ids = append(ids, platformclientv2.Domainentityref{Id: &externalTrunkBaseIdStr})
-					}
-					outboundRouteFromTf.ExternalTrunkBases = &ids
-				}
+	outboundRoutesFromTf := make([]platformclientv2.Outboundroutebase, 0)
+	for _, or := range orsList {
+		orMap := or.(map[string]interface{})
+		outboundRouteFromTf := platformclientv2.Outboundroutebase{}
 
-				outboundRoutesFromTf = append(outboundRoutesFromTf, outboundRouteFromTf)
+		if name := orMap["name"].(string); name != "" {
+			outboundRouteFromTf.Name = &name
+		}
+		if description := orMap["description"].(string); description != "" {
+			outboundRouteFromTf.Description = &description
+		}
+		if classificationTypes, ok := orMap["classification_types"].([]interface{}); ok && len(classificationTypes) > 0 {
+			cts := make([]string, 0)
+			for _, classificationType := range classificationTypes {
+				cts = append(cts, classificationType.(string))
 			}
-
-			// The default outbound routes won't be assigned yet if there isn't a wait
-			time.Sleep(5 * time.Second)
-
-			outboundRoutesFromAPI := make([]platformclientv2.Outboundroutebase, 0)
-			for pageNum := 1; ; pageNum++ {
-				const pageSize = 100
-				outboundRoutes, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), pageSize, pageNum, "", "", "")
-				if err != nil {
-					return diag.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err)
-				}
-				if outboundRoutes.Entities == nil || len(*outboundRoutes.Entities) == 0 {
-					break
-				}
-				outboundRoutesFromAPI = append(outboundRoutesFromAPI, *outboundRoutes.Entities...)
+			outboundRouteFromTf.ClassificationTypes = &cts
+		}
+		if enabled, ok := orMap["enabled"].(bool); ok {
+			outboundRouteFromTf.Enabled = &enabled
+		}
+		if distribution := orMap["distribution"].(string); distribution != "" {
+			outboundRouteFromTf.Distribution = &distribution
+		}
+		if externalTrunkBaseIds, ok := orMap["external_trunk_base_ids"].([]interface{}); ok && len(externalTrunkBaseIds) > 0 {
+			ids := make([]platformclientv2.Domainentityref, 0)
+			for _, externalTrunkBaseId := range externalTrunkBaseIds {
+				externalTrunkBaseIdStr := externalTrunkBaseId.(string)
+				ids = append(ids, platformclientv2.Domainentityref{Id: &externalTrunkBaseIdStr})
 			}
+			outboundRouteFromTf.ExternalTrunkBases = &ids
+		}
 
-			for _, outboundRouteFromTf := range outboundRoutesFromTf {
-				if outboundRoute, ok := nameInOutboundRoutes(*outboundRouteFromTf.Name, outboundRoutesFromAPI); ok {
-					// Update the outbound route
-					outboundRoute.Name = outboundRouteFromTf.Name
-					outboundRoute.Description = outboundRouteFromTf.Description
-					outboundRoute.ClassificationTypes = outboundRouteFromTf.ClassificationTypes
-					outboundRoute.Enabled = outboundRouteFromTf.Enabled
-					outboundRoute.Distribution = outboundRouteFromTf.Distribution
-					outboundRoute.ExternalTrunkBases = outboundRouteFromTf.ExternalTrunkBases
-					_, _, err := edgesAPI.PutTelephonyProvidersEdgesSiteOutboundroute(d.Id(), *outboundRoute.Id, *outboundRoute)
-					if err != nil {
-						return diag.Errorf("Failed to update outbound route with id %s for site %s: %s", *outboundRoute.Id, d.Id(), err)
-					}
-				} else {
-					// Add the outbound route
-					_, _, err := edgesAPI.PostTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), outboundRouteFromTf)
-					if err != nil {
-						return diag.Errorf("Failed to add outbound route to site %s: %s", d.Id(), err)
-					}
-				}
+		outboundRoutesFromTf = append(outboundRoutesFromTf, outboundRouteFromTf)
+	}
+
+	// The default outbound routes won't be assigned yet if there isn't a wait
+	time.Sleep(5 * time.Second)
+
+	outboundRoutesFromAPI := make([]platformclientv2.Outboundroutebase, 0)
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		outboundRoutes, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), pageSize, pageNum, "", "", "")
+		if err != nil {
+			return diag.Errorf("failed to get outbound routes for site %s: %s", d.Id(), err)
+		}
+		if outboundRoutes.Entities == nil || len(*outboundRoutes.Entities) == 0 {
+			break
+		}
+		outboundRoutesFromAPI = append(outboundRoutesFromAPI, *outboundRoutes.Entities...)
+	}
+
+	for _, outboundRouteFromTf := range outboundRoutesFromTf {
+		if outboundRoute, ok := nameInOutboundRoutes(*outboundRouteFromTf.Name, outboundRoutesFromAPI); ok {
+			// Update the outbound route
+			outboundRoute.Name = outboundRouteFromTf.Name
+			outboundRoute.Description = outboundRouteFromTf.Description
+			outboundRoute.ClassificationTypes = outboundRouteFromTf.ClassificationTypes
+			outboundRoute.Enabled = outboundRouteFromTf.Enabled
+			outboundRoute.Distribution = outboundRouteFromTf.Distribution
+			outboundRoute.ExternalTrunkBases = outboundRouteFromTf.ExternalTrunkBases
+			_, _, err := edgesAPI.PutTelephonyProvidersEdgesSiteOutboundroute(d.Id(), *outboundRoute.Id, *outboundRoute)
+			if err != nil {
+				return diag.Errorf("failed to update outbound route with id %s for site %s: %s", *outboundRoute.Id, d.Id(), err)
 			}
-
-			for _, outboundRouteFromAPI := range outboundRoutesFromAPI {
-				// Delete route if no reference to it
-				if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, outboundRoutesFromTf); !ok {
-					resp, err := edgesAPI.DeleteTelephonyProvidersEdgesSiteOutboundroute(d.Id(), *outboundRouteFromAPI.Id)
-					if err != nil {
-						if IsStatus404(resp) {
-							return nil
-						}
-						return diag.Errorf("Failed to delete outbound route from site %s: %s", d.Id(), err)
-					}
-				}
+		} else {
+			// Add the outbound route
+			_, _, err := edgesAPI.PostTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), outboundRouteFromTf)
+			if err != nil {
+				return diag.Errorf("failed to add outbound route to site %s: %s", d.Id(), err)
 			}
-
-			// Wait for the update before reading
-			time.Sleep(5 * time.Second)
 		}
 	}
+
+	for _, outboundRouteFromAPI := range outboundRoutesFromAPI {
+		// Delete route if no reference to it
+		if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, outboundRoutesFromTf); !ok {
+			resp, err := edgesAPI.DeleteTelephonyProvidersEdgesSiteOutboundroute(d.Id(), *outboundRouteFromAPI.Id)
+			if err != nil {
+				if IsStatus404(resp) {
+					return nil
+				}
+				return diag.Errorf("failed to delete outbound route from site %s: %s", d.Id(), err)
+			}
+		}
+	}
+
+	// Wait for the update before reading
+	time.Sleep(5 * time.Second)
+
 	return nil
 }
 
@@ -922,7 +931,7 @@ func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Tele
 			d.SetId("") // Site doesn't exist
 			return nil
 		}
-		return retry.NonRetryableError(fmt.Errorf("Failed to read number plans for site %s: %s", d.Id(), getErr))
+		return retry.NonRetryableError(fmt.Errorf("failed to read number plans for site %s: %s", d.Id(), getErr))
 	}
 
 	dNumberPlans := make([]interface{}, 0)
@@ -991,7 +1000,7 @@ func readSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.T
 		const pageSize = 100
 		outboundRouteEntityListing, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), pageSize, pageNum, "", "", "")
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("failed to get outbound routes for site %s: %s", d.Id(), err))
 		}
 		if outboundRouteEntityListing.Entities == nil || len(*outboundRouteEntityListing.Entities) == 0 {
 			break
@@ -999,7 +1008,7 @@ func readSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.T
 		outboundRoutes = append(outboundRoutes, *outboundRouteEntityListing.Entities...)
 	}
 
-	dOutboundRoutes := make([]interface{}, 0)
+	dOutboundRoutes := schema.NewSet(schema.HashResource(outboundRouteSchema), []interface{}{})
 
 	if len(outboundRoutes) > 0 {
 		for _, outboundRoute := range outboundRoutes {
@@ -1011,7 +1020,7 @@ func readSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.T
 			}
 
 			if outboundRoute.ClassificationTypes != nil {
-				dOutboundRoute["classification_types"] = *outboundRoute.ClassificationTypes
+				dOutboundRoute["classification_types"] = lists.StringListToInterfaceList(*outboundRoute.ClassificationTypes)
 			}
 
 			if outboundRoute.Enabled != nil {
@@ -1027,11 +1036,13 @@ func readSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.T
 				for _, externalTrunkBase := range *outboundRoute.ExternalTrunkBases {
 					externalTrunkBaseIds = append(externalTrunkBaseIds, *externalTrunkBase.Id)
 				}
-				dOutboundRoute["external_trunk_base_ids"] = externalTrunkBaseIds
+				dOutboundRoute["external_trunk_base_ids"] = lists.StringListToInterfaceList(externalTrunkBaseIds)
 			}
 
-			dOutboundRoutes = append(dOutboundRoutes, dOutboundRoute)
+			dOutboundRoutes.Add(dOutboundRoute)
+
 		}
+
 		d.Set("outbound_routes", dOutboundRoutes)
 	} else {
 		d.Set("outbound_routes", nil)
@@ -1066,12 +1077,12 @@ func buildSdkEdgeAutoUpdateConfig(d *schema.ResourceData) (*platformclientv2.Edg
 
 			start, err := time.Parse("2006-01-02T15:04:05.000000", startStr)
 			if err != nil {
-				return nil, fmt.Errorf("Failed to parse date %s: %s", startStr, err)
+				return nil, fmt.Errorf("failed to parse date %s: %s", startStr, err)
 			}
 
 			end, err := time.Parse("2006-01-02T15:04:05.000000", endStr)
 			if err != nil {
-				return nil, fmt.Errorf("Failed to parse date %s: %s", end, err)
+				return nil, fmt.Errorf("failed to parse date %s: %s", end, err)
 			}
 
 			return &platformclientv2.Edgeautoupdateconfig{
