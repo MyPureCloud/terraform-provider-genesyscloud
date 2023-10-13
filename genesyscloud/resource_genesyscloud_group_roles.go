@@ -75,7 +75,7 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupRoles())
 		_ = d.Set("group_id", d.Id())
 
-		roles, resp, err := readSubjectRoles(d.Id(), authAPI)
+		roles, resp, err := readSubjectRoles(d, d.Id(), authAPI)
 		if err != nil {
 			if IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))

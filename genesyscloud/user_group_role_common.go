@@ -54,7 +54,7 @@ func getAssignedGrants(subjectID string, authAPI *platformclientv2.Authorization
 	return grants, resp, nil
 }
 
-func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationApi) ([]interface{}, *platformclientv2.APIResponse, diag.Diagnostics) {
+func readSubjectRoles(d *schema.ResourceData, subjectID string, authAPI *platformclientv2.AuthorizationApi) ([]interface{}, *platformclientv2.APIResponse, diag.Diagnostics) {
 	grants, resp, err := getAssignedGrants(subjectID, authAPI)
 	if err != nil {
 		return nil, resp, err
@@ -76,7 +76,43 @@ func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationA
 		role["division_ids"] = divs
 		roleList = append(roleList, role)
 	}
+
+	// If the role IDs are the same in the schema state and in the response from the GET,
+	// re-organize the items to match the ordering in the schema
+	rolesFromSchema, ok := d.Get("roles").([]interface{})
+	if !ok {
+		return roleList, resp, nil
+	}
+
+	roleIdsFromSchema := getRoleIdsFromRolesList(rolesFromSchema)
+	var roleIdsFromApi []string
+	for roleId, _ := range roleDivsMap {
+		roleIdsFromApi = append(roleIdsFromApi, roleId)
+	}
+
+	if lists.AreEquivalent(roleIdsFromSchema, roleIdsFromApi) {
+		// re-organise roleList so that order of items is the same as in the schema
+		roleListReordered := make([]interface{}, 0)
+		for _, roleId := range roleIdsFromSchema {
+			currentRole := make(map[string]interface{}, 0)
+			currentRole["role_id"] = roleId
+			currentRole["division_ids"] = roleDivsMap[roleId]
+			roleListReordered = append(roleListReordered, currentRole)
+		}
+		roleList = roleListReordered
+	}
+
 	return roleList, resp, nil
+}
+
+func getRoleIdsFromRolesList(roles []interface{}) []string {
+	var roleIds []string
+	for _, r := range roles {
+		if rMap, ok := r.(map[string]interface{}); ok {
+			roleIds = append(roleIds, rMap["role_id"].(string))
+		}
+	}
+	return roleIds
 }
 
 func updateSubjectRoles(_ context.Context, d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {

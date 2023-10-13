@@ -75,7 +75,7 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Reading roles for user %s", d.Id())
 	d.Set("user_id", d.Id())
 	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		roles, _, err := readSubjectRoles(d.Id(), authAPI)
+		roles, _, err := readSubjectRoles(d, d.Id(), authAPI)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}

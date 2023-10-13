@@ -678,7 +678,7 @@ func testVerifyAllDivisionsAssigned(resourceName string, attrName string) resour
 		// Preventing a large n² comparison equation from executing
 		maxLengthForListItemComparision := 20
 		if len(allAuthDivisionIds) < maxLengthForListItemComparision {
-			if lists.ListsAreEquivalent(allAuthDivisionIds, skillGroupMemberDivisionIds) {
+			if lists.AreEquivalent(allAuthDivisionIds, skillGroupMemberDivisionIds) {
 				return nil
 			} else {
 				return fmt.Errorf("Expected %s to equal the list of all auth divisions", attrName)

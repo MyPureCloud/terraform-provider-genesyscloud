@@ -561,7 +561,7 @@ func organizeMemberDivisionIdsForRead(schemaList, apiList []string, divisionId s
 		return schemaList
 	} else {
 		// if hcl & api lists are the same but with different ordering - set with original ordering
-		if lists.ListsAreEquivalent(schemaList, apiList) {
+		if lists.AreEquivalent(schemaList, apiList) {
 			return schemaList
 		} else {
 			return apiList
