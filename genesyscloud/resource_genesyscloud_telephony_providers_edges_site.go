@@ -21,45 +21,49 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
-var outboundRouteSchema = &schema.Resource{
-	Schema: map[string]*schema.Schema{
-		"name": {
-			Description: "The name of the entity.",
-			Type:        schema.TypeString,
-			Required:    true,
+var (
+	outboundRouteSchema = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Description: "The name of the entity.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"description": {
+				Description: "The resource's description.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"classification_types": {
+				Description: "Used to classify this outbound route.",
+				Type:        schema.TypeList,
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"enabled": {
+				Description: "Enable or disable the outbound route",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"distribution": {
+				Description:  "Valid values: SEQUENTIAL, RANDOM.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "SEQUENTIAL",
+				ValidateFunc: validation.StringInSlice([]string{"SEQUENTIAL", "RANDOM"}, false),
+			},
+			"external_trunk_base_ids": {
+				Description: "Trunk base settings of trunkType \"EXTERNAL\". This base must also be set on an edge logical interface for correct routing. The order of the IDs determines the distribution if \"distribution\" is set to \"SEQUENTIAL\"",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
-		"description": {
-			Description: "The resource's description.",
-			Type:        schema.TypeString,
-			Optional:    true,
-		},
-		"classification_types": {
-			Description: "Used to classify this outbound route.",
-			Type:        schema.TypeList,
-			Required:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-		},
-		"enabled": {
-			Description: "Enable or disable the outbound route",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
-		},
-		"distribution": {
-			Description:  "Valid values: SEQUENTIAL, RANDOM.",
-			Type:         schema.TypeString,
-			Optional:     true,
-			Default:      "SEQUENTIAL",
-			ValidateFunc: validation.StringInSlice([]string{"SEQUENTIAL", "RANDOM"}, false),
-		},
-		"external_trunk_base_ids": {
-			Description: "Trunk base settings of trunkType \"EXTERNAL\". This base must also be set on an edge logical interface for correct routing. The order of the IDs determines the distribution if \"distribution\" is set to \"SEQUENTIAL\"",
-			Type:        schema.TypeList,
-			Optional:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-		},
-	},
-}
+	}
+
+	defaultPlans = []string{"Emergency", "Extension", "National", "International", "Network", "Suicide Prevention"}
+)
 
 func ResourceSite() *schema.Resource {
 	return &schema.Resource{
@@ -243,7 +247,64 @@ func ResourceSite() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
+		CustomizeDiff: customizeSiteDiff,
 	}
+}
+
+func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	if diff.HasChange("number_plans") {
+		oldNumberPlans, newNumberPlans := diff.GetChange("number_plans")
+		oldNumberPlansList := oldNumberPlans.([]interface{})
+		newNumberPlansList := newNumberPlans.([]interface{})
+		log.Printf("PRINCE: number_plan has change")
+		log.Printf("%v", oldNumberPlans)
+		log.Printf("%v", newNumberPlans)
+
+		if len(oldNumberPlansList) <= len(newNumberPlansList) {
+			return nil
+		}
+
+		sdkConfig := meta.(*ProviderMeta).ClientConfig
+		edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+
+		siteId := diff.Id()
+		if siteId == "" {
+			log.Printf("PRINCE: no id yet")
+			return nil
+		}
+
+		numberPlansFromApi, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(siteId)
+		if err != nil {
+			return fmt.Errorf("failed to get number plans from site %s: %s", siteId, err)
+		}
+
+		for _, np := range numberPlansFromApi {
+			if isDefaultPlan(*np.Name) && isNumberPlanInConfig(*np.Name, oldNumberPlansList) && !isNumberPlanInConfig(*np.Name, newNumberPlansList) {
+				log.Printf("PRINCE: adding vanilla default plan to diff list")
+				newNumberPlansList = append(newNumberPlansList, flattenNumberPlan(&np))
+			}
+		}
+
+		log.Printf("PRINCE: new number plans")
+		for i, x := range newNumberPlansList {
+			log.Printf("%v: %v", i, x)
+		}
+		diff.SetNew("number_plans", newNumberPlansList)
+	}
+	return nil
+}
+
+// isNumberPlanInConfig returns true if the number plan's name is in the config list
+func isNumberPlanInConfig(planName string, list []interface{}) bool {
+	for _, plan := range list {
+		planMap := plan.(map[string]interface{})
+		if planName == planMap["name"] {
+			log.Printf("PRINCE: number plan %v in list %v", planName, list)
+			return true
+		}
+	}
+	log.Printf("PRINCE: number plan %v not in list %v", planName, list)
+	return false
 }
 
 func getSites(_ context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -698,116 +759,129 @@ func updatePrimarySecondarySites(d *schema.ResourceData, siteId string, edgesAPI
 }
 
 func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) diag.Diagnostics {
-	if d.HasChange("number_plans") {
-		if nps := d.Get("number_plans").([]interface{}); nps != nil {
-			numberPlansFromTf := make([]platformclientv2.Numberplan, 0)
-			for _, np := range nps {
-				npMap := np.(map[string]interface{})
-				numberPlanFromTf := platformclientv2.Numberplan{}
+	if !d.HasChange("number_plans") {
+		return nil
+	}
+	nps := d.Get("number_plans").([]interface{})
+	if nps == nil {
+		return nil
+	}
 
-				if name := npMap["name"].(string); name != "" {
-					numberPlanFromTf.Name = &name
+	log.Printf("PRINCE: wtf %v", nps)
+
+	numberPlansFromTf := make([]platformclientv2.Numberplan, 0)
+	for _, np := range nps {
+		npMap := np.(map[string]interface{})
+		numberPlanFromTf := platformclientv2.Numberplan{}
+
+		if name := npMap["name"].(string); name != "" {
+			numberPlanFromTf.Name = &name
+		}
+
+		if matchType := npMap["match_type"].(string); matchType != "" {
+			numberPlanFromTf.MatchType = &matchType
+		}
+
+		if matchFormat := npMap["match_format"].(string); matchFormat != "" {
+			numberPlanFromTf.Match = &matchFormat
+		}
+
+		if normalizedFormat := npMap["normalized_format"].(string); normalizedFormat != "" {
+			numberPlanFromTf.NormalizedFormat = &normalizedFormat
+		}
+
+		if classification := npMap["classification"].(string); classification != "" {
+			numberPlanFromTf.Classification = &classification
+		}
+
+		if numbers, ok := npMap["numbers"].([]interface{}); ok && len(numbers) > 0 {
+			sdkNumbers := make([]platformclientv2.Number, 0)
+			for _, number := range numbers {
+				numberMap := number.(map[string]interface{})
+				sdkNumber := platformclientv2.Number{}
+				if start, ok := numberMap["start"].(string); ok {
+					sdkNumber.Start = &start
 				}
-
-				if matchType := npMap["match_type"].(string); matchType != "" {
-					numberPlanFromTf.MatchType = &matchType
+				if end, ok := numberMap["end"].(string); ok {
+					sdkNumber.End = &end
 				}
-
-				if matchFormat := npMap["match_format"].(string); matchFormat != "" {
-					numberPlanFromTf.Match = &matchFormat
-				}
-
-				if normalizedFormat := npMap["normalized_format"].(string); normalizedFormat != "" {
-					numberPlanFromTf.NormalizedFormat = &normalizedFormat
-				}
-
-				if classification := npMap["classification"].(string); classification != "" {
-					numberPlanFromTf.Classification = &classification
-				}
-
-				if numbers, ok := npMap["numbers"].([]interface{}); ok && len(numbers) > 0 {
-					sdkNumbers := make([]platformclientv2.Number, 0)
-					for _, number := range numbers {
-						numberMap := number.(map[string]interface{})
-						sdkNumber := platformclientv2.Number{}
-						if start, ok := numberMap["start"].(string); ok {
-							sdkNumber.Start = &start
-						}
-						if end, ok := numberMap["end"].(string); ok {
-							sdkNumber.End = &end
-						}
-						sdkNumbers = append(sdkNumbers, sdkNumber)
-					}
-					numberPlanFromTf.Numbers = &sdkNumbers
-				}
-
-				if digitLength, ok := npMap["digit_length"].([]interface{}); ok && len(digitLength) > 0 {
-					sdkDigitlengthMap := digitLength[0].(map[string]interface{})
-					sdkDigitlength := platformclientv2.Digitlength{}
-					if start, ok := sdkDigitlengthMap["start"].(string); ok {
-						sdkDigitlength.Start = &start
-					}
-					if end, ok := sdkDigitlengthMap["end"].(string); ok {
-						sdkDigitlength.End = &end
-					}
-					numberPlanFromTf.DigitLength = &sdkDigitlength
-				}
-
-				numberPlansFromTf = append(numberPlansFromTf, numberPlanFromTf)
+				sdkNumbers = append(sdkNumbers, sdkNumber)
 			}
+			numberPlanFromTf.Numbers = &sdkNumbers
+		}
 
-			// The default plans won't be assigned yet if there isn't a wait
-			time.Sleep(5 * time.Second)
-
-			numberPlansFromAPI, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(d.Id())
-			if err != nil {
-				return diag.Errorf("failed to get number plans for site %s: %s", d.Id(), err)
+		if digitLength, ok := npMap["digit_length"].([]interface{}); ok && len(digitLength) > 0 {
+			sdkDigitlengthMap := digitLength[0].(map[string]interface{})
+			sdkDigitlength := platformclientv2.Digitlength{}
+			if start, ok := sdkDigitlengthMap["start"].(string); ok {
+				sdkDigitlength.Start = &start
 			}
-
-			updatedNumberPlans := make([]platformclientv2.Numberplan, 0)
-
-			for _, numberPlanFromTf := range numberPlansFromTf {
-				if plan, ok := nameInPlans(*numberPlanFromTf.Name, numberPlansFromAPI); ok {
-					// Update the plan
-					plan.Classification = numberPlanFromTf.Classification
-					plan.Numbers = numberPlanFromTf.Numbers
-					plan.DigitLength = numberPlanFromTf.DigitLength
-					plan.Match = numberPlanFromTf.Match
-					plan.MatchType = numberPlanFromTf.MatchType
-					plan.NormalizedFormat = numberPlanFromTf.NormalizedFormat
-					updatedNumberPlans = append(updatedNumberPlans, *plan)
-				} else {
-					// Add the plan
-					updatedNumberPlans = append(updatedNumberPlans, numberPlanFromTf)
-				}
+			if end, ok := sdkDigitlengthMap["end"].(string); ok {
+				sdkDigitlength.End = &end
 			}
+			numberPlanFromTf.DigitLength = &sdkDigitlength
+		}
 
-			for _, numberPlanFromAPI := range numberPlansFromAPI {
-				// Keep the default plans assigned.
-				if isDefaultPlan(*numberPlanFromAPI.Name) {
-					updatedNumberPlans = append(updatedNumberPlans, numberPlanFromAPI)
-				}
-			}
+		numberPlansFromTf = append(numberPlansFromTf, numberPlanFromTf)
+	}
 
-			diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-				log.Printf("Updating number plans for site %s", d.Id())
-				_, resp, err := edgesAPI.PutTelephonyProvidersEdgesSiteNumberplans(d.Id(), updatedNumberPlans)
-				if err != nil {
-					respString := ""
-					if resp != nil {
-						respString = resp.String()
-					}
-					return resp, diag.Errorf("failed to update number plans for site %s: %s %s", d.Id(), err, respString)
-				}
-				return resp, nil
-			})
-			if diagErr != nil {
-				return diagErr
-			}
-			// Wait for the update before reading
-			time.Sleep(5 * time.Second)
+	// The default plans won't be assigned yet if there isn't a wait
+	time.Sleep(5 * time.Second)
+
+	numberPlansFromAPI, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(d.Id())
+	if err != nil {
+		return diag.Errorf("failed to get number plans for site %s: %s", d.Id(), err)
+	}
+
+	updatedNumberPlans := make([]platformclientv2.Numberplan, 0)
+	namesOfOverridenDefaults := []string{}
+
+	for _, numberPlanFromTf := range numberPlansFromTf {
+		if plan, ok := nameInPlans(*numberPlanFromTf.Name, numberPlansFromAPI); ok {
+			// Update the plan
+			plan.Classification = numberPlanFromTf.Classification
+			plan.Numbers = numberPlanFromTf.Numbers
+			plan.DigitLength = numberPlanFromTf.DigitLength
+			plan.Match = numberPlanFromTf.Match
+			plan.MatchType = numberPlanFromTf.MatchType
+			plan.NormalizedFormat = numberPlanFromTf.NormalizedFormat
+
+			namesOfOverridenDefaults = append(namesOfOverridenDefaults, *numberPlanFromTf.Name)
+			updatedNumberPlans = append(updatedNumberPlans, *plan)
+		} else {
+			// Add the plan
+			updatedNumberPlans = append(updatedNumberPlans, numberPlanFromTf)
 		}
 	}
+
+	for _, numberPlanFromAPI := range numberPlansFromAPI {
+		// Keep the default plans which are not overriden.
+		if isDefaultPlan(*numberPlanFromAPI.Name) && !lists.ItemInSlice(*numberPlanFromAPI.Name, namesOfOverridenDefaults) {
+			updatedNumberPlans = append(updatedNumberPlans, numberPlanFromAPI)
+		}
+	}
+
+	log.Printf("PRINCE: numberplans total %v", len(updatedNumberPlans))
+	log.Printf("PRINCE: overridden defaults: %v", namesOfOverridenDefaults)
+
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Updating number plans for site %s", d.Id())
+		_, resp, err := edgesAPI.PutTelephonyProvidersEdgesSiteNumberplans(d.Id(), updatedNumberPlans)
+		if err != nil {
+			respString := ""
+			if resp != nil {
+				respString = resp.String()
+			}
+			return resp, diag.Errorf("failed to update number plans for site %s: %s %s", d.Id(), err, respString)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
+	// Wait for the update before reading
+	time.Sleep(5 * time.Second)
+
 	return nil
 }
 
@@ -915,13 +989,58 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 }
 
 func isDefaultPlan(name string) bool {
-	defaultPlans := []string{"Emergency", "Extension", "National", "International", "Network", "Suicide Prevention"}
 	for _, defaultPlan := range defaultPlans {
 		if name == defaultPlan {
 			return true
 		}
 	}
 	return false
+}
+
+func flattenNumberPlan(numberPlan *platformclientv2.Numberplan) interface{} {
+	dNumberPlan := make(map[string]interface{})
+	dNumberPlan["name"] = *numberPlan.Name
+
+	if numberPlan.Match != nil {
+		dNumberPlan["match_format"] = *numberPlan.Match
+	}
+	if numberPlan.NormalizedFormat != nil {
+		dNumberPlan["normalized_format"] = *numberPlan.NormalizedFormat
+	}
+	if numberPlan.Classification != nil {
+		dNumberPlan["classification"] = *numberPlan.Classification
+	}
+	if numberPlan.MatchType != nil {
+		dNumberPlan["match_type"] = *numberPlan.MatchType
+	}
+
+	if numberPlan.Numbers != nil {
+		numbers := make([]interface{}, 0)
+		for _, number := range *numberPlan.Numbers {
+			numberMap := make(map[string]interface{})
+			if number.Start != nil {
+				numberMap["start"] = *number.Start
+			}
+			if number.End != nil {
+				numberMap["end"] = *number.End
+			}
+			numbers = append(numbers, numberMap)
+		}
+		dNumberPlan["numbers"] = numbers
+	}
+	if numberPlan.DigitLength != nil {
+		digitLength := make([]interface{}, 0)
+		digitLengthMap := make(map[string]interface{})
+		if numberPlan.DigitLength.Start != nil {
+			digitLengthMap["start"] = *numberPlan.DigitLength.Start
+		}
+		if numberPlan.DigitLength.End != nil {
+			digitLengthMap["end"] = *numberPlan.DigitLength.End
+		}
+		digitLength = append(digitLength, digitLengthMap)
+		dNumberPlan["digit_length"] = digitLength
+	}
+	return dNumberPlan
 }
 
 func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.TelephonyProvidersEdgeApi) *retry.RetryError {
@@ -937,52 +1056,7 @@ func readSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Tele
 	dNumberPlans := make([]interface{}, 0)
 	if len(numberPlans) > 0 {
 		for _, numberPlan := range numberPlans {
-			if isDefaultPlan(*numberPlan.Name) {
-				continue
-			}
-
-			dNumberPlan := make(map[string]interface{})
-			dNumberPlan["name"] = *numberPlan.Name
-
-			if numberPlan.Match != nil {
-				dNumberPlan["match_format"] = *numberPlan.Match
-			}
-			if numberPlan.NormalizedFormat != nil {
-				dNumberPlan["normalized_format"] = *numberPlan.NormalizedFormat
-			}
-			if numberPlan.Classification != nil {
-				dNumberPlan["classification"] = *numberPlan.Classification
-			}
-			if numberPlan.MatchType != nil {
-				dNumberPlan["match_type"] = *numberPlan.MatchType
-			}
-
-			if numberPlan.Numbers != nil {
-				numbers := make([]interface{}, 0)
-				for _, number := range *numberPlan.Numbers {
-					numberMap := make(map[string]interface{})
-					if number.Start != nil {
-						numberMap["start"] = *number.Start
-					}
-					if number.End != nil {
-						numberMap["end"] = *number.End
-					}
-					numbers = append(numbers, numberMap)
-				}
-				dNumberPlan["numbers"] = numbers
-			}
-			if numberPlan.DigitLength != nil {
-				digitLength := make([]interface{}, 0)
-				digitLengthMap := make(map[string]interface{})
-				if numberPlan.DigitLength.Start != nil {
-					digitLengthMap["start"] = *numberPlan.DigitLength.Start
-				}
-				if numberPlan.DigitLength.End != nil {
-					digitLengthMap["end"] = *numberPlan.DigitLength.End
-				}
-				digitLength = append(digitLength, digitLengthMap)
-				dNumberPlan["digit_length"] = digitLength
-			}
+			dNumberPlan := flattenNumberPlan(&numberPlan)
 
 			dNumberPlans = append(dNumberPlans, dNumberPlan)
 		}
