@@ -256,9 +256,6 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 		oldNumberPlans, newNumberPlans := diff.GetChange("number_plans")
 		oldNumberPlansList := oldNumberPlans.([]interface{})
 		newNumberPlansList := newNumberPlans.([]interface{})
-		log.Printf("PRINCE: number_plan has change")
-		log.Printf("%v", oldNumberPlans)
-		log.Printf("%v", newNumberPlans)
 
 		if len(oldNumberPlansList) <= len(newNumberPlansList) {
 			return nil
@@ -269,7 +266,6 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 
 		siteId := diff.Id()
 		if siteId == "" {
-			log.Printf("PRINCE: no id yet")
 			return nil
 		}
 
@@ -280,12 +276,10 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 
 		for _, np := range numberPlansFromApi {
 			if isDefaultPlan(*np.Name) && isNumberPlanInConfig(*np.Name, oldNumberPlansList) && !isNumberPlanInConfig(*np.Name, newNumberPlansList) {
-				log.Printf("PRINCE: adding vanilla default plan to diff list")
 				newNumberPlansList = append(newNumberPlansList, flattenNumberPlan(&np))
 			}
 		}
 
-		log.Printf("PRINCE: new number plans")
 		for i, x := range newNumberPlansList {
 			log.Printf("%v: %v", i, x)
 		}
@@ -299,11 +293,9 @@ func isNumberPlanInConfig(planName string, list []interface{}) bool {
 	for _, plan := range list {
 		planMap := plan.(map[string]interface{})
 		if planName == planMap["name"] {
-			log.Printf("PRINCE: number plan %v in list %v", planName, list)
 			return true
 		}
 	}
-	log.Printf("PRINCE: number plan %v not in list %v", planName, list)
 	return false
 }
 
@@ -767,8 +759,6 @@ func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Te
 		return nil
 	}
 
-	log.Printf("PRINCE: wtf %v", nps)
-
 	numberPlansFromTf := make([]platformclientv2.Numberplan, 0)
 	for _, np := range nps {
 		npMap := np.(map[string]interface{})
@@ -861,9 +851,6 @@ func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Te
 		}
 	}
 
-	log.Printf("PRINCE: numberplans total %v", len(updatedNumberPlans))
-	log.Printf("PRINCE: overridden defaults: %v", namesOfOverridenDefaults)
-
 	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Updating number plans for site %s", d.Id())
 		_, resp, err := edgesAPI.PutTelephonyProvidersEdgesSiteNumberplans(d.Id(), updatedNumberPlans)
@@ -934,6 +921,7 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 	// The default outbound routes won't be assigned yet if there isn't a wait
 	time.Sleep(5 * time.Second)
 
+	// Get the current outbound routes
 	outboundRoutesFromAPI := make([]platformclientv2.Outboundroutebase, 0)
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
@@ -947,6 +935,22 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 		outboundRoutesFromAPI = append(outboundRoutesFromAPI, *outboundRoutes.Entities...)
 	}
 
+	// Delete unwanted outbound roues first to free up classifications assigned to them
+	for _, outboundRouteFromAPI := range outboundRoutesFromAPI {
+		// Delete route if no reference to it
+		if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, outboundRoutesFromTf); !ok {
+			resp, err := edgesAPI.DeleteTelephonyProvidersEdgesSiteOutboundroute(d.Id(), *outboundRouteFromAPI.Id)
+			if err != nil {
+				if IsStatus404(resp) {
+					return nil
+				}
+				return diag.Errorf("failed to delete outbound route from site %s: %s", d.Id(), err)
+			}
+		}
+	}
+	time.Sleep(2 * time.Second)
+
+	// Update the outbound routes
 	for _, outboundRouteFromTf := range outboundRoutesFromTf {
 		if outboundRoute, ok := nameInOutboundRoutes(*outboundRouteFromTf.Name, outboundRoutesFromAPI); ok {
 			// Update the outbound route
@@ -965,19 +969,6 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 			_, _, err := edgesAPI.PostTelephonyProvidersEdgesSiteOutboundroutes(d.Id(), outboundRouteFromTf)
 			if err != nil {
 				return diag.Errorf("failed to add outbound route to site %s: %s", d.Id(), err)
-			}
-		}
-	}
-
-	for _, outboundRouteFromAPI := range outboundRoutesFromAPI {
-		// Delete route if no reference to it
-		if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, outboundRoutesFromTf); !ok {
-			resp, err := edgesAPI.DeleteTelephonyProvidersEdgesSiteOutboundroute(d.Id(), *outboundRouteFromAPI.Id)
-			if err != nil {
-				if IsStatus404(resp) {
-					return nil
-				}
-				return diag.Errorf("failed to delete outbound route from site %s: %s", d.Id(), err)
 			}
 		}
 	}
