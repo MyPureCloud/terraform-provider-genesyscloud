@@ -13,6 +13,7 @@ import (
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -500,21 +501,11 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			d.Set("location_id", *currentSite.Location.Id)
 		}
 		d.Set("media_model", *currentSite.MediaModel)
-		d.Set("description", nil)
-		if currentSite.Description != nil {
-			d.Set("description", *currentSite.Description)
-		}
 		d.Set("media_regions_use_latency_based", *currentSite.MediaRegionsUseLatencyBased)
 
-		d.Set("edge_auto_update_config", nil)
-		if currentSite.EdgeAutoUpdateConfig != nil {
-			d.Set("edge_auto_update_config", flattenSdkEdgeAutoUpdateConfig(currentSite.EdgeAutoUpdateConfig))
-		}
-
-		d.Set("media_regions", nil)
-		if currentSite.MediaRegions != nil {
-			d.Set("media_regions", *currentSite.MediaRegions)
-		}
+		resourcedata.SetNillableValue(d, "description", currentSite.Description)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "edge_auto_update_config", currentSite.EdgeAutoUpdateConfig, flattenSdkEdgeAutoUpdateConfig)
+		resourcedata.SetNillableValue(d, "media_regions", currentSite.MediaRegions)
 
 		d.Set("caller_id", currentSite.CallerId)
 		d.Set("caller_name", currentSite.CallerName)
@@ -764,25 +755,11 @@ func updateSiteNumberPlans(d *schema.ResourceData, edgesAPI *platformclientv2.Te
 		npMap := np.(map[string]interface{})
 		numberPlanFromTf := platformclientv2.Numberplan{}
 
-		if name := npMap["name"].(string); name != "" {
-			numberPlanFromTf.Name = &name
-		}
-
-		if matchType := npMap["match_type"].(string); matchType != "" {
-			numberPlanFromTf.MatchType = &matchType
-		}
-
-		if matchFormat := npMap["match_format"].(string); matchFormat != "" {
-			numberPlanFromTf.Match = &matchFormat
-		}
-
-		if normalizedFormat := npMap["normalized_format"].(string); normalizedFormat != "" {
-			numberPlanFromTf.NormalizedFormat = &normalizedFormat
-		}
-
-		if classification := npMap["classification"].(string); classification != "" {
-			numberPlanFromTf.Classification = &classification
-		}
+		resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Name, npMap, "name")
+		resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.MatchType, npMap, "match_type")
+		resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Match, npMap, "match_format")
+		resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.NormalizedFormat, npMap, "normalized_format")
+		resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Classification, npMap, "classification")
 
 		if numbers, ok := npMap["numbers"].([]interface{}); ok && len(numbers) > 0 {
 			sdkNumbers := make([]platformclientv2.Number, 0)
@@ -887,12 +864,9 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 		orMap := or.(map[string]interface{})
 		outboundRouteFromTf := platformclientv2.Outboundroutebase{}
 
-		if name := orMap["name"].(string); name != "" {
-			outboundRouteFromTf.Name = &name
-		}
-		if description := orMap["description"].(string); description != "" {
-			outboundRouteFromTf.Description = &description
-		}
+		resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Name, orMap, "name")
+		resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Description, orMap, "description")
+
 		if classificationTypes, ok := orMap["classification_types"].([]interface{}); ok && len(classificationTypes) > 0 {
 			cts := make([]string, 0)
 			for _, classificationType := range classificationTypes {
@@ -903,9 +877,9 @@ func updateSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2
 		if enabled, ok := orMap["enabled"].(bool); ok {
 			outboundRouteFromTf.Enabled = &enabled
 		}
-		if distribution := orMap["distribution"].(string); distribution != "" {
-			outboundRouteFromTf.Distribution = &distribution
-		}
+
+		resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Distribution, orMap, "distribution")
+
 		if externalTrunkBaseIds, ok := orMap["external_trunk_base_ids"].([]interface{}); ok && len(externalTrunkBaseIds) > 0 {
 			ids := make([]platformclientv2.Domainentityref, 0)
 			for _, externalTrunkBaseId := range externalTrunkBaseIds {
@@ -992,18 +966,10 @@ func flattenNumberPlan(numberPlan *platformclientv2.Numberplan) interface{} {
 	dNumberPlan := make(map[string]interface{})
 	dNumberPlan["name"] = *numberPlan.Name
 
-	if numberPlan.Match != nil {
-		dNumberPlan["match_format"] = *numberPlan.Match
-	}
-	if numberPlan.NormalizedFormat != nil {
-		dNumberPlan["normalized_format"] = *numberPlan.NormalizedFormat
-	}
-	if numberPlan.Classification != nil {
-		dNumberPlan["classification"] = *numberPlan.Classification
-	}
-	if numberPlan.MatchType != nil {
-		dNumberPlan["match_type"] = *numberPlan.MatchType
-	}
+	resourcedata.SetMapValueIfNotNil(dNumberPlan, "match_format", numberPlan.Match)
+	resourcedata.SetMapValueIfNotNil(dNumberPlan, "normalized_format", numberPlan.NormalizedFormat)
+	resourcedata.SetMapValueIfNotNil(dNumberPlan, "classification", numberPlan.Classification)
+	resourcedata.SetMapValueIfNotNil(dNumberPlan, "match_type", numberPlan.MatchType)
 
 	if numberPlan.Numbers != nil {
 		numbers := make([]interface{}, 0)
@@ -1080,20 +1046,12 @@ func readSiteOutboundRoutes(d *schema.ResourceData, edgesAPI *platformclientv2.T
 			dOutboundRoute := make(map[string]interface{})
 			dOutboundRoute["name"] = *outboundRoute.Name
 
-			if outboundRoute.Description != nil {
-				dOutboundRoute["description"] = *outboundRoute.Description
-			}
+			resourcedata.SetMapValueIfNotNil(dOutboundRoute, "description", outboundRoute.Description)
+			resourcedata.SetMapValueIfNotNil(dOutboundRoute, "enabled", outboundRoute.Enabled)
+			resourcedata.SetMapValueIfNotNil(dOutboundRoute, "distribution", outboundRoute.Distribution)
 
 			if outboundRoute.ClassificationTypes != nil {
 				dOutboundRoute["classification_types"] = lists.StringListToInterfaceList(*outboundRoute.ClassificationTypes)
-			}
-
-			if outboundRoute.Enabled != nil {
-				dOutboundRoute["enabled"] = *outboundRoute.Enabled
-			}
-
-			if outboundRoute.Distribution != nil {
-				dOutboundRoute["distribution"] = *outboundRoute.Distribution
 			}
 
 			if len(*outboundRoute.ExternalTrunkBases) > 0 {
