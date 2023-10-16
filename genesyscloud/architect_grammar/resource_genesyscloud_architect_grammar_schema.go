@@ -11,9 +11,9 @@ import (
 resource_genesyscloud_architect_grammar_schema.go holds four functions within it:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
-2.  The resource schema definitions for the architect_grammar_language resource.
-3.  The datasource schema definitions for the architect_grammar_language datasource.
-4.  The resource exporter configuration for the architect_grammar_language exporter.
+2.  The resource schema definitions for the architect_grammar resource.
+3.  The datasource schema definitions for the architect_grammar datasource.
+4.  The resource exporter configuration for the architect_grammar exporter.
 */
 const resourceName = "genesyscloud_architect_grammar"
 
