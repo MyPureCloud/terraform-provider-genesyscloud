@@ -3,8 +3,3 @@
 * [DELETE /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-architect-grammars--grammarId-)
 * [GET /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-architect-grammars--grammarId-)
 * [PATCH /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-architect-grammars--grammarId-)
-* [POST /api/v2/architect/grammars/{grammarId}/languages](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-architect-grammars--grammarId--languages)
-* [GET /api/v2/architect/grammars/{grammarId}/languages/{languageCode}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-architect-grammars--grammarId--languages--languageCode-)
-* [PATCH /api/v2/architect/grammars/{grammarId}/languages/{languageCode}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-architect-grammars--grammarId--languages--languageCode-)
-* [POST /api/v2/architect/grammars/{grammarId}/languages/{languageCode}/files/dtmf](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-architect-grammars--grammarId--languages--languageCode--files-dtmf)
-* [POST /api/v2/architect/grammars/{grammarId}/languages/{languageCode}/files/voice](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-architect-grammars--grammarId--languages--languageCode--files-voice)

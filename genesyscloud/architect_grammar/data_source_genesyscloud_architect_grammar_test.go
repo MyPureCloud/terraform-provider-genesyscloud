@@ -21,7 +21,7 @@ func TestAccDataSourceArchitectGrammar(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateGrammarResource(
+				Config: GenerateGrammarResource(
 					grammarResource,
 					name,
 					description,

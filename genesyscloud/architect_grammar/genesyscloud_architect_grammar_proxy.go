@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 	"log"
-	"net/http"
-	"os"
 )
 
 /*
@@ -100,36 +98,6 @@ func createArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 		return nil, fmt.Errorf("Failed to create grammar: %s", err)
 	}
 
-	// Create each language associated with the grammar
-	for _, language := range *grammar.Languages {
-		_, _, err := p.architectApi.PostArchitectGrammarLanguages(*grammarSdk.Id, language)
-		if err != nil {
-			return grammarSdk, fmt.Errorf("Failed to create grammar language: %s", err)
-		}
-
-		// Upload grammar voice file
-		if language.VoiceFileMetadata != nil && language.VoiceFileMetadata.FileName != nil {
-			uploadRequest := platformclientv2.Grammarfileuploadrequest{
-				FileType: language.VoiceFileMetadata.FileType,
-			}
-			err = uploadGrammarLanguageFile(p, *grammarSdk.Id, *language.Language, language.VoiceFileMetadata.FileName, &uploadRequest, "voice")
-			if err != nil {
-				return grammarSdk, fmt.Errorf("Failed to upload language voice file: %s", err)
-			}
-		}
-
-		// Upload grammar dtmf file
-		if language.DtmfFileMetadata != nil && language.DtmfFileMetadata.FileName != nil {
-			uploadRequest := platformclientv2.Grammarfileuploadrequest{
-				FileType: language.DtmfFileMetadata.FileType,
-			}
-			err = uploadGrammarLanguageFile(p, *grammarSdk.Id, *language.Language, language.DtmfFileMetadata.FileName, &uploadRequest, "dtmf")
-			if err != nil {
-				return grammarSdk, fmt.Errorf("Failed to upload language dtmf file: %s", err)
-			}
-		}
-	}
-
 	return grammarSdk, nil
 }
 
@@ -199,63 +167,7 @@ func updateArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 		return nil, fmt.Errorf("Failed to update grammar %s: %s", grammarId, err)
 	}
 
-	// Update each language associated with the grammar
-	for _, language := range *grammar.Languages {
-		_, err := updateArchitectGrammarLanguage(ctx, p, *grammarSdk.Id, *language.Language, &language)
-		if err != nil {
-			return grammarSdk, fmt.Errorf("Failed to update grammar language: %s", err)
-		}
-
-		// Upload grammar voice file
-		if language.VoiceFileMetadata != nil && language.VoiceFileMetadata.FileName != nil {
-			uploadRequest := platformclientv2.Grammarfileuploadrequest{
-				FileType: language.VoiceFileMetadata.FileType,
-			}
-			err = uploadGrammarLanguageFile(p, *grammarSdk.Id, *language.Language, language.VoiceFileMetadata.FileName, &uploadRequest, "voice")
-			if err != nil {
-				return grammarSdk, fmt.Errorf("Failed to upload language voice file: %s", err)
-			}
-		}
-
-		// Upload grammar dtmf file
-		if language.DtmfFileMetadata != nil && language.DtmfFileMetadata.FileName != nil {
-			uploadRequest := platformclientv2.Grammarfileuploadrequest{
-				FileType: language.DtmfFileMetadata.FileType,
-			}
-			err = uploadGrammarLanguageFile(p, *grammarSdk.Id, *language.Language, language.DtmfFileMetadata.FileName, &uploadRequest, "dtmf")
-			if err != nil {
-				return grammarSdk, fmt.Errorf("Failed to upload language dtmf file: %s", err)
-			}
-		}
-	}
-
 	return grammarSdk, nil
-}
-
-// updateArchitectGrammarLanguage is a function for updating a Genesys Cloud Architect Grammarlanguage
-func updateArchitectGrammarLanguage(ctx context.Context, p *architectGrammarProxy, grammarId string, languageCode string, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, error) {
-	// Need to check if the language exists, if not, create it
-	_, _, err := p.architectApi.GetArchitectGrammarLanguage(grammarId, languageCode)
-	if err != nil {
-		log.Printf("Laguage %s not found, creating language", languageCode)
-		language, _, err := p.architectApi.PostArchitectGrammarLanguages(grammarId, *language)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to create grammar language: %s", err)
-		}
-
-		return language, nil
-	}
-
-	languageUpdate := platformclientv2.Grammarlanguageupdate{
-		DtmfFileMetadata:  language.DtmfFileMetadata,
-		VoiceFileMetadata: language.VoiceFileMetadata,
-	}
-	languageSDK, _, err := p.architectApi.PatchArchitectGrammarLanguage(grammarId, languageCode, languageUpdate)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to update grammar language: %s", err)
-	}
-
-	return languageSDK, nil
 }
 
 // deleteArchitectGrammarFn is an implementation function for deleting a Genesys Cloud Architect Grammar
@@ -266,44 +178,4 @@ func deleteArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 	}
 
 	return resp.StatusCode, nil
-}
-
-// uploadGrammarLanguageFile is a function for uploading a grammar language file to Genesys cloud
-func uploadGrammarLanguageFile(p *architectGrammarProxy, grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest, fileType string) error {
-	var uploadResponse *platformclientv2.Uploadurlresponse
-	var err error
-	if fileType == "voice" {
-		uploadResponse, _, err = p.architectApi.PostArchitectGrammarLanguageFilesVoice(grammarId, languageCode, *uploadBody)
-	} else if fileType == "dtmf" {
-		uploadResponse, _, err = p.architectApi.PostArchitectGrammarLanguageFilesDtmf(grammarId, languageCode, *uploadBody)
-	} else {
-		return fmt.Errorf("Invalid file type given. Specify either voice of dtmf")
-	}
-	if err != nil {
-		return fmt.Errorf("Failed to get language file presignedUri: %s for file %s", err, *filename)
-	}
-
-	file, err := os.Open(*filename)
-	if err != nil {
-		return fmt.Errorf("Failed to find file: %s", err)
-	}
-	defer file.Close()
-
-	request, err := http.NewRequest(http.MethodPut, *uploadResponse.Url, file)
-	if err != nil {
-		return err
-	}
-
-	for key, value := range *uploadResponse.Headers {
-		request.Header.Add(key, value)
-	}
-
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	return nil
 }

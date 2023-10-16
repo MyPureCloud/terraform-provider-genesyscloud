@@ -6,6 +6,7 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
+	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
@@ -88,6 +89,7 @@ func registerResources() {
 	regInstance := &RegisterInstance{}
 
 	grammar.SetRegistrar(regInstance)           //Registering architect grammar
+	grammarLanguage.SetRegistrar(regInstance)   //Registering architect grammar language
 	pat.SetRegistrar(regInstance)               //Registering process automation triggers
 	obs.SetRegistrar(regInstance)               //Resistering outbound ruleset
 	ob.SetRegistrar(regInstance)                //Registering outbound

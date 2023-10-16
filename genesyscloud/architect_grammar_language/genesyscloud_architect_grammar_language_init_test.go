@@ -1,13 +1,14 @@
-package architect_grammar
+package architect_grammar_language
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
+	architectGrammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	"testing"
 )
 
 /*
-   The genesyscloud_architect_grammar_init_test.go file is used to initialize the data sources and resources
+   The genesyscloud_architect_grammar_language_init_test.go file is used to initialize the resource
    used in testing the architect_grammar_language resource.
 */
 
@@ -24,12 +25,8 @@ type registerTestInstance struct {
 
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
-	providerResources["genesyscloud_architect_grammar"] = ResourceArchitectGrammar()
-}
-
-// registerTestDataSources registers all data sources used in the tests.
-func (r *registerTestInstance) registerTestDataSources() {
-	providerDataSources["genesyscloud_architect_grammar"] = DataSourceArchitectGrammar()
+	providerResources["genesyscloud_architect_grammar_language"] = ResourceArchitectGrammarLanguage()
+	providerResources["genesyscloud_architect_grammar"] = architectGrammar.ResourceArchitectGrammar()
 }
 
 // initTestresources initializes all test_data resources and data sources.
@@ -40,7 +37,6 @@ func initTestResources() {
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
-	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test_data

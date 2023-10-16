@@ -36,12 +36,15 @@ func getAllAuthArchitectGrammar(ctx context.Context, clientConfig *platformclien
 	return resources, nil
 }
 
-// createArchitectGrammar is used by the architect_grammar resource to create a Genesys cloud architect grammar
+// createArchitectGrammar is used by the architect_grammar_language resource to create a Genesys cloud architect grammar
 func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarProxy(sdkConfig)
 
-	architectGrammar := getArchitectGrammarFromResourceData(d)
+	architectGrammar := platformclientv2.Grammar{
+		Name:        platformclientv2.String(d.Get("name").(string)),
+		Description: platformclientv2.String(d.Get("description").(string)),
+	}
 
 	// Create grammar
 	log.Printf("Creating Architect Grammar %s", *architectGrammar.Name)
@@ -55,7 +58,7 @@ func createArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 	return readArchitectGrammar(ctx, d, meta)
 }
 
-// readArchitectGrammar is used by the architect_grammar resource to read an architect grammar from genesys cloud.
+// readArchitectGrammar is used by the architect_grammar_language resource to read an architect grammar from genesys cloud.
 func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarProxy(sdkConfig)
@@ -76,19 +79,21 @@ func readArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta inte
 
 		resourcedata.SetNillableValue(d, "name", grammar.Name)
 		resourcedata.SetNillableValue(d, "description", grammar.Description)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFuncWithState(d, "languages", grammar.Languages, flattenGrammarLanguages)
 
-		log.Printf("Read Architect Grammar %s %s", d.Id(), *grammar.Name)
+		log.Printf("Read Architect Grammar %s", d.Id())
 		return cc.CheckState()
 	})
 }
 
-// updateArchitectGrammar is used by the architect_grammar resource to update an architect grammar in Genesys Cloud
+// updateArchitectGrammar is used by the architect_grammar_language resource to update an architect grammar in Genesys Cloud
 func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarProxy(sdkConfig)
 
-	architectGrammar := getArchitectGrammarFromResourceData(d)
+	architectGrammar := platformclientv2.Grammar{
+		Name:        platformclientv2.String(d.Get("name").(string)),
+		Description: platformclientv2.String(d.Get("description").(string)),
+	}
 
 	// Update grammar
 	log.Printf("Updating Architect Grammar %s", *architectGrammar.Name)
@@ -101,7 +106,7 @@ func updateArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 	return readArchitectGrammar(ctx, d, meta)
 }
 
-// deleteArchitectGrammar is used by the architect_grammar resource to delete an architect grammar from Genesys cloud.
+// deleteArchitectGrammar is used by the architect_grammar_language resource to delete an architect grammar from Genesys cloud.
 func deleteArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := newArchitectGrammarProxy(sdkConfig)
@@ -125,4 +130,17 @@ func deleteArchitectGrammar(ctx context.Context, d *schema.ResourceData, meta in
 
 		return retry.RetryableError(fmt.Errorf("Grammar %s still exists", d.Id()))
 	})
+}
+
+func GenerateGrammarResource(
+	resourceId string,
+	name string,
+	description string,
+) string {
+	return fmt.Sprintf(`
+		resource "genesyscloud_architect_grammar" "%s" {
+			name = "%s"
+			description = "%s"
+		}
+	`, resourceId, name, description)
 }
