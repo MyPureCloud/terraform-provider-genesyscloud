@@ -10,6 +10,7 @@ import (
 	"log"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -74,7 +75,7 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Architect Grammar Language %s: %s", d.Id(), getErr))
 		}
 
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammarLanguage())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammarLanguage())
 
 		resourcedata.SetNillableValue(d, "grammar_id", language.GrammarId)
 		resourcedata.SetNillableValue(d, "language", language.Language)
@@ -86,8 +87,7 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		log.Printf("Read Architect Grammar Language %s", d.Id())
-		//return cc.CheckState()
-		return nil
+		return cc.CheckState()
 	})
 }
 
