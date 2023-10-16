@@ -147,7 +147,7 @@ func verifyWrapupCodeMappingsMappingValues(resourceName string, wrapupCodeResour
 				for j := 0; j < numFlags; j++ {
 					flagsList = append(flagsList, resourceState.Primary.Attributes[fmt.Sprintf("mappings.%v.flags.%v", strconv.Itoa(i), strconv.Itoa(j))])
 				}
-				if !lists.ListsAreEquivalent(flagsList, expectedFlags) {
+				if !lists.AreEquivalent(flagsList, expectedFlags) {
 					return fmt.Errorf("mismatch for field %v. Expected: %v, got: %v\n", fmt.Sprintf("mappings.%v.flags", strconv.Itoa(i)), expectedFlags, flagsList)
 				}
 				return nil

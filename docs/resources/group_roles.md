@@ -37,7 +37,7 @@ resource "genesyscloud_group_roles" "group-roles" {
 
 ### Optional
 
-- `roles` (Block Set) Roles and their divisions assigned to this group. (see [below for nested schema](#nestedblock--roles))
+- `roles` (Block List) Roles and their divisions assigned to this group. (see [below for nested schema](#nestedblock--roles))
 
 ### Read-Only
 

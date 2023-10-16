@@ -101,7 +101,7 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 			for _, v := range schemaDefaultSet {
 				defaultSet = append(defaultSet, v.(string))
 			}
-			if lists.ListsAreEquivalent(defaultSet, *sdkWrapupCodeMappings.DefaultSet) {
+			if lists.AreEquivalent(defaultSet, *sdkWrapupCodeMappings.DefaultSet) {
 				d.Set("default_set", defaultSet)
 			} else {
 				d.Set("default_set", lists.StringListToInterfaceList(*sdkWrapupCodeMappings.DefaultSet))

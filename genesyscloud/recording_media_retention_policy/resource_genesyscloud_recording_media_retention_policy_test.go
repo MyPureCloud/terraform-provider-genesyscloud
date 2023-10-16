@@ -528,7 +528,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 
 	basePolicy := Policycreate{
 		Name:        "terraform-media-retention-policy" + uuid.NewString(),
-		Order:       1,
+		Order:       0,
 		Description: "a media retention policy",
 		Enabled:     true,
 	}
