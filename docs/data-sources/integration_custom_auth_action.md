@@ -3,18 +3,18 @@
 page_title: "genesyscloud_integration_custom_auth_action Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud integration custom auth action. Select the custom auth action by its associated integration's name.
+  Data source for Genesys Cloud integration custom auth action. Select the custom auth action by its associated integration's id.
 ---
 
 # genesyscloud_integration_custom_auth_action (Data Source)
 
-Data source for Genesys Cloud integration custom auth action. Select the custom auth action by its associated integration's name.
+Data source for Genesys Cloud integration custom auth action. Select the custom auth action by its associated integration's id.
 
 ## Example Usage
 
 ```terraform
 data "genesyscloud_integration_custom_auth_action" "integrationCustomAuthAction" {
-  integration_name = "example integration name"
+  parent_integration_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 }
 ```
 
@@ -23,7 +23,7 @@ data "genesyscloud_integration_custom_auth_action" "integrationCustomAuthAction"
 
 ### Required
 
-- `integration_name` (String) The name of the integration associated with the custom auth action
+- `parent_integration_id` (String) The id of the integration associated with the custom auth action
 
 ### Read-Only
 
