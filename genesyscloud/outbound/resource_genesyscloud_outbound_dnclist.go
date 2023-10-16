@@ -304,7 +304,7 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		if sdkDncList.DncCodes != nil {
 			schemaCodes := lists.InterfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 			// preserve ordering and avoid a plan not empty error
-			if lists.ListsAreEquivalent(schemaCodes, *sdkDncList.DncCodes) {
+			if lists.AreEquivalent(schemaCodes, *sdkDncList.DncCodes) {
 				_ = d.Set("dnc_codes", schemaCodes)
 			} else {
 				_ = d.Set("dnc_codes", lists.StringListToInterfaceList(*sdkDncList.DncCodes))

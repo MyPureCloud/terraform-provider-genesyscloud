@@ -337,7 +337,6 @@ func ResourceRoutingQueue() *schema.Resource {
 							Type:         schema.TypeString,
 							Optional:     true,
 							Default:      "EstimatedWaitTime",
-							ValidateFunc: validation.StringInSlice([]string{"EstimatedWaitTime", "ServiceLevel"}, false),
 						},
 						"condition_value": {
 							Description:  "The limit value, beyond which a rule evaluates as true.",
