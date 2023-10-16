@@ -209,10 +209,10 @@ func generateIntegrationActionConfigRequest(req *customAuthActionResourceConfigR
 	}
 
 	return fmt.Sprintf(`config_request {
-        request_url_template = "%s"
-        request_type = "%s"
-        request_template = %s
-        %s
+		request_url_template = "%s"
+		request_type = "%s"
+		request_template = %s
+		%s
 	}
 	`, req.requestUrlTemplate, req.requestType, req.requestTemplate, headers)
 }
@@ -229,8 +229,8 @@ func generateIntegrationActionConfigResponse(res *customAuthActionResourceConfig
 	}
 
 	return fmt.Sprintf(`config_response {
-        success_template = %s
-        %s
+		success_template = %s
+		%s
 		%s
 	}
 	`, res.successTemplate, translationMap, translationMapDefaults)

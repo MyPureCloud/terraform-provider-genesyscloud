@@ -38,7 +38,7 @@ type updateCustomAuthActionFunc func(ctx context.Context, p *customAuthActionsPr
 type getIntegrationActionTemplateFunc func(ctx context.Context, p *customAuthActionsProxy, actionId string, fileName string) (*string, *platformclientv2.APIResponse, error)
 type getIntegrationTypeFunc func(ctx context.Context, p *customAuthActionsProxy, integrationId string) (string, error)
 type getIntegrationCredentialsTypeFunc func(ctx context.Context, p *customAuthActionsProxy, integrationId string) (string, error)
-type getIntegrationByNameFunc func(ctx context.Context, p *customAuthActionsProxy, integrationName string) (integration *platformclientv2.Integration, retryable bool, err error)
+type getIntegrationByIdFunc func(ctx context.Context, p *customAuthActionsProxy, integrationName string) (integration *platformclientv2.Integration, resp *platformclientv2.APIResponse, err error)
 
 // customAuthActionsProxy contains all of the methods that call genesys cloud APIs.
 type customAuthActionsProxy struct {
@@ -50,7 +50,7 @@ type customAuthActionsProxy struct {
 	getIntegrationActionTemplateAttr       getIntegrationActionTemplateFunc
 	getIntegrationTypeAttr                 getIntegrationTypeFunc
 	getIntegrationCredentialsTypeAttr      getIntegrationCredentialsTypeFunc
-	getIntegrationByNameAttr               getIntegrationByNameFunc
+	getIntegrationByIdAttr                 getIntegrationByIdFunc
 }
 
 // newCustomAuthActionsProxy initializes the customAuthActionsProxy with all of the data needed to communicate with Genesys Cloud
@@ -65,7 +65,7 @@ func newCustomAuthActionsProxy(clientConfig *platformclientv2.Configuration) *cu
 		getIntegrationActionTemplateAttr:       getIntegrationActionTemplateFn,
 		getIntegrationTypeAttr:                 getIntegrationTypeFn,
 		getIntegrationCredentialsTypeAttr:      getIntegrationCredentialsTypeFn,
-		getIntegrationByNameAttr:               getIntegrationByNameFn,
+		getIntegrationByIdAttr:                 getIntegrationByIdFn,
 	}
 }
 
@@ -109,9 +109,9 @@ func (p *customAuthActionsProxy) getIntegrationCredentialsType(ctx context.Conte
 	return p.getIntegrationCredentialsTypeAttr(ctx, p, integrationId)
 }
 
-// getIntegrationByName gets a Genesys Cloud Integration by name
-func (p *customAuthActionsProxy) getIntegrationByName(ctx context.Context, integrationName string) (*platformclientv2.Integration, bool, error) {
-	return p.getIntegrationByNameAttr(ctx, p, integrationName)
+// getIntegrationById gets a Genesys Cloud Integration by id
+func (p *customAuthActionsProxy) getIntegrationById(ctx context.Context, integrationName string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+	return p.getIntegrationByIdAttr(ctx, p, integrationName)
 }
 
 // getAllIntegrationCustomAuthActionsFn is the implementation for getting all integration custom auth actions in Genesys Cloud
@@ -213,36 +213,14 @@ func getIntegrationCredentialsTypeFn(ctx context.Context, p *customAuthActionsPr
 	return *credential.VarType.Name, nil
 }
 
-// getIntegrationByNameFn is the implementation for getting a Genesys Cloud Integration by name
-func getIntegrationByNameFn(ctx context.Context, p *customAuthActionsProxy, integrationName string) (*platformclientv2.Integration, bool, error) {
+// getIntegrationByIdFn is the implementation for getting a Genesys Cloud Integration by id
+func getIntegrationByIdFn(ctx context.Context, p *customAuthActionsProxy, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
-
-	integrations, _, err := p.integrationsApi.GetIntegrations(pageSize, 1, "", nil, "", "")
+	const pageNum = 1
+	integration, resp, err := p.integrationsApi.GetIntegration(integrationId, pageSize, pageNum, "", nil, "", "")
 	if err != nil {
-		return nil, false, err
-	}
-	for _, integration := range *integrations.Entities {
-		if integration.Name != nil && *integration.Name == integrationName {
-			return &integration, false, nil
-		}
+		return nil, resp, err
 	}
 
-	for pageNum := 2; pageNum <= *integrations.PageCount; pageNum++ {
-		integrations, _, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "")
-		if err != nil {
-			return nil, false, err
-		}
-
-		if integrations.Entities == nil || len(*integrations.Entities) == 0 {
-			break
-		}
-
-		for _, integration := range *integrations.Entities {
-			if integration.Name != nil && *integration.Name == integrationName {
-				return &integration, false, nil
-			}
-		}
-	}
-
-	return nil, true, fmt.Errorf("no integrations found with name: %s", integrationName)
+	return integration, resp, nil
 }

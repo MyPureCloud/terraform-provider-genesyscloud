@@ -25,16 +25,15 @@ func dataSourceIntegrationCustomAuthActionRead(ctx context.Context, d *schema.Re
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
 
-	integrationName := d.Get("integration_name").(string)
+	integrationId := d.Get("parent_integration_id").(string)
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		// Get the integration by name
-		integration, retryable, err := cap.getIntegrationByName(ctx, integrationName)
-		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("failed to get page of integrations: %s. %s", integrationName, err))
-		}
-		if retryable {
-			return retry.RetryableError(fmt.Errorf("failed to get integration %s", integrationName))
+		integration, resp, getErr := cap.getIntegrationById(ctx, integrationId)
+		if getErr != nil {
+			if gcloud.IsStatus404(resp) {
+				return retry.RetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
+			}
+			return retry.NonRetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
 		}
 
 		// Get the custom auth action for the integration
@@ -48,6 +47,7 @@ func dataSourceIntegrationCustomAuthActionRead(ctx context.Context, d *schema.Re
 		}
 
 		d.SetId(*authAction.Id)
+
 		return nil
 	})
 }

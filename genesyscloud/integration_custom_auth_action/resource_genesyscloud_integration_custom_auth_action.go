@@ -87,7 +87,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("cannot find custom auth action of integration %s: %v", integrationId, err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("error deleting integration %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error getting custom auth action %s: %s", d.Id(), err))
 		}
 
 		// Get default name if not to be overriden

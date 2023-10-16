@@ -136,11 +136,11 @@ func IntegrationCustomAuthActionExporter() *resourceExporter.ResourceExporter {
 // DataSourceIntegrationCustomAuthAction registers the genesyscloud_integration_custom_auth_action data source
 func DataSourceIntegrationCustomAuthAction() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud integration custom auth action. Select the custom auth action by its associated integration's name.",
+		Description: "Data source for Genesys Cloud integration custom auth action. Select the custom auth action by its associated integration's id.",
 		ReadContext: gcloud.ReadWithPooledClient(dataSourceIntegrationCustomAuthActionRead),
 		Schema: map[string]*schema.Schema{
-			"integration_name": {
-				Description: "The name of the integration associated with the custom auth action",
+			"parent_integration_id": {
+				Description: "The id of the integration associated with the custom auth action",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
