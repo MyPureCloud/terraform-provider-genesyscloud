@@ -16,11 +16,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-architect-grammars--grammarId-)
 * [GET /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-architect-grammars--grammarId-)
 * [PATCH /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-architect-grammars--grammarId-)
-* [POST /api/v2/architect/grammars/{grammarId}/languages](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-architect-grammars--grammarId--languages)
-* [GET /api/v2/architect/grammars/{grammarId}/languages/{languageCode}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-architect-grammars--grammarId--languages--languageCode-)
-* [PATCH /api/v2/architect/grammars/{grammarId}/languages/{languageCode}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-architect-grammars--grammarId--languages--languageCode-)
-* [POST /api/v2/architect/grammars/{grammarId}/languages/{languageCode}/files/dtmf](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-architect-grammars--grammarId--languages--languageCode--files-dtmf)
-* [POST /api/v2/architect/grammars/{grammarId}/languages/{languageCode}/files/voice](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-architect-grammars--grammarId--languages--languageCode--files-voice)
+
 
 ## Example Usage
 
@@ -28,34 +24,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 // Architect grammars are still in beta and protected by a feature toggle.
 // To enable grammars in your org contact your Genesys Cloud account manager
 resource "genesyscloud_architect_grammar" "example-grammar" {
-  name        = "sample name"
+  name        = "Grammar name"
   description = "sample description"
-  languages {
-    language = "en-us"
-    voice_file_data {
-      file_name         = "voice_file_name.gram"
-      file_type         = "Gram"
-      file_content_hash = filesha256("voice_file_name.gram")
-    }
-    dtmf_file_data {
-      file_name         = "dtmf_file_name.gram"
-      file_type         = "Gram"
-      file_content_hash = filesha256("dtmf_file_name.gram")
-    }
-  }
-  languages {
-    language = "fr-ca"
-    voice_file_data {
-      file_name         = "voice_file_name.grxml"
-      file_type         = "Grxml"
-      file_content_hash = filesha256("voice_file_name.grxml")
-    }
-    dtmf_file_data {
-      file_name         = "dtmf_file_name.grxml"
-      file_type         = "Grxml"
-      file_content_hash = filesha256("dtmf_file_name.grxml")
-    }
-  }
 }
 ```
 
@@ -69,40 +39,8 @@ resource "genesyscloud_architect_grammar" "example-grammar" {
 ### Optional
 
 - `description` (String) Description of the grammar
-- `languages` (Block List) List of languages for this grammar (see [below for nested schema](#nestedblock--languages))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-<a id="nestedblock--languages"></a>
-### Nested Schema for `languages`
-
-Required:
-
-- `language` (String) Language name. (eg. en-us)
-
-Optional:
-
-- `dtmf_file_data` (Block List, Max: 1) Information about the associated dtmf file (see [below for nested schema](#nestedblock--languages--dtmf_file_data))
-- `voice_file_data` (Block List, Max: 1) Information about the associated voice file (see [below for nested schema](#nestedblock--languages--voice_file_data))
-
-<a id="nestedblock--languages--dtmf_file_data"></a>
-### Nested Schema for `languages.dtmf_file_data`
-
-Required:
-
-- `file_content_hash` (String) Hash value of the file content. Used to detect changes.
-- `file_name` (String) The name of the file as defined by the user
-- `file_type` (String) The extension of the file
-
-
-<a id="nestedblock--languages--voice_file_data"></a>
-### Nested Schema for `languages.voice_file_data`
-
-Required:
-
-- `file_content_hash` (String) Hash value of the file content. Used to detect changes.
-- `file_name` (String) The name of the file as defined by the user
-- `file_type` (String) The extension of the file
 
