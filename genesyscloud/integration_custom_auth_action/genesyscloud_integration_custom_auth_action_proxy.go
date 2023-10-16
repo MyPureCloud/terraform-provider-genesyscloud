@@ -117,9 +117,20 @@ func (p *customAuthActionsProxy) getIntegrationByName(ctx context.Context, integ
 // getAllIntegrationCustomAuthActionsFn is the implementation for getting all integration custom auth actions in Genesys Cloud
 func getAllIntegrationCustomAuthActionsFn(ctx context.Context, p *customAuthActionsProxy) (*[]platformclientv2.Action, error) {
 	actions := []platformclientv2.Action{}
+	const pageSize = 100
 
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
+	actionsList, _, err := p.integrationsApi.GetIntegrationsActions(pageSize, 1, "", "", "", "", "", "", "", "", "true")
+	if err != nil {
+		return nil, err
+	}
+	for _, action := range *actionsList.Entities {
+		if !strings.HasPrefix(*action.Id, customAuthIdPrefix) {
+			continue
+		}
+		actions = append(actions, action)
+	}
+
+	for pageNum := 2; pageNum <= *actionsList.PageCount; pageNum++ {
 		actionsList, _, err := p.integrationsApi.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", "", "", "", "true")
 		if err != nil {
 			return nil, err
@@ -204,29 +215,34 @@ func getIntegrationCredentialsTypeFn(ctx context.Context, p *customAuthActionsPr
 
 // getIntegrationByNameFn is the implementation for getting a Genesys Cloud Integration by name
 func getIntegrationByNameFn(ctx context.Context, p *customAuthActionsProxy, integrationName string) (*platformclientv2.Integration, bool, error) {
-	var foundIntegration *platformclientv2.Integration
-
 	const pageSize = 100
-	for pageNum := 1; ; pageNum++ {
+
+	integrations, _, err := p.integrationsApi.GetIntegrations(pageSize, 1, "", nil, "", "")
+	if err != nil {
+		return nil, false, err
+	}
+	for _, integration := range *integrations.Entities {
+		if integration.Name != nil && *integration.Name == integrationName {
+			return &integration, false, nil
+		}
+	}
+
+	for pageNum := 2; pageNum <= *integrations.PageCount; pageNum++ {
 		integrations, _, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "")
 		if err != nil {
 			return nil, false, err
 		}
 
 		if integrations.Entities == nil || len(*integrations.Entities) == 0 {
-			return nil, true, fmt.Errorf("no integrations found with name: %s", integrationName)
+			break
 		}
 
 		for _, integration := range *integrations.Entities {
 			if integration.Name != nil && *integration.Name == integrationName {
-				foundIntegration = &integration
-				break
+				return &integration, false, nil
 			}
-		}
-		if foundIntegration != nil {
-			break
 		}
 	}
 
-	return foundIntegration, false, nil
+	return nil, true, fmt.Errorf("no integrations found with name: %s", integrationName)
 }
