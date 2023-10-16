@@ -14,6 +14,8 @@ import (
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
@@ -385,33 +387,15 @@ func flattenPhoneCapabilities(capabilities *platformclientv2.Phonecapabilities) 
 	}
 
 	capabilitiesMap := make(map[string]interface{})
-	if capabilities.Provisions != nil {
-		capabilitiesMap["provisions"] = *capabilities.Provisions
-	}
-	if capabilities.Registers != nil {
-		capabilitiesMap["registers"] = *capabilities.Registers
-	}
-	if capabilities.DualRegisters != nil {
-		capabilitiesMap["dual_registers"] = *capabilities.DualRegisters
-	}
-	if capabilities.HardwareIdType != nil {
-		capabilitiesMap["hardware_id_type"] = *capabilities.HardwareIdType
-	}
-	if capabilities.AllowReboot != nil {
-		capabilitiesMap["allow_reboot"] = *capabilities.AllowReboot
-	}
-	if capabilities.NoRebalance != nil {
-		capabilitiesMap["no_rebalance"] = *capabilities.NoRebalance
-	}
-	if capabilities.NoCloudProvisioning != nil {
-		capabilitiesMap["no_cloud_provisioning"] = *capabilities.NoCloudProvisioning
-	}
-	if capabilities.MediaCodecs != nil {
-		capabilitiesMap["media_codecs"] = *capabilities.MediaCodecs
-	}
-	if capabilities.Cdm != nil {
-		capabilitiesMap["cdm"] = *capabilities.Cdm
-	}
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "provisions", capabilities.Provisions)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "registers", capabilities.Registers)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "dual_registers", capabilities.DualRegisters)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "hardware_id_type", capabilities.HardwareIdType)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "allow_reboot", capabilities.AllowReboot)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "no_rebalance", capabilities.NoRebalance)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "no_cloud_provisioning", capabilities.NoCloudProvisioning)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "media_codecs", capabilities.MediaCodecs)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "cdm", capabilities.Cdm)
 
 	return []interface{}{capabilitiesMap}
 }
