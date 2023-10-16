@@ -9,10 +9,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
-func dataSourceGroup() *schema.Resource {
+func DataSourceGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Groups. Select a group by name.",
 		ReadContext: ReadWithPooledClient(dataSourceGroupRead),

@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func TestAccResourcePhoneBaseSettings(t *testing.T) {
@@ -115,42 +115,42 @@ func testVerifyPhoneBaseSettingsDestroyed(state *terraform.State) error {
 
 func generatePhoneBaseSettingsProperties(phoneLabel, phoneMaxLineKeys, phoneMwiEnabled, phoneMwiSubscribe, phoneStandalone string, phoneStations []string) string {
 	// A random selection of properties
-	return "properties = " + generateJsonEncodedProperties(
-		generateJsonProperty(
-			"phone_label", generateJsonObject(
-				generateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonProperty("instance", strconv.Quote(phoneLabel)),
+	return "properties = " + GenerateJsonEncodedProperties(
+		GenerateJsonProperty(
+			"phone_label", GenerateJsonObject(
+				GenerateJsonProperty(
+					"value", GenerateJsonObject(
+						GenerateJsonProperty("instance", strconv.Quote(phoneLabel)),
 					)))),
-		generateJsonProperty(
-			"phone_maxLineKeys", generateJsonObject(
-				generateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonProperty("instance", phoneMaxLineKeys),
+		GenerateJsonProperty(
+			"phone_maxLineKeys", GenerateJsonObject(
+				GenerateJsonProperty(
+					"value", GenerateJsonObject(
+						GenerateJsonProperty("instance", phoneMaxLineKeys),
 					)))),
-		generateJsonProperty(
-			"phone_mwi_enabled", generateJsonObject(
-				generateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonProperty("instance", phoneMwiEnabled),
+		GenerateJsonProperty(
+			"phone_mwi_enabled", GenerateJsonObject(
+				GenerateJsonProperty(
+					"value", GenerateJsonObject(
+						GenerateJsonProperty("instance", phoneMwiEnabled),
 					)))),
-		generateJsonProperty(
-			"phone_mwi_subscribe", generateJsonObject(
-				generateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonProperty("instance", phoneMwiSubscribe),
+		GenerateJsonProperty(
+			"phone_mwi_subscribe", GenerateJsonObject(
+				GenerateJsonProperty(
+					"value", GenerateJsonObject(
+						GenerateJsonProperty("instance", phoneMwiSubscribe),
 					)))),
-		generateJsonProperty(
-			"phone_standalone", generateJsonObject(
-				generateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonProperty("instance", phoneStandalone),
+		GenerateJsonProperty(
+			"phone_standalone", GenerateJsonObject(
+				GenerateJsonProperty(
+					"value", GenerateJsonObject(
+						GenerateJsonProperty("instance", phoneStandalone),
 					)))),
-		generateJsonProperty(
-			"phone_stations", generateJsonObject(
-				generateJsonProperty(
-					"value", generateJsonObject(
-						generateJsonArrayProperty("instance", strings.Join(phoneStations, ",")),
+		GenerateJsonProperty(
+			"phone_stations", GenerateJsonObject(
+				GenerateJsonProperty(
+					"value", GenerateJsonObject(
+						GenerateJsonArrayProperty("instance", strings.Join(phoneStations, ",")),
 					)))),
 	)
 }

@@ -3,7 +3,7 @@ package station
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package

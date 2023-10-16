@@ -3,13 +3,12 @@ package genesyscloud
 import (
 	"fmt"
 	"log"
-	"os"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func TestAccResponseManagementResponseAsset(t *testing.T) {
@@ -87,8 +86,7 @@ func cleanupResponseAssets(folderName string) error {
 		fields  = []string{name}
 		varType = "STARTS_WITH"
 	)
-	config := platformclientv2.GetDefaultConfiguration()
-	err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+	config, err := AuthorizeSdk()
 	if err != nil {
 		return err
 	}

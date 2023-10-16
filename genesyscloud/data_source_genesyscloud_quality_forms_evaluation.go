@@ -9,10 +9,48 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
-func dataSourceQualityFormsEvaluations() *schema.Resource {
+type EvaluationFormQuestionGroupStruct struct {
+	Name                    string
+	DefaultAnswersToHighest bool
+	DefaultAnswersToNA      bool
+	NaEnabled               bool
+	Weight                  float32
+	ManualWeight            bool
+	Questions               []EvaluationFormQuestionStruct
+	VisibilityCondition     VisibilityConditionStruct
+}
+
+type EvaluationFormStruct struct {
+	Name           string
+	Published      bool
+	QuestionGroups []EvaluationFormQuestionGroupStruct
+}
+
+type EvaluationFormQuestionStruct struct {
+	Text                string
+	HelpText            string
+	NaEnabled           bool
+	CommentsRequired    bool
+	IsKill              bool
+	IsCritical          bool
+	VisibilityCondition VisibilityConditionStruct
+	AnswerOptions       []AnswerOptionStruct
+}
+
+type AnswerOptionStruct struct {
+	Text  string
+	Value int
+}
+
+type VisibilityConditionStruct struct {
+	CombiningOperation string
+	Predicates         []string
+}
+
+func DataSourceQualityFormsEvaluations() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Evaluation Forms. Select an evaluations form by name",
 		ReadContext: ReadWithPooledClient(dataSourceQualityFormsEvaluationsRead),

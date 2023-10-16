@@ -31,7 +31,6 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources["genesyscloud_externalcontacts_contact"] = ResourceExternalContact()
-
 }
 
 // registerTestDataSources registers all data sources used in the tests.

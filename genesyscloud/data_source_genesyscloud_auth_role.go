@@ -9,13 +9,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
-func dataSourceAuthRole() *schema.Resource {
+func DataSourceAuthRole() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Roles. Select a role by name.",
-		ReadContext: ReadWithPooledClient(dataSourceAuthRoleRead),
+		ReadContext: ReadWithPooledClient(DataSourceAuthRoleRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Role name.",
@@ -26,7 +26,7 @@ func dataSourceAuthRole() *schema.Resource {
 	}
 }
 
-func dataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func DataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 

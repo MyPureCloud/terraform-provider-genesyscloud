@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
@@ -25,7 +25,7 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanupRoutingEmailDomains()
+	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
@@ -33,7 +33,7 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create purecloud subdomain
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					trueValue, // Subdomain clear
@@ -66,7 +66,7 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanupRoutingEmailDomains()
+	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
@@ -74,7 +74,7 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create custom domain
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue, // Subdomain
@@ -88,7 +88,7 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 			},
 			{
 				// Update custom domain
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
 					falseValue, // Subdomain
@@ -103,19 +103,6 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 		},
 		CheckDestroy: testVerifyRoutingEmailDomainDestroyed,
 	})
-}
-
-func generateRoutingEmailDomainResource(
-	resourceID string,
-	domainID string,
-	subdomain string,
-	fromDomain string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_email_domain" "%s" {
-		domain_id = "%s"
-		subdomain = %s
-        mail_from_domain = %s
-	}
-	`, resourceID, domainID, subdomain, fromDomain)
 }
 
 func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {

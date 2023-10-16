@@ -3,7 +3,6 @@ package outbound
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -15,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -1251,9 +1250,9 @@ resource "genesyscloud_outbound_callabletimeset" "%s"{
 }
 
 func getPublishedScriptId() (string, error) {
-	config := platformclientv2.GetDefaultConfiguration()
-	if err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET")); err != nil {
-		return "", err
+	config, err := gcloud.AuthorizeSdk()
+	if err != nil {
+		return "", fmt.Errorf("failed to authorize client: %v", err)
 	}
 	api := platformclientv2.NewScriptsApiWithConfig(config)
 	// Get the published scripts.

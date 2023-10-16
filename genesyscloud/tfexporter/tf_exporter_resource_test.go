@@ -2,13 +2,19 @@ package tfexporter
 
 import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
+	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	outboundAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
+	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
+	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	"testing"
 
 	obw "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
@@ -42,7 +48,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
 	providerResources["genesyscloud_flow_milestone"] = gcloud.ResourceFlowMilestone()
 	providerResources["genesyscloud_flow_outcome"] = gcloud.ResourceFlowOutcome()
-	providerResources["genesyscloud_architect_ivr"] = gcloud.ResourceArchitectIvrConfig()
+	providerResources["genesyscloud_architect_ivr"] = archIvr.ResourceArchitectIvrConfig()
 	providerResources["genesyscloud_architect_schedules"] = gcloud.ResourceArchitectSchedules()
 	providerResources["genesyscloud_architect_schedulegroups"] = gcloud.ResourceArchitectScheduleGroups()
 	providerResources["genesyscloud_architect_user_prompt"] = gcloud.ResourceArchitectUserPrompt()
@@ -58,22 +64,20 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_idp_onelogin"] = gcloud.ResourceIdpOnelogin()
 	providerResources["genesyscloud_idp_ping"] = gcloud.ResourceIdpPing()
 	providerResources["genesyscloud_idp_salesforce"] = gcloud.ResourceIdpSalesforce()
-	providerResources["genesyscloud_integration"] = gcloud.ResourceIntegration()
-	providerResources["genesyscloud_integration_action"] = gcloud.ResourceIntegrationAction()
-	providerResources["genesyscloud_integration_credential"] = gcloud.ResourceCredential()
+	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
+	providerResources["genesyscloud_integration_action"] = integrationAction.ResourceIntegrationAction()
+	providerResources["genesyscloud_integration_credential"] = integrationCred.ResourceIntegrationCredential()
 	providerResources["genesyscloud_journey_action_map"] = gcloud.ResourceJourneyActionMap()
 	providerResources["genesyscloud_journey_action_template"] = gcloud.ResourceJourneyActionTemplate()
 	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
 	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_knowledge_document"] = gcloud.ResourceKnowledgeDocument()
-	providerResources["genesyscloud_knowledge_v1_document"] = gcloud.ResourceKnowledgeDocumentV1()
 	providerResources["genesyscloud_knowledge_document_variation"] = gcloud.ResourceKnowledgeDocumentVariation()
 	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
-	providerResources["genesyscloud_knowledge_v1_category"] = gcloud.ResourceKnowledgeCategoryV1()
 	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
-	providerResources["genesyscloud_recording_media_retention_policy"] = gcloud.ResourceMediaRetentionPolicy()
+	providerResources["genesyscloud_recording_media_retention_policy"] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
 	providerResources["genesyscloud_oauth_client"] = gcloud.ResourceOAuthClient()
 	providerResources["genesyscloud_outbound_settings"] = ob.ResourceOutboundSettings()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
@@ -88,7 +92,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_utilization"] = gcloud.ResourceRoutingUtilization()
 
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = gcloud.ResourceTelephonyDidPool()
 	providerResources["genesyscloud_telephony_providers_edges_edge_group"] = gcloud.ResourceEdgeGroup()
 	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = gcloud.ResourceTelephonyExtensionPool()
 	providerResources["genesyscloud_telephony_providers_edges_phone"] = edgePhone.ResourcePhone()
@@ -117,6 +120,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_responsemanagement_response"] = gcloud.ResourceResponsemanagementResponse()
 	providerResources["genesyscloud_routing_sms_address"] = routingSmsAddress.ResourceRoutingSmsAddress()
 	providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
+	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = didPool.ResourceTelephonyDidPool()
 
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
@@ -126,7 +130,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_architect_datatable", gcloud.ArchitectDatatableExporter())
 	RegisterExporter("genesyscloud_architect_datatable_row", gcloud.ArchitectDatatableRowExporter())
 	RegisterExporter("genesyscloud_architect_emergencygroup", gcloud.ArchitectEmergencyGroupExporter())
-	RegisterExporter("genesyscloud_architect_ivr", gcloud.ArchitectIvrExporter())
+	RegisterExporter("genesyscloud_architect_ivr", archIvr.ArchitectIvrExporter())
 	RegisterExporter("genesyscloud_architect_schedules", gcloud.ArchitectSchedulesExporter())
 	RegisterExporter("genesyscloud_architect_schedulegroups", gcloud.ArchitectScheduleGroupsExporter())
 	RegisterExporter("genesyscloud_architect_user_prompt", gcloud.ArchitectUserPromptExporter())
@@ -145,9 +149,9 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_idp_onelogin", gcloud.IdpOneloginExporter())
 	RegisterExporter("genesyscloud_idp_ping", gcloud.IdpPingExporter())
 	RegisterExporter("genesyscloud_idp_salesforce", gcloud.IdpSalesforceExporter())
-	RegisterExporter("genesyscloud_integration", gcloud.IntegrationExporter())
-	RegisterExporter("genesyscloud_integration_action", gcloud.IntegrationActionExporter())
-	RegisterExporter("genesyscloud_integration_credential", gcloud.CredentialExporter())
+	RegisterExporter("genesyscloud_integration", integration.IntegrationExporter())
+	RegisterExporter("genesyscloud_integration_action", integrationAction.IntegrationActionExporter())
+	RegisterExporter("genesyscloud_integration_credential", integrationCred.IntegrationCredentialExporter())
 	RegisterExporter("genesyscloud_journey_action_map", gcloud.JourneyActionMapExporter())
 	RegisterExporter("genesyscloud_journey_action_template", gcloud.JourneyActionTemplateExporter())
 	RegisterExporter("genesyscloud_journey_outcome", gcloud.JourneyOutcomeExporter())
@@ -171,7 +175,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_wrapupcodemappings", obw.OutboundWrapupCodeMappingsExporter())
 	RegisterExporter("genesyscloud_quality_forms_evaluation", gcloud.EvaluationFormExporter())
 	RegisterExporter("genesyscloud_quality_forms_survey", gcloud.SurveyFormExporter())
-	RegisterExporter("genesyscloud_recording_media_retention_policy", gcloud.MediaRetentionPolicyExporter())
+	RegisterExporter("genesyscloud_recording_media_retention_policy", recMediaRetPolicy.MediaRetentionPolicyExporter())
 	RegisterExporter("genesyscloud_responsemanagement_library", gcloud.ResponsemanagementLibraryExporter())
 	RegisterExporter("genesyscloud_responsemanagement_response", gcloud.ResponsemanagementResponseExporter())
 	RegisterExporter("genesyscloud_routing_email_domain", gcloud.RoutingEmailDomainExporter())
@@ -184,7 +188,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_routing_sms_address", routingSmsAddress.RoutingSmsAddressExporter())
 	RegisterExporter("genesyscloud_routing_utilization", gcloud.RoutingUtilizationExporter())
 	RegisterExporter("genesyscloud_routing_wrapupcode", gcloud.RoutingWrapupCodeExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", gcloud.TelephonyDidPoolExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_edge_group", gcloud.EdgeGroupExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", gcloud.TelephonyExtensionPoolExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_phone", edgePhone.PhoneExporter())
@@ -198,13 +201,12 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_webdeployments_deployment", gcloud.WebDeploymentExporter())
 	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
 
-	RegisterExporter("genesyscloud_knowledge_v1_document", gcloud.KnowledgeDocumentExporterV1())
 	RegisterExporter("genesyscloud_knowledge_document_variation", gcloud.KnowledgeDocumentVariationExporter())
 	RegisterExporter("genesyscloud_knowledge_label", gcloud.KnowledgeLabelExporter())
-	RegisterExporter("genesyscloud_knowledge_v1_category", gcloud.KnowledgeCategoryExporterV1())
 
 	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
 	RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", didPool.TelephonyDidPoolExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }

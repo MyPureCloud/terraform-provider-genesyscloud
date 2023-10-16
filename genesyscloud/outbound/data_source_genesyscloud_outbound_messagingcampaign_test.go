@@ -2,7 +2,6 @@ package outbound
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"testing"
 
@@ -11,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 var trueValue = "true"
@@ -84,10 +83,9 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		)
 	)
 
-	config := platformclientv2.GetDefaultConfiguration()
-	err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+	config, err := gcloud.AuthorizeSdk()
 	if err != nil {
-		t.Errorf("error validating client credentials: %v", err)
+		t.Errorf("failed to authorize client: %v", err)
 	}
 	api := platformclientv2.NewRoutingApiWithConfig(config)
 	err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)

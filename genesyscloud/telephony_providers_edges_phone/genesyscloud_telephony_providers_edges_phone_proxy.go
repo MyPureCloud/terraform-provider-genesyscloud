@@ -3,7 +3,7 @@ package telephony_providers_edges_phone
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
 /*
@@ -153,9 +153,17 @@ func (p *phoneProxy) assignUserToStation(ctx context.Context, userId string, sta
 func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Phone, error) {
 	var allPhones []platformclientv2.Phone
 
-	for pageNum := 1; ; pageNum++ {
+	phones, _, _ := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, 100, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+	for _, phone := range *phones.Entities {
+		if phone.State != nil && *phone.State != "deleted" {
+			allPhones = append(allPhones, phone)
+		}
+	}
+
+	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
 		const pageSize = 100
-		phones, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+		const sortBy = "id"
+		phones, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 		if err != nil {
 			return nil, err
 		}

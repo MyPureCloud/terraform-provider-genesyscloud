@@ -10,35 +10,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v109/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
-
-func cleanupRoutingEmailDomains() {
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false, "")
-		if getErr != nil {
-			return
-		}
-
-		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
-			return
-		}
-
-		for _, routingEmailDomain := range *routingEmailDomains.Entities {
-			if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
-				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
-				if err != nil {
-					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
-					continue
-				}
-				time.Sleep(5 * time.Second)
-			}
-		}
-	}
-}
 
 func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 	var (
@@ -51,14 +24,14 @@ func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanupRoutingEmailDomains()
+	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { TestAccPreCheck(t) },
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateRoutingEmailDomainResource(
+				Config: GenerateRoutingEmailDomainResource(
 					emailDomainResourceId,
 					emailDomainId,
 					falseValue,
@@ -84,4 +57,31 @@ func generateRoutingEmailDomainDataSource(
         depends_on=[%s]
 	}
 	`, resourceID, name, dependsOnResource)
+}
+
+func CleanupRoutingEmailDomains() {
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageNum, pageSize, false, "")
+		if getErr != nil {
+			return
+		}
+
+		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
+			return
+		}
+
+		for _, routingEmailDomain := range *routingEmailDomains.Entities {
+			if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
+				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
+				if err != nil {
+					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
+					continue
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
 }
