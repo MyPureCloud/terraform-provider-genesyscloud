@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 var (
@@ -333,10 +333,10 @@ func ResourceRoutingQueue() *schema.Resource {
 							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
 						},
 						"metric": {
-							Description:  "The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel",
-							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "EstimatedWaitTime",
+							Description: "The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel",
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "EstimatedWaitTime",
 						},
 						"condition_value": {
 							Description:  "The limit value, beyond which a rule evaluates as true.",
