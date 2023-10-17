@@ -886,7 +886,7 @@ func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 	var (
 		queueResource1    = "test-queue-direct"
 		queueResource2    = "test-queue"
-		queueName1        = "Genesys System Direct Routing Queue"
+		queueName1        = "Terraform Test Queue1-" + uuid.NewString()
 		queueName2        = "Terraform Test Queue2-" + uuid.NewString()
 		queueName3        = "Terraform Test Queue3-" + uuid.NewString()
 		agentWaitSeconds1 = "200"
