@@ -3,7 +3,6 @@ package outbound
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -1250,9 +1249,9 @@ resource "genesyscloud_outbound_callabletimeset" "%s"{
 }
 
 func getPublishedScriptId() (string, error) {
-	config := platformclientv2.GetDefaultConfiguration()
-	if err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET")); err != nil {
-		return "", err
+	config, err := gcloud.AuthorizeSdk()
+	if err != nil {
+		return "", fmt.Errorf("failed to authorize client: %v", err)
 	}
 	api := platformclientv2.NewScriptsApiWithConfig(config)
 	// Get the published scripts.

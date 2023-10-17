@@ -145,7 +145,7 @@ func getOutboundRulesetByIdFn(ctx context.Context, p *outboundRulesetProxy, rule
 }
 
 // getOutboundRulesetIdBySearchFn is an implementation of the function to get a Genesys Cloud Outbound Ruleset by name
-func getOutboundRulesetIdByNameFn(ctx context.Context, p *outboundRulesetProxy, name string) (rulesetIdId string, retryable bool, err error) {
+func getOutboundRulesetIdByNameFn(ctx context.Context, p *outboundRulesetProxy, name string) (rulesetId string, retryable bool, err error) {
 	const pageNum = 1
 	const pageSize = 100
 	rulesets, _, err := p.outboundApi.GetOutboundRulesets(pageSize, pageNum, true, "", name, "", "")
@@ -157,13 +157,18 @@ func getOutboundRulesetIdByNameFn(ctx context.Context, p *outboundRulesetProxy, 
 		return "", true, fmt.Errorf("No outbound ruleset found with name %s", name)
 	}
 
-	if len(*rulesets.Entities) > 1 {
-		return "", false, fmt.Errorf("Too many values returned in look for outbound rulesets.  Unable to choose 1 ruleset.  Please refine search and continue.")
+	var ruleset platformclientv2.Ruleset
+	entities := *rulesets.Entities
+
+	for _, rulesetSdk := range entities {
+		if *rulesetSdk.Name == name {
+			log.Printf("Retrieved the ruleset id %s by name %s", *rulesetSdk.Id, name)
+			ruleset = rulesetSdk
+			return *ruleset.Id, false, nil
+		}
 	}
 
-	log.Printf("Retrieved the ruleset id %s by name %s", *(*rulesets.Entities)[0].Id, name)
-	ruleset := (*rulesets.Entities)[0]
-	return *ruleset.Id, false, nil
+	return "", false, fmt.Errorf("Unable to find ruleset with name %s", name)
 }
 
 // updateOutboundRulesetFn is an implementation of the function to update a Genesys Cloud Outbound Rulesets

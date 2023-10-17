@@ -12,6 +12,76 @@ type TestAssertion struct {
 	name   string
 }
 
+func TestSanitizeResourceNames(t *testing.T) {
+	randNumSuffix := "_[0-9]+"
+	metaMap := make(ResourceIDMetaMap)
+	metaMap["1"] = &ResourceMeta{Name: "wrapupcodemappings"}
+	metaMap["2"] = &ResourceMeta{Name: "foobar"}
+	metaMap["3"] = &ResourceMeta{Name: "wrapupcode$%^mappings"}
+	metaMap["4"] = &ResourceMeta{Name: "wrapupcode*#@mappings"}
+	metaMap["5"] = &ResourceMeta{Name: "-suuuuueeeey"}
+	metaMap["6"] = &ResourceMeta{Name: "1-2bucklemyshoe"}
+	metaMap["7"] = &ResourceMeta{Name: "unsafeUnicodeȺ®Here"}
+	metaMap["8"] = &ResourceMeta{Name: "unsafeUnicodeÊƩHere"}
+	metaMap["9"] = &ResourceMeta{Name: "unsafeUnicodeÊƩȺ®Here"}
+	sanitizeResourceNames(metaMap)
+	assertions := [9]TestAssertion{
+		{
+			input:  metaMap["1"].Name,
+			output: "wrapupcodemappings",
+			name:   "actual resource name",
+		},
+		{
+			input:  metaMap["2"].Name,
+			output: "foobar",
+			name:   "any name",
+		},
+		{
+			input:  metaMap["3"].Name,
+			output: "wrapupcode___mappings" + randNumSuffix,
+			name:   "ascii chars",
+		},
+		{
+			input:  metaMap["4"].Name,
+			output: "wrapupcode___mappings" + randNumSuffix,
+			name:   "ascii chars with same structure different chars",
+		},
+		{
+			input:  metaMap["5"].Name,
+			output: "_-suuuuueeeey",
+			name:   "starting dash",
+		},
+		{
+			input:  metaMap["6"].Name,
+			output: "_1-2bucklemyshoe",
+			name:   "starting number",
+		},
+		{
+			input:  metaMap["7"].Name,
+			output: "unsafeUnicode__Here" + randNumSuffix,
+			name:   "unsafe unicode",
+		},
+		{
+			input:  metaMap["8"].Name,
+			output: "unsafeUnicode__Here" + randNumSuffix,
+			name:   "unsafe unicode matching pattern",
+		},
+		{
+			input:  metaMap["9"].Name,
+			output: "unsafeUnicode____Here",
+			name:   "unsafe unicode non-matching pattern, no added random suffix",
+		},
+	}
+
+	for _, assertion := range assertions {
+		assertionOutputRegex := regexp.MustCompile("^" + assertion.output + "$")
+		if !assertionOutputRegex.MatchString(assertion.input) {
+			t.Errorf("%s did not sanitize correctly!\nExpected Output: %v\nActual Output: %v", assertion.name, assertion.output, assertion.input)
+		}
+	}
+
+}
+
 func TestSanitizeResourceName(t *testing.T) {
 
 	simpleString := "foobar"
@@ -19,9 +89,7 @@ func TestSanitizeResourceName(t *testing.T) {
 	underscore := "_"
 	dash := "-"
 	unsafeUnicode := "Ⱥ®ÊƩ"
-	unsafeAscii := "#%@&"
-
-	randNumSuffix := "_[0-9]+$"
+	unsafeAscii := "#%$^@&"
 
 	assertions := [14]TestAssertion{
 		{
@@ -52,12 +120,12 @@ func TestSanitizeResourceName(t *testing.T) {
 		{
 			name:   "Single Unsafe Ascii Character",
 			input:  string(unsafeAscii[0]),
-			output: underscore + randNumSuffix,
+			output: underscore,
 		},
 		{
 			name:   "Single Unsafe Unicode Character",
 			input:  string(unsafeUnicode[0]),
-			output: underscore + randNumSuffix,
+			output: underscore,
 		},
 		{
 			name:   "String beginning with Integer",
@@ -82,12 +150,12 @@ func TestSanitizeResourceName(t *testing.T) {
 		{
 			name:   "String beginning with Unsafe Ascii Character",
 			input:  unsafeAscii + simpleString,
-			output: strings.Repeat(underscore, len(unsafeAscii)) + simpleString + randNumSuffix,
+			output: strings.Repeat(underscore, len(unsafeAscii)) + simpleString,
 		},
 		{
 			name:   "String beginning with Unicode",
 			input:  unsafeUnicode + simpleString,
-			output: strings.Repeat(underscore, len(unsafeAscii)) + simpleString + randNumSuffix,
+			output: strings.Repeat(underscore, len([]rune(unsafeUnicode))) + simpleString,
 		},
 		{
 			name:   "String with everything",
@@ -98,7 +166,7 @@ func TestSanitizeResourceName(t *testing.T) {
 
 	for _, assertion := range assertions {
 		output := SanitizeResourceName(assertion.input)
-		assertionOutputRegex := regexp.MustCompile(assertion.output)
+		assertionOutputRegex := regexp.MustCompile("^" + assertion.output + "$")
 		if !assertionOutputRegex.MatchString(output) {
 			t.Errorf("%s did not sanitize correctly!\nExpected Output: %v\nActual Output: %v", assertion.name, assertion.output, output)
 		}
