@@ -3,7 +3,8 @@ package telephony_providers_edges_did_pool
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 type DidPoolStruct struct {

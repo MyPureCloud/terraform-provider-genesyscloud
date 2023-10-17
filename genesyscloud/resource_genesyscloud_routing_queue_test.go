@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -884,19 +884,15 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 
 func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 	var (
-		queueResource1       = "test-queue-direct"
-		queueResource2       = "test-queue"
-		queueName1           = "Genesys System Direct Routing Queue"
-		queueName2           = "Terraform Test Queue2-" + uuid.NewString()
-		queueName3           = "Terraform Test Queue3-" + uuid.NewString()
-		inboundCallFlowId    = uuid.NewString()
-		voicemailFlowId      = uuid.NewString()
-		inboundEmailFlowId   = uuid.NewString()
-		inboundMessageFlowId = uuid.NewString()
-		agentWaitSeconds1    = "200"
-		waitForAgent1        = "true"
-		agentWaitSeconds2    = "300"
-		waitForAgent2        = "false"
+		queueResource1    = "test-queue-direct"
+		queueResource2    = "test-queue"
+		queueName1        = "Terraform Test Queue1-" + uuid.NewString()
+		queueName2        = "Terraform Test Queue2-" + uuid.NewString()
+		queueName3        = "Terraform Test Queue3-" + uuid.NewString()
+		agentWaitSeconds1 = "200"
+		waitForAgent1     = "true"
+		agentWaitSeconds2 = "300"
+		waitForAgent2     = "false"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -911,21 +907,17 @@ func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 						"genesyscloud_routing_queue."+queueResource2,
 						queueName1,
 						generateDirectRouting(
-							agentWaitSeconds1,    // agentWaitSeconds
-							waitForAgent1,        // waitForAgent
-							"true",               // callEnabled
-							inboundCallFlowId,    // inboundCallFlowId
-							voicemailFlowId,      // voicemailFlowId
-							"true",               // emailEnabled
-							inboundEmailFlowId,   // inboundEmailFlowId
-							"true",               // messageEnabled
-							inboundMessageFlowId, // inboundMessageFlowId
+							agentWaitSeconds1, // agentWaitSeconds
+							waitForAgent1,     // waitForAgent
+							"true",            // callUseAgentAddressOutbound
+							"true",            // emailUseAgentAddressOutbound
+							"true",            // messageUseAgentAddressOutbound
 							"backup_queue_id = genesyscloud_routing_queue."+queueResource2+".id",
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "name", queueName1),
-					validateDirectRouting(queueResource1, agentWaitSeconds1, waitForAgent1, "true", inboundCallFlowId, voicemailFlowId, "true", inboundEmailFlowId, "true", inboundMessageFlowId),
+					validateDirectRouting(queueResource1, agentWaitSeconds1, waitForAgent1, "true", "true", "true"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "direct_routing.0.backup_queue_id", "genesyscloud_routing_queue."+queueResource2, "id"),
 				),
 			},
@@ -937,20 +929,16 @@ func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 						"genesyscloud_routing_queue."+queueResource2,
 						queueName1,
 						generateDirectRouting(
-							agentWaitSeconds2,    // agentWaitSeconds
-							waitForAgent2,        // waitForAgent
-							"true",               // callEnabled
-							inboundCallFlowId,    // inboundCallFlowId
-							voicemailFlowId,      // voicemailFlowId
-							"true",               // emailEnabled
-							inboundEmailFlowId,   // inboundEmailFlowId
-							"true",               // messageEnabled
-							inboundMessageFlowId, // inboundMessageFlowId
+							agentWaitSeconds2, // agentWaitSeconds
+							waitForAgent2,     // waitForAgent
+							"true",            // callUseAgentAddressOutbound
+							"true",            // emailUseAgentAddressOutbound
+							"true",            // messageEnabled
 							"backup_queue_id = genesyscloud_routing_queue."+queueResource2+".id",
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					validateDirectRouting(queueResource1, agentWaitSeconds2, waitForAgent2, "true", inboundCallFlowId, voicemailFlowId, "true", inboundEmailFlowId, "true", inboundMessageFlowId),
+					validateDirectRouting(queueResource1, agentWaitSeconds2, waitForAgent2, "true", "true", "true"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "direct_routing.0.backup_queue_id", "genesyscloud_routing_queue."+queueResource2, "id"),
 				),
 			},
@@ -1115,36 +1103,24 @@ func generateQueueWrapupCodes(wrapupCodes ...string) string {
 func generateDirectRouting(
 	agentWaitSeconds string,
 	waitForAgent string,
-	callEnabled string,
-	callInboundFlowId string,
-	voicemailFlowId string,
-	emailEnabled string,
-	emailInboundFlowId string,
-	messageEnabled string,
-	messageInboundFlowId string,
+	callUseAgentAddressOutbound string,
+	emailUseAgentAddressOutbound string,
+	messageUseAgentAddressOutbound string,
 	extraArgs ...string) string {
 	return fmt.Sprintf(` direct_routing {
 		agent_wait_seconds = %s
 		wait_for_agent = %s
-		call_enabled = %s
-		call_inbound_flow_id = "%s"
-		voicemail_flow_id = "%s"
-		email_enabled = %s
-		email_inbound_flow_id = "%s"
-		message_enabled = %s
-		message_inbound_flow_id = "%s"
+		call_use_agent_address_outbound = %s
+		email_use_agent_address_outbound = %s
+		message_use_agent_address_outbound = %s
 		%s
 	}
 	`,
 		agentWaitSeconds,
 		waitForAgent,
-		callEnabled,
-		callInboundFlowId,
-		voicemailFlowId,
-		emailEnabled,
-		emailInboundFlowId,
-		messageEnabled,
-		messageInboundFlowId,
+		callUseAgentAddressOutbound,
+		emailUseAgentAddressOutbound,
+		messageUseAgentAddressOutbound,
 		strings.Join(extraArgs, "\n"))
 }
 
@@ -1297,23 +1273,15 @@ func validateQueueWrapupCode(queueResourceName string, codeResourceName string) 
 func validateDirectRouting(resourceName string,
 	agentWaitSeconds string,
 	waitForAgent string,
-	callEnabled string,
-	callInboundFlowId string,
-	voicemailFlowId string,
-	emailEnabled string,
-	emailInboundFlowId string,
-	messageEnabled string,
-	messageInboundFlowId string) resource.TestCheckFunc {
+	callUseAgentAddressOutbound string,
+	emailUseAgentAddressOutbound string,
+	messageUseAgentAddressOutbound string) resource.TestCheckFunc {
 	return resource.ComposeAggregateTestCheckFunc(
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.agent_wait_seconds", agentWaitSeconds),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.wait_for_agent", waitForAgent),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_enabled", callEnabled),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_inbound_flow_id", callInboundFlowId),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.voicemail_flow_id", voicemailFlowId),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_enabled", emailEnabled),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_inbound_flow_id", emailInboundFlowId),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.message_enabled", messageEnabled),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.message_inbound_flow_id", messageInboundFlowId),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.call_use_agent_address_outbound", callUseAgentAddressOutbound),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.email_use_agent_address_outbound", emailUseAgentAddressOutbound),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceName, "direct_routing.0.message_use_agent_address_outbound", messageUseAgentAddressOutbound),
 	)
 }
 
