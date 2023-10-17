@@ -35,6 +35,7 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 					nullValue, // No calling party name
 					nullValue, // No calling party number
 					nullValue, // enable_manual_assignment false
+					nullValue, //suppressCall_record_false
 					nullValue, // enable_transcription false
 				) + generateRoutingQueueDataSource(
 					queueDataSource,
