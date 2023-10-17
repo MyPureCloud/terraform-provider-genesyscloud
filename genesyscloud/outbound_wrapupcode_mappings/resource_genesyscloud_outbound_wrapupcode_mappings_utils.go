@@ -36,7 +36,7 @@ func flattenOutboundWrapupCodeMappings(d *schema.ResourceData, sdkWrapupcodemapp
 				if mMap["wrapup_code_id"].(string) == sdkId {
 					currentMap := make(map[string]interface{}, 0)
 					currentMap["wrapup_code_id"] = sdkId
-					if lists.ListsAreEquivalent(schemaFlags, sdkFlags) {
+					if lists.AreEquivalent(schemaFlags, sdkFlags) {
 						currentMap["flags"] = lists.StringListToInterfaceList(schemaFlags)
 					} else {
 						currentMap["flags"] = lists.StringListToInterfaceList(sdkFlags)

@@ -97,7 +97,7 @@ func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, me
 				ids = append(ids, *item.Id)
 			}
 			// if lists are the same: Set in original order to avoid plan not empty error
-			if lists.ListsAreEquivalent(schemaUserIds, ids) {
+			if lists.AreEquivalent(schemaUserIds, ids) {
 				d.Set("user_ids", schemaUserIds)
 			} else {
 				d.Set("user_ids", ids)
@@ -110,7 +110,7 @@ func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, me
 				ids = append(ids, *item.Id)
 			}
 			// if lists are the same: Set in original order to avoid plan not empty error
-			if lists.ListsAreEquivalent(schemaGroupIds, ids) {
+			if lists.AreEquivalent(schemaGroupIds, ids) {
 				d.Set("group_ids", schemaGroupIds)
 			} else {
 				d.Set("group_ids", ids)

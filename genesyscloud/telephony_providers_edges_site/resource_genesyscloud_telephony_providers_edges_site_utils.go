@@ -19,6 +19,47 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
 )
 
+var (
+	defaultPlans = []string{"Emergency", "Extension", "National", "International", "Network", "Suicide Prevention"}
+)
+
+func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	if diff.HasChange("number_plans") {
+		oldNumberPlans, newNumberPlans := diff.GetChange("number_plans")
+		oldNumberPlansList := oldNumberPlans.([]interface{})
+		newNumberPlansList := newNumberPlans.([]interface{})
+
+		if len(oldNumberPlansList) <= len(newNumberPlansList) {
+			return nil
+		}
+
+		sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+		edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+
+		siteId := diff.Id()
+		if siteId == "" {
+			return nil
+		}
+
+		numberPlansFromApi, _, err := edgesAPI.GetTelephonyProvidersEdgesSiteNumberplans(siteId)
+		if err != nil {
+			return fmt.Errorf("failed to get number plans from site %s: %s", siteId, err)
+		}
+
+		for _, np := range numberPlansFromApi {
+			if isDefaultPlan(*np.Name) && isNumberPlanInConfig(*np.Name, oldNumberPlansList) && !isNumberPlanInConfig(*np.Name, newNumberPlansList) {
+				newNumberPlansList = append(newNumberPlansList, flattenNumberPlan(&np))
+			}
+		}
+
+		for i, x := range newNumberPlansList {
+			log.Printf("%v: %v", i, x)
+		}
+		diff.SetNew("number_plans", newNumberPlansList)
+	}
+	return nil
+}
+
 func validateMediaRegions(regions *[]string, sp *siteProxy, ctx context.Context) error {
 	telephonyRegions, err := sp.getTelephonyMediaregions(ctx)
 	if err != nil {
@@ -101,196 +142,224 @@ func updatePrimarySecondarySites(d *schema.ResourceData, siteId string, sp *site
 }
 
 func updateSiteNumberPlans(d *schema.ResourceData, sp *siteProxy, ctx context.Context) diag.Diagnostics {
-	if d.HasChange("number_plans") {
-		if nps := d.Get("number_plans").([]interface{}); nps != nil {
-			numberPlansFromTf := make([]platformclientv2.Numberplan, 0)
-			for _, np := range nps {
-				npMap := np.(map[string]interface{})
-				numberPlanFromTf := platformclientv2.Numberplan{}
+	if !d.HasChange("number_plans") {
+		return nil
+	}
+	nps := d.Get("number_plans").([]interface{})
+	if nps == nil {
+		return nil
+	}
 
-				resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Name, npMap, "name")
-				resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.MatchType, npMap, "match_type")
-				resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Match, npMap, "match_format")
-				resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.NormalizedFormat, npMap, "normalized_format")
-				resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Classification, npMap, "classification")
+	numberPlansFromTf := make([]platformclientv2.Numberplan, 0)
+	for _, np := range nps {
+		npMap := np.(map[string]interface{})
+		numberPlanFromTf := platformclientv2.Numberplan{}
 
-				if numbers, ok := npMap["numbers"].([]interface{}); ok && len(numbers) > 0 {
-					sdkNumbers := make([]platformclientv2.Number, 0)
-					for _, number := range numbers {
-						numberMap := number.(map[string]interface{})
-						sdkNumber := platformclientv2.Number{}
-						if start, ok := numberMap["start"].(string); ok {
-							sdkNumber.Start = &start
-						}
-						if end, ok := numberMap["end"].(string); ok {
-							sdkNumber.End = &end
-						}
-						sdkNumbers = append(sdkNumbers, sdkNumber)
-					}
-					numberPlanFromTf.Numbers = &sdkNumbers
+		resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Name, npMap, "name")
+		resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.MatchType, npMap, "match_type")
+		resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Match, npMap, "match_format")
+		resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.NormalizedFormat, npMap, "normalized_format")
+		resourcedata.BuildSDKStringValueIfNotNil(&numberPlanFromTf.Classification, npMap, "classification")
+
+		if numbers, ok := npMap["numbers"].([]interface{}); ok && len(numbers) > 0 {
+			sdkNumbers := make([]platformclientv2.Number, 0)
+			for _, number := range numbers {
+				numberMap := number.(map[string]interface{})
+				sdkNumber := platformclientv2.Number{}
+				if start, ok := numberMap["start"].(string); ok {
+					sdkNumber.Start = &start
 				}
-
-				if digitLength, ok := npMap["digit_length"].([]interface{}); ok && len(digitLength) > 0 {
-					sdkDigitlengthMap := digitLength[0].(map[string]interface{})
-					sdkDigitlength := platformclientv2.Digitlength{}
-					if start, ok := sdkDigitlengthMap["start"].(string); ok {
-						sdkDigitlength.Start = &start
-					}
-					if end, ok := sdkDigitlengthMap["end"].(string); ok {
-						sdkDigitlength.End = &end
-					}
-					numberPlanFromTf.DigitLength = &sdkDigitlength
+				if end, ok := numberMap["end"].(string); ok {
+					sdkNumber.End = &end
 				}
-
-				numberPlansFromTf = append(numberPlansFromTf, numberPlanFromTf)
+				sdkNumbers = append(sdkNumbers, sdkNumber)
 			}
+			numberPlanFromTf.Numbers = &sdkNumbers
+		}
 
-			// The default plans won't be assigned yet if there isn't a wait
-			time.Sleep(5 * time.Second)
-
-			numberPlansFromAPI, _, err := sp.getSiteNumberPlans(ctx, d.Id())
-			if err != nil {
-				return diag.Errorf("Failed to get number plans for site %s: %s", d.Id(), err)
+		if digitLength, ok := npMap["digit_length"].([]interface{}); ok && len(digitLength) > 0 {
+			sdkDigitlengthMap := digitLength[0].(map[string]interface{})
+			sdkDigitlength := platformclientv2.Digitlength{}
+			if start, ok := sdkDigitlengthMap["start"].(string); ok {
+				sdkDigitlength.Start = &start
 			}
-
-			updatedNumberPlans := make([]platformclientv2.Numberplan, 0)
-
-			for _, numberPlanFromTf := range numberPlansFromTf {
-				if plan, ok := nameInPlans(*numberPlanFromTf.Name, *numberPlansFromAPI); ok {
-					// Update the plan
-					plan.Classification = numberPlanFromTf.Classification
-					plan.Numbers = numberPlanFromTf.Numbers
-					plan.DigitLength = numberPlanFromTf.DigitLength
-					plan.Match = numberPlanFromTf.Match
-					plan.MatchType = numberPlanFromTf.MatchType
-					plan.NormalizedFormat = numberPlanFromTf.NormalizedFormat
-					updatedNumberPlans = append(updatedNumberPlans, *plan)
-				} else {
-					// Add the plan
-					updatedNumberPlans = append(updatedNumberPlans, numberPlanFromTf)
-				}
+			if end, ok := sdkDigitlengthMap["end"].(string); ok {
+				sdkDigitlength.End = &end
 			}
+			numberPlanFromTf.DigitLength = &sdkDigitlength
+		}
 
-			for _, numberPlanFromAPI := range *numberPlansFromAPI {
-				// Keep the default plans assigned.
-				if isDefaultPlan(*numberPlanFromAPI.Name) {
-					updatedNumberPlans = append(updatedNumberPlans, numberPlanFromAPI)
-				}
-			}
+		numberPlansFromTf = append(numberPlansFromTf, numberPlanFromTf)
+	}
 
-			diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-				log.Printf("Updating number plans for site %s", d.Id())
+	// The default plans won't be assigned yet if there isn't a wait
+	time.Sleep(5 * time.Second)
 
-				_, resp, err := sp.updateSiteNumberPlans(ctx, d.Id(), &updatedNumberPlans)
-				if err != nil {
-					respString := ""
-					if resp != nil {
-						respString = resp.String()
-					}
-					return resp, diag.Errorf("Failed to update number plans for site %s: %s %s", d.Id(), err, respString)
-				}
-				return resp, nil
-			})
-			if diagErr != nil {
-				return diagErr
-			}
-			// Wait for the update before reading
-			time.Sleep(5 * time.Second)
+	numberPlansFromAPI, _, err := sp.getSiteNumberPlans(ctx, d.Id())
+	if err != nil {
+		return diag.Errorf("Failed to get number plans for site %s: %s", d.Id(), err)
+	}
+
+	updatedNumberPlans := make([]platformclientv2.Numberplan, 0)
+	namesOfOverridenDefaults := []string{}
+
+	for _, numberPlanFromTf := range numberPlansFromTf {
+		if plan, ok := nameInPlans(*numberPlanFromTf.Name, *numberPlansFromAPI); ok {
+			// Update the plan
+			plan.Classification = numberPlanFromTf.Classification
+			plan.Numbers = numberPlanFromTf.Numbers
+			plan.DigitLength = numberPlanFromTf.DigitLength
+			plan.Match = numberPlanFromTf.Match
+			plan.MatchType = numberPlanFromTf.MatchType
+			plan.NormalizedFormat = numberPlanFromTf.NormalizedFormat
+
+			namesOfOverridenDefaults = append(namesOfOverridenDefaults, *numberPlanFromTf.Name)
+			updatedNumberPlans = append(updatedNumberPlans, *plan)
+		} else {
+			// Add the plan
+			updatedNumberPlans = append(updatedNumberPlans, numberPlanFromTf)
 		}
 	}
+
+	for _, numberPlanFromAPI := range *numberPlansFromAPI {
+		// Keep the default plans which are not overriden.
+		if isDefaultPlan(*numberPlanFromAPI.Name) && !lists.ItemInSlice(*numberPlanFromAPI.Name, namesOfOverridenDefaults) {
+			updatedNumberPlans = append(updatedNumberPlans, numberPlanFromAPI)
+		}
+	}
+
+	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Updating number plans for site %s", d.Id())
+
+		_, resp, err := sp.updateSiteNumberPlans(ctx, d.Id(), &updatedNumberPlans)
+		if err != nil {
+			respString := ""
+			if resp != nil {
+				respString = resp.String()
+			}
+			return resp, diag.Errorf("Failed to update number plans for site %s: %s %s", d.Id(), err, respString)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
+	// Wait for the update before reading
+	time.Sleep(5 * time.Second)
+
 	return nil
 }
 
 func updateSiteOutboundRoutes(d *schema.ResourceData, sp *siteProxy, ctx context.Context) diag.Diagnostics {
-	if d.HasChange("outbound_routes") {
-		if ors := d.Get("outbound_routes").([]interface{}); ors != nil {
-			outboundRoutesFromTf := make([]platformclientv2.Outboundroutebase, 0)
-			for _, or := range ors {
-				orMap := or.(map[string]interface{})
-				outboundRouteFromTf := platformclientv2.Outboundroutebase{}
+	if !d.HasChange("outbound_routes") {
+		return nil
+	}
+	ors := d.Get("outbound_routes").(*schema.Set)
+	if ors == nil {
+		return nil
+	}
+	orsList := ors.List()
 
-				resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Name, orMap, "name")
-				resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Description, orMap, "description")
+	outboundRoutesFromTf := make([]platformclientv2.Outboundroutebase, 0)
+	for _, or := range orsList {
+		orMap := or.(map[string]interface{})
+		outboundRouteFromTf := platformclientv2.Outboundroutebase{}
 
-				if classificationTypes, ok := orMap["classification_types"].([]interface{}); ok && len(classificationTypes) > 0 {
-					cts := make([]string, 0)
-					for _, classificationType := range classificationTypes {
-						cts = append(cts, classificationType.(string))
-					}
-					outboundRouteFromTf.ClassificationTypes = &cts
-				}
-				if enabled, ok := orMap["enabled"].(bool); ok {
-					outboundRouteFromTf.Enabled = &enabled
-				}
-				resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Distribution, orMap, "distribution")
+		resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Name, orMap, "name")
+		resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Description, orMap, "description")
 
-				if externalTrunkBaseIds, ok := orMap["external_trunk_base_ids"].([]interface{}); ok && len(externalTrunkBaseIds) > 0 {
-					ids := make([]platformclientv2.Domainentityref, 0)
-					for _, externalTrunkBaseId := range externalTrunkBaseIds {
-						externalTrunkBaseIdStr := externalTrunkBaseId.(string)
-						ids = append(ids, platformclientv2.Domainentityref{Id: &externalTrunkBaseIdStr})
-					}
-					outboundRouteFromTf.ExternalTrunkBases = &ids
-				}
-
-				outboundRoutesFromTf = append(outboundRoutesFromTf, outboundRouteFromTf)
+		if classificationTypes, ok := orMap["classification_types"].([]interface{}); ok && len(classificationTypes) > 0 {
+			cts := make([]string, 0)
+			for _, classificationType := range classificationTypes {
+				cts = append(cts, classificationType.(string))
 			}
+			outboundRouteFromTf.ClassificationTypes = &cts
+		}
+		if enabled, ok := orMap["enabled"].(bool); ok {
+			outboundRouteFromTf.Enabled = &enabled
+		}
+		resourcedata.BuildSDKStringValueIfNotNil(&outboundRouteFromTf.Distribution, orMap, "distribution")
 
-			// The default outbound routes won't be assigned yet if there isn't a wait
-			time.Sleep(5 * time.Second)
+		if externalTrunkBaseIds, ok := orMap["external_trunk_base_ids"].([]interface{}); ok && len(externalTrunkBaseIds) > 0 {
+			ids := make([]platformclientv2.Domainentityref, 0)
+			for _, externalTrunkBaseId := range externalTrunkBaseIds {
+				externalTrunkBaseIdStr := externalTrunkBaseId.(string)
+				ids = append(ids, platformclientv2.Domainentityref{Id: &externalTrunkBaseIdStr})
+			}
+			outboundRouteFromTf.ExternalTrunkBases = &ids
+		}
 
-			outboundRoutesFromAPI, err := sp.getSiteOutboundRoutes(ctx, d.Id())
+		outboundRoutesFromTf = append(outboundRoutesFromTf, outboundRouteFromTf)
+	}
+
+	// The default outbound routes won't be assigned yet if there isn't a wait
+	time.Sleep(5 * time.Second)
+
+	// Get the current outbound routes
+	outboundRoutesFromAPI, err := sp.getSiteOutboundRoutes(ctx, d.Id())
+	if err != nil {
+		return diag.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err)
+	}
+
+	// Delete unwanted outbound roues first to free up classifications assigned to them
+	for _, outboundRouteFromAPI := range *outboundRoutesFromAPI {
+		// Delete route if no reference to it
+		if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, outboundRoutesFromTf); !ok {
+			resp, err := sp.deleteSiteOutboundRoute(ctx, d.Id(), *outboundRouteFromAPI.Id)
 			if err != nil {
-				return diag.Errorf("Failed to get outbound routes for site %s: %s", d.Id(), err)
-			}
-
-			for _, outboundRouteFromTf := range outboundRoutesFromTf {
-				if outboundRoute, ok := nameInOutboundRoutes(*outboundRouteFromTf.Name, *outboundRoutesFromAPI); ok {
-					// Update the outbound route
-					outboundRoute.Name = outboundRouteFromTf.Name
-					outboundRoute.Description = outboundRouteFromTf.Description
-					outboundRoute.ClassificationTypes = outboundRouteFromTf.ClassificationTypes
-					outboundRoute.Enabled = outboundRouteFromTf.Enabled
-					outboundRoute.Distribution = outboundRouteFromTf.Distribution
-					outboundRoute.ExternalTrunkBases = outboundRouteFromTf.ExternalTrunkBases
-
-					_, err := sp.updateSiteOutboundRoute(ctx, d.Id(), *outboundRoute.Id, outboundRoute)
-					if err != nil {
-						return diag.Errorf("Failed to update outbound route with id %s for site %s: %s", *outboundRoute.Id, d.Id(), err)
-					}
-				} else {
-					// Add the outbound route
-					_, err := sp.createSiteOutboundRoute(ctx, d.Id(), &outboundRouteFromTf)
-					if err != nil {
-						return diag.Errorf("Failed to add outbound route to site %s: %s", d.Id(), err)
-					}
+				if gcloud.IsStatus404(resp) {
+					return nil
 				}
+				return diag.Errorf("failed to delete outbound route from site %s: %s", d.Id(), err)
 			}
-
-			for _, outboundRouteFromAPI := range *outboundRoutesFromAPI {
-				// Delete route if no reference to it
-				if _, ok := nameInOutboundRoutes(*outboundRouteFromAPI.Name, outboundRoutesFromTf); !ok {
-					resp, err := sp.deleteSiteOutboundRoute(ctx, d.Id(), *outboundRouteFromAPI.Id)
-					if err != nil {
-						if gcloud.IsStatus404(resp) {
-							return nil
-						}
-						return diag.Errorf("Failed to delete outbound route from site %s: %s", d.Id(), err)
-					}
-				}
-			}
-
-			// Wait for the update before reading
-			time.Sleep(5 * time.Second)
 		}
 	}
+	time.Sleep(2 * time.Second)
+
+	// Update the outbound routes
+	for _, outboundRouteFromTf := range outboundRoutesFromTf {
+		if outboundRoute, ok := nameInOutboundRoutes(*outboundRouteFromTf.Name, *outboundRoutesFromAPI); ok {
+			// Update the outbound route
+			outboundRoute.Name = outboundRouteFromTf.Name
+			outboundRoute.Description = outboundRouteFromTf.Description
+			outboundRoute.ClassificationTypes = outboundRouteFromTf.ClassificationTypes
+			outboundRoute.Enabled = outboundRouteFromTf.Enabled
+			outboundRoute.Distribution = outboundRouteFromTf.Distribution
+			outboundRoute.ExternalTrunkBases = outboundRouteFromTf.ExternalTrunkBases
+
+			_, err := sp.updateSiteOutboundRoute(ctx, d.Id(), *outboundRoute.Id, outboundRoute)
+			if err != nil {
+				return diag.Errorf("Failed to update outbound route with id %s for site %s: %s", *outboundRoute.Id, d.Id(), err)
+			}
+		} else {
+			// Add the outbound route
+			_, err := sp.createSiteOutboundRoute(ctx, d.Id(), &outboundRouteFromTf)
+			if err != nil {
+				return diag.Errorf("Failed to add outbound route to site %s: %s", d.Id(), err)
+			}
+		}
+	}
+
+	// Wait for the update before reading
+	time.Sleep(5 * time.Second)
+
 	return nil
 }
 
 func isDefaultPlan(name string) bool {
-	defaultPlans := []string{"Emergency", "Extension", "National", "International", "Network", "Suicide Prevention"}
 	for _, defaultPlan := range defaultPlans {
 		if name == defaultPlan {
+			return true
+		}
+	}
+	return false
+}
+
+// isNumberPlanInConfig returns true if the number plan's name is in the config list
+func isNumberPlanInConfig(planName string, list []interface{}) bool {
+	for _, plan := range list {
+		planMap := plan.(map[string]interface{})
+		if planName == planMap["name"] {
 			return true
 		}
 	}
@@ -310,45 +379,7 @@ func readSiteNumberPlans(d *schema.ResourceData, sp *siteProxy, ctx context.Cont
 	dNumberPlans := make([]interface{}, 0)
 	if len(*numberPlans) > 0 {
 		for _, numberPlan := range *numberPlans {
-			if isDefaultPlan(*numberPlan.Name) {
-				continue
-			}
-
-			dNumberPlan := make(map[string]interface{})
-			dNumberPlan["name"] = *numberPlan.Name
-
-			resourcedata.SetMapValueIfNotNil(dNumberPlan, "match_format", numberPlan.Match)
-			resourcedata.SetMapValueIfNotNil(dNumberPlan, "normalized_format", numberPlan.NormalizedFormat)
-			resourcedata.SetMapValueIfNotNil(dNumberPlan, "classification", numberPlan.Classification)
-			resourcedata.SetMapValueIfNotNil(dNumberPlan, "match_type", numberPlan.MatchType)
-
-			if numberPlan.Numbers != nil {
-				numbers := make([]interface{}, 0)
-				for _, number := range *numberPlan.Numbers {
-					numberMap := make(map[string]interface{})
-					if number.Start != nil {
-						numberMap["start"] = *number.Start
-					}
-					if number.End != nil {
-						numberMap["end"] = *number.End
-					}
-					numbers = append(numbers, numberMap)
-				}
-				dNumberPlan["numbers"] = numbers
-			}
-			if numberPlan.DigitLength != nil {
-				digitLength := make([]interface{}, 0)
-				digitLengthMap := make(map[string]interface{})
-				if numberPlan.DigitLength.Start != nil {
-					digitLengthMap["start"] = *numberPlan.DigitLength.Start
-				}
-				if numberPlan.DigitLength.End != nil {
-					digitLengthMap["end"] = *numberPlan.DigitLength.End
-				}
-				digitLength = append(digitLength, digitLengthMap)
-				dNumberPlan["digit_length"] = digitLength
-			}
-
+			dNumberPlan := flattenNumberPlan(&numberPlan)
 			dNumberPlans = append(dNumberPlans, dNumberPlan)
 		}
 		d.Set("number_plans", dNumberPlans)
@@ -365,7 +396,7 @@ func readSiteOutboundRoutes(d *schema.ResourceData, sp *siteProxy, ctx context.C
 		return retry.NonRetryableError(fmt.Errorf("failed to get outbound routes for site %s: %s", d.Id(), err))
 	}
 
-	dOutboundRoutes := make([]interface{}, 0)
+	dOutboundRoutes := schema.NewSet(schema.HashResource(outboundRouteSchema), []interface{}{})
 
 	if len(*outboundRoutes) > 0 {
 		for _, outboundRoute := range *outboundRoutes {
@@ -373,19 +404,22 @@ func readSiteOutboundRoutes(d *schema.ResourceData, sp *siteProxy, ctx context.C
 			dOutboundRoute["name"] = *outboundRoute.Name
 
 			resourcedata.SetMapValueIfNotNil(dOutboundRoute, "description", outboundRoute.Description)
-			resourcedata.SetMapValueIfNotNil(dOutboundRoute, "classification_types", outboundRoute.ClassificationTypes)
 			resourcedata.SetMapValueIfNotNil(dOutboundRoute, "enabled", outboundRoute.Enabled)
 			resourcedata.SetMapValueIfNotNil(dOutboundRoute, "distribution", outboundRoute.Distribution)
+
+			if outboundRoute.ClassificationTypes != nil {
+				dOutboundRoute["classification_types"] = lists.StringListToInterfaceList(*outboundRoute.ClassificationTypes)
+			}
 
 			if len(*outboundRoute.ExternalTrunkBases) > 0 {
 				externalTrunkBaseIds := make([]string, 0)
 				for _, externalTrunkBase := range *outboundRoute.ExternalTrunkBases {
 					externalTrunkBaseIds = append(externalTrunkBaseIds, *externalTrunkBase.Id)
 				}
-				dOutboundRoute["external_trunk_base_ids"] = externalTrunkBaseIds
+				dOutboundRoute["external_trunk_base_ids"] = lists.StringListToInterfaceList(externalTrunkBaseIds)
 			}
 
-			dOutboundRoutes = append(dOutboundRoutes, dOutboundRoute)
+			dOutboundRoutes.Add(dOutboundRoute)
 		}
 		d.Set("outbound_routes", dOutboundRoutes)
 	} else {
@@ -407,6 +441,44 @@ func flattenSdkEdgeAutoUpdateConfig(edgeAutoUpdateConfig *platformclientv2.Edgea
 	edgeAutoUpdateConfigMap["end"] = timeutil.Strftime(edgeAutoUpdateConfig.End, "%Y-%m-%dT%H:%M:%S.%f")
 
 	return []interface{}{edgeAutoUpdateConfigMap}
+}
+
+func flattenNumberPlan(numberPlan *platformclientv2.Numberplan) interface{} {
+	dNumberPlan := make(map[string]interface{})
+	dNumberPlan["name"] = *numberPlan.Name
+
+	resourcedata.SetMapValueIfNotNil(dNumberPlan, "match_format", numberPlan.Match)
+	resourcedata.SetMapValueIfNotNil(dNumberPlan, "normalized_format", numberPlan.NormalizedFormat)
+	resourcedata.SetMapValueIfNotNil(dNumberPlan, "classification", numberPlan.Classification)
+	resourcedata.SetMapValueIfNotNil(dNumberPlan, "match_type", numberPlan.MatchType)
+
+	if numberPlan.Numbers != nil {
+		numbers := make([]interface{}, 0)
+		for _, number := range *numberPlan.Numbers {
+			numberMap := make(map[string]interface{})
+			if number.Start != nil {
+				numberMap["start"] = *number.Start
+			}
+			if number.End != nil {
+				numberMap["end"] = *number.End
+			}
+			numbers = append(numbers, numberMap)
+		}
+		dNumberPlan["numbers"] = numbers
+	}
+	if numberPlan.DigitLength != nil {
+		digitLength := make([]interface{}, 0)
+		digitLengthMap := make(map[string]interface{})
+		if numberPlan.DigitLength.Start != nil {
+			digitLengthMap["start"] = *numberPlan.DigitLength.Start
+		}
+		if numberPlan.DigitLength.End != nil {
+			digitLengthMap["end"] = *numberPlan.DigitLength.End
+		}
+		digitLength = append(digitLength, digitLengthMap)
+		dNumberPlan["digit_length"] = digitLength
+	}
+	return dNumberPlan
 }
 
 func buildSdkEdgeAutoUpdateConfig(d *schema.ResourceData) (*platformclientv2.Edgeautoupdateconfig, error) {
