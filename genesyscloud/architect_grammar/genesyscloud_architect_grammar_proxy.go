@@ -105,6 +105,14 @@ func createArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, gra
 func getAllArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy) (*[]platformclientv2.Grammar, error) {
 	var allGrammars []platformclientv2.Grammar
 
+	grammars, _, err := p.architectApi.GetArchitectGrammars(1, 100, "", "", []string{}, "", "", "", true)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get architect grammars: %v", err)
+	}
+	for _, grammar := range *grammars.Entities {
+		allGrammars = append(allGrammars, grammar)
+	}
+
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 
@@ -118,7 +126,6 @@ func getAllArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy) (*[
 		}
 
 		for _, grammar := range *grammars.Entities {
-			log.Printf("Dealing with grammar id : %s", *grammar.Id)
 			allGrammars = append(allGrammars, grammar)
 		}
 	}

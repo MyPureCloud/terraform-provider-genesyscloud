@@ -57,7 +57,7 @@ func buildGrammarLanguageFileMetadata(fileMetadata []interface{}) *platformclien
 	return &sdkMetadata
 }
 
-func flattenGrammarLanguageFileMetadata(d *schema.ResourceData, fileMetadata *platformclientv2.Grammarlanguagefilemetadata, fileType string) []interface{} {
+func flattenGrammarLanguageFileMetadata(d *schema.ResourceData, fileMetadata *platformclientv2.Grammarlanguagefilemetadata, fileType FileType) []interface{} {
 	if fileMetadata == nil {
 		return nil
 	}
@@ -67,14 +67,15 @@ func flattenGrammarLanguageFileMetadata(d *schema.ResourceData, fileMetadata *pl
 	resourcedata.SetMapValueIfNotNil(metadataMap, "file_name", fileMetadata.FileName)
 	resourcedata.SetMapValueIfNotNil(metadataMap, "file_type", fileMetadata.FileType)
 
-	if fileType == "voice" {
+	if fileType == Voice {
 		if voiceData := d.Get("voice_file_data").([]interface{}); len(voiceData) > 0 {
 			voiceDataMap := voiceData[0].(map[string]interface{})
 			if hash, ok := voiceDataMap["file_content_hash"].(string); ok {
 				metadataMap["file_content_hash"] = hash
 			}
 		}
-	} else if fileType == "dtmf" {
+	}
+	if fileType == Dtmf {
 		if dtmfData := d.Get("dtmf_file_data").([]interface{}); len(dtmfData) > 0 {
 			dtmfDataMap := dtmfData[0].(map[string]interface{})
 			if hash, ok := dtmfDataMap["file_content_hash"].(string); ok {
@@ -136,24 +137,25 @@ func downloadFiles(grammarId string, fullPath string, languageCode string, fileU
 
 func updateFilenamesInExportConfigMap(configMap map[string]interface{}, grammarId string, language platformclientv2.Grammarlanguage, subDir string) {
 	if voiceFileData, ok := configMap["voice_file_data"].([]interface{}); ok {
-		setExporterFileData(voiceFileData, grammarId, language, subDir, "voice")
+		setExporterFileData(voiceFileData, grammarId, language, subDir, Voice)
 	}
 	if dtmfFileData, ok := configMap["dtmf_file_data"].([]interface{}); ok {
-		setExporterFileData(dtmfFileData, grammarId, language, subDir, "dtmf")
+		setExporterFileData(dtmfFileData, grammarId, language, subDir, Dtmf)
 	}
 }
 
-func setExporterFileData(fileDataMap []interface{}, grammarId string, language platformclientv2.Grammarlanguage, subDir string, fileType string) {
+func setExporterFileData(fileDataMap []interface{}, grammarId string, language platformclientv2.Grammarlanguage, subDir string, fileType FileType) {
 	//Set file name and content hash in the exporter map
 	if fileData, ok := fileDataMap[0].(map[string]interface{}); ok {
 		fileExtension := ""
-		if fileType == "voice" && language.VoiceFileMetadata.FileType != nil {
+		if fileType == Voice && language.VoiceFileMetadata.FileType != nil {
 			fileExtension = strings.ToLower(*language.VoiceFileMetadata.FileType)
-		} else if fileType == "dtmf" && language.DtmfFileMetadata.FileType != nil {
+		}
+		if fileType == Dtmf && language.DtmfFileMetadata.FileType != nil {
 			fileExtension = strings.ToLower(*language.DtmfFileMetadata.FileType)
 		}
 
-		fileName := fmt.Sprintf("%s-%s-%s.%s", *language.Language, fileType, grammarId, fileExtension)
+		fileName := fmt.Sprintf("%s-%v-%s.%s", *language.Language, fileType, grammarId, fileExtension)
 		fileData["file_name"] = path.Join(subDir, fileName)
 		fileData["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDir, fileName))
 		if fileData["file_type"] == nil {

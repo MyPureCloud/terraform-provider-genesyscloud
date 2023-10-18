@@ -16,13 +16,6 @@ import (
 	"testing"
 )
 
-type FileType int
-
-const (
-	Dtmf FileType = iota
-	Voice
-)
-
 func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
 	var (
 		grammarResourceId = "grammar" + uuid.NewString()
@@ -205,7 +198,8 @@ func verifyFileUpload(grammarResourceName string, language string, fileType File
 			if err != nil {
 				return err
 			}
-		} else if fileType == Voice {
+		}
+		if fileType == Voice {
 			if grammarLanguage.VoiceFileUrl == nil {
 				return fmt.Errorf("Voice file url not found for file %s", filename)
 			}
@@ -213,8 +207,6 @@ func verifyFileUpload(grammarResourceName string, language string, fileType File
 			if err != nil {
 				return err
 			}
-		} else {
-			return fmt.Errorf("Unknown language file type. Please specify Voice of Dtmf")
 		}
 
 		return nil

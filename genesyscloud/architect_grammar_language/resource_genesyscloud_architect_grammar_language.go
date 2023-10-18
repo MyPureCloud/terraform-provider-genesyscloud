@@ -80,10 +80,10 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 		resourcedata.SetNillableValue(d, "grammar_id", language.GrammarId)
 		resourcedata.SetNillableValue(d, "language", language.Language)
 		if language.VoiceFileMetadata != nil {
-			d.Set("voice_file_data", flattenGrammarLanguageFileMetadata(d, language.VoiceFileMetadata, "voice"))
+			d.Set("voice_file_data", flattenGrammarLanguageFileMetadata(d, language.VoiceFileMetadata, Voice))
 		}
 		if language.DtmfFileMetadata != nil {
-			d.Set("dtmf_file_data", flattenGrammarLanguageFileMetadata(d, language.DtmfFileMetadata, "dtmf"))
+			d.Set("dtmf_file_data", flattenGrammarLanguageFileMetadata(d, language.DtmfFileMetadata, Dtmf))
 		}
 
 		log.Printf("Read Architect Grammar Language %s", d.Id())

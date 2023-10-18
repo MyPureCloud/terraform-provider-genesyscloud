@@ -8,6 +8,13 @@ import (
 	"os"
 )
 
+type FileType int
+
+const (
+	Dtmf FileType = iota
+	Voice
+)
+
 /*
 The genesyscloud_architect_grammar_language_proxy.go file contains the proxy structures and methods that interact
 with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
@@ -96,7 +103,7 @@ func createArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLa
 		uploadRequest := platformclientv2.Grammarfileuploadrequest{
 			FileType: language.VoiceFileMetadata.FileType,
 		}
-		err = uploadGrammarLanguageFile(p, *language.GrammarId, *language.Language, language.VoiceFileMetadata.FileName, &uploadRequest, "voice")
+		err = uploadGrammarLanguageFile(p, *language.GrammarId, *language.Language, language.VoiceFileMetadata.FileName, &uploadRequest, Voice)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to upload language voice file: %s", err)
 		}
@@ -107,7 +114,7 @@ func createArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLa
 		uploadRequest := platformclientv2.Grammarfileuploadrequest{
 			FileType: language.DtmfFileMetadata.FileType,
 		}
-		err = uploadGrammarLanguageFile(p, *language.GrammarId, *language.Language, language.DtmfFileMetadata.FileName, &uploadRequest, "dtmf")
+		err = uploadGrammarLanguageFile(p, *language.GrammarId, *language.Language, language.DtmfFileMetadata.FileName, &uploadRequest, Dtmf)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to upload language dtmf file: %s", err)
 		}
@@ -142,7 +149,7 @@ func updateArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLa
 		uploadRequest := platformclientv2.Grammarfileuploadrequest{
 			FileType: language.VoiceFileMetadata.FileType,
 		}
-		err = uploadGrammarLanguageFile(p, *language.GrammarId, *language.Language, language.VoiceFileMetadata.FileName, &uploadRequest, "voice")
+		err = uploadGrammarLanguageFile(p, *language.GrammarId, *language.Language, language.VoiceFileMetadata.FileName, &uploadRequest, Voice)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to upload language voice file: %s", err)
 		}
@@ -153,7 +160,7 @@ func updateArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLa
 		uploadRequest := platformclientv2.Grammarfileuploadrequest{
 			FileType: language.DtmfFileMetadata.FileType,
 		}
-		err = uploadGrammarLanguageFile(p, *language.GrammarId, *language.Language, language.DtmfFileMetadata.FileName, &uploadRequest, "dtmf")
+		err = uploadGrammarLanguageFile(p, *language.GrammarId, *language.Language, language.DtmfFileMetadata.FileName, &uploadRequest, Dtmf)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to upload language dtmf file: %s", err)
 		}
@@ -173,15 +180,14 @@ func deleteArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLa
 }
 
 // uploadGrammarLanguageFile is a function for uploading a grammar language file to Genesys cloud
-func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest, fileType string) error {
+func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, grammarId string, languageCode string, filename *string, uploadBody *platformclientv2.Grammarfileuploadrequest, fileType FileType) error {
 	var uploadResponse *platformclientv2.Uploadurlresponse
 	var err error
-	if fileType == "voice" {
+	if fileType == Voice {
 		uploadResponse, _, err = p.architectApi.PostArchitectGrammarLanguageFilesVoice(grammarId, languageCode, *uploadBody)
-	} else if fileType == "dtmf" {
+	}
+	if fileType == Dtmf {
 		uploadResponse, _, err = p.architectApi.PostArchitectGrammarLanguageFilesDtmf(grammarId, languageCode, *uploadBody)
-	} else {
-		return fmt.Errorf("Invalid file type given. Specify either voice of dtmf")
 	}
 	if err != nil {
 		return fmt.Errorf("Failed to get language file presignedUri: %s for file %s", err, *filename)
@@ -204,10 +210,14 @@ func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, grammarId strin
 
 	client := &http.Client{}
 	response, err := client.Do(request)
+	defer response.Body.Close()
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+
+	if response.StatusCode >= http.StatusBadRequest {
+		return fmt.Errorf("Invalid request, status: %s", response.Status)
+	}
 
 	return nil
 }
@@ -216,12 +226,22 @@ func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, grammarId strin
 func getAllArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLanguageProxy) (*[]platformclientv2.Grammarlanguage, error) {
 	var allLanguages []platformclientv2.Grammarlanguage
 
-	for pageNum := 1; ; pageNum++ {
+	grammars, _, err := p.architectApi.GetArchitectGrammars(1, 100, "", "", []string{}, "", "", "", true)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get architect grammar languages: %v", err)
+	}
+	for _, grammar := range *grammars.Entities {
+		for _, language := range *grammar.Languages {
+			allLanguages = append(allLanguages, language)
+		}
+	}
+
+	for pageNum := 1; pageNum <= *grammars.PageCount; pageNum++ {
 		const pageSize = 100
 
 		grammars, _, err := p.architectApi.GetArchitectGrammars(pageNum, pageSize, "", "", []string{}, "", "", "", true)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get architect grammars: %v", err)
+			return nil, fmt.Errorf("Failed to get architect grammar languages: %v", err)
 		}
 
 		if grammars.Entities == nil || len(*grammars.Entities) == 0 {

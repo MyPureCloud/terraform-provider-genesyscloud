@@ -73,18 +73,6 @@ func ValidateDateTime(date interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Date %v is not a string", date)
 }
 
-// Validates a date string is in the format 2006-01-02T15:04:05.000Z
-func ValidateDateTimeSeconds(date interface{}, _ cty.Path) diag.Diagnostics {
-	if dateStr, ok := date.(string); ok {
-		_, err := time.Parse("2006-01-02T15:04:05.000Z", dateStr)
-		if err != nil {
-			return diag.Errorf("Failed to parse date %s: %s", dateStr, err)
-		}
-		return nil
-	}
-	return diag.Errorf("Date %v is not a string", date)
-}
-
 // Validates a country code is in format ISO 3166-1 alpha-2
 func ValidateCountryCode(code interface{}, _ cty.Path) diag.Diagnostics {
 	countryCode := code.(string)
