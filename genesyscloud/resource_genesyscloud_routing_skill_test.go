@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func TestAccResourceRoutingSkillBasic(t *testing.T) {
