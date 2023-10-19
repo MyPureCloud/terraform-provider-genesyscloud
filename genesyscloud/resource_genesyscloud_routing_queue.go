@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 var (
@@ -108,43 +108,23 @@ var (
 				Optional:    true,
 				Default:     false,
 			},
-			"call_enabled": {
-				Description: "Boolean indicating if Direct Routing calls are enabled.",
+			"call_use_agent_address_outbound": {
+				Description: "Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for calls.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
 			},
-			"call_inbound_flow_id": {
-				Description: "Id of the Direct Routing inbound call flow IVR.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"voicemail_flow_id": {
-				Description: "Id of the in-queue call flow used for collecting voicemails and converting to ACD voicemail.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"email_enabled": {
-				Description: "Boolean indicating if Direct Routing emails are enabled.",
+			"email_use_agent_address_outbound": {
+				Description: "Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for emails.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
 			},
-			"email_inbound_flow_id": {
-				Description: "Id of the Direct Routing inbound email flow.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"message_enabled": {
-				Description: "Boolean indicating if Direct Routing messages are enabled.",
+			"message_use_agent_address_outbound": {
+				Description: "Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for messages.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
-			},
-			"message_inbound_flow_id": {
-				Description: "Id of the Direct Routing inbound message flow.",
-				Type:        schema.TypeString,
-				Required:    true,
 			},
 		},
 	}
@@ -353,10 +333,10 @@ func ResourceRoutingQueue() *schema.Resource {
 							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
 						},
 						"metric": {
-							Description:  "The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel",
-							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "EstimatedWaitTime",
+							Description: "The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel",
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "EstimatedWaitTime",
 						},
 						"condition_value": {
 							Description:  "The limit value, beyond which a rule evaluates as true.",
@@ -1398,44 +1378,19 @@ func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouti
 		agentWaitSeconds := settingsMap["agent_wait_seconds"].(int)
 		waitForAgent := settingsMap["wait_for_agent"].(bool)
 
-		callEnabled := settingsMap["call_enabled"].(bool)
-
-		inboundCallFlowId := settingsMap["call_inbound_flow_id"].(string)
-		inboundCallFlowRef := &platformclientv2.Addressableentityref{
-			Id: &inboundCallFlowId,
+		callUseAgentAddressOutbound := settingsMap["call_use_agent_address_outbound"].(bool)
+		callSettings := &platformclientv2.Directroutingmediasettings{
+			UseAgentAddressOutbound: &callUseAgentAddressOutbound,
 		}
 
-		voicemailFlowId := settingsMap["voicemail_flow_id"].(string)
-		voicemailFlowRef := &platformclientv2.Addressableentityref{
-			Id: &voicemailFlowId,
-		}
-
-		callSettings := &platformclientv2.Directroutingcallmediasettings{
-			Enabled:       &callEnabled,
-			InboundFlow:   inboundCallFlowRef,
-			VoicemailFlow: voicemailFlowRef,
-		}
-
-		emailEnabled := settingsMap["email_enabled"].(bool)
-		inboundEmailFlowId := settingsMap["email_inbound_flow_id"].(string)
-		inboundEmailFlowRef := &platformclientv2.Addressableentityref{
-			Id: &inboundEmailFlowId,
-		}
-
+		emailUseAgentAddressOutbound := settingsMap["email_use_agent_address_outbound"].(bool)
 		emailSettings := &platformclientv2.Directroutingmediasettings{
-			Enabled:     &emailEnabled,
-			InboundFlow: inboundEmailFlowRef,
+			UseAgentAddressOutbound: &emailUseAgentAddressOutbound,
 		}
 
-		messageEnabled := settingsMap["message_enabled"].(bool)
-		inboundMessageFlowId := settingsMap["message_inbound_flow_id"].(string)
-		inboundMessageFlowRef := &platformclientv2.Addressableentityref{
-			Id: &inboundMessageFlowId,
-		}
-
+		messageUseAgentAddressOutbound := settingsMap["message_use_agent_address_outbound"].(bool)
 		messageSettings := &platformclientv2.Directroutingmediasettings{
-			Enabled:     &messageEnabled,
-			InboundFlow: inboundMessageFlowRef,
+			UseAgentAddressOutbound: &messageUseAgentAddressOutbound,
 		}
 
 		return &platformclientv2.Directrouting{
@@ -1463,19 +1418,15 @@ func flattenDirectRouting(settings platformclientv2.Directrouting) map[string]in
 	}
 	if settings.CallMediaSettings != nil {
 		callSettings := *settings.CallMediaSettings
-		settingsMap["call_enabled"] = *callSettings.Enabled
-		settingsMap["call_inbound_flow_id"] = *callSettings.InboundFlow.Id
-		settingsMap["voicemail_flow_id"] = *callSettings.VoicemailFlow.Id
+		settingsMap["call_use_agent_address_outbound"] = *callSettings.UseAgentAddressOutbound
 	}
 	if settings.EmailMediaSettings != nil {
 		emailSettings := *settings.EmailMediaSettings
-		settingsMap["email_enabled"] = *emailSettings.Enabled
-		settingsMap["email_inbound_flow_id"] = *emailSettings.InboundFlow.Id
+		settingsMap["email_use_agent_address_outbound"] = *emailSettings.UseAgentAddressOutbound
 	}
 	if settings.MessageMediaSettings != nil {
 		messageSettings := *settings.MessageMediaSettings
-		settingsMap["message_enabled"] = *messageSettings.Enabled
-		settingsMap["message_inbound_flow_id"] = *messageSettings.InboundFlow.Id
+		settingsMap["message_use_agent_address_outbound"] = *messageSettings.UseAgentAddressOutbound
 	}
 
 	return settingsMap

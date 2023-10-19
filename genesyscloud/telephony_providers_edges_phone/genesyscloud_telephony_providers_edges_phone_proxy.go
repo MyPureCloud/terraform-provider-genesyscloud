@@ -3,7 +3,7 @@ package telephony_providers_edges_phone
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 /*

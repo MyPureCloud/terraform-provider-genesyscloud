@@ -171,17 +171,13 @@ Required:
 Required:
 
 - `backup_queue_id` (String) Direct Routing default backup queue id.
-- `call_inbound_flow_id` (String) Id of the Direct Routing inbound call flow IVR.
-- `email_inbound_flow_id` (String) Id of the Direct Routing inbound email flow.
-- `message_inbound_flow_id` (String) Id of the Direct Routing inbound message flow.
-- `voicemail_flow_id` (String) Id of the in-queue call flow used for collecting voicemails and converting to ACD voicemail.
 
 Optional:
 
 - `agent_wait_seconds` (Number) The queue default time a Direct Routing interaction will wait for an agent before it goes to configured backup. Defaults to `60`.
-- `call_enabled` (Boolean) Boolean indicating if Direct Routing calls are enabled. Defaults to `true`.
-- `email_enabled` (Boolean) Boolean indicating if Direct Routing emails are enabled. Defaults to `true`.
-- `message_enabled` (Boolean) Boolean indicating if Direct Routing messages are enabled. Defaults to `true`.
+- `call_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for calls. Defaults to `true`.
+- `email_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for emails. Defaults to `true`.
+- `message_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for messages. Defaults to `true`.
 - `wait_for_agent` (Boolean) Boolean indicating if Direct Routing interactions should wait for the targeted agent by default. Defaults to `false`.
 
 
