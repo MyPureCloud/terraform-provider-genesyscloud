@@ -33,7 +33,7 @@ func TestAccDataSourceIntegration(t *testing.T) {
 					inteResource1,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
-					generateIntegrationConfig(
+					GenerateIntegrationConfig(
 						strconv.Quote(inteName1),
 						nullValue, //Empty notes
 						"",        //Empty credential ID

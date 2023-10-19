@@ -79,7 +79,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					inteResource1,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
-					generateIntegrationConfig(
+					GenerateIntegrationConfig(
 						strconv.Quote(inteName1),
 						nullValue, //Empty notes
 						"",        //Empty credential ID
@@ -103,7 +103,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					inteResource1,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
-					generateIntegrationConfig(
+					GenerateIntegrationConfig(
 						nullValue, // No name update. Should stay the same
 						nullValue, //Empty notes
 						"",        //Empty credential ID
@@ -127,7 +127,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					inteResource1,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID),
-					generateIntegrationConfig(
+					GenerateIntegrationConfig(
 						strconv.Quote(inteName2),
 						strconv.Quote(configNotes),
 						"", //Empty credential ID
@@ -164,7 +164,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					inteResource1,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID),
-					generateIntegrationConfig(
+					GenerateIntegrationConfig(
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
 						"", //Empty credential ID
@@ -192,7 +192,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					inteResource1,
 					nullValue, //Change to default value
 					strconv.Quote(typeID),
-					generateIntegrationConfig(
+					GenerateIntegrationConfig(
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes2),
 						"", //Empty credentials
@@ -220,7 +220,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					inteResource1,
 					nullValue, //Default value
 					strconv.Quote(typeID),
-					generateIntegrationConfig(
+					GenerateIntegrationConfig(
 						strconv.Quote(inteName2),
 						strconv.Quote(configNotes2),
 						"", //Empty credentials
@@ -257,7 +257,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					inteResource2,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID2),
-					generateIntegrationConfig(
+					GenerateIntegrationConfig(
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
 						gcloud.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
@@ -288,7 +288,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					inteResource2,
 					nullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID2),
-					generateIntegrationConfig(
+					GenerateIntegrationConfig(
 						strconv.Quote(inteName2),
 						nullValue, // Empty notes
 						gcloud.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
@@ -316,19 +316,6 @@ func TestAccResourceIntegration(t *testing.T) {
 		},
 		CheckDestroy: testVerifyIntegrationDestroyed,
 	})
-}
-
-func generateIntegrationConfig(name string, notes string, cred string, props string, adv string) string {
-	return fmt.Sprintf(`config {
-        name = %s
-        notes = %s
-        credentials = {
-            %s
-        }
-        properties = %s
-        advanced = %s
-	}
-	`, name, notes, cred, props, adv)
 }
 
 func validateIntegrationProperties(integrationResourceName string, groupResourceName string, propDisplayType string, propSandbox string, propURL string, groupID string) resource.TestCheckFunc {
