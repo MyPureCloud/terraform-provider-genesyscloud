@@ -109,11 +109,14 @@ func getAllArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy) (*[
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get architect grammars: %v", err)
 	}
+	if grammars.Entities == nil || len(*grammars.Entities) == 0 {
+		return &allGrammars, nil
+	}
 	for _, grammar := range *grammars.Entities {
 		allGrammars = append(allGrammars, grammar)
 	}
 
-	for pageNum := 1; ; pageNum++ {
+	for pageNum := 2; ; pageNum++ {
 		const pageSize = 100
 
 		grammars, _, err := p.architectApi.GetArchitectGrammars(pageNum, pageSize, "", "", []string{}, "", "", "", true)

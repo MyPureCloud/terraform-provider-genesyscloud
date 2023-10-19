@@ -230,13 +230,19 @@ func getAllArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLa
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get architect grammar languages: %v", err)
 	}
+	if grammars.Entities == nil || len(*grammars.Entities) == 0 {
+		return &allLanguages, nil
+	}
+
 	for _, grammar := range *grammars.Entities {
-		for _, language := range *grammar.Languages {
-			allLanguages = append(allLanguages, language)
+		if grammar.Languages != nil {
+			for _, language := range *grammar.Languages {
+				allLanguages = append(allLanguages, language)
+			}
 		}
 	}
 
-	for pageNum := 1; pageNum <= *grammars.PageCount; pageNum++ {
+	for pageNum := 2; pageNum <= *grammars.PageCount; pageNum++ {
 		const pageSize = 100
 
 		grammars, _, err := p.architectApi.GetArchitectGrammars(pageNum, pageSize, "", "", []string{}, "", "", "", true)
@@ -249,8 +255,10 @@ func getAllArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLa
 		}
 
 		for _, grammar := range *grammars.Entities {
-			for _, language := range *grammar.Languages {
-				allLanguages = append(allLanguages, language)
+			if grammar.Languages != nil {
+				for _, language := range *grammar.Languages {
+					allLanguages = append(allLanguages, language)
+				}
 			}
 		}
 	}
