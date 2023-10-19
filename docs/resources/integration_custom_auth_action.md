@@ -17,6 +17,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/api/rest/v2/integrations/#patch-api-v2-integrations-actions--actionId-)
 * [GET /api/v2/integrations/{integrationId}/config/current](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations--integrationId--config-current)
 * [GET /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-credentials--credentialId-)
+* [PATCH /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/platform/integrations/#patch-api-v2-integrations-actions--actionId--draft)
+* [POST /api/v2/integrations/actions/{actionId}/draft/publish](https://developer.genesys.cloud/platform/integrations/#post-api-v2-integrations-actions--actionId--draft-publish)
+* [GET /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/platform/integrations/#get-api-v2-integrations-actions--actionId--draft)
 
 
 ## Example Usage

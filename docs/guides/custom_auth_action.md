@@ -7,7 +7,7 @@ description: |-
 
 # Configuring Genesys Cloud integration custom auth action
 
-Web Services Data Actions is a type of integration which allows a Genesys Cloud org to interact with third-party web services. Most of the time, invoking these third-party API endpoints require an authentication mechanism. Genesys Cloud provides three options for configuring credentials:
+Web Services Data Actions is a type of integration which allows a Genesys Cloud org to interact with third-party web services. Most of the time, invoking these third-party API endpoints requires an authentication mechanism. Genesys Cloud provides three options for configuring credentials:
 
 1. Basic Auth
 2. User Defined
@@ -39,8 +39,8 @@ resource "genesyscloud_integration_credential" "credential" {
   name                 = "example-credential"
   credential_type_name = "userDefinedOAuth"
   fields = {
-    clientId = "groot"
-    clientSecret = "iamgroot"
+    clientId = var.client_id
+    clientSecret = var.client_secret
   }
 }
 
@@ -73,9 +73,11 @@ resource "genesyscloud_integration_custom_auth_action" "auth_action" {
 
 Take note of the configurations of both `genesyscloud_integration_credential` and the `genesyscloud_integration`: the credential should be of type `userDefinedOAuth`, and the integration should be of type `custom-rest-actions`. Having values other than these, on any of the two resources, would result in failure as Genesys Cloud will not create the Custom Auth Action and CX as Code wouldn't have any `genesyscloud_integration_custom_auth_action` resource to manage.
 
+**BEST PRACTICE**: When configuring credentials and other sensitive information in CX as Code, it is recommended to use [input variables](https://developer.hashicorp.com/terraform/language/values/variables) rather than hardcoding them into the configuration itself. This allows you to secure the variable definitions separately from the infrastructure files.
+
 ## 'Deleting' the resource from CX as Code
 
-As mentioned, it is not possible to delete the Custom Auth Data Action from CX as Code as its existence is managed by Genesys Cloud. If you want to delete the Custom Auth Action, then you must also delete the integration it is associated with.
+As mentioned, it is not possible to delete the Custom Auth Data Action from CX as Code as its existence is managed by Genesys Cloud. If you want to delete the Custom Auth Action, then you must replace the credential type of the integration or delete the integration itself.
 
 ## Example cases
 
