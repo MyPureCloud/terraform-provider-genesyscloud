@@ -188,6 +188,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					nullValue,                          // No calling party name
 					nullValue,                          // No calling party number
 					nullValue,                          // enable_manual_assignment false
+					falseValue,                         //suppressCall_record_false
 					nullValue,                          // enable_transcription false
 				) + generateTfExportByName(
 					exportResource1,
@@ -228,6 +229,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					nullValue,                          // No calling party name
 					nullValue,                          // No calling party number
 					nullValue,                          // enable_manual_assignment false
+					falseValue,                         //suppressCall_record_false
 					nullValue,                          // enable_transcription false
 				) + generateTfExportByName(
 					exportResource1,
@@ -281,6 +283,7 @@ func TestAccResourceTfExportByName(t *testing.T) {
 					nullValue,                          // No calling party name
 					nullValue,                          // No calling party number
 					nullValue,                          // enable_manual_assignment false
+					falseValue,                         //suppressCall_record_false
 					nullValue,                          // enable_transcription false
 				) + generateTfExportByName(
 					exportResource1,
@@ -806,7 +809,8 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		strconv.Quote("Example Inc."),
 		nullValue,
 		"true",
-		"true",
+		trueValue,
+		falseValue,
 		gcloud.GenerateMediaSettings("media_settings_call", alertTimeoutSec, falseValue, slPercentage, slDurationMs),
 		gcloud.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
 		gcloud.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
@@ -1786,6 +1790,7 @@ func buildQueueResources(queueExports []QueueExport) string {
 			nullValue, // No calling party name
 			nullValue, // No calling party number
 			nullValue, // enable_manual_assignment false
+			nullValue, //suppressCall_record_false
 			nullValue, // enable_transcription false
 		)
 	}
