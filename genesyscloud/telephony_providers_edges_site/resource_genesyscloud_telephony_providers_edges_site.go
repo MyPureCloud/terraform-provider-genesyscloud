@@ -68,7 +68,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.FromErr(err)
 	}
 
-	err = validateMediaRegions(mediaRegions, sp, ctx)
+	err = validateMediaRegions(ctx, sp, mediaRegions)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -112,18 +112,18 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	d.SetId(*site.Id)
 
 	log.Printf("Creating updating site with primary/secondary:  %s", *site.Id)
-	diagErr := updatePrimarySecondarySites(d, *site.Id, sp, ctx)
+	diagErr := updatePrimarySecondarySites(ctx, sp, d, *site.Id)
 	if diagErr != nil {
 		return diagErr
 	}
 
-	diagErr = updateSiteNumberPlans(d, sp, ctx)
+	diagErr = updateSiteNumberPlans(ctx, sp, d)
 	if diagErr != nil {
 		return diagErr
 	}
 
 	diagErr = gcloud.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-		diagErr = updateSiteOutboundRoutes(d, sp, ctx)
+		diagErr = updateSiteOutboundRoutes(ctx, sp, d)
 		if diagErr != nil {
 			return retry.RetryableError(fmt.Errorf(fmt.Sprintf("%v", diagErr), d.Id()))
 		}
@@ -184,11 +184,11 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			d.Set("secondary_sites", gcloud.SdkDomainEntityRefArrToList(*currentSite.SecondarySites))
 		}
 
-		if retryErr := readSiteNumberPlans(d, sp, ctx); retryErr != nil {
+		if retryErr := readSiteNumberPlans(ctx, sp, d); retryErr != nil {
 			return retryErr
 		}
 
-		if retryErr := readSiteOutboundRoutes(d, sp, ctx); retryErr != nil {
+		if retryErr := readSiteOutboundRoutes(ctx, sp, d); retryErr != nil {
 			return retryErr
 		}
 
@@ -230,7 +230,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.FromErr(err)
 	}
 
-	err = validateMediaRegions(mediaRegions, sp, ctx)
+	err = validateMediaRegions(ctx, sp, mediaRegions)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -293,12 +293,12 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	diagErr = updateSiteNumberPlans(d, sp, ctx)
+	diagErr = updateSiteNumberPlans(ctx, sp, d)
 	if diagErr != nil {
 		return diagErr
 	}
 
-	diagErr = updateSiteOutboundRoutes(d, sp, ctx)
+	diagErr = updateSiteOutboundRoutes(ctx, sp, d)
 	if diagErr != nil {
 		return diagErr
 	}

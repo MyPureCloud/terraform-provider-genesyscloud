@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -37,74 +38,21 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
 
-	name := d.Get("name").(string)
-	state := d.Get("state").(string)
-	site := gcloud.BuildSdkDomainEntityRef(d, "site_id")
-	phoneBaseSettings := buildSdkPhoneBaseSettings(d, "phone_base_settings_id")
-
-	capabilities := buildSdkCapabilities(d)
-	webRtcUserId := d.Get("web_rtc_user_id")
-
-	var err error
-	lineBaseSettingsID := d.Get("line_base_settings_id").(string)
-	if lineBaseSettingsID == "" {
-		lineBaseSettingsID, err = getLineBaseSettingsID(ctx, pp, *phoneBaseSettings.Id)
-		if err != nil {
-			return diag.Errorf("Failed to get line base settings for %s: %s", name, err)
-		}
-	}
-
-	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
-	lines, isStandalone := buildSdkLines(ctx, pp, d, lineBaseSettings)
-
-	phoneMetaBaseId, err := getPhoneMetaBaseId(ctx, pp, *phoneBaseSettings.Id)
+	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
 	if err != nil {
-		return diag.Errorf("Failed to get phone meta base for %s: %s", name, err)
+		return diag.Errorf("failed to create phone %v: %v", *phoneConfig.Name, err)
 	}
 
-	phoneMetaBase := &platformclientv2.Domainentityref{
-		Id: &phoneMetaBaseId,
-	}
-
-	//Have to create a phonebasesettings object now as of version v90.  Used to be a domain ref but the engineering team changed the type in the swagger def
-	phoneSettings := &platformclientv2.Phonebasesettings{
-		Id: phoneBaseSettings.Id,
-	}
-
-	createPhone := &platformclientv2.Phone{
-		Name:              &name,
-		State:             &state,
-		Site:              site,
-		PhoneBaseSettings: phoneSettings,
-		LineBaseSettings:  lineBaseSettings,
-		PhoneMetaBase:     phoneMetaBase,
-		Lines:             lines,
-		Capabilities:      capabilities,
-	}
-
-	if isStandalone {
-		createPhone.Properties = &map[string]interface{}{
-			"phone_standalone": &map[string]interface{}{
-				"value": &map[string]interface{}{
-					"instance": true,
-				},
-			},
-		}
-	}
-
-	if webRtcUserId != "" {
-		createPhone.WebRtcUser = gcloud.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
-	}
-
-	log.Printf("Creating phone %s", name)
+	log.Printf("Creating phone %s", *phoneConfig.Name)
 	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		phone, resp, err := pp.createPhone(ctx, createPhone)
+		phone, resp, err := pp.createPhone(ctx, phoneConfig)
 		if err != nil {
-			return resp, diag.Errorf("Failed to create phone %s: %s", name, err)
+			return resp, diag.Errorf("failed to create phone %s: %s", *phoneConfig.Name, err)
 		}
 
 		d.SetId(*phone.Id)
 
+		webRtcUserId := d.Get("web_rtc_user_id")
 		if webRtcUserId != "" {
 			diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string))
 			if diagErr != nil {
@@ -142,6 +90,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("site_id", *currentPhone.Site.Id)
 		d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
 		d.Set("line_base_settings_id", *currentPhone.LineBaseSettings.Id)
+
 		if currentPhone.PhoneMetaBase != nil {
 			d.Set("phone_meta_base_id", *currentPhone.PhoneMetaBase.Id)
 		}
@@ -154,9 +103,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
 		}
 
-		if currentPhone.Capabilities != nil {
-			d.Set("capabilities", flattenPhoneCapabilities(currentPhone.Capabilities))
-		}
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "capabilities", currentPhone.Capabilities, flattenPhoneCapabilities)
 
 		log.Printf("Read phone %s %s", d.Id(), *currentPhone.Name)
 		return cc.CheckState()
@@ -167,61 +114,20 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
 
-	name := d.Get("name").(string)
-	site := gcloud.BuildSdkDomainEntityRef(d, "site_id")
-	phoneBaseSettings := buildSdkPhoneBaseSettings(d, "phone_base_settings_id")
-	phoneMetaBase := gcloud.BuildSdkDomainEntityRef(d, "phone_meta_base_id")
-	webRtcUserId := d.Get("web_rtc_user_id")
-
-	var err error
-	lineBaseSettingsID := d.Get("line_base_settings_id").(string)
-	if lineBaseSettingsID == "" {
-		lineBaseSettingsID, err = getLineBaseSettingsID(ctx, pp, *phoneBaseSettings.Id)
-		if err != nil {
-			return diag.Errorf("Failed to get line base settings for %s: %s", name, err)
-		}
-	}
-
-	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
-	lines, isStandalone := buildSdkLines(ctx, pp, d, lineBaseSettings)
-
-	//Have to create a phonebasesettings object now as of version v90.  Used to be a domain ref but the engineering team changed the type in the swagger def
-	phoneSettings := &platformclientv2.Phonebasesettings{
-		Id: phoneBaseSettings.Id,
-	}
-
-	updatePhoneBody := &platformclientv2.Phone{
-		Name:              &name,
-		Site:              site,
-		PhoneBaseSettings: phoneSettings,
-		PhoneMetaBase:     phoneMetaBase,
-		LineBaseSettings:  lineBaseSettings,
-		Lines:             lines,
-	}
-
-	if isStandalone {
-		updatePhoneBody.Properties = &map[string]interface{}{
-			"phone_standalone": &map[string]interface{}{
-				"value": &map[string]interface{}{
-					"instance": true,
-				},
-			},
-		}
-	}
-
-	if webRtcUserId != "" {
-		updatePhoneBody.WebRtcUser = gcloud.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
-	}
-
-	log.Printf("Updating phone %s", name)
-
-	phone, err := pp.updatePhone(ctx, d.Id(), updatePhoneBody)
+	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
 	if err != nil {
-		return diag.Errorf("Failed to update phone %s: %s", name, err)
+		return diag.Errorf("failed to updated phone %v: %v", *phoneConfig.Name, err)
+	}
+
+	log.Printf("Updating phone %s", *phoneConfig.Name)
+	phone, err := pp.updatePhone(ctx, d.Id(), phoneConfig)
+	if err != nil {
+		return diag.Errorf("failed to update phone %s: %s", *phoneConfig.Name, err)
 	}
 
 	log.Printf("Updated phone %s", *phone.Id)
 
+	webRtcUserId := d.Get("web_rtc_user_id")
 	if webRtcUserId != "" {
 		if d.HasChange("web_rtc_user_id") {
 			diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string))

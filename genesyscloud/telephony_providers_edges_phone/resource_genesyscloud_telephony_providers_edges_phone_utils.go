@@ -31,6 +31,59 @@ type PhoneConfig struct {
 	Depends_on          string
 }
 
+func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.ResourceData) (*platformclientv2.Phone, error) {
+	phoneConfig := &platformclientv2.Phone{
+		Name:  platformclientv2.String(d.Get("name").(string)),
+		State: platformclientv2.String(d.Get("state").(string)),
+		Site:  gcloud.BuildSdkDomainEntityRef(d, "site_id"),
+		PhoneBaseSettings: &platformclientv2.Phonebasesettings{
+			Id: buildSdkPhoneBaseSettings(d, "phone_base_settings_id").Id,
+		},
+		Capabilities: buildSdkCapabilities(d),
+	}
+
+	// Line base settings and lines
+	var err error
+	lineBaseSettingsID := d.Get("line_base_settings_id").(string)
+	if lineBaseSettingsID == "" {
+		lineBaseSettingsID, err = getLineBaseSettingsID(ctx, pp, *phoneConfig.PhoneBaseSettings.Id)
+		if err != nil {
+			return nil, fmt.Errorf("ailed to get line base settings for %s: %s", *phoneConfig.Name, err)
+		}
+	}
+	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
+	lines, isStandalone := buildSdkLines(ctx, pp, d, lineBaseSettings)
+	phoneConfig.LineBaseSettings = lineBaseSettings
+	phoneConfig.Lines = lines
+
+	// phone meta base
+	phoneMetaBaseId, err := getPhoneMetaBaseId(ctx, pp, *phoneConfig.PhoneBaseSettings.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get phone meta base for %s: %s", *phoneConfig.Name, err)
+	}
+	phoneMetaBase := &platformclientv2.Domainentityref{
+		Id: &phoneMetaBaseId,
+	}
+	phoneConfig.PhoneMetaBase = phoneMetaBase
+
+	if isStandalone {
+		phoneConfig.Properties = &map[string]interface{}{
+			"phone_standalone": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": true,
+				},
+			},
+		}
+	}
+
+	webRtcUserId := d.Get("web_rtc_user_id")
+	if webRtcUserId != "" {
+		phoneConfig.WebRtcUser = gcloud.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
+	}
+
+	return phoneConfig, nil
+}
+
 func getLineBaseSettingsID(ctx context.Context, pp *phoneProxy, phoneBaseSettingsId string) (string, error) {
 	phoneBase, err := pp.getPhoneBaseSetting(ctx, phoneBaseSettingsId)
 	if err != nil {
@@ -216,36 +269,30 @@ func buildSdkCapabilities(d *schema.ResourceData) *platformclientv2.Phonecapabil
 			}
 			capabilitiesMap := capabilities[0].(map[string]interface{})
 
-			// Only set non-empty values.
-			provisions := capabilitiesMap["provisions"].(bool)
-			registers := capabilitiesMap["registers"].(bool)
-			dualRegisters := capabilitiesMap["dual_registers"].(bool)
-			var hardwareIdType string
-			if checkHardwareIdType := capabilitiesMap["hardware_id_type"].(string); len(checkHardwareIdType) > 0 {
-				hardwareIdType = checkHardwareIdType
+			sdkPhoneCapabilities = platformclientv2.Phonecapabilities{
+				Provisions:          platformclientv2.Bool(capabilitiesMap["provisions"].(bool)),
+				Registers:           platformclientv2.Bool(capabilitiesMap["registers"].(bool)),
+				DualRegisters:       platformclientv2.Bool(capabilitiesMap["dual_registers"].(bool)),
+				AllowReboot:         platformclientv2.Bool(capabilitiesMap["allow_reboot"].(bool)),
+				NoRebalance:         platformclientv2.Bool(capabilitiesMap["no_rebalance"].(bool)),
+				NoCloudProvisioning: platformclientv2.Bool(capabilitiesMap["no_cloud_provisioning"].(bool)),
+				Cdm:                 platformclientv2.Bool(capabilitiesMap["cdm"].(bool)),
 			}
-			allowReboot := capabilitiesMap["allow_reboot"].(bool)
-			noRebalance := capabilitiesMap["no_rebalance"].(bool)
-			noCloudProvisioning := capabilitiesMap["no_cloud_provisioning"].(bool)
+
+			// Hardware ID type
+			if checkHardwareIdType := capabilitiesMap["hardware_id_type"].(string); len(checkHardwareIdType) > 0 {
+				sdkPhoneCapabilities.HardwareIdType = &checkHardwareIdType
+			}
+
+			// Media codecs
 			mediaCodecs := make([]string, 0)
 			if checkMediaCodecs := capabilitiesMap["media_codecs"].([]interface{}); len(checkMediaCodecs) > 0 {
 				for _, codec := range checkMediaCodecs {
 					mediaCodecs = append(mediaCodecs, fmt.Sprintf("%v", codec))
 				}
 			}
-			cdm := capabilitiesMap["cdm"].(bool)
 
-			sdkPhoneCapabilities = platformclientv2.Phonecapabilities{
-				Provisions:          &provisions,
-				Registers:           &registers,
-				DualRegisters:       &dualRegisters,
-				HardwareIdType:      &hardwareIdType,
-				AllowReboot:         &allowReboot,
-				NoRebalance:         &noRebalance,
-				NoCloudProvisioning: &noCloudProvisioning,
-				MediaCodecs:         &mediaCodecs,
-				Cdm:                 &cdm,
-			}
+			sdkPhoneCapabilities.MediaCodecs = &mediaCodecs
 		}
 		return &sdkPhoneCapabilities
 	}

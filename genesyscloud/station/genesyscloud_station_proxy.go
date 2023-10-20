@@ -2,6 +2,7 @@ package station
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
@@ -46,16 +47,36 @@ func (p *stationProxy) getStationIdByName(ctx context.Context, stationName strin
 
 // getStationIdByNameFn is an implementation function for retrieving a Station Id by Name
 func getStationIdByNameFn(ctx context.Context, p *stationProxy, stationName string) (stationId string, retryable bool, err error) {
-	const pageSize = 50
-	const pageNum = 1
-	stations, _, err := p.stationsApi.GetStations(pageSize, pageNum, "", stationName, "", "", "", "")
+	const pageSize = 100
+	stations, _, err := p.stationsApi.GetStations(pageSize, 1, "", stationName, "", "", "", "")
 	if err != nil {
 		return "", false, err
 	}
-
 	if stations.Entities == nil || len(*stations.Entities) == 0 {
-		return "", true, err
+		return "", true, fmt.Errorf("failed to find ID of station '%s'", stationName)
 	}
 
-	return *(*stations.Entities)[0].Id, false, nil
+	for _, station := range *stations.Entities {
+		if *station.Name == stationName {
+			return *station.Id, false, nil
+		}
+	}
+
+	for pageNum := 2; pageNum <= *stations.PageCount; pageNum++ {
+		stations, _, err := p.stationsApi.GetStations(pageSize, pageNum, "", stationName, "", "", "", "")
+		if err != nil {
+			return "", false, err
+		}
+		if stations.Entities == nil {
+			return "", true, fmt.Errorf("failed to find ID of station '%s'", stationName)
+		}
+
+		for _, station := range *stations.Entities {
+			if *station.Name == stationName {
+				return *station.Id, false, nil
+			}
+		}
+	}
+
+	return "", true, fmt.Errorf("failed to find ID of station '%s'", stationName)
 }

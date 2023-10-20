@@ -2,6 +2,7 @@ package telephony_providers_edges_phone
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
@@ -204,18 +205,38 @@ func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platfo
 
 // getPhoneByNameFn is an implementation function for retrieving a Genesys Cloud Phone by name
 func getPhoneByNameFn(ctx context.Context, p *phoneProxy, phoneName string) (phone *platformclientv2.Phone, retryable bool, err error) {
-	const pageNum = 1
 	const pageSize = 100
-	phones, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", nil, nil)
+	phones, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", nil, nil)
 	if err != nil {
 		return nil, false, err
 	}
-
 	if phones.Entities == nil || len(*phones.Entities) == 0 {
-		return nil, true, err
+		return nil, true, fmt.Errorf("failed to find ID of phone '%s'", phoneName)
 	}
 
-	return &(*phones.Entities)[0], false, nil
+	for _, phone := range *phones.Entities {
+		if *phone.Name == phoneName {
+			return &phone, false, nil
+		}
+	}
+
+	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
+		phones, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, "", "", "", "", "", "", "", "", "", "", phoneName, "", "", nil, nil)
+		if err != nil {
+			return nil, false, err
+		}
+		if phones.Entities == nil {
+			return nil, true, fmt.Errorf("failed to find ID of phone '%s'", phoneName)
+		}
+
+		for _, phone := range *phones.Entities {
+			if *phone.Name == phoneName {
+				return &phone, false, nil
+			}
+		}
+	}
+
+	return nil, true, fmt.Errorf("failed to find ID of phone '%s'", phoneName)
 }
 
 // updatePhoneFn is an implementation function for updating a Genesys Cloud Phone

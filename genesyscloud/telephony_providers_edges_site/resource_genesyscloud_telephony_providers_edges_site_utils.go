@@ -60,7 +60,7 @@ func customizeSiteDiff(ctx context.Context, diff *schema.ResourceDiff, meta inte
 	return nil
 }
 
-func validateMediaRegions(regions *[]string, sp *siteProxy, ctx context.Context) error {
+func validateMediaRegions(ctx context.Context, sp *siteProxy, regions *[]string) error {
 	telephonyRegions, err := sp.getTelephonyMediaregions(ctx)
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func nameInOutboundRoutes(name string, outboundRoutes []platformclientv2.Outboun
 }
 
 // Contains the logic to determine if a primary or secondary site need to be updated.
-func updatePrimarySecondarySites(d *schema.ResourceData, siteId string, sp *siteProxy, ctx context.Context) diag.Diagnostics {
+func updatePrimarySecondarySites(ctx context.Context, sp *siteProxy, d *schema.ResourceData, siteId string) diag.Diagnostics {
 	primarySites := lists.InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
 	secondarySites := lists.InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
 
@@ -141,7 +141,7 @@ func updatePrimarySecondarySites(d *schema.ResourceData, siteId string, sp *site
 	return nil
 }
 
-func updateSiteNumberPlans(d *schema.ResourceData, sp *siteProxy, ctx context.Context) diag.Diagnostics {
+func updateSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceData) diag.Diagnostics {
 	if !d.HasChange("number_plans") {
 		return nil
 	}
@@ -250,7 +250,7 @@ func updateSiteNumberPlans(d *schema.ResourceData, sp *siteProxy, ctx context.Co
 	return nil
 }
 
-func updateSiteOutboundRoutes(d *schema.ResourceData, sp *siteProxy, ctx context.Context) diag.Diagnostics {
+func updateSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.ResourceData) diag.Diagnostics {
 	if !d.HasChange("outbound_routes") {
 		return nil
 	}
@@ -366,7 +366,7 @@ func isNumberPlanInConfig(planName string, list []interface{}) bool {
 	return false
 }
 
-func readSiteNumberPlans(d *schema.ResourceData, sp *siteProxy, ctx context.Context) *retry.RetryError {
+func readSiteNumberPlans(ctx context.Context, sp *siteProxy, d *schema.ResourceData) *retry.RetryError {
 	numberPlans, resp, err := sp.getSiteNumberPlans(ctx, d.Id())
 	if err != nil {
 		if gcloud.IsStatus404(resp) {
@@ -390,7 +390,7 @@ func readSiteNumberPlans(d *schema.ResourceData, sp *siteProxy, ctx context.Cont
 	return nil
 }
 
-func readSiteOutboundRoutes(d *schema.ResourceData, sp *siteProxy, ctx context.Context) *retry.RetryError {
+func readSiteOutboundRoutes(ctx context.Context, sp *siteProxy, d *schema.ResourceData) *retry.RetryError {
 	outboundRoutes, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
 		return retry.NonRetryableError(fmt.Errorf("failed to get outbound routes for site %s: %s", d.Id(), err))
