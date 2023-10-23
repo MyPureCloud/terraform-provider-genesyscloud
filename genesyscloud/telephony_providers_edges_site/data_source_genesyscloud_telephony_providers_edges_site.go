@@ -23,11 +23,11 @@ func dataSourceSiteRead(ctx context.Context, d *schema.ResourceData, m interface
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		siteId, retryable, err := sp.getSiteIdByName(ctx, name, managed)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting site %s: %s", name, err))
-		}
+			if retryable {
+				return retry.RetryableError(fmt.Errorf("failed to get site %s", name))
+			}
 
-		if retryable {
-			return retry.RetryableError(fmt.Errorf("failed to get site %s", name))
+			return retry.NonRetryableError(fmt.Errorf("error requesting site %s: %s", name, err))
 		}
 
 		d.SetId(siteId)

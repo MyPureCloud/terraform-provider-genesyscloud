@@ -17,7 +17,7 @@ func TestAccDataSourceSite(t *testing.T) {
 		// site
 		siteRes      = "site"
 		siteDataRes  = "site-data"
-		name         = "site " + uuid.NewString()
+		name         = "tf-site-" + uuid.NewString()
 		description1 = "test site description"
 		mediaModel   = "Cloud"
 
