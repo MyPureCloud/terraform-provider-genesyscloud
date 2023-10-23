@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -138,6 +139,9 @@ func getAllRoutingQueues(_ context.Context, clientConfig *platformclientv2.Confi
 	queues, _, getErr := routingAPI.GetRoutingQueues(1, 100, "", "", nil, nil, nil, false)
 	if getErr != nil {
 		return nil, diag.Errorf("Failed to get first page of queues: %v", getErr)
+	}
+	if queues.Entities == nil || len(*queues.Entities) == 0 {
+		return resources, nil
 	}
 	for _, queue := range *queues.Entities {
 		resources[*queue.Id] = &resourceExporter.ResourceMeta{Name: *queue.Name}
@@ -1485,15 +1489,16 @@ func updateQueueUserRingNum(queueID string, userID string, ringNum int, api *pla
 }
 
 func getRoutingQueueMembers(queueID string, memberBy string, api *platformclientv2.RoutingApi) ([]platformclientv2.Queuemember, diag.Diagnostics) {
+	var members []platformclientv2.Queuemember
 	const pageSize = 100
 
-	var members []platformclientv2.Queuemember
 	for pageNum := 1; ; pageNum++ {
-		users, _, err := api.GetRoutingQueueMembers(queueID, pageNum, pageSize, "", nil, "", nil, nil, nil, nil, nil, "", false)
-		if err != nil {
+		users, resp, err := api.GetRoutingQueueMembers(queueID, pageNum, pageSize, "", nil, "", nil, nil, nil, nil, nil, memberBy, false)
+		if err != nil || resp.StatusCode != http.StatusOK {
 			return nil, diag.Errorf("Failed to query users for queue %s: %s", queueID, err)
 		}
 		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
+			log.Printf("%d queue members found", len(members))
 			return members, nil
 		}
 		for _, user := range *users.Entities {
