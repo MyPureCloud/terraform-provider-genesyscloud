@@ -44,7 +44,7 @@ func TestAccResponseManagementResponseAsset(t *testing.T) {
 			},
 			{
 				Config: generateResponseManagementResponseAssetResource(resourceId, fullPath2, "genesyscloud_auth_division."+divisionResourceId+".id") +
-					generateAuthDivisionBasic(divisionResourceId, divisionName),
+					GenerateAuthDivisionBasic(divisionResourceId, divisionName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath2),
 					resource.TestCheckResourceAttrPair("genesyscloud_responsemanagement_responseasset."+resourceId, "division_id",
