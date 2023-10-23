@@ -177,3 +177,16 @@ func GenerateIntegrationResource(resourceID string, intendedState string, integr
 	}
 	`, resourceID, intendedState, integrationType, strings.Join(attrs, "\n"))
 }
+
+func GenerateIntegrationConfig(name string, notes string, cred string, props string, adv string) string {
+	return fmt.Sprintf(`config {
+        name = %s
+        notes = %s
+        credentials = {
+            %s
+        }
+        properties = %s
+        advanced = %s
+	}
+	`, name, notes, cred, props, adv)
+}
