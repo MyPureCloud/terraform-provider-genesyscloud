@@ -319,8 +319,7 @@ func getSiteByIdFn(ctx context.Context, p *siteProxy, siteId string) (*platformc
 }
 
 // getSiteIdByNameFn is an implementation function for retrieving a Genesys Cloud Site by name
-func getSiteIdByNameFn(ctx context.Context, p *siteProxy, siteName string, managed bool) (siteId string, retryable bool, err error) {
-	siteId = ""
+func getSiteIdByNameFn(ctx context.Context, p *siteProxy, siteName string, managed bool) (string, bool, error) {
 	const pageSize = 100
 	sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", siteName, "", managed)
 	if err != nil {
@@ -331,7 +330,7 @@ func getSiteIdByNameFn(ctx context.Context, p *siteProxy, siteName string, manag
 	}
 	for _, site := range *sites.Entities {
 		if (site.Name != nil && *site.Name == siteName) && (site.State != nil && *site.State != "deleted") {
-			return siteId, false, nil
+			return *site.Id, false, nil
 		}
 	}
 
@@ -347,11 +346,8 @@ func getSiteIdByNameFn(ctx context.Context, p *siteProxy, siteName string, manag
 
 		for _, site := range *sites.Entities {
 			if (site.Name != nil && *site.Name == siteName) && (site.State != nil && *site.State != "deleted") {
-				return siteId, false, nil
+				return *site.Id, false, nil
 			}
-		}
-		if siteId != "" {
-			break
 		}
 	}
 
