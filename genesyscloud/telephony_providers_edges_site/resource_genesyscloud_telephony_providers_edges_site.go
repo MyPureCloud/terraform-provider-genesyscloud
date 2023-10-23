@@ -47,22 +47,23 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	sp := getSiteProxy(sdkConfig)
 
-	name := d.Get("name").(string)
-	locationId := d.Get("location_id").(string)
-	mediaModel := d.Get("media_model").(string)
-	description := d.Get("description").(string)
-	mediaRegionsUseLatencyBased := d.Get("media_regions_use_latency_based").(bool)
-	setAsDefault := d.Get("set_as_default_site").(bool)
-	edgeAutoUpdateConfig, err := buildSdkEdgeAutoUpdateConfig(d)
+	siteReq := &platformclientv2.Site{
+		Name:                        platformclientv2.String(d.Get("name").(string)),
+		CallerId:                    platformclientv2.String(d.Get("caller_id").(string)),
+		CallerName:                  platformclientv2.String(d.Get("caller_name").(string)),
+		MediaModel:                  platformclientv2.String(d.Get("media_model").(string)),
+		Description:                 platformclientv2.String(d.Get("description").(string)),
+		MediaRegionsUseLatencyBased: platformclientv2.Bool(d.Get("media_regions_use_latency_based").(bool)),
+	}
 
+	edgeAutoUpdateConfig, err := buildSdkEdgeAutoUpdateConfig(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	mediaRegions := lists.BuildSdkStringListFromInterfaceArray(d, "media_regions")
-	callerID := d.Get("caller_id").(string)
-	callerName := d.Get("caller_name").(string)
 
+	locationId := d.Get("location_id").(string)
 	location, err := sp.getLocation(ctx, locationId)
 	if err != nil {
 		return diag.FromErr(err)
@@ -73,14 +74,9 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.FromErr(err)
 	}
 
-	siteReq := &platformclientv2.Site{
-		Name: &name,
-		Location: &platformclientv2.Locationdefinition{
-			Id:              &locationId,
-			EmergencyNumber: location.EmergencyNumber,
-		},
-		MediaModel:                  &mediaModel,
-		MediaRegionsUseLatencyBased: &mediaRegionsUseLatencyBased,
+	siteReq.Location = &platformclientv2.Locationdefinition{
+		Id:              platformclientv2.String(locationId),
+		EmergencyNumber: location.EmergencyNumber,
 	}
 
 	if edgeAutoUpdateConfig != nil {
@@ -91,19 +87,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		siteReq.MediaRegions = mediaRegions
 	}
 
-	if callerID != "" {
-		siteReq.CallerId = &callerID
-	}
-
-	if callerName != "" {
-		siteReq.CallerName = &callerName
-	}
-
-	if description != "" {
-		siteReq.Description = &description
-	}
-
-	log.Printf("Creating site %s", name)
+	log.Printf("Creating site %s", *siteReq.Name)
 	site, err := sp.createSite(ctx, siteReq)
 	if err != nil {
 		return diag.FromErr(err)
@@ -135,7 +119,8 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	log.Printf("Created site %s", *site.Id)
 
-	if setAsDefault {
+	// Default site
+	if d.Get("set_as_default_site").(bool) {
 		log.Printf("Setting default site to %s", *site.Id)
 		err := sp.setDefaultSite(ctx, *site.Id)
 		if err != nil {
@@ -207,42 +192,38 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	sp := getSiteProxy(sdkConfig)
 
-	name := d.Get("name").(string)
-	locationId := d.Get("location_id").(string)
-	mediaModel := d.Get("media_model").(string)
-	description := d.Get("description").(string)
-	mediaRegionsUseLatencyBased := d.Get("media_regions_use_latency_based").(bool)
-	setAsDefault := d.Get("set_as_default_site").(bool)
-	edgeAutoUpdateConfig, err := buildSdkEdgeAutoUpdateConfig(d)
-	primarySites := lists.InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
-	secondarySites := lists.InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
+	site := &platformclientv2.Site{
+		Name:                        platformclientv2.String(d.Get("name").(string)),
+		CallerId:                    platformclientv2.String(d.Get("caller_id").(string)),
+		CallerName:                  platformclientv2.String(d.Get("caller_name").(string)),
+		MediaModel:                  platformclientv2.String(d.Get("media_model").(string)),
+		Description:                 platformclientv2.String(d.Get("description").(string)),
+		MediaRegionsUseLatencyBased: platformclientv2.Bool(d.Get("media_regions_use_latency_based").(bool)),
+	}
 
+	locationId := d.Get("location_id").(string)
+	edgeAutoUpdateConfig, err := buildSdkEdgeAutoUpdateConfig(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	primarySites := lists.InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
+	secondarySites := lists.InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
+
 	mediaRegions := lists.BuildSdkStringListFromInterfaceArray(d, "media_regions")
-	callerID := d.Get("caller_id").(string)
-	callerName := d.Get("caller_name").(string)
 
 	location, err := sp.getLocation(ctx, locationId)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	site.Location = &platformclientv2.Locationdefinition{
+		Id:              &locationId,
+		EmergencyNumber: location.EmergencyNumber,
+	}
 
 	err = validateMediaRegions(ctx, sp, mediaRegions)
 	if err != nil {
 		return diag.FromErr(err)
-	}
-
-	site := &platformclientv2.Site{
-		Name: &name,
-		Location: &platformclientv2.Locationdefinition{
-			Id:              &locationId,
-			EmergencyNumber: location.EmergencyNumber,
-		},
-		MediaModel:                  &mediaModel,
-		MediaRegionsUseLatencyBased: &mediaRegionsUseLatencyBased,
 	}
 
 	if edgeAutoUpdateConfig != nil {
@@ -251,18 +232,6 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	if mediaRegions != nil {
 		site.MediaRegions = mediaRegions
-	}
-
-	if callerID != "" {
-		site.CallerId = &callerID
-	}
-
-	if callerName != "" {
-		site.CallerName = &callerName
-	}
-
-	if description != "" {
-		site.Description = &description
 	}
 
 	if len(primarySites) > 0 {
@@ -281,10 +250,10 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 		site.Version = currentSite.Version
 
-		log.Printf("Updating site %s", name)
+		log.Printf("Updating site %s", *site.Name)
 		site, resp, err = sp.updateSite(ctx, d.Id(), site)
 		if err != nil {
-			return resp, diag.Errorf("Failed to update site %s: %s", name, err)
+			return resp, diag.Errorf("Failed to update site %s: %s", *site.Name, err)
 		}
 
 		return resp, nil
@@ -303,7 +272,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	if setAsDefault {
+	if d.Get("set_as_default_site").(bool) {
 		log.Printf("Setting default site to %s", *site.Id)
 		err := sp.setDefaultSite(ctx, *site.Id)
 		if err != nil {
