@@ -58,14 +58,15 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					queueResource1,
 					queueName1,
 					queueDesc1,
-					nullValue, // MANDATORY_TIMEOUT
-					"200000",  // acw_timeout
-					nullValue, // ALL
-					nullValue, // auto_answer_only true
-					nullValue, // No calling party name
-					nullValue, // No calling party number
-					nullValue, // enable_manual_assignment false
-					nullValue, // enable_transcription false
+					nullValue,  // MANDATORY_TIMEOUT
+					"200000",   // acw_timeout
+					nullValue,  // ALL
+					nullValue,  // auto_answer_only true
+					nullValue,  // No calling party name
+					nullValue,  // No calling party number
+					nullValue,  // enable_manual_assignment false
+					falseValue, // suppress_in_queue_call_recording false
+					nullValue,  // enable_transcription false
 					GenerateMediaSettings("media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
@@ -81,6 +82,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "acw_timeout_ms", "200000"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "skill_evaluation_method", skillEvalAll),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
 					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
@@ -105,6 +107,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					falseValue, // auto_answer_only false
 					strconv.Quote(callingPartyName),
 					strconv.Quote(callingPartyNumber),
+					trueValue, // suppress_in_queue_call_recording true
 					trueValue, // enable_manual_assignment true
 					trueValue, // enable_transcription true
 					GenerateMediaSettings("media_settings_call", alertTimeout2, falseValue, slPercent2, slDuration2),
@@ -126,6 +129,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "calling_party_name", callingPartyName),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "calling_party_number", callingPartyNumber),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", trueValue),
 					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
@@ -196,14 +200,15 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					queueResource1,
 					queueName1,
 					queueDesc1,
-					nullValue, // MANDATORY_TIMEOUT
-					"200000",  // acw_timeout
-					nullValue, // ALL
-					nullValue, // auto_answer_only true
-					nullValue, // No calling party name
-					nullValue, // No calling party number
-					nullValue, // enable_transcription false
-					nullValue, // enable_manual_assignment false
+					nullValue,  // MANDATORY_TIMEOUT
+					"200000",   // acw_timeout
+					nullValue,  // ALL
+					nullValue,  // auto_answer_only true
+					nullValue,  // No calling party name
+					nullValue,  // No calling party number
+					nullValue,  // enable_transcription false
+					falseValue, // suppress_in_queue_call_recording false
+					nullValue,  // enable_manual_assignment false
 					GenerateMediaSettings("media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
@@ -229,6 +234,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "acw_timeout_ms", "200000"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "skill_evaluation_method", skillEvalAll),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
 
@@ -265,14 +271,15 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					queueResource1,
 					queueName1,
 					queueDesc1,
-					nullValue, // MANDATORY_TIMEOUT
-					"200000",  // acw_timeout
-					nullValue, // ALL
-					nullValue, // auto_answer_only true
-					nullValue, // No calling party name
-					nullValue, // No calling party number
-					nullValue, // enable_transcription false
-					nullValue, // enable_manual_assignment false
+					nullValue,  // MANDATORY_TIMEOUT
+					"200000",   // acw_timeout
+					nullValue,  // ALL
+					nullValue,  // auto_answer_only true
+					nullValue,  // No calling party name
+					nullValue,  // No calling party number
+					nullValue,  // enable_transcription false
+					falseValue, // suppress_in_queue_call_recording false
+					nullValue,  // enable_manual_assignment false
 					GenerateMediaSettings("media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
@@ -310,6 +317,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "acw_timeout_ms", "200000"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "skill_evaluation_method", skillEvalAll),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
 
@@ -382,14 +390,15 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					queueResource1,
 					queueName1,
 					queueDesc1,
-					nullValue, // MANDATORY_TIMEOUT
-					"200000",  // acw_timeout
-					nullValue, // ALL
-					nullValue, // auto_answer_only true
-					nullValue, // No calling party name
-					nullValue, // No calling party number
-					nullValue, // enable_transcription false
-					nullValue, // enable_manual_assignment false
+					nullValue,  // MANDATORY_TIMEOUT
+					"200000",   // acw_timeout
+					nullValue,  // ALL
+					nullValue,  // auto_answer_only true
+					nullValue,  // No calling party name
+					nullValue,  // No calling party number
+					nullValue,  // enable_transcription false
+					falseValue, // suppress_in_queue_call_recording false
+					nullValue,  // enable_manual_assignment false
 					GenerateMediaSettings("media_settings_call", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, falseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, falseValue, slPercent1, slDuration1),
@@ -417,6 +426,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "skill_evaluation_method", skillEvalAll),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "auto_answer_only", trueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_manual_assignment", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "suppress_in_queue_call_recording", falseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", falseValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.operator", conditionalGroupRouting1Operator),

@@ -331,6 +331,18 @@ func GenerateMapAttr(name string, properties ...string) string {
 	`, name, strings.Join(properties, "\n"))
 }
 
+func GenerateMapAttrWithMapProperties(name string, properties map[string]string) string {
+	var propertiesStr string
+	for k, v := range properties {
+		propertiesStr += GenerateMapProperty(k, v) + "\n"
+	}
+
+	return fmt.Sprintf(`%s = {
+		%s
+	}
+	`, name, propertiesStr)
+}
+
 func GenerateSubstitutionsMap(substitutions map[string]string) string {
 	var substitutionsStr string
 	for k, v := range substitutions {
