@@ -193,32 +193,54 @@ func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, grammarId strin
 		return fmt.Errorf("Failed to get language file presignedUri: %s for file %s", err, *filename)
 	}
 
-	file, err := os.Open(*filename)
-	if err != nil {
-		return fmt.Errorf("Failed to find file: %s", err)
-	}
-	defer file.Close()
+	maxRetries := 5
+	var response *http.Response
+	var file *os.File
+	for retry := 0; retry < maxRetries; retry++ {
+		file, err = os.Open(*filename)
+		if err != nil {
+			file.Close()
+			return fmt.Errorf("Failed to find file: %s", err)
+		}
 
-	request, err := http.NewRequest(http.MethodPut, *uploadResponse.Url, file)
-	if err != nil {
-		return err
+		request, err := http.NewRequest(http.MethodPut, *uploadResponse.Url, file)
+		if err != nil {
+			file.Close()
+			return err
+		}
+
+		for key, value := range *uploadResponse.Headers {
+			request.Header.Add(key, value)
+		}
+
+		client := &http.Client{}
+		response, err = client.Do(request)
+		if err != nil {
+			file.Close()
+			response.Body.Close()
+			return err
+		}
+
+		if response.StatusCode == http.StatusNotImplemented {
+			file.Close()
+			response.Body.Close()
+			if retry == maxRetries-1 {
+				return fmt.Errorf("Max retry attempts reached, status: %s", response.Status)
+			}
+		}
+		if response.StatusCode >= http.StatusBadRequest && response.StatusCode != http.StatusNotImplemented {
+			file.Close()
+			response.Body.Close()
+			return fmt.Errorf("Invalid request, status: %s", response.Status)
+		}
+
+		if response.StatusCode == http.StatusOK {
+			break
+		}
 	}
 
-	for key, value := range *uploadResponse.Headers {
-		request.Header.Add(key, value)
-	}
-
-	client := &http.Client{}
-	response, err := client.Do(request)
-	defer response.Body.Close()
-	if err != nil {
-		return err
-	}
-
-	if response.StatusCode >= http.StatusBadRequest {
-		return fmt.Errorf("Invalid request, status: %s", response.Status)
-	}
-
+	file.Close()
+	response.Body.Close()
 	return nil
 }
 
