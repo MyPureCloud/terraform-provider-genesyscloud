@@ -25,7 +25,7 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTrunkBaseSettingsResourceWithCustomAttrs(
+				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 					trunkBaseSettingsRes,
 					name,
 					description,

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -351,4 +352,23 @@ func TrunkBaseSettingsExporter() *resourceExporter.ResourceExporter {
 		RefAttrs:             map[string]*resourceExporter.RefAttrSettings{},
 		JsonEncodeAttributes: []string{"properties"},
 	}
+}
+
+func GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettingsRes,
+	name,
+	description,
+	trunkMetaBaseId,
+	trunkType string,
+	managed bool,
+	otherAttrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "%s" {
+		name = "%s"
+		description = "%s"
+		trunk_meta_base_id = "%s"
+		trunk_type = "%s"
+		managed = %v
+		%s
+	}
+	`, trunkBaseSettingsRes, name, description, trunkMetaBaseId, trunkType, managed, strings.Join(otherAttrs, "\n"))
 }

@@ -1,9 +1,12 @@
-package genesyscloud
+package telephony_providers_edges_phone
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -28,12 +31,22 @@ func TestAccDataSourcePhone(t *testing.T) {
 		userDepartment = "Development"
 	)
 
+	_, err := gcloud.AuthorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defaultSiteId, err := edgeSite.GetOrganizationDefaultSiteId()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateOrganizationMe() + generateUserResource(
+				Config: gcloud.GenerateUserResource(
 					userRes1,
 					userEmail1,
 					userName1,
@@ -44,16 +57,16 @@ func TestAccDataSourcePhone(t *testing.T) {
 					nullValue, // Default acdAutoAnswer
 					"",        // No profile skills
 					"",        // No certs
-				) + generatePhoneBaseSettingsResourceWithCustomAttrs(
+				) + gcloud.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					phoneBaseSettingsName,
 					"phoneBaseSettings description",
 					"inin_webrtc_softphone.json",
-				) + generatePhoneResourceWithCustomAttrs(&phoneConfig{
+				) + GeneratePhoneResourceWithCustomAttrs(&PhoneConfig{
 					phoneRes,
 					name1,
 					stateActive,
-					"data.genesyscloud_organizations_me.me.default_site_id",
+					fmt.Sprintf("\"%s\"", defaultSiteId),
 					"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
 					nil, // no line addresses
 					"genesyscloud_user." + userRes1 + ".id",

@@ -1,15 +1,24 @@
-package genesyscloud
+package telephony_providers_edges_site
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+)
+
+var (
+	// Used for testing the default site functionality. Track so it can be restored after test
+	originalSiteId string
 )
 
 func TestAccResourceSite(t *testing.T) {
@@ -35,26 +44,26 @@ func TestAccResourceSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	emergencyNumber := "+13173124740"
+	emergencyNumber := "+13173124741"
 	err = DeleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	location := GenerateLocationResource(
+	location := gcloud.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		GenerateLocationEmergencyNum(
+		gcloud.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), GenerateLocationAddress(
+		), gcloud.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -63,8 +72,8 @@ func TestAccResourceSite(t *testing.T) {
 		))
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSiteResourceWithCustomAttrs(
@@ -171,26 +180,26 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	emergencyNumber := "+13173124741"
+	emergencyNumber := "+13173124742"
 	err = DeleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	location := GenerateLocationResource(
+	location := gcloud.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		GenerateLocationEmergencyNum(
+		gcloud.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), GenerateLocationAddress(
+		), gcloud.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -199,8 +208,8 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		))
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSiteResourceWithCustomAttrs(
@@ -372,26 +381,26 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	emergencyNumber := "+13173124742"
+	emergencyNumber := "+13173124743"
 	err = DeleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	location := GenerateLocationResource(
+	location := gcloud.GenerateLocationResource(
 		locationRes,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		GenerateLocationEmergencyNum(
+		gcloud.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			nullValue, // Default number type
-		), GenerateLocationAddress(
+		), gcloud.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -399,7 +408,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 			"46278",
 		))
 
-	trunkBaseSettings1 := generateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings1 := gcloud.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings1",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -407,7 +416,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings2 := generateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings2 := gcloud.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings2",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -415,7 +424,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings3 := generateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings3 := gcloud.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings3",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -424,8 +433,8 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		false)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSiteResourceWithCustomAttrs(
@@ -451,7 +460,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 						"\"National\"",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings2.id",
 						"SEQUENTIAL",
-						false)) + trunkBaseSettings1 + trunkBaseSettings2 + location,
+						false)+"set_as_default_site = false") + trunkBaseSettings1 + trunkBaseSettings2 + location,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.name", "outboundRoute name 1"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.description", "outboundRoute description"),
@@ -528,7 +537,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 						strings.Join([]string{strconv.Quote("Network"), strconv.Quote("International")}, ","),
 						strings.Join([]string{"genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings1.id", "genesyscloud_telephony_providers_edges_trunkbasesettings.trunkBaseSettings3.id"}, ","),
 						"RANDOM",
-						true)) + trunkBaseSettings1 + trunkBaseSettings2 + trunkBaseSettings3 + location,
+						true)+"set_as_default_site = false") + trunkBaseSettings1 + trunkBaseSettings2 + trunkBaseSettings3 + location,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.name", "outboundRoute name 1"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "outbound_routes.0.description", "outboundRoute description updated"),
@@ -551,6 +560,110 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 	})
 }
 
+func TestAccResourceSiteDefaultSite(t *testing.T) {
+	var (
+		// site
+		siteRes      = "site"
+		name1        = "site " + uuid.NewString()
+		description1 = "TestAccResourceSite description 1"
+		mediaModel   = "Cloud"
+
+		// location
+		locationRes = "test-location1"
+	)
+
+	_, err := gcloud.AuthorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	originalSiteId, err = GetOrganizationDefaultSiteId()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	emergencyNumber := "+13173124744"
+	err = DeleteLocationWithNumber(emergencyNumber)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	location := gcloud.GenerateLocationResource(
+		locationRes,
+		"Terraform location"+uuid.NewString(),
+		"HQ1",
+		[]string{},
+		gcloud.GenerateLocationEmergencyNum(
+			emergencyNumber,
+			nullValue, // Default number type
+		), gcloud.GenerateLocationAddress(
+			"7601 Interactive Way",
+			"Indianapolis",
+			"IN",
+			"US",
+			"46278",
+		))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Store the original default site so it can be restored later
+				PreConfig: func() {
+					originalSiteId, err = GetOrganizationDefaultSiteId()
+					if err != nil {
+						t.Fatalf("error setting original default site ID %s", originalSiteId)
+					}
+				},
+				Config: GenerateSiteResourceWithCustomAttrs(
+					siteRes,
+					name1,
+					description1,
+					"genesyscloud_location."+locationRes+".id",
+					mediaModel,
+					false,
+					"[\"us-west-2\"]",
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing"),
+					"set_as_default_site = true") + location,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "description", description1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "media_model", mediaModel),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteRes, "media_regions_use_latency_based", falseValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_site."+siteRes, "location_id", "genesyscloud_location."+locationRes, "id"),
+					testDefaultSite("genesyscloud_telephony_providers_edges_site."+siteRes),
+				),
+			},
+			{
+				// Restore the old default site before cleaning up after the test.
+				PreConfig: func() {
+					if err := setDefaultSite(originalSiteId); err != nil {
+						t.Fatalf("cannot restore default site back to %s", originalSiteId)
+					}
+					time.Sleep(5 * time.Second) // Wait or test case will error trying to delete the created default site
+				},
+				Config: GenerateSiteResourceWithCustomAttrs(
+					siteRes,
+					name1,
+					description1,
+					"genesyscloud_location."+locationRes+".id",
+					mediaModel,
+					false,
+					"[\"us-west-2\"]",
+					strconv.Quote("+19205551212"),
+					strconv.Quote("Wilco plumbing"),
+					"set_as_default_site = false") + location + gcloud.GenerateOrganizationMe(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.genesyscloud_organizations_me.me", "default_site_id", originalSiteId),
+				),
+			},
+		},
+		CheckDestroy: testVerifySitesDestroyed,
+	})
+}
+
 func testVerifySitesDestroyed(state *terraform.State) error {
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApi()
 	for _, rs := range state.RootModule().Resources {
@@ -565,7 +678,7 @@ func testVerifySitesDestroyed(state *terraform.State) error {
 				continue
 			}
 			return fmt.Errorf("site (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// site not found as expected
 			continue
 		} else {
@@ -652,4 +765,48 @@ func generateSiteOutboundRoutesWithCustomAttrs(
 		distribution,
 		enabled,
 		strings.Join(otherAttrs, "\n"))
+}
+
+// getOrganizationDefaultSite is a test utiliy function to set the default site of the org
+func setDefaultSite(siteId string) error {
+	sdkConfig := platformclientv2.GetDefaultConfiguration()
+	organizationApi := platformclientv2.NewOrganizationApiWithConfig(sdkConfig)
+
+	org, _, err := organizationApi.GetOrganizationsMe()
+	if err != nil {
+		return err
+	}
+
+	// Update org details
+	*org.DefaultSiteId = siteId
+
+	_, _, err = organizationApi.PutOrganizationsMe(*org)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("set default site to %s", siteId)
+
+	return nil
+}
+
+// Verify if the provided resource site is the default site
+func testDefaultSite(resource string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		defaultSiteId, err := GetOrganizationDefaultSiteId()
+		if err != nil {
+			return fmt.Errorf("failed to get default site id: %v", err)
+		}
+
+		r := state.RootModule().Resources[resource]
+		if r == nil {
+			return fmt.Errorf("%s not found in state", resource)
+		}
+
+		if r.Primary.ID != defaultSiteId {
+			return fmt.Errorf("default site is expected to be %s. Instead got %s", r.Primary.ID, defaultSiteId)
+		}
+
+		return nil
+	}
 }
