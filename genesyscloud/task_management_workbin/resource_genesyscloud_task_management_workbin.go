@@ -124,7 +124,7 @@ func deleteTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getTaskManagementWorkbinById(ctx, d.Id())
 
-		if err == nil {
+		if err != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted task management workbin %s", d.Id())
 				return nil

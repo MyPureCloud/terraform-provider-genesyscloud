@@ -31,7 +31,7 @@ func TestAccDataSourceTaskManagementWorkbin(t *testing.T) {
 				Config: generateWorkbinResource(workbinResId, workbinName, workDescription, nullValue) +
 					generateWorkbinDataSource(workbinDataSourceId, workbinName, resourceName+"."+workbinResId),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workbinResId, "id", resourceName+"."+workbinResId, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workbinDataSourceId, "id", resourceName+"."+workbinResId, "id"),
 				),
 			},
 		},

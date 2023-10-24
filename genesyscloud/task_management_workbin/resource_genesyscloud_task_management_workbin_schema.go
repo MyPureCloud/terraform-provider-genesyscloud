@@ -47,6 +47,7 @@ func ResourceTaskManagementWorkbin() *schema.Resource {
 			"division_id": {
 				Description: "The division to which this entity belongs.",
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 				ForceNew:    true,
 			},
@@ -63,8 +64,8 @@ func ResourceTaskManagementWorkbin() *schema.Resource {
 func TaskManagementWorkbinExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthTaskManagementWorkbins),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			// TODO: Add any reference attributes here
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }

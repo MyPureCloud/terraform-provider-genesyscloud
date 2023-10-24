@@ -1,0 +1,5 @@
+* [POST /api/v2/taskmanagement/workbins](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-workbins)
+* [GET /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-taskmanagement-workbins--workbinId-)
+* [PATCH /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-taskmanagement-workbins--workbinId-)
+* [DELETE /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-taskmanagement-workbins--workbinId-)
+* [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-workbins-query)
