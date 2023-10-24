@@ -1492,13 +1492,25 @@ func getRoutingQueueMembers(queueID string, memberBy string, api *platformclient
 	var members []platformclientv2.Queuemember
 	const pageSize = 100
 
+	// Need to call this method to find the member count for a queue. GetRoutingQueueMembers does not return a `total` property for us to use.
+	queue, _, err := api.GetRoutingQueue(queueID)
+	queueMembers := *queue.MemberCount
+	if err != nil {
+		return nil, diag.Errorf("Can't find queue %s", queueID)
+	}
+	log.Printf("%d members belong to queue %s", queueMembers, queueID)
+
 	for pageNum := 1; ; pageNum++ {
-		users, resp, err := api.GetRoutingQueueMembers(queueID, pageNum, pageSize, "", nil, "", nil, nil, nil, nil, nil, memberBy, false)
+		users, resp, err := api.GetRoutingQueueMembers(queueID, pageNum, pageSize, "", nil, "", nil, nil, nil, nil, nil, memberBy, true)
 		if err != nil || resp.StatusCode != http.StatusOK {
 			return nil, diag.Errorf("Failed to query users for queue %s: %s", queueID, err)
 		}
 		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
-			log.Printf("%d queue members found", len(members))
+			membersFound := len(members)
+			log.Printf("%d queue members found for queue %s", membersFound, queueID)
+			if membersFound != queueMembers {
+				log.Printf("Member count is not equal to queue member found for queue %s, Correlation Id: %s", queueID, resp.CorrelationID)
+			}
 			return members, nil
 		}
 		for _, user := range *users.Entities {
