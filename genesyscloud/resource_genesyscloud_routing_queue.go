@@ -2,9 +2,11 @@ package genesyscloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -1501,7 +1503,7 @@ func getRoutingQueueMembers(queueID string, memberBy string, api *platformclient
 	log.Printf("%d members belong to queue %s", queueMembers, queueID)
 
 	for pageNum := 1; ; pageNum++ {
-		users, resp, err := api.GetRoutingQueueMembers(queueID, pageNum, pageSize, "", nil, "", nil, nil, nil, nil, nil, memberBy, true)
+		users, resp, err := sdkGetRoutingQueueMembers(queueID, memberBy, pageNum, pageSize, api)
 		if err != nil || resp.StatusCode != http.StatusOK {
 			return nil, diag.Errorf("Failed to query users for queue %s: %s", queueID, err)
 		}
@@ -1517,6 +1519,51 @@ func getRoutingQueueMembers(queueID string, memberBy string, api *platformclient
 			members = append(members, user)
 		}
 	}
+}
+
+func sdkGetRoutingQueueMembers(queueID, memberBy string, pageNumber, pageSize int, api *platformclientv2.RoutingApi) (*platformclientv2.Queuememberentitylisting, *platformclientv2.APIResponse, error) {
+	// SDK does not support nil values for boolean query params yet, so we must manually construct this HTTP request for now
+	apiClient := &api.Configuration.APIClient
+
+	// create path and map variables
+	path := api.Configuration.BasePath + "/api/v2/routing/queues/{queueId}/members"
+	path = strings.Replace(path, "{queueId}", fmt.Sprintf("%v", queueID), -1)
+
+	headerParams := make(map[string]string)
+	queryParams := make(map[string]string)
+	formParams := url.Values{}
+	var postBody interface{}
+	var postFileName string
+	var fileBytes []byte
+
+	// oauth required
+	if api.Configuration.AccessToken != "" {
+		headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
+	}
+	// add default headers if any
+	for key := range api.Configuration.DefaultHeader {
+		headerParams[key] = api.Configuration.DefaultHeader[key]
+	}
+
+	queryParams["pageSize"] = apiClient.ParameterToString(pageSize, "")
+	queryParams["pageNumber"] = apiClient.ParameterToString(pageNumber, "")
+	if memberBy != "" {
+		queryParams["memberBy"] = memberBy
+	}
+
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	var successPayload *platformclientv2.Queuememberentitylisting
+	response, err := apiClient.CallAPI(path, http.MethodGet, postBody, headerParams, queryParams, formParams, postFileName, fileBytes)
+	if err != nil {
+		// Nothing special to do here, but do avoid processing the response
+	} else if response.Error != nil {
+		err = fmt.Errorf(response.ErrorMessage)
+	} else {
+		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
+	}
+	return successPayload, response, err
 }
 
 func flattenQueueMembers(queueID string, memberBy string, api *platformclientv2.RoutingApi) (*schema.Set, diag.Diagnostics) {
