@@ -116,7 +116,7 @@ func getAllArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy) (*[
 		allGrammars = append(allGrammars, grammar)
 	}
 
-	for pageNum := 2; ; pageNum++ {
+	for pageNum := 2; pageNum <= *grammars.PageCount; pageNum++ {
 		const pageSize = 100
 
 		grammars, _, err := p.architectApi.GetArchitectGrammars(pageNum, pageSize, "", "", []string{}, "", "", "", true)
@@ -147,19 +147,16 @@ func getArchitectGrammarByIdFn(ctx context.Context, p *architectGrammarProxy, gr
 
 // getArchitectGrammarIdByNameFn is an implementation of the function to get a Genesys Cloud Architect Grammar by name
 func getArchitectGrammarIdByNameFn(ctx context.Context, p *architectGrammarProxy, name string) (grammarId string, retryable bool, err error) {
-	const pageNum = 1
-	const pageSize = 100
-	grammars, _, err := p.architectApi.GetArchitectGrammars(pageNum, pageSize, "", "", []string{}, name, "", "", true)
+	grammars, err := getAllArchitectGrammarFn(ctx, p)
 	if err != nil {
-		return "", false, fmt.Errorf("Error searching architect grammar %s: %s", name, err)
+		return "", false, err
 	}
-
-	if grammars.Entities == nil || len(*grammars.Entities) == 0 {
+	if grammars == nil || len(*grammars) == 0 {
 		return "", true, fmt.Errorf("No architect grammars found with name %s", name)
 	}
 
 	var grammar platformclientv2.Grammar
-	for _, grammarSdk := range *grammars.Entities {
+	for _, grammarSdk := range *grammars {
 		if *grammarSdk.Name == name {
 			log.Printf("Retrieved the grammar id %s by name %s", *grammarSdk.Id, name)
 			grammar = grammarSdk
