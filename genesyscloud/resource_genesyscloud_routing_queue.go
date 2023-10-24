@@ -525,19 +525,6 @@ func ResourceRoutingQueue() *schema.Resource {
 }
 
 func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-<<<<<<< HEAD
-=======
-	name := d.Get("name").(string)
-	divisionID := d.Get("division_id").(string)
-	description := d.Get("description").(string)
-	skillEvaluationMethod := d.Get("skill_evaluation_method").(string)
-	autoAnswerOnly := d.Get("auto_answer_only").(bool)
-	enableTranscription := d.Get("enable_transcription").(bool)
-	suppressInQueueCallRecording := d.Get("suppress_in_queue_call_recording").(bool)
-	enableManualAssignment := d.Get("enable_manual_assignment").(bool)
-	callingPartyName := d.Get("calling_party_name").(string)
-	callingPartyNumber := d.Get("calling_party_number").(string)
->>>>>>> main
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
@@ -554,7 +541,6 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	createQueue := platformclientv2.Createqueuerequest{
-<<<<<<< HEAD
 		Name:                       platformclientv2.String(d.Get("name").(string)),
 		Description:                platformclientv2.String(d.Get("description").(string)),
 		MediaSettings:              buildSdkMediaSettings(d),
@@ -577,31 +563,6 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		EnableManualAssignment:     platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:              buildSdkDirectRouting(d),
 		MemberGroups:               &memberGroups,
-=======
-		Name:                         &name,
-		Description:                  &description,
-		MediaSettings:                buildSdkMediaSettings(d),
-		RoutingRules:                 buildSdkRoutingRules(d),
-		Bullseye:                     buildSdkBullseyeSettings(d),
-		ConditionalGroupRouting:      conditionalGroupRouting,
-		AcwSettings:                  buildSdkAcwSettings(d),
-		SkillEvaluationMethod:        &skillEvaluationMethod,
-		QueueFlow:                    BuildSdkDomainEntityRef(d, "queue_flow_id"),
-		EmailInQueueFlow:             BuildSdkDomainEntityRef(d, "email_in_queue_flow_id"),
-		MessageInQueueFlow:           BuildSdkDomainEntityRef(d, "message_in_queue_flow_id"),
-		WhisperPrompt:                BuildSdkDomainEntityRef(d, "whisper_prompt_id"),
-		AutoAnswerOnly:               &autoAnswerOnly,
-		CallingPartyName:             &callingPartyName,
-		CallingPartyNumber:           &callingPartyNumber,
-		DefaultScripts:               buildSdkDefaultScriptsMap(d),
-		OutboundMessagingAddresses:   buildSdkQueueMessagingAddresses(d),
-		OutboundEmailAddress:         buildSdkQueueEmailAddress(d),
-		EnableTranscription:          &enableTranscription,
-		SuppressInQueueCallRecording: &suppressInQueueCallRecording,
-		EnableManualAssignment:       &enableManualAssignment,
-		DirectRouting:                buildSdkDirectRouting(d),
-		MemberGroups:                 &memberGroups,
->>>>>>> main
 	}
 
 	if divisionID != "" {
@@ -692,7 +653,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			if currentQueue.MediaSettings.Message != nil {
 				d.Set("media_settings_message", flattenMediaSetting(*currentQueue.MediaSettings.Message))
 			}
-
 		}
 
 		if currentQueue.RoutingRules != nil {
@@ -707,7 +667,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("bullseye_rings", nil)
 		}
 
-<<<<<<< HEAD
 		resourcedata.SetNillableReference(d, "queue_flow_id", currentQueue.QueueFlow)
 		resourcedata.SetNillableReference(d, "message_in_queue_flow_id", currentQueue.MessageInQueueFlow)
 		resourcedata.SetNillableReference(d, "email_in_queue_flow_id", currentQueue.EmailInQueueFlow)
@@ -717,67 +676,6 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValue(d, "enable_manual_assignment", currentQueue.EnableManualAssignment)
 		resourcedata.SetNillableValue(d, "calling_party_name", currentQueue.CallingPartyName)
 		resourcedata.SetNillableValue(d, "calling_party_number", currentQueue.CallingPartyNumber)
-=======
-		if currentQueue.QueueFlow != nil && currentQueue.QueueFlow.Id != nil {
-			d.Set("queue_flow_id", *currentQueue.QueueFlow.Id)
-		} else {
-			d.Set("queue_flow_id", nil)
-		}
-
-		if currentQueue.MessageInQueueFlow != nil && currentQueue.MessageInQueueFlow.Id != nil {
-			d.Set("message_in_queue_flow_id", *currentQueue.MessageInQueueFlow.Id)
-		} else {
-			d.Set("message_in_queue_flow_id", nil)
-		}
-
-		if currentQueue.EmailInQueueFlow != nil && currentQueue.EmailInQueueFlow.Id != nil {
-			d.Set("email_in_queue_flow_id", *currentQueue.EmailInQueueFlow.Id)
-		} else {
-			d.Set("email_in_queue_flow_id", nil)
-		}
-
-		if currentQueue.WhisperPrompt != nil && currentQueue.WhisperPrompt.Id != nil {
-			d.Set("whisper_prompt_id", *currentQueue.WhisperPrompt.Id)
-		} else {
-			d.Set("whisper_prompt_id", nil)
-		}
-
-		if currentQueue.AutoAnswerOnly != nil {
-			d.Set("auto_answer_only", *currentQueue.AutoAnswerOnly)
-		} else {
-			d.Set("auto_answer_only", nil)
-		}
-
-		if currentQueue.EnableTranscription != nil {
-			d.Set("enable_transcription", *currentQueue.EnableTranscription)
-		} else {
-			d.Set("enable_transcription", nil)
-		}
-
-		if currentQueue.SuppressInQueueCallRecording != nil {
-			d.Set("suppress_in_queue_call_recording", *currentQueue.SuppressInQueueCallRecording)
-		} else {
-			d.Set("suppress_in_queue_call_recording", nil)
-		}
-
-		if currentQueue.EnableManualAssignment != nil {
-			d.Set("enable_manual_assignment", *currentQueue.EnableManualAssignment)
-		} else {
-			d.Set("enable_manual_assignment", nil)
-		}
-
-		if currentQueue.CallingPartyName != nil {
-			d.Set("calling_party_name", *currentQueue.CallingPartyName)
-		} else {
-			d.Set("calling_party_name", nil)
-		}
-
-		if currentQueue.CallingPartyNumber != nil {
-			d.Set("calling_party_number", *currentQueue.CallingPartyNumber)
-		} else {
-			d.Set("calling_party_number", nil)
-		}
->>>>>>> main
 
 		if currentQueue.DefaultScripts != nil {
 			d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
