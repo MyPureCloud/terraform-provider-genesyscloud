@@ -23,7 +23,7 @@ func TestAccDataSourcePhoneBaseSettings(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generatePhoneBaseSettingsResourceWithCustomAttrs(
+				Config: GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					name,
 					description,

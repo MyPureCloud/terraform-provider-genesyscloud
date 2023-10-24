@@ -98,6 +98,7 @@ resource "genesyscloud_telephony_providers_edges_site" "site" {
 - `outbound_routes` (Set of Object) Outbound Routes for the site. The default outbound route will be deleted if routes are specified (see [below for nested schema](#nestedatt--outbound_routes))
 - `primary_sites` (List of String) Used for primary phone edge assignment on physical edges only.  List of primary sites the phones can be assigned to. If no primary_sites are defined, the site id for this site will be used as the primary site id.
 - `secondary_sites` (List of String) Used for secondary phone edge assignment on physical edges only.  List of secondary sites the phones can be assigned to.  If no primary_sites or secondary_sites are defined then the current site will defined as primary and secondary.
+- `set_as_default_site` (Boolean) Set this site as the default site for the organization. Only one genesyscloud_telephony_providers_edges_site resource should be set as the default. Defaults to `false`.
 
 ### Read-Only
 

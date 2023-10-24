@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -35,7 +36,7 @@ func TestAccDataSourceOutboundSequence(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = gcloud.DeleteLocationWithNumber(emergencyNumber)
+	err = edgeSite.DeleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
