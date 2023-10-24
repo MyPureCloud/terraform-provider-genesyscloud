@@ -28,7 +28,7 @@ func TestAccResourcePhoneBaseSettings(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generatePhoneBaseSettingsResourceWithCustomAttrs(
+				Config: GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					name1,
 					description1,
@@ -55,7 +55,7 @@ func TestAccResourcePhoneBaseSettings(t *testing.T) {
 			},
 			// Update with new name, description and properties
 			{
-				Config: generatePhoneBaseSettingsResourceWithCustomAttrs(
+				Config: GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					name2,
 					description2,
@@ -111,21 +111,6 @@ func testVerifyPhoneBaseSettingsDestroyed(state *terraform.State) error {
 	}
 	//Success. PhoneBaseSettings destroyed
 	return nil
-}
-
-func generatePhoneBaseSettingsResourceWithCustomAttrs(
-	phoneBaseSettingsRes,
-	name,
-	description,
-	phoneMetaBaseId string,
-	otherAttrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_phonebasesettings" "%s" {
-		name = "%s"
-		description = "%s"
-		phone_meta_base_id = "%s"
-		%s
-	}
-	`, phoneBaseSettingsRes, name, description, phoneMetaBaseId, strings.Join(otherAttrs, "\n"))
 }
 
 func generatePhoneBaseSettingsProperties(phoneLabel, phoneMaxLineKeys, phoneMwiEnabled, phoneMwiSubscribe, phoneStandalone string, phoneStations []string) string {

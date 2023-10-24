@@ -1,9 +1,13 @@
-package genesyscloud
+package station
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
+	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -29,7 +33,17 @@ func TestAccDataSourceStation(t *testing.T) {
 		stationDataRes = "station1234"
 	)
 
-	config := generateOrganizationMe() + generateUserResource(
+	_, err := gcloud.AuthorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defaultSiteId, err := edgeSite.GetOrganizationDefaultSiteId()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config := gcloud.GenerateUserResource(
 		userRes1,
 		userEmail1,
 		userName1,
@@ -40,26 +54,26 @@ func TestAccDataSourceStation(t *testing.T) {
 		nullValue, // Default acdAutoAnswer
 		"",        // No profile skills
 		"",        // No certs
-	) + generatePhoneBaseSettingsResourceWithCustomAttrs(
+	) + gcloud.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 		phoneBaseSettingsRes,
 		phoneBaseSettingsName,
 		"phoneBaseSettings description",
 		"inin_webrtc_softphone.json",
-	) + generatePhoneResourceWithCustomAttrs(&phoneConfig{
-		phoneRes,
-		name1,
-		stateActive,
-		"data.genesyscloud_organizations_me.me.default_site_id",
-		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
-		nil, // no line addresses
-		"genesyscloud_user." + userRes1 + ".id",
-		"", // no depends on
+	) + edgePhone.GeneratePhoneResourceWithCustomAttrs(&edgePhone.PhoneConfig{
+		PhoneRes:            phoneRes,
+		Name:                name1,
+		State:               stateActive,
+		SiteId:              fmt.Sprintf("\"%s\"", defaultSiteId),
+		PhoneBaseSettingsId: "genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
+		LineAddresses:       nil, // no line addresses
+		WebRtcUserId:        "genesyscloud_user." + userRes1 + ".id",
+		Depends_on:          "", // no depends on
 	},
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: config + generateStationDataSource(
@@ -72,7 +86,7 @@ func TestAccDataSourceStation(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyWebRtcPhoneDestroyed,
+		CheckDestroy: edgePhone.TestVerifyWebRtcPhoneDestroyed,
 	})
 }
 
