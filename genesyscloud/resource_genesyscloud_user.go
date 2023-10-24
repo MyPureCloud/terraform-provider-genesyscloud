@@ -126,66 +126,73 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 
 	errorChan := make(chan error)
 	wgDone := make(chan bool)
+	usersChan := make(chan platformclientv2.User, 200)
+	defer close(usersChan)
+
 	// Cancel remaining goroutines if an error occurs
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
+
+	getUsersByStatus := func(userStatus string) {
 		defer wg.Done()
-		// get all inactive users
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			users, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "inactive")
-			if getErr != nil {
-				select {
-				case <-ctx.Done():
-				case errorChan <- getErr:
-				}
+
+		const pageSize = 100
+		users, _, err := usersAPI.GetUsers(pageSize, 1, nil, nil, "", nil, "", userStatus)
+		if err != nil {
+			errorChan <- err
+			cancel()
+			return
+		}
+		for _, user := range *users.Entities {
+			usersChan <- user
+		}
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		for pageNum := 2; pageNum <= *users.PageCount; pageNum++ {
+			users, _, err := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", userStatus)
+			if err != nil {
+				errorChan <- err
 				cancel()
 				return
 			}
 
-			if users.Entities == nil || len(*users.Entities) == 0 {
-				break
-			}
-
 			for _, user := range *users.Entities {
-				resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
+				usersChan <- user
 			}
-		}
-	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		// get all active users
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			users, _, getErr := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "active")
-			if getErr != nil {
-				select {
-				case <-ctx.Done():
-				case errorChan <- getErr:
-				}
-				cancel()
+			select {
+			case <-ctx.Done():
 				return
-			}
-
-			if users.Entities == nil || len(*users.Entities) == 0 {
-				break
-			}
-
-			for _, user := range *users.Entities {
-				resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
+			default:
 			}
 		}
-	}()
+	}
+
+	wg.Add(2)
+	go getUsersByStatus("active")
+	go getUsersByStatus("inactive")
 
 	go func() {
 		wg.Wait()
-		close(wgDone)
+
+		// Make sure the buffer channel is emptied out
+		for {
+			if len(usersChan) == 0 {
+				wgDone <- true
+			}
+		}
+	}()
+
+	go func() {
+		for user := range usersChan {
+			resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
+		}
 	}()
 
 	// Wait until either WaitGroup is done or an error is received
@@ -193,7 +200,7 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	case <-wgDone:
 		return resources, nil
 	case err := <-errorChan:
-		return nil, diag.Errorf("Failed to get page of users: %v", err)
+		return nil, diag.Errorf("Failed to get all users: %v", err)
 	}
 }
 
