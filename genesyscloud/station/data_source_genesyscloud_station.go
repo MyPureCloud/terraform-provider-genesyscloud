@@ -21,7 +21,7 @@ func dataSourceStationRead(ctx context.Context, d *schema.ResourceData, m interf
 
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		stationId, retryable, err := sp.getStationIdByName(ctx, stationName)
-		if err != nil {
+		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error requesting station %s", err))
 		}
 

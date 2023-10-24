@@ -101,7 +101,7 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 
 	retryErr := gcloud.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		station, retryable, err := pp.getStationOfUser(ctx, userId)
-		if err != nil {
+		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error requesting stations: %s", err))
 		}
 		if retryable {

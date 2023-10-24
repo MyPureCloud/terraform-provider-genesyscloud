@@ -21,7 +21,7 @@ func dataSourcePhoneRead(ctx context.Context, d *schema.ResourceData, m interfac
 
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		phone, retryable, err := pp.getPhoneByName(ctx, name)
-		if err != nil {
+		if err != nil && !retryable {
 			return retry.NonRetryableError(fmt.Errorf("error requesting phone %s: %s", name, err))
 		}
 
