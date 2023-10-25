@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
+	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
@@ -90,6 +92,8 @@ func registerResources() {
 
 	regInstance := &RegisterInstance{}
 
+	grammar.SetRegistrar(regInstance)               //Registering architect grammar
+	grammarLanguage.SetRegistrar(regInstance)       //Registering architect grammar language
 	edgePhone.SetRegistrar(regInstance)             //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)              //Registering telephony providers edges site
 	station.SetRegistrar(regInstance)               //Registering station

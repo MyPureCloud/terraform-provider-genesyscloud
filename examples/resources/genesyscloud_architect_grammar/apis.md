@@ -1,0 +1,5 @@
+* [GET /api/v2/architect/grammars](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-architect-grammars)
+* [POST /api/v2/architect/grammars](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-architect-grammars)
+* [DELETE /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-architect-grammars--grammarId-)
+* [GET /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-architect-grammars--grammarId-)
+* [PATCH /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-architect-grammars--grammarId-)
