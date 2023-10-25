@@ -25,7 +25,7 @@ func TestAccResourceTrunk(t *testing.T) {
 		trunkRes = "trunkRes"
 	)
 
-	phoneTrunkBaseSettings := generateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSettings := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
@@ -33,7 +33,7 @@ func TestAccResourceTrunk(t *testing.T) {
 		"PHONE",
 		false)
 
-	trunkBaseSettingsConfig := generateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettingsConfig := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		trunkBaseSettingsRes,
 		"test trunk base settings "+uuid.NewString(),
 		"test description 1",

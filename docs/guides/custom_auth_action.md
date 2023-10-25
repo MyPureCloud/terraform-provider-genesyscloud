@@ -85,7 +85,6 @@ Here are some other cases that you may run into while configuring the resource i
 
 * Having an integration and credentials of correct type but not a  `genesyscloud_integration_custom_auth_action` resource.
   * If requirements are met on the integration and its credential type, Genesys Cloud will still create the Custom Auth Data Action. It would just retain default values and won't be managed by CX as Code. This is a completely normal use case. You can choose to manage it anytime by adding the custom auth resource.
-
 * Initially managing the integration and custom auth resources, then deleting only the custom auth resource from CX as Code.
   * The custom auth resource will still exist in Genesys Cloud but will not be managed by CX as Code. It would keep the latest configuration it was set on. The action will only be deleted if the integration is deleted or its credential type is changed.
 

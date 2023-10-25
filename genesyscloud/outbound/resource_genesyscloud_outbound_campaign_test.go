@@ -9,6 +9,7 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -64,7 +65,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		t.Fatal(err)
 	}
 	emergencyNumber := "+13178793428"
-	err = gcloud.DeleteLocationWithNumber(emergencyNumber)
+	err = edgeSite.DeleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +164,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			"US",
 			"46278",
 		),
-	) + gcloud.GenerateSiteResourceWithCustomAttrs(
+	) + edgeSite.GenerateSiteResourceWithCustomAttrs(
 		siteId,
 		"tf site "+uuid.NewString(),
 		"test description",
@@ -433,7 +434,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 	emergencyNumber := "+13178793429"
-	err = gcloud.DeleteLocationWithNumber(emergencyNumber)
+	err = edgeSite.DeleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -500,7 +501,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 			"US",
 			"46278",
 		),
-	) + gcloud.GenerateSiteResourceWithCustomAttrs(
+	) + edgeSite.GenerateSiteResourceWithCustomAttrs(
 		siteId,
 		"tf site "+uuid.NewString(),
 		"test description",
@@ -636,7 +637,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 		t.Fatal(err)
 	}
 	emergencyNumber := "+13178793430"
-	err = gcloud.DeleteLocationWithNumber(emergencyNumber)
+	err = edgeSite.DeleteLocationWithNumber(emergencyNumber)
 	if err != nil {
 		t.Fatal(err)
 	}

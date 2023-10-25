@@ -20,14 +20,14 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 		phoneTrunkBaseSettingsRes2 = "phoneTrunkBaseSettingsRes2"
 	)
 
-	phoneTrunkBaseSetting1 := generateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting1 := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes1,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
 		"PHONE",
 		false)
-	phoneTrunkBaseSetting2 := generateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting2 := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes2,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
