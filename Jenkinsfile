@@ -1,27 +1,28 @@
 pipeline {
 
-  agent {
-        node {
-            label 'dev_v2'
-        }
-  }
-
+  agent any
+  
+    tools {
+        go 'go1.21.3'
+    }
+            environment {
+        GENESYSCLOUD_OAUTHCLIENT_ID = credentials('GENESYSCLOUD_OAUTHCLIENT_ID')
+        GENESYSCLOUD_OAUTHCLIENT_SECRET = credentials('GENESYSCLOUD_OAUTHCLIENT_SECRET')
+        GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
+      }
   stages {
-    stage ('Release') {
-      environment {
-        GITHUB_TOKEN = credentials('MYPURECLOUD_GITHUB_TOKEN')
-        GPG_FINGERPRINT="25D753B7C560659B057B714C970A8360B4BF5075"
-      }
+      
 
-      steps {
-         withCredentials([file(credentialsId: 'TERRAFORM_GPG', variable: 'terraform_gpg_private_key')]) {
-                    sh "cp \$terraform_gpg_private_key /tmp/terraform_gpg_secret.asc & chmod 755 /tmp/terraform_gpg_secret.asc"
-                    sh "./addCredToConfig.sh"
-                    sh "rm -f secret.asc"
-        }
 
-        sh './getgoreleaser.sh release --clean --timeout 45m --parallelism 3'
-      }
+
+
+       stage('Pre Test') {
+            steps {
+                echo 'Installing dependencies'
+                sh 'go version'
+                sh 'go mod download'
+                sh 'go build -v .'
+            }
     }
   }
 }
