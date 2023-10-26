@@ -41,7 +41,7 @@ func ResourceTaskManagementWorkbin() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Workbin name",
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			"division_id": {

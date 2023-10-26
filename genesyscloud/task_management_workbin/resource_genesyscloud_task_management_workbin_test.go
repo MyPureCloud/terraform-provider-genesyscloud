@@ -35,6 +35,17 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
+			// Default division
+			{
+				Config: generateWorkbinResource(workbinResId, workbinName, workDescription, nullValue) +
+					"\n data \"genesyscloud_auth_division_home\" \"home\" {}",
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName+"."+workbinResId, "name", workbinName),
+					resource.TestCheckResourceAttr(resourceName+"."+workbinResId, "description", workDescription),
+					resource.TestCheckResourceAttrPair(resourceName+"."+workbinResId, "division_id", "data.genesyscloud_auth_division_home.home", "id"),
+				),
+			},
+			// Change division
 			{
 				Config: gcloud.GenerateAuthDivisionBasic(divisionResId1, divisionName1) +
 					gcloud.GenerateAuthDivisionBasic(divisionResId2, divisionName2) +
@@ -45,8 +56,6 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 					resource.TestCheckResourceAttrPair(resourceName+"."+workbinResId, "division_id", "genesyscloud_auth_division."+divisionResId1, "id"),
 				),
 			},
-
-			// Change division
 			{
 				Config: gcloud.GenerateAuthDivisionBasic(divisionResId1, divisionName1) +
 					gcloud.GenerateAuthDivisionBasic(divisionResId2, divisionName2) +
