@@ -33,7 +33,7 @@ pipeline {
        stage('Tests') {
             steps {
                 echo 'Running Tests'
-                sh ''
+                sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out'
 
             }
     }
