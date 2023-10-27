@@ -1501,10 +1501,10 @@ func getRoutingQueueMembers(queueID string, memberBy string, api *platformclient
 
 	// Need to call this method to find the member count for a queue. GetRoutingQueueMembers does not return a `total` property for us to use.
 	queue, _, err := api.GetRoutingQueue(queueID)
-	queueMembers := *queue.MemberCount
 	if err != nil {
 		return nil, diag.Errorf("Can't find queue %s", queueID)
 	}
+	queueMembers := *queue.MemberCount
 	log.Printf("%d members belong to queue %s", queueMembers, queueID)
 
 	for pageNum := 1; ; pageNum++ {
