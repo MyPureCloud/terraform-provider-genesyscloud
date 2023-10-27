@@ -13,7 +13,7 @@ Genesys Cloud task management workbin data source. Select an task management wor
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_task_management_workbin" "example_workbin" {
+data "genesyscloud_task_management_workbin" "example_workbin" {
   name = "My Workbin"
 }
 ```

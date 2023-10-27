@@ -128,26 +128,14 @@ func getAllTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbin
 
 // getTaskManagementWorkbinIdByNameFn is an implementation of the function to get a Genesys Cloud task management workbin by name
 func getTaskManagementWorkbinIdByNameFn(ctx context.Context, p *taskManagementWorkbinProxy, name string) (id string, retryable bool, err error) {
-	pageSize := 200
+	workbins, err := p.getAllTaskManagementWorkbin(ctx)
+	if err != nil {
+		return "", false, fmt.Errorf("failed to get workbin %s. failed to get all task management workbins", name)
+	}
 
-	for {
-		queryReq := &platformclientv2.Workbinqueryrequest{
-			PageSize: &pageSize,
-		}
-
-		workbins, _, err := p.taskManagementApi.PostTaskmanagementWorkbinsQuery(*queryReq)
-		if err != nil {
-			return "", false, fmt.Errorf("error searching task management workbin %s: %s", name, err)
-		}
-		for _, workbin := range *workbins.Entities {
-			if *workbin.Name == name {
-				return *workbin.Id, false, nil
-			}
-		}
-
-		// Exit loop if there are no more 'pages'
-		if workbins.After == nil || *workbins.After == "" {
-			break
+	for _, workbin := range *workbins {
+		if *workbin.Name == name {
+			return *workbin.Id, false, nil
 		}
 	}
 

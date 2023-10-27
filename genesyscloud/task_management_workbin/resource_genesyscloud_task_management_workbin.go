@@ -83,7 +83,7 @@ func readTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkbin())
 
 		resourcedata.SetNillableValue(d, "name", workbin.Name)
-		resourcedata.SetNillableValue(d, "division_id", workbin.Division.Id)
+		resourcedata.SetNillableReferenceDivision(d, "division_id", workbin.Division)
 		resourcedata.SetNillableValue(d, "description", workbin.Description)
 
 		log.Printf("Read task management workbin %s %s", d.Id(), *workbin.Name)
