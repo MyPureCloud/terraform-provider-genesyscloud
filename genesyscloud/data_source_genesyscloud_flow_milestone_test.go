@@ -24,7 +24,7 @@ func TestAccDataSourceFlowMilestone(t *testing.T) {
 				Config: generateFlowMilestoneResource(
 					milestoneRes,
 					name,
-					nullValue,
+					NullValue,
 					description,
 				) + generateFlowMilestoneDataSource(
 					milestoneData,

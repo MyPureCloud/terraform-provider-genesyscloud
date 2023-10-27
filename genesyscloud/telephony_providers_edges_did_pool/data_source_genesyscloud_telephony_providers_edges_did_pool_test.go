@@ -36,9 +36,9 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 					didPoolRes,
 					didPoolStartPhoneNumber,
 					didPoolEndPhoneNumber,
-					nullValue, // No description
-					nullValue, // No comments
-					nullValue, // No provider
+					gcloud.NullValue, // No description
+					gcloud.NullValue, // No comments
+					gcloud.NullValue, // No provider
 				}) + generateDidPoolDataSource(didPoolDataRes,
 					didPoolStartPhoneNumber,
 					didPoolEndPhoneNumber,

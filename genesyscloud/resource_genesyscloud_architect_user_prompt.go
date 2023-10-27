@@ -1234,11 +1234,11 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 	resourcesString := ``
 	for _, p := range userPrompt.Resources {
 		var fileContentHash string
-		if p.FileContentHash != nullValue {
+		if p.FileContentHash != NullValue {
 			fullyQualifiedPath, _ := filepath.Abs(p.FileContentHash)
 			fileContentHash = fmt.Sprintf(`filesha256("%s")`, fullyQualifiedPath)
 		} else {
-			fileContentHash = nullValue
+			fileContentHash = NullValue
 		}
 		resourcesString += fmt.Sprintf(`resources {
 			language          = "%s"

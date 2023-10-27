@@ -24,10 +24,10 @@ func TestAccDataSourceGroup(t *testing.T) {
 				Config: generateGroupResource(
 					groupResource,
 					groupName,
-					nullValue, // No description
-					nullValue, // Default type
-					nullValue, // Default visibility
-					nullValue, // Default rules_visible
+					NullValue, // No description
+					NullValue, // Default type
+					NullValue, // Default visibility
+					NullValue, // Default rules_visible
 				) + generateGroupDataSource(
 					groupDataSource,
 					groupName,

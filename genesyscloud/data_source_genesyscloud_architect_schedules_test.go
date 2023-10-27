@@ -27,7 +27,7 @@ func TestAccDataSourceSchedule(t *testing.T) {
 				Config: generateArchitectSchedulesResource(
 					schedRes,
 					name,
-					nullValue,
+					NullValue,
 					description,
 					start,
 					end,

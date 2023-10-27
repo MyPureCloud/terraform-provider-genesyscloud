@@ -28,11 +28,11 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		columnType            = "numeric"
 		operator              = "EQUALS"
 		predicateValue        = "+12345123456"
-		inverted              = falseValue
+		inverted              = FalseValue
 		rangeMin              = "1"
 		rangeMax              = "10"
-		minInclusive          = trueValue
-		maxInclusive          = falseValue
+		minInclusive          = TrueValue
+		maxInclusive          = FalseValue
 		rangeInSet            = []string{"a"}
 
 		nameUpdated           = "Test CLF " + uuid.NewString()
@@ -41,28 +41,28 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		columnTypeUpdated     = "alphabetic"
 		operatorUpdated       = "CONTAINS"
 		predicateValueUpdated = "XYZ"
-		invertedUpdated       = trueValue
+		invertedUpdated       = TrueValue
 		rangeMinUpdated       = "2"
 		rangeMaxUpdated       = "12"
-		minInclusiveUpdated   = falseValue
-		maxInclusiveUpdated   = trueValue
+		minInclusiveUpdated   = FalseValue
+		maxInclusiveUpdated   = TrueValue
 		rangeInSetUpdated     = []string{"a", "b"}
 	)
 
 	contactListResource := obContactList.GenerateOutboundContactList(
 		contactListResourceId,
 		contactListName,
-		nullValue,
-		nullValue,
+		NullValue,
+		NullValue,
 		[]string{},
 		[]string{strconv.Quote(column), strconv.Quote(columnUpdated)},
-		nullValue,
-		nullValue,
-		nullValue,
+		NullValue,
+		NullValue,
+		NullValue,
 		obContactList.GeneratePhoneColumnsBlock(
 			column,
 			"cell",
-			nullValue,
+			NullValue,
 		),
 	)
 

@@ -145,8 +145,8 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue, // Subdomain
-					nullValue,
+					gcloud.FalseValue, // Subdomain
+					gcloud.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					gcloud.GenerateAuthRoleResource(
 						roleResource1,

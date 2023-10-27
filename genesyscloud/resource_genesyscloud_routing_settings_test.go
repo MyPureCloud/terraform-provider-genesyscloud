@@ -19,23 +19,23 @@ func TestAccResourceRoutingSettingsBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingSettingsResource(settingsResource, falseValue),
+				Config: generateRoutingSettingsResource(settingsResource, FalseValue),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", FalseValue),
 				),
 			},
 			{
 				// Update
-				Config: generateRoutingSettingsResource(settingsResource, trueValue),
+				Config: generateRoutingSettingsResource(settingsResource, TrueValue),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", TrueValue),
 				),
 			},
 			{
 				// Update
-				Config: generateRoutingSettingsResource(settingsResource, falseValue),
+				Config: generateRoutingSettingsResource(settingsResource, FalseValue),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", FalseValue),
 				),
 			},
 			{
@@ -61,22 +61,22 @@ func TestAccResourceRoutingSettingsContactCenter(t *testing.T) {
 				// Create with contact center
 				Config: generateRoutingSettingsWithCustomAttrs(
 					settingsResource,
-					trueValue,
-					generateSettingsContactCenter(trueValue),
+					TrueValue,
+					generateSettingsContactCenter(TrueValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "contactcenter.0.remove_skills_from_blind_transfer", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "contactcenter.0.remove_skills_from_blind_transfer", TrueValue),
 				),
 			},
 			{
 				// Update contact center
 				Config: generateRoutingSettingsWithCustomAttrs(
 					settingsResource,
-					trueValue,
-					generateSettingsContactCenter(falseValue),
+					TrueValue,
+					generateSettingsContactCenter(FalseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "contactcenter.0.remove_skills_from_blind_transfer", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "contactcenter.0.remove_skills_from_blind_transfer", FalseValue),
 				),
 			},
 			{
@@ -106,28 +106,28 @@ func TestAccResourceRoutingSettingsTranscription(t *testing.T) {
 				// Create with transcription
 				Config: generateRoutingSettingsWithCustomAttrs(
 					settingsResource,
-					trueValue,
-					generateSettingsTranscription(transcription1, confidence1, trueValue, trueValue),
+					TrueValue,
+					generateSettingsTranscription(transcription1, confidence1, TrueValue, TrueValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.transcription", transcription1),
 					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.transcription_confidence_threshold", confidence1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.low_latency_transcription_enabled", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.content_search_enabled", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.low_latency_transcription_enabled", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.content_search_enabled", TrueValue),
 				),
 			},
 			{
 				// Update transcription
 				Config: generateRoutingSettingsWithCustomAttrs(
 					settingsResource,
-					trueValue,
-					generateSettingsTranscription(transcription2, confidence2, falseValue, falseValue),
+					TrueValue,
+					generateSettingsTranscription(transcription2, confidence2, FalseValue, FalseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.transcription", transcription2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.transcription_confidence_threshold", confidence2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.low_latency_transcription_enabled", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.content_search_enabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.low_latency_transcription_enabled", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.content_search_enabled", FalseValue),
 				),
 			},
 			{

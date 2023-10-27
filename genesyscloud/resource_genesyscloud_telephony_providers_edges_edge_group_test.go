@@ -67,8 +67,8 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "name", edgeGroupName1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "description", edgeGroupDescription1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "managed", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "hybrid", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "managed", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "hybrid", FalseValue),
 				),
 			},
 			// Update with new name, description and phone trunk base
@@ -83,8 +83,8 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "name", edgeGroupName2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "description", edgeGroupDescription2),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "managed", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "hybrid", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "managed", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "hybrid", FalseValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "phone_trunk_base_ids.0",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes3, "id"),
 				),

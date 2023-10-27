@@ -31,7 +31,7 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 				Config: generateFlowMilestoneResource(
 					milestoneResource1,
 					name1,
-					nullValue,
+					NullValue,
 					description1,
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -45,7 +45,7 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 				Config: generateFlowMilestoneResource(
 					milestoneResource1,
 					name2,
-					nullValue,
+					NullValue,
 					description2,
 				),
 				Check: resource.ComposeTestCheckFunc(

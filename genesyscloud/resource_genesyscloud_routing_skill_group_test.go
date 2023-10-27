@@ -120,7 +120,7 @@ data "genesyscloud_auth_division_home" "home" {}
 		skillGroupDescription1,
 		"data.genesyscloud_auth_division_home.home.id",
 		skillCondition1,
-		nullValue,
+		NullValue,
 	)
 
 	config2 := fmt.Sprintf(`
@@ -132,7 +132,7 @@ data "genesyscloud_auth_division_home" "home" {}
 		skillGroupDescription2,
 		"data.genesyscloud_auth_division_home.home.id",
 		skillCondition2,
-		nullValue,
+		NullValue,
 	)
 
 	resource.Test(t, resource.TestCase{

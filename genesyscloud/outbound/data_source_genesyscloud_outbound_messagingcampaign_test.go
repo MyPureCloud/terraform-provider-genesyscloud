@@ -13,7 +13,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
-var trueValue = "true"
+var TrueValue = "true"
 
 /*
 This test can only pass in a test org because it requires an active provisioned sms phone number
@@ -50,13 +50,13 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		contactListResource = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			contactListName,
-			nullValue,
-			nullValue,
+			NullValue,
+			NullValue,
 			[]string{},
 			[]string{strconv.Quote(column1), strconv.Quote(column2)},
-			falseValue,
-			nullValue,
-			nullValue,
+			FalseValue,
+			NullValue,
+			NullValue,
 			obContactList.GeneratePhoneColumnsBlock(
 				column1,
 				"cell",
@@ -113,7 +113,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 						"",
 						"10",
-						falseValue,
+						FalseValue,
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
 						[]string{},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
@@ -130,7 +130,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						generateOutboundMessagingCampaignContactSort(
 							column2,
 							"DESC",
-							trueValue,
+							TrueValue,
 						),
 					) + generateOutboundMessagingCampaignDataSource(
 					dataSourceId,

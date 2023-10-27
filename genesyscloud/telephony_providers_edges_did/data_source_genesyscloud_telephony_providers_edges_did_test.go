@@ -10,10 +10,6 @@ import (
 	"testing"
 )
 
-const (
-	nullValue = "null"
-)
-
 func TestAccDataSourceDidBasic(t *testing.T) {
 	var (
 		didPoolStartPhoneNumber = "+45465550001"
@@ -36,9 +32,9 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 					ResourceID:       didPoolRes,
 					StartPhoneNumber: didPoolStartPhoneNumber,
 					EndPhoneNumber:   didPoolEndPhoneNumber,
-					Description:      nullValue, // No description
-					Comments:         nullValue, // No comments
-					PoolProvider:     nullValue, // No provider
+					Description:      gcloud.NullValue, // No description
+					Comments:         gcloud.NullValue, // No comments
+					PoolProvider:     gcloud.NullValue, // No provider
 				}) + archIvr.GenerateIvrConfigResource(&archIvr.IvrConfigStruct{
 					ResourceID:  ivrConfigRes,
 					Name:        ivrConfigName,

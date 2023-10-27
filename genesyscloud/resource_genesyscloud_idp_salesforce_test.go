@@ -26,13 +26,13 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert1)),
 					uri1,
 					uri2,
-					nullValue, // Not disabled
+					NullValue, // Not disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_salesforce.salesforce", "certificates", testCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "target_uri", uri2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "disabled", FalseValue),
 				),
 			},
 			{
@@ -41,13 +41,13 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert2)),
 					uri2,
 					uri1,
-					trueValue, // disabled
+					TrueValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_salesforce.salesforce", "certificates", testCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "disabled", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "disabled", TrueValue),
 				),
 			},
 			{
@@ -56,14 +56,14 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
 					uri2,
 					uri1,
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_salesforce.salesforce", "certificates", testCert1),
 					ValidateStringInArray("genesyscloud_idp_salesforce.salesforce", "certificates", testCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "disabled", FalseValue),
 				),
 			},
 			{
@@ -72,14 +72,14 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert1)),
 					uri2,
 					uri1,
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_salesforce.salesforce", "certificates", testCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "certificates.#", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "disabled", FalseValue),
 				),
 			},
 			{
@@ -88,7 +88,7 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
 					uri2,
 					uri1,
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_salesforce.salesforce", "certificates", testCert1),
@@ -96,7 +96,7 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "certificates.#", "2"),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "disabled", FalseValue),
 				),
 			},
 			{

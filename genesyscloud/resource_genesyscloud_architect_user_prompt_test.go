@@ -31,25 +31,25 @@ func TestAccResourceUserPromptBasic(t *testing.T) {
 	userPromptAsset1 := UserPromptResourceStruct{
 		userPromptResourceLang1,
 		strconv.Quote(userPromptResourceTTS1),
-		nullValue,
-		nullValue,
-		nullValue,
+		NullValue,
+		NullValue,
+		NullValue,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
 		userPromptResourceLang1,
 		strconv.Quote(userPromptResourceTTS2),
-		nullValue,
-		nullValue,
-		nullValue,
+		NullValue,
+		NullValue,
+		NullValue,
 	}
 
 	userPromptAsset3 := UserPromptResourceStruct{
 		userPromptResourceLang2,
 		strconv.Quote(userPromptResourceTTS3),
-		nullValue,
-		nullValue,
-		nullValue,
+		NullValue,
+		NullValue,
+		NullValue,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}
@@ -126,7 +126,7 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 
 	userPromptAsset1 := UserPromptResourceStruct{
 		userPromptResourceLang1,
-		nullValue,
+		NullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName1),
 		userPromptResourceFileName1,
@@ -134,7 +134,7 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 
 	userPromptAsset2 := UserPromptResourceStruct{
 		userPromptResourceLang1,
-		nullValue,
+		NullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName2),
 		userPromptResourceFileName2,
@@ -198,18 +198,18 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 
 	userPromptAsset1 := UserPromptResourceStruct{
 		userPromptResourceLang1,
-		nullValue,
+		NullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName1),
-		nullValue,
+		NullValue,
 	}
 
 	userPromptAsset2 := UserPromptResourceStruct{
 		userPromptResourceLang1,
-		nullValue,
+		NullValue,
 		strconv.Quote(userPromptResourceText1),
 		strconv.Quote(userPromptResourceFileName2),
-		nullValue,
+		NullValue,
 	}
 
 	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}

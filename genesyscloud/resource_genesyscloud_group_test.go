@@ -33,16 +33,16 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					groupResource1,
 					groupName,
 					strconv.Quote(groupDesc1),
-					nullValue, // Default type
-					nullValue, // Default visibility
-					nullValue, // Default rules_visible
+					NullValue, // Default type
+					NullValue, // Default visibility
+					NullValue, // Default rules_visible
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "type", typeOfficial),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", groupDesc1),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "visibility", visPublic),
-					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", TrueValue),
 				),
 			},
 			{
@@ -53,14 +53,14 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					strconv.Quote(groupDesc2),
 					strconv.Quote(typeOfficial), // Cannot change type
 					strconv.Quote(visMembers),
-					falseValue,
+					FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "type", typeOfficial),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "description", groupDesc2),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "visibility", visMembers),
-					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "rules_visible", FalseValue),
 				),
 			},
 			{
@@ -99,7 +99,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					generateGroupAddress(
 						strconv.Quote(addrPhone1),
 						typeGroupRing,
-						nullValue, // No extension
+						NullValue, // No extension
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -116,7 +116,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					generateGroupAddress(
 						strconv.Quote(addrPhone2),
 						typeGroupPhone,
-						nullValue,
+						NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -131,7 +131,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					groupResource1,
 					groupName,
 					generateGroupAddress(
-						nullValue,
+						NullValue,
 						typeGroupPhone,
 						strconv.Quote(addrPhoneExt),
 					),
@@ -148,7 +148,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 					groupResource1,
 					groupName,
 					generateGroupAddress(
-						nullValue,
+						NullValue,
 						typeGroupPhone,
 						strconv.Quote(addrPhoneExt2),
 					),

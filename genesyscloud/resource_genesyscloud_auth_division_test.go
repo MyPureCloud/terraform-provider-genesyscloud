@@ -27,8 +27,8 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 				Config: generateAuthDivisionResource(
 					divResource1,
 					divName1,
-					nullValue, // No description
-					nullValue, // Not home division
+					NullValue, // No description
+					NullValue, // Not home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName1),
@@ -41,7 +41,7 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 					divResource1,
 					divName2,
 					strconv.Quote(divDesc1),
-					nullValue, // Not home division
+					NullValue, // Not home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName2),
@@ -77,7 +77,7 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 					divHomeRes,
 					divHomeName,
 					strconv.Quote(homeDesc),
-					trueValue, // Home division
+					TrueValue, // Home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "name", divHomeName),
@@ -91,7 +91,7 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 					divHomeRes,
 					divHomeName,
 					strconv.Quote(homeDesc2),
-					trueValue, // Home division
+					TrueValue, // Home division
 				),
 			},
 			{
@@ -100,7 +100,7 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 					divHomeRes,
 					divHomeName,
 					strconv.Quote(homeDesc2),
-					trueValue, // Home division
+					TrueValue, // Home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "name", divHomeName),
@@ -119,7 +119,7 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 }
 
 func generateAuthDivisionBasic(resourceID string, name string) string {
-	return generateAuthDivisionResource(resourceID, name, nullValue, falseValue)
+	return generateAuthDivisionResource(resourceID, name, NullValue, FalseValue)
 }
 
 func generateAuthDivisionResource(

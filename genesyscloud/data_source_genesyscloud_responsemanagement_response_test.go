@@ -34,9 +34,9 @@ func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 					responseResource,
 					name,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource + ".id"},
-					nullValue,
-					nullValue,
-					nullValue,
+					NullValue,
+					NullValue,
+					NullValue,
 					[]string{},
 					generateTextsBlock(
 						textsContent,
