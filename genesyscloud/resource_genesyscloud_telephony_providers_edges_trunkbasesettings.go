@@ -243,6 +243,10 @@ func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		log.Printf("Deleting trunk base settings")
 		resp, err := edgesAPI.DeleteTelephonyProvidersEdgesTrunkbasesetting(d.Id())
 		if err != nil {
+			if IsStatus404(resp) {
+				// trunk base settings not found, goal achieved!
+				return nil, nil
+			}
 			return resp, diag.Errorf("Failed to delete trunk base settings: %s", err)
 		}
 		return resp, nil
