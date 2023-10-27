@@ -29,6 +29,7 @@ pipeline {
                 sh 'go mod download'
                 sh 'go build -v .'
             }
+	   }
 
        stage('Tests') {
             steps {
@@ -38,4 +39,5 @@ pipeline {
             }
     }
   }
+
 }
