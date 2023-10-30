@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"strconv"
 	"strings"
 	"testing"
@@ -961,6 +962,100 @@ func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
 	})
+}
+
+/*
+The conditional routing rule functionality insist that the first rule should always be defaulted to the queue in which
+it belongs to.  This means the flattenConditionalGroupRoutingRules() function should never set the queue id of
+the first conditional routing rule.  The flattenConditionalGroupRoutingRules() function originally did not check
+the position of the queue, but instead excluded all queue ids that matched the queue being created.  This was
+not the right approach because the second conditional routing rule could legitimately reference the same queue
+for the second rule. The function was changed and the unit test below tests these condition.
+*/
+func TestFlattenConditionalGroupRoutingRulesForFirstConditionalRoutingRule(t *testing.T) {
+	//Setting up the queue with 2 sets of conditional routing rules and a member group
+	queueName := "Simple Queue Conditional queue"
+	cgr1Metric := "EstimatedWaitTime"
+	cgr1Operator := "GreaterThan"
+	cgr1QueueId := uuid.NewString()
+	cgr1MemberGroupId := uuid.NewString()
+	cgr1MemberGroupType := "GROUP"
+	cgr1ConditionValue := 60.0
+	cgr1WaitSeconds := 2
+
+	cgr2Metric := "EstimatedWaitTime"
+	cgr2Operator := "GreaterThan"
+	cgr2QueueId := uuid.NewString()
+
+	cgr2ConditionValue := 60.0
+	cgr2WaitSeconds := 2
+
+	//Creating the member group and assigning a member group object to it.
+	cgr1MemberGroup := &platformclientv2.Membergroup{
+		VarType: &cgr1MemberGroupType,
+		Id:      &cgr1MemberGroupId,
+	}
+
+	cgr1MemberGroups := make([]platformclientv2.Membergroup, 1)
+	cgr1MemberGroups[0] = *cgr1MemberGroup
+
+	//Create two conditional routing rules
+	cgr1 := &platformclientv2.Conditionalgrouproutingrule{
+		Queue:          &platformclientv2.Domainentityref{Id: &cgr1QueueId},
+		Metric:         &cgr1Metric,
+		Operator:       &cgr1Operator,
+		ConditionValue: &cgr1ConditionValue,
+		WaitSeconds:    &cgr1WaitSeconds,
+		Groups:         &cgr1MemberGroups,
+	}
+
+	cgr2 := &platformclientv2.Conditionalgrouproutingrule{
+		Queue:          &platformclientv2.Domainentityref{Id: &cgr2QueueId},
+		Metric:         &cgr2Metric,
+		Operator:       &cgr2Operator,
+		ConditionValue: &cgr2ConditionValue,
+		WaitSeconds:    &cgr2WaitSeconds,
+		Groups:         &cgr1MemberGroups, //This is not a mistake.  I made both rules share the same member group
+	}
+
+	//Assigning the two routing rules to the queue
+	cgr := make([]platformclientv2.Conditionalgrouproutingrule, 2)
+	cgr[0] = *cgr1
+	cgr[1] = *cgr2
+
+	c := &platformclientv2.Conditionalgrouprouting{}
+	c.Rules = &cgr
+
+	//Creating the queues
+	queue := &platformclientv2.Queue{
+		Name:                    &queueName,
+		ConditionalGroupRouting: c,
+	}
+
+	//Call the function
+	results := flattenConditionalGroupRoutingRules(queue)
+
+	//Retrieve the first and second conditional rules
+	firstConditionalRule := results[0].(map[string]interface{})
+	secondConditionalRule := results[1].(map[string]interface{})
+
+	//If we find a value (e.g. via the presence of "ok") for the first conditional rule then we have a problem
+	queueVal, ok := firstConditionalRule["queue_id"]
+	if ok {
+		t.Errorf("The first conditional rule should never have its queue id returned by the flattenConditionalGroupRoutingRules() function. A queue record was retured %#v", queueVal)
+	}
+
+	//If we do not find a value (e.g. via the non-presence of ok) then we have a problem,
+	queueVal, ok = secondConditionalRule["queue_id"]
+	if !ok {
+		t.Errorf("The second conditional routing rule always needs to have a queue id assigned to it.  In this case, the value you read from the flattenConditionalGroupRoutingRules() function does not contain a queue id")
+	}
+
+	//On the second conditional rule if the queue id does not match the target id we have a probelm
+	targetQueueId := queueVal
+	if targetQueueId != cgr2QueueId {
+		assert.Equal(t, targetQueueId, cgr2QueueId)
+	}
 }
 
 func testVerifyQueuesDestroyed(state *terraform.State) error {

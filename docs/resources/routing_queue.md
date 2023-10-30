@@ -153,7 +153,7 @@ Required:
 Optional:
 
 - `metric` (String) The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel Defaults to `EstimatedWaitTime`.
-- `queue_id` (String) The ID of the queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified.
+- `queue_id` (String) The ID of the queue being evaluated for this rule. For rule 1, this is always be the current queue, so no queue id should be specified for the first rule.
 - `wait_seconds` (Number) The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified. Defaults to `2`.
 
 <a id="nestedblock--conditional_group_routing_rules--groups"></a>
