@@ -3,7 +3,7 @@ pipeline {
   agent any
   
     tools {
-        go 'go1.21.3'
+        go 'go'
     }
             environment {
         GENESYSCLOUD_OAUTHCLIENT_ID = credentials('GENESYSCLOUD_OAUTHCLIENT_ID')
@@ -26,15 +26,15 @@ pipeline {
             steps {
                 echo 'Installing dependencies'
                 sh 'go version'
-                //sh 'go mod download'
-                //sh 'go build -v .'
+                sh 'go mod download'
+                sh 'go build -v .'
             }
 	   }
 
        stage('Terraform Check') {
             steps {
                 echo 'Check Terraform Installation'
-				//sh'sudo apt-get install terraform'
+				//sh 'terraform init'
                 sh 'terraform -version'
 
             }
@@ -43,7 +43,7 @@ pipeline {
        stage('Tests') {
             steps {
                 echo 'Running Tests'
-                //sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out'
+                sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out'
 
             }
     }
