@@ -217,11 +217,11 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsBasic(t *testing.T) {
 
 	authDivision1Name := "TF Division " + uuid.NewString()
 	authDivision1Resource := "division1"
-	authDivision1 := generateAuthDivisionBasic(authDivision1Resource, authDivision1Name)
+	authDivision1 := GenerateAuthDivisionBasic(authDivision1Resource, authDivision1Name)
 
 	authDivision2Name := "TF Division " + uuid.NewString()
 	authDivision2Resource := "division2"
-	authDivision2 := generateAuthDivisionBasic(authDivision2Resource, authDivision2Name)
+	authDivision2 := GenerateAuthDivisionBasic(authDivision2Resource, authDivision2Name)
 
 	memberDivisionIds1 := fmt.Sprintf(`[%s]`, strings.Join([]string{"data.genesyscloud_auth_division_home.home.id"}, ", "))
 
@@ -424,9 +424,9 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) 
 
 	routingSkillResource := generateRoutingSkillResource(routingSkillResourceId, routingSkillName)
 
-	division1Resource := generateAuthDivisionBasic(division1ResourceId, division1Name)
-	division2Resource := generateAuthDivisionBasic(division2ResourceId, division2Name)
-	division3Resource := generateAuthDivisionBasic(division3ResourceId, division3Name)
+	division1Resource := GenerateAuthDivisionBasic(division1ResourceId, division1Name)
+	division2Resource := GenerateAuthDivisionBasic(division2ResourceId, division2Name)
+	division3Resource := GenerateAuthDivisionBasic(division3ResourceId, division3Name)
 
 	user1Resource := fmt.Sprintf(`
 resource "genesyscloud_user" "%s" {

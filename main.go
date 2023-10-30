@@ -24,6 +24,7 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
+	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	station "terraform-provider-genesyscloud/genesyscloud/station"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
@@ -114,6 +115,7 @@ func registerResources() {
 	did.SetRegistrar(regInstance)                   //Registering telephony did
 	didPool.SetRegistrar(regInstance)               //Registering telephony did pools
 	archIvr.SetRegistrar(regInstance)               //Registering architect ivr
+	workbin.SetRegistrar(regInstance)               //Registering task management workbin
 
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters

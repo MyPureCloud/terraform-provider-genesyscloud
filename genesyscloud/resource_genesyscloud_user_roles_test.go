@@ -73,7 +73,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					GenerateResourceRoles("genesyscloud_auth_role."+roleResource2+".id", "genesyscloud_auth_division."+divResource+".id"),
-				) + generateAuthDivisionBasic(divResource, divName),
+				) + GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1),
 					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource2, "genesyscloud_auth_division."+divResource),
@@ -93,7 +93,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userRoleResource,
 					userResource1,
 					GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "genesyscloud_auth_division."+divResource+".id"),
-				) + generateAuthDivisionBasic(divResource, divName),
+				) + GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1, "genesyscloud_auth_division."+divResource),
 				),
@@ -111,7 +111,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 				) + GenerateUserRoles(
 					userRoleResource,
 					userResource1,
-				) + generateAuthDivisionBasic(divResource, divName),
+				) + GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckNoResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.%"),
 				),
