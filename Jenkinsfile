@@ -34,8 +34,8 @@ pipeline {
        stage('Terraform Check') {
             steps {
                 echo 'Check Terraform Installation'
-				sh'sudo apt-get install terraform'
-                sh 'terraform version'
+				//sh'sudo apt-get install terraform'
+                sh 'terraform -version'
 
             }
     }
