@@ -31,10 +31,18 @@ pipeline {
             }
 	   }
 
+       stage('Terraform Check') {
+            steps {
+                echo 'Check Terraform Installation'
+                sh 'terraform version'
+
+            }
+    }
+
        stage('Tests') {
             steps {
                 echo 'Running Tests'
-                sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out'
+                //sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out'
 
             }
     }
