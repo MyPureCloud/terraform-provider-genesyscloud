@@ -22,9 +22,9 @@ func TestAccDataSourceEmergencyGroup(t *testing.T) {
 			{
 				Config: generateArchitectEmergencyGroupResource(emergencyGroupResourceID,
 					name,
-					nullValue,
+					NullValue,
 					"",
-					falseValue,
+					FalseValue,
 					"",
 				) + generateEmergencyGroupDataSource(
 					emergencyGroupDataSourceID,

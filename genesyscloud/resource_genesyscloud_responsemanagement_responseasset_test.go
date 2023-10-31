@@ -36,7 +36,7 @@ func TestAccResponseManagementResponseAsset(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateResponseManagementResponseAssetResource(resourceId, fullPath1, nullValue),
+				Config: generateResponseManagementResponseAssetResource(resourceId, fullPath1, NullValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", fullPath1),
 					TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceId),

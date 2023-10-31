@@ -40,26 +40,26 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		userRes1,
 		userEmail1,
 		userName1,
-		nullValue, // Defaults to active
+		gcloud.NullValue, // Defaults to active
 		strconv.Quote(userTitle),
 		strconv.Quote(userDepartment),
-		nullValue, // No manager
-		nullValue, // Default acdAutoAnswer
-		"",        // No profile skills
-		"",        // No certs
+		gcloud.NullValue, // No manager
+		gcloud.NullValue, // Default acdAutoAnswer
+		"",               // No profile skills
+		"",               // No certs
 	)
 
 	user2 := gcloud.GenerateUserResource(
 		userRes2,
 		userEmail2,
 		userName2,
-		nullValue, // Defaults to active
+		gcloud.NullValue, // Defaults to active
 		strconv.Quote(userTitle),
 		strconv.Quote(userDepartment),
-		nullValue, // No manager
-		nullValue, // Default acdAutoAnswer
-		"",        // No profile skills
-		"",        // No certs
+		gcloud.NullValue, // No manager
+		gcloud.NullValue, // Default acdAutoAnswer
+		"",               // No profile skills
+		"",               // No certs
 	)
 
 	_, err := gcloud.AuthorizeSdk()
@@ -144,13 +144,13 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "phone_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "line_base_settings_id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "web_rtc_user_id", "genesyscloud_user."+userRes1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.provisions", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.registers", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.dual_registers", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.allow_reboot", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.no_rebalance", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.no_cloud_provisioning", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.cdm", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.provisions", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.registers", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.dual_registers", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.allow_reboot", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.no_rebalance", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.no_cloud_provisioning", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.cdm", gcloud.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.hardware_id_type", "mac"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.media_codecs.0", "audio/opus"),
 				),
@@ -216,7 +216,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		[]string{},
 		gcloud.GenerateLocationEmergencyNum(
 			emergencyNumber,
-			nullValue, // Default number type
+			gcloud.NullValue, // Default number type
 		), gcloud.GenerateLocationAddress(
 			"0176 Interactive Way",
 			"Indianapolis",
@@ -234,8 +234,8 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		"Premises",
 		false,
 		`["us-east-1"]`,
-		nullValue,
-		nullValue,
+		gcloud.NullValue,
+		gcloud.NullValue,
 		"primary_sites   = []",
 		"secondary_sites = []",
 	)
@@ -281,13 +281,13 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "line_base_settings_id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "phone_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_addresses.0", lineAddresses[0]),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.provisions", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.registers", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.dual_registers", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.allow_reboot", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.no_rebalance", trueValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.no_cloud_provisioning", falseValue),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.cdm", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.provisions", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.registers", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.dual_registers", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.allow_reboot", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.no_rebalance", gcloud.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.no_cloud_provisioning", gcloud.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.cdm", gcloud.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.hardware_id_type", "mac"),
 				),
 			},

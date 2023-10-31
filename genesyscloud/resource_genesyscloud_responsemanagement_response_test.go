@@ -58,9 +58,9 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 					responseResource,
 					name1,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource1 + ".id"},
-					nullValue,
-					nullValue,
-					nullValue,
+					NullValue,
+					NullValue,
+					NullValue,
 					[]string{},
 					generateTextsBlock(
 						textsContent1,
@@ -84,7 +84,7 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 				) + generateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
-					nullValue,
+					NullValue,
 				) + generateResponseManagementResponseResource(
 					responseResource,
 					name2,
@@ -142,7 +142,7 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 				) + generateResponseManagementResponseAssetResource(
 					assetResource,
 					fullPath,
-					nullValue,
+					NullValue,
 				) + generateResponseManagementResponseResource(
 					responseResource,
 					name2,

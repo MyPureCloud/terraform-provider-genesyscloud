@@ -202,7 +202,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func GenerateAuthDivisionBasic(resourceID string, name string) string {
-	return GenerateAuthDivisionResource(resourceID, name, nullValue, falseValue)
+	return GenerateAuthDivisionResource(resourceID, name, NullValue, FalseValue)
 }
 
 func GenerateAuthDivisionResource(

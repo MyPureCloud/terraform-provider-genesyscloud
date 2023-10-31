@@ -39,14 +39,14 @@ func TestAccDataSourceIntegrationCustomAuthAction(t *testing.T) {
 		integTypeID               = "custom-rest-actions"
 		integrationResourceConfig = integration.GenerateIntegrationResource(
 			integResource1,
-			nullValue,
+			gcloud.NullValue,
 			strconv.Quote(integTypeID),
 			integration.GenerateIntegrationConfig(
 				strconv.Quote(integResourceName1),
-				nullValue, // no notes
+				gcloud.NullValue, // no notes
 				fmt.Sprintf("basicAuth = genesyscloud_integration_credential.%s.id", credentialResource1),
-				nullValue, // no properties
-				nullValue, // no advanced properties
+				gcloud.NullValue, // no properties
+				gcloud.NullValue, // no advanced properties
 			),
 		)
 

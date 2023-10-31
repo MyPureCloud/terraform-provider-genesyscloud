@@ -26,7 +26,7 @@ func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 					extensionPoolRes,
 					extensionPoolStartNumber,
 					extensionPoolEndNumber,
-					nullValue, // No description
+					NullValue, // No description
 				}) + generateExtensionPoolDataSource(extensionPoolDataRes,
 					extensionPoolStartNumber,
 					extensionPoolEndNumber,

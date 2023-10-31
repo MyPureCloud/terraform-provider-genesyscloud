@@ -36,12 +36,12 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					trueValue, // Subdomain clear
-					nullValue,
+					TrueValue, // Subdomain clear
+					NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", TrueValue),
 				),
 			},
 			{
@@ -77,12 +77,12 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue, // Subdomain
-					nullValue,
+					FalseValue, // Subdomain
+					NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "mail_from_domain", ""),
 				),
 			},
@@ -91,12 +91,12 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue, // Subdomain
+					FalseValue, // Subdomain
 					strconv.Quote(mailFromDomain1),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "subdomain", FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainRes, "mail_from_domain", mailFromDomain1),
 				),
 			},

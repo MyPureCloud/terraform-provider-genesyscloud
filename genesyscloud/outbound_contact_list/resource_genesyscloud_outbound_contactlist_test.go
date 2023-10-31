@@ -28,13 +28,13 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 			strconv.Quote("Work"),
 			strconv.Quote("Personal"),
 		}
-		automaticTimeZoneMapping = falseValue
+		automaticTimeZoneMapping = gcloud.FalseValue
 		attemptLimitResourceID   = "attempt-limit"
 		attemptLimitDataSourceID = "attempt-limit-data"
 		attemptLimitName         = "Test Attempt Limit " + uuid.NewString()
 
 		nameUpdated                      = "Test Contact List " + uuid.NewString()
-		automaticTimeZoneMappingUpdated  = trueValue
+		automaticTimeZoneMappingUpdated  = gcloud.TrueValue
 		zipCodeColumnName                = "Zipcode"
 		columnNamesUpdated               = append(columnNames, strconv.Quote(zipCodeColumnName))
 		previewModeColumnNameUpdated     = "Home"
@@ -49,13 +49,13 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				Config: GenerateOutboundContactList(
 					resourceId,
 					name,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					nullValue,
-					nullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -69,12 +69,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						nullValue,
+						gcloud.NullValue,
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						nullValue,
+						gcloud.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -106,13 +106,13 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				Config: GenerateOutboundContactList(
 					resourceId,
 					name,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValuesUpdated,
 					columnNames,
 					automaticTimeZoneMapping,
-					nullValue,
-					nullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -126,12 +126,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						nullValue,
+						gcloud.NullValue,
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						nullValue,
+						gcloud.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -164,13 +164,13 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 				Config: GenerateOutboundContactList(
 					resourceId,
 					nameUpdated,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(previewModeColumnNameUpdated),
 					previewModeAcceptedValuesUpdated,
 					columnNames,
 					automaticTimeZoneMapping,
-					nullValue,
-					nullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -184,12 +184,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					generateEmailColumnsBlock(
 						"Work",
 						"work",
-						nullValue,
+						gcloud.NullValue,
 					),
 					generateEmailColumnsBlock(
 						"Personal",
 						"personal",
-						nullValue,
+						gcloud.NullValue,
 					),
 					GeneratePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Cell"), // columnName
@@ -201,8 +201,8 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					GeneratePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Home"), // columnName
 						strconv.Quote("TEXT"), // columnDataType
-						nullValue,             // min
-						nullValue,             // max
+						gcloud.NullValue,      // min
+						gcloud.NullValue,      // max
 						"5",                   // maxLength
 					),
 				),
@@ -268,12 +268,12 @@ func TestAccResourceOutboundContactListBasic(t *testing.T) {
 					GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						nullValue,
+						gcloud.NullValue,
 					),
 					GeneratePhoneColumnsBlock(
 						"Home",
 						"home",
-						nullValue,
+						gcloud.NullValue,
 					),
 					generateEmailColumnsBlock(
 						"Work",

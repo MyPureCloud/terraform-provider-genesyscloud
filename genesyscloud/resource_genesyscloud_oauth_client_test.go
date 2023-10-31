@@ -49,11 +49,11 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					clientDesc1,
 					grantTypeClientCreds,
 					tokenSec1,
-					nullValue, // Default state
+					NullValue, // Default state
 					generateStringArray(strconv.Quote(redirectURI1)),
-					nullValue, // No scopes for client creds
+					NullValue, // No scopes for client creds
 					credentialName1,
-					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", nullValue),
+					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "name", clientName1),
@@ -81,8 +81,8 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					tokenSec2,
 					strconv.Quote(stateInactive),
 					generateStringArray(strconv.Quote(redirectURI2)),
-					nullValue, // No scopes for client creds
-					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", nullValue),
+					NullValue, // No scopes for client creds
+					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResource1, "name", clientName2),

@@ -44,7 +44,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 				Config: generateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					name,
-					trueValue,
+					TrueValue,
 					generateCarsResponsesBlock(
 						generateCarsResponse(
 							identifier1,
@@ -68,7 +68,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier1+".0.reaction_type", "transfer"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier2+".0.reaction_type", "transfer"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier3+".0.reaction_type", "transfer"),
@@ -79,7 +79,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 				Config: generateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					name,
-					falseValue,
+					FalseValue,
 					generateCarsResponsesBlock(
 						generateCarsResponse(
 							identifier1,
@@ -103,7 +103,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier1+".0.reaction_type", reactionTypeUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier2+".0.reaction_type", reactionTypeUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0."+identifier3+".0.reaction_type", reactionTypeUpdated),
@@ -118,16 +118,16 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + obContactList.GenerateOutboundContactList(
 					contactListResourceId,
 					contactListName,
-					nullValue,
-					nullValue,
+					NullValue,
+					NullValue,
 					[]string{},
 					[]string{strconv.Quote("Cell")},
-					falseValue,
-					nullValue,
-					nullValue,
+					FalseValue,
+					NullValue,
+					NullValue,
 					obContactList.GeneratePhoneColumnsBlock("Cell",
 						"cell",
-						nullValue,
+						NullValue,
 					),
 				) + gcloud.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceId,
@@ -146,7 +146,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 				) + generateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					name,
-					falseValue,
+					FalseValue,
 					generateCarsResponsesBlock(
 						generateCarsResponse(
 							"callable_person",
@@ -158,7 +158,7 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "beep_detection_enabled", FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0.callable_person.0.reaction_type", "transfer_flow"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0.callable_person.0.name", outboundFlowName),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_callanalysisresponseset."+resourceId, "responses.0.callable_person.0.data",

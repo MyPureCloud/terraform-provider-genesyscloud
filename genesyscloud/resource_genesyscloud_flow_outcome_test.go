@@ -27,8 +27,8 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 				Config: generateFlowOutcomeResource(
 					outcomeResource1,
 					name1,
-					nullValue,
-					nullValue,
+					NullValue,
+					NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name1),
@@ -40,7 +40,7 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 				Config: generateFlowOutcomeResource(
 					outcomeResource1,
 					name2,
-					nullValue,
+					NullValue,
 					description,
 				),
 				Check: resource.ComposeTestCheckFunc(

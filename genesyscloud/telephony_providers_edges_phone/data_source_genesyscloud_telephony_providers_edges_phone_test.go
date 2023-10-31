@@ -50,13 +50,13 @@ func TestAccDataSourcePhone(t *testing.T) {
 					userRes1,
 					userEmail1,
 					userName1,
-					nullValue, // Defaults to active
+					gcloud.NullValue, // Defaults to active
 					strconv.Quote(userTitle),
 					strconv.Quote(userDepartment),
-					nullValue, // No manager
-					nullValue, // Default acdAutoAnswer
-					"",        // No profile skills
-					"",        // No certs
+					gcloud.NullValue, // No manager
+					gcloud.NullValue, // Default acdAutoAnswer
+					"",               // No profile skills
+					"",               // No certs
 				) + gcloud.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					phoneBaseSettingsName,

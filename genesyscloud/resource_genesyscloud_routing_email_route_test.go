@@ -54,8 +54,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue,
-					nullValue,
+					FalseValue,
+					NullValue,
 				) + generateRoutingEmailRouteResource(
 					routeRes,
 					"genesyscloud_routing_email_domain."+domainRes+".id",
@@ -78,8 +78,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue,
-					nullValue,
+					FalseValue,
+					NullValue,
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
@@ -133,8 +133,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue,
-					nullValue,
+					FalseValue,
+					NullValue,
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,
@@ -189,8 +189,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue,
-					nullValue,
+					FalseValue,
+					NullValue,
 				) + GenerateRoutingQueueResourceBasic(
 					queueResource,
 					queueName,

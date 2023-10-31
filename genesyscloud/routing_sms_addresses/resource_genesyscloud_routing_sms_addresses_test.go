@@ -38,7 +38,7 @@ func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
 					region,
 					postalCode,
 					countryCode,
-					falseValue,
+					gcloud.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "name", name),
@@ -47,7 +47,7 @@ func TestAccResourceRoutingSmsAddressesProdOrg(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "region", region),
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "postal_code", postalCode),
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "country_code", countryCode),
-					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "auto_correct_address", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "auto_correct_address", gcloud.FalseValue),
 				),
 			},
 			{
@@ -91,7 +91,7 @@ func TestAccResourceRoutingSmsAddressesTestOrg(t *testing.T) {
 					region,
 					postalCode,
 					countryCode,
-					trueValue,
+					gcloud.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "name", name),
@@ -100,7 +100,7 @@ func TestAccResourceRoutingSmsAddressesTestOrg(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "region", region),
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "postal_code", postalCode),
 					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "country_code", countryCode),
-					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "auto_correct_address", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "auto_correct_address", gcloud.TrueValue),
 				),
 			},
 			{

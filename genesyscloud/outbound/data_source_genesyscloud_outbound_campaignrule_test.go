@@ -74,8 +74,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						campaignRuleResourceId,
 						campaignRuleName,
-						falseValue,
-						falseValue,
+						FalseValue,
+						FalseValue,
 						generateCampaignRuleEntity(
 							[]string{"genesyscloud_outbound_campaign." + campaign1ResourceId + ".id"},
 							[]string{},
@@ -95,7 +95,7 @@ data "genesyscloud_auth_division_home" "home" {}
 							"turnOnCampaign",
 							[]string{"genesyscloud_outbound_campaign." + campaign2ResourceId + ".id"},
 							[]string{},
-							falseValue,
+							FalseValue,
 							generateCampaignRuleParameters(
 								"lessThan",
 								"0.5",

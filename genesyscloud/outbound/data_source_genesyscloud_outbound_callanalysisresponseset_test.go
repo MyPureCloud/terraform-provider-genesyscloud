@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-var falseValue = "false"
+var FalseValue = "false"
 
 func TestAccDataSourceCallAnalysisResponseSet(t *testing.T) {
 	var (
@@ -27,7 +27,7 @@ func TestAccDataSourceCallAnalysisResponseSet(t *testing.T) {
 				Config: generateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					responseSetName,
-					falseValue,
+					FalseValue,
 					"",
 				) + generateOutboundCallAnalysisResponseSetDataSource(
 					dataSourceId,

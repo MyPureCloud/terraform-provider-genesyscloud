@@ -19,12 +19,6 @@ import (
    Please make sure you register ALL resources and data sources your test cases will use.
 */
 
-const (
-	trueValue  = "true"
-	falseValue = "false"
-	nullValue  = "null"
-)
-
 var sdkConfig *platformclientv2.Configuration
 var err error
 

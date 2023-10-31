@@ -39,7 +39,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 				Config: generateArchitectSchedulesResource(
 					schedResource1,
 					name,
-					nullValue,
+					NullValue,
 					description,
 					start,
 					end,
@@ -59,7 +59,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 				Config: generateArchitectSchedulesResource(
 					schedResource1,
 					name,
-					nullValue,
+					NullValue,
 					description,
 					start2,
 					end,

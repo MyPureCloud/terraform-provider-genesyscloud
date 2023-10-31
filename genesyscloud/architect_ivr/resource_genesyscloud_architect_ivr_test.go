@@ -16,8 +16,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
-const nullValue = "null"
-
 func TestAccResourceIvrConfigBasic(t *testing.T) {
 	ivrConfigResource1 := "test-ivrconfig1"
 	ivrConfigName := "terraform-ivrconfig-" + uuid.NewString()
@@ -61,9 +59,9 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 					ResourceID:       didPoolResource1,
 					StartPhoneNumber: ivrConfigDnis[0],
 					EndPhoneNumber:   ivrConfigDnis[1],
-					Description:      nullValue, // No description
-					Comments:         nullValue, // No comments
-					PoolProvider:     nullValue, // No provider
+					Description:      gcloud.NullValue, // No description
+					Comments:         gcloud.NullValue, // No comments
+					PoolProvider:     gcloud.NullValue, // No provider
 				}) + GenerateIvrConfigResource(&IvrConfigStruct{
 					ResourceID:  ivrConfigResource1,
 					Name:        ivrConfigName,
@@ -122,8 +120,8 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 				Config: generateAuthDivisionResourceForIvrTests(
 					divResource1,
 					divName1,
-					nullValue, // No description
-					nullValue, // Not home division
+					gcloud.NullValue, // No description
+					gcloud.NullValue, // Not home division
 				) + GenerateIvrConfigResource(&IvrConfigStruct{
 					ResourceID:  ivrConfigResource1,
 					Name:        ivrConfigName,
@@ -144,20 +142,20 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 				Config: generateAuthDivisionResourceForIvrTests(
 					divResource1,
 					divName1,
-					nullValue, // No description
-					nullValue, // Not home division
+					gcloud.NullValue, // No description
+					gcloud.NullValue, // Not home division
 				) + generateAuthDivisionResourceForIvrTests(
 					divResource2,
 					divName2,
-					nullValue, // No description
-					nullValue, // Not home division
+					gcloud.NullValue, // No description
+					gcloud.NullValue, // Not home division
 				) + didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
 					ResourceID:       didPoolResource1,
 					StartPhoneNumber: ivrConfigDnis[0],
 					EndPhoneNumber:   ivrConfigDnis[1],
-					Description:      nullValue, // No description
-					Comments:         nullValue, // No comments
-					PoolProvider:     nullValue, // No provider
+					Description:      gcloud.NullValue, // No description
+					Comments:         gcloud.NullValue, // No comments
+					PoolProvider:     gcloud.NullValue, // No provider
 				}) + GenerateIvrConfigResource(&IvrConfigStruct{
 					ResourceID:  ivrConfigResource1,
 					Name:        ivrConfigName,
@@ -183,13 +181,13 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 				Config: generateAuthDivisionResourceForIvrTests(
 					divResource1,
 					divName1,
-					nullValue, // No description
-					nullValue, // Not home division
+					gcloud.NullValue, // No description
+					gcloud.NullValue, // Not home division
 				) + generateAuthDivisionResourceForIvrTests(
 					divResource2,
 					divName2,
-					nullValue, // No description
-					nullValue, // Not home division
+					gcloud.NullValue, // No description
+					gcloud.NullValue, // Not home division
 				),
 			},
 		},
@@ -230,9 +228,9 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 		ResourceID:       didPoolResourceId,
 		StartPhoneNumber: startNumberStr,
 		EndPhoneNumber:   endNumberStr,
-		Description:      nullValue, // No description
-		Comments:         nullValue, // No comments
-		PoolProvider:     nullValue, // No provider
+		Description:      gcloud.NullValue, // No description
+		Comments:         gcloud.NullValue, // No comments
+		PoolProvider:     gcloud.NullValue, // No provider
 	})
 
 	// did pool cleanup

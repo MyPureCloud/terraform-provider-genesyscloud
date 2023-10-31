@@ -49,7 +49,7 @@ data "genesyscloud_auth_division_home" "home" {}
 					"site",
 					emergencyNumber,
 					"car",
-					nullValue,
+					NullValue,
 					outboundFlowFilePath,
 					"data-campaign-test-flow",
 					"test flow "+uuid.NewString(),

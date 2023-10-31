@@ -33,8 +33,8 @@ func TestAccDataSourceArchitectDatatable(t *testing.T) {
 					tableResource,
 					tableName,
 					strconv.Quote(tableDesc),
-					generateArchitectDatatableProperty(propBool, typeBool, nullValue, nullValue),
-					generateArchitectDatatableProperty(propNameKey, typeString, nullValue, nullValue),
+					generateArchitectDatatableProperty(propBool, typeBool, NullValue, NullValue),
+					generateArchitectDatatableProperty(propNameKey, typeString, NullValue, NullValue),
 				) + generateArchitectDatatableDataSource(
 					tableDataSource,
 					"genesyscloud_architect_datatable."+tableResource+".name",
