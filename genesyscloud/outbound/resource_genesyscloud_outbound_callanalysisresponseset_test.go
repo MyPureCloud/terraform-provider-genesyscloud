@@ -3,7 +3,6 @@ package outbound
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -41,24 +40,30 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundCallAnalysisResponseSetResource(
+				Config: GenerateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					name,
+<<<<<<< HEAD
 					TrueValue,
 					generateCarsResponsesBlock(
 						generateCarsResponse(
+=======
+					trueValue,
+					GenerateCarsResponsesBlock(
+						GenerateCarsResponse(
+>>>>>>> 1f6fa18e (Continuing refactor)
 							identifier1,
 							reactionType,
 							"",
 							"",
 						),
-						generateCarsResponse(
+						GenerateCarsResponse(
 							identifier2,
 							reactionType,
 							"",
 							"",
 						),
-						generateCarsResponse(
+						GenerateCarsResponse(
 							identifier3,
 							reactionType,
 							"",
@@ -76,24 +81,30 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 			},
 			// Update
 			{
-				Config: generateOutboundCallAnalysisResponseSetResource(
+				Config: GenerateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					name,
+<<<<<<< HEAD
 					FalseValue,
 					generateCarsResponsesBlock(
 						generateCarsResponse(
+=======
+					falseValue,
+					GenerateCarsResponsesBlock(
+						GenerateCarsResponse(
+>>>>>>> 1f6fa18e (Continuing refactor)
 							identifier1,
 							reactionTypeUpdated,
 							"",
 							"",
 						),
-						generateCarsResponse(
+						GenerateCarsResponse(
 							identifier2,
 							reactionTypeUpdated,
 							"",
 							"",
 						),
-						generateCarsResponse(
+						GenerateCarsResponse(
 							identifier3,
 							reactionTypeUpdated,
 							"",
@@ -143,12 +154,18 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 						"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 						"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapupCodeResourceId + ".name}",
 					}),
-				) + generateOutboundCallAnalysisResponseSetResource(
+				) + GenerateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					name,
+<<<<<<< HEAD
 					FalseValue,
 					generateCarsResponsesBlock(
 						generateCarsResponse(
+=======
+					falseValue,
+					GenerateCarsResponsesBlock(
+						GenerateCarsResponse(
+>>>>>>> 1f6fa18e (Continuing refactor)
 							"callable_person",
 							"transfer_flow",
 							outboundFlowName,
@@ -168,40 +185,6 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 		},
 		CheckDestroy: testVerifyCallAnalysisResponseSetDestroyed,
 	})
-}
-
-func generateOutboundCallAnalysisResponseSetResource(resourceId string, name string, beepDetectionEnabled string, responsesBlock string) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
-	name                   = "%s"
-	beep_detection_enabled = %s
-	%s
-}
-`, resourceId, name, beepDetectionEnabled, responsesBlock)
-}
-
-func generateCarsResponsesBlock(nestedBlocks ...string) string {
-	return fmt.Sprintf(`
-	responses {
-		%s
-	}
-`, strings.Join(nestedBlocks, "\n"))
-}
-
-func generateCarsResponse(identifier string, reactionType string, name string, data string) string {
-	if name != "" {
-		name = fmt.Sprintf(`name = "%s"`, name)
-	}
-	if data != "" {
-		data = fmt.Sprintf(`data = "%s"`, data)
-	}
-	return fmt.Sprintf(`
-		%s {
-			reaction_type = "%s"
-			%s
-			%s
-		}
-`, identifier, reactionType, name, data)
 }
 
 func testVerifyCallAnalysisResponseSetDestroyed(state *terraform.State) error {

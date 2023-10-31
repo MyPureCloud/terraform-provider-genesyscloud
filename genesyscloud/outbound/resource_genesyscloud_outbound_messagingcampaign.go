@@ -489,3 +489,19 @@ func flattenSdkOutboundMessagingCampaignSmsconfig(smsconfig *platformclientv2.Sm
 
 	return smsconfigSet
 }
+
+func GenerateOutboundMessagingCampaignContactSort(fieldName string, direction string, numeric string) string {
+	if direction != "" {
+		direction = fmt.Sprintf(`direction = "%s"`, direction)
+	}
+	if numeric != "" {
+		numeric = fmt.Sprintf(`numeric = %s`, numeric)
+	}
+	return fmt.Sprintf(`
+	contact_sorts {
+		field_name = "%s"
+		%s
+        %s
+	}
+`, fieldName, direction, numeric)
+}

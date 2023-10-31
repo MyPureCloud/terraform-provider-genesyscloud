@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -341,4 +342,42 @@ func flattenSdkoutboundcallabletimesetCallabletimeSlice(callabletimes []platform
 	}
 
 	return callabletimeSet
+}
+
+func GenerateOutboundCallabletimeset(
+	resourceId string,
+	name string,
+	nestedBlocks ...string) string {
+
+	return fmt.Sprintf(`
+		resource "genesyscloud_outbound_callabletimeset" "%s"{
+			name = "%s"
+			%s
+		}
+		`, resourceId, name, strings.Join(nestedBlocks, "\n"),
+	)
+}
+
+func GenerateCallableTimesBlock(
+	timeZoneID string,
+	attrs ...string) string {
+	return fmt.Sprintf(`
+		callable_times {
+			time_zone_id = "%s"
+			%s
+		}
+	`, timeZoneID, strings.Join(attrs, "\n"))
+}
+
+func GenerateTimeSlotsBlock(
+	startTime string,
+	stopTime string,
+	day string) string {
+	return fmt.Sprintf(`
+		time_slots {
+			start_time = "%s"
+			stop_time = "%s"
+			day = %s
+		}
+	`, startTime, stopTime, day)
 }

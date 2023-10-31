@@ -176,7 +176,6 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 			d.Set("site_id", *sdkcampaign.Site.Id)
 		}
 		if sdkcampaign.CampaignStatus != nil {
-			fmt.Println("Reading campaign status")
 			d.Set("campaign_status", *sdkcampaign.CampaignStatus)
 		}
 		if sdkcampaign.PhoneColumns != nil {

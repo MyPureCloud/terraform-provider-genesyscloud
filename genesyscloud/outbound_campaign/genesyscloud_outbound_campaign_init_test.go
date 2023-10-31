@@ -2,6 +2,11 @@ package outbound_campaign
 
 import (
 	"sync"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/outbound"
+	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	outboundRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -26,13 +31,23 @@ type registerTestInstance struct {
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
 	providerResources[resourceName] = ResourceOutboundCampaign()
-	// TODO: Add references
+	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
+	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
+	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
+	providerResources["genesyscloud_outbound_callanalysisresponseset"] = outbound.ResourceOutboundCallAnalysisResponseSet()
+	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
+	providerResources["genesyscloud_telephony_providers_edges_site"] = telephonyProvidersEdgesSite.ResourceSite()
+	providerResources["genesyscloud_outbound_dnclist"] = outbound.ResourceOutboundDncList()
+	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
+	providerResources["genesyscloud_outbound_contactlistfilter"] = outbound.ResourceOutboundContactListFilter()
+	providerResources["genesyscloud_outbound_ruleset"] = outboundRuleset.ResourceOutboundRuleset()
+	providerResources["genesyscloud_outbound_callabletimeset"] = outbound.ResourceOutboundCallabletimeset()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[resourceName] = DataSourceOutboundCampaign()
-	// TODO: Add references
+	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 
 // initTestresources initializes all test resources and data sources.

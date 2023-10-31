@@ -2,6 +2,7 @@ package outbound_campaign
 
 import (
 	"context"
+	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
@@ -96,7 +97,38 @@ func createOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, out
 
 // getAllOutboundCampaignFn is the implementation for retrieving all outbound campaign in Genesys Cloud
 func getAllOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy) (*[]platformclientv2.Campaign, error) {
-	return nil, nil
+	var allCampaigns []platformclientv2.Campaign
+	const pageSize = 100
+
+	campaigns, _, err := p.outboundApi.GetOutboundCampaigns(pageSize, 1, "", "", nil, "", "", "", "", "", nil, "", "")
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get campaign: %s", err)
+	}
+
+	if campaigns.Entities == nil || len(*campaigns.Entities) == 0 {
+		return &allCampaigns, nil
+	}
+
+	for _, campaign := range *campaigns.Entities {
+		allCampaigns = append(allCampaigns, campaign)
+	}
+
+	for pageNum := 2; pageNum <= *campaigns.PageCount; pageNum++ {
+		campaigns, _, err := p.outboundApi.GetOutboundCampaigns(pageSize, pageNum, "", "", nil, "", "", "", "", "", nil, "", "")
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get campaign: %s", err)
+		}
+
+		if campaigns.Entities == nil || len(*campaigns.Entities) == 0 {
+			break
+		}
+
+		for _, campaign := range *campaigns.Entities {
+			allCampaigns = append(allCampaigns, campaign)
+		}
+	}
+
+	return &allCampaigns, nil
 }
 
 // getOutboundCampaignIdByNameFn is an implementation of the function to get a Genesys Cloud outbound campaign by name

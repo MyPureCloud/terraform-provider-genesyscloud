@@ -29,6 +29,12 @@ func generatePhoneColumnNoTypeBlock(columnName string) string {
 `, columnName)
 }
 
+const (
+	trueValue  = "true"
+	falseValue = "false"
+	nullValue  = "null"
+)
+
 func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	t.Parallel()
 
@@ -100,7 +106,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			gcloud.NullValue,         // max
 			"10",                     // maxLength
 		),
-	) + outbound.generateOutboundDncListBasic(
+	) + outbound.GenerateOutboundDncListBasic(
 		dncListResourceId,
 		"dnc list "+uuid.NewString(),
 	) + gcloud.GenerateRoutingQueueResourceBasic(
@@ -121,7 +127,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 			"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapupCodeResourceId + ".name}",
 		}),
-	) + outbound.generateOutboundCallAnalysisResponseSetResource(
+	) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
 		carResourceId,
 		"tf car "+uuid.NewString(),
 		gcloud.FalseValue,
@@ -133,14 +139,14 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 				"${genesyscloud_flow.flow.id}",
 			),
 		),
-	) + outbound.generateOutboundContactListFilter(
+	) + outbound.GenerateOutboundContactListFilter(
 		clfResourceId,
 		"tf clf "+uuid.NewString(),
 		"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 		"",
-		outbound.generateOutboundContactListFilterClause(
+		outbound.GenerateOutboundContactListFilterClause(
 			"",
-			outbound.generateOutboundContactListFilterPredicates(
+			outbound.GenerateOutboundContactListFilterPredicates(
 				"Cell",
 				"alphabetic",
 				"EQUALS",
@@ -181,17 +187,17 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			contact_list_id = genesyscloud_outbound_contact_list.%s.id
 		}
 		`, ruleSetResourceId, "tf ruleset "+uuid.NewString(), contactListResourceId,
-	) + outbound.generateOutboundCallabletimeset(
+	) + outbound.GenerateOutboundCallabletimeset(
 		callableTimeSetId,
 		"tf timeset "+uuid.NewString(),
-		outbound.generateCallableTimesBlock(
+		outbound.GenerateCallableTimesBlock(
 			"Africa/Abidjan",
-			outbound.generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+			outbound.GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
 		))
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(outbound.providerResources, outbound.providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: referencedResources + generateOutboundCampaign(
@@ -219,7 +225,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.generateOutboundMessagingCampaignContactSort(
+					outbound.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
@@ -289,7 +295,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.generateOutboundMessagingCampaignContactSort(
+					outbound.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
@@ -359,7 +365,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.generateOutboundMessagingCampaignContactSort(
+					outbound.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
@@ -474,7 +480,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 			"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapupCodeResourceId + ".name}",
 		}),
-	) + outbound.generateOutboundCallAnalysisResponseSetResource(
+	) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
 		carResourceId,
 		"tf car "+uuid.NewString(),
 		gcloud.FalseValue,
@@ -646,7 +652,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 	// Test campaign_status can be turned on at time of creation as well
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(outbound.providerResources, outbound.providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			// Create resources for outbound campaign
 			{
@@ -780,7 +786,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
-		ProviderFactories: gcloud.GetProviderFactories(outbound.providerResources, outbound.providerDataSources),
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: referencedResources +
@@ -850,7 +856,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceId + ".id"},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
 						generatePhoneColumnNoTypeBlock("Cell"),
-						outbound.generateOutboundMessagingCampaignContactSort(
+						outbound.GenerateOutboundMessagingCampaignContactSort(
 							contactSortFieldName,
 							contactSortDirection,
 							contactSortNumeric,
@@ -1114,7 +1120,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 			obContactList.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
 	}
 	if dncListResourceId != "" {
-		dncList = outbound.generateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
+		dncList = outbound.GenerateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
 	}
 	if queueResourceId != "" {
 		queue = gcloud.GenerateRoutingQueueResourceBasic(queueResourceId, "tf test queue "+uuid.NewString())
@@ -1135,7 +1141,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
 					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapUpCodeResourceId + ".name}",
 				}),
-			) + outbound.generateOutboundCallAnalysisResponseSetResource(
+			) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
 				carResourceId,
 				"tf test car "+uuid.NewString(),
 				gcloud.FalseValue,
@@ -1148,7 +1154,7 @@ func generateReferencedResourcesForOutboundCampaignTests(
 					),
 				))
 		} else {
-			callAnalysisResponseSet = outbound.generateOutboundCallAnalysisResponseSetResource(
+			callAnalysisResponseSet = outbound.GenerateOutboundCallAnalysisResponseSetResource(
 				carResourceId,
 				"tf test car "+uuid.NewString(),
 				gcloud.TrueValue,
@@ -1164,14 +1170,14 @@ func generateReferencedResourcesForOutboundCampaignTests(
 		}
 	}
 	if clfResourceId != "" {
-		contactListFilter = outbound.generateOutboundContactListFilter(
+		contactListFilter = outbound.GenerateOutboundContactListFilter(
 			clfResourceId,
 			"tf test clf "+uuid.NewString(),
 			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 			"",
-			outbound.generateOutboundContactListFilterClause(
+			outbound.GenerateOutboundContactListFilterClause(
 				"",
-				outbound.generateOutboundContactListFilterPredicates(
+				outbound.GenerateOutboundContactListFilterPredicates(
 					"Cell",
 					"alphabetic",
 					"EQUALS",
