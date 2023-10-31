@@ -200,3 +200,20 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		return retry.RetryableError(fmt.Errorf("Division %s still exists", name))
 	})
 }
+
+func GenerateAuthDivisionBasic(resourceID string, name string) string {
+	return GenerateAuthDivisionResource(resourceID, name, NullValue, FalseValue)
+}
+
+func GenerateAuthDivisionResource(
+	resourceID string,
+	name string,
+	description string,
+	home string) string {
+	return fmt.Sprintf(`resource "genesyscloud_auth_division" "%s" {
+		name = "%s"
+		description = %s
+		home = %s
+	}
+	`, resourceID, name, description, home)
+}

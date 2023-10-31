@@ -20,7 +20,7 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateAuthDivisionResource(
+				Config: GenerateAuthDivisionResource(
 					divResource,
 					divName,
 					NullValue,
