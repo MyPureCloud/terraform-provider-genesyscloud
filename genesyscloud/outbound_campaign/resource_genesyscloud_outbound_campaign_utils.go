@@ -1,6 +1,7 @@
 package outbound_campaign
 
 import (
+	"context"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
@@ -13,49 +14,93 @@ The resource_genesyscloud_outbound_campaign_utils.go file contains various helpe
 and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 
-func updateOutboundCampaignStatus(d *schema.ResourceData, outboundApi *platformclientv2.OutboundApi, campaign platformclientv2.Campaign) diag.Diagnostics {
-	newCampaignStatus := d.Get("campaign_status").(string)
+func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv2.Campaign {
+	abandonRate := d.Get("abandon_rate").(float64)
+	outboundLineCount := d.Get("outbound_line_count").(int)
+	skipPreviewDisabled := d.Get("skip_preview_disabled").(bool)
+	previewTimeOutSeconds := d.Get("preview_time_out_seconds").(int)
+	alwaysRunning := d.Get("always_running").(bool)
+	noAnswerTimeout := d.Get("no_answer_timeout").(int)
+	callAnalysisLanguage := d.Get("call_analysis_language").(string)
+	priority := d.Get("priority").(int)
+
+	campaign := platformclientv2.Campaign{
+		Name:                           platformclientv2.String(d.Get("name").(string)),
+		DialingMode:                    platformclientv2.String(d.Get("dialing_mode").(string)),
+		CallerAddress:                  platformclientv2.String(d.Get("caller_address").(string)),
+		CallerName:                     platformclientv2.String(d.Get("caller_name").(string)),
+		CampaignStatus:                 platformclientv2.String("off"),
+		ContactList:                    gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
+		Queue:                          gcloud.BuildSdkDomainEntityRef(d, "queue_id"),
+		Script:                         gcloud.BuildSdkDomainEntityRef(d, "script_id"),
+		EdgeGroup:                      gcloud.BuildSdkDomainEntityRef(d, "edge_group_id"),
+		Site:                           gcloud.BuildSdkDomainEntityRef(d, "site_id"),
+		PhoneColumns:                   buildSdkoutboundcampaignPhonecolumnSlice(d.Get("phone_columns").([]interface{})),
+		DncLists:                       gcloud.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
+		CallableTimeSet:                gcloud.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
+		CallAnalysisResponseSet:        gcloud.BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
+		RuleSets:                       gcloud.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
+		SkipPreviewDisabled:            &skipPreviewDisabled,
+		AlwaysRunning:                  &alwaysRunning,
+		ContactSorts:                   buildSdkoutboundcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
+		ContactListFilters:             gcloud.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
+		Division:                       gcloud.BuildSdkDomainEntityRef(d, "division_id"),
+		DynamicContactQueueingSettings: buildSdkDynamicContactQueueingSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
+	}
+
+	if abandonRate != 0 {
+		campaign.AbandonRate = &abandonRate
+	}
+	if outboundLineCount != 0 {
+		campaign.OutboundLineCount = &outboundLineCount
+	}
+	if previewTimeOutSeconds != 0 {
+		campaign.PreviewTimeOutSeconds = &previewTimeOutSeconds
+	}
+	if noAnswerTimeout != 0 {
+		campaign.NoAnswerTimeout = &noAnswerTimeout
+	}
+	if callAnalysisLanguage != "" {
+		campaign.CallAnalysisLanguage = &callAnalysisLanguage
+	}
+	if priority != 0 {
+		campaign.Priority = &priority
+	}
+
+	return campaign
+}
+
+func updateOutboundCampaignStatus(ctx context.Context, d *schema.ResourceData, proxy *outboundCampaignProxy, campaign platformclientv2.Campaign, newCampaignStatus string) diag.Diagnostics {
 	if newCampaignStatus != "" &&
 		// Campaign status can only go from ON -> OFF or OFF, COMPLETE, INVALID, ETC -> ON
 		((*campaign.CampaignStatus == "on" && newCampaignStatus == "off") ||
 			(*campaign.CampaignStatus != "on" && newCampaignStatus == "on")) {
 		campaign.CampaignStatus = &newCampaignStatus
 		log.Printf("Updating Outbound Campaign %s status to %s", *campaign.Name, newCampaignStatus)
-		diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			// Get current Outbound Campaign version
-			outboundCampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
-			if getErr != nil {
-				return resp, diag.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr)
-			}
-			campaign.Version = outboundCampaign.Version
-			_, _, updateErr := outboundApi.PutOutboundCampaign(d.Id(), campaign)
-			if updateErr != nil {
-				return resp, diag.Errorf("Failed to update Outbound Campaign %s: %s", *campaign.Name, updateErr)
-			}
-			return nil, nil
-		})
-		if diagErr != nil {
-			return diagErr
+		_, err := proxy.updateOutboundCampaign(ctx, d.Id(), &campaign)
+		if err != nil {
+			return diag.Errorf("Failed to update Outbound Campaign %s: %s", *campaign.Name, err)
 		}
 	}
 	return nil
 }
 
-func buildSdkoutboundcampaignPhonecolumnSlice(phonecolumnList []interface{}) *[]platformclientv2.Phonecolumn {
-	if phonecolumnList == nil || len(phonecolumnList) == 0 {
+func buildSdkoutboundcampaignPhonecolumnSlice(phonecolumns []interface{}) *[]platformclientv2.Phonecolumn {
+	if phonecolumns == nil || len(phonecolumns) == 0 {
 		return nil
 	}
-	sdkPhonecolumnSlice := make([]platformclientv2.Phonecolumn, 0)
-	for _, configphonecolumn := range phonecolumnList {
+	phonecolumnSlice := make([]platformclientv2.Phonecolumn, 0)
+	for _, phonecolumn := range phonecolumns {
 		var sdkPhonecolumn platformclientv2.Phonecolumn
-		phonecolumnMap := configphonecolumn.(map[string]interface{})
+
+		phonecolumnMap := phonecolumn.(map[string]interface{})
 		if columnName := phonecolumnMap["column_name"].(string); columnName != "" {
 			sdkPhonecolumn.ColumnName = &columnName
 		}
 
-		sdkPhonecolumnSlice = append(sdkPhonecolumnSlice, sdkPhonecolumn)
+		phonecolumnSlice = append(phonecolumnSlice, sdkPhonecolumn)
 	}
-	return &sdkPhonecolumnSlice
+	return &phonecolumnSlice
 }
 
 func buildSdkDynamicContactQueueingSettings(settings []interface{}) *platformclientv2.Dynamiccontactqueueingsettings {

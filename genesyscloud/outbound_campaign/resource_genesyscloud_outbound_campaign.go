@@ -11,6 +11,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
 
@@ -40,81 +41,17 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 
 // createOutboundCampaign is used by the outbound_campaign resource to create Genesys cloud outbound campaign
 func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	name := d.Get("name").(string)
-	dialingMode := d.Get("dialing_mode").(string)
-	campaignStatus := d.Get("campaign_status").(string)
-	abandonRate := d.Get("abandon_rate").(float64)
-	callerName := d.Get("caller_name").(string)
-	callerAddress := d.Get("caller_address").(string)
-	outboundLineCount := d.Get("outbound_line_count").(int)
-	skipPreviewDisabled := d.Get("skip_preview_disabled").(bool)
-	previewTimeOutSeconds := d.Get("preview_time_out_seconds").(int)
-	alwaysRunning := d.Get("always_running").(bool)
-	noAnswerTimeout := d.Get("no_answer_timeout").(int)
-	callAnalysisLanguage := d.Get("call_analysis_language").(string)
-	priority := d.Get("priority").(int)
-
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	proxy := newOutboundCampaignProxy(sdkConfig)
+	campaignStatus := d.Get("campaign_status").(string)
 
-	sdkcampaign := platformclientv2.Campaign{
-		ContactList:                    gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
-		Queue:                          gcloud.BuildSdkDomainEntityRef(d, "queue_id"),
-		Script:                         gcloud.BuildSdkDomainEntityRef(d, "script_id"),
-		EdgeGroup:                      gcloud.BuildSdkDomainEntityRef(d, "edge_group_id"),
-		Site:                           gcloud.BuildSdkDomainEntityRef(d, "site_id"),
-		PhoneColumns:                   buildSdkoutboundcampaignPhonecolumnSlice(d.Get("phone_columns").([]interface{})),
-		DncLists:                       gcloud.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
-		CallableTimeSet:                gcloud.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
-		CallAnalysisResponseSet:        gcloud.BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
-		RuleSets:                       gcloud.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
-		SkipPreviewDisabled:            &skipPreviewDisabled,
-		AlwaysRunning:                  &alwaysRunning,
-		ContactSorts:                   buildSdkoutboundcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
-		ContactListFilters:             gcloud.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
-		Division:                       gcloud.BuildSdkDomainEntityRef(d, "division_id"),
-		DynamicContactQueueingSettings: buildSdkDynamicContactQueueingSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
-	}
+	campaign := getOutboundCampaignFromResourceData(d)
 
-	if name != "" {
-		sdkcampaign.Name = &name
-	}
-	if dialingMode != "" {
-		sdkcampaign.DialingMode = &dialingMode
-	}
-	if abandonRate != 0 {
-		sdkcampaign.AbandonRate = &abandonRate
-	}
-	if callerName != "" {
-		sdkcampaign.CallerName = &callerName
-	}
-	if callerAddress != "" {
-		sdkcampaign.CallerAddress = &callerAddress
-	}
-	if outboundLineCount != 0 {
-		sdkcampaign.OutboundLineCount = &outboundLineCount
-	}
-	if previewTimeOutSeconds != 0 {
-		sdkcampaign.PreviewTimeOutSeconds = &previewTimeOutSeconds
-	}
-	if noAnswerTimeout != 0 {
-		sdkcampaign.NoAnswerTimeout = &noAnswerTimeout
-	}
-	if callAnalysisLanguage != "" {
-		sdkcampaign.CallAnalysisLanguage = &callAnalysisLanguage
-	}
-	if priority != 0 {
-		sdkcampaign.Priority = &priority
-	}
-
-	// All campaigns have to be created in an "off" state to start out with
-	defaultCampaignStatus := "off"
-	sdkcampaign.CampaignStatus = &defaultCampaignStatus
-
-	log.Printf("Creating Outbound Campaign %s", name)
-	outboundCampaign, _, err := outboundApi.PostOutboundCampaigns(sdkcampaign)
+	// Create campaign
+	log.Printf("Creating Outbound Campaign %s", *campaign.Name)
+	outboundCampaign, err := proxy.createOutboundCampaign(ctx, &campaign)
 	if err != nil {
-		return diag.Errorf("Failed to create Outbound Campaign %s: %s", name, err)
+		return diag.Errorf("Failed to create Outbound Campaign %s: %s", *campaign.Name, err)
 	}
 
 	d.SetId(*outboundCampaign.Id)
@@ -122,13 +59,13 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	// Campaigns can be enabled after creation
 	if campaignStatus != "" && campaignStatus == "on" {
 		d.Set("campaign_status", campaignStatus)
-		diag := updateOutboundCampaignStatus(d, outboundApi, *outboundCampaign)
+		diag := updateOutboundCampaignStatus(ctx, d, proxy, *outboundCampaign, campaignStatus)
 		if diag != nil {
 			return diag
 		}
 	}
 
-	log.Printf("Created Outbound Campaign %s %s", name, *outboundCampaign.Id)
+	log.Printf("Created Outbound Campaign %s %s", *outboundCampaign.Name, *outboundCampaign.Id)
 
 	return readOutboundCampaign(ctx, d, meta)
 }
@@ -136,215 +73,98 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 // readOutboundCampaign is used by the outbound_campaign resource to read an outbound campaign from genesys cloud
 func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	proxy := newOutboundCampaignProxy(sdkConfig)
 
 	log.Printf("Reading Outbound Campaign %s", d.Id())
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		sdkcampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
+		campaign, resp, getErr := proxy.getOutboundCampaignById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404(resp) {
+			if gcloud.IsStatus404ByInt(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr))
 		}
-		//if *sdkcampaign.CampaignStatus == "stopping" {
-		//	return retry.RetryableError(fmt.Errorf("Outbound Campaign still stopping %s", d.Id()))
-		//}
+
+		if *campaign.CampaignStatus == "stopping" {
+			return retry.RetryableError(fmt.Errorf("Outbound Campaign still stopping %s", d.Id()))
+		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign())
 
-		if sdkcampaign.Name != nil {
-			d.Set("name", *sdkcampaign.Name)
+		resourcedata.SetNillableValue(d, "name", campaign.Name)
+		resourcedata.SetNillableReference(d, "contact_list_id", campaign.ContactList)
+		resourcedata.SetNillableReference(d, "queue_id", campaign.Queue)
+		resourcedata.SetNillableValue(d, "dialing_mode", campaign.DialingMode)
+		resourcedata.SetNillableReference(d, "script_id", campaign.Script)
+		resourcedata.SetNillableReference(d, "edge_group_id", campaign.EdgeGroup)
+		resourcedata.SetNillableReference(d, "site_id", campaign.Site)
+		resourcedata.SetNillableValue(d, "campaign_status", campaign.CampaignStatus)
+		if campaign.PhoneColumns != nil {
+			d.Set("phone_columns", flattenSdkoutboundcampaignPhonecolumnSlice(*campaign.PhoneColumns))
 		}
-		if sdkcampaign.ContactList != nil && sdkcampaign.ContactList.Id != nil {
-			d.Set("contact_list_id", *sdkcampaign.ContactList.Id)
+		resourcedata.SetNillableValue(d, "abandon_rate", campaign.AbandonRate)
+		if campaign.DncLists != nil {
+			d.Set("dnc_list_ids", gcloud.SdkDomainEntityRefArrToList(*campaign.DncLists))
 		}
-		if sdkcampaign.Queue != nil && sdkcampaign.Queue.Id != nil {
-			d.Set("queue_id", *sdkcampaign.Queue.Id)
+		resourcedata.SetNillableReference(d, "callable_time_set_id", campaign.CallableTimeSet)
+		resourcedata.SetNillableReference(d, "call_analysis_response_set_id", campaign.CallAnalysisResponseSet)
+		resourcedata.SetNillableValue(d, "caller_name", campaign.CallerName)
+		resourcedata.SetNillableValue(d, "caller_address", campaign.CallerAddress)
+		resourcedata.SetNillableValue(d, "outbound_line_count", campaign.OutboundLineCount)
+		if campaign.RuleSets != nil {
+			d.Set("rule_set_ids", gcloud.SdkDomainEntityRefArrToList(*campaign.RuleSets))
 		}
-		if sdkcampaign.DialingMode != nil {
-			d.Set("dialing_mode", *sdkcampaign.DialingMode)
+		resourcedata.SetNillableValue(d, "skip_preview_disabled", campaign.SkipPreviewDisabled)
+		resourcedata.SetNillableValue(d, "preview_time_out_seconds", campaign.PreviewTimeOutSeconds)
+		resourcedata.SetNillableValue(d, "always_running", campaign.AlwaysRunning)
+		if campaign.ContactSorts != nil {
+			d.Set("contact_sorts", flattenSdkoutboundcampaignContactsortSlice(*campaign.ContactSorts))
 		}
-		if sdkcampaign.Script != nil && sdkcampaign.Script.Id != nil {
-			d.Set("script_id", *sdkcampaign.Script.Id)
+		resourcedata.SetNillableValue(d, "no_answer_timeout", campaign.NoAnswerTimeout)
+		resourcedata.SetNillableValue(d, "call_analysis_language", campaign.CallAnalysisLanguage)
+		resourcedata.SetNillableValue(d, "priority", campaign.Priority)
+		if campaign.ContactListFilters != nil {
+			d.Set("contact_list_filter_ids", gcloud.SdkDomainEntityRefArrToList(*campaign.ContactListFilters))
 		}
-		if sdkcampaign.EdgeGroup != nil && sdkcampaign.EdgeGroup.Id != nil {
-			d.Set("edge_group_id", *sdkcampaign.EdgeGroup.Id)
-		}
-		if sdkcampaign.Site != nil && sdkcampaign.Site.Id != nil {
-			d.Set("site_id", *sdkcampaign.Site.Id)
-		}
-		if sdkcampaign.CampaignStatus != nil {
-			d.Set("campaign_status", *sdkcampaign.CampaignStatus)
-		}
-		if sdkcampaign.PhoneColumns != nil {
-			d.Set("phone_columns", flattenSdkoutboundcampaignPhonecolumnSlice(*sdkcampaign.PhoneColumns))
-		}
-		if sdkcampaign.AbandonRate != nil {
-			d.Set("abandon_rate", *sdkcampaign.AbandonRate)
-		}
-		if sdkcampaign.DncLists != nil {
-			d.Set("dnc_list_ids", gcloud.SdkDomainEntityRefArrToList(*sdkcampaign.DncLists))
-		}
-		if sdkcampaign.CallableTimeSet != nil && sdkcampaign.CallableTimeSet.Id != nil {
-			d.Set("callable_time_set_id", *sdkcampaign.CallableTimeSet.Id)
-		}
-		if sdkcampaign.CallAnalysisResponseSet != nil && sdkcampaign.CallAnalysisResponseSet.Id != nil {
-			d.Set("call_analysis_response_set_id", *sdkcampaign.CallAnalysisResponseSet.Id)
-		}
-		if sdkcampaign.CallerName != nil {
-			d.Set("caller_name", *sdkcampaign.CallerName)
-		}
-		if sdkcampaign.CallerAddress != nil {
-			d.Set("caller_address", *sdkcampaign.CallerAddress)
-		}
-		if sdkcampaign.OutboundLineCount != nil {
-			d.Set("outbound_line_count", *sdkcampaign.OutboundLineCount)
-		}
-		if sdkcampaign.RuleSets != nil {
-			d.Set("rule_set_ids", gcloud.SdkDomainEntityRefArrToList(*sdkcampaign.RuleSets))
-		}
-		if sdkcampaign.SkipPreviewDisabled != nil {
-			d.Set("skip_preview_disabled", *sdkcampaign.SkipPreviewDisabled)
-		}
-		if sdkcampaign.PreviewTimeOutSeconds != nil {
-			d.Set("preview_time_out_seconds", *sdkcampaign.PreviewTimeOutSeconds)
-		}
-		if sdkcampaign.AlwaysRunning != nil {
-			d.Set("always_running", *sdkcampaign.AlwaysRunning)
-		}
-		if sdkcampaign.ContactSorts != nil {
-			d.Set("contact_sorts", flattenSdkoutboundcampaignContactsortSlice(*sdkcampaign.ContactSorts))
-		}
-		if sdkcampaign.NoAnswerTimeout != nil {
-			d.Set("no_answer_timeout", *sdkcampaign.NoAnswerTimeout)
-		}
-		if sdkcampaign.CallAnalysisLanguage != nil {
-			d.Set("call_analysis_language", *sdkcampaign.CallAnalysisLanguage)
-		}
-		if sdkcampaign.Priority != nil {
-			d.Set("priority", *sdkcampaign.Priority)
-		}
-		if sdkcampaign.ContactListFilters != nil {
-			d.Set("contact_list_filter_ids", gcloud.SdkDomainEntityRefArrToList(*sdkcampaign.ContactListFilters))
-		}
-		if sdkcampaign.Division != nil && sdkcampaign.Division.Id != nil {
-			d.Set("division_id", *sdkcampaign.Division.Id)
-		}
-		if sdkcampaign.DynamicContactQueueingSettings != nil {
-			d.Set("dynamic_contact_queueing_settings", flattenSdkDynamicContactQueueingSettings(*sdkcampaign.DynamicContactQueueingSettings))
+		resourcedata.SetNillableReference(d, "call_analysis_response_set_id", campaign.Division)
+		if campaign.DynamicContactQueueingSettings != nil {
+			d.Set("dynamic_contact_queueing_settings", flattenSdkDynamicContactQueueingSettings(*campaign.DynamicContactQueueingSettings))
 		}
 
-		log.Printf("Read Outbound Campaign %s %s", d.Id(), *sdkcampaign.Name)
+		log.Printf("Read Outbound Campaign %s %s", d.Id(), *campaign.Name)
 		return cc.CheckState()
 	})
 }
 
 // updateOutboundCampaign is used by the outbound_campaign resource to update an outbound campaign in Genesys Cloud
 func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	name := d.Get("name").(string)
-	dialingMode := d.Get("dialing_mode").(string)
-	abandonRate := d.Get("abandon_rate").(float64)
-	callerName := d.Get("caller_name").(string)
-	callerAddress := d.Get("caller_address").(string)
-	outboundLineCount := d.Get("outbound_line_count").(int)
-	skipPreviewDisabled := d.Get("skip_preview_disabled").(bool)
-	previewTimeOutSeconds := d.Get("preview_time_out_seconds").(int)
-	alwaysRunning := d.Get("always_running").(bool)
-	noAnswerTimeout := d.Get("no_answer_timeout").(int)
-	callAnalysisLanguage := d.Get("call_analysis_language").(string)
-	priority := d.Get("priority").(int)
-
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	proxy := newOutboundCampaignProxy(sdkConfig)
+	campaignStatus := d.Get("campaign_status").(string)
 
-	sdkcampaign := platformclientv2.Campaign{
-		ContactList:                    gcloud.BuildSdkDomainEntityRef(d, "contact_list_id"),
-		Queue:                          gcloud.BuildSdkDomainEntityRef(d, "queue_id"),
-		Script:                         gcloud.BuildSdkDomainEntityRef(d, "script_id"),
-		EdgeGroup:                      gcloud.BuildSdkDomainEntityRef(d, "edge_group_id"),
-		Site:                           gcloud.BuildSdkDomainEntityRef(d, "site_id"),
-		PhoneColumns:                   buildSdkoutboundcampaignPhonecolumnSlice(d.Get("phone_columns").([]interface{})),
-		DncLists:                       gcloud.BuildSdkDomainEntityRefArr(d, "dnc_list_ids"),
-		CallableTimeSet:                gcloud.BuildSdkDomainEntityRef(d, "callable_time_set_id"),
-		CallAnalysisResponseSet:        gcloud.BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
-		RuleSets:                       gcloud.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
-		SkipPreviewDisabled:            &skipPreviewDisabled,
-		AlwaysRunning:                  &alwaysRunning,
-		ContactSorts:                   buildSdkoutboundcampaignContactsortSlice(d.Get("contact_sorts").([]interface{})),
-		ContactListFilters:             gcloud.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
-		Division:                       gcloud.BuildSdkDomainEntityRef(d, "division_id"),
-		DynamicContactQueueingSettings: buildSdkDynamicContactQueueingSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
-	}
+	campaign := getOutboundCampaignFromResourceData(d)
 
-	if name != "" {
-		sdkcampaign.Name = &name
-	}
-	if dialingMode != "" {
-		sdkcampaign.DialingMode = &dialingMode
-	}
-	if abandonRate != 0 {
-		sdkcampaign.AbandonRate = &abandonRate
-	}
-	if callerName != "" {
-		sdkcampaign.CallerName = &callerName
-	}
-	if callerAddress != "" {
-		sdkcampaign.CallerAddress = &callerAddress
-	}
-	if outboundLineCount != 0 {
-		sdkcampaign.OutboundLineCount = &outboundLineCount
-	}
-	if previewTimeOutSeconds != 0 {
-		sdkcampaign.PreviewTimeOutSeconds = &previewTimeOutSeconds
-	}
-	if noAnswerTimeout != 0 {
-		sdkcampaign.NoAnswerTimeout = &noAnswerTimeout
-	}
-	if callAnalysisLanguage != "" {
-		sdkcampaign.CallAnalysisLanguage = &callAnalysisLanguage
-	}
-	if priority != 0 {
-		sdkcampaign.Priority = &priority
-	}
-
-	log.Printf("Updating Outbound Campaign %s", name)
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		// Get current Outbound Campaign version
-		outboundCampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
-		if getErr != nil {
-			return resp, diag.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr)
-		}
-		sdkcampaign.Version = outboundCampaign.Version
-
-		// Campaign Status has to stay the same, and can only be updated independent of any other operations
-		sdkcampaign.CampaignStatus = outboundCampaign.CampaignStatus
-
-		_, _, updateErr := outboundApi.PutOutboundCampaign(d.Id(), sdkcampaign)
-		if updateErr != nil {
-			return resp, diag.Errorf("Failed to update Outbound Campaign %s: %s", name, updateErr)
-		}
-		return nil, nil
-	})
-	if diagErr != nil {
-		return diagErr
+	log.Printf("Updating Outbound Campaign %s", *campaign.Name)
+	campaignSdk, err := proxy.updateOutboundCampaign(ctx, d.Id(), &campaign)
+	if err != nil {
+		return diag.Errorf("Failed to update campaign %s", err)
 	}
 
 	// Check if Campaign Status needs updated
-	diagErr = updateOutboundCampaignStatus(d, outboundApi, sdkcampaign)
+	diagErr := updateOutboundCampaignStatus(ctx, d, proxy, *campaignSdk, campaignStatus)
 	if diagErr != nil {
 		return diagErr
 	}
 
-	log.Printf("Updated Outbound Campaign %s", name)
+	log.Printf("Updated Outbound Campaign %s", *campaign.Name)
 	return readOutboundCampaign(ctx, d, meta)
 }
 
 // deleteOutboundCampaign is used by the outbound_campaign resource to delete an outbound campaign from Genesys cloud
 func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
+	proxy := newOutboundCampaignProxy(sdkConfig)
 
 	campaignStatus := d.Get("campaign_status").(string)
 
@@ -353,12 +173,12 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 		diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			log.Printf("Turning off Outbound Campaign before deletion")
 			d.Set("campaign_status", "off")
-			outboundCampaign, resp, getErr := outboundApi.GetOutboundCampaign(d.Id())
+			outboundCampaign, resp, getErr := proxy.getOutboundCampaignById(ctx, d.Id())
 			if getErr != nil {
 				return resp, diag.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr)
 			}
 			// Handles updating the campaign based on what is set in ResourceData.campaign_status
-			diagErr := updateOutboundCampaignStatus(d, outboundApi, *outboundCampaign)
+			diagErr := updateOutboundCampaignStatus(ctx, d, proxy, *outboundCampaign, campaignStatus)
 			if diagErr != nil {
 				return resp, diagErr
 			}
@@ -368,22 +188,15 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 			return diagErr
 		}
 	}
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		log.Printf("Deleting Outbound Campaign")
-		_, resp, err := outboundApi.DeleteOutboundCampaign(d.Id())
-		if err != nil {
-			return resp, diag.Errorf("Failed to delete Outbound Campaign: %s", err)
-		}
-		return resp, nil
-	})
-	if diagErr != nil {
-		return diagErr
+	_, err := proxy.deleteOutboundCampaign(ctx, d.Id())
+	if err != nil {
+		return diag.Errorf("Failed to delete campaign %s: %s", d.Id(), err)
 	}
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := outboundApi.GetOutboundCampaign(d.Id())
+		_, resp, err := proxy.getOutboundCampaignById(ctx, d.Id())
 		if err != nil {
-			if gcloud.IsStatus404(resp) {
+			if gcloud.IsStatus404ByInt(resp) {
 				// Outbound Campaign deleted
 				log.Printf("Deleted Outbound Campaign %s", d.Id())
 				return nil

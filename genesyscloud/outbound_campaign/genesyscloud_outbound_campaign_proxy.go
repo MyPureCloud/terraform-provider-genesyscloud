@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"log"
 )
 
 /*
@@ -92,7 +93,12 @@ func (p *outboundCampaignProxy) deleteOutboundCampaign(ctx context.Context, id s
 
 // createOutboundCampaignFn is an implementation function for creating a Genesys Cloud outbound campaign
 func createOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, outboundCampaign *platformclientv2.Campaign) (*platformclientv2.Campaign, error) {
-	return nil, nil
+	campaign, _, err := p.outboundApi.PostOutboundCampaigns(*outboundCampaign)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create campaign %s", err)
+	}
+
+	return campaign, nil
 }
 
 // getAllOutboundCampaignFn is the implementation for retrieving all outbound campaign in Genesys Cloud
@@ -133,20 +139,56 @@ func getAllOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy) (*[
 
 // getOutboundCampaignIdByNameFn is an implementation of the function to get a Genesys Cloud outbound campaign by name
 func getOutboundCampaignIdByNameFn(ctx context.Context, p *outboundCampaignProxy, name string) (id string, retryable bool, err error) {
-	return "", false, nil
+	campaigns, err := getAllOutboundCampaignFn(ctx, p)
+	if err != nil {
+		return "", false, err
+	}
+	if campaigns == nil || len(*campaigns) == 0 {
+		return "", true, fmt.Errorf("No campaigns found with name %s", name)
+	}
+
+	var campaign platformclientv2.Campaign
+	for _, campaignSdk := range *campaigns {
+		if *campaignSdk.Name == name {
+			log.Printf("Retrieved the campaign id %s by name %s", *campaignSdk.Id, name)
+			campaign = campaignSdk
+			return *campaign.Id, false, nil
+		}
+	}
+
+	return "", false, fmt.Errorf("Unable to find campaign with name %s", name)
 }
 
 // getOutboundCampaignByIdFn is an implementation of the function to get a Genesys Cloud outbound campaign by Id
 func getOutboundCampaignByIdFn(ctx context.Context, p *outboundCampaignProxy, id string) (outboundCampaign *platformclientv2.Campaign, statusCode int, err error) {
-	return nil, 0, nil
+	campaign, resp, err := p.outboundApi.GetOutboundCampaign(id)
+	if err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve campaign by id %s: %s", id, err)
+	}
+	return campaign, resp.StatusCode, nil
 }
 
 // updateOutboundCampaignFn is an implementation of the function to update a Genesys Cloud outbound campaign
 func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id string, outboundCampaign *platformclientv2.Campaign) (*platformclientv2.Campaign, error) {
-	return nil, nil
+	campaign, _, err := getOutboundCampaignByIdFn(ctx, p, id)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to ruleset by id %s: %s", id, err)
+	}
+
+	outboundCampaign.Version = campaign.Version
+	outboundCampaign, _, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to update campaign: %s", err)
+	}
+	return outboundCampaign, nil
 }
 
 // deleteOutboundCampaignFn is an implementation function for deleting a Genesys Cloud outbound campaign
 func deleteOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id string) (statusCode int, err error) {
-	return 0, nil
+	_, resp, err := p.outboundApi.DeleteOutboundCampaign(id)
+	if err != nil {
+		return resp.StatusCode, fmt.Errorf("Failed to delete campaign: %s", err)
+	}
+
+	return resp.StatusCode, nil
 }
