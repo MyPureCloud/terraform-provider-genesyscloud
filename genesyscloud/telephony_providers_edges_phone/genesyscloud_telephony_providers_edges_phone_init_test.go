@@ -18,12 +18,6 @@ import (
    Please make sure you register ALL resources and data sources your test cases will use.
 */
 
-const (
-	trueValue  = "true"
-	falseValue = "false"
-	nullValue  = "null"
-)
-
 // providerDataSources holds a map of all registered sites
 var providerDataSources map[string]*schema.Resource
 

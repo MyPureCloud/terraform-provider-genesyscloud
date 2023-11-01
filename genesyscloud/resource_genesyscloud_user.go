@@ -1358,7 +1358,7 @@ func flattenUserCertifications(certs *[]string) *schema.Set {
 
 // Basic user with minimum required fields
 func GenerateBasicUserResource(resourceID string, email string, name string) string {
-	return GenerateUserResource(resourceID, email, name, nullValue, nullValue, nullValue, nullValue, nullValue, "", "")
+	return GenerateUserResource(resourceID, email, name, NullValue, NullValue, NullValue, NullValue, NullValue, "", "")
 }
 
 func GenerateUserResource(

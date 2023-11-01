@@ -37,7 +37,7 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 				// Create without config
 				Config: integration.GenerateIntegrationResource(
 					integResource1,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(integTypeID),
 					// No config block
 				) + generateIntegrationActionResource(
@@ -45,15 +45,15 @@ func TestAccDataSourceIntegrationAction(t *testing.T) {
 					actionName1,
 					actionCateg1,
 					"genesyscloud_integration."+integResource1+".id",
-					nullValue, // Secure default (false)
-					nullValue, // Timeout default
+					gcloud.NullValue, // Secure default (false)
+					gcloud.NullValue, // Timeout default
 					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
 						reqUrlTemplate1,
 						reqType1,
-						nullValue, // Default req templatezz
-						"",        // No headers
+						gcloud.NullValue, // Default req templatezz
+						"",               // No headers
 					),
 					// Default config response
 				) + generateIntegrationActionDataSource(

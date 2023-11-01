@@ -11,10 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-const nullValue = "null"
-const falseValue = "false"
-const trueValue = "true"
-
 func TestAccDataSourceOutboundContactList(t *testing.T) {
 
 	var (
@@ -30,17 +26,17 @@ func TestAccDataSourceOutboundContactList(t *testing.T) {
 				Config: GenerateOutboundContactList(
 					resourceId,
 					contactListName,
-					nullValue,  // divisionId
-					nullValue,  // previewModeColumnName
-					[]string{}, // previewModeAcceptedValues
+					gcloud.NullValue, // divisionId
+					gcloud.NullValue, // previewModeColumnName
+					[]string{},       // previewModeAcceptedValues
 					[]string{strconv.Quote("Cell")},
-					falseValue, // automaticTimeZoneMapping
-					nullValue,  // zipCodeColumnName
-					nullValue,  // attemptLimitId
+					gcloud.FalseValue, // automaticTimeZoneMapping
+					gcloud.NullValue,  // zipCodeColumnName
+					gcloud.NullValue,  // attemptLimitId
 					GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
-						nullValue,
+						gcloud.NullValue,
 					),
 				) + generateOutboundContactListDataSource(
 					dataSourceId,

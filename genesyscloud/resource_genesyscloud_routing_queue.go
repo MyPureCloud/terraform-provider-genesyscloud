@@ -336,7 +336,7 @@ func ResourceRoutingQueue() *schema.Resource {
 						"queue_id": {
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: `The ID of the queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified.`,
+							Description: `The ID of the queue being evaluated for this rule. For rule 1, this is always be the current queue, so no queue id should be specified for the first rule.`,
 						},
 						"operator": {
 							Description:  "The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.",
@@ -1110,7 +1110,7 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.
 
 			if queueId, ok := ruleSettings["queue_id"].(string); ok && queueId != "" {
 				if i == 0 {
-					return nil, diag.Errorf("For rule 1, queue_id is always assumed to be the current queue, so should not be specified.")
+					return nil, diag.Errorf("For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified.")
 				}
 				sdkCGRRule.Queue = &platformclientv2.Domainentityref{Id: &queueId}
 			}
@@ -1154,9 +1154,9 @@ func flattenConditionalGroupRoutingRules(queue *platformclientv2.Queue) []interf
 		resourcedata.SetMapValueIfNotNil(ruleSettings, "condition_value", rule.ConditionValue)
 		resourcedata.SetMapValueIfNotNil(ruleSettings, "metric", rule.Metric)
 
-		// The first rule is assumed to apply to this queue, so queue_id should be omitted from the first rule on queue creation
-		// Hence it should not be read in either
-		if rule.Queue != nil && *rule.Queue.Id != *queue.Id {
+		// The first rule is assumed to apply to this queue, so queue_id should be omitted if the conditional grouping routing rule
+		//is the first one being looked at.
+		if rule.Queue != nil && i > 0 {
 			ruleSettings["queue_id"] = *rule.Queue.Id
 		}
 

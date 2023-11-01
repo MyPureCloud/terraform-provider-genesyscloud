@@ -20,11 +20,11 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateAuthDivisionResource(
+				Config: GenerateAuthDivisionResource(
 					divResource,
 					divName,
-					nullValue,
-					nullValue,
+					NullValue,
+					NullValue,
 				) + generateAuthDivisionDataSource(
 					divDataSource,
 					"genesyscloud_auth_division."+divResource+".name",

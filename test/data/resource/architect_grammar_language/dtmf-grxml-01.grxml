@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<grammar xmlns="http://www.w3.org/2001/06/grammar"
+	 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	 xsi:schemaLocation="http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd"
+	 version="1.0"
+ 	 mode="dtmf"
+	 xml:lang="en-US"
+	 tag-format="semantics/1.0"
+	 root="ROOT">
+
+   <rule id="ROOT" scope="public">
+      <one-of>
+
+         <!-- checking-->
+         <item>
+            <one-of>
+               <item>1</item>
+            </one-of>
+            <tag> out = "checking" </tag>
+         </item>
+
+         <!-- savings-->
+         <item>
+            <one-of>
+               <item>2</item>
+            </one-of>
+            <tag> out = "savings" </tag>
+         </item>
+
+      </one-of>
+   </rule>
+</grammar>

@@ -31,7 +31,7 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 				Config: generateFlowMilestoneResource(
 					milestoneResource1,
 					name1,
-					nullValue,
+					NullValue,
 					description1,
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -45,7 +45,7 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 				Config: generateFlowMilestoneResource(
 					milestoneResource1,
 					name2,
-					nullValue,
+					NullValue,
 					description2,
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -56,7 +56,7 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 			},
 			{
 				// Update with a new division
-				Config: generateAuthDivisionBasic(divResource, divName) + generateFlowMilestoneResource(
+				Config: GenerateAuthDivisionBasic(divResource, divName) + generateFlowMilestoneResource(
 					milestoneResource1,
 					name2,
 					"genesyscloud_auth_division."+divResource+".id",

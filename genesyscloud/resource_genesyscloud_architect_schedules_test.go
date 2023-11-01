@@ -39,7 +39,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 				Config: generateArchitectSchedulesResource(
 					schedResource1,
 					name,
-					nullValue,
+					NullValue,
 					description,
 					start,
 					end,
@@ -59,7 +59,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 				Config: generateArchitectSchedulesResource(
 					schedResource1,
 					name,
-					nullValue,
+					NullValue,
 					description,
 					start2,
 					end,
@@ -76,7 +76,7 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 			},
 			{
 				// Create with new division
-				Config: generateAuthDivisionBasic(divResource, divName) + generateArchitectSchedulesResource(
+				Config: GenerateAuthDivisionBasic(divResource, divName) + generateArchitectSchedulesResource(
 					schedResource2,
 					name2,
 					"genesyscloud_auth_division."+divResource+".id",

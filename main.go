@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
+	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
@@ -22,6 +24,7 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
+	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	station "terraform-provider-genesyscloud/genesyscloud/station"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
@@ -90,6 +93,8 @@ func registerResources() {
 
 	regInstance := &RegisterInstance{}
 
+	grammar.SetRegistrar(regInstance)               //Registering architect grammar
+	grammarLanguage.SetRegistrar(regInstance)       //Registering architect grammar language
 	edgePhone.SetRegistrar(regInstance)             //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)              //Registering telephony providers edges site
 	station.SetRegistrar(regInstance)               //Registering station
@@ -110,6 +115,7 @@ func registerResources() {
 	did.SetRegistrar(regInstance)                   //Registering telephony did
 	didPool.SetRegistrar(regInstance)               //Registering telephony did pools
 	archIvr.SetRegistrar(regInstance)               //Registering architect ivr
+	workbin.SetRegistrar(regInstance)               //Registering task management workbin
 
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters

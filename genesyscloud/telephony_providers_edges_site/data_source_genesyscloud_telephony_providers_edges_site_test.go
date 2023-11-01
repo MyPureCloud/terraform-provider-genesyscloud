@@ -43,7 +43,7 @@ func TestAccDataSourceSite(t *testing.T) {
 		[]string{},
 		gcloud.GenerateLocationEmergencyNum(
 			emergencyNumber,
-			nullValue, // Default number type
+			gcloud.NullValue, // Default number type
 		), gcloud.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",

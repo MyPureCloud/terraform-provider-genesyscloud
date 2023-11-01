@@ -51,7 +51,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 				Config: generateArchitectSchedulesResource( // Create Open schedule
 					schedResource1,
 					openSched,
-					nullValue,
+					NullValue,
 					schedDesc,
 					start,
 					end,
@@ -59,7 +59,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 				) + generateArchitectSchedulesResource( // Create Closed schedule
 					schedResource2,
 					closedSched,
-					nullValue,
+					NullValue,
 					schedDesc,
 					start,
 					end,
@@ -67,7 +67,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 				) + generateArchitectScheduleGroupsResource(
 					schedGroupResource1,
 					name,
-					nullValue,
+					NullValue,
 					description,
 					time_zone,
 					generateSchedules("open_schedules_id", "genesyscloud_architect_schedules."+schedResource1+".id"),
@@ -87,7 +87,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 				Config: generateArchitectSchedulesResource( // Create Open schedule
 					schedResource1,
 					openSched,
-					nullValue,
+					NullValue,
 					schedDesc,
 					start,
 					end,
@@ -95,7 +95,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 				) + generateArchitectSchedulesResource( // Create Closed schedule
 					schedResource2,
 					closedSched,
-					nullValue,
+					NullValue,
 					schedDesc,
 					start,
 					end,
@@ -103,7 +103,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 				) + generateArchitectSchedulesResource( // Create Holiday schedule
 					schedResource3,
 					holidaySched,
-					nullValue,
+					NullValue,
 					schedDesc,
 					start,
 					end,
@@ -111,7 +111,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 				) + generateArchitectScheduleGroupsResource(
 					schedGroupResource1,
 					name,
-					nullValue,
+					NullValue,
 					description,
 					time_zone,
 					generateSchedules("open_schedules_id", "genesyscloud_architect_schedules."+schedResource1+".id"),
@@ -130,7 +130,7 @@ func TestAccResourceArchitectScheduleGroups(t *testing.T) {
 			},
 			{
 				// Create with new division
-				Config: generateAuthDivisionBasic(divResource, divName) + generateArchitectSchedulesResource( // Create Open schedule
+				Config: GenerateAuthDivisionBasic(divResource, divName) + generateArchitectSchedulesResource( // Create Open schedule
 					schedResource4,
 					openSched2,
 					"genesyscloud_auth_division."+divResource+".id",

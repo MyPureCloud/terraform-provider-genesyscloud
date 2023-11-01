@@ -25,7 +25,7 @@ func TestAccDataSourceFlowOutcome(t *testing.T) {
 				Config: generateFlowOutcomeResource(
 					outcomeRes,
 					name,
-					nullValue,
+					NullValue,
 					description,
 				) + generateFlowOutcomeDataSource(
 					outcomeData,

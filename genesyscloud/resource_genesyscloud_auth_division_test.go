@@ -24,11 +24,11 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateAuthDivisionResource(
+				Config: GenerateAuthDivisionResource(
 					divResource1,
 					divName1,
-					nullValue, // No description
-					nullValue, // Not home division
+					NullValue, // No description
+					NullValue, // Not home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName1),
@@ -37,11 +37,11 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 			},
 			{
 				// Update with a new name and description
-				Config: generateAuthDivisionResource(
+				Config: GenerateAuthDivisionResource(
 					divResource1,
 					divName2,
 					strconv.Quote(divDesc1),
-					nullValue, // Not home division
+					NullValue, // Not home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName2),
@@ -73,11 +73,11 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Set home division description
-				Config: generateAuthDivisionResource(
+				Config: GenerateAuthDivisionResource(
 					divHomeRes,
 					divHomeName,
 					strconv.Quote(homeDesc),
-					trueValue, // Home division
+					TrueValue, // Home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "name", divHomeName),
@@ -87,20 +87,20 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 			},
 			{
 				// Set home division description again (applying twice to allow for desc to update)
-				Config: generateAuthDivisionResource(
+				Config: GenerateAuthDivisionResource(
 					divHomeRes,
 					divHomeName,
 					strconv.Quote(homeDesc2),
-					trueValue, // Home division
+					TrueValue, // Home division
 				),
 			},
 			{
 				// Set home division description again
-				Config: generateAuthDivisionResource(
+				Config: GenerateAuthDivisionResource(
 					divHomeRes,
 					divHomeName,
 					strconv.Quote(homeDesc2),
-					trueValue, // Home division
+					TrueValue, // Home division
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "name", divHomeName),
@@ -116,23 +116,6 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 		},
 		CheckDestroy: testVerifyDivisionsDestroyed,
 	})
-}
-
-func generateAuthDivisionBasic(resourceID string, name string) string {
-	return generateAuthDivisionResource(resourceID, name, nullValue, falseValue)
-}
-
-func generateAuthDivisionResource(
-	resourceID string,
-	name string,
-	description string,
-	home string) string {
-	return fmt.Sprintf(`resource "genesyscloud_auth_division" "%s" {
-		name = "%s"
-		description = %s
-		home = %s
-	}
-	`, resourceID, name, description, home)
 }
 
 func testVerifyDivisionsDestroyed(state *terraform.State) error {

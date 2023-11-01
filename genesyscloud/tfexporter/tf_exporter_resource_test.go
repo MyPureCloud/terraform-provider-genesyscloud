@@ -2,6 +2,8 @@ package tfexporter
 
 import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
+	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
@@ -14,6 +16,7 @@ import (
 	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
+	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	"testing"
 
@@ -41,7 +44,8 @@ type registerTestInstance struct {
 }
 
 func (r *registerTestInstance) registerTestResources() {
-
+	providerResources["genesyscloud_architect_grammar"] = grammar.ResourceArchitectGrammar()
+	providerResources["genesyscloud_architect_grammar_language"] = grammarLanguage.ResourceArchitectGrammarLanguage()
 	providerResources["genesyscloud_architect_datatable"] = gcloud.ResourceArchitectDatatable()
 	providerResources["genesyscloud_architect_datatable_row"] = gcloud.ResourceArchitectDatatableRow()
 	providerResources["genesyscloud_architect_emergencygroup"] = gcloud.ResourceArchitectEmergencyGroup()
@@ -122,11 +126,14 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_skill_group"] = gcloud.ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = didPool.ResourceTelephonyDidPool()
 
+	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
+
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
 
 func (r *registerTestInstance) registerTestExporters() {
-
+	RegisterExporter("genesyscloud_architect_grammar", grammar.ArchitectGrammarExporter())
+	RegisterExporter("genesyscloud_architect_grammar_language", grammarLanguage.ArchitectGrammarLanguageExporter())
 	RegisterExporter("genesyscloud_architect_datatable", gcloud.ArchitectDatatableExporter())
 	RegisterExporter("genesyscloud_architect_datatable_row", gcloud.ArchitectDatatableRowExporter())
 	RegisterExporter("genesyscloud_architect_emergencygroup", gcloud.ArchitectEmergencyGroupExporter())
@@ -207,6 +214,8 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
 	RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", didPool.TelephonyDidPoolExporter())
+
+	RegisterExporter("genesyscloud_task_management_workbin", workbin.TaskManagementWorkbinExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }

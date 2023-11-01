@@ -28,15 +28,15 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 					queueResource,
 					queueName,
 					queueDesc,
-					nullValue, // MANDATORY_TIMEOUT
+					NullValue, // MANDATORY_TIMEOUT
 					"200000",  // acw_timeout
-					nullValue, // ALL
-					nullValue, // auto_answer_only true
-					nullValue, // No calling party name
-					nullValue, // No calling party number
-					nullValue, // enable_manual_assignment false
-					nullValue, //suppressCall_record_false
-					nullValue, // enable_transcription false
+					NullValue, // ALL
+					NullValue, // auto_answer_only true
+					NullValue, // No calling party name
+					NullValue, // No calling party number
+					NullValue, // enable_manual_assignment false
+					NullValue, //suppressCall_record_false
+					NullValue, // enable_transcription false
 				) + generateRoutingQueueDataSource(
 					queueDataSource,
 					"genesyscloud_routing_queue."+queueResource+".name",
