@@ -933,8 +933,13 @@ func buildSdkRoutingRules(d *schema.ResourceData) *[]platformclientv2.Routingrul
 			var sdkRule platformclientv2.Routingrule
 
 			resourcedata.BuildSDKStringValueIfNotNil(&sdkRule.Operator, ruleSettings, "operator")
-			sdkRule.Threshold = platformclientv2.Int(ruleSettings["threshold"].(int))
-			sdkRule.WaitSeconds = platformclientv2.Float64(ruleSettings["wait_seconds"].(float64))
+			if threshold, ok := ruleSettings["threshold"]; ok {
+				v := threshold.(int)
+				sdkRule.Threshold = &v
+			}
+			if waitSeconds, ok := ruleSettings["wait_seconds"].(float64); ok {
+				sdkRule.WaitSeconds = &waitSeconds
+			}
 
 			routingRules = append(routingRules, sdkRule)
 		}
@@ -1094,9 +1099,13 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.
 			}
 			var sdkCGRRule platformclientv2.Conditionalgrouproutingrule
 
-			sdkCGRRule.WaitSeconds = platformclientv2.Int(ruleSettings["wait_seconds"].(int))
+			if waitSeconds, ok := ruleSettings["wait_seconds"].(int); ok {
+				sdkCGRRule.WaitSeconds = &waitSeconds
+			}
 			resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Operator, ruleSettings, "operator")
-			sdkCGRRule.ConditionValue = platformclientv2.Float64(ruleSettings["condition_value"].(float64))
+			if conditionValue, ok := ruleSettings["condition_value"].(float64); ok {
+				sdkCGRRule.ConditionValue = &conditionValue
+			}
 			resourcedata.BuildSDKStringValueIfNotNil(&sdkCGRRule.Metric, ruleSettings, "metric")
 
 			if queueId, ok := ruleSettings["queue_id"].(string); ok && queueId != "" {
@@ -1271,19 +1280,32 @@ func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouti
 	if directRouting != nil && len(directRouting) > 0 {
 		settingsMap := directRouting[0].(map[string]interface{})
 
+		backupQueueID := settingsMap["backup_queue_id"].(string)
+		agentWaitSeconds := settingsMap["agent_wait_seconds"].(int)
+		waitForAgent := settingsMap["wait_for_agent"].(bool)
+
+		callUseAgentAddressOutbound := settingsMap["call_use_agent_address_outbound"].(bool)
+		callSettings := &platformclientv2.Directroutingmediasettings{
+			UseAgentAddressOutbound: &callUseAgentAddressOutbound,
+		}
+
+		emailUseAgentAddressOutbound := settingsMap["email_use_agent_address_outbound"].(bool)
+		emailSettings := &platformclientv2.Directroutingmediasettings{
+			UseAgentAddressOutbound: &emailUseAgentAddressOutbound,
+		}
+
+		messageUseAgentAddressOutbound := settingsMap["message_use_agent_address_outbound"].(bool)
+		messageSettings := &platformclientv2.Directroutingmediasettings{
+			UseAgentAddressOutbound: &messageUseAgentAddressOutbound,
+		}
+
 		return &platformclientv2.Directrouting{
-			CallMediaSettings: &platformclientv2.Directroutingmediasettings{
-				UseAgentAddressOutbound: platformclientv2.Bool(settingsMap["call_use_agent_address_outbound"].(bool)),
-			},
-			EmailMediaSettings: &platformclientv2.Directroutingmediasettings{
-				UseAgentAddressOutbound: platformclientv2.Bool(settingsMap["email_use_agent_address_outbound"].(bool)),
-			},
-			MessageMediaSettings: &platformclientv2.Directroutingmediasettings{
-				UseAgentAddressOutbound: platformclientv2.Bool(settingsMap["message_use_agent_address_outbound"].(bool)),
-			},
-			WaitForAgent:     platformclientv2.Bool(settingsMap["wait_for_agent"].(bool)),
-			AgentWaitSeconds: platformclientv2.Int(settingsMap["agent_wait_seconds"].(int)),
-			BackupQueueId:    platformclientv2.String(settingsMap["backup_queue_id"].(string)),
+			CallMediaSettings:    callSettings,
+			EmailMediaSettings:   emailSettings,
+			MessageMediaSettings: messageSettings,
+			WaitForAgent:         &waitForAgent,
+			AgentWaitSeconds:     &agentWaitSeconds,
+			BackupQueueId:        &backupQueueID,
 		}
 	}
 	return nil
@@ -1292,9 +1314,15 @@ func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouti
 func flattenDirectRouting(settings platformclientv2.Directrouting) map[string]interface{} {
 	settingsMap := make(map[string]interface{})
 
-	resourcedata.SetMapValueIfNotNil(settingsMap, "backup_queue_id", settings.BackupQueueId)
-	resourcedata.SetMapValueIfNotNil(settingsMap, "agent_wait_seconds", settings.AgentWaitSeconds)
-	resourcedata.SetMapValueIfNotNil(settingsMap, "wait_for_agent", settings.WaitForAgent)
+	if settings.BackupQueueId != nil {
+		settingsMap["backup_queue_id"] = *settings.BackupQueueId
+	}
+	if settings.AgentWaitSeconds != nil {
+		settingsMap["agent_wait_seconds"] = *settings.AgentWaitSeconds
+	}
+	if settings.WaitForAgent != nil {
+		settingsMap["wait_for_agent"] = *settings.WaitForAgent
+	}
 
 	if settings.CallMediaSettings != nil {
 		callSettings := *settings.CallMediaSettings

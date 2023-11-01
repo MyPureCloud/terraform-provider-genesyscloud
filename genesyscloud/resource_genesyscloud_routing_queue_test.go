@@ -148,9 +148,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"suppress_in_queue_call_recording",
-				},
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
@@ -351,9 +348,6 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"suppress_in_queue_call_recording",
-				},
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
@@ -456,9 +450,6 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"suppress_in_queue_call_recording",
-				},
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
@@ -596,9 +587,6 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"suppress_in_queue_call_recording",
-				},
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
@@ -706,9 +694,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResource,
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"suppress_in_queue_call_recording",
-				},
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
@@ -807,9 +792,6 @@ func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResourceId,
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"suppress_in_queue_call_recording",
-				},
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
@@ -904,9 +886,6 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResource,
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"suppress_in_queue_call_recording",
-				},
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
@@ -978,9 +957,6 @@ func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"suppress_in_queue_call_recording",
-				},
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
