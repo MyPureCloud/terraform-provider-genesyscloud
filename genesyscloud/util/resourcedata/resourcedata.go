@@ -100,8 +100,6 @@ func SetMapInterfaceArrayWithFuncIfNotNil[T any](targetMap map[string]interface{
 func SetNillableReference(d *schema.ResourceData, key string, value *platformclientv2.Domainentityref) {
 	if value != nil && value.Id != nil {
 		d.Set(key, value.Id)
-	} else {
-		d.Set(key, nil)
 	}
 }
 
