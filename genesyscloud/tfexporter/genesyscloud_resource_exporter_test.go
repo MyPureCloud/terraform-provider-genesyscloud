@@ -15,7 +15,7 @@ func TestPostProcessHclBytesFunc(t *testing.T) {
 	testCase1 := PostProcessHclBytesTestCase{
 		original: `
 		resource "example_resource" "example" {
-			file_content_hash = "${filesha256(\"file.json\")}"
+			file_content_hash = "${filesha256(\"file1.json\")}"
 			another_field     = filesha256("file2.json")
 		}
 		
@@ -26,12 +26,12 @@ func TestPostProcessHclBytesFunc(t *testing.T) {
 		
 		resource "example_resource" "example3" {
 			file_content_hash = filesha256(var.file_path)
-			another_file      = "${filesha256(\"file.json\")}"
+			another_file      = "${filesha256(\"file1.json\")}"
 			another_field     = "${var.foo}" 
 		}`,
 		expected: `
 		resource "example_resource" "example" {
-			file_content_hash = "${filesha256("file.json")}"
+			file_content_hash = "${filesha256("file1.json")}"
 			another_field     = filesha256("file2.json")
 		}
 		
@@ -42,7 +42,7 @@ func TestPostProcessHclBytesFunc(t *testing.T) {
 		
 		resource "example_resource" "example3" {
 			file_content_hash = filesha256(var.file_path)
-			another_file      = "${filesha256("file.json")}"
+			another_file      = "${filesha256("file1.json")}"
 			another_field     = "${var.foo}" 
 		}`,
 	}
@@ -57,13 +57,13 @@ func TestPostProcessHclBytesFunc(t *testing.T) {
 		original: `
 		resource "foo" "bar" {
 			json_data1        = "123"
-			file_content_hash = "${filesha256(\"file.json\")}"
+			file_content_hash = "${filesha256(\"file1.json\")}"
 			json_data2        = "456"
 		}`,
 		expected: `
 		resource "foo" "bar" {
 			json_data1        = jsonencode({ "foo": "bar" })
-			file_content_hash = "${filesha256("file.json")}"
+			file_content_hash = "${filesha256("file1.json")}"
 			json_data2        = jsonencode({
 				"hello": "world"
 			})

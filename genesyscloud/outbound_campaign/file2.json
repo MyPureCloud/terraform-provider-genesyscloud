@@ -1,0 +1,58 @@
+{
+	"name": "Test Campaign 9d9f3f6e-ebf9-45fc-9f57-f67ae6da67c2",
+	"contactList": {
+		"id": "4c773b14-2ee0-4e55-addc-49bec064ee67"
+	},
+	"queue": {
+		"id": "799be3cf-b1dc-44c0-85f1-e09dd2c99711"
+	},
+	"dialingMode": "agentless",
+	"site": {
+		"id": "4c0112a1-2ac9-42d5-9635-3ba0dacfa235"
+	},
+	"campaignStatus": "off",
+	"phoneColumns": [
+		{
+			"columnName": "Cell"
+		}
+	],
+	"abandonRate": 1,
+	"dncLists": [
+		{
+			"id": "ab766b13-67b6-47eb-8070-92d8688bea8c"
+		}
+	],
+	"callableTimeSet": {
+		"id": "1d181f3a-9a83-46dd-a5c1-76de623f9789"
+	},
+	"callAnalysisResponseSet": {
+		"id": "57018225-2434-488f-8d9f-dcc2782c01af"
+	},
+	"callerName": "Test Name",
+	"callerAddress": "+353371111111",
+	"outboundLineCount": 1,
+	"ruleSets": [
+		{
+			"id": "d47a9b20-5171-42f8-8f5f-a7e25a529fb8"
+		}
+	],
+	"skipPreviewDisabled": false,
+	"alwaysRunning": false,
+	"contactSorts": [
+		{
+			"fieldName": "zipcode",
+			"direction": "ASC",
+			"numeric": false
+		}
+	],
+	"noAnswerTimeout": 40,
+	"priority": 4,
+	"contactListFilters": [
+		{
+			"id": "d34df8a2-dbcf-49b9-8216-90de20aaf86f"
+		}
+	],
+	"dynamicContactQueueingSettings": {
+		"sort": true
+	}
+}

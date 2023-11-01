@@ -1,0 +1,85 @@
+{
+  "id": "8ef9741d-7417-425d-9fcb-5a5d010eb347",
+  "name": "Test Campaign 9d9f3f6e-ebf9-45fc-9f57-f67ae6da67c2",
+  "dateCreated": "2023-11-01T09:57:52.481000Z",
+  "version": 1,
+  "contactList": {
+    "id": "4c773b14-2ee0-4e55-addc-49bec064ee67",
+    "name": "contact list 51cb78bf-2d5a-4520-973c-3fa4831db3a3",
+    "selfUri": "/api/v2/outbound/contactlists/4c773b14-2ee0-4e55-addc-49bec064ee67"
+  },
+  "dialingMode": "agentless",
+  "site": {
+    "id": "4c0112a1-2ac9-42d5-9635-3ba0dacfa235",
+    "name": "tf site d7654906-c609-4d45-82fb-f9347ac53ee4",
+    "selfUri": "/api/v2/telephony/providers/edges/sites/4c0112a1-2ac9-42d5-9635-3ba0dacfa235"
+  },
+  "campaignStatus": "off",
+  "phoneColumns": [
+    {
+      "columnName": "Cell",
+      "type": "cell"
+    }
+  ],
+  "abandonRate": 1,
+  "dncLists": [
+    {
+      "id": "ab766b13-67b6-47eb-8070-92d8688bea8c",
+      "name": "dnc list fe819ff1-a953-4b88-a79f-a9f16ad73ad9",
+      "selfUri": "/api/v2/outbound/dnclists/ab766b13-67b6-47eb-8070-92d8688bea8c"
+    }
+  ],
+  "callableTimeSet": {
+    "id": "1d181f3a-9a83-46dd-a5c1-76de623f9789",
+    "name": "tf timeset 4540b0c1-84bc-42cd-8c76-a27fd9678b69",
+    "selfUri": "/api/v2/outbound/callabletimesets/1d181f3a-9a83-46dd-a5c1-76de623f9789"
+  },
+  "callAnalysisResponseSet": {
+    "id": "57018225-2434-488f-8d9f-dcc2782c01af",
+    "name": "tf car 519d09cc-1811-4e64-8e1c-d4c3b382df9a",
+    "selfUri": "/api/v2/outbound/callanalysisresponsesets/57018225-2434-488f-8d9f-dcc2782c01af"
+  },
+  "callerName": "Test Name",
+  "callerAddress": "+353371111111",
+  "outboundLineCount": 1,
+  "ruleSets": [
+    {
+      "id": "d47a9b20-5171-42f8-8f5f-a7e25a529fb8",
+      "name": "tf ruleset abf5ae61-6e45-478f-a0b6-9ddb57ce9585",
+      "selfUri": "/api/v2/outbound/rulesets/d47a9b20-5171-42f8-8f5f-a7e25a529fb8"
+    }
+  ],
+  "skipPreviewDisabled": false,
+  "previewTimeOutSeconds": 0,
+  "alwaysRunning": false,
+  "contactSort": {
+    "fieldName": "zipcode",
+    "direction": "ASC",
+    "numeric": false
+  },
+  "contactSorts": [
+    {
+      "fieldName": "zipcode",
+      "direction": "ASC",
+      "numeric": false
+    }
+  ],
+  "noAnswerTimeout": 40,
+  "priority": 4,
+  "contactListFilters": [
+    {
+      "id": "d34df8a2-dbcf-49b9-8216-90de20aaf86f",
+      "name": "tf clf d7727bd5-8cc9-49b3-8772-f3ba630842d7",
+      "selfUri": "/api/v2/outbound/contactlistfilters/d34df8a2-dbcf-49b9-8216-90de20aaf86f"
+    }
+  ],
+  "division": {
+    "id": "4a7e4f4b-e734-40b6-838e-557c5eedd49a",
+    "name": "New Home",
+    "selfUri": "/api/v2/authorization/divisions/4a7e4f4b-e734-40b6-838e-557c5eedd49a"
+  },
+  "dynamicContactQueueingSettings": {
+    "sort": true
+  },
+  "selfUri": "/api/v2/outbound/campaigns/8ef9741d-7417-425d-9fcb-5a5d010eb347"
+}

@@ -20,9 +20,9 @@ var internalProxy *outboundCampaignProxy
 type createOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy, campaign *platformclientv2.Campaign) (*platformclientv2.Campaign, error)
 type getAllOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy) (*[]platformclientv2.Campaign, error)
 type getOutboundCampaignIdByNameFunc func(ctx context.Context, p *outboundCampaignProxy, name string) (id string, retryable bool, err error)
-type getOutboundCampaignByIdFunc func(ctx context.Context, p *outboundCampaignProxy, id string) (campaign *platformclientv2.Campaign, responseCode int, err error)
+type getOutboundCampaignByIdFunc func(ctx context.Context, p *outboundCampaignProxy, id string) (campaign *platformclientv2.Campaign, response *platformclientv2.APIResponse, err error)
 type updateOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy, id string, campaign *platformclientv2.Campaign) (*platformclientv2.Campaign, error)
-type deleteOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy, id string) (responseCode int, err error)
+type deleteOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy, id string) (response *platformclientv2.APIResponse, err error)
 
 // outboundCampaignProxy contains all of the methods that call genesys cloud APIs.
 type outboundCampaignProxy struct {
@@ -77,7 +77,7 @@ func (p *outboundCampaignProxy) getOutboundCampaignIdByName(ctx context.Context,
 }
 
 // getOutboundCampaignById returns a single Genesys Cloud outbound campaign by Id
-func (p *outboundCampaignProxy) getOutboundCampaignById(ctx context.Context, id string) (outboundCampaign *platformclientv2.Campaign, statusCode int, err error) {
+func (p *outboundCampaignProxy) getOutboundCampaignById(ctx context.Context, id string) (outboundCampaign *platformclientv2.Campaign, response *platformclientv2.APIResponse, err error) {
 	return p.getOutboundCampaignByIdAttr(ctx, p, id)
 }
 
@@ -87,7 +87,7 @@ func (p *outboundCampaignProxy) updateOutboundCampaign(ctx context.Context, id s
 }
 
 // deleteOutboundCampaign deletes a Genesys Cloud outbound campaign by Id
-func (p *outboundCampaignProxy) deleteOutboundCampaign(ctx context.Context, id string) (statusCode int, err error) {
+func (p *outboundCampaignProxy) deleteOutboundCampaign(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
 	return p.deleteOutboundCampaignAttr(ctx, p, id)
 }
 
@@ -160,12 +160,12 @@ func getOutboundCampaignIdByNameFn(ctx context.Context, p *outboundCampaignProxy
 }
 
 // getOutboundCampaignByIdFn is an implementation of the function to get a Genesys Cloud outbound campaign by Id
-func getOutboundCampaignByIdFn(ctx context.Context, p *outboundCampaignProxy, id string) (outboundCampaign *platformclientv2.Campaign, statusCode int, err error) {
+func getOutboundCampaignByIdFn(ctx context.Context, p *outboundCampaignProxy, id string) (outboundCampaign *platformclientv2.Campaign, response *platformclientv2.APIResponse, err error) {
 	campaign, resp, err := p.outboundApi.GetOutboundCampaign(id)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve campaign by id %s: %s", id, err)
+		return nil, resp, fmt.Errorf("Failed to retrieve campaign by id %s: %s", id, err)
 	}
-	return campaign, resp.StatusCode, nil
+	return campaign, resp, nil
 }
 
 // updateOutboundCampaignFn is an implementation of the function to update a Genesys Cloud outbound campaign
@@ -184,11 +184,11 @@ func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id 
 }
 
 // deleteOutboundCampaignFn is an implementation function for deleting a Genesys Cloud outbound campaign
-func deleteOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id string) (statusCode int, err error) {
+func deleteOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	_, resp, err := p.outboundApi.DeleteOutboundCampaign(id)
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("Failed to delete campaign: %s", err)
+		return resp, fmt.Errorf("Failed to delete campaign: %s", err)
 	}
 
-	return resp.StatusCode, nil
+	return resp, nil
 }
