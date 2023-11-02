@@ -2,7 +2,6 @@ package outbound_campaign
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -10,6 +9,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 	"log"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -30,8 +30,30 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 	}
 
 	for _, campaign := range *campaigns {
-		if *campaign.CampaignStatus != "off" && *campaign.CampaignStatus != "on" {
-			*campaign.CampaignStatus = "off"
+		// If a campaign is "stopping" during the export process we may encounter an error when we read the campaign later, and it will stop the export.
+		// We will give the campaign time to stop here and skip any that won't stop in time
+		if *campaign.CampaignStatus == "stopping" {
+			fmt.Println("Campaign is stopping")
+			// Retry to give the campaign time to turn off
+			err := gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+				campaign, resp, getErr := proxy.getOutboundCampaignById(ctx, *campaign.Id)
+				if getErr != nil {
+					if gcloud.IsStatus404(resp) {
+						return retry.RetryableError(fmt.Errorf("Failed to read Campaign %s during export: %s", *campaign.Id, getErr))
+					}
+					return retry.NonRetryableError(fmt.Errorf("Failed to read Campaign %s: during export %s", *campaign.Id, getErr))
+				}
+
+				if *campaign.CampaignStatus == "stopping" {
+					return retry.RetryableError(fmt.Errorf("Campaign %s didn't stop in time, unable to export %s", *campaign.Id))
+				}
+
+				return nil
+			})
+			if err != nil {
+				log.Printf("%v", err)
+				continue
+			}
 		}
 		resources[*campaign.Id] = &resourceExporter.ResourceMeta{Name: *campaign.Name}
 	}
@@ -59,7 +81,7 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	// Campaigns can be enabled after creation
 	if campaignStatus == "on" {
 		d.Set("campaign_status", campaignStatus)
-		diag := updateOutboundCampaignStatus(ctx, d, proxy, *outboundCampaign, campaignStatus)
+		diag := updateOutboundCampaignStatus(ctx, d.Id(), proxy, *outboundCampaign, campaignStatus)
 		if diag != nil {
 			return diag
 		}
@@ -90,7 +112,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 			return retry.RetryableError(fmt.Errorf("Outbound Campaign still stopping %s", d.Id()))
 		}
 
-		//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign())
 
 		resourcedata.SetNillableValue(d, "name", campaign.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", campaign.ContactList)
@@ -100,9 +122,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableReference(d, "edge_group_id", campaign.EdgeGroup)
 		resourcedata.SetNillableReference(d, "site_id", campaign.Site)
 		resourcedata.SetNillableValue(d, "campaign_status", campaign.CampaignStatus)
-		if campaign.PhoneColumns != nil {
-			d.Set("phone_columns", flattenSdkoutboundcampaignPhonecolumnSlice(*campaign.PhoneColumns))
-		}
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "phone_columns", campaign.PhoneColumns, flattenPhoneColumn)
 		resourcedata.SetNillableValue(d, "abandon_rate", campaign.AbandonRate)
 		if campaign.DncLists != nil {
 			d.Set("dnc_list_ids", gcloud.SdkDomainEntityRefArrToList(*campaign.DncLists))
@@ -118,9 +138,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "skip_preview_disabled", campaign.SkipPreviewDisabled)
 		resourcedata.SetNillableValue(d, "preview_time_out_seconds", campaign.PreviewTimeOutSeconds)
 		resourcedata.SetNillableValue(d, "always_running", campaign.AlwaysRunning)
-		if campaign.ContactSorts != nil {
-			d.Set("contact_sorts", flattenSdkoutboundcampaignContactsortSlice(*campaign.ContactSorts))
-		}
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "contact_sorts", campaign.ContactSorts, flattenContactSorts)
 		resourcedata.SetNillableValue(d, "no_answer_timeout", campaign.NoAnswerTimeout)
 		resourcedata.SetNillableValue(d, "call_analysis_language", campaign.CallAnalysisLanguage)
 		resourcedata.SetNillableValue(d, "priority", campaign.Priority)
@@ -128,23 +146,11 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 			d.Set("contact_list_filter_ids", gcloud.SdkDomainEntityRefArrToList(*campaign.ContactListFilters))
 		}
 		resourcedata.SetNillableReference(d, "division_id", campaign.Division)
-		if campaign.DynamicContactQueueingSettings != nil {
-			d.Set("dynamic_contact_queueing_settings", flattenSdkDynamicContactQueueingSettings(*campaign.DynamicContactQueueingSettings))
-		}
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", campaign.DynamicContactQueueingSettings, flattenSettings)
 
 		log.Printf("Read Outbound Campaign %s %s", d.Id(), *campaign.Name)
-		//return cc.CheckState()
-		return nil
+		return cc.CheckState()
 	})
-}
-
-// Function to format JSON response - Go
-func formatJSON(input any) string {
-	output, err := json.MarshalIndent(input, "", "	")
-	if err != nil {
-		fmt.Println(err)
-	}
-	return string(output)
 }
 
 // updateOutboundCampaign is used by the outbound_campaign resource to update an outbound campaign in Genesys Cloud
@@ -162,7 +168,7 @@ func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	// Check if Campaign Status needs updated
-	diagErr := updateOutboundCampaignStatus(ctx, d, proxy, *campaignSdk, campaignStatus)
+	diagErr := updateOutboundCampaignStatus(ctx, d.Id(), proxy, *campaignSdk, campaignStatus)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -186,9 +192,8 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 			if getErr != nil {
 				return resp, diag.Errorf("Failed to read Outbound Campaign %s: %s", d.Id(), getErr)
 			}
-			outboundCampaign.CampaignStatus = platformclientv2.String("off")
 			// Handles updating the campaign based on what is set in ResourceData.campaign_status
-			diagErr := updateOutboundCampaignStatus(ctx, d, proxy, *outboundCampaign, campaignStatus)
+			diagErr := updateOutboundCampaignStatus(ctx, d.Id(), proxy, *outboundCampaign, "off")
 			if diagErr != nil {
 				return resp, diagErr
 			}

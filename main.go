@@ -128,6 +128,7 @@ func registerResources() {
 	obwm.SetRegistrar(regInstance)                          //Registering outbound wrapup code mappings
 	gcloud.SetRegistrar(regInstance)                        //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                //Registering outbound attempt limit
+	obCampaign.SetRegistrar(regInstance)                    // Registering outbound campaign
 	obContactList.SetRegistrar(regInstance)                 //Registering outbound contact list
 	obCampaign.SetRegistrar(regInstance)                    //Registering outbound campaign
 	scripts.SetRegistrar(regInstance)                       //Registering Scripts

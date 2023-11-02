@@ -46,7 +46,6 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		callerAddress         = "+353371111111"
 		contactListResourceId = "contact_list"
 		dncListResourceId     = "dnc"
-		queueResourceId       = "queue"
 		wrapupCodeResourceId  = "wrapupcode"
 		locationResourceId    = "location"
 		clfResourceId         = "clf"
@@ -109,10 +108,6 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	) + outbound.GenerateOutboundDncListBasic(
 		dncListResourceId,
 		"dnc list "+uuid.NewString(),
-	) + gcloud.GenerateRoutingQueueResourceBasic(
-		queueResourceId,
-		"tf queue"+uuid.NewString(),
-		"",
 	) + gcloud.GenerateRoutingWrapupcodeResource(
 		wrapupCodeResourceId,
 		"tf wrapup code"+uuid.NewString(),
@@ -210,7 +205,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					gcloud.NullValue, // campaign_status
 					gcloud.NullValue, // division id
 					gcloud.NullValue, // script id
-					"genesyscloud_routing_queue."+queueResourceId+".id",
+					gcloud.NullValue, // queue id
 					"genesyscloud_telephony_providers_edges_site."+siteId+".id",
 					"1",
 					"genesyscloud_outbound_callabletimeset."+callableTimeSetId+".id",
@@ -253,8 +248,6 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "queue_id",
-						"genesyscloud_routing_queue."+queueResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "dnc_list_ids.0",
@@ -280,7 +273,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					gcloud.NullValue, // campaign_status
 					gcloud.NullValue, // division id
 					gcloud.NullValue, // script id
-					"genesyscloud_routing_queue."+queueResourceId+".id",
+					gcloud.NullValue, // queue id
 					"genesyscloud_telephony_providers_edges_site."+siteId+".id",
 					"1",
 					"genesyscloud_outbound_callabletimeset."+callableTimeSetId+".id",
@@ -323,8 +316,6 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "queue_id",
-						"genesyscloud_routing_queue."+queueResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "dnc_list_ids.0",
@@ -350,7 +341,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					gcloud.NullValue, // campaign_status
 					gcloud.NullValue, // division id
 					gcloud.NullValue, // script id
-					"genesyscloud_routing_queue."+queueResourceId+".id",
+					gcloud.NullValue, // queue id
 					"genesyscloud_telephony_providers_edges_site."+siteId+".id",
 					"2",
 					"genesyscloud_outbound_callabletimeset."+callableTimeSetId+".id",
@@ -392,8 +383,6 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 						"genesyscloud_outbound_contact_list."+contactListResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "queue_id",
-						"genesyscloud_routing_queue."+queueResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceId, "dnc_list_ids.0",
