@@ -29,12 +29,6 @@ func generatePhoneColumnNoTypeBlock(columnName string) string {
 `, columnName)
 }
 
-const (
-	trueValue  = "true"
-	falseValue = "false"
-	nullValue  = "null"
-)
-
 func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 	t.Parallel()
 

@@ -43,15 +43,9 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 				Config: GenerateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					name,
-<<<<<<< HEAD
 					TrueValue,
-					generateCarsResponsesBlock(
-						generateCarsResponse(
-=======
-					trueValue,
 					GenerateCarsResponsesBlock(
 						GenerateCarsResponse(
->>>>>>> 1f6fa18e (Continuing refactor)
 							identifier1,
 							reactionType,
 							"",
@@ -84,15 +78,9 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 				Config: GenerateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					name,
-<<<<<<< HEAD
 					FalseValue,
-					generateCarsResponsesBlock(
-						generateCarsResponse(
-=======
-					falseValue,
 					GenerateCarsResponsesBlock(
 						GenerateCarsResponse(
->>>>>>> 1f6fa18e (Continuing refactor)
 							identifier1,
 							reactionTypeUpdated,
 							"",
@@ -157,15 +145,9 @@ func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
 				) + GenerateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					name,
-<<<<<<< HEAD
 					FalseValue,
-					generateCarsResponsesBlock(
-						generateCarsResponse(
-=======
-					falseValue,
 					GenerateCarsResponsesBlock(
 						GenerateCarsResponse(
->>>>>>> 1f6fa18e (Continuing refactor)
 							"callable_person",
 							"transfer_flow",
 							outboundFlowName,
