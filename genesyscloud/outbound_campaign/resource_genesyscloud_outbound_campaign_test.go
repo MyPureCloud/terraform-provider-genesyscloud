@@ -126,8 +126,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		carResourceId,
 		"tf car "+uuid.NewString(),
 		gcloud.FalseValue,
-		generateCarsResponsesBlock(
-			generateCarsResponse(
+		outbound.GenerateCarsResponsesBlock(
+			outbound.GenerateCarsResponse(
 				"callable_person",
 				"transfer_flow",
 				flowName,
@@ -473,8 +473,8 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		carResourceId,
 		"tf car "+uuid.NewString(),
 		gcloud.FalseValue,
-		generateCarsResponsesBlock(
-			generateCarsResponse(
+		outbound.GenerateCarsResponsesBlock(
+			outbound.GenerateCarsResponse(
 				"callable_person",
 				"transfer_flow",
 				flowName,
@@ -832,6 +832,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						gcloud.NullValue,
 						strconv.Quote(scriptId),
 						"genesyscloud_routing_queue."+queueResourceId+".id",
+						gcloud.NullValue,
 						"1",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceId+".id",
@@ -1134,8 +1135,8 @@ func generateReferencedResourcesForOutboundCampaignTests(
 				carResourceId,
 				"tf test car "+uuid.NewString(),
 				gcloud.FalseValue,
-				generateCarsResponsesBlock(
-					generateCarsResponse(
+				outbound.GenerateCarsResponsesBlock(
+					outbound.GenerateCarsResponse(
 						"callable_person",
 						"transfer_flow",
 						flowName,
@@ -1147,8 +1148,8 @@ func generateReferencedResourcesForOutboundCampaignTests(
 				carResourceId,
 				"tf test car "+uuid.NewString(),
 				gcloud.TrueValue,
-				generateCarsResponsesBlock(
-					generateCarsResponse(
+				outbound.GenerateCarsResponsesBlock(
+					outbound.GenerateCarsResponse(
 						"callable_machine",
 						"transfer",
 						"",

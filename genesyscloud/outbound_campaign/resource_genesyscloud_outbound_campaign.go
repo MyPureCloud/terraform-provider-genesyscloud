@@ -45,7 +45,7 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 				}
 
 				if *campaign.CampaignStatus == "stopping" {
-					return retry.RetryableError(fmt.Errorf("Campaign %s didn't stop in time, unable to export %s", *campaign.Id))
+					return retry.RetryableError(fmt.Errorf("Campaign %s didn't stop in time, unable to export", *campaign.Id))
 				}
 
 				return nil
@@ -202,6 +202,8 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 		if diagErr != nil {
 			return diagErr
 		}
+		// Give the campaign some time to turn off
+		time.Sleep(10 * time.Second)
 	}
 	_, err := proxy.deleteOutboundCampaign(ctx, d.Id())
 	if err != nil {
