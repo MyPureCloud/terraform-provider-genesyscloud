@@ -58,6 +58,7 @@ func (p *ProcessAutomationTrigger) toJSONString() (string, error) {
 		value["jsonPath"] = obj["jsonPath"]
 		value["operator"] = obj["operator"]
 		value["value"] = obj["value"]
+		value["values"] = obj["values"]
 
 		matchCriteriaArray[i] = value
 	}
