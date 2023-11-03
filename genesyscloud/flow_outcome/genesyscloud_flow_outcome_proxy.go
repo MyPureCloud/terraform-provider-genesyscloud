@@ -98,7 +98,7 @@ func getAllFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy) (*[]platformc
 	var allFlowOutcomes []platformclientv2.Flowoutcome
 	const pageSize = 100
 
-	flowOutcomes, _, err := p.architectApi.GetFlowsOutcomes()
+	flowOutcomes, _, err := p.architectApi.GetFlowsOutcomes(1, pageSize, "", "", nil, "", "", "", nil)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get flow outcome: %v", err)
 	}
@@ -110,8 +110,7 @@ func getAllFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy) (*[]platformc
 	}
 
 	for pageNum := 2; pageNum <= *flowOutcomes.PageCount; pageNum++ {
-
-		flowOutcomes, _, err := p.architectApi.GetFlowsOutcomes()
+		flowOutcomes, _, err := p.architectApi.GetFlowsOutcomes(pageNum, pageSize, "", "", nil, "", "", "", nil)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get flow outcome: %v", err)
 		}
@@ -130,7 +129,7 @@ func getAllFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy) (*[]platformc
 
 // getFlowOutcomeIdByNameFn is an implementation of the function to get a Genesys Cloud flow outcome by name
 func getFlowOutcomeIdByNameFn(ctx context.Context, p *flowOutcomeProxy, name string) (id string, retryable bool, err error) {
-	flowOutcomes, err := getAllFlowOutcomeFn(ctx, p)
+	flowOutcomes, _, err := p.architectApi.GetFlowsOutcomes(1, 100, "", "", nil, name, "", "", nil)
 	if err != nil {
 		return "", false, err
 	}
@@ -141,7 +140,7 @@ func getFlowOutcomeIdByNameFn(ctx context.Context, p *flowOutcomeProxy, name str
 
 	var flowOutcome platformclientv2.Flowoutcome
 	for _, flowOutcomeSdk := range *flowOutcomes.Entities {
-		if *flowOutcome.Name == name {
+		if *flowOutcomeSdk.Name == name {
 			log.Printf("Retrieved the flow outcome id %s by name %s", *flowOutcomeSdk.Id, name)
 			flowOutcome = flowOutcomeSdk
 			return *flowOutcome.Id, false, nil
@@ -163,7 +162,7 @@ func getFlowOutcomeByIdFn(ctx context.Context, p *flowOutcomeProxy, id string) (
 
 // updateFlowOutcomeFn is an implementation of the function to update a Genesys Cloud flow outcome
 func updateFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy, id string, flowOutcome *platformclientv2.Flowoutcome) (*platformclientv2.Flowoutcome, error) {
-	flowOutcome, _, err = p.architectApi.PutFlowsOutcome(id, *flowOutcome)
+	_, _, err := p.architectApi.PutFlowsOutcome(id, *flowOutcome)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to update flow outcome: %s", err)
 	}

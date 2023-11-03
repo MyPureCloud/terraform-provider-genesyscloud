@@ -30,8 +30,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_flow_outcome"] = ResourceFlowOutcome()
-	// TODO: Add references
+	providerResources[resourceName] = ResourceFlowOutcome()
+	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -39,8 +39,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_flow_outcome"] = DataSourceFlowOutcome()
-	// TODO: Add references
+	providerDataSources[resourceName] = DataSourceFlowOutcome()
 }
 
 // initTestresources initializes all test resources and data sources.

@@ -1,7 +1,8 @@
-package genesyscloud
+package flow_outcome
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -9,7 +10,7 @@ import (
 )
 
 func TestAccResourceFlowOutcome(t *testing.T) {
-	t.Skip("Skipping until a DELETE method is publicly available for flow outcomes.")
+	//t.Skip("Skipping until a DELETE method is publicly available for flow outcomes.")
 	var (
 		outcomeResource1 = "flow-outcome1"
 		name1            = "Terraform Code-" + uuid.NewString()
@@ -19,20 +20,20 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create using only required fields i.e. name
 				Config: generateFlowOutcomeResource(
 					outcomeResource1,
 					name1,
-					NullValue,
-					NullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name1),
-					TestDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
+					gcloud.TestDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
 				),
 			},
 			{
@@ -40,13 +41,13 @@ func TestAccResourceFlowOutcome(t *testing.T) {
 				Config: generateFlowOutcomeResource(
 					outcomeResource1,
 					name2,
-					NullValue,
+					gcloud.NullValue,
 					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_flow_outcome."+outcomeResource1, "description", description),
-					TestDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
+					gcloud.TestDefaultHomeDivision("genesyscloud_flow_outcome."+outcomeResource1),
 				),
 			},
 			{

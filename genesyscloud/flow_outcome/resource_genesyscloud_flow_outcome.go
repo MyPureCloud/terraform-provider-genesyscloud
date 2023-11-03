@@ -47,13 +47,13 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	flowOutcome := getFlowOutcomeFromResourceData(d)
 
 	log.Printf("Creating flow outcome %s", *flowOutcome.Name)
-	flowOutcome, err := proxy.createFlowOutcome(ctx, &flowOutcome)
+	outcome, err := proxy.createFlowOutcome(ctx, &flowOutcome)
 	if err != nil {
 		return diag.Errorf("Failed to create flow outcome: %s", err)
 	}
 
-	d.SetId(*flowOutcome.Id)
-	log.Printf("Created flow outcome %s", *flowOutcome.Id)
+	d.SetId(*outcome.Id)
+	log.Printf("Created flow outcome %s", *outcome.Id)
 	return readFlowOutcome(ctx, d, meta)
 }
 
@@ -76,7 +76,7 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowOutcome())
 
 		resourcedata.SetNillableValue(d, "name", flowOutcome.Name)
-		resourcedata.SetNillableValue(d, "division_id", flowOutcome.DivisionId)
+		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", flowOutcome.Division)
 		resourcedata.SetNillableValue(d, "description", flowOutcome.Description)
 
 		log.Printf("Read flow outcome %s %s", d.Id(), *flowOutcome.Name)
@@ -92,12 +92,12 @@ func updateFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	flowOutcome := getFlowOutcomeFromResourceData(d)
 
 	log.Printf("Updating flow outcome %s", *flowOutcome.Name)
-	flowOutcome, err := proxy.updateFlowOutcome(ctx, d.Id(), &flowOutcome)
+	_, err := proxy.updateFlowOutcome(ctx, d.Id(), &flowOutcome)
 	if err != nil {
 		return diag.Errorf("Failed to update flow outcome: %s", err)
 	}
 
-	log.Printf("Updated flow outcome %s", *flowOutcome.Id)
+	log.Printf("Updated flow outcome %s", d.Id())
 	return readFlowOutcome(ctx, d, meta)
 }
 
@@ -108,9 +108,19 @@ func deleteFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 
 // getFlowOutcomeFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowoutcome
 func getFlowOutcomeFromResourceData(d *schema.ResourceData) platformclientv2.Flowoutcome {
-	return platformclientv2.Flowoutcome{
-		Name:        platformclientv2.String(d.Get("name").(string)),
-		DivisionId:  platformclientv2.String(d.Get("division_id").(string)),
-		Description: platformclientv2.String(d.Get("description").(string)),
+	divisionId := d.Get("division_id").(string)
+	description := d.Get("description").(string)
+
+	outcome := platformclientv2.Flowoutcome{
+		Name: platformclientv2.String(d.Get("name").(string)),
 	}
+
+	if divisionId != "" {
+		outcome.Division = &platformclientv2.Writabledivision{Id: &divisionId}
+	}
+	if description != "" {
+		outcome.Description = &description
+	}
+
+	return outcome
 }

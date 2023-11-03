@@ -47,10 +47,11 @@ func ResourceFlowOutcome() *schema.Resource {
 			"division_id": {
 				Description: "The division to which this entity belongs.",
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			"description": {
-				Description: "",
+				Description: "This is a description for the flow outcome.",
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
@@ -62,8 +63,8 @@ func ResourceFlowOutcome() *schema.Resource {
 func FlowOutcomeExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthFlowOutcomes),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			// TODO: Add any reference attributes here
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }

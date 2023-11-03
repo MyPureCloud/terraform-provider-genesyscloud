@@ -5,6 +5,7 @@ import (
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
@@ -51,7 +52,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_emergencygroup"] = gcloud.ResourceArchitectEmergencyGroup()
 	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
 	providerResources["genesyscloud_flow_milestone"] = gcloud.ResourceFlowMilestone()
-	providerResources["genesyscloud_flow_outcome"] = gcloud.ResourceFlowOutcome()
+	providerResources["genesyscloud_flow_outcome"] = flowOutcome.ResourceFlowOutcome()
 	providerResources["genesyscloud_architect_ivr"] = archIvr.ResourceArchitectIvrConfig()
 	providerResources["genesyscloud_architect_schedules"] = gcloud.ResourceArchitectSchedules()
 	providerResources["genesyscloud_architect_schedulegroups"] = gcloud.ResourceArchitectScheduleGroups()
@@ -146,7 +147,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_employeeperformance_externalmetrics_definitions", gcloud.EmployeeperformanceExternalmetricsDefinitionExporter())
 	RegisterExporter("genesyscloud_flow", gcloud.FlowExporter())
 	RegisterExporter("genesyscloud_flow_milestone", gcloud.FlowMilestoneExporter())
-	RegisterExporter("genesyscloud_flow_outcome", gcloud.FlowOutcomeExporter())
+	RegisterExporter("genesyscloud_flow_outcome", flowOutcome.FlowOutcomeExporter())
 	RegisterExporter("genesyscloud_group", gcloud.GroupExporter())
 	RegisterExporter("genesyscloud_group_roles", gcloud.GroupRolesExporter())
 	RegisterExporter("genesyscloud_idp_adfs", gcloud.IdpAdfsExporter())
