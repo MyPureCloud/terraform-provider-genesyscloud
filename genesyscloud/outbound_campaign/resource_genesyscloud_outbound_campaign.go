@@ -35,7 +35,7 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 		if *campaign.CampaignStatus == "stopping" {
 			fmt.Println("Campaign is stopping")
 			// Retry to give the campaign time to turn off
-			err := gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+			err := gcloud.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
 				campaign, resp, getErr := proxy.getOutboundCampaignById(ctx, *campaign.Id)
 				if getErr != nil {
 					if gcloud.IsStatus404(resp) {
