@@ -1,4 +1,4 @@
-package teams_resource
+package team
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -9,31 +9,31 @@ import (
 )
 
 /*
-resource_genesycloud_teams_resource_schema.go holds four functions within it:
+resource_genesycloud_team_schema.go holds four functions within it:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
-2.  The resource schema definitions for the teams_resource resource.
-3.  The datasource schema definitions for the teams_resource datasource.
-4.  The resource exporter configuration for the teams_resource exporter.
+2.  The resource schema definitions for the team resource.
+3.  The datasource schema definitions for the team datasource.
+4.  The resource exporter configuration for the team exporter.
 */
-const resourceName = "genesyscloud_teams_resource"
+const resourceName = "genesyscloud_team"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceTeamsResource())
-	regInstance.RegisterDataSource(resourceName, DataSourceTeamsResource())
-	regInstance.RegisterExporter(resourceName, TeamsResourceExporter())
+	regInstance.RegisterResource(resourceName, ResourceTeam())
+	regInstance.RegisterDataSource(resourceName, DataSourceTeam())
+	regInstance.RegisterExporter(resourceName, TeamExporter())
 }
 
-// ResourceTeamsResource registers the genesyscloud_teams_resource resource with Terraform
-func ResourceTeamsResource() *schema.Resource {
+// ResourceTeam registers the genesyscloud_team resource with Terraform
+func ResourceTeam() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud teams resource`,
+		Description: `Genesys Cloud team`,
 
-		CreateContext: gcloud.CreateWithPooledClient(createTeamsResource),
-		ReadContext:   gcloud.ReadWithPooledClient(readTeamsResource),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateTeamsResource),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteTeamsResource),
+		CreateContext: gcloud.CreateWithPooledClient(createTeam),
+		ReadContext:   gcloud.ReadWithPooledClient(readTeam),
+		UpdateContext: gcloud.UpdateWithPooledClient(updateTeam),
+		DeleteContext: gcloud.DeleteWithPooledClient(deleteTeam),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -63,27 +63,27 @@ func ResourceTeamsResource() *schema.Resource {
 	}
 }
 
-// TeamsResourceExporter returns the resourceExporter object used to hold the genesyscloud_teams_resource exporter's config
-func TeamsResourceExporter() *resourceExporter.ResourceExporter {
+// TeamExporter returns the resourceExporter object used to hold the genesyscloud_team exporter's config
+func TeamExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthTeamsResources),
+		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthTeams),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},
 	}
 }
 
-// DataSourceTeamsResource registers the genesyscloud_teams_resource data source
-func DataSourceTeamsResource() *schema.Resource {
+// DataSourceTeam registers the genesyscloud_team data source
+func DataSourceTeam() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud teams resource data source. Select an teams resource by name`,
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceTeamsResourceRead),
+		Description: `Genesys Cloud team data source. Select an team by name`,
+		ReadContext: gcloud.ReadWithPooledClient(dataSourceTeamRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: `teams resource name`,
+				Description: `team name`,
 				Type:        schema.TypeString,
 				Required:    true,
 			},
