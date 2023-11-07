@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	dependent_consumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -70,7 +71,7 @@ type GenesysCloudResourceExporter struct {
 	provider               *schema.Provider
 	exportDirPath          string
 	exporters              *map[string]*resourceExporter.ResourceExporter
-	resources              []resourceInfo
+	resources              []resourceExporter.ResourceInfo
 	resourceTypesHCLBlocks map[string]resourceHCLBlock
 	resourceTypesMaps      map[string]resourceJSONMaps
 	unresolvedAttrs        []unresolvableAttributeInfo
@@ -403,32 +404,16 @@ func (g *GenesysCloudResourceExporter) buildDependsOnResources() diag.Diagnostic
 
 	filterList := make([]string, 0)
 
-	retrieveDependentConsumers := func(resourceKeys resourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+
+			proxy := dependent_consumers.GetDependentConsumerProxy(clientConfig)
 			resources := make(resourceExporter.ResourceIDMetaMap)
-			apiInstance := platformclientv2.NewArchitectApiWithConfig(clientConfig)
-			resourceKey := resourceKeys.State.ID
-			resourceType := resourceKeys.Type
-			dependentConsumerMap := SetDependentObjectMaps()
-			objectType, exists := dependentConsumerMap[resourceType]
+			resources, err := proxy.GetDependentConsumers(ctx, resourceKeys)
 
-			if exists {
-				for pageNum := 1; ; pageNum++ {
-					const pageSize = 100
-					dependencies, _, err := apiInstance.GetArchitectDependencytrackingConsumingresources(resourceKey, objectType, nil, "", pageNum, pageSize, "")
-					if err != nil {
-						return nil, diag.Errorf("Failed to retrieve Dependent Flows %s: %s", resourceKey, err)
-					}
-					if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
-						break
-					}
-
-					for _, consumer := range *dependencies.Entities {
-						resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: *consumer.Name}
-					}
-				}
+			if err != nil {
+				return nil, diag.Errorf("Failed to retrieve Dependent Flows %s: %s", resourceKeys.State.ID, err)
 			}
-
 			return resources, nil
 		}
 	}
@@ -568,7 +553,7 @@ func mergeExporters(m1, m2 *map[string]*resourceExporter.ResourceExporter) *map[
 	return &result
 }
 
-func retrieveExportResources(existingResources []resourceInfo, resources resourceExporter.ResourceIDMetaMap) map[string]*resourceExporter.ResourceMeta {
+func retrieveExportResources(existingResources []resourceExporter.ResourceInfo, resources resourceExporter.ResourceIDMetaMap) map[string]*resourceExporter.ResourceMeta {
 	foundTypes := make(map[string]bool)
 	resourcesTobeExported := make(map[string]*resourceExporter.ResourceMeta)
 
@@ -612,10 +597,10 @@ func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
 	return err
 }
 
-func getResourcesForType(resType string, provider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceInfo, diag.Diagnostics) {
+func getResourcesForType(resType string, provider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceExporter.ResourceInfo, diag.Diagnostics) {
 	lenResources := len(exporter.SanitizedResourceMap)
 	errorChan := make(chan diag.Diagnostics, lenResources)
-	resourceChan := make(chan resourceInfo, lenResources)
+	resourceChan := make(chan resourceExporter.ResourceInfo, lenResources)
 	removeChan := make(chan string, lenResources)
 
 	res := provider.ResourcesMap[resType]
@@ -649,7 +634,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *re
 					return nil
 				}
 
-				resourceChan <- resourceInfo{
+				resourceChan <- resourceExporter.ResourceInfo{
 					State:   instanceState,
 					Name:    resMeta.Name,
 					Type:    resType,
@@ -683,7 +668,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *re
 		close(removeChan)
 	}()
 
-	var resources []resourceInfo
+	var resources []resourceExporter.ResourceInfo
 	for r := range resourceChan {
 		resources = append(resources, r)
 	}

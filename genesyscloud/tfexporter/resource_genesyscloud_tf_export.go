@@ -10,13 +10,10 @@ import (
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
-	"github.com/hashicorp/go-cty/cty"
-
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func SetRegistrar(l registrar.Registrar) {
@@ -116,13 +113,6 @@ func ResourceTfExport() *schema.Resource {
 			},
 		},
 	}
-}
-
-type resourceInfo struct {
-	State   *terraform.InstanceState
-	Name    string
-	Type    string
-	CtyType cty.Type
 }
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

@@ -1,4 +1,4 @@
-package tfexporter
+package dependent_consumers
 
 var dependentConsumerMap map[string]string
 

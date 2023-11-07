@@ -6,7 +6,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -38,6 +40,13 @@ type RefAttrSettings struct {
 
 	// Values that may be set that should not be treated as IDs
 	AltValues []string
+}
+
+type ResourceInfo struct {
+	State   *terraform.InstanceState
+	Name    string
+	Type    string
+	CtyType cty.Type
 }
 
 // Allows the definition of a custom resolver for an exporter.
