@@ -3,6 +3,8 @@ package telephony_providers_edges_phone
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
@@ -152,9 +154,18 @@ func (p *phoneProxy) assignUserToStation(ctx context.Context, userId string, sta
 
 // getAllPhonesFn is an implementation function for retrieving all Genesys Cloud Phones
 func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Phone, error) {
+	log.Printf("Entering the getAllPhonesFn method to retrieve all of the phone ids for export")
 	var allPhones []platformclientv2.Phone
+	const pageSize = 100
+	const sortBy = "id"
 
-	phones, _, _ := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, 100, "", "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+	phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+	if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
+		log.Printf("getAllPhonesFn: error encountered while trying to get first page of phone data #%v statusCode: %d", err, response.StatusCode)
+		return nil, err
+	}
+
+	log.Printf("Retrieved page 1 of %d pages of phone data.  Total number of phone records is %d", phones.PageCount, phones.Total)
 	for _, phone := range *phones.Entities {
 		if phone.State != nil && *phone.State != "deleted" {
 			allPhones = append(allPhones, phone)
@@ -162,10 +173,8 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	}
 
 	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
-		const pageSize = 100
-		const sortBy = "id"
 		phones, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
-		if err != nil {
+		if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
 			return nil, err
 		}
 
@@ -178,6 +187,11 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 				allPhones = append(allPhones, phone)
 			}
 		}
+	}
+
+	log.Printf("getAllPhonesFn:: Listing all of the non-deleted phone ids and names")
+	for _, phone := range allPhones {
+		log.Printf("getAllPhonesFn::  Retrieved phone id %s with phone name: %s\n", phone.Id, phone.Name)
 	}
 
 	return &allPhones, nil
@@ -196,10 +210,12 @@ func createPhoneFn(ctx context.Context, p *phoneProxy, phoneConfig *platformclie
 // getPhoneByIdFn is an implementation function for retrieving a Genesys Cloud Phone by id
 func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
 	phone, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhone(phoneId)
+
 	if err != nil {
 		return nil, resp, err
 	}
 
+	log.Printf("getPhoneByIdFn:: Successfully retrieved individual phone record id %s with phoneName%s.\n", phone.Id, phone.Name)
 	return phone, resp, nil
 }
 
