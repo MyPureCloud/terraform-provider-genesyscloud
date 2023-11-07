@@ -13,7 +13,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
-func TestUploadIvrDnisChunksSuccess(t *testing.T) {
+func TestUnitUploadIvrDnisChunksSuccess(t *testing.T) {
 	var (
 		maxDnisPerRequest = 4
 		dnis              = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
@@ -69,7 +69,7 @@ type architectIvrUploadErrorTestData struct {
 	mockError        error
 }
 
-func TestUploadIvrDnisChunksError(t *testing.T) {
+func TestUnitUploadIvrDnisChunksError(t *testing.T) {
 	var (
 		ivrId             = uuid.NewString()
 		mockGetError      = fmt.Errorf("error on proxy.GetArchitectIvr")
