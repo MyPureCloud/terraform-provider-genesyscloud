@@ -33,7 +33,7 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 		// If a campaign is "stopping" during the export process we may encounter an error when we read the campaign later, and it will stop the export.
 		// We will give the campaign time to stop here and skip any that won't stop in time
 		if *campaign.CampaignStatus == "stopping" {
-			fmt.Println("Campaign is stopping")
+			log.Println("Campaign is stopping")
 			// Retry to give the campaign time to turn off
 			err := gcloud.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
 				campaign, resp, getErr := proxy.getOutboundCampaignById(ctx, *campaign.Id)

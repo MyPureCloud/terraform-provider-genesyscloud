@@ -147,16 +147,14 @@ func getOutboundCampaignIdByNameFn(ctx context.Context, p *outboundCampaignProxy
 		return "", true, fmt.Errorf("No campaigns found with name %s", name)
 	}
 
-	var campaign platformclientv2.Campaign
-	for _, campaignSdk := range *campaigns {
-		if *campaignSdk.Name == name {
-			log.Printf("Retrieved the campaign id %s by name %s", *campaignSdk.Id, name)
-			campaign = campaignSdk
+	for _, campaign := range *campaigns {
+		if *campaign.Name == name {
+			log.Printf("Retrieved the campaign id %s by name %s", *campaign.Id, name)
 			return *campaign.Id, false, nil
 		}
 	}
 
-	return "", false, fmt.Errorf("Unable to find campaign with name %s", name)
+	return "", true, fmt.Errorf("Unable to find campaign with name %s", name)
 }
 
 // getOutboundCampaignByIdFn is an implementation of the function to get a Genesys Cloud outbound campaign by Id

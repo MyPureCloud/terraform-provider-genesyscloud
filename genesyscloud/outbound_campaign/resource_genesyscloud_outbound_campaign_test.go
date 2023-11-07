@@ -641,7 +641,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
-`) + generateReferencedResourcesForOutboundCampaignTests(
+`) + GenerateReferencedResourcesForOutboundCampaignTests(
 					contactListResourceId,
 					"",
 					"",
@@ -666,7 +666,7 @@ data "genesyscloud_auth_division_home" "home" {}
 			{
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
-`) + generateOutboundCampaignBasic(
+`) + GenerateOutboundCampaignBasic(
 					resourceId,
 					name,
 					contactListResourceId,
@@ -731,7 +731,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 		t.Skip("Skipping as a published script ID is needed to run this test")
 	}
 
-	referencedResources := generateReferencedResourcesForOutboundCampaignTests(
+	referencedResources := GenerateReferencedResourcesForOutboundCampaignTests(
 		contactListResourceId,
 		"",
 		queueResourceId,
@@ -749,7 +749,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 		"",
 	)
 
-	referencedResourcesUpdate := generateReferencedResourcesForOutboundCampaignTests(
+	referencedResourcesUpdate := GenerateReferencedResourcesForOutboundCampaignTests(
 		contactListResourceId,
 		dncListResourceId,
 		queueResourceId,
@@ -947,55 +947,6 @@ func addContactsToContactList(state *terraform.State) error {
 	return nil
 }
 
-func generateOutboundCampaignBasic(resourceId string,
-	name string,
-	contactListResourceId string,
-	siteResourceId string,
-	emergencyNumber string,
-	carResourceId string,
-	campaignStatus string,
-	outboundFlowFilePath string,
-	flowResourceId string,
-	flowName string,
-	divisionName,
-	locationResourceId string,
-	wrapupcodeResourceId string) string {
-	referencedResources := generateReferencedResourcesForOutboundCampaignTests(
-		contactListResourceId,
-		"",
-		"",
-		carResourceId,
-		outboundFlowFilePath,
-		flowResourceId,
-		flowName,
-		"",
-		siteResourceId,
-		emergencyNumber,
-		"",
-		"",
-		divisionName,
-		locationResourceId,
-		wrapupcodeResourceId,
-	)
-	return fmt.Sprintf(`
-resource "genesyscloud_outbound_campaign" "%s" {
-	name                          = "%s"
-	dialing_mode                  = "agentless"
-	caller_name                   = "Test Name"
-	caller_address                = "+353371111111"
-	outbound_line_count           = 2
-	campaign_status               = %s
-	contact_list_id 			  = genesyscloud_outbound_contact_list.%s.id
-	site_id 				      = genesyscloud_telephony_providers_edges_site.%s.id
-	call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.%s.id
-	phone_columns {
-		column_name = "Cell"
-	}
-}
-%s
-`, resourceId, name, campaignStatus, contactListResourceId, siteResourceId, carResourceId, referencedResources)
-}
-
 func generateOutboundCampaign(
 	resourceId string,
 	name string,
@@ -1060,183 +1011,6 @@ func generateDynamicContactQueueingSettingsBlock(sort string) string {
 		sort = %s
 	}
 	`, sort)
-}
-
-func generateReferencedResourcesForOutboundCampaignTests(
-	contactListResourceId string,
-	dncListResourceId string,
-	queueResourceId string,
-	carResourceId string,
-	outboundFlowFilePath string,
-	flowResourceId string,
-	flowName string,
-	clfResourceId string,
-	siteId string,
-	emergencyNumber string,
-	ruleSetId string,
-	callableTimeSetResourceId string,
-	divisionName string,
-	locationResourceId string,
-	wrapUpCodeResourceId string,
-) string {
-	var (
-		contactList             string
-		dncList                 string
-		queue                   string
-		callAnalysisResponseSet string
-		contactListFilter       string
-		site                    string
-		ruleSet                 string
-		callableTimeSet         string
-	)
-	if contactListResourceId != "" {
-		contactList = obContactList.GenerateOutboundContactList(
-			contactListResourceId,
-			"terraform contact list "+uuid.NewString(),
-			gcloud.NullValue,
-			strconv.Quote("Cell"),
-			[]string{strconv.Quote("Cell")},
-			[]string{strconv.Quote("Cell"), strconv.Quote("Home"), strconv.Quote("zipcode")},
-			gcloud.FalseValue,
-			gcloud.NullValue,
-			gcloud.NullValue,
-			obContactList.GeneratePhoneColumnsBlock("Cell", "cell", strconv.Quote("Cell")),
-			obContactList.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
-	}
-	if dncListResourceId != "" {
-		dncList = outbound.GenerateOutboundDncListBasic(dncListResourceId, "tf dnc list "+uuid.NewString())
-	}
-	if queueResourceId != "" {
-		queue = gcloud.GenerateRoutingQueueResourceBasic(queueResourceId, "tf test queue "+uuid.NewString())
-	}
-	if carResourceId != "" {
-		if outboundFlowFilePath != "" {
-			callAnalysisResponseSet = gcloud.GenerateRoutingWrapupcodeResource(
-				wrapUpCodeResourceId,
-				"wrapupcode "+uuid.NewString(),
-			) + gcloud.GenerateFlowResource(
-				flowResourceId,
-				outboundFlowFilePath,
-				"",
-				false,
-				gcloud.GenerateSubstitutionsMap(map[string]string{
-					"flow_name":          flowName,
-					"home_division_name": divisionName,
-					"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
-					"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapUpCodeResourceId + ".name}",
-				}),
-			) + outbound.GenerateOutboundCallAnalysisResponseSetResource(
-				carResourceId,
-				"tf test car "+uuid.NewString(),
-				gcloud.FalseValue,
-				outbound.GenerateCarsResponsesBlock(
-					outbound.GenerateCarsResponse(
-						"callable_person",
-						"transfer_flow",
-						flowName,
-						"${genesyscloud_flow."+flowResourceId+".id}",
-					),
-				))
-		} else {
-			callAnalysisResponseSet = outbound.GenerateOutboundCallAnalysisResponseSetResource(
-				carResourceId,
-				"tf test car "+uuid.NewString(),
-				gcloud.TrueValue,
-				outbound.GenerateCarsResponsesBlock(
-					outbound.GenerateCarsResponse(
-						"callable_machine",
-						"transfer",
-						"",
-						"",
-					),
-				),
-			)
-		}
-	}
-	if clfResourceId != "" {
-		contactListFilter = outbound.GenerateOutboundContactListFilter(
-			clfResourceId,
-			"tf test clf "+uuid.NewString(),
-			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
-			"",
-			outbound.GenerateOutboundContactListFilterClause(
-				"",
-				outbound.GenerateOutboundContactListFilterPredicates(
-					"Cell",
-					"alphabetic",
-					"EQUALS",
-					"+12345123456",
-					"",
-					"",
-				),
-			),
-		)
-	}
-	if siteId != "" {
-		siteName := "site " + uuid.NewString()
-		locationName := "location " + uuid.NewString()
-		site = fmt.Sprintf(`
-resource "genesyscloud_location" "%s" {
-	name  = "%s"
-	notes = "HQ1"
-	path  = []
-	emergency_number {
-		number = "%s"
-		type   = null
-	}
-	address {
-		street1  = "7601 Interactive Way"
-		city     = "Indianapolis"
-		state    = "IN"
-		country  = "US"
-		zip_code = "46278"
-	}
-}
-
-resource "genesyscloud_telephony_providers_edges_site" "%s" {
-	name                            = "%s"
-	description                     = "TestAccResourceSite description 1"
-	location_id                     = genesyscloud_location.%s.id
-	media_model                     = "Cloud"
-	media_regions_use_latency_based = false
-}
-`, locationResourceId, locationName, emergencyNumber, siteId, siteName, locationResourceId)
-	}
-	if ruleSetId != "" {
-		ruleSetName := "ruleset " + uuid.NewString()
-		ruleSet = fmt.Sprintf(`
-resource "genesyscloud_outbound_ruleset" "%s" {
-  name            = "%s"
-  contact_list_id = genesyscloud_outbound_contact_list.%s.id
-}
-`, ruleSetId, ruleSetName, contactListResourceId)
-	}
-	if callableTimeSetResourceId != "" {
-		callableTimeSetName := "test time set " + uuid.NewString()
-		callableTimeSet = fmt.Sprintf(`
-resource "genesyscloud_outbound_callabletimeset" "%s"{
-	name = "%s"
-	callable_times {
-		time_zone_id = "Africa/Abidjan"
-		time_slots {
-			start_time = "07:00:00"
-			stop_time = "18:00:00"
-			day = 3
-		}
-	}
-}
-`, callableTimeSetResourceId, callableTimeSetName)
-	}
-	return fmt.Sprintf(`
-%s
-%s
-%s
-%s
-%s
-%s
-%s
-%s
-`, contactList, dncList, queue, callAnalysisResponseSet, contactListFilter, site, ruleSet, callableTimeSet)
 }
 
 func getPublishedScriptId() (string, error) {

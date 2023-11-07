@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
+	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -55,7 +55,7 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 				// Create
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
-`) + outbound_campaign.generateOutboundCampaignBasic(
+`) + outboundCampaign.GenerateOutboundCampaignBasic(
 					campaignResourceId,
 					campaignName,
 					contactListResourceId,
@@ -88,7 +88,7 @@ data "genesyscloud_auth_division_home" "home" {}
 				// Update with a new name, status and repeat value
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
-`) + outbound_campaign.generateOutboundCampaignBasic(
+`) + outboundCampaign.GenerateOutboundCampaignBasic(
 					campaignResourceId,
 					campaignName,
 					contactListResourceId,
@@ -166,7 +166,7 @@ func TestAccResourceOutboundSequenceStatus(t *testing.T) {
 				// Create
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
-`) + outbound_campaign.generateOutboundCampaignBasic(
+`) + outboundCampaign.GenerateOutboundCampaignBasic(
 					campaignResourceId,
 					campaignName,
 					contactListResourceId,
@@ -199,7 +199,7 @@ data "genesyscloud_auth_division_home" "home" {}
 				// Update with a new name, status and repeat value
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
-`) + outbound_campaign.generateOutboundCampaignBasic(
+`) + outboundCampaign.GenerateOutboundCampaignBasic(
 					campaignResourceId,
 					campaignName,
 					contactListResourceId,
@@ -233,7 +233,7 @@ data "genesyscloud_auth_division_home" "home" {}
 				// command can handle destroying a sequence that is "on"
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
-`) + outbound_campaign.generateOutboundCampaignBasic(
+`) + outboundCampaign.GenerateOutboundCampaignBasic(
 					campaignResourceId,
 					campaignName,
 					contactListResourceId,
