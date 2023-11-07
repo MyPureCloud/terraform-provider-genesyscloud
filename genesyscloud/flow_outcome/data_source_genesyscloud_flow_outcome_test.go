@@ -1,7 +1,8 @@
-package genesyscloud
+package flow_outcome
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -18,14 +19,14 @@ func TestAccDataSourceFlowOutcome(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateFlowOutcomeResource(
 					outcomeRes,
 					name,
-					NullValue,
+					gcloud.NullValue,
 					description,
 				) + generateFlowOutcomeDataSource(
 					outcomeData,
