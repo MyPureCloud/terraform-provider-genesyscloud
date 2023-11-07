@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/zclconf/go-cty/cty"
 	zclconfCty "github.com/zclconf/go-cty/cty"
 )
 
@@ -171,7 +172,6 @@ func postProcessHclBytes(resource []byte) []byte {
 	}
 
 	resourceStr = correctInterpolatedFileShaFunctions(resourceStr)
-
 	return []byte(resourceStr)
 }
 
@@ -247,6 +247,15 @@ func getCtyValue(v interface{}) zclconfCty.Value {
 		value = zclconfCty.NumberFloatVal(vFloat64)
 	} else if vMapInter, ok := v.(map[string]interface{}); ok {
 		value = createHCLObject(vMapInter)
+	} else if vMapInter, ok := v.([]string); ok {
+
+		var values []cty.Value
+		for _, s := range vMapInter {
+			values = append(values, cty.StringVal(s))
+		}
+
+		value = cty.ListVal(values)
+
 	} else {
 		value = zclconfCty.NilVal
 	}
