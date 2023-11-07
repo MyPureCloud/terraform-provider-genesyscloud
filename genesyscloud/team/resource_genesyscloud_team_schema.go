@@ -46,7 +46,7 @@ func ResourceTeam() *schema.Resource {
 			},
 			"division_id": {
 				Description: "The division to which this entity belongs.",
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			"description": {
