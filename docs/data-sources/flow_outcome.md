@@ -3,12 +3,12 @@
 page_title: "genesyscloud_flow_outcome Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Flow Outcome. Select an outcome by name.
+  Genesys Cloud flow outcome data source. Select a flow outcome by name
 ---
 
 # genesyscloud_flow_outcome (Data Source)
 
-Data source for Genesys Cloud Flow Outcome. Select an outcome by name.
+Genesys Cloud flow outcome data source. Select a flow outcome by name
 
 ## Example Usage
 
@@ -23,7 +23,7 @@ data "genesyscloud_flow_outcome" "outcome" {
 
 ### Required
 
-- `name` (String) Outcome name.
+- `name` (String) flow outcome name
 
 ### Read-Only
 
