@@ -138,16 +138,14 @@ func getFlowOutcomeIdByNameFn(ctx context.Context, p *flowOutcomeProxy, name str
 		return "", true, fmt.Errorf("No flow outcome found with name %s", name)
 	}
 
-	var flowOutcome platformclientv2.Flowoutcome
 	for _, flowOutcomeSdk := range *flowOutcomes.Entities {
 		if *flowOutcomeSdk.Name == name {
 			log.Printf("Retrieved the flow outcome id %s by name %s", *flowOutcomeSdk.Id, name)
-			flowOutcome = flowOutcomeSdk
-			return *flowOutcome.Id, false, nil
+			return *flowOutcomeSdk.Id, false, nil
 		}
 	}
 
-	return "", false, fmt.Errorf("Unable to find flow outcome with name %s", name)
+	return "", true, fmt.Errorf("Unable to find flow outcome with name %s", name)
 }
 
 // getFlowOutcomeByIdFn is an implementation of the function to get a Genesys Cloud flow outcome by Id

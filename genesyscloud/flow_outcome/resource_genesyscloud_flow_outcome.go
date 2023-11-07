@@ -105,22 +105,3 @@ func updateFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 func deleteFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return nil
 }
-
-// getFlowOutcomeFromResourceData maps data from schema ResourceData object to a platformclientv2.Flowoutcome
-func getFlowOutcomeFromResourceData(d *schema.ResourceData) platformclientv2.Flowoutcome {
-	divisionId := d.Get("division_id").(string)
-	description := d.Get("description").(string)
-
-	outcome := platformclientv2.Flowoutcome{
-		Name: platformclientv2.String(d.Get("name").(string)),
-	}
-
-	if divisionId != "" {
-		outcome.Division = &platformclientv2.Writabledivision{Id: &divisionId}
-	}
-	if description != "" {
-		outcome.Description = &description
-	}
-
-	return outcome
-}
