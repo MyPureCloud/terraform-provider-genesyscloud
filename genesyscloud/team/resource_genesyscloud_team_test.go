@@ -99,15 +99,13 @@ func testVerifyTeamDestroyed(state *terraform.State) error {
 		team, resp, err := teamsAPI.GetTeam(rs.Primary.ID)
 		if team != nil {
 			return fmt.Errorf("team (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
-			// Milestone not found as expected
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
 		}
+		if gcloud.IsStatus404(resp) {
+			continue
+		}
+		return fmt.Errorf("Unexpected error: %s", err)
+
 	}
 
-	// Success. All milestones destroyed
 	return nil
 }

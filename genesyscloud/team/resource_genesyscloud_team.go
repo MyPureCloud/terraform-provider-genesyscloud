@@ -136,12 +136,10 @@ func getTeamFromResourceData(d *schema.ResourceData) platformclientv2.Team {
 
 	name := d.Get("name").(string)
 	division := d.Get("division_id").(string)
-	//description := d.Get("description").(string)
 
 	return platformclientv2.Team{
 		Name:        &name,
 		Division:    &platformclientv2.Writabledivision{Id: &division},
 		Description: platformclientv2.String(d.Get("description").(string)),
-		//MemberCount: platformclientv2.Int(d.Get("member_count").(int)),
 	}
 }

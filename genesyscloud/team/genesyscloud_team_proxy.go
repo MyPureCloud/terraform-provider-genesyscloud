@@ -134,11 +134,9 @@ func getTeamIdByNameFn(ctx context.Context, p *teamProxy, name string) (id strin
 		return "", true, fmt.Errorf("No team found with name %s", name)
 	}
 
-	//var matchingTeam platformclientv2.Team
 	for _, team := range *teams {
 		if *team.Name == name {
 			log.Printf("Retrieved the team id %s by name %s", *team.Id, name)
-			//matchingTeam = team
 			return *team.Id, false, nil
 		}
 	}
