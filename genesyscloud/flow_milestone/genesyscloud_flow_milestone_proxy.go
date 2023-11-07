@@ -2,7 +2,6 @@ package flow_milestone
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 	"log"
@@ -147,25 +146,14 @@ func getFlowMilestoneIdByNameFn(ctx context.Context, p *flowMilestoneProxy, name
 		return "", true, fmt.Errorf("No flow milestone found with name %s", name)
 	}
 
-	var flowMilestone platformclientv2.Flowmilestone
 	for _, flowMilestoneSdk := range *flowMilestones.Entities {
 		if *flowMilestoneSdk.Name == name {
 			log.Printf("Retrieved the flow milestone id %s by name %s", *flowMilestoneSdk.Id, name)
-			flowMilestone = flowMilestoneSdk
-			return *flowMilestone.Id, false, nil
+			return *flowMilestoneSdk.Id, false, nil
 		}
 	}
 
-	return "", false, fmt.Errorf("Unable to find flow milestone with name %s", name)
-}
-
-// Function to format JSON response - Go
-func formatJSON(input any) string {
-	output, err := json.MarshalIndent(input, "", "	")
-	if err != nil {
-		fmt.Println(err)
-	}
-	return string(output)
+	return "", true, fmt.Errorf("Unable to find flow milestone with name %s", name)
 }
 
 // getFlowMilestoneByIdFn is an implementation of the function to get a Genesys Cloud flow milestone by Id
