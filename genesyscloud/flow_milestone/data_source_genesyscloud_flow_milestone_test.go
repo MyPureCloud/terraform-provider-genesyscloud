@@ -1,7 +1,8 @@
-package genesyscloud
+package flow_milestone
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -17,14 +18,14 @@ func TestAccDataSourceFlowMilestone(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateFlowMilestoneResource(
 					milestoneRes,
 					name,
-					NullValue,
+					gcloud.NullValue,
 					description,
 				) + generateFlowMilestoneDataSource(
 					milestoneData,

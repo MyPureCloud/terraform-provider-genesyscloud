@@ -9,6 +9,7 @@ import (
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
+	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
@@ -98,6 +99,7 @@ func registerResources() {
 	grammarLanguage.SetRegistrar(regInstance)       //Registering architect grammar language
 	edgePhone.SetRegistrar(regInstance)             //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)              //Registering telephony providers edges site
+	flowMilestone.SetRegistrar(regInstance)         //Registering flow milestone
 	flowOutcome.SetRegistrar(regInstance)           //Registering flow outcome
 	station.SetRegistrar(regInstance)               //Registering station
 	pat.SetRegistrar(regInstance)                   //Registering process automation triggers

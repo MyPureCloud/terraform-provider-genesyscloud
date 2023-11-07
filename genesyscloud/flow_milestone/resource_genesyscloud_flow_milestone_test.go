@@ -1,7 +1,8 @@
-package genesyscloud
+package flow_milestone
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -23,21 +24,21 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: generateFlowMilestoneResource(
 					milestoneResource1,
 					name1,
-					NullValue,
+					gcloud.NullValue,
 					description1,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_milestone."+milestoneResource1, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_flow_milestone."+milestoneResource1, "description", description1),
-					TestDefaultHomeDivision("genesyscloud_flow_milestone."+milestoneResource1),
+					gcloud.TestDefaultHomeDivision("genesyscloud_flow_milestone."+milestoneResource1),
 				),
 			},
 			{
@@ -45,18 +46,18 @@ func TestAccResourceFlowMilestone(t *testing.T) {
 				Config: generateFlowMilestoneResource(
 					milestoneResource1,
 					name2,
-					NullValue,
+					gcloud.NullValue,
 					description2,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_flow_milestone."+milestoneResource1, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_flow_milestone."+milestoneResource1, "description", description2),
-					TestDefaultHomeDivision("genesyscloud_flow_milestone."+milestoneResource1),
+					gcloud.TestDefaultHomeDivision("genesyscloud_flow_milestone."+milestoneResource1),
 				),
 			},
 			{
 				// Update with a new division
-				Config: GenerateAuthDivisionBasic(divResource, divName) + generateFlowMilestoneResource(
+				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) + generateFlowMilestoneResource(
 					milestoneResource1,
 					name2,
 					"genesyscloud_auth_division."+divResource+".id",
@@ -103,7 +104,7 @@ func testVerifyFlowMilestoneDestroyed(state *terraform.State) error {
 		milestone, resp, err := archAPi.GetFlowsMilestone(rs.Primary.ID)
 		if milestone != nil {
 			return fmt.Errorf("Milestone (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// Milestone not found as expected
 			continue
 		} else {
