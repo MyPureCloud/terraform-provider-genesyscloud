@@ -72,7 +72,7 @@ func FlowMilestoneExporter() *resourceExporter.ResourceExporter {
 // DataSourceFlowMilestone registers the genesyscloud_flow_milestone data source
 func DataSourceFlowMilestone() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud flow milestone data source. Select an flow milestone by name`,
+		Description: `Genesys Cloud flow milestone data source. Select a flow milestone by name`,
 		ReadContext: gcloud.ReadWithPooledClient(dataSourceFlowMilestoneRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
