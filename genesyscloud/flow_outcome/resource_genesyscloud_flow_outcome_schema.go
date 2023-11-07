@@ -72,7 +72,7 @@ func FlowOutcomeExporter() *resourceExporter.ResourceExporter {
 // DataSourceFlowOutcome registers the genesyscloud_flow_outcome data source
 func DataSourceFlowOutcome() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud flow outcome data source. Select an flow outcome by name`,
+		Description: `Genesys Cloud flow outcome data source. Select a flow outcome by name`,
 		ReadContext: gcloud.ReadWithPooledClient(dataSourceFlowOutcomeRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,

@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccDataSourceFlowOutcome(t *testing.T) {
-	//t.Skip("Skipping until a DELETE method is publicly available for flow outcomes.")
+	t.Skip("Skipping until a DELETE method is publicly available for flow outcomes.")
 	var (
 		outcomeRes  = "flow-outcome"
 		outcomeData = "outcomeData"
