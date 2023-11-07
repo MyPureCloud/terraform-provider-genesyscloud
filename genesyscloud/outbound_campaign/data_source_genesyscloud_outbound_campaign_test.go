@@ -42,7 +42,7 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
-`) + generateOutboundCampaignBasic(
+`) + GenerateOutboundCampaignBasic(
 					resourceId,
 					campaignName,
 					"contact_list",
