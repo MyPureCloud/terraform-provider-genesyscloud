@@ -105,12 +105,13 @@ func createTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbin
 func getAllTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbinProxy) (*[]platformclientv2.Workbin, error) {
 	var allWorkbins []platformclientv2.Workbin
 	pageSize := 200
+	after := ""
 
 	for {
 		queryReq := &platformclientv2.Workbinqueryrequest{
 			PageSize: &pageSize,
+			After:    &after,
 		}
-
 		workbins, _, err := p.taskManagementApi.PostTaskmanagementWorkbinsQuery(*queryReq)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get workbin: %v", err)
@@ -121,6 +122,7 @@ func getAllTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbin
 		if workbins.After == nil || *workbins.After == "" {
 			break
 		}
+		after = *workbins.After
 	}
 
 	return &allWorkbins, nil
