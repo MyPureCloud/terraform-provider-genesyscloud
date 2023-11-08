@@ -174,6 +174,8 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 		}
 	} else {
 		log.Printf("getAllPhonesFn:: No phone records were retrieved (phone or on the first call to p.edgesApi.GetTelephonyProvidersEdgesPhones.")
+		phones := make([]platformclientv2.Phone, 0)
+		return &phones, nil
 	}
 
 	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
