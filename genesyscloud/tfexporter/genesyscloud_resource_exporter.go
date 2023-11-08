@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	dependent_consumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -169,7 +169,7 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	}
 
 	// Step #5 Convert the Genesys Cloud resources to neutral format (e.g. map of maps)
-	diagErr = g.buildDependsOnResources()
+	diagErr = g.buildAndExportDependsOnResources()
 	if diagErr != nil {
 		return diagErr
 	}
@@ -400,14 +400,28 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) buildDependsOnResources() diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResources() diag.Diagnostics {
 
+	filterList, err := g.processAndBuildDependencies()
+	if err != nil {
+		return err
+	}
+	if len(filterList) > 0 {
+		diagErr := g.exportDependentResources(filterList)
+		if diagErr != nil {
+			return diagErr
+		}
+	}
+	return nil
+}
+
+func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []string, diagErr diag.Diagnostics) {
 	filterList := make([]string, 0)
+	proxy := dependentconsumers.GetDependentConsumerProxy(nil)
 
 	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-
-			proxy := dependent_consumers.GetDependentConsumerProxy(clientConfig)
+			proxy = dependentconsumers.GetDependentConsumerProxy(clientConfig)
 			resources := make(resourceExporter.ResourceIDMetaMap)
 			resources, err := proxy.GetDependentConsumers(ctx, resourceKeys)
 
@@ -419,12 +433,10 @@ func (g *GenesysCloudResourceExporter) buildDependsOnResources() diag.Diagnostic
 	}
 
 	for _, resourceKeys := range g.resources {
-		resourcefunc := gcloud.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
-		ctx, _ := context.WithCancel(context.Background())
-		resources, err := resourcefunc(ctx)
 
+		resources, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if len(resources) > 0 {
@@ -441,15 +453,7 @@ func (g *GenesysCloudResourceExporter) buildDependsOnResources() diag.Diagnostic
 			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
 		}
 	}
-
-	if len(filterList) > 0 {
-		diagErr := g.exportDependentResources(filterList)
-		if diagErr != nil {
-			return diagErr
-		}
-	}
-
-	return nil
+	return filterList, nil
 }
 
 func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []string) (diagErr diag.Diagnostics) {
