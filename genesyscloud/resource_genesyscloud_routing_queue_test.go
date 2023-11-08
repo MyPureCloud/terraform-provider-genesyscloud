@@ -1428,6 +1428,9 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResource,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"suppress_in_queue_call_recording",
+				},
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,

@@ -121,6 +121,14 @@ $ make testacc TESTARGS="-run TestAccResourceUserBasic"
 
 All new resources must have passing acceptance tests and docs in order to be merged. Most of the docs are generated automatically from the schema and examples folder by running `go generate`.
 
+
+To run all of the unit tests:
+```sh
+$make testunit
+```
+
+
+
 ### Adding a new resource type
 
 1. Create new resource and test go files for the resource type, e.g. `resource_genesyscloud_{resource_name}.go` and `resource_genesyscloud_{resource_name}_test.go`. Resource names should typically be the same as (or very similar to) the Public API resource. 

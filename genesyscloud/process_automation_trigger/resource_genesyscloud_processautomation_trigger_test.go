@@ -275,6 +275,172 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 	})
 }
 
+func TestAccResourceProcessAutomationTriggerValues(t *testing.T) {
+	t.Parallel()
+	var (
+		triggerResource = "test-trigger-" + uuid.NewString()
+
+		triggerName                      = "Terraform trigger1-" + uuid.NewString()
+		topicName                        = "v2.detail.events.conversation.{id}.customer.end"
+		enabled                          = "true"
+		targetType                       = "Workflow"
+		workflowTargetSettingsDataFormat = "Json"
+		eventTtlSeconds                  = "60"
+		description                      = "description1"
+
+		flowResource = "test_flow"
+		filePath     = "../../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
+		flowName     = "terraform-provider-test-" + uuid.NewString()
+	)
+	var homeDivisionName string
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
+				Check: resource.ComposeTestCheckFunc(
+					gcloud.GetHomeDivisionName("data.genesyscloud_auth_division_home.home", &homeDivisionName),
+				),
+			},
+		},
+	})
+
+	workflowConfig := fmt.Sprintf(`workflow:
+ name: %s
+ division: %s
+ startUpRef: "/workflow/states/state[Initial State_10]"
+ defaultLanguage: en-us
+ variables:
+     - stringVariable:
+         name: Flow.dateActiveQueuesChanged
+         initialValue:
+           noValue: true
+         isInput: true
+         isOutput: false
+     - stringVariable:
+         name: Flow.id
+         initialValue:
+           noValue: true
+         isInput: true
+         isOutput: false
+ settingsErrorHandling:
+   errorHandling:
+     endWorkflow:
+       none: true
+ states:
+   - state:
+       name: Initial State
+       refId: Initial State_10
+       actions:
+         - endWorkflow:
+             name: End Workflow
+             exitReason:
+               noValue: true`, flowName, homeDivisionName)
+
+	matchCriteria1 := `[
+				{
+				  "jsonPath": "mediaType",
+				  "operator": "In",
+				  "values": ["id1", "id2"]
+				}
+	]`
+
+	matchCriteria2 := `[
+		{
+			"jsonPath": "mediaType",
+			"operator": "In",
+			"values": ["id1", "id2", "id3"]
+		}
+	]`
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create flow and trigger
+				Config: gcloud.GenerateFlowResource(
+					flowResource,
+					filePath,
+					workflowConfig,
+					false,
+				) + generateProcessAutomationTriggerResourceEventTTL(
+					triggerResource,
+					triggerName,
+					topicName,
+					enabled,
+					fmt.Sprintf(`target {
+                        id = %s
+                        type = "%s"
+						workflow_target_settings {
+							data_format = "%s"
+						}
+                    }
+                    `, "genesyscloud_flow."+flowResource+".id", targetType, workflowTargetSettingsDataFormat),
+					matchCriteria1,
+					eventTtlSeconds,
+					description,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "name", triggerName),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "topic_name", topicName),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "enabled", enabled),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "event_ttl_seconds", eventTtlSeconds),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "description", description),
+					validateTargetFlowId("genesyscloud_flow."+flowResource, "genesyscloud_processautomation_trigger."+triggerResource),
+					validateTargetType("genesyscloud_processautomation_trigger."+triggerResource, targetType),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "target.0.workflow_target_settings.0.data_format", workflowTargetSettingsDataFormat),
+					testAccCheckMatchCriteria("genesyscloud_processautomation_trigger."+triggerResource, matchCriteria1),
+				),
+			},
+			{
+				// Update match criteria
+				Config: gcloud.GenerateFlowResource(
+					flowResource,
+					filePath,
+					workflowConfig,
+					false,
+				) + generateProcessAutomationTriggerResourceEventTTL(
+					triggerResource,
+					triggerName,
+					topicName,
+					enabled,
+					fmt.Sprintf(`target {
+			            id = %s
+			            type = "%s"
+						workflow_target_settings {
+							data_format = "%s"
+						}
+			        }
+			        `, "genesyscloud_flow."+flowResource+".id", targetType, workflowTargetSettingsDataFormat),
+					matchCriteria2,
+					eventTtlSeconds,
+					description,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "name", triggerName),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "topic_name", topicName),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "enabled", enabled),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "event_ttl_seconds", eventTtlSeconds),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "description", description),
+					validateTargetFlowId("genesyscloud_flow."+flowResource, "genesyscloud_processautomation_trigger."+triggerResource),
+					validateTargetType("genesyscloud_processautomation_trigger."+triggerResource, targetType),
+					resource.TestCheckResourceAttr("genesyscloud_processautomation_trigger."+triggerResource, "target.0.workflow_target_settings.0.data_format", workflowTargetSettingsDataFormat),
+					testAccCheckMatchCriteria("genesyscloud_processautomation_trigger."+triggerResource, matchCriteria2),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_processautomation_trigger." + triggerResource,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyProcessAutomationTriggerDestroyed,
+	})
+}
+
 func generateProcessAutomationTriggerResourceEventTTL(resourceID, name, topic_name, enabled, target, match_criteria, event_ttl_seconds, description string) string {
 	return fmt.Sprintf(`resource "genesyscloud_processautomation_trigger" "%s" {
         name = "%s"
