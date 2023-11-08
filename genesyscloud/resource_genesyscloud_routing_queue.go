@@ -577,7 +577,10 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("Failed to create queue %s: %s", *createQueue.Name, err)
 	}
 
-	log.Printf("completed call to routingAPI.PostRoutingQueues for queueName: %s with statusCode %d and correlation id: %s", *createQueue.Name, resp.StatusCode, resp.CorrelationID)
+	if resp.StatusCode != http.StatusOK {
+		return diag.Errorf("Failed to create queue %s: with httpStatus code: %d", *createQueue.Name, resp.StatusCode)
+	}
+
 	d.SetId(*queue.Id)
 
 	diagErr = updateQueueMembers(d, routingAPI)
