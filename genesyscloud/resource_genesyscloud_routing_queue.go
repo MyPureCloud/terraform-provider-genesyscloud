@@ -570,11 +570,17 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		createQueue.Division = &platformclientv2.Writabledivision{Id: &divisionID}
 	}
 
-	log.Printf("Creating queue %s", *createQueue.Name)
-	queue, _, err := routingAPI.PostRoutingQueues(createQueue)
+	log.Printf("creating queue %s using routingAPI.PostRoutingQueues", *createQueue.Name)
+	queue, resp, err := routingAPI.PostRoutingQueues(createQueue)
 	if err != nil {
+		log.Printf("error while trying to create queue: %s. Err %s", *createQueue.Name, err)
 		return diag.Errorf("Failed to create queue %s: %s", *createQueue.Name, err)
 	}
+
+	if resp.StatusCode != http.StatusOK {
+		return diag.Errorf("Failed to create queue %s: with httpStatus code: %d", *createQueue.Name, resp.StatusCode)
+	}
+
 	d.SetId(*queue.Id)
 
 	diagErr = updateQueueMembers(d, routingAPI)
