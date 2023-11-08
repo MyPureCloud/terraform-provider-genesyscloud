@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -23,7 +24,7 @@ func TestAccDataSourceCampaignRule(t *testing.T) {
 		campaign1Name        = "TF Test Campaign " + uuid.NewString()
 		outboundFlowFilePath = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 		campaign1FlowName    = "test flow " + uuid.NewString()
-		campaign1Resource    = generateOutboundCampaignBasic(
+		campaign1Resource    = outboundCampaign.GenerateOutboundCampaignBasic(
 			campaign1ResourceId,
 			campaign1Name,
 			"contact-list",
@@ -42,7 +43,7 @@ func TestAccDataSourceCampaignRule(t *testing.T) {
 		campaign2ResourceId = "campaign2"
 		campaign2Name       = "TF Test Campaign " + uuid.NewString()
 		campaign2FlowName   = "test flow " + uuid.NewString()
-		campaign2Resource   = generateOutboundCampaignBasic(
+		campaign2Resource   = outboundCampaign.GenerateOutboundCampaignBasic(
 			campaign2ResourceId,
 			campaign2Name,
 			"contact-list-2",

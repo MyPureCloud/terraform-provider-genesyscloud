@@ -1,4 +1,4 @@
-package outbound
+package outbound_campaign
 
 import (
 	"fmt"
@@ -42,14 +42,14 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
-`) + generateOutboundCampaignBasic(
+`) + GenerateOutboundCampaignBasic(
 					resourceId,
 					campaignName,
 					"contact_list",
 					"site",
 					emergencyNumber,
 					"car",
-					NullValue,
+					gcloud.NullValue,
 					outboundFlowFilePath,
 					"data-campaign-test-flow",
 					"test flow "+uuid.NewString(),

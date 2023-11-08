@@ -2,6 +2,7 @@ package outbound
 
 import (
 	"fmt"
+	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -48,7 +49,7 @@ func TestAccDataSourceOutboundSequence(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 data "genesyscloud_auth_division_home" "home" {}
-`) + generateOutboundCampaignBasic(
+`) + outboundCampaign.GenerateOutboundCampaignBasic(
 					campaignResourceId,
 					campaignName,
 					contactListResourceId,

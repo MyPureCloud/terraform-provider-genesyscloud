@@ -373,3 +373,13 @@ func uploadPhoneEntriesToDncList(api *platformclientv2.OutboundApi, dncList *pla
 	}
 	return nil, nil
 }
+
+func GenerateOutboundDncListBasic(resourceId string, name string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_outbound_dnclist" "%s" {
+	name            = "%s"
+	dnc_source_type = "rds"	
+	contact_method  = "Phone"
+}
+`, resourceId, name)
+}

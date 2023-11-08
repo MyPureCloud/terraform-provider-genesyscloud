@@ -275,30 +275,6 @@ func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 	})
 }
 
-func generateOutboundDncList(
-	resourceId string,
-	name string,
-	dncSourceType string,
-	contactMethod string,
-	loginId string,
-	campaignId string,
-	licenseId string,
-	dncCodes []string,
-	nestedBlocks ...string) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_outbound_dnclist" "%s" {
-	name            = "%s"
-	dnc_source_type = "%s"
-	contact_method  = %s
-	login_id        = %s
-	license_id      = %s
-	campaign_id     = %s
-	dnc_codes = [%s]
-    %s
-}
-`, resourceId, name, dncSourceType, contactMethod, loginId, licenseId, campaignId, strings.Join(dncCodes, ", "), strings.Join(nestedBlocks, "\n"))
-}
-
 func generateOutboundDncListEntriesBlock(phoneNumbers []string, expirationDate string) string {
 	return fmt.Sprintf(`
 	entries {
@@ -306,16 +282,6 @@ func generateOutboundDncListEntriesBlock(phoneNumbers []string, expirationDate s
 		phone_numbers   = [%s]
 	}
 `, expirationDate, strings.Join(phoneNumbers, ", "))
-}
-
-func generateOutboundDncListBasic(resourceId string, name string) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_outbound_dnclist" "%s" {
-	name            = "%s"
-	dnc_source_type = "rds"	
-	contact_method  = "Phone"
-}
-`, resourceId, name)
 }
 
 func checkPhoneNumbersAddedToDncList(resource string, numberOfPhoneNumbersAdded int) resource.TestCheckFunc {
@@ -356,4 +322,28 @@ func testVerifyDncListDestroyed(state *terraform.State) error {
 	}
 	// Success. All dnc lists destroyed
 	return nil
+}
+
+func generateOutboundDncList(
+	resourceId string,
+	name string,
+	dncSourceType string,
+	contactMethod string,
+	loginId string,
+	campaignId string,
+	licenseId string,
+	dncCodes []string,
+	nestedBlocks ...string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_outbound_dnclist" "%s" {
+	name            = "%s"
+	dnc_source_type = "%s"
+	contact_method  = %s
+	login_id        = %s
+	license_id      = %s
+	campaign_id     = %s
+	dnc_codes = [%s]
+    %s
+}
+`, resourceId, name, dncSourceType, contactMethod, loginId, licenseId, campaignId, strings.Join(dncCodes, ", "), strings.Join(nestedBlocks, "\n"))
 }

@@ -17,6 +17,7 @@ import (
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	obwm "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
@@ -92,7 +93,6 @@ type RegisterInstance struct {
 }
 
 func registerResources() {
-
 	regInstance := &RegisterInstance{}
 
 	grammar.SetRegistrar(regInstance)               //Registering architect grammar
@@ -108,6 +108,7 @@ func registerResources() {
 	obwm.SetRegistrar(regInstance)                  //Registering outbound wrapup code mappings
 	gcloud.SetRegistrar(regInstance)                //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)        //Registering outbound attempt limit
+  obCampaign.SetRegistrar(regInstance)                    //Registering outbound campaign
 	obContactList.SetRegistrar(regInstance)         //Registering outbound contact list
 	scripts.SetRegistrar(regInstance)               //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)          //Registering routing sms addresses
@@ -120,7 +121,6 @@ func registerResources() {
 	didPool.SetRegistrar(regInstance)               //Registering telephony did pools
 	archIvr.SetRegistrar(regInstance)               //Registering architect ivr
 	workbin.SetRegistrar(regInstance)               //Registering task management workbin
-
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
 
