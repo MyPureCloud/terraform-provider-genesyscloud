@@ -161,19 +161,23 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 
 	phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 	if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
-		log.Printf("getAllPhonesFn: error encountered while trying to get first page of phone data #%v statusCode: %d", err, response.StatusCode)
+		log.Printf("getAllPhonesFn:: error encountered while trying to get first page of phone data #%v statusCode: %d", err, response.StatusCode)
 		return nil, err
 	}
 
-	log.Printf("Retrieved page 1 of %d pages of phone data.  Total number of phone records is %d", phones.PageCount, phones.Total)
-	for _, phone := range *phones.Entities {
-		if phone.State != nil && *phone.State != "deleted" {
-			allPhones = append(allPhones, phone)
+	if phones != nil && phones.Entities != nil {
+		log.Printf("getAllPhonesFn::: Retrieved page 1 of %d pages of phone data.  Total number of phone records is %d", phones.PageCount, phones.Total)
+		for _, phone := range *phones.Entities {
+			if phone.State != nil && *phone.State != "deleted" {
+				allPhones = append(allPhones, phone)
+			}
 		}
+	} else {
+		log.Printf("getAllPhonesFn:: No phone records were retrieved (phone or on the first call to p.edgesApi.GetTelephonyProvidersEdgesPhones.")
 	}
 
 	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
-		phones, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+		phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
 		if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
 			return nil, err
 		}
@@ -189,7 +193,7 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 		}
 	}
 
-	log.Printf("getAllPhonesFn:: Listing all of the non-deleted phone ids and names")
+	log.Printf("getAllPhonesFn:: Listing all of the non-deleted phone ids and names that we actually retrieved")
 	for _, phone := range allPhones {
 		log.Printf("getAllPhonesFn::  Retrieved phone id %s with phone name: %s\n", phone.Id, phone.Name)
 	}
@@ -215,7 +219,7 @@ func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platfo
 		return nil, resp, err
 	}
 
-	log.Printf("getPhoneByIdFn:: Successfully retrieved individual phone record id %s with phoneName%s.\n", phone.Id, phone.Name)
+	log.Printf("getPhoneByIdFn:: Successfully retrieved individual phone record id %s with phone name %s.\n", phone.Id, phone.Name)
 	return phone, resp, nil
 }
 
