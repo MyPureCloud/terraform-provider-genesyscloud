@@ -26,7 +26,6 @@ The resource_genesyscloud_team.go contains all of the methods that perform the c
 
 // getAllAuthTeam retrieves all of the team via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-
 	proxy := getTeamProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	teams, err := proxy.getAllTeam(ctx, "")
