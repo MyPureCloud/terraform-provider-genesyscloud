@@ -54,11 +54,6 @@ func ResourceTeam() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			"member_count": {
-				Description: "Number of members in a team",
-				Optional:    true,
-				Type:        schema.TypeInt,
-			},
 		},
 	}
 }

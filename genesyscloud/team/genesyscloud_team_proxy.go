@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
@@ -19,7 +20,7 @@ var internalProxy *teamProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createTeamFunc func(ctx context.Context, p *teamProxy, team *platformclientv2.Team) (*platformclientv2.Team, error)
-type getAllTeamFunc func(ctx context.Context, p *teamProxy) (*[]platformclientv2.Team, error)
+type getAllTeamFunc func(ctx context.Context, p *teamProxy, name string) (*[]platformclientv2.Team, error)
 type getTeamIdByNameFunc func(ctx context.Context, p *teamProxy, name string) (id string, retryable bool, err error)
 type getTeamByIdFunc func(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, responseCode int, err error)
 type updateTeamFunc func(ctx context.Context, p *teamProxy, id string, team *platformclientv2.Team) (*platformclientv2.Team, error)
@@ -68,8 +69,8 @@ func (p *teamProxy) createTeam(ctx context.Context, team *platformclientv2.Team)
 }
 
 // getTeam retrieves all Genesys Cloud team
-func (p *teamProxy) getAllTeam(ctx context.Context) (*[]platformclientv2.Team, error) {
-	return p.getAllTeamAttr(ctx, p)
+func (p *teamProxy) getAllTeam(ctx context.Context, name string) (*[]platformclientv2.Team, error) {
+	return p.getAllTeamAttr(ctx, p, name)
 }
 
 // getTeamIdByName returns a single Genesys Cloud team by a name
@@ -103,29 +104,51 @@ func createTeamFn(ctx context.Context, p *teamProxy, team *platformclientv2.Team
 }
 
 // getAllTeamFn is the implementation for retrieving all team in Genesys Cloud
-func getAllTeamFn(ctx context.Context, p *teamProxy) (*[]platformclientv2.Team, error) {
-	var allTeams []platformclientv2.Team
+func getAllTeamFn(ctx context.Context, p *teamProxy, name string) (*[]platformclientv2.Team, error) {
+	var (
+		after    string
+		allTeams []platformclientv2.Team
+	)
+
 	const pageSize = 100
+	for i := 0; ; i++ {
 
-	teams, _, err := p.teamsApi.GetTeams(100, "", "", "", "")
+		teams, _, getErr := p.teamsApi.GetTeams(pageSize, name, after, "", "")
+		if getErr != nil {
+			return nil, fmt.Errorf("Unable to find team entities %s", getErr)
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get team: %v", err)
-	}
-	if teams.Entities == nil || len(*teams.Entities) == 0 {
-		return &allTeams, nil
-	}
-	for _, team := range *teams.Entities {
+		if teams.Entities == nil || len(*teams.Entities) == 0 {
+			break
+		}
 
-		allTeams = append(allTeams, team)
+		allTeams = append(allTeams, *teams.Entities...)
+
+		if teams.NextUri == nil || *teams.NextUri == "" {
+			break
+		}
+
+		u, err := url.Parse(*teams.NextUri)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to find team entities %s", err)
+		}
+
+		m, _ := url.ParseQuery(u.RawQuery)
+		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
+			after = afterSlice[0]
+		}
+		if after == "" {
+			break
+		}
 	}
 
 	return &allTeams, nil
+
 }
 
 // getTeamIdByNameFn is an implementation of the function to get a Genesys Cloud team by name
 func getTeamIdByNameFn(ctx context.Context, p *teamProxy, name string) (id string, retryable bool, err error) {
-	teams, err := getAllTeamFn(ctx, p)
+	teams, err := getAllTeamFn(ctx, p, name)
 	if err != nil {
 		return "", false, err
 	}
@@ -141,7 +164,7 @@ func getTeamIdByNameFn(ctx context.Context, p *teamProxy, name string) (id strin
 		}
 	}
 
-	return "", false, fmt.Errorf("Unable to find team with name %s", name)
+	return "", true, fmt.Errorf("Unable to find team with name %s", name)
 }
 
 // getTeamByIdFn is an implementation of the function to get a Genesys Cloud team by Id

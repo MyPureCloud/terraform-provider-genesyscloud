@@ -26,10 +26,10 @@ The resource_genesyscloud_team.go contains all of the methods that perform the c
 
 // getAllAuthTeam retrieves all of the team via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newTeamProxy(clientConfig)
-	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	teams, err := proxy.getAllTeam(ctx)
+	proxy := getTeamProxy(clientConfig)
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	teams, err := proxy.getAllTeam(ctx, "")
 	if err != nil {
 		return nil, diag.Errorf("Failed to get team: %v", err)
 	}
@@ -82,7 +82,6 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", team.Division)
 
 		resourcedata.SetNillableValue(d, "description", team.Description)
-		resourcedata.SetNillableValue(d, "member_count", team.MemberCount)
 
 		log.Printf("Read team %s %s", d.Id(), *team.Name)
 		return cc.CheckState()

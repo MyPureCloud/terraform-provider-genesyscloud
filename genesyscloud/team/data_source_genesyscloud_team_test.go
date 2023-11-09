@@ -1,7 +1,6 @@
 package team
 
 import (
-	//"fmt"
 	"fmt"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
