@@ -2,6 +2,7 @@ package dependent_consumers
 
 import (
 	"context"
+	"log"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -64,15 +65,18 @@ func retrievePooledClientFn(method gcloud.GetAllConfigFunc) (resourceExporter.Re
 
 func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, error) {
 	resourceKey := resourceKeys.State.ID
-	resourceType := resourceKeys.Type
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	dependentConsumerMap := SetDependentObjectMaps()
-	objectType, exists := dependentConsumerMap[resourceType]
-	if exists {
+	data, response, err := p.ArchitectApi.GetFlow(resourceKey, false)
+	log.Printf("Response:\n  Success: %v\n  Status code: %v\n  Correlation ID: %v\n  Body: %v\n", response.IsSuccess, response.StatusCode, response.CorrelationID, data.String())
+	if err != nil {
+		log.Printf("Error calling GetFlow: %v\n", err)
+	}
+	if data != nil && data.PublishedVersion.Id != nil {
 		pageCount := 1
 		for pageNum := 1; pageNum <= pageCount; pageNum++ {
 			const pageSize = 100
-			dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumingresources(resourceKey, objectType, nil, "", pageNum, pageSize, "")
+			dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, *data.VarType+"FLOW", nil, pageNum, pageSize)
 			if err != nil {
 				return nil, err
 			}
@@ -81,7 +85,12 @@ func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy
 			}
 
 			for _, consumer := range *dependencies.Entities {
-				resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: *consumer.Name}
+				resType, exists := dependentConsumerMap[*consumer.VarType]
+				if exists {
+					resourceFilter := resType + " " + *consumer.Name
+					resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
+				}
+
 			}
 			pageCount = *dependencies.PageCount
 		}

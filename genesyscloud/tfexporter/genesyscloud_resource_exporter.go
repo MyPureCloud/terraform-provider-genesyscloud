@@ -443,12 +443,13 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			resourcesTobeExported := retrieveExportResources(g.resources, resources)
 			dependsList := make([]string, 0)
 			for _, meta := range resourcesTobeExported {
-				filterList = append(filterList, fmt.Sprintf("%s::%s", "genesyscloud_flow", meta.Name))
-				dependsList = append(dependsList, fmt.Sprintf("%s:%s", "genesyscloud_flow", meta.Name))
+				resource := strings.Split(meta.Name, " ")
+				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
+				dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], resource[1]))
 			}
 
 			dependsMap := make(map[string][]string)
-			dependsMap[resourceKeys.Name] = dependsList
+			dependsMap[resourceKeys.State.ID] = dependsList
 
 			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
 		}
@@ -719,6 +720,11 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 	return state, nil
 }
 
+func correctCustomFunctions(config string) string {
+	config = correctInterpolatedFileShaFunctions(config)
+	return correctDependsOn(config)
+}
+
 // find & replace ${filesha256(\"...\")} with ${filesha256("...")}
 func correctInterpolatedFileShaFunctions(config string) string {
 	correctedConfig := config
@@ -728,6 +734,24 @@ func correctInterpolatedFileShaFunctions(config string) string {
 		correctedMatch := strings.Replace(match, `\"`, `"`, -1)
 		correctedConfig = strings.Replace(correctedConfig, match, correctedMatch, -1)
 	}
+	return correctedConfig
+}
+
+func correctDependsOn(config string) string {
+	correctedConfig := config
+	re := regexp.MustCompile(`"\$dep\$([^$]+)\$dep\$"`)
+	matches := re.FindAllString(config, -1)
+
+	for _, match := range matches {
+		value := re.FindStringSubmatch(match)
+		log.Printf(" depfthyui %v", value)
+		log.Printf(" match %v", match)
+		if len(value) == 2 {
+			// Replace the entire match with the extracted value without quotes
+			correctedConfig = strings.Replace(correctedConfig, match, value[1], -1)
+		}
+	}
+
 	return correctedConfig
 }
 
@@ -766,7 +790,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		}
 
 		if parentKey {
-			if currAttr == "name" {
+			if currAttr == "id" {
 				g.addDependsOnValues(val.(string), configMap)
 			}
 		}
@@ -925,8 +949,18 @@ func removeZeroValues(key string, val interface{}, configMap gcloud.JsonMap) {
 
 func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap gcloud.JsonMap) {
 	list, exists := g.dependsList[key]
+	resourceDependsList := make([]string, 0)
 	if exists {
-		configMap["depends_on"] = list
+		for _, res := range list {
+			for _, resource := range g.resources {
+				if resource.Name == strings.Split(res, ".")[1] {
+					resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", res))
+				}
+			}
+		}
+		if len(resourceDependsList) > 0 {
+			configMap["depends_on"] = resourceDependsList
+		}
 	}
 }
 
