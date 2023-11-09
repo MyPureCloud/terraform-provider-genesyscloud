@@ -1,9 +1,8 @@
-package outbound
+package outbound_sequence
 
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"testing"
 
@@ -62,24 +61,24 @@ data "genesyscloud_auth_division_home" "home" {}
 					siteId,
 					emergencyNumber,
 					carResourceId,
-					NullValue,
+					gcloud.NullValue,
 					outboundFlowFilePath,
 					"sequence-test-flow",
 					flowName,
 					"${data.genesyscloud_auth_division_home.home.name}",
 					"sequence-test-location",
 					"sequence-test-wrapupcode",
-				) + generateOutboundSequence(
+				) + GenerateOutboundSequence(
 					sequenceResource,
 					sequenceName1,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
 					strconv.Quote("off"),
-					TrueValue,
+					gcloud.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName1),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "status", "off"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", gcloud.TrueValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResource, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceId, "id"),
 				),
@@ -95,24 +94,24 @@ data "genesyscloud_auth_division_home" "home" {}
 					siteId,
 					emergencyNumber,
 					carResourceId,
-					NullValue,
+					gcloud.NullValue,
 					outboundFlowFilePath,
 					"sequence-test-flow",
 					flowName,
 					"${data.genesyscloud_auth_division_home.home.name}",
 					"sequence-test-location",
 					"sequence-test-wrapupcode",
-				) + generateOutboundSequence(
+				) + GenerateOutboundSequence(
 					sequenceResource,
 					sequenceName2,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
 					strconv.Quote("on"),
-					FalseValue,
+					gcloud.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "status", "on"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", gcloud.FalseValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResource, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceId, "id"),
 				),
@@ -173,24 +172,24 @@ data "genesyscloud_auth_division_home" "home" {}
 					siteId,
 					emergencyNumber,
 					carResourceId,
-					NullValue,
+					gcloud.NullValue,
 					outboundFlowFilePath,
 					"sequence-test-flow",
 					flowName,
 					"${data.genesyscloud_auth_division_home.home.name}",
 					"sequence-test-location",
 					"sequence-test-wrapupcode",
-				) + generateOutboundSequence(
+				) + GenerateOutboundSequence(
 					sequenceResource,
 					sequenceName1,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
 					strconv.Quote("on"),
-					FalseValue,
+					gcloud.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName1),
 					gcloud.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_sequence."+sequenceResource, "status", []string{"on", "complete"}),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", gcloud.FalseValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResource, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceId, "id"),
 				),
@@ -206,24 +205,24 @@ data "genesyscloud_auth_division_home" "home" {}
 					siteId,
 					emergencyNumber,
 					carResourceId,
-					NullValue,
+					gcloud.NullValue,
 					outboundFlowFilePath,
 					"sequence-test-flow",
 					flowName,
 					"${data.genesyscloud_auth_division_home.home.name}",
 					"sequence-test-location",
 					"sequence-test-wrapupcode",
-				) + generateOutboundSequence(
+				) + GenerateOutboundSequence(
 					sequenceResource,
 					sequenceName2,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
 					strconv.Quote("off"),
-					FalseValue,
+					gcloud.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "status", "off"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", gcloud.FalseValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResource, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceId, "id"),
 				),
@@ -240,24 +239,24 @@ data "genesyscloud_auth_division_home" "home" {}
 					siteId,
 					emergencyNumber,
 					carResourceId,
-					NullValue,
+					gcloud.NullValue,
 					outboundFlowFilePath,
 					"sequence-test-flow",
 					flowName,
 					"${data.genesyscloud_auth_division_home.home.name}",
 					"sequence-test-location",
 					"sequence-test-wrapupcode",
-				) + generateOutboundSequence(
+				) + GenerateOutboundSequence(
 					sequenceResource,
 					sequenceName2,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
 					strconv.Quote("on"),
-					FalseValue,
+					gcloud.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "name", sequenceName2),
 					gcloud.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_sequence."+sequenceResource, "status", []string{"on", "complete"}),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResource, "repeat", gcloud.FalseValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResource, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceId, "id"),
 				),
@@ -271,22 +270,6 @@ data "genesyscloud_auth_division_home" "home" {}
 		},
 		CheckDestroy: testVerifyOutboundSequenceDestroyed,
 	})
-}
-
-func generateOutboundSequence(
-	resourceId string,
-	name string,
-	campaignIds []string,
-	status string,
-	repeat string) string {
-	return fmt.Sprintf(`
-		resource "genesyscloud_outbound_sequence" "%s" {
-			name = "%s"
-			campaign_ids = [%s]
-			status = %s
-			repeat = %s
-		}
-	`, resourceId, name, strings.Join(campaignIds, ", "), status, repeat)
 }
 
 func testVerifyOutboundSequenceDestroyed(state *terraform.State) error {

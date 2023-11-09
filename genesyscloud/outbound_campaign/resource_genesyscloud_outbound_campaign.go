@@ -203,7 +203,7 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 			return diagErr
 		}
 		// Give the campaign some time to turn off
-		time.Sleep(10 * time.Second)
+		time.Sleep(20 * time.Second)
 	}
 	_, err := proxy.deleteOutboundCampaign(ctx, d.Id())
 	if err != nil {

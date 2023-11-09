@@ -45,14 +45,14 @@ func TestAccDataSourceOutboundContactListFilter(t *testing.T) {
 						"cell",
 						NullValue,
 					),
-				) + generateOutboundContactListFilter(
+				) + GenerateOutboundContactListFilter(
 					resourceId,
 					contactListFilterName,
 					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 					"AND",
-					generateOutboundContactListFilterClause(
+					GenerateOutboundContactListFilterClause(
 						"",
-						generateOutboundContactListFilterPredicates(
+						GenerateOutboundContactListFilterPredicates(
 							column1,
 							"numeric",
 							"EQUALS",
