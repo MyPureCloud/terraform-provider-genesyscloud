@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccResourceProcessAutomationTrigger(t *testing.T) {
-	t.Parallel()
 	var (
 		triggerResource1 = "test-trigger1"
 
@@ -276,7 +275,6 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 }
 
 func TestAccResourceProcessAutomationTriggerValues(t *testing.T) {
-	t.Parallel()
 	var (
 		triggerResource = "test-trigger-" + uuid.NewString()
 
