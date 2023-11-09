@@ -124,7 +124,21 @@ func deleteOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getOutboundSequenceProxy(sdkConfig)
 
-	_, err := proxy.deleteOutboundSequence(ctx, d.Id())
+	// Sequence can't be deleted while running
+	sequence, _, err := proxy.getOutboundSequenceById(ctx, d.Id())
+	if *sequence.Status == "on" {
+		if err != nil {
+			return diag.Errorf("Failed to get outbound sequence %s: %s", d.Id(), err)
+		}
+		sequence.Status = platformclientv2.String("off")
+		_, err = proxy.updateOutboundSequence(ctx, d.Id(), sequence)
+		if err != nil {
+			return diag.Errorf("Failed to turn off outbound sequence %s: %s", d.Id(), err)
+		}
+		time.Sleep(20 * time.Second) // Give the sequence a chance to turned off
+	}
+
+	_, err = proxy.deleteOutboundSequence(ctx, d.Id())
 	if err != nil {
 		return diag.Errorf("Failed to delete outbound sequence %s: %s", d.Id(), err)
 	}
