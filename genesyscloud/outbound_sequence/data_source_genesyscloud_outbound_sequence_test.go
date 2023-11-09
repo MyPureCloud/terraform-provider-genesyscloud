@@ -1,4 +1,4 @@
-package outbound
+package outbound_sequence
 
 import (
 	"fmt"
@@ -56,19 +56,19 @@ data "genesyscloud_auth_division_home" "home" {}
 					siteId,
 					emergencyNumber,
 					carResourceId,
-					NullValue,
+					gcloud.NullValue,
 					outboundFlowFilePath,
 					"data-sequence-test-flow",
 					flowName,
 					"${data.genesyscloud_auth_division_home.home.name}",
 					"data-sequence-test-location",
 					"data-sequence-test-wrapupcode",
-				) + generateOutboundSequence(
+				) + GenerateOutboundSequence(
 					resourceId,
 					sequenceName,
 					[]string{"genesyscloud_outbound_campaign." + campaignResourceId + ".id"},
-					NullValue,
-					NullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 				) + generateOutboundSequenceDataSource(
 					dataSourceId,
 					sequenceName,

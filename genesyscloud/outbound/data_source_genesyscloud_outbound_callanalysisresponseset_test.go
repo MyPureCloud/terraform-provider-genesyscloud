@@ -24,7 +24,7 @@ func TestAccDataSourceCallAnalysisResponseSet(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundCallAnalysisResponseSetResource(
+				Config: GenerateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					responseSetName,
 					FalseValue,

@@ -1,4 +1,4 @@
-package outbound
+package outbound_campaignrule
 
 import (
 	"context"
@@ -136,7 +136,7 @@ var (
 	}
 )
 
-func getAllCampaignRules(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllAuthCampaignRules(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 
@@ -157,26 +157,6 @@ func getAllCampaignRules(_ context.Context, clientConfig *platformclientv2.Confi
 	}
 
 	return resources, nil
-}
-
-func OutboundCampaignRuleExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllCampaignRules),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			`campaign_rule_actions.campaign_rule_action_entities.campaign_ids`: {
-				RefType: "genesyscloud_outbound_campaign",
-			},
-			`campaign_rule_actions.campaign_rule_action_entities.sequence_ids`: {
-				RefType: "genesyscloud_outbound_sequence",
-			},
-			`campaign_rule_entities.campaign_ids`: {
-				RefType: "genesyscloud_outbound_campaign",
-			},
-			`campaign_rule_entities.sequence_ids`: {
-				RefType: "genesyscloud_outbound_sequence",
-			},
-		},
-	}
 }
 
 func ResourceOutboundCampaignRule() *schema.Resource {
