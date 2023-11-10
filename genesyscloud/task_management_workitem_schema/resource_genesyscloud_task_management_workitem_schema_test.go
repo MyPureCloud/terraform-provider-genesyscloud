@@ -1,9 +1,8 @@
 package task_management_workitem_schema
 
 import (
+	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -24,23 +23,58 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 	t.Parallel()
 	var (
 		schemaResId       = "tf_schema_1"
-		schemaTitle       = "tf_schema_" + uuid.NewString()
+		schemaName        = "tf_schema_" + uuid.NewString()
 		schemaDescription = "created for CX as Code test case"
 
-		// custom attribute 1
-		attr1Title       = "custom_attribute"
-		attr1Description = "custom_attribute description"
-		attr1Type        = TEXT
-		attr1Min         = 1
-		attr1Max         = 50
+		// "text" field
+		attr1 = textTypeField{
+			title:       "custom_text_attribute",
+			description: "custom_text_attribute description",
+			varType:     TEXT,
+			minLength:   1,
+			maxLength:   50,
+		}
+
+		// "longtext" field
+		attr2 = textTypeField{
+			title:       "Custom_longtext_attribute",
+			description: "Custom_longtext_attribute description",
+			varType:     LONGTEXT,
+			minLength:   1,
+			maxLength:   50,
+		}
+
+		// "url" field
+		attr3 = textTypeField{
+			title:       "Custom_url_attribute",
+			description: "Custom_url_attribute description",
+			varType:     URL,
+			minLength:   1,
+			maxLength:   50,
+		}
+
+		// "identifier" field
+		attr4 = textTypeField{
+			title:       "Custom_identifier_attribute",
+			description: "Custom_identifier_attribute description",
+			varType:     IDENTIFIER,
+			minLength:   1,
+			maxLength:   50,
+		}
 
 		config = generateWorkitemSchemaResource(
 			schemaResId,
+			schemaName,
+			schemaDescription,
 			gcloud.GenerateJsonEncodedProperties(
-				generateJsonSchema(strconv.Quote(schemaTitle), strconv.Quote(schemaDescription),
-					generateJsonSchemaProperty(attr1Title, attr1Description, attr1Type,
-						generateStrLengthFields(attr1Min, attr1Max)),
-				),
+				generateJsonSchemaProperty(attr1.title, attr1.description, attr1.varType,
+					generateStrLengthFields(attr1.minLength, attr1.maxLength)),
+				generateJsonSchemaProperty(attr2.title, attr2.description, attr2.varType,
+					generateStrLengthFields(attr2.minLength, attr2.maxLength)),
+				generateJsonSchemaProperty(attr3.title, attr3.description, attr3.varType,
+					generateStrLengthFields(attr3.minLength, attr3.maxLength)),
+				generateJsonSchemaProperty(attr4.title, attr4.description, attr4.varType,
+					generateStrLengthFields(attr4.minLength, attr4.maxLength)),
 			),
 			gcloud.TrueValue,
 		)
@@ -54,7 +88,9 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "name", schemaTitle),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "name", schemaName),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "description", schemaDescription),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", gcloud.TrueValue),
 				),
 			},
 		},
@@ -69,41 +105,41 @@ func testVerifyTaskManagementWorkitemSchemaDestroyed(state *terraform.State) err
 			continue
 		}
 
-		workbin, resp, err := taskMgmtApi.GetTaskmanagementWorkitemsSchema(rs.Primary.ID)
-		if workbin != nil {
-			return fmt.Errorf("task management workitem schema (%s) still exists", rs.Primary.ID)
-		} else if gcloud.IsStatus404(resp) {
-			// Workitem schema not found as expected
-			continue
-		} else {
+		var successPayload map[string]interface{}
+		_, resp, err := taskMgmtApi.GetTaskmanagementWorkitemsSchema(rs.Primary.ID)
+		if gcloud.IsStatus404(resp) {
+			continue // does not exist anymore so considered as deleted
+		} else if err != nil {
 			// Unexpected error
 			return fmt.Errorf("unexpected error: %s", err)
 		}
+
+		// Manually check for the 'deleted' property
+		err = json.Unmarshal([]byte(resp.RawBody), &successPayload)
+		if err != nil {
+			return fmt.Errorf("error verifying if workitem schems %s is destroyed: %v", rs.Primary.ID, err)
+		}
+		if isDeleted, ok := successPayload["deleted"].(bool); ok && isDeleted {
+			continue // workitem schema is 'deleted'
+		}
+
+		return fmt.Errorf("task management workitem schema (%s) still exists", rs.Primary.ID)
 	}
+
 	// Success. All workitem schemas destroyed
 	return nil
 }
 
-func generateJsonSchema(title string, description string, properties ...string) string {
-	return fmt.Sprintf(`"$schema": "http://json-schema.org/draft-04/schema#",
-		"title": %s,
-		"description": %s,
-		"properties": {
-			%s
-		}
-	`, title, description, strings.Join(properties, "\n"))
-}
-
 // json schema properties
 func generateJsonSchemaProperty(title, description, coreType, otherFields string) string {
-	return fmt.Sprintf(`"%s_%s": {
-		"allOf": [
+	return fmt.Sprintf(`"%s_%s" = {
+		"allOf" = [
           {
-            "$ref": "#/definitions/%s"
+            "$ref" = "#/definitions/%s"
           }
         ],
-        "title": "%s",
-        "description": "%s",
+        "title" = "%s",
+        "description" = "%s",
         %s
 	}
 	`, title, coreType, coreType, title, description, otherFields)
@@ -121,10 +157,12 @@ func generateNumLimitsFields(min int, max int) string {
 		`, min, max)
 }
 
-func generateWorkitemSchemaResource(resourceId string, json_schema string, enabledStr string) string {
+func generateWorkitemSchemaResource(resourceId, name, description, properties, enabledStr string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
-		json_schema = %s
+		name = "%s"
+		description = "%s"
+		properties = %s
 		enabled = %s
 	}
-	`, resourceName, resourceId, json_schema, enabledStr)
+	`, resourceName, resourceId, name, description, properties, enabledStr)
 }

@@ -2,7 +2,10 @@ package task_management_workitem_schema
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
@@ -23,31 +26,34 @@ type getTaskManagementWorkitemSchemasByNameFunc func(ctx context.Context, p *tas
 type getTaskManagementWorkitemSchemaByIdFunc func(ctx context.Context, p *taskManagementProxy, id string) (schema *platformclientv2.Dataschema, responseCode int, err error)
 type updateTaskManagementWorkitemSchemaFunc func(ctx context.Context, p *taskManagementProxy, id string, schema *platformclientv2.Dataschema) (*platformclientv2.Dataschema, error)
 type deleteTaskManagementWorkitemSchemaFunc func(ctx context.Context, p *taskManagementProxy, id string) (responseCode int, err error)
+type getTaskManagementWorkitemSchemaDeletedStatusFunc func(ctx context.Context, p *taskManagementProxy, schemaId string) (isDeleted bool, statusCode int, err error)
 
 // taskManagementProxy contains all of the methods that call genesys cloud APIs.
 type taskManagementProxy struct {
-	clientConfig                               *platformclientv2.Configuration
-	taskManagementApi                          *platformclientv2.TaskManagementApi
-	createTaskManagementWorkitemSchemaAttr     createTaskManagementWorkitemSchemaFunc
-	getAllTaskManagementWorkitemSchemaAttr     getAllTaskManagementWorkitemSchemaFunc
-	getTaskManagementWorkitemSchemasByNameAttr getTaskManagementWorkitemSchemasByNameFunc
-	getTaskManagementWorkitemSchemaByIdAttr    getTaskManagementWorkitemSchemaByIdFunc
-	updateTaskManagementWorkitemSchemaAttr     updateTaskManagementWorkitemSchemaFunc
-	deleteTaskManagementWorkitemSchemaAttr     deleteTaskManagementWorkitemSchemaFunc
+	clientConfig                                     *platformclientv2.Configuration
+	taskManagementApi                                *platformclientv2.TaskManagementApi
+	createTaskManagementWorkitemSchemaAttr           createTaskManagementWorkitemSchemaFunc
+	getAllTaskManagementWorkitemSchemaAttr           getAllTaskManagementWorkitemSchemaFunc
+	getTaskManagementWorkitemSchemasByNameAttr       getTaskManagementWorkitemSchemasByNameFunc
+	getTaskManagementWorkitemSchemaByIdAttr          getTaskManagementWorkitemSchemaByIdFunc
+	updateTaskManagementWorkitemSchemaAttr           updateTaskManagementWorkitemSchemaFunc
+	deleteTaskManagementWorkitemSchemaAttr           deleteTaskManagementWorkitemSchemaFunc
+	getTaskManagementWorkitemSchemaDeletedStatusAttr getTaskManagementWorkitemSchemaDeletedStatusFunc
 }
 
 // newTaskManagementProxy initializes the task management proxy with all of the data needed to communicate with Genesys Cloud
 func newTaskManagementProxy(clientConfig *platformclientv2.Configuration) *taskManagementProxy {
 	api := platformclientv2.NewTaskManagementApiWithConfig(clientConfig)
 	return &taskManagementProxy{
-		clientConfig:                               clientConfig,
-		taskManagementApi:                          api,
-		createTaskManagementWorkitemSchemaAttr:     createTaskManagementWorkitemSchemaFn,
-		getAllTaskManagementWorkitemSchemaAttr:     getAllTaskManagementWorkitemSchemaFn,
-		getTaskManagementWorkitemSchemasByNameAttr: getTaskManagementWorkitemSchemasByNameFn,
-		getTaskManagementWorkitemSchemaByIdAttr:    getTaskManagementWorkitemSchemaByIdFn,
-		updateTaskManagementWorkitemSchemaAttr:     updateTaskManagementWorkitemSchemaFn,
-		deleteTaskManagementWorkitemSchemaAttr:     deleteTaskManagementWorkitemSchemaFn,
+		clientConfig:                                     clientConfig,
+		taskManagementApi:                                api,
+		createTaskManagementWorkitemSchemaAttr:           createTaskManagementWorkitemSchemaFn,
+		getAllTaskManagementWorkitemSchemaAttr:           getAllTaskManagementWorkitemSchemaFn,
+		getTaskManagementWorkitemSchemasByNameAttr:       getTaskManagementWorkitemSchemasByNameFn,
+		getTaskManagementWorkitemSchemaByIdAttr:          getTaskManagementWorkitemSchemaByIdFn,
+		updateTaskManagementWorkitemSchemaAttr:           updateTaskManagementWorkitemSchemaFn,
+		deleteTaskManagementWorkitemSchemaAttr:           deleteTaskManagementWorkitemSchemaFn,
+		getTaskManagementWorkitemSchemaDeletedStatusAttr: getTaskManagementWorkitemSchemaDeletedStatusFn,
 	}
 }
 
@@ -89,6 +95,10 @@ func (p *taskManagementProxy) updateTaskManagementWorkitemSchema(ctx context.Con
 // deleteTaskManagementWorkitemSchema deletes a Genesys Cloud task management workitem schema by Id
 func (p *taskManagementProxy) deleteTaskManagementWorkitemSchema(ctx context.Context, id string) (statusCode int, err error) {
 	return p.deleteTaskManagementWorkitemSchemaAttr(ctx, p, id)
+}
+
+func (p *taskManagementProxy) getTaskManagementWorkitemSchemaDeletedStatus(ctx context.Context, schemaId string) (isDeleted bool, statusCode int, err error) {
+	return p.getTaskManagementWorkitemSchemaDeletedStatusAttr(ctx, p, schemaId)
 }
 
 // createTaskManagementWorkitemSchemaFn is an implementation function for creating a Genesys Cloud task management workitem schema
@@ -167,4 +177,48 @@ func deleteTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 	}
 
 	return resp.StatusCode, nil
+}
+
+func getTaskManagementWorkitemSchemaDeletedStatusFn(ctx context.Context, p *taskManagementProxy, schemaId string) (isDeleted bool, statusCode int, err error) {
+	apiClient := &p.clientConfig.APIClient
+
+	// create path and map variables
+	path := p.clientConfig.BasePath + "/api/v2/taskmanagement/workitems/schemas/" + schemaId
+
+	headerParams := make(map[string]string)
+	queryParams := make(map[string]string)
+
+	// oauth required
+	if p.clientConfig.AccessToken != "" {
+		headerParams["Authorization"] = "Bearer " + p.clientConfig.AccessToken
+	}
+	// add default headers if any
+	for key := range p.clientConfig.DefaultHeader {
+		headerParams[key] = p.clientConfig.DefaultHeader[key]
+	}
+
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	var successPayload map[string]interface{}
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
+	if err != nil {
+		return false, response.StatusCode, fmt.Errorf("failed to get workitem schema %s: %v", schemaId, err)
+	}
+	if response.Error != nil {
+		return false, response.StatusCode, fmt.Errorf("failed to get workitem schema %s: %v", schemaId, errors.New(response.ErrorMessage))
+	}
+
+	err = json.Unmarshal([]byte(response.RawBody), &successPayload)
+	if err != nil {
+		return false, response.StatusCode, fmt.Errorf("failed to get deleted status of %s: %v", schemaId, err)
+	}
+
+	// Manually query for the 'deleted' property because it is removed when
+	// response JSON body becomes SDK Dataschema object.
+	if isDeleted, ok := successPayload["deleted"].(bool); ok {
+		return isDeleted, response.StatusCode, nil
+	}
+
+	return false, response.StatusCode, fmt.Errorf("failed to get deleted status of %s: %v", schemaId, err)
 }

@@ -2,6 +2,7 @@ package task_management_workitem_schema
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -47,16 +48,27 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTaskManagementProxy(sdkConfig)
 
-	var jsonSchemaDoc platformclientv2.Jsonschemadocument
-	jsonSchemaDoc.UnmarshalJSON([]byte(d.Get("json_schema").(string)))
+	var properties map[string]interface{}
+	err := json.Unmarshal([]byte(d.Get("properties").(string)), &properties)
+	if err != nil {
+		return diag.Errorf("error in properties: %v", err)
+	}
+
+	// body for the creation/update of the schema
+	dataSchema := &platformclientv2.Dataschema{
+		Name: platformclientv2.String(d.Get("name").(string)),
+		JsonSchema: &platformclientv2.Jsonschemadocument{
+			Schema:      platformclientv2.String("http://json-schema.org/draft-04/schema#"),
+			Title:       platformclientv2.String(d.Get("name").(string)),
+			Description: platformclientv2.String(d.Get("description").(string)),
+			Properties:  &properties,
+		},
+		// NOTE: At time of writing doesn't matter. Will be 'enabled' on creation.
+		Enabled: platformclientv2.Bool(d.Get("enabled").(bool)),
+	}
 
 	log.Printf("Creating task management workitem schema")
-	log.Printf("PRINCE: %v", jsonSchemaDoc.String())
-	schema, err := proxy.createTaskManagementWorkitemSchema(ctx,
-		&platformclientv2.Dataschema{
-			JsonSchema: &jsonSchemaDoc,
-			Enabled:    platformclientv2.Bool(d.Get("enabled").(bool)), // NOTE: At time of writing doesn't matter. Will be 'enabled' on creation.
-		})
+	schema, err := proxy.createTaskManagementWorkitemSchema(ctx, dataSchema)
 	if err != nil {
 		return diag.Errorf("failed to create task management workitem schema: %s", err)
 	}
@@ -65,12 +77,8 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 
 	// If enabled is set to 'false' do an update call to the schema
 	if enabled, ok := d.Get("enabled").(bool); ok && !enabled {
-		_, err := proxy.updateTaskManagementWorkitemSchema(ctx, *schema.Id,
-			&platformclientv2.Dataschema{
-				Version:    platformclientv2.Int(1),
-				JsonSchema: &jsonSchemaDoc, // still required to pass
-				Enabled:    platformclientv2.Bool(false),
-			})
+		dataSchema.Version = platformclientv2.Int(1)
+		_, err := proxy.updateTaskManagementWorkitemSchema(ctx, *schema.Id, dataSchema)
 		if err != nil {
 			return diag.Errorf("failed to update task management workitem schema: %s", err)
 		}
@@ -98,8 +106,15 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitemSchema())
 
-		schemaStr := schema.JsonSchema.String()
-		resourcedata.SetNillableValue(d, "json_schema", &schemaStr)
+		schemaProps, err := json.Marshal(schema.JsonSchema.Properties)
+		if err != nil {
+			return retry.NonRetryableError(fmt.Errorf("error in reading json schema properties of %s: %v", *schema.Name, err))
+		}
+		schemaPropsStr := string(schemaProps)
+
+		resourcedata.SetNillableValue(d, "name", schema.Name)
+		resourcedata.SetNillableValue(d, "description", schema.JsonSchema.Description)
+		resourcedata.SetNillableValue(d, "properties", &schemaPropsStr)
 		resourcedata.SetNillableValue(d, "enabled", schema.Enabled)
 
 		log.Printf("Read task management workitem schema %s %s", d.Id(), *schema.Name)
@@ -121,12 +136,24 @@ func updateTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 		return diag.Errorf("failed to update task management workitem schema: %s", err)
 	}
 
+	var properties map[string]interface{}
+	err = json.Unmarshal([]byte(d.Get("properties").(string)), &properties)
+	if err != nil {
+		return diag.Errorf("error in properties: %v", err)
+	}
+
 	log.Printf("Updating task management workitem schema")
 	updatedSchema, err := proxy.updateTaskManagementWorkitemSchema(ctx, d.Id(),
 		&platformclientv2.Dataschema{
-			Version:    platformclientv2.Int(*curSchema.Version),
-			JsonSchema: &jsonSchemaDoc,
-			Enabled:    platformclientv2.Bool(d.Get("enabled").(bool)),
+			Version: platformclientv2.Int(*curSchema.Version),
+			Name:    platformclientv2.String(d.Get("name").(string)),
+			JsonSchema: &platformclientv2.Jsonschemadocument{
+				Schema:      platformclientv2.String("http://json-schema.org/draft-04/schema#"),
+				Title:       platformclientv2.String(d.Get("name").(string)),
+				Description: platformclientv2.String(d.Get("description").(string)),
+				Properties:  &properties,
+			},
+			Enabled: platformclientv2.Bool(d.Get("enabled").(bool)),
 		})
 	if err != nil {
 		return diag.Errorf("failed to update task management workitem schema: %s", err)
@@ -147,14 +174,18 @@ func deleteTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	}
 
 	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())
-
+		isDeleted, respCode, err := proxy.getTaskManagementWorkitemSchemaDeletedStatus(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted task management workitem schema %s", d.Id())
 				return nil
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting task management workitem schema %s: %s", d.Id(), err))
+		}
+
+		if isDeleted {
+			log.Printf("Deleted task management workitem schema %s", d.Id())
+			return nil
 		}
 
 		return retry.RetryableError(fmt.Errorf("task management workitem schema %s still exists", d.Id()))

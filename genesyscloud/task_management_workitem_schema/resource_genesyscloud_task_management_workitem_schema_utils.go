@@ -13,3 +13,19 @@ const (
 	CHECKBOX   = "checkbox"
 	TAG        = "tag"
 )
+
+type textTypeField struct {
+	title       string
+	description string
+	varType     string
+	minLength   int
+	maxLength   int
+}
+
+type numTypeField struct {
+	title       string
+	description string
+	varType     string
+	minVal      int
+	maxVal      int
+}
