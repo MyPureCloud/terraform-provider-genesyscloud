@@ -51,7 +51,7 @@ func ResourceTaskManagementWorkitemSchema() *schema.Resource {
 			},
 			"properties": {
 				Description:      "The properties for the JSON Schema document.",
-				Required:         true,
+				Optional:         true,
 				Type:             schema.TypeString,
 				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
 			},

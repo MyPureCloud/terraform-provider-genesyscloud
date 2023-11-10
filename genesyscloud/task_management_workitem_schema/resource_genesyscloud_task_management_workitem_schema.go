@@ -48,23 +48,9 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTaskManagementProxy(sdkConfig)
 
-	var properties map[string]interface{}
-	err := json.Unmarshal([]byte(d.Get("properties").(string)), &properties)
+	dataSchema, err := BuildSdkWorkitemSchema(d, nil)
 	if err != nil {
-		return diag.Errorf("error in properties: %v", err)
-	}
-
-	// body for the creation/update of the schema
-	dataSchema := &platformclientv2.Dataschema{
-		Name: platformclientv2.String(d.Get("name").(string)),
-		JsonSchema: &platformclientv2.Jsonschemadocument{
-			Schema:      platformclientv2.String("http://json-schema.org/draft-04/schema#"),
-			Title:       platformclientv2.String(d.Get("name").(string)),
-			Description: platformclientv2.String(d.Get("description").(string)),
-			Properties:  &properties,
-		},
-		// NOTE: At time of writing doesn't matter. Will be 'enabled' on creation.
-		Enabled: platformclientv2.Bool(d.Get("enabled").(bool)),
+		return diag.Errorf("create: failed to build task management workitem schema: %s", err)
 	}
 
 	log.Printf("Creating task management workitem schema")
@@ -110,12 +96,20 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("error in reading json schema properties of %s: %v", *schema.Name, err))
 		}
-		schemaPropsStr := string(schemaProps)
+		var schemaPropsPtr *string
+		if string(schemaProps) != gcloud.NullValue {
+			schemaPropsStr := string(schemaProps)
+			schemaPropsPtr = &schemaPropsStr
+		}
 
 		resourcedata.SetNillableValue(d, "name", schema.Name)
 		resourcedata.SetNillableValue(d, "description", schema.JsonSchema.Description)
-		resourcedata.SetNillableValue(d, "properties", &schemaPropsStr)
+		resourcedata.SetNillableValue(d, "properties", schemaPropsPtr)
 		resourcedata.SetNillableValue(d, "enabled", schema.Enabled)
+
+		if schemaPropsPtr != nil {
+			log.Printf("PRINCE: read: %s", *schemaPropsPtr)
+		}
 
 		log.Printf("Read task management workitem schema %s %s", d.Id(), *schema.Name)
 		return cc.CheckState()
@@ -127,34 +121,19 @@ func updateTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTaskManagementProxy(sdkConfig)
 
-	var jsonSchemaDoc platformclientv2.Jsonschemadocument
-	jsonSchemaDoc.UnmarshalJSON([]byte(d.Get("json_schema").(string)))
-
 	log.Printf("Getting version of workitem schema")
 	curSchema, _, err := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())
 	if err != nil {
 		return diag.Errorf("failed to update task management workitem schema: %s", err)
 	}
 
-	var properties map[string]interface{}
-	err = json.Unmarshal([]byte(d.Get("properties").(string)), &properties)
+	dataSchema, err := BuildSdkWorkitemSchema(d, curSchema.Version)
 	if err != nil {
-		return diag.Errorf("error in properties: %v", err)
+		return diag.Errorf("update: failed to build task management workitem schema: %s", err)
 	}
 
 	log.Printf("Updating task management workitem schema")
-	updatedSchema, err := proxy.updateTaskManagementWorkitemSchema(ctx, d.Id(),
-		&platformclientv2.Dataschema{
-			Version: platformclientv2.Int(*curSchema.Version),
-			Name:    platformclientv2.String(d.Get("name").(string)),
-			JsonSchema: &platformclientv2.Jsonschemadocument{
-				Schema:      platformclientv2.String("http://json-schema.org/draft-04/schema#"),
-				Title:       platformclientv2.String(d.Get("name").(string)),
-				Description: platformclientv2.String(d.Get("description").(string)),
-				Properties:  &properties,
-			},
-			Enabled: platformclientv2.Bool(d.Get("enabled").(bool)),
-		})
+	updatedSchema, err := proxy.updateTaskManagementWorkitemSchema(ctx, d.Id(), dataSchema)
 	if err != nil {
 		return diag.Errorf("failed to update task management workitem schema: %s", err)
 	}
