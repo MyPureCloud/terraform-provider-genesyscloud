@@ -213,7 +213,6 @@ func TestUnitResourceTeamGetAll(t *testing.T) {
 	teamProxyobj.getAllTeamAttr = func(ctx context.Context, p *teamProxy, name string) (*[]platformclientv2.Team, error) {
 		var allTeams []platformclientv2.Team
 
-		// two team  elements in an array of team
 		teamObjFirst := &platformclientv2.Team{
 			Id:          &tIdFirst,
 			Name:        &tNameFirst,
