@@ -9,14 +9,19 @@ import (
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
+	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
+	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
+	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	obSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	obwm "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
@@ -27,7 +32,6 @@ import (
 	station "terraform-provider-genesyscloud/genesyscloud/station"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	team "terraform-provider-genesyscloud/genesyscloud/team"
-
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
@@ -92,13 +96,16 @@ type RegisterInstance struct {
 }
 
 func registerResources() {
-
 	regInstance := &RegisterInstance{}
 
 	grammar.SetRegistrar(regInstance)                       //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)               //Registering architect grammar language
 	edgePhone.SetRegistrar(regInstance)                     //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)                      //Registering telephony providers edges site
+
+	flowMilestone.SetRegistrar(regInstance)                 //Registering flow milestone
+	flowOutcome.SetRegistrar(regInstance)                   //Registering flow outcome
+
 	station.SetRegistrar(regInstance)                       //Registering station
 	pat.SetRegistrar(regInstance)                           //Registering process automation triggers
 	obs.SetRegistrar(regInstance)                           //Resistering outbound ruleset
@@ -106,7 +113,14 @@ func registerResources() {
 	obwm.SetRegistrar(regInstance)                          //Registering outbound wrapup code mappings
 	gcloud.SetRegistrar(regInstance)                        //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                //Registering outbound attempt limit
+
 	obContactList.SetRegistrar(regInstance)                 //Registering outbound contact list
+
+	obCampaign.SetRegistrar(regInstance)                    //Registering outbound campaign
+	obContactList.SetRegistrar(regInstance)                 //Registering outbound contact list
+	obSequence.SetRegistrar(regInstance)                    //Registering outbound sequence
+	obCampaignRule.SetRegistrar(regInstance)                //Registering outbound campaignrule
+
 	scripts.SetRegistrar(regInstance)                       //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)                  //Registering routing sms addresses
 	integration.SetRegistrar(regInstance)                   //Registering integrations

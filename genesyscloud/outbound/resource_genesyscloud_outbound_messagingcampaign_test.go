@@ -65,7 +65,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		// DNC List
 		dncListResourceId = "dnc_list"
 		dncListName       = "Test DNC List " + uuid.NewString()
-		dncListResource   = generateOutboundDncListBasic(
+		dncListResource   = GenerateOutboundDncListBasic(
 			dncListResourceId,
 			dncListName,
 		)
@@ -73,14 +73,14 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		// Contact List Filter
 		clfResourceId             = "contact_list_filter"
 		clfName                   = "Contact List Filter " + uuid.NewString()
-		contactListFilterResource = generateOutboundContactListFilter(
+		contactListFilterResource = GenerateOutboundContactListFilter(
 			clfResourceId,
 			clfName,
 			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 			"",
-			generateOutboundContactListFilterClause(
+			GenerateOutboundContactListFilterClause(
 				"",
-				generateOutboundContactListFilterPredicates(
+				GenerateOutboundContactListFilterPredicates(
 					column1,
 					"alphabetic",
 					"EQUALS",
@@ -93,13 +93,13 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 
 		callableTimeSetResourceId = "callable_time_set"
 		callableTimeSetName       = "Test CTS " + uuid.NewString()
-		callableTimeSetResource   = generateOutboundCallabletimeset(
+		callableTimeSetResource   = GenerateOutboundCallabletimeset(
 			callableTimeSetResourceId,
 			callableTimeSetName,
-			generateCallableTimesBlock(
+			GenerateCallableTimesBlock(
 				"Europe/Dublin",
-				generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
-				generateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
+				GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+				GenerateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
 			),
 		)
 	)
@@ -144,12 +144,12 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 							smsConfigPhoneColumn,
 							smsConfigSenderSMSPhoneNumber,
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column1,
 							"",
 							"",
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column2,
 							"DESC",
 							TrueValue,
@@ -200,12 +200,12 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 							smsConfigPhoneColumn,
 							smsConfigSenderSMSPhoneNumber,
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column1,
 							"",
 							"",
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column2,
 							"DESC",
 							TrueValue,
@@ -258,12 +258,12 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 							smsConfigPhoneColumn,
 							smsConfigSenderSMSPhoneNumber,
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column1,
 							"DESC",
 							TrueValue,
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column2,
 							"",
 							"",
@@ -399,22 +399,6 @@ func generateOutboundMessagingCampaignSmsConfig(
  		sender_sms_phone_number = "%s"
 	}
 `, smsConfigMessageColumn, smsConfigPhoneColumn, smsConfigSenderSMSPhoneNumber)
-}
-
-func generateOutboundMessagingCampaignContactSort(fieldName string, direction string, numeric string) string {
-	if direction != "" {
-		direction = fmt.Sprintf(`direction = "%s"`, direction)
-	}
-	if numeric != "" {
-		numeric = fmt.Sprintf(`numeric = %s`, numeric)
-	}
-	return fmt.Sprintf(`
-	contact_sorts {
-		field_name = "%s"
-		%s
-        %s
-	}
-`, fieldName, direction, numeric)
 }
 
 func testVerifyOutboundMessagingCampaignDestroyed(state *terraform.State) error {

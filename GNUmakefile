@@ -20,16 +20,24 @@ copy-hooks:
 testacc:
 	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m -parallel 20  -coverprofile=coverage.out
 
-unittests: 
-	go test -tags unit ./... -v $(TESTARGS) -timeout 120m -parallel 20  -coverprofile=unitcoverage.out
+# Run unit tests
+testunit:
+	TF_UNIT=1 go test ./... -run TestUnit -cover -count=1 -coverprofile=coverage_unit.out
 
 
-coverage:
+coverageacc:
 	go tool cover -func coverage.out | grep "total:" | \
 	awk '{print ((int($$3) > 80) != 1) }'
 
-report:
-	go tool cover -html=coverage.out -o cover.html	
+coverageunit:
+	go tool cover -func coverage_unit.out | grep "total:" | \
+	awk '{print ((int($$3) > 80) != 1) }'
+
+reportacc:
+	go tool cover -html=coverage.out -o cover.html
+
+reportunit:
+	go tool cover -html=coverage_unit.out -o cover_unit.html
 
 clean:
 	rm -f -r ${DIST_DIR}

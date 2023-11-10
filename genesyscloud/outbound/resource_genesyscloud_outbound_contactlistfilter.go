@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -473,4 +474,71 @@ func flattenSdkOutboundContactListFilterClauseSlice(contactListFilterClauses []p
 		contactListFilterClauseList = append(contactListFilterClauseList, contactListFilterClauseMap)
 	}
 	return contactListFilterClauseList
+}
+
+func GenerateOutboundContactListFilter(
+	resourceId string,
+	name string,
+	contactListId string,
+	filterType string,
+	nestedBlocks ...string,
+) string {
+	if filterType != "" {
+		filterType = fmt.Sprintf(`filter_type = "%s"`, filterType)
+	}
+	return fmt.Sprintf(`
+resource "genesyscloud_outbound_contactlistfilter" "%s" {
+	name            = "%s"
+	contact_list_id = %s
+	%s
+	%s
+}
+`, resourceId, name, contactListId, filterType, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateOutboundContactListFilterClause(filterType string, nestedBlocks ...string) string {
+	if filterType != "" {
+		filterType = fmt.Sprintf(`filter_type = "%s"`, filterType)
+	}
+	return fmt.Sprintf(`
+	clauses {
+		%s
+		%s
+	}
+`, filterType, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateOutboundContactListFilterPredicates(
+	column string,
+	columnType string,
+	operator string,
+	value string,
+	inverted string,
+	varRangeBlock string,
+) string {
+	if column != "" {
+		column = fmt.Sprintf(`column = "%s"`, column)
+	}
+	if columnType != "" {
+		columnType = fmt.Sprintf(`column_type = "%s"`, columnType)
+	}
+	if operator != "" {
+		operator = fmt.Sprintf(`operator = "%s"`, operator)
+	}
+	if value != "" {
+		value = fmt.Sprintf(`value = "%s"`, value)
+	}
+	if inverted != "" {
+		inverted = fmt.Sprintf(`inverted = %s`, inverted)
+	}
+	return fmt.Sprintf(`
+		predicates {
+			%s
+			%s
+			%s
+			%s
+			%s	
+			%s
+		}
+`, column, columnType, operator, value, inverted, varRangeBlock)
 }

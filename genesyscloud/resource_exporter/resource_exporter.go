@@ -2,9 +2,7 @@ package resource_exporter
 
 import (
 	"context"
-	"hash/fnv"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -17,10 +15,6 @@ import (
 
 var resourceExporters map[string]*ResourceExporter
 var resourceExporterMapMutex = sync.RWMutex{}
-
-// func init() {
-// 	resourceExporters = make(map[string]*ResourceExporter)
-// }
 
 type ResourceMeta struct {
 	// Name of the resource to be used in exports
@@ -138,7 +132,9 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, name st
 	}
 
 	r.SanitizedResourceMap = result
-	sanitizeResourceNames(r.SanitizedResourceMap)
+	sanitizer := NewSanitizerProvider()
+	sanitizer.S.Sanitize(r.SanitizedResourceMap)
+
 	return nil
 }
 
@@ -244,29 +240,6 @@ var unsafeNameChars = regexp.MustCompile(`[^0-9A-Za-z_-]`)
 // Resource names must start with a letter or underscore
 // https://www.terraform.io/docs/language/syntax/configuration.html#identifiers
 var unsafeNameStartingChars = regexp.MustCompile(`[^A-Za-z_]`)
-
-func sanitizeResourceNames(idMetaMap ResourceIDMetaMap) {
-	for _, meta := range idMetaMap {
-		meta.Name = SanitizeResourceName(meta.Name)
-	}
-}
-
-func SanitizeResourceName(inputName string) string {
-	name := unsafeNameChars.ReplaceAllStringFunc(inputName, escapeRune)
-	if name != inputName {
-		// Append a hash of the original name to ensure uniqueness for similar names
-		// and that equivalent names are consistent across orgs
-		algorithm := fnv.New32()
-		algorithm.Write([]byte(inputName))
-		name = name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
-	}
-	if unsafeNameStartingChars.MatchString(string(rune(name[0]))) {
-		// Terraform does not allow names to begin with a number. Prefix with an underscore instead
-		name = "_" + name
-	}
-
-	return name
-}
 
 func RegisterExporter(exporterName string, resourceExporter *ResourceExporter) {
 	resourceExporterMapMutex.Lock()

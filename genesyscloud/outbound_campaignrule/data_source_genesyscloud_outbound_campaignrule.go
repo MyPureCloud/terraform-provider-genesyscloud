@@ -1,4 +1,4 @@
-package outbound
+package outbound_campaignrule
 
 import (
 	"context"
@@ -14,21 +14,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
-func dataSourceOutboundCampaignRule() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Outbound Campaign Rules. Select a campaign rule by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceCampaignRuleRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Campaign Rule name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
-
-func dataSourceCampaignRuleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceOutboundCampaignruleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
 
