@@ -40,9 +40,10 @@ func ResourceTaskManagementWorkitemSchema() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"json_schema": {
-				Description: "The JSON Schema document.",
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:      "The JSON Schema document.",
+				Required:         true,
+				Type:             schema.TypeString,
+				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
 			},
 			"enabled": {
 				Description: `The schema's enabled/disabled status. A disabled schema cannot be assigned to any other entities, but the data on those entities from the schema still exists.`,

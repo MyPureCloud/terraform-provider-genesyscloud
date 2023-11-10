@@ -109,7 +109,7 @@ func getAllTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 
 	schemas, _, err := p.taskManagementApi.GetTaskmanagementWorkitemsSchemas()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all workbins: %v", err)
+		return nil, fmt.Errorf("failed to get all workitem schemas: %v", err)
 	}
 	if schemas.Entities == nil || *schemas.Total == 0 {
 		return &([]platformclientv2.Dataschema{}), nil

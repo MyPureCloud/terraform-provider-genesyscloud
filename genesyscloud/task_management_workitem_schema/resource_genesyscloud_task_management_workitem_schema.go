@@ -48,9 +48,10 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	proxy := getTaskManagementProxy(sdkConfig)
 
 	var jsonSchemaDoc platformclientv2.Jsonschemadocument
-	jsonSchemaDoc.UnmarshalJSON(d.Get("json_schema").([]byte))
+	jsonSchemaDoc.UnmarshalJSON([]byte(d.Get("json_schema").(string)))
 
 	log.Printf("Creating task management workitem schema")
+	log.Printf("PRINCE: %v", jsonSchemaDoc.String())
 	schema, err := proxy.createTaskManagementWorkitemSchema(ctx,
 		&platformclientv2.Dataschema{
 			JsonSchema: &jsonSchemaDoc,
@@ -99,7 +100,7 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 
 		schemaStr := schema.JsonSchema.String()
 		resourcedata.SetNillableValue(d, "json_schema", &schemaStr)
-		resourcedata.SetNillableValue(d, "enable", schema.Enabled)
+		resourcedata.SetNillableValue(d, "enabled", schema.Enabled)
 
 		log.Printf("Read task management workitem schema %s %s", d.Id(), *schema.Name)
 		return cc.CheckState()
@@ -112,7 +113,7 @@ func updateTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	proxy := getTaskManagementProxy(sdkConfig)
 
 	var jsonSchemaDoc platformclientv2.Jsonschemadocument
-	jsonSchemaDoc.UnmarshalJSON(d.Get("json_schema").([]byte))
+	jsonSchemaDoc.UnmarshalJSON([]byte(d.Get("json_schema").(string)))
 
 	log.Printf("Getting version of workitem schema")
 	curSchema, _, err := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())

@@ -14,7 +14,7 @@ import (
 )
 
 /*
-   The data_source_genesyscloud_task_management_workbin.go contains the data source implementation
+   The data_source_genesyscloud_task_management_workitem_schema.go contains the data source implementation
    for the resource.
 */
 
