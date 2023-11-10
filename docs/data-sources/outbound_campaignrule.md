@@ -3,12 +3,12 @@
 page_title: "genesyscloud_outbound_campaignrule Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Outbound Campaign Rules. Select a campaign rule by name.
+  Genesys Cloud outbound campaign rule data source. Select a campaign rule by name
 ---
 
 # genesyscloud_outbound_campaignrule (Data Source)
 
-Data source for Genesys Cloud Outbound Campaign Rules. Select a campaign rule by name.
+Genesys Cloud outbound campaign rule data source. Select a campaign rule by name
 
 ## Example Usage
 

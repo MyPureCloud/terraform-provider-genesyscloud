@@ -5,13 +5,18 @@ import (
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
+	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	outboundAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
+	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	obSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -50,8 +55,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_datatable_row"] = gcloud.ResourceArchitectDatatableRow()
 	providerResources["genesyscloud_architect_emergencygroup"] = gcloud.ResourceArchitectEmergencyGroup()
 	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
-	providerResources["genesyscloud_flow_milestone"] = gcloud.ResourceFlowMilestone()
-	providerResources["genesyscloud_flow_outcome"] = gcloud.ResourceFlowOutcome()
+	providerResources["genesyscloud_flow_milestone"] = flowMilestone.ResourceFlowMilestone()
+	providerResources["genesyscloud_flow_outcome"] = flowOutcome.ResourceFlowOutcome()
 	providerResources["genesyscloud_architect_ivr"] = archIvr.ResourceArchitectIvrConfig()
 	providerResources["genesyscloud_architect_schedules"] = gcloud.ResourceArchitectSchedules()
 	providerResources["genesyscloud_architect_schedulegroups"] = gcloud.ResourceArchitectScheduleGroups()
@@ -112,13 +117,13 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_attempt_limit"] = outboundAttemptLimit.ResourceOutboundAttemptLimit()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = ob.ResourceOutboundCallAnalysisResponseSet()
 	providerResources["genesyscloud_outbound_callabletimeset"] = ob.ResourceOutboundCallabletimeset()
-	providerResources["genesyscloud_outbound_campaign"] = ob.ResourceOutboundCampaign()
+	providerResources["genesyscloud_outbound_campaign"] = obCampaign.ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = ob.ResourceOutboundContactListFilter()
 	providerResources["genesyscloud_outbound_messagingcampaign"] = ob.ResourceOutboundMessagingCampaign()
-	providerResources["genesyscloud_outbound_sequence"] = ob.ResourceOutboundSequence()
+	providerResources["genesyscloud_outbound_sequence"] = obSequence.ResourceOutboundSequence()
 	providerResources["genesyscloud_outbound_dnclist"] = ob.ResourceOutboundDncList()
-	providerResources["genesyscloud_outbound_campaignrule"] = ob.ResourceOutboundCampaignRule()
+	providerResources["genesyscloud_outbound_campaignrule"] = obCampaignRule.ResourceOutboundCampaignRule()
 	providerResources["genesyscloud_outbound_wrapupcodemappings"] = obw.ResourceOutboundWrapUpCodeMappings()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_responsemanagement_response"] = gcloud.ResourceResponsemanagementResponse()
@@ -145,8 +150,8 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_auth_role", gcloud.AuthRoleExporter())
 	RegisterExporter("genesyscloud_employeeperformance_externalmetrics_definitions", gcloud.EmployeeperformanceExternalmetricsDefinitionExporter())
 	RegisterExporter("genesyscloud_flow", gcloud.FlowExporter())
-	RegisterExporter("genesyscloud_flow_milestone", gcloud.FlowMilestoneExporter())
-	RegisterExporter("genesyscloud_flow_outcome", gcloud.FlowOutcomeExporter())
+	RegisterExporter("genesyscloud_flow_milestone", flowMilestone.FlowMilestoneExporter())
+	RegisterExporter("genesyscloud_flow_outcome", flowOutcome.FlowOutcomeExporter())
 	RegisterExporter("genesyscloud_group", gcloud.GroupExporter())
 	RegisterExporter("genesyscloud_group_roles", gcloud.GroupRolesExporter())
 	RegisterExporter("genesyscloud_idp_adfs", gcloud.IdpAdfsExporter())
@@ -171,13 +176,13 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_attempt_limit", outboundAttemptLimit.OutboundAttemptLimitExporter())
 	RegisterExporter("genesyscloud_outbound_callanalysisresponseset", ob.OutboundCallAnalysisResponseSetExporter())
 	RegisterExporter("genesyscloud_outbound_callabletimeset", ob.OutboundCallableTimesetExporter())
-	RegisterExporter("genesyscloud_outbound_campaign", ob.OutboundCampaignExporter())
+	RegisterExporter("genesyscloud_outbound_campaign", obCampaign.OutboundCampaignExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactList.OutboundContactListExporter())
 	RegisterExporter("genesyscloud_outbound_contactlistfilter", ob.OutboundContactListFilterExporter())
 	RegisterExporter("genesyscloud_outbound_messagingcampaign", ob.OutboundMessagingcampaignExporter())
-	RegisterExporter("genesyscloud_outbound_sequence", ob.OutboundSequenceExporter())
+	RegisterExporter("genesyscloud_outbound_sequence", obSequence.OutboundSequenceExporter())
 	RegisterExporter("genesyscloud_outbound_dnclist", ob.OutboundDncListExporter())
-	RegisterExporter("genesyscloud_outbound_campaignrule", ob.OutboundCampaignRuleExporter())
+	RegisterExporter("genesyscloud_outbound_campaignrule", obCampaignRule.OutboundCampaignruleExporter())
 	RegisterExporter("genesyscloud_outbound_settings", ob.OutboundSettingsExporter())
 	RegisterExporter("genesyscloud_outbound_wrapupcodemappings", obw.OutboundWrapupCodeMappingsExporter())
 	RegisterExporter("genesyscloud_quality_forms_evaluation", gcloud.EvaluationFormExporter())

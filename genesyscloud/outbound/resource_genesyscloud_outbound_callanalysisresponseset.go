@@ -390,3 +390,37 @@ func flattenSdkReaction(sdkReaction platformclientv2.Reaction) *schema.Set {
 	reactionSet.Add(reactionMap)
 	return reactionSet
 }
+
+func GenerateOutboundCallAnalysisResponseSetResource(resourceId string, name string, beepDetectionEnabled string, responsesBlock string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
+	name                   = "%s"
+	beep_detection_enabled = %s
+	%s
+}
+`, resourceId, name, beepDetectionEnabled, responsesBlock)
+}
+
+func GenerateCarsResponsesBlock(nestedBlocks ...string) string {
+	return fmt.Sprintf(`
+	responses {
+		%s
+	}
+`, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateCarsResponse(identifier string, reactionType string, name string, data string) string {
+	if name != "" {
+		name = fmt.Sprintf(`name = "%s"`, name)
+	}
+	if data != "" {
+		data = fmt.Sprintf(`data = "%s"`, data)
+	}
+	return fmt.Sprintf(`
+		%s {
+			reaction_type = "%s"
+			%s
+			%s
+		}
+`, identifier, reactionType, name, data)
+}

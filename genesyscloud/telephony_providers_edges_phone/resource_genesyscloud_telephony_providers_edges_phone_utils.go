@@ -214,11 +214,14 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 			LineBaseSettings: lineBaseSettings,
 		}
 
-		lineId, err := getLineIdByPhoneId(ctx, pp, d.Id())
-		if err != nil {
-			log.Printf("Failed to retrieve ID for phone %s: %v", d.Id(), err)
-		} else {
-			line.Id = &lineId
+		// If this function is invoked on a phone create, the ID won't exist yet
+		if d.Id() != "" {
+			lineId, err := getLineIdByPhoneId(ctx, pp, d.Id())
+			if err != nil {
+				log.Printf("Failed to retrieve ID for phone %s: %v", d.Id(), err)
+			} else {
+				line.Id = &lineId
+			}
 		}
 
 		lines = append(lines, line)

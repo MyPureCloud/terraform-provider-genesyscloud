@@ -44,12 +44,12 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	log.Printf("Creating phone %s", *phoneConfig.Name)
-	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := gcloud.RetryWhen(gcloud.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		phone, resp, err := pp.createPhone(ctx, phoneConfig)
+		log.Printf("Completed call to create phone name %s with status code %d, correlation id %s and err %s", *phoneConfig.Name, resp.StatusCode, resp.CorrelationID, err)
 		if err != nil {
 			return resp, diag.Errorf("failed to create phone %s: %s", *phoneConfig.Name, err)
 		}
-
 		d.SetId(*phone.Id)
 
 		webRtcUserId := d.Get("web_rtc_user_id")
@@ -63,6 +63,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		log.Printf("Created phone %s", *phone.Id)
 		return nil, nil
 	})
+
 	if diagErr != nil {
 		return diagErr
 	}
