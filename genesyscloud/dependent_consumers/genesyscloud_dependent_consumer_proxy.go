@@ -66,34 +66,36 @@ func retrievePooledClientFn(method gcloud.GetAllConfigFunc) (resourceExporter.Re
 func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, error) {
 	resourceKey := resourceKeys.State.ID
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	dependentConsumerMap := SetDependentObjectMaps()
-	data, response, err := p.ArchitectApi.GetFlow(resourceKey, false)
-	log.Printf("Response:\n  Success: %v\n  Status code: %v\n  Correlation ID: %v\n  Body: %v\n", response.IsSuccess, response.StatusCode, response.CorrelationID, data.String())
-	if err != nil {
-		log.Printf("Error calling GetFlow: %v\n", err)
-	}
-	if data != nil && data.PublishedVersion.Id != nil {
-		pageCount := 1
-		for pageNum := 1; pageNum <= pageCount; pageNum++ {
-			const pageSize = 100
-			dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, *data.VarType+"FLOW", nil, pageNum, pageSize)
-			if err != nil {
-				return nil, err
-			}
-			if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
-				break
-			}
-
-			for _, consumer := range *dependencies.Entities {
-				resType, exists := dependentConsumerMap[*consumer.VarType]
-				if exists {
-					resourceFilter := resType + " " + *consumer.Name
-					resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
+	if resourceKeys.Type == "genesyscloud_flow" {
+		dependentConsumerMap := SetDependentObjectMaps()
+		data, _, err := p.ArchitectApi.GetFlow(resourceKey, false)
+		if err != nil {
+			log.Printf("Error calling GetFlow: %v\n", err)
+		}
+		if data != nil && data.PublishedVersion.Id != nil {
+			pageCount := 1
+			for pageNum := 1; pageNum <= pageCount; pageNum++ {
+				const pageSize = 100
+				dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, *data.VarType+"FLOW", nil, pageNum, pageSize)
+				if err != nil {
+					return nil, err
+				}
+				if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
+					break
 				}
 
+				for _, consumer := range *dependencies.Entities {
+					resType, exists := dependentConsumerMap[*consumer.VarType]
+					if exists {
+						resourceFilter := resType + " " + *consumer.Name
+						resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
+					}
+
+				}
+				pageCount = *dependencies.PageCount
 			}
-			pageCount = *dependencies.PageCount
 		}
 	}
+
 	return resources, nil
 }

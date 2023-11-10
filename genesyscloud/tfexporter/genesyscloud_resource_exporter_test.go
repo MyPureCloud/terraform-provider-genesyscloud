@@ -134,13 +134,13 @@ func TestRemoveZeroValuesFunc(t *testing.T) {
 func TestUnitBuildDependsOnResources(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
-		Name:     "example_resource",
+		Name:     "example resource",
 		IdPrefix: "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
 	resources := resourceExporter.ResourceIDMetaMap{
-		"queue": meta,
+		"queue resources": meta,
 	}
 
 	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, error) {
@@ -164,7 +164,7 @@ func TestUnitBuildDependsOnResources(t *testing.T) {
 		ctx: ctx,
 	}
 
-	state := &terraform.InstanceState{} // Replace with your actual state
+	state := &terraform.InstanceState{}
 	state.ID = "1"
 	name := "genesyscloud_resource_queue"
 	resourceType := "example_type"
