@@ -817,11 +817,12 @@ func deleteQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	// Queue deletes are not immediate. Query until queue is no longer found
-	// Add a delay before the first request to reduce the liklihood of public API's cache
+	// Add a delay before the first request to reduce the likelihood of public API's cache
 	// re-populating the queue after the delete. Otherwise it may not expire for a minute.
 	time.Sleep(5 * time.Second)
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	//DEVTOOLING-238- Increasing this to a 120 seconds to see if we can temporarily mitigate a problem for a customer
+	return WithRetries(ctx, 120*time.Second, func() *retry.RetryError {
 		_, resp, err := routingAPI.GetRoutingQueue(d.Id())
 		if err != nil {
 			if IsStatus404(resp) {
