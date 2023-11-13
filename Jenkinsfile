@@ -1,5 +1,4 @@
-@Library('pipeline-library')
-
+@Library('pipeline-library') _
 pipeline {
     agent {
         node{
@@ -8,23 +7,29 @@ pipeline {
     }
 
     environment {
-        GENESYSCLOUD_OAUTHCLIENT_ID = credentials('GENESYSCLOUD_OAUTHCLIENT_ID')
-        GENESYSCLOUD_OAUTHCLIENT_SECRET = credentials('GENESYSCLOUD_OAUTHCLIENT_SECRET')
+        CREDENTIALS_ID  = "GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECERET"
         GOPATH = "${HOME}/${LANGUAGE}"
-		//TF_ACC = "1"
-        //TF_LOG = "DEBUG"
-        //TF_LOG_PATH = "../test.log"
 		GENESYSCLOUD_REGION = "us-east-1"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
     }
     tools {
-        go 'go 1.21.0'
-        terraform 'Terraform 1.4.7'
+        go 'Go 1.20'
+        terraform 'Terraform 1.0.10'
     }
 
     stages {
-      
+        
+        stage('Load and Set Credentials') {
+            steps {
+                script{
+                withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
+                {
+                    echo 'Loading Genesys OAuth Credentials'
+                }
+                }
+            }
+        }
        stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies'
@@ -35,7 +40,6 @@ pipeline {
        stage('Terraform Check') {
             steps {
                 echo 'Check Terraform Installation'
-				//sh 'terraform init'
                 sh 'terraform -version'
 
             }
@@ -43,8 +47,4 @@ pipeline {
 
 
   }
-
 }
-
-
-
