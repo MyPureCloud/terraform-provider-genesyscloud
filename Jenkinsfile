@@ -3,7 +3,7 @@
 pipeline {
     agent {
         node{
-        "dev_mesos_v2"
+        label "dev_mesos_v2"
         }
     }
 
