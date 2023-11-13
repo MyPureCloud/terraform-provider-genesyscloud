@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
@@ -35,7 +35,6 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.#", "0"),
 				),
 			},
 			{
@@ -48,7 +47,6 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.#", "0"),
 				),
 			},
 			{
@@ -82,8 +80,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					configName,
 					configDescription,
 					generateWebDeploymentConfigCobrowseSettings(
-						trueValue,
-						trueValue,
+						TrueValue,
+						TrueValue,
 						channels,
 						[]string{strconv.Quote("selector-one")},
 						[]string{strconv.Quote("selector-one")},
@@ -95,10 +93,10 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
 					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.launcher_button.0.visibility", "OnDemand"),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", trueValue),
-					// resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.logo_url", ""),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.styles.0.primary_color", "#B0B0B0"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.0.file_types.#", "1"),
@@ -108,8 +106,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", trueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.0", "Webmessaging"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "1"),
@@ -117,7 +115,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.0", "selector-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.0", "excluded-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.pageview_config", "Auto"),
@@ -129,12 +127,12 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.selector", "form-selector-1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.form_name", "form-1"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_abandon", trueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_submit", falseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_abandon", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_submit", FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.selector", "form-selector-2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.form_name", "form-3"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_abandon", falseValue),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_submit", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_abandon", FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_submit", TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.event_name", "idle-event-1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.idle_after_seconds", "88"),
@@ -150,29 +148,6 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.scroll_depth_event.0.percentage", "33"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.scroll_depth_event.1.event_name", "scroll-depth-event-2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.scroll_depth_event.1.percentage", "66"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled", trueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_uri", "/api/v2/knowledge/knowledgebases/dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.default_value", "Welcome to Knowledge Portal"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.1.type", "Welcome"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", "test"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.feedback_enabled", trueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.enabled_categories_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.self_uri", "https://my-domain/images/my-logo.png"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.image_source", ""),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_background_color", "#5C3D5C"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_text_color", "#FFFFFF"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_image", "https://my-domain/images/my-logo.png"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_background_color", "#FAF8F7"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_primary_color", "#FF4F1F"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_primary_color_dark", "#CC3F19"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_primary_color_light", "#FFDCD2"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_text_color", "#33302f"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_font_family", "inherit"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", "Home"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_type", "Search"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", trueValue),
 				),
 			},
 			{
@@ -181,8 +156,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					configName,
 					configDescription,
 					generateWebDeploymentConfigCobrowseSettings(
-						falseValue,
-						falseValue,
+						FalseValue,
+						FalseValue,
 						channelsUpdate,
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
@@ -194,10 +169,10 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
 					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.launcher_button.0.visibility", "OnDemand"),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", trueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.logo_url", ""),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.styles.0.primary_color", "#B0B0B0"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.0.file_types.#", "1"),
@@ -207,8 +182,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", falseValue),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", falseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "2"),
 					ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
 					ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
@@ -219,7 +194,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
 					ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.0", "excluded-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.pageview_config", "Auto"),
@@ -231,12 +206,12 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.selector", "form-selector-1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.form_name", "form-1"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_abandon", trueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_submit", falseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_abandon", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_submit", FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.selector", "form-selector-2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.form_name", "form-3"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_abandon", falseValue),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_submit", trueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_abandon", FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_submit", TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.event_name", "idle-event-1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.idle_after_seconds", "88"),
@@ -252,29 +227,6 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.scroll_depth_event.0.percentage", "33"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.scroll_depth_event.1.event_name", "scroll-depth-event-2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.scroll_depth_event.1.percentage", "66"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled", trueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_uri", "/api/v2/knowledge/knowledgebases/dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.default_value", "Welcome to Knowledge Portal"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.1.type", "Welcome"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", "test"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.feedback_enabled", trueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.enabled_categories_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.self_uri", "https://my-domain/images/my-logo.png"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.image_source", "https://my-domain/images/my-logo.png"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_background_color", "#5C3D5C"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_text_color", "#FFFFFF"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_image", "https://my-domain/images/my-logo.png"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_background_color", "#FAF8F7"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_primary_color", "#FF4F1F"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_primary_color_dark", "#CC3F19"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_primary_color_light", "#FFDCD2"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_text_color", "#33302f"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_font_family", "inherit"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", "Home"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_type", "Search"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", trueValue),
 				),
 			},
 			{
@@ -386,41 +338,6 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 			scroll_depth_event {
 				event_name = "scroll-depth-event-2"
 				percentage = 66
-			}
-
-		}
-		support_center {
-			enabled = true
-			knowledge_base_id = "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"
-			knowledge_base_uri = "/api/v2/knowledge/knowledgebases/dfffc742-3ba4-4363-b8e6-fbc1bea1f643"
-			custom_messages {
-				default_value = "Welcome to Knowledge Portal"
-				type ="Welcome"
-			}
-			router_type = ""
-			feedback_enabled = ""
-			enabled_categories {
-				enabled_categories_id = "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"
-				self_uri = "https://my-domain/images/my-logo.png""
-				image_source = "https://my-domain/images/my-logo.png"
-			}
-			style_setting {
-				hero_style_background_color = "#5C3D5C"
-				hero_style_text_color = "#FFFFFF"
-				hero_style_image = "https://my-domain/images/my-logo.png"
-				global_style_background_color = "#FAF8F7"
-				global_style_primary_color = "#FF4F1F"
-				global_style_primary_color_dark = "#CC3F19"
-				global_style_primary_color_light = "#FFDCD2"
-				global_style_text_color = "#33302f"
-				global_style_font_family = "inherit"
-			}
-			screens {
-				type = "Home"
-				module_settings_type = "Search"
-				module_settings_enabled = true
-				module_settings_compact_category_module_template = false
-				module_settings_detailed_category_module_template = false
 			}
 		}
 		%s
