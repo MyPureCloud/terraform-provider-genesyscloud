@@ -102,10 +102,8 @@ func registerResources() {
 	grammarLanguage.SetRegistrar(regInstance)               //Registering architect grammar language
 	edgePhone.SetRegistrar(regInstance)                     //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)                      //Registering telephony providers edges site
-
 	flowMilestone.SetRegistrar(regInstance)                 //Registering flow milestone
 	flowOutcome.SetRegistrar(regInstance)                   //Registering flow outcome
-
 	station.SetRegistrar(regInstance)                       //Registering station
 	pat.SetRegistrar(regInstance)                           //Registering process automation triggers
 	obs.SetRegistrar(regInstance)                           //Resistering outbound ruleset
@@ -113,14 +111,10 @@ func registerResources() {
 	obwm.SetRegistrar(regInstance)                          //Registering outbound wrapup code mappings
 	gcloud.SetRegistrar(regInstance)                        //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                //Registering outbound attempt limit
-
-	obContactList.SetRegistrar(regInstance)                 //Registering outbound contact list
-
 	obCampaign.SetRegistrar(regInstance)                    //Registering outbound campaign
 	obContactList.SetRegistrar(regInstance)                 //Registering outbound contact list
 	obSequence.SetRegistrar(regInstance)                    //Registering outbound sequence
 	obCampaignRule.SetRegistrar(regInstance)                //Registering outbound campaignrule
-
 	scripts.SetRegistrar(regInstance)                       //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)                  //Registering routing sms addresses
 	integration.SetRegistrar(regInstance)                   //Registering integrations

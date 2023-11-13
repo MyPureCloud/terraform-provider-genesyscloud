@@ -63,7 +63,7 @@ func TeamExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllAuthTeams),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"division_id": {RefType: "genesyscloud_auth_division"}, // TODO: Add any reference attributes here
+			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }
