@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 /*
@@ -528,7 +528,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 
 	basePolicy := Policycreate{
 		Name:        "terraform-media-retention-policy" + uuid.NewString(),
-		Order:       1,
+		Order:       0,
 		Description: "a media retention policy",
 		Enabled:     true,
 	}
@@ -937,8 +937,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue, // Subdomain
-					nullValue,
+					gcloud.FalseValue, // Subdomain
+					gcloud.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					gcloud.GenerateAuthRoleResource(
 						roleResource1,
@@ -975,7 +975,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "name", mediaRetentionCallPolicy.Name),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "description", mediaRetentionCallPolicy.Description),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", gcloud.TrueValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.call_policy.0.actions.0.retain_recording", strconv.FormatBool(mediaRetentionCallPolicy.MediaPolicies.CallPolicy.Actions.RetainRecording)),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.call_policy.0.actions.0.delete_recording", strconv.FormatBool(mediaRetentionCallPolicy.MediaPolicies.CallPolicy.Actions.DeleteRecording)),
@@ -1044,8 +1044,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue, // Subdomain
-					nullValue,
+					gcloud.FalseValue, // Subdomain
+					gcloud.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					gcloud.GenerateAuthRoleResource(
 						roleResource1,
@@ -1082,7 +1082,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "name", mediaRetentionCallPolicy.Name),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "description", mediaRetentionCallPolicy.Description),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", gcloud.TrueValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.chat_policy.0.actions.0.retain_recording", strconv.FormatBool(mediaRetentionChatPolicy.MediaPolicies.ChatPolicy.Actions.RetainRecording)),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.chat_policy.0.actions.0.delete_recording", strconv.FormatBool(mediaRetentionChatPolicy.MediaPolicies.ChatPolicy.Actions.DeleteRecording)),
@@ -1151,8 +1151,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue, // Subdomain
-					nullValue,
+					gcloud.FalseValue, // Subdomain
+					gcloud.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					gcloud.GenerateAuthRoleResource(
 						roleResource1,
@@ -1189,7 +1189,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "name", mediaRetentionCallPolicy.Name),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "description", mediaRetentionCallPolicy.Description),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", gcloud.TrueValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.message_policy.0.actions.0.retain_recording", strconv.FormatBool(mediaRetentionMessagePolicy.MediaPolicies.MessagePolicy.Actions.RetainRecording)),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.message_policy.0.actions.0.delete_recording", strconv.FormatBool(mediaRetentionMessagePolicy.MediaPolicies.MessagePolicy.Actions.DeleteRecording)),
@@ -1258,8 +1258,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue, // Subdomain
-					nullValue,
+					gcloud.FalseValue, // Subdomain
+					gcloud.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					gcloud.GenerateAuthRoleResource(
 						roleResource1,
@@ -1296,7 +1296,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "name", mediaRetentionCallPolicy.Name),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "description", mediaRetentionCallPolicy.Description),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "enabled", gcloud.TrueValue),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.email_policy.0.actions.0.retain_recording", strconv.FormatBool(mediaRetentionEmailPolicy.MediaPolicies.EmailPolicy.Actions.RetainRecording)),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResource1, "media_policies.0.email_policy.0.actions.0.delete_recording", strconv.FormatBool(mediaRetentionEmailPolicy.MediaPolicies.EmailPolicy.Actions.DeleteRecording)),

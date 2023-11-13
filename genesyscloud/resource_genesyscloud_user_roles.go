@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func UserRolesExporter() *resourceExporter.ResourceExporter {
@@ -54,7 +54,7 @@ Terraform expects to manage the resources that are defined in its stack. You can
 			},
 			"roles": {
 				Description: "Roles and their divisions assigned to this user.",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        roleAssignmentResource,
 			},
@@ -75,12 +75,12 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Reading roles for user %s", d.Id())
 	d.Set("user_id", d.Id())
 	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		roles, _, err := readSubjectRoles(d.Id(), authAPI)
+		roles, _, err := readSubjectRoles(d, d.Id(), authAPI)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUserRoles())
-		d.Set("roles", roles)
+		_ = d.Set("roles", roles)
 
 		log.Printf("Read roles for user %s", d.Id())
 		return cc.CheckState()

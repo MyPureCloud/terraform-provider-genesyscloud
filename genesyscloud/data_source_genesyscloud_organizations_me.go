@@ -5,10 +5,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
-func dataSourceOrganizationsMe() *schema.Resource {
+func DataSourceOrganizationsMe() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud current organization",
 		ReadContext: ReadWithPooledClient(dataSourceOrganizationsMeRead),
@@ -106,4 +106,10 @@ func dataSourceOrganizationsMeRead(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	return nil
+}
+
+func GenerateOrganizationMe() string {
+	return `
+data "genesyscloud_organizations_me" "me" {}
+`
 }

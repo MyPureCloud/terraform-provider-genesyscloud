@@ -24,15 +24,15 @@ func TestAccDataSourceRoutingSettings(t *testing.T) {
 				// Search by contact center
 				Config: generateRoutingSettingsWithCustomAttrs(
 					settingsResource,
-					trueValue,
-					generateSettingsContactCenter(falseValue),
-					generateSettingsTranscription(transcription, confidence, trueValue, falseValue),
+					TrueValue,
+					generateSettingsContactCenter(FalseValue),
+					generateSettingsTranscription(transcription, confidence, TrueValue, FalseValue),
 				) + generateRoutingSettingsDataSource(
 					settingsDataSource,
-					trueValue,
+					TrueValue,
 					"genesyscloud_routing_settings."+settingsResource,
-					generateSettingsContactCenter(falseValue),
-					generateSettingsTranscription(transcription, confidence, trueValue, falseValue),
+					generateSettingsContactCenter(FalseValue),
+					generateSettingsTranscription(transcription, confidence, TrueValue, FalseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_settings."+settingsDataSource, "reset_agent_on_presence", "genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence"),

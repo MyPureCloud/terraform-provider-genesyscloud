@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 /*
@@ -18,12 +18,6 @@ import (
 
    Please make sure you register ALL resources and data sources your test cases will use.
 */
-
-const (
-	trueValue  = "true"
-	falseValue = "false"
-	nullValue  = "null"
-)
 
 var sdkConfig *platformclientv2.Configuration
 var err error

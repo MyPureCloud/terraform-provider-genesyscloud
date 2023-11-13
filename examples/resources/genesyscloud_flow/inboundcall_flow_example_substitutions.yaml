@@ -1,5 +1,6 @@
 inboundCall:
   name: "{{flow_name}}"
+  description: "{{description}}"
   defaultLanguage: "{{default_language}}"
   startUpRef: ./menus/menu[mainMenu]
   initialGreeting:

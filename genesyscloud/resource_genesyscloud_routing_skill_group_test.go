@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func testAccCheckSkillConditions(resourceName string, targetSkillConditionJson string) resource.TestCheckFunc {
@@ -120,7 +120,7 @@ data "genesyscloud_auth_division_home" "home" {}
 		skillGroupDescription1,
 		"data.genesyscloud_auth_division_home.home.id",
 		skillCondition1,
-		nullValue,
+		NullValue,
 	)
 
 	config2 := fmt.Sprintf(`
@@ -132,7 +132,7 @@ data "genesyscloud_auth_division_home" "home" {}
 		skillGroupDescription2,
 		"data.genesyscloud_auth_division_home.home.id",
 		skillCondition2,
-		nullValue,
+		NullValue,
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -217,11 +217,11 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsBasic(t *testing.T) {
 
 	authDivision1Name := "TF Division " + uuid.NewString()
 	authDivision1Resource := "division1"
-	authDivision1 := generateAuthDivisionBasic(authDivision1Resource, authDivision1Name)
+	authDivision1 := GenerateAuthDivisionBasic(authDivision1Resource, authDivision1Name)
 
 	authDivision2Name := "TF Division " + uuid.NewString()
 	authDivision2Resource := "division2"
-	authDivision2 := generateAuthDivisionBasic(authDivision2Resource, authDivision2Name)
+	authDivision2 := GenerateAuthDivisionBasic(authDivision2Resource, authDivision2Name)
 
 	memberDivisionIds1 := fmt.Sprintf(`[%s]`, strings.Join([]string{"data.genesyscloud_auth_division_home.home.id"}, ", "))
 
@@ -424,9 +424,9 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) 
 
 	routingSkillResource := generateRoutingSkillResource(routingSkillResourceId, routingSkillName)
 
-	division1Resource := generateAuthDivisionBasic(division1ResourceId, division1Name)
-	division2Resource := generateAuthDivisionBasic(division2ResourceId, division2Name)
-	division3Resource := generateAuthDivisionBasic(division3ResourceId, division3Name)
+	division1Resource := GenerateAuthDivisionBasic(division1ResourceId, division1Name)
+	division2Resource := GenerateAuthDivisionBasic(division2ResourceId, division2Name)
+	division3Resource := GenerateAuthDivisionBasic(division3ResourceId, division3Name)
 
 	user1Resource := fmt.Sprintf(`
 resource "genesyscloud_user" "%s" {
@@ -555,12 +555,11 @@ func generateRoutingSkillGroupResourceBasic(
 func testVerifySkillGroupMemberCount(resourceName string, count string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		// Authorize client credentials
-		config := platformclientv2.GetDefaultConfiguration()
-		routingAPI := platformclientv2.NewRoutingApi()
-		err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+		config, err := AuthorizeSdk()
 		if err != nil {
-			return fmt.Errorf("Unexpected error while trying to authorize client in testVerifyAllDivisionsAssigned : %s", err)
+			return fmt.Errorf("unexpected error while trying to authorize client in testVerifyAllDivisionsAssigned : %s", err)
 		}
+		routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
 
 		resourceState, ok := state.RootModule().Resources[resourceName]
 		if !ok {
@@ -679,7 +678,7 @@ func testVerifyAllDivisionsAssigned(resourceName string, attrName string) resour
 		// Preventing a large n² comparison equation from executing
 		maxLengthForListItemComparision := 20
 		if len(allAuthDivisionIds) < maxLengthForListItemComparision {
-			if lists.ListsAreEquivalent(allAuthDivisionIds, skillGroupMemberDivisionIds) {
+			if lists.AreEquivalent(allAuthDivisionIds, skillGroupMemberDivisionIds) {
 				return nil
 			} else {
 				return fmt.Errorf("Expected %s to equal the list of all auth divisions", attrName)
@@ -696,15 +695,14 @@ func testVerifyAllDivisionsAssigned(resourceName string, attrName string) resour
 
 func testVerifySkillGroupDestroyed(state *terraform.State) error {
 	// Get default config to set config options
-	config := platformclientv2.GetDefaultConfiguration()
-	routingAPI := platformclientv2.NewRoutingApi()
+	config, err := AuthorizeSdk()
+	if err != nil {
+		return fmt.Errorf("unexpected error while trying to authorize client in testVerifySkillGroupDestroyed : %s", err)
+	}
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
 	apiClient := &routingAPI.Configuration.APIClient
 
 	// TODO Once this code has been released into the public API we should fix this and use the SDK
-	err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
-	if err != nil {
-		return fmt.Errorf("Unexpected error while trying to authorize client in testVerifySkillGroupDestroyed : %s", err)
-	}
 
 	headerParams := buildHeaderParams(routingAPI)
 	for _, rs := range state.RootModule().Resources {

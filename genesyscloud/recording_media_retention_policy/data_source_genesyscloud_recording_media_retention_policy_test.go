@@ -26,7 +26,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 
 	basePolicy := Policycreate{
 		Name:        policyName,
-		Order:       1,
+		Order:       0,
 		Description: "a media retention policy",
 		Enabled:     true,
 	}
@@ -145,8 +145,8 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 				Config: gcloud.GenerateRoutingEmailDomainResource(
 					domainRes,
 					domainId,
-					falseValue, // Subdomain
-					nullValue,
+					gcloud.FalseValue, // Subdomain
+					gcloud.NullValue,
 				) + gcloud.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
 					gcloud.GenerateAuthRoleResource(
 						roleResource1,

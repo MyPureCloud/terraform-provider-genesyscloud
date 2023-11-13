@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 var (
@@ -533,7 +533,7 @@ func addGroupMembers(d *schema.ResourceData, membersToAdd []string, groupsAPI *p
 }
 
 func GenerateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
-	return generateGroupResource(resourceID, name, nullValue, nullValue, nullValue, trueValue, nestedBlocks...)
+	return generateGroupResource(resourceID, name, NullValue, NullValue, NullValue, TrueValue, nestedBlocks...)
 }
 
 func generateGroupResource(

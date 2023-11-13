@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 type PromptAudioData struct {
@@ -1234,11 +1234,11 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 	resourcesString := ``
 	for _, p := range userPrompt.Resources {
 		var fileContentHash string
-		if p.FileContentHash != nullValue {
+		if p.FileContentHash != NullValue {
 			fullyQualifiedPath, _ := filepath.Abs(p.FileContentHash)
 			fileContentHash = fmt.Sprintf(`filesha256("%s")`, fullyQualifiedPath)
 		} else {
-			fileContentHash = nullValue
+			fileContentHash = NullValue
 		}
 		resourcesString += fmt.Sprintf(`resources {
 			language          = "%s"

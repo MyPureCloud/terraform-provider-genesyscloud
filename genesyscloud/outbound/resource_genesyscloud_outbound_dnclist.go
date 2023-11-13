@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func getAllOutboundDncLists(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -304,7 +304,7 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		if sdkDncList.DncCodes != nil {
 			schemaCodes := lists.InterfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 			// preserve ordering and avoid a plan not empty error
-			if lists.ListsAreEquivalent(schemaCodes, *sdkDncList.DncCodes) {
+			if lists.AreEquivalent(schemaCodes, *sdkDncList.DncCodes) {
 				_ = d.Set("dnc_codes", schemaCodes)
 			} else {
 				_ = d.Set("dnc_codes", lists.StringListToInterfaceList(*sdkDncList.DncCodes))
@@ -372,4 +372,14 @@ func uploadPhoneEntriesToDncList(api *platformclientv2.OutboundApi, dncList *pla
 		log.Printf("Uploaded phone numbers to DNC list %s", *dncList.Name)
 	}
 	return nil, nil
+}
+
+func GenerateOutboundDncListBasic(resourceId string, name string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_outbound_dnclist" "%s" {
+	name            = "%s"
+	dnc_source_type = "rds"	
+	contact_method  = "Phone"
+}
+`, resourceId, name)
 }

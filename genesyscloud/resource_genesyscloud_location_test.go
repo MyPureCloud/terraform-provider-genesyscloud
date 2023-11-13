@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func TestAccResourceLocationBasic(t *testing.T) {
@@ -70,7 +70,7 @@ func TestAccResourceLocationBasic(t *testing.T) {
 					[]string{"genesyscloud_location." + locResource2 + ".id"},
 					GenerateLocationEmergencyNum(
 						emergencyNum1,
-						nullValue, // Default number type
+						NullValue, // Default number type
 					),
 					GenerateLocationAddress(street1, city1, state1, country1, zip1),
 				) + GenerateLocationResourceBasic(locResource2, locName3),
@@ -87,7 +87,7 @@ func TestAccResourceLocationBasic(t *testing.T) {
 				Config: GenerateLocationResource(
 					locResource1,
 					locName2,
-					nullValue,
+					NullValue,
 					[]string{},
 					GenerateLocationEmergencyNum(
 						emergencyNum2,
@@ -107,7 +107,7 @@ func TestAccResourceLocationBasic(t *testing.T) {
 				Config: GenerateLocationResource(
 					locResource1,
 					locName2,
-					nullValue,
+					NullValue,
 					[]string{},
 					GenerateLocationAddress(street1, city1, state1, country1, zip1),
 				),
@@ -122,7 +122,7 @@ func TestAccResourceLocationBasic(t *testing.T) {
 				Config: GenerateLocationResource(
 					locResource1,
 					locName2,
-					nullValue,
+					NullValue,
 					[]string{},
 					GenerateLocationAddress(street2, city2, state2, country1, zip2),
 				),

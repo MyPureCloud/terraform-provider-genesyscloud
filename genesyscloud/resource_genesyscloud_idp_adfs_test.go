@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func TestAccResourceIdpAdfs(t *testing.T) {
@@ -28,15 +28,15 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert1)),
 					uri1,
 					uri2,
-					nullValue, // No relying party ID
-					nullValue, // Not disabled
+					NullValue, // No relying party ID
+					NullValue, // Not disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_adfs.adfs", "certificates", testCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "target_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "relying_party_identifier", ""),
-					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", FalseValue),
 				),
 			},
 			{
@@ -46,14 +46,14 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID1),
-					trueValue, // disabled
+					TrueValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_adfs.adfs", "certificates", testCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "relying_party_identifier", relyingPartyID1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", TrueValue),
 				),
 			},
 			{
@@ -63,7 +63,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_adfs.adfs", "certificates", testCert1),
@@ -71,7 +71,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "relying_party_identifier", relyingPartyID2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", FalseValue),
 				),
 			},
 			{
@@ -81,7 +81,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_adfs.adfs", "certificates", testCert1),
@@ -89,7 +89,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "relying_party_identifier", relyingPartyID2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", FalseValue),
 				),
 			},
 			{
@@ -99,7 +99,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_adfs.adfs", "certificates", testCert1),
@@ -108,7 +108,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "relying_party_identifier", relyingPartyID2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", FalseValue),
 				),
 			},
 			{

@@ -95,9 +95,10 @@ resource "genesyscloud_telephony_providers_edges_site" "site" {
 - `media_regions` (List of String) The ordered list of AWS regions through which media can stream. A full list of available media regions can be found at the GET /api/v2/telephony/mediaregions endpoint
 - `media_regions_use_latency_based` (Boolean) Latency based on media region Defaults to `false`.
 - `number_plans` (Block List) Number plans for the site. The order of the plans in the resource file determines the priority of the plans. Specifying number plans will not result in the default plans being overwritten. (see [below for nested schema](#nestedblock--number_plans))
-- `outbound_routes` (Block List) Outbound Routes for the site. The default outbound route will not be delete if routes are specified (see [below for nested schema](#nestedblock--outbound_routes))
+- `outbound_routes` (Set of Object) Outbound Routes for the site. The default outbound route will be deleted if routes are specified (see [below for nested schema](#nestedatt--outbound_routes))
 - `primary_sites` (List of String) Used for primary phone edge assignment on physical edges only.  List of primary sites the phones can be assigned to. If no primary_sites are defined, the site id for this site will be used as the primary site id.
 - `secondary_sites` (List of String) Used for secondary phone edge assignment on physical edges only.  List of secondary sites the phones can be assigned to.  If no primary_sites or secondary_sites are defined then the current site will defined as primary and secondary.
+- `set_as_default_site` (Boolean) Set this site as the default site for the organization. Only one genesyscloud_telephony_providers_edges_site resource should be set as the default. Defaults to `false`.
 
 ### Read-Only
 
@@ -149,18 +150,15 @@ Optional:
 
 
 
-<a id="nestedblock--outbound_routes"></a>
+<a id="nestedatt--outbound_routes"></a>
 ### Nested Schema for `outbound_routes`
-
-Required:
-
-- `classification_types` (List of String) Used to classify this outbound route.
-- `name` (String) The name of the entity.
 
 Optional:
 
-- `description` (String) The resource's description.
-- `distribution` (String) Valid values: SEQUENTIAL, RANDOM. Defaults to `SEQUENTIAL`.
-- `enabled` (Boolean) Enable or disable the outbound route Defaults to `false`.
-- `external_trunk_base_ids` (List of String) Trunk base settings of trunkType "EXTERNAL". This base must also be set on an edge logical interface for correct routing. The order of the IDs determines the distribution if "distribution" is set to "SEQUENTIAL"
+- `classification_types` (List of String)
+- `description` (String)
+- `distribution` (String)
+- `enabled` (Boolean)
+- `external_trunk_base_ids` (List of String)
+- `name` (String)
 

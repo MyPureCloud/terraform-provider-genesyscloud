@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -199,4 +199,21 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 		return retry.RetryableError(fmt.Errorf("Division %s still exists", name))
 	})
+}
+
+func GenerateAuthDivisionBasic(resourceID string, name string) string {
+	return GenerateAuthDivisionResource(resourceID, name, NullValue, FalseValue)
+}
+
+func GenerateAuthDivisionResource(
+	resourceID string,
+	name string,
+	description string,
+	home string) string {
+	return fmt.Sprintf(`resource "genesyscloud_auth_division" "%s" {
+		name = "%s"
+		description = %s
+		home = %s
+	}
+	`, resourceID, name, description, home)
 }

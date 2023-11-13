@@ -4,17 +4,77 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+)
+
+var (
+	phoneCapabilities = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"provisions": {
+				Description: "Provisions",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"registers": {
+				Description: "Registers",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"dual_registers": {
+				Description: "Dual Registers",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"hardware_id_type": {
+				Description: "HardwareId Type",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"allow_reboot": {
+				Description: "Allow Reboot",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"no_rebalance": {
+				Description: "No Rebalance",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"no_cloud_provisioning": {
+				Description: "No Cloud Provisioning",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"media_codecs": {
+				Description: "Media Codecs",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validation.StringInSlice([]string{"audio/opus", "audio/pcmu", "audio/pcma", "audio/g729", "audio/g722"}, false),
+				},
+			},
+			"cdm": {
+				Description: "CDM",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+		},
+	}
 )
 
 func ResourcePhoneBaseSettings() *schema.Resource {
@@ -274,4 +334,83 @@ func PhoneBaseSettingsExporter() *resourceExporter.ResourceExporter {
 		RefAttrs:             map[string]*resourceExporter.RefAttrSettings{},
 		JsonEncodeAttributes: []string{"properties"},
 	}
+}
+
+func buildSdkCapabilities(d *schema.ResourceData) *platformclientv2.Phonecapabilities {
+	if capabilities := d.Get("capabilities").([]interface{}); capabilities != nil {
+		sdkPhoneCapabilities := platformclientv2.Phonecapabilities{}
+		if len(capabilities) > 0 {
+			if _, ok := capabilities[0].(map[string]interface{}); !ok {
+				return nil
+			}
+			capabilitiesMap := capabilities[0].(map[string]interface{})
+
+			// Only set non-empty values.
+			provisions := capabilitiesMap["provisions"].(bool)
+			registers := capabilitiesMap["registers"].(bool)
+			dualRegisters := capabilitiesMap["dual_registers"].(bool)
+			var hardwareIdType string
+			if checkHardwareIdType := capabilitiesMap["hardware_id_type"].(string); len(checkHardwareIdType) > 0 {
+				hardwareIdType = checkHardwareIdType
+			}
+			allowReboot := capabilitiesMap["allow_reboot"].(bool)
+			noRebalance := capabilitiesMap["no_rebalance"].(bool)
+			noCloudProvisioning := capabilitiesMap["no_cloud_provisioning"].(bool)
+			mediaCodecs := make([]string, 0)
+			if checkMediaCodecs := capabilitiesMap["media_codecs"].([]interface{}); len(checkMediaCodecs) > 0 {
+				for _, codec := range checkMediaCodecs {
+					mediaCodecs = append(mediaCodecs, fmt.Sprintf("%v", codec))
+				}
+			}
+			cdm := capabilitiesMap["cdm"].(bool)
+
+			sdkPhoneCapabilities = platformclientv2.Phonecapabilities{
+				Provisions:          &provisions,
+				Registers:           &registers,
+				DualRegisters:       &dualRegisters,
+				HardwareIdType:      &hardwareIdType,
+				AllowReboot:         &allowReboot,
+				NoRebalance:         &noRebalance,
+				NoCloudProvisioning: &noCloudProvisioning,
+				MediaCodecs:         &mediaCodecs,
+				Cdm:                 &cdm,
+			}
+		}
+		return &sdkPhoneCapabilities
+	}
+	return nil
+}
+
+func flattenPhoneCapabilities(capabilities *platformclientv2.Phonecapabilities) []interface{} {
+	if capabilities == nil {
+		return nil
+	}
+
+	capabilitiesMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "provisions", capabilities.Provisions)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "registers", capabilities.Registers)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "dual_registers", capabilities.DualRegisters)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "hardware_id_type", capabilities.HardwareIdType)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "allow_reboot", capabilities.AllowReboot)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "no_rebalance", capabilities.NoRebalance)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "no_cloud_provisioning", capabilities.NoCloudProvisioning)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "media_codecs", capabilities.MediaCodecs)
+	resourcedata.SetMapValueIfNotNil(capabilitiesMap, "cdm", capabilities.Cdm)
+
+	return []interface{}{capabilitiesMap}
+}
+
+func GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+	phoneBaseSettingsRes,
+	name,
+	description,
+	phoneMetaBaseId string,
+	otherAttrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_phonebasesettings" "%s" {
+		name = "%s"
+		description = "%s"
+		phone_meta_base_id = "%s"
+		%s
+	}
+	`, phoneBaseSettingsRes, name, description, phoneMetaBaseId, strings.Join(otherAttrs, "\n"))
 }

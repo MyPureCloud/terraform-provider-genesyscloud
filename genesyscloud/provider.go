@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func init() {
@@ -200,6 +200,9 @@ func getRegionMap() map[string]string {
 		"ap-northeast-2": "apne2.pure.cloud",
 		"ap-south-1":     "aps1.pure.cloud",
 		"sa-east-1":      "sae1.pure.cloud",
+		"ap-northeast-3": "apne3.pure.cloud",
+		"eu-central-2":   "euc2.pure.cloud",
+		"me-central-1":   "mec1.pure.cloud",
 	}
 }
 
@@ -300,8 +303,15 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 }
 
 func AuthorizeSdk() (*platformclientv2.Configuration, error) {
+
 	// Create new config
 	sdkConfig := platformclientv2.GetDefaultConfiguration()
+
+	_, exists := os.LookupEnv("TF_UNIT")
+	if exists {
+		log.Printf("TF_UNIT environment is set.  No authorization of the SDK has occurred")
+		return sdkConfig, nil
+	}
 
 	sdkConfig.BasePath = GetRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
 

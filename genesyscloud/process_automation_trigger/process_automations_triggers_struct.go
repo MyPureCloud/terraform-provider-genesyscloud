@@ -3,7 +3,7 @@ package process_automation_trigger
 import (
 	"encoding/json"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 type ProcessAutomationTrigger struct {
@@ -58,6 +58,7 @@ func (p *ProcessAutomationTrigger) toJSONString() (string, error) {
 		value["jsonPath"] = obj["jsonPath"]
 		value["operator"] = obj["operator"]
 		value["value"] = obj["value"]
+		value["values"] = obj["values"]
 
 		matchCriteriaArray[i] = value
 	}

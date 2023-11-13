@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 const (
@@ -102,6 +102,24 @@ func SetNillableReference(d *schema.ResourceData, key string, value *platformcli
 		d.Set(key, value.Id)
 	} else {
 		d.Set(key, nil)
+	}
+}
+
+// SetNillableReferenceWritableDivision functions the same as SetNillableReference, but for fields that are type Writabledivision, not Domainentityref
+func SetNillableReferenceWritableDivision(d *schema.ResourceData, key string, value *platformclientv2.Writabledivision) {
+	if value != nil && value.Id != nil {
+		_ = d.Set(key, *value.Id)
+	} else {
+		_ = d.Set(key, nil)
+	}
+}
+
+// SetNillableReferenceDivision functions the same as SetNillableReference, but for fields that are type Division, not Domainentityref
+func SetNillableReferenceDivision(d *schema.ResourceData, key string, value *platformclientv2.Division) {
+	if value != nil && value.Id != nil {
+		_ = d.Set(key, *value.Id)
+	} else {
+		_ = d.Set(key, nil)
 	}
 }
 

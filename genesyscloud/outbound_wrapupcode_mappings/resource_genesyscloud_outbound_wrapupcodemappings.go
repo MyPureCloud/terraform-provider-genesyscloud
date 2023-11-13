@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 // getOutboundWrapupCodeMappings is used by the exporter to return all wrapupcode mappings
@@ -101,7 +101,7 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 			for _, v := range schemaDefaultSet {
 				defaultSet = append(defaultSet, v.(string))
 			}
-			if lists.ListsAreEquivalent(defaultSet, *sdkWrapupCodeMappings.DefaultSet) {
+			if lists.AreEquivalent(defaultSet, *sdkWrapupCodeMappings.DefaultSet) {
 				d.Set("default_set", defaultSet)
 			} else {
 				d.Set("default_set", lists.StringListToInterfaceList(*sdkWrapupCodeMappings.DefaultSet))

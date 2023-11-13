@@ -3,7 +3,6 @@ package outbound
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -14,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
@@ -35,13 +34,13 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		contactListResource   = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			contactListName,
-			nullValue,
-			nullValue,
+			NullValue,
+			NullValue,
 			[]string{},
 			[]string{strconv.Quote(column1), strconv.Quote(column2)},
-			nullValue,
-			nullValue,
-			nullValue,
+			NullValue,
+			NullValue,
+			NullValue,
 			obContactList.GeneratePhoneColumnsBlock(
 				column1,
 				"cell",
@@ -53,7 +52,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		resourceId                    = "messaging_campaign"
 		name                          = "Test Messaging Campaign " + uuid.NewString()
 		messagesPerMin                = "10"
-		alwaysRunning                 = falseValue
+		alwaysRunning                 = FalseValue
 		smsConfigMessageColumn        = column1
 		smsConfigPhoneColumn          = column1
 		smsConfigSenderSMSPhoneNumber = "+19198793429"
@@ -61,12 +60,12 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		// Messaging Campaign Updated fields
 		nameUpdate           = "Test Messaging Campaign " + uuid.NewString()
 		messagesPerMinUpdate = "15"
-		alwaysRunningUpdate  = trueValue
+		alwaysRunningUpdate  = TrueValue
 
 		// DNC List
 		dncListResourceId = "dnc_list"
 		dncListName       = "Test DNC List " + uuid.NewString()
-		dncListResource   = generateOutboundDncListBasic(
+		dncListResource   = GenerateOutboundDncListBasic(
 			dncListResourceId,
 			dncListName,
 		)
@@ -74,14 +73,14 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 		// Contact List Filter
 		clfResourceId             = "contact_list_filter"
 		clfName                   = "Contact List Filter " + uuid.NewString()
-		contactListFilterResource = generateOutboundContactListFilter(
+		contactListFilterResource = GenerateOutboundContactListFilter(
 			clfResourceId,
 			clfName,
 			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 			"",
-			generateOutboundContactListFilterClause(
+			GenerateOutboundContactListFilterClause(
 				"",
-				generateOutboundContactListFilterPredicates(
+				GenerateOutboundContactListFilterPredicates(
 					column1,
 					"alphabetic",
 					"EQUALS",
@@ -94,21 +93,20 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 
 		callableTimeSetResourceId = "callable_time_set"
 		callableTimeSetName       = "Test CTS " + uuid.NewString()
-		callableTimeSetResource   = generateOutboundCallabletimeset(
+		callableTimeSetResource   = GenerateOutboundCallabletimeset(
 			callableTimeSetResourceId,
 			callableTimeSetName,
-			generateCallableTimesBlock(
+			GenerateCallableTimesBlock(
 				"Europe/Dublin",
-				generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
-				generateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
+				GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+				GenerateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
 			),
 		)
 	)
 
-	config := platformclientv2.GetDefaultConfiguration()
-	err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+	config, err := gcloud.AuthorizeSdk()
 	if err != nil {
-		t.Errorf("error validating client credentials: %v", err)
+		t.Errorf("failed to authorize client: %v", err)
 	}
 	api := platformclientv2.NewRoutingApiWithConfig(config)
 	err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
@@ -146,15 +144,15 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 							smsConfigPhoneColumn,
 							smsConfigSenderSMSPhoneNumber,
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column1,
 							"",
 							"",
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column2,
 							"DESC",
-							trueValue,
+							TrueValue,
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -167,10 +165,10 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.sender_sms_phone_number", smsConfigSenderSMSPhoneNumber),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.field_name", column1),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.direction", "ASC"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.numeric", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.numeric", FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.field_name", column2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.direction", "DESC"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", TrueValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "dnc_list_ids.0",
@@ -202,15 +200,15 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 							smsConfigPhoneColumn,
 							smsConfigSenderSMSPhoneNumber,
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column1,
 							"",
 							"",
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column2,
 							"DESC",
-							trueValue,
+							TrueValue,
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -223,10 +221,10 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.sender_sms_phone_number", smsConfigSenderSMSPhoneNumber),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.field_name", column1),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.direction", "ASC"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.numeric", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.numeric", FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.field_name", column2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.direction", "DESC"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", TrueValue),
 					gcloud.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_messagingcampaign."+resourceId, "campaign_status", []string{"on", "complete"}),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId, "id"),
@@ -260,12 +258,12 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 							smsConfigPhoneColumn,
 							smsConfigSenderSMSPhoneNumber,
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column1,
 							"DESC",
-							trueValue,
+							TrueValue,
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column2,
 							"",
 							"",
@@ -281,10 +279,10 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "sms_config.0.sender_sms_phone_number", smsConfigSenderSMSPhoneNumber),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.field_name", column1),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.direction", "DESC"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.numeric", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.0.numeric", TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.field_name", column2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.direction", "ASC"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_sorts.1.numeric", FalseValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_messagingcampaign."+resourceId, "contact_list_filter_ids.0",
@@ -401,22 +399,6 @@ func generateOutboundMessagingCampaignSmsConfig(
  		sender_sms_phone_number = "%s"
 	}
 `, smsConfigMessageColumn, smsConfigPhoneColumn, smsConfigSenderSMSPhoneNumber)
-}
-
-func generateOutboundMessagingCampaignContactSort(fieldName string, direction string, numeric string) string {
-	if direction != "" {
-		direction = fmt.Sprintf(`direction = "%s"`, direction)
-	}
-	if numeric != "" {
-		numeric = fmt.Sprintf(`numeric = %s`, numeric)
-	}
-	return fmt.Sprintf(`
-	contact_sorts {
-		field_name = "%s"
-		%s
-        %s
-	}
-`, fieldName, direction, numeric)
 }
 
 func testVerifyOutboundMessagingCampaignDestroyed(state *terraform.State) error {

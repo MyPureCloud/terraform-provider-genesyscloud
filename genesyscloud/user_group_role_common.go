@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 var (
@@ -54,102 +54,142 @@ func getAssignedGrants(subjectID string, authAPI *platformclientv2.Authorization
 	return grants, resp, nil
 }
 
-func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationApi) (*schema.Set, *platformclientv2.APIResponse, diag.Diagnostics) {
+func readSubjectRoles(d *schema.ResourceData, subjectID string, authAPI *platformclientv2.AuthorizationApi) ([]interface{}, *platformclientv2.APIResponse, diag.Diagnostics) {
 	grants, resp, err := getAssignedGrants(subjectID, authAPI)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	roleDivsMap := make(map[string]*schema.Set)
+	roleDivsMap := make(map[string][]interface{})
 	for _, grant := range grants {
 		if currentDivs, ok := roleDivsMap[*grant.Role.Id]; ok {
-			currentDivs.Add(*grant.Division.Id)
+			currentDivs = append(currentDivs, *grant.Division.Id)
 		} else {
-			roleDivsMap[*grant.Role.Id] = schema.NewSet(schema.HashString, []interface{}{*grant.Division.Id})
+			roleDivsMap[*grant.Role.Id] = []interface{}{*grant.Division.Id}
 		}
 	}
 
-	roleSet := schema.NewSet(schema.HashResource(roleAssignmentResource), []interface{}{})
+	var roleList []interface{}
 	for roleID, divs := range roleDivsMap {
 		role := make(map[string]interface{})
 		role["role_id"] = roleID
 		role["division_ids"] = divs
-		roleSet.Add(role)
+		roleList = append(roleList, role)
 	}
-	return roleSet, resp, nil
+
+	// If the role IDs are the same in the schema state and in the response from the GET,
+	// re-organize the items to match the ordering in the schema
+	rolesFromSchema, ok := d.Get("roles").([]interface{})
+	if !ok {
+		return roleList, resp, nil
+	}
+
+	roleIdsFromSchema := getRoleIdsFromRolesList(rolesFromSchema)
+	var roleIdsFromApi []string
+	for roleId, _ := range roleDivsMap {
+		roleIdsFromApi = append(roleIdsFromApi, roleId)
+	}
+
+	if lists.AreEquivalent(roleIdsFromSchema, roleIdsFromApi) {
+		// re-organise roleList so that order of items is the same as in the schema
+		roleListReordered := make([]interface{}, 0)
+		for _, roleId := range roleIdsFromSchema {
+			currentRole := make(map[string]interface{}, 0)
+			currentRole["role_id"] = roleId
+			currentRole["division_ids"] = roleDivsMap[roleId]
+			roleListReordered = append(roleListReordered, currentRole)
+		}
+		roleList = roleListReordered
+	}
+
+	return roleList, resp, nil
 }
 
-func updateSubjectRoles(ctx context.Context, d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {
-	if d.HasChange("roles") {
-		rolesConfig := d.Get("roles")
-		if rolesConfig != nil {
-			// Get existing roles/divisions
-			grants, _, err := getAssignedGrants(d.Id(), authAPI)
+func getRoleIdsFromRolesList(roles []interface{}) []string {
+	var roleIds []string
+	for _, r := range roles {
+		if rMap, ok := r.(map[string]interface{}); ok {
+			roleIds = append(roleIds, rMap["role_id"].(string))
+		}
+	}
+	return roleIds
+}
+
+func updateSubjectRoles(_ context.Context, d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {
+	if !d.HasChange("roles") {
+		return nil
+	}
+	rolesList, ok := d.Get("roles").([]interface{})
+	if !ok {
+		return nil
+	}
+	// Get existing roles/divisions
+	grants, _, err := getAssignedGrants(d.Id(), authAPI)
+	if err != nil {
+		return err
+	}
+
+	var existingGrants []string
+	for _, grant := range grants {
+		existingGrants = append(existingGrants, createRoleDivisionPair(*grant.Role.Id, *grant.Division.Id))
+	}
+
+	homeDiv, diagErr := getHomeDivisionID()
+	if diagErr != nil {
+		return diagErr
+	}
+
+	var configGrants []string
+	for _, configRole := range rolesList {
+		roleMap, ok := configRole.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		roleID := roleMap["role_id"].(string)
+
+		var divisionIDs []string
+		if configDivs, ok := roleMap["division_ids"]; ok {
+			divisionIDs = *lists.SetToStringList(configDivs.(*schema.Set))
+		}
+
+		if len(divisionIDs) == 0 {
+			// No division set. Use the home division
+			divisionIDs = []string{homeDiv}
+		}
+
+		for _, divID := range divisionIDs {
+			configGrants = append(configGrants, createRoleDivisionPair(roleID, divID))
+		}
+	}
+
+	grantsToRemove := lists.SliceDifference(existingGrants, configGrants)
+	if len(grantsToRemove) > 0 {
+		// It's possible for a role or division to be removed before this update is processed,
+		// and the bulk remove API returns failure if any roles/divisions no longer exist.
+		// Work around by removing all grants individually and ignore 404s.
+		sdkGrantsToRemove := roleDivPairsToGrants(grantsToRemove)
+		for _, grant := range *sdkGrantsToRemove.Grants {
+			resp, err := authAPI.DeleteAuthorizationSubjectDivisionRole(d.Id(), *grant.DivisionId, *grant.RoleId)
 			if err != nil {
-				return err
-			}
-
-			var existingGrants []string
-			for _, grant := range grants {
-				existingGrants = append(existingGrants, createRoleDivisionPair(*grant.Role.Id, *grant.Division.Id))
-			}
-
-			homeDiv, diagErr := getHomeDivisionID()
-			if diagErr != nil {
-				return diagErr
-			}
-
-			var configGrants []string
-			rolesList := rolesConfig.(*schema.Set).List()
-			for _, configRole := range rolesList {
-				roleMap := configRole.(map[string]interface{})
-				roleID := roleMap["role_id"].(string)
-
-				var divisionIDs []string
-				if configDivs, ok := roleMap["division_ids"]; ok {
-					divisionIDs = *lists.SetToStringList(configDivs.(*schema.Set))
-				}
-
-				if len(divisionIDs) == 0 {
-					// No division set. Use the home division
-					divisionIDs = []string{homeDiv}
-				}
-
-				for _, divID := range divisionIDs {
-					configGrants = append(configGrants, createRoleDivisionPair(roleID, divID))
+				if resp == nil || resp.StatusCode != 404 {
+					return diag.Errorf("Failed to remove role grants for subject %s: %s", d.Id(), err)
 				}
 			}
+		}
+	}
 
-			grantsToRemove := lists.SliceDifference(existingGrants, configGrants)
-			if len(grantsToRemove) > 0 {
-				// It's possible for a role or division to be removed before this update is processed,
-				// and the bulk remove API returns failure if any roles/divisions no longer exist.
-				// Work around by removing all grants individually and ignore 404s.
-				sdkGrantsToRemove := roleDivPairsToGrants(grantsToRemove)
-				for _, grant := range *sdkGrantsToRemove.Grants {
-					resp, err := authAPI.DeleteAuthorizationSubjectDivisionRole(d.Id(), *grant.DivisionId, *grant.RoleId)
-					if err != nil {
-						if resp == nil || resp.StatusCode != 404 {
-							return diag.Errorf("Failed to remove role grants for subject %s: %s", d.Id(), err)
-						}
-					}
-				}
+	grantsToAdd := lists.SliceDifference(configGrants, existingGrants)
+	if len(grantsToAdd) > 0 {
+		// In some cases new roles or divisions have not yet been added to the auth service cache causing 404s that should be retried.
+		diagErr = RetryWhen(IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			resp, err := authAPI.PostAuthorizationSubjectBulkadd(d.Id(), roleDivPairsToGrants(grantsToAdd), subjectType)
+			if err != nil {
+				return resp, diag.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err)
 			}
-
-			grantsToAdd := lists.SliceDifference(configGrants, existingGrants)
-			if len(grantsToAdd) > 0 {
-				// In some cases new roles or divisions have not yet been added to the auth service cache causing 404s that should be retried.
-				diagErr = RetryWhen(IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-					resp, err := authAPI.PostAuthorizationSubjectBulkadd(d.Id(), roleDivPairsToGrants(grantsToAdd), subjectType)
-					if err != nil {
-						return resp, diag.Errorf("Failed to add role grants for subject %s: %s", d.Id(), err)
-					}
-					return nil, nil
-				})
-				if diagErr != nil {
-					return diagErr
-				}
-			}
+			return nil, nil
+		})
+		if diagErr != nil {
+			return diagErr
 		}
 	}
 	return nil

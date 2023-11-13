@@ -21,7 +21,7 @@ func TestAccDataSourceDncList(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundDncListBasic(
+				Config: GenerateOutboundDncListBasic(
 					resourceId,
 					dncListName,
 				) + generateOutboundDncListDataSource(

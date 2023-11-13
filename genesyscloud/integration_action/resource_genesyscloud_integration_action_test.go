@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 /*
@@ -59,29 +59,29 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 				// Create an integration and an associated action
 				Config: integration.GenerateIntegrationResource(
 					integResource1,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(integTypeID),
 				) + generateIntegrationActionResource(
 					actionResource1,
 					actionName1,
 					actionCateg1,
 					"genesyscloud_integration."+integResource1+".id",
-					nullValue, // Secure default (false)
-					nullValue, // Timeout default
+					gcloud.NullValue, // Secure default (false)
+					gcloud.NullValue, // Timeout default
 					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
 						reqUrlTemplate1,
 						reqType1,
-						nullValue, // Default req templatezz
-						"",        // No headers
+						gcloud.NullValue, // Default req templatezz
+						"",               // No headers
 					),
 					// Default config response
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "name", actionName1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "category", actionCateg1),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", gcloud.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_timeout_seconds", "0"),
 					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
 					gcloud.ValidateValueInJsonAttr("genesyscloud_integration_action."+actionResource1, "contract_input", "type", "object"),
@@ -98,14 +98,14 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 				// Update action name, category, timeout, and request/response config
 				Config: integration.GenerateIntegrationResource(
 					integResource1,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(integTypeID),
 				) + generateIntegrationActionResource(
 					actionResource1,
 					actionName2,
 					actionCateg2,
 					"genesyscloud_integration."+integResource1+".id",
-					nullValue, // Secure default (false)
+					gcloud.NullValue, // Secure default (false)
 					timeout2,
 					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
@@ -133,7 +133,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "name", actionName2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "category", actionCateg2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", gcloud.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_timeout_seconds", timeout2),
 					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_url_template", reqUrlTemplate2),
@@ -149,15 +149,15 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 				// Update config values as well as secure field which should force a new action to be created
 				Config: integration.GenerateIntegrationResource(
 					integResource1,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(integTypeID),
 				) + generateIntegrationActionResource(
 					actionResource1,
 					actionName2,
 					actionCateg2,
 					"genesyscloud_integration."+integResource1+".id",
-					trueValue, // Secure
-					nullValue, // time default
+					gcloud.TrueValue, // Secure
+					gcloud.NullValue, // time default
 					gcloud.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					gcloud.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
@@ -184,7 +184,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "name", actionName2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "category", actionCateg2),
-					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "secure", gcloud.TrueValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResource1, "integration_id", "genesyscloud_integration."+integResource1, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_url_template", reqUrlTemplate2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResource1, "config_request.0.request_type", reqType2),

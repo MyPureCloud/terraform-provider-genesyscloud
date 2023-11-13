@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
@@ -34,8 +34,8 @@ func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 				Config: GenerateRoutingEmailDomainResource(
 					emailDomainResourceId,
 					emailDomainId,
-					falseValue,
-					nullValue,
+					FalseValue,
+					NullValue,
 				) + generateRoutingEmailDomainDataSource(emailDataResourceId, "genesyscloud_routing_email_domain."+emailDomainResourceId+".domain_id", "genesyscloud_routing_email_domain."+emailDomainResourceId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_email_domain."+emailDataResourceId, "id", "genesyscloud_routing_email_domain."+emailDomainResourceId, "id"),

@@ -110,6 +110,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `routing_rules` (Block List, Max: 6) The routing rules for the queue, used for routing to known or preferred agents. (see [below for nested schema](#nestedblock--routing_rules))
 - `skill_evaluation_method` (String) The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to `ALL`.
 - `skill_groups` (Set of String) List of skill group ids assigned to the queue.
+- `suppress_in_queue_call_recording` (Boolean) Indicates whether recording in-queue calls is suppressed for this queue. Defaults to `true`.
 - `teams` (Set of String) List of ids assigned to the queue
 - `whisper_prompt_id` (String) The prompt ID used for whisper on the queue, if configured.
 - `wrapup_codes` (Set of String) IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.
@@ -152,7 +153,7 @@ Required:
 Optional:
 
 - `metric` (String) The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel Defaults to `EstimatedWaitTime`.
-- `queue_id` (String) The ID of the queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified.
+- `queue_id` (String) The ID of the queue being evaluated for this rule. For rule 1, this is always be the current queue, so no queue id should be specified for the first rule.
 - `wait_seconds` (Number) The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified. Defaults to `2`.
 
 <a id="nestedblock--conditional_group_routing_rules--groups"></a>
@@ -171,17 +172,13 @@ Required:
 Required:
 
 - `backup_queue_id` (String) Direct Routing default backup queue id.
-- `call_inbound_flow_id` (String) Id of the Direct Routing inbound call flow IVR.
-- `email_inbound_flow_id` (String) Id of the Direct Routing inbound email flow.
-- `message_inbound_flow_id` (String) Id of the Direct Routing inbound message flow.
-- `voicemail_flow_id` (String) Id of the in-queue call flow used for collecting voicemails and converting to ACD voicemail.
 
 Optional:
 
 - `agent_wait_seconds` (Number) The queue default time a Direct Routing interaction will wait for an agent before it goes to configured backup. Defaults to `60`.
-- `call_enabled` (Boolean) Boolean indicating if Direct Routing calls are enabled. Defaults to `true`.
-- `email_enabled` (Boolean) Boolean indicating if Direct Routing emails are enabled. Defaults to `true`.
-- `message_enabled` (Boolean) Boolean indicating if Direct Routing messages are enabled. Defaults to `true`.
+- `call_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for calls. Defaults to `true`.
+- `email_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for emails. Defaults to `true`.
+- `message_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for messages. Defaults to `true`.
 - `wait_for_agent` (Boolean) Boolean indicating if Direct Routing interactions should wait for the targeted agent by default. Defaults to `false`.
 
 

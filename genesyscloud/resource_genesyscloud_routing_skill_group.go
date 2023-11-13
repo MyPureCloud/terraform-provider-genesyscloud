@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 type SkillGroupsRequest struct {
@@ -561,7 +561,7 @@ func organizeMemberDivisionIdsForRead(schemaList, apiList []string, divisionId s
 		return schemaList
 	} else {
 		// if hcl & api lists are the same but with different ordering - set with original ordering
-		if lists.ListsAreEquivalent(schemaList, apiList) {
+		if lists.AreEquivalent(schemaList, apiList) {
 			return schemaList
 		} else {
 			return apiList

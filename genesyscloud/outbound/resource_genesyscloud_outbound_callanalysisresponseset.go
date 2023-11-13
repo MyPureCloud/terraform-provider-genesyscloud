@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 var (
@@ -389,4 +389,38 @@ func flattenSdkReaction(sdkReaction platformclientv2.Reaction) *schema.Set {
 	reactionMap["reaction_type"] = *sdkReaction.ReactionType
 	reactionSet.Add(reactionMap)
 	return reactionSet
+}
+
+func GenerateOutboundCallAnalysisResponseSetResource(resourceId string, name string, beepDetectionEnabled string, responsesBlock string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
+	name                   = "%s"
+	beep_detection_enabled = %s
+	%s
+}
+`, resourceId, name, beepDetectionEnabled, responsesBlock)
+}
+
+func GenerateCarsResponsesBlock(nestedBlocks ...string) string {
+	return fmt.Sprintf(`
+	responses {
+		%s
+	}
+`, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateCarsResponse(identifier string, reactionType string, name string, data string) string {
+	if name != "" {
+		name = fmt.Sprintf(`name = "%s"`, name)
+	}
+	if data != "" {
+		data = fmt.Sprintf(`data = "%s"`, data)
+	}
+	return fmt.Sprintf(`
+		%s {
+			reaction_type = "%s"
+			%s
+			%s
+		}
+`, identifier, reactionType, name, data)
 }

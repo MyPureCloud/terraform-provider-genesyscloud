@@ -4,7 +4,7 @@ import (
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 // flattenOutboundWrapupCodeMappings maps objects and flags lists come back ordered differently than what is defined by the user in their config
@@ -36,7 +36,7 @@ func flattenOutboundWrapupCodeMappings(d *schema.ResourceData, sdkWrapupcodemapp
 				if mMap["wrapup_code_id"].(string) == sdkId {
 					currentMap := make(map[string]interface{}, 0)
 					currentMap["wrapup_code_id"] = sdkId
-					if lists.ListsAreEquivalent(schemaFlags, sdkFlags) {
+					if lists.AreEquivalent(schemaFlags, sdkFlags) {
 						currentMap["flags"] = lists.StringListToInterfaceList(schemaFlags)
 					} else {
 						currentMap["flags"] = lists.StringListToInterfaceList(sdkFlags)

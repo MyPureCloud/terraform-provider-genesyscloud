@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
@@ -32,7 +32,7 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 					defintionResource,
 					name1,
 					units[2],
-					nullValue,
+					NullValue,
 					"5",
 					defaultTypes[0],
 					"true",
@@ -45,7 +45,7 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
 						"default_objective_type", defaultTypes[0]),
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
-						"enabled", trueValue),
+						"enabled", TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
 						"unit", units[2]),
 				),
@@ -69,7 +69,7 @@ func TestAccResourceEmployeePerformanceExternalMetricsDefintions(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
 						"default_objective_type", defaultTypes[1]),
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
-						"enabled", falseValue),
+						"enabled", FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,
 						"unit", units[0]),
 					resource.TestCheckResourceAttr("genesyscloud_employeeperformance_externalmetrics_definitions."+defintionResource,

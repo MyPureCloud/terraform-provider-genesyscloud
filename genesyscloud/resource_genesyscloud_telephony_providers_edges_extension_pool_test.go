@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 type extensionPoolStruct struct {
@@ -42,7 +42,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 					extensionPoolResource1,
 					extensionPoolStartNumber1,
 					extensionPoolEndNumber1,
-					nullValue, // No description
+					NullValue, // No description
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "start_number", extensionPoolStartNumber1),

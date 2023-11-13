@@ -29,7 +29,7 @@ func TestAccDataSourceUser(t *testing.T) {
 				) + generateUserDataSource(
 					userDataSource,
 					"genesyscloud_user."+userResource+".email",
-					nullValue,
+					NullValue,
 					"genesyscloud_user."+userResource,
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -44,7 +44,7 @@ func TestAccDataSourceUser(t *testing.T) {
 					userName,
 				) + generateUserDataSource(
 					userDataSource,
-					nullValue,
+					NullValue,
 					"genesyscloud_user."+userResource+".name",
 					"genesyscloud_user."+userResource,
 				),

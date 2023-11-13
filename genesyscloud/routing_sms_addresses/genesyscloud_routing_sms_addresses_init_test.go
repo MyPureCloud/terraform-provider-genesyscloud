@@ -7,11 +7,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const (
-	trueValue  = "true"
-	falseValue = "false"
-)
-
 var providerDataSources map[string]*schema.Resource
 var providerResources map[string]*schema.Resource
 

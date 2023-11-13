@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v112/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func TestAccResourceIdpOnelogin(t *testing.T) {
@@ -26,13 +26,13 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert1)),
 					uri1,
 					uri2,
-					nullValue, // Not disabled
+					NullValue, // Not disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_onelogin.onelogin", "certificates", testCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "target_uri", uri2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", FalseValue),
 				),
 			},
 			{
@@ -41,13 +41,13 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert2)),
 					uri2,
 					uri1,
-					trueValue, // disabled
+					TrueValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_onelogin.onelogin", "certificates", testCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", TrueValue),
 				),
 			},
 			{
@@ -56,14 +56,14 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
 					uri2,
 					uri1,
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_onelogin.onelogin", "certificates", testCert1),
 					ValidateStringInArray("genesyscloud_idp_onelogin.onelogin", "certificates", testCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", FalseValue),
 				),
 			},
 			{
@@ -72,14 +72,14 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert1)),
 					uri2,
 					uri1,
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_onelogin.onelogin", "certificates", testCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "certificates.#", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", FalseValue),
 				),
 			},
 			{
@@ -88,7 +88,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
 					uri2,
 					uri1,
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_onelogin.onelogin", "certificates", testCert1),
@@ -96,7 +96,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "certificates.#", "2"),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "target_uri", uri1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", FalseValue),
 				),
 			},
 			{
