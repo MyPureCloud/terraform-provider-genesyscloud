@@ -34,6 +34,8 @@ pipeline {
             steps {
                 echo 'Installing dependencies'
                 sh 'go version'
+                sh 'go mod download'
+                sh 'go build -v .'
             }
 	   }
 
