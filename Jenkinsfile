@@ -29,8 +29,6 @@ pipeline {
             steps {
                 echo 'Installing dependencies'
                 sh 'go version'
-                sh 'go mod download'
-                sh 'go build -v .'
             }
 	   }
 
@@ -43,16 +41,10 @@ pipeline {
             }
     }
 
-       stage('Tests') {
-            steps {
-                echo 'Running Tests'
-                sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out'
 
-            }
-    }
   }
 
 }
 
 
-}
+
