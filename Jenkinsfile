@@ -3,7 +3,7 @@ pipeline {
     agent {
         node{
         label "dev_mesos_v2"
-        customWorkspace "${JOB_NAME}-${currentBuild.number}"
+        //customWorkspace "${JOB_NAME}-${currentBuild.number}"
         }
     }
 
@@ -37,7 +37,7 @@ pipeline {
                 sh 'ls'
                 sh 'go version'
                 sh 'go mod download'
-                sh 'go build'
+                sh 'go build -x'
             }
 	   }
 
