@@ -2,15 +2,15 @@
 pipeline {
     agent {
         node{
-        label "dev_mesos_v2"
+        label "dev_mesos_large_v2"
         }
     }
 
     environment {
         CREDENTIALS_ID  = "GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECERET"
         GOPATH = "$HOME/go"
-        PATH = "$PATH:$GOPATH/bin"
-		    GENESYSCLOUD_REGION = "us-east-1"
+        //PATH = "$PATH:$GOPATH/bin"
+		GENESYSCLOUD_REGION = "us-east-1"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
         GO120MODULE= 'on'
@@ -38,6 +38,7 @@ pipeline {
                 sh 'ls'
                 sh 'go version'
                 sh 'go mod download'
+                sh 'go build -v .'
             }
 	   }
 
