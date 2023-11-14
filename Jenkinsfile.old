@@ -16,12 +16,9 @@ pipeline {
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
       }
+      
   stages {
       
-
-
-
-
        stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies'

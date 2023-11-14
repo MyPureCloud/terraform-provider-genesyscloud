@@ -3,6 +3,7 @@ pipeline {
     agent {
         node{
         label "dev_mesos_v2"
+        customWorkspace "${JOB_NAME}-${currentBuild.number}"
         }
     }
 
@@ -12,6 +13,9 @@ pipeline {
 		GENESYSCLOUD_REGION = "us-east-1"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
+        GONOPROXY = "none"
+        JFROGBASE = "purecloud.jfrog.io/artifactory/api/go/genesys-go"
+        GOPROXY = "https://${JFROG_USR}:${JFROG_PWD}@${JFROGBASE},https://proxy.golang.org,direct"
     }
     tools {
         go 'Go 1.20'
@@ -43,6 +47,13 @@ pipeline {
             steps {
                 echo 'Check Terraform Installation'
                 sh 'terraform -version'
+
+            }
+    }
+        stage('Running Tests') {
+            steps {
+                echo 'Running Tests'
+                sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out'
 
             }
     }
