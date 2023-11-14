@@ -9,7 +9,7 @@ pipeline {
 
     environment {
         CREDENTIALS_ID  = "GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECERET"
-        GOPATH = "${HOME}/${LANGUAGE}"
+        GOPATH = "$HOME/go"
 		GENESYSCLOUD_REGION = "us-east-1"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
