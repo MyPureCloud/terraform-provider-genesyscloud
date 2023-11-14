@@ -25,7 +25,7 @@ pipeline {
 
     stages {
         
-        stage('Load and Set Credentials') {
+        /*stage('Load and Set Credentials') {
             steps {
                 script{
                 withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
@@ -34,7 +34,7 @@ pipeline {
                 }
                 }
             }
-        }
+        }*/
        stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies'
@@ -54,11 +54,17 @@ pipeline {
     }
         stage('Running Tests') {
             steps {
-                echo 'Running Tests'
-                sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out'
+
+                echo 'Attempting to Run Tests'
+                withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
+                    {
+                        echo 'Loading Genesys OAuth Credentials'
+                        sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out'
+
+                    }
 
             }
-    }
+        }
 
 
   }
