@@ -29,6 +29,7 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
   }
   interaction_type = "chat" // Possible values: chat, email, twitter
   substitutions {
+    id            = "sample_id"
     description   = "Sample description"
     default_value = "Sample default value"
   }
