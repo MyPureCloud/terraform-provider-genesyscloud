@@ -18,8 +18,10 @@ import (
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
+	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	obSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	obwm "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	recMediaRetPolicy "terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
@@ -30,6 +32,7 @@ import (
 	station "terraform-provider-genesyscloud/genesyscloud/station"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	team "terraform-provider-genesyscloud/genesyscloud/team"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
@@ -111,6 +114,8 @@ func registerResources() {
 	obAttemptLimit.SetRegistrar(regInstance)                //Registering outbound attempt limit
 	obCampaign.SetRegistrar(regInstance)                    //Registering outbound campaign
 	obContactList.SetRegistrar(regInstance)                 //Registering outbound contact list
+	obSequence.SetRegistrar(regInstance)                    //Registering outbound sequence
+	obCampaignRule.SetRegistrar(regInstance)                //Registering outbound campaignrule
 	scripts.SetRegistrar(regInstance)                       //Registering Scripts
 	smsAddresses.SetRegistrar(regInstance)                  //Registering routing sms addresses
 	integration.SetRegistrar(regInstance)                   //Registering integrations
@@ -124,8 +129,8 @@ func registerResources() {
 	workbin.SetRegistrar(regInstance)                       //Registering task management workbin
 	workitemSchema.SetRegistrar(regInstance)                //Registering task management workitem schema
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
+	team.SetRegistrar(regInstance)                          //Registering team
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
-
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

@@ -197,7 +197,7 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 
 	log.Printf("getAllPhonesFn:: Listing all of the non-deleted phone ids and names that we actually retrieved")
 	for _, phone := range allPhones {
-		log.Printf("getAllPhonesFn::  Retrieved phone id %s with phone name: %s\n", phone.Id, phone.Name)
+		log.Printf("getAllPhonesFn::  Retrieved phone id %s with phone name: %s\n", *phone.Id, *phone.Name)
 	}
 
 	return &allPhones, nil
@@ -221,7 +221,7 @@ func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platfo
 		return nil, resp, err
 	}
 
-	log.Printf("getPhoneByIdFn:: Successfully retrieved individual phone record id %s with phone name %s.\n", phone.Id, phone.Name)
+	log.Printf("getPhoneByIdFn:: Successfully retrieved individual phone record id %s with phone name %s.\n", *phone.Id, *phone.Name)
 	return phone, resp, nil
 }
 

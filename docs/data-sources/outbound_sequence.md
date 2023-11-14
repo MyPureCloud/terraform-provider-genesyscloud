@@ -3,12 +3,12 @@
 page_title: "genesyscloud_outbound_sequence Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Outbound Sequence. Select a Outbound Sequence by name.
+  Genesys Cloud outbound sequence data source. Select an outbound sequence by name
 ---
 
 # genesyscloud_outbound_sequence (Data Source)
 
-Data source for Genesys Cloud Outbound Sequence. Select a Outbound Sequence by name.
+Genesys Cloud outbound sequence data source. Select an outbound sequence by name
 
 ## Example Usage
 
@@ -23,7 +23,7 @@ data "genesyscloud_outbound_sequence" "example_outbound_sequence" {
 
 ### Required
 
-- `name` (String) Outbound Sequence name.
+- `name` (String) Outbound Sequence name
 
 ### Read-Only
 

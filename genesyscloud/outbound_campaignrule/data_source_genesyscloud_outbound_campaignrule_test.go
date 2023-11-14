@@ -1,4 +1,4 @@
-package outbound
+package outbound_campaignrule
 
 import (
 	"fmt"
@@ -75,8 +75,8 @@ data "genesyscloud_auth_division_home" "home" {}
 					generateOutboundCampaignRule(
 						campaignRuleResourceId,
 						campaignRuleName,
-						FalseValue,
-						FalseValue,
+						gcloud.FalseValue,
+						gcloud.FalseValue,
 						generateCampaignRuleEntity(
 							[]string{"genesyscloud_outbound_campaign." + campaign1ResourceId + ".id"},
 							[]string{},
@@ -96,7 +96,7 @@ data "genesyscloud_auth_division_home" "home" {}
 							"turnOnCampaign",
 							[]string{"genesyscloud_outbound_campaign." + campaign2ResourceId + ".id"},
 							[]string{},
-							FalseValue,
+							gcloud.FalseValue,
 							generateCampaignRuleParameters(
 								"lessThan",
 								"0.5",
