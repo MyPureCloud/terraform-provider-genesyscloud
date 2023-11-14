@@ -12,8 +12,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
-const nullValue = "null"
-
 func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolResource1 := "test-didpool1"
 	didPoolStartPhoneNumber1 := "+14175540014"
@@ -44,9 +42,9 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 					didPoolResource1,
 					didPoolStartPhoneNumber1,
 					didPoolEndPhoneNumber1,
-					nullValue, // No description
-					nullValue, // No comments
-					nullValue, // No provider
+					gcloud.NullValue, // No description
+					gcloud.NullValue, // No comments
+					gcloud.NullValue, // No provider
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceId, "start_phone_number", didPoolStartPhoneNumber1),

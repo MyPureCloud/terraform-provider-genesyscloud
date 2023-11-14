@@ -31,14 +31,14 @@ func TestAccDataSourceIntegration(t *testing.T) {
 				// Create with config
 				Config: GenerateIntegrationResource(
 					inteResource1,
-					nullValue, //Empty intended_state, default value is "DISABLED"
+					gcloud.NullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
-					generateIntegrationConfig(
+					GenerateIntegrationConfig(
 						strconv.Quote(inteName1),
-						nullValue, //Empty notes
-						"",        //Empty credential ID
-						nullValue, //Empty properties
-						nullValue, //Empty advanced JSON
+						gcloud.NullValue, //Empty notes
+						"",               //Empty credential ID
+						gcloud.NullValue, //Empty properties
+						gcloud.NullValue, //Empty advanced JSON
 					),
 					// No config block
 				) + generateIntegrationDataSource(inteResource2,

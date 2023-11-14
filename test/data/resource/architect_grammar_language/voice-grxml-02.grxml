@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<grammar version="1.0"
+   xmlns="http://www.w3.org/2001/06/grammar"
+   mode="voice"
+   xml:lang="en-US"
+   tag-format="swi-semantics/1.0"
+   root="ROOT">
+
+   <rule id="ROOT" scope="public">
+      <one-of>
+
+         <!-- checking-->
+         <item>
+            <one-of>
+               <item>
+                  <item repeat="0-1">
+                     <one-of>
+                        <item>a</item>
+                        <item>the</item>
+                        <item>my</item>
+                     </one-of>
+                  </item>
+                  <item>
+                     <one-of>
+                        <item>checking</item>
+                        <item>check</item>
+                     </one-of>
+                  </item>
+                  <item repeat="0-1">account</item>
+                  <item repeat="0-1">please</item>
+               </item>
+            </one-of>
+            <tag> SWI_meaning = "checking" </tag>
+         </item>
+
+         <!-- savings-->
+         <item>
+            <one-of>
+               <item>
+                  <item repeat="0-1">
+                     <one-of>
+                        <item>a</item>
+                        <item>the</item>
+                        <item>my</item>
+                     </one-of>
+                  </item>
+                  <item>
+                     <one-of>
+                        <item>savings</item>
+                        <item>saving</item>
+                     </one-of>
+                  </item>
+                  <item repeat="0-1">account</item>
+                  <item repeat="0-1">please</item>
+               </item>
+            </one-of>
+            <tag> SWI_meaning = "savings" </tag>
+         </item>
+
+         <item>
+             <one-of>
+                <item>
+                   <item repeat="0-1">
+                      <one-of>
+                         <item>b</item>
+                         <item>and</item>
+                         <item>they</item>
+                      </one-of>
+                   </item>
+                   <item>
+                      <one-of>
+                         <item>checking</item>
+                         <item>check</item>
+                      </one-of>
+                   </item>
+                   <item repeat="0-1">account</item>
+                   <item repeat="0-1">please</item>
+                </item>
+             </one-of>
+             <tag> SWI_meaning = "checking" </tag>
+          </item>
+      </one-of>
+   </rule>
+
+</grammar>

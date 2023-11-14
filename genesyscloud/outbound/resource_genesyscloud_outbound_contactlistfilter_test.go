@@ -28,11 +28,11 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		columnType            = "numeric"
 		operator              = "EQUALS"
 		predicateValue        = "+12345123456"
-		inverted              = falseValue
+		inverted              = FalseValue
 		rangeMin              = "1"
 		rangeMax              = "10"
-		minInclusive          = trueValue
-		maxInclusive          = falseValue
+		minInclusive          = TrueValue
+		maxInclusive          = FalseValue
 		rangeInSet            = []string{"a"}
 
 		nameUpdated           = "Test CLF " + uuid.NewString()
@@ -41,28 +41,28 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		columnTypeUpdated     = "alphabetic"
 		operatorUpdated       = "CONTAINS"
 		predicateValueUpdated = "XYZ"
-		invertedUpdated       = trueValue
+		invertedUpdated       = TrueValue
 		rangeMinUpdated       = "2"
 		rangeMaxUpdated       = "12"
-		minInclusiveUpdated   = falseValue
-		maxInclusiveUpdated   = trueValue
+		minInclusiveUpdated   = FalseValue
+		maxInclusiveUpdated   = TrueValue
 		rangeInSetUpdated     = []string{"a", "b"}
 	)
 
 	contactListResource := obContactList.GenerateOutboundContactList(
 		contactListResourceId,
 		contactListName,
-		nullValue,
-		nullValue,
+		NullValue,
+		NullValue,
 		[]string{},
 		[]string{strconv.Quote(column), strconv.Quote(columnUpdated)},
-		nullValue,
-		nullValue,
-		nullValue,
+		NullValue,
+		NullValue,
+		NullValue,
 		obContactList.GeneratePhoneColumnsBlock(
 			column,
 			"cell",
-			nullValue,
+			NullValue,
 		),
 	)
 
@@ -71,14 +71,14 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: contactListResource + generateOutboundContactListFilter(
+				Config: contactListResource + GenerateOutboundContactListFilter(
 					resourceId,
 					name,
 					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 					"",
-					generateOutboundContactListFilterClause(
+					GenerateOutboundContactListFilterClause(
 						"",
-						generateOutboundContactListFilterPredicates(
+						GenerateOutboundContactListFilterPredicates(
 							column,
 							columnType,
 							operator,
@@ -97,14 +97,14 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 				),
 			},
 			{
-				Config: contactListResource + generateOutboundContactListFilter(
+				Config: contactListResource + GenerateOutboundContactListFilter(
 					resourceId,
 					name,
 					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 					filterType,
-					generateOutboundContactListFilterClause(
+					GenerateOutboundContactListFilterClause(
 						filterType,
-						generateOutboundContactListFilterPredicates(
+						GenerateOutboundContactListFilterPredicates(
 							column,
 							columnType,
 							operator,
@@ -139,14 +139,14 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 				),
 			},
 			{
-				Config: contactListResource + generateOutboundContactListFilter(
+				Config: contactListResource + GenerateOutboundContactListFilter(
 					resourceId,
 					nameUpdated,
 					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 					filterTypeUpdated,
-					generateOutboundContactListFilterClause(
+					GenerateOutboundContactListFilterClause(
 						filterType,
-						generateOutboundContactListFilterPredicates(
+						GenerateOutboundContactListFilterPredicates(
 							column,
 							columnType,
 							operator,
@@ -161,9 +161,9 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 							),
 						),
 					),
-					generateOutboundContactListFilterClause(
+					GenerateOutboundContactListFilterClause(
 						filterTypeUpdated,
-						generateOutboundContactListFilterPredicates(
+						GenerateOutboundContactListFilterPredicates(
 							column,
 							columnType,
 							operator,
@@ -171,7 +171,7 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 							inverted,
 							"",
 						),
-						generateOutboundContactListFilterPredicates(
+						GenerateOutboundContactListFilterPredicates(
 							columnUpdated,
 							columnTypeUpdated,
 							operatorUpdated,
@@ -223,14 +223,14 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 				),
 			},
 			{
-				Config: contactListResource + generateOutboundContactListFilter(
+				Config: contactListResource + GenerateOutboundContactListFilter(
 					resourceId,
 					name,
 					"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 					"",
-					generateOutboundContactListFilterClause(
+					GenerateOutboundContactListFilterClause(
 						"",
-						generateOutboundContactListFilterPredicates(
+						GenerateOutboundContactListFilterPredicates(
 							column,
 							columnType,
 							operator,
@@ -256,73 +256,6 @@ func TestAccResourceOutboundContactListFilter(t *testing.T) {
 		},
 		CheckDestroy: testVerifyOutboundContactListFilterDestroyed,
 	})
-}
-
-func generateOutboundContactListFilter(
-	resourceId string,
-	name string,
-	contactListId string,
-	filterType string,
-	nestedBlocks ...string,
-) string {
-	if filterType != "" {
-		filterType = fmt.Sprintf(`filter_type = "%s"`, filterType)
-	}
-	return fmt.Sprintf(`
-resource "genesyscloud_outbound_contactlistfilter" "%s" {
-	name            = "%s"
-	contact_list_id = %s
-	%s
-	%s
-}
-`, resourceId, name, contactListId, filterType, strings.Join(nestedBlocks, "\n"))
-}
-
-func generateOutboundContactListFilterClause(filterType string, nestedBlocks ...string) string {
-	if filterType != "" {
-		filterType = fmt.Sprintf(`filter_type = "%s"`, filterType)
-	}
-	return fmt.Sprintf(`
-	clauses {
-		%s
-		%s
-	}
-`, filterType, strings.Join(nestedBlocks, "\n"))
-}
-
-func generateOutboundContactListFilterPredicates(
-	column string,
-	columnType string,
-	operator string,
-	value string,
-	inverted string,
-	varRangeBlock string,
-) string {
-	if column != "" {
-		column = fmt.Sprintf(`column = "%s"`, column)
-	}
-	if columnType != "" {
-		columnType = fmt.Sprintf(`column_type = "%s"`, columnType)
-	}
-	if operator != "" {
-		operator = fmt.Sprintf(`operator = "%s"`, operator)
-	}
-	if value != "" {
-		value = fmt.Sprintf(`value = "%s"`, value)
-	}
-	if inverted != "" {
-		inverted = fmt.Sprintf(`inverted = %s`, inverted)
-	}
-	return fmt.Sprintf(`
-		predicates {
-			%s
-			%s
-			%s
-			%s
-			%s	
-			%s
-		}
-`, column, columnType, operator, value, inverted, varRangeBlock)
 }
 
 func generatePredicateVarRangeBlock(

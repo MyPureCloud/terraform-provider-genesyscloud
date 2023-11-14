@@ -1,17 +1,15 @@
 package telephony_providers_edges_did
 
 import (
+	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	"testing"
-)
 
-const (
-	nullValue = "null"
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceDidBasic(t *testing.T) {
@@ -26,6 +24,15 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 		didDataRes              = "didData"
 	)
 
+	// did pool cleanup
+	defer func() {
+		if _, err := gcloud.AuthorizeSdk(); err != nil {
+			return
+		}
+		ctx := context.TODO()
+		_ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
+	}()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
@@ -36,9 +43,9 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 					ResourceID:       didPoolRes,
 					StartPhoneNumber: didPoolStartPhoneNumber,
 					EndPhoneNumber:   didPoolEndPhoneNumber,
-					Description:      nullValue, // No description
-					Comments:         nullValue, // No comments
-					PoolProvider:     nullValue, // No provider
+					Description:      gcloud.NullValue, // No description
+					Comments:         gcloud.NullValue, // No comments
+					PoolProvider:     gcloud.NullValue, // No provider
 				}) + archIvr.GenerateIvrConfigResource(&archIvr.IvrConfigStruct{
 					ResourceID:  ivrConfigRes,
 					Name:        ivrConfigName,

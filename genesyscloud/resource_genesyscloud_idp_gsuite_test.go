@@ -28,15 +28,15 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 					generateStringArray(strconv.Quote(testCert1)),
 					uri1,
 					uri2,
-					nullValue, // No relying party ID
-					nullValue, // Not disabled
+					NullValue, // No relying party ID
+					NullValue, // Not disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", testCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", ""),
-					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", FalseValue),
 				),
 			},
 			{
@@ -46,14 +46,14 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID1),
-					trueValue, // disabled
+					TrueValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", testCert2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", relyingPartyID1),
-					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", trueValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", TrueValue),
 				),
 			},
 			{
@@ -63,7 +63,7 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", testCert1),
@@ -71,7 +71,7 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", relyingPartyID2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", FalseValue),
 				),
 			},
 			{
@@ -81,7 +81,7 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", testCert1),
@@ -89,7 +89,7 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", relyingPartyID2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", FalseValue),
 				),
 			},
 			{
@@ -99,7 +99,7 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
-					falseValue, // disabled
+					FalseValue, // disabled
 				),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", testCert1),
@@ -108,7 +108,7 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", relyingPartyID2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", FalseValue),
 				),
 			},
 			{

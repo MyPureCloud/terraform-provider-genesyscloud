@@ -30,7 +30,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTrunkBaseSettingsResourceWithCustomAttrs(
+				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 					trunkBaseSettingsRes,
 					name1,
 					description1,
@@ -41,7 +41,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 						name1,
 						"1m",
 						"25",
-						falseValue,
+						FalseValue,
 						[]string{strconv.Quote("audio/pcmu")}),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -49,17 +49,17 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "description", description1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_meta_base_id", trunkMetaBaseId),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_type", trunkType),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", FalseValue),
 					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name1),
 					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "1m"),
 					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "25"),
-					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", falseValue),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", FalseValue),
 					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/pcmu"}, ",")),
 				),
 			},
 			// Update with new name, description and properties
 			{
-				Config: generateTrunkBaseSettingsResourceWithCustomAttrs(
+				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 					trunkBaseSettingsRes,
 					name2,
 					description2,
@@ -69,7 +69,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 					generateTrunkBaseSettingsProperties(name2,
 						"2m",
 						"50",
-						trueValue,
+						TrueValue,
 						[]string{strconv.Quote("audio/opus")}),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -77,11 +77,11 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "description", description2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_meta_base_id", trunkMetaBaseId),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_type", trunkType),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", falseValue),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", FalseValue),
 					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name2),
 					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_max_dial_timeout", "2m"),
 					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_transport_sip_dscp_value", "50"),
-					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", trueValue),
+					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_disconnect_on_idle_rtp", TrueValue),
 					validateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_media_codec", strings.Join([]string{"audio/opus"}, ",")),
 				),
 			},
@@ -116,25 +116,6 @@ func testVerifyTrunkBaseSettingsDestroyed(state *terraform.State) error {
 	}
 	//Success. TrunkBaseSettings destroyed
 	return nil
-}
-
-func generateTrunkBaseSettingsResourceWithCustomAttrs(
-	trunkBaseSettingsRes,
-	name,
-	description,
-	trunkMetaBaseId,
-	trunkType string,
-	managed bool,
-	otherAttrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "%s" {
-		name = "%s"
-		description = "%s"
-		trunk_meta_base_id = "%s"
-		trunk_type = "%s"
-		managed = %v
-		%s
-	}
-	`, trunkBaseSettingsRes, name, description, trunkMetaBaseId, trunkType, managed, strings.Join(otherAttrs, "\n"))
 }
 
 func generateTrunkBaseSettingsProperties(settingsName, trunkMaxDialTimeout, trunkTransportSipDscpValue, trunkMediaDisconnectOnIdleRtp string, trunkMediaCodec []string) string {

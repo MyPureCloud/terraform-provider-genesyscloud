@@ -15,7 +15,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
-const nullValue = "null"
+const NullValue = "null"
 
 func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 
@@ -37,13 +37,13 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
-					nullValue,
-					nullValue,
-					nullValue,
+					NullValue,
+					NullValue,
+					NullValue,
 					[]string{},
 					generateOutboundDncListEntriesBlock(
 						[]string{strconv.Quote("+353747474747")},
-						nullValue,
+						NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -60,13 +60,13 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
-					nullValue,
-					nullValue,
-					nullValue,
+					NullValue,
+					NullValue,
+					NullValue,
 					[]string{},
 					generateOutboundDncListEntriesBlock(
 						[]string{strconv.Quote("+353112222222"), strconv.Quote("+353221111111")},
-						nullValue,
+						NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -83,21 +83,21 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
-					nullValue,
-					nullValue,
-					nullValue,
+					NullValue,
+					NullValue,
+					NullValue,
 					[]string{},
 					generateOutboundDncListEntriesBlock(
 						[]string{strconv.Quote("+353112222222"), strconv.Quote("+353221111111")},
-						nullValue,
+						NullValue,
 					),
 					generateOutboundDncListEntriesBlock(
 						[]string{strconv.Quote("+353112222222"), strconv.Quote("+353808080808")},
-						nullValue,
+						NullValue,
 					),
 					generateOutboundDncListEntriesBlock(
 						[]string{strconv.Quote("+353232323232")},
-						nullValue,
+						NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -154,9 +154,9 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
-					nullValue,
-					nullValue,
-					nullValue,
+					NullValue,
+					NullValue,
+					NullValue,
 					[]string{},
 					"",
 				),
@@ -173,10 +173,10 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					resourceID,
 					nameUpdated,
 					dncSourceTypeUpdate,
-					nullValue,
+					NullValue,
 					strconv.Quote(dncLoginId),
 					strconv.Quote(campaignId),
-					nullValue,
+					NullValue,
 					dncCodes,
 					"",
 				),
@@ -197,10 +197,10 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					resourceID,
 					nameUpdated,
 					dncSourceTypeUpdate,
-					nullValue,
+					NullValue,
 					strconv.Quote(dncLoginId),
 					strconv.Quote(campaignId),
-					nullValue,
+					NullValue,
 					dncCodesUpdated,
 					"",
 				),
@@ -250,9 +250,9 @@ func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 					resourceID,
 					name,
 					dncSourceType,
-					nullValue,
-					nullValue,
-					nullValue,
+					NullValue,
+					NullValue,
+					NullValue,
 					strconv.Quote(gryphonLicense),
 					[]string{},
 					"",
@@ -275,30 +275,6 @@ func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 	})
 }
 
-func generateOutboundDncList(
-	resourceId string,
-	name string,
-	dncSourceType string,
-	contactMethod string,
-	loginId string,
-	campaignId string,
-	licenseId string,
-	dncCodes []string,
-	nestedBlocks ...string) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_outbound_dnclist" "%s" {
-	name            = "%s"
-	dnc_source_type = "%s"
-	contact_method  = %s
-	login_id        = %s
-	license_id      = %s
-	campaign_id     = %s
-	dnc_codes = [%s]
-    %s
-}
-`, resourceId, name, dncSourceType, contactMethod, loginId, licenseId, campaignId, strings.Join(dncCodes, ", "), strings.Join(nestedBlocks, "\n"))
-}
-
 func generateOutboundDncListEntriesBlock(phoneNumbers []string, expirationDate string) string {
 	return fmt.Sprintf(`
 	entries {
@@ -306,16 +282,6 @@ func generateOutboundDncListEntriesBlock(phoneNumbers []string, expirationDate s
 		phone_numbers   = [%s]
 	}
 `, expirationDate, strings.Join(phoneNumbers, ", "))
-}
-
-func generateOutboundDncListBasic(resourceId string, name string) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_outbound_dnclist" "%s" {
-	name            = "%s"
-	dnc_source_type = "rds"	
-	contact_method  = "Phone"
-}
-`, resourceId, name)
 }
 
 func checkPhoneNumbersAddedToDncList(resource string, numberOfPhoneNumbersAdded int) resource.TestCheckFunc {
@@ -356,4 +322,28 @@ func testVerifyDncListDestroyed(state *terraform.State) error {
 	}
 	// Success. All dnc lists destroyed
 	return nil
+}
+
+func generateOutboundDncList(
+	resourceId string,
+	name string,
+	dncSourceType string,
+	contactMethod string,
+	loginId string,
+	campaignId string,
+	licenseId string,
+	dncCodes []string,
+	nestedBlocks ...string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_outbound_dnclist" "%s" {
+	name            = "%s"
+	dnc_source_type = "%s"
+	contact_method  = %s
+	login_id        = %s
+	license_id      = %s
+	campaign_id     = %s
+	dnc_codes = [%s]
+    %s
+}
+`, resourceId, name, dncSourceType, contactMethod, loginId, licenseId, campaignId, strings.Join(dncCodes, ", "), strings.Join(nestedBlocks, "\n"))
 }

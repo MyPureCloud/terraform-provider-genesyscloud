@@ -21,10 +21,6 @@ The resource_genesyscloud_outbound_ruleset_test.go contains all of the test case
 tests for outbound_ruleset.
 */
 
-const falseValue = "false"
-const trueValue = "true"
-const nullValue = "null"
-
 func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 	t.Parallel()
 	var (
@@ -35,7 +31,7 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 		previewModeColumnName     = "Cell"
 		previewModeAcceptedValues = []string{strconv.Quote(previewModeColumnName)}
 		columnNames               = []string{strconv.Quote("Cell"), strconv.Quote("Home")}
-		automaticTimeZoneMapping  = falseValue
+		automaticTimeZoneMapping  = gcloud.FalseValue
 
 		queueResource1 = "test-queue-1"
 		queueResource2 = "test-queue-2"
@@ -55,13 +51,13 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					nullValue,
-					nullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -83,13 +79,13 @@ func TestAccResourceOutboundRulesetNoRules(t *testing.T) {
 				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId2,
 					contactListName2,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					nullValue,
-					nullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -125,7 +121,7 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 		previewModeColumnName     = "Cell"
 		previewModeAcceptedValues = []string{strconv.Quote(previewModeColumnName)}
 		columnNames               = []string{strconv.Quote("Cell"), strconv.Quote("Home")}
-		automaticTimeZoneMapping  = falseValue
+		automaticTimeZoneMapping  = gcloud.FalseValue
 
 		ruleSetResourceId = "rule-set"
 		ruleSetName1      = "Test Rule Set " + uuid.NewString()
@@ -139,13 +135,13 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					nullValue,
-					nullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -184,13 +180,13 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					nullValue,
-					nullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",
@@ -255,13 +251,13 @@ func TestAccResourceOutboundRuleset(t *testing.T) {
 				Config: obContactList.GenerateOutboundContactList(
 					contactListResourceId1,
 					contactListName1,
-					nullValue,
+					gcloud.NullValue,
 					strconv.Quote(previewModeColumnName),
 					previewModeAcceptedValues,
 					columnNames,
 					automaticTimeZoneMapping,
-					nullValue,
-					nullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					obContactList.GeneratePhoneColumnsBlock(
 						"Cell",
 						"cell",

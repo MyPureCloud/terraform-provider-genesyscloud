@@ -32,7 +32,7 @@ func TestAccDataSourceSmsAddressProdOrg(t *testing.T) {
 					"New York",
 					"AA34HH",
 					"US",
-					falseValue,
+					gcloud.FalseValue,
 				) + generateSmsAddressDataSource(
 					addressData,
 					name,
@@ -71,7 +71,7 @@ func TestAccDataSourceSmsAddressTestOrg(t *testing.T) {
 					"region-1",
 					"postal-code-1",
 					"country-code-1",
-					trueValue,
+					gcloud.TrueValue,
 				) + generateSmsAddressDataSource(
 					addressData,
 					name,

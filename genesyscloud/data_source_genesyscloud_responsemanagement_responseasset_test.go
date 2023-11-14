@@ -29,7 +29,7 @@ func TestAccDataSourceResponseManagementResponseAsset(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateResponseManagementResponseAssetDataSource(dataSourceId, fileName, "genesyscloud_responsemanagement_responseasset."+resourceId) +
-					generateResponseManagementResponseAssetResource(resourceId, fileName, nullValue),
+					generateResponseManagementResponseAssetResource(resourceId, fileName, NullValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_responsemanagement_responseasset."+dataSourceId, "id",
 						"genesyscloud_responsemanagement_responseasset."+resourceId, "id"),

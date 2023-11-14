@@ -21,7 +21,7 @@ func TestAccDataSourceLineBaseSettings(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Creating a phone base settings will result in a line base settings of the same name being created
-				Config: generatePhoneBaseSettingsResourceWithCustomAttrs(
+				Config: GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					phoneBaseSettingsName,
 					"phoneBaseSettings description",

@@ -42,7 +42,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 					extensionPoolResource1,
 					extensionPoolStartNumber1,
 					extensionPoolEndNumber1,
-					nullValue, // No description
+					NullValue, // No description
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "start_number", extensionPoolStartNumber1),

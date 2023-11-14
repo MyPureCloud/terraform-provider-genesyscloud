@@ -13,7 +13,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
-var trueValue = "true"
+var TrueValue = "true"
 
 /*
 This test can only pass in a test org because it requires an active provisioned sms phone number
@@ -37,26 +37,26 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 
 		callableTimeSetResourceId = "callable_time_set"
 		callableTimeSetName       = "Test CTS " + uuid.NewString()
-		callableTimeSetResource   = generateOutboundCallabletimeset(
+		callableTimeSetResource   = GenerateOutboundCallabletimeset(
 			callableTimeSetResourceId,
 			callableTimeSetName,
-			generateCallableTimesBlock(
+			GenerateCallableTimesBlock(
 				"Europe/Dublin",
-				generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
-				generateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
+				GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+				GenerateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
 			),
 		)
 
 		contactListResource = obContactList.GenerateOutboundContactList(
 			contactListResourceId,
 			contactListName,
-			nullValue,
-			nullValue,
+			NullValue,
+			NullValue,
 			[]string{},
 			[]string{strconv.Quote(column1), strconv.Quote(column2)},
-			falseValue,
-			nullValue,
-			nullValue,
+			FalseValue,
+			NullValue,
+			NullValue,
 			obContactList.GeneratePhoneColumnsBlock(
 				column1,
 				"cell",
@@ -64,14 +64,14 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 			),
 		)
 
-		contactListFilterResource = generateOutboundContactListFilter(
+		contactListFilterResource = GenerateOutboundContactListFilter(
 			clfResourceId,
 			clfName,
 			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 			"",
-			generateOutboundContactListFilterClause(
+			GenerateOutboundContactListFilterClause(
 				"",
-				generateOutboundContactListFilterPredicates(
+				GenerateOutboundContactListFilterPredicates(
 					column1,
 					"alphabetic",
 					"EQUALS",
@@ -113,7 +113,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 						"",
 						"10",
-						falseValue,
+						FalseValue,
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceId+".id",
 						[]string{},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceId + ".id"},
@@ -122,15 +122,15 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 							column1,
 							smsConfigSenderSMSPhoneNumber,
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column1,
 							"",
 							"",
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column2,
 							"DESC",
-							trueValue,
+							TrueValue,
 						),
 					) + generateOutboundMessagingCampaignDataSource(
 					dataSourceId,

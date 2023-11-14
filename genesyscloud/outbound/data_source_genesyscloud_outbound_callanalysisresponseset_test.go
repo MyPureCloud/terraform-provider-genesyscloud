@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-var falseValue = "false"
+var FalseValue = "false"
 
 func TestAccDataSourceCallAnalysisResponseSet(t *testing.T) {
 	var (
@@ -24,10 +24,10 @@ func TestAccDataSourceCallAnalysisResponseSet(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundCallAnalysisResponseSetResource(
+				Config: GenerateOutboundCallAnalysisResponseSetResource(
 					resourceId,
 					responseSetName,
-					falseValue,
+					FalseValue,
 					"",
 				) + generateOutboundCallAnalysisResponseSetDataSource(
 					dataSourceId,

@@ -533,7 +533,7 @@ func addGroupMembers(d *schema.ResourceData, membersToAdd []string, groupsAPI *p
 }
 
 func GenerateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
-	return generateGroupResource(resourceID, name, nullValue, nullValue, nullValue, trueValue, nestedBlocks...)
+	return generateGroupResource(resourceID, name, NullValue, NullValue, NullValue, TrueValue, nestedBlocks...)
 }
 
 func generateGroupResource(
