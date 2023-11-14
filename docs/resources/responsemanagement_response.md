@@ -118,6 +118,10 @@ Required:
 <a id="nestedblock--substitutions"></a>
 ### Nested Schema for `substitutions`
 
+Required:
+
+- `id` (String) Response substitution identifier.
+
 Optional:
 
 - `default_value` (String) Response substitution default value.
