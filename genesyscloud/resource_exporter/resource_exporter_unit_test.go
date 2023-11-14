@@ -129,12 +129,6 @@ func TestUnitSanitizeResourceNamesOptimized(t *testing.T) {
 
 	sanitizer := NewSanitizerProvider()
 
-	//Make sure we unset the GENESYS_SANITIZER_OPTIMIZED environment variable after the test runs
-	unsetEnv := func() {
-		os.Unsetenv("GENESYS_SANITIZER_OPTIMIZED")
-	}
-	defer unsetEnv()
-
 	sanitizer.S.Sanitize(metaMap)
 
 	assertions := [9]TestAssertion{
