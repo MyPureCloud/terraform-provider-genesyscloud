@@ -10,6 +10,9 @@ pipeline {
         CREDENTIALS_ID  = "GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECERET"
         GOPATH = "$HOME/go"
         //PATH = "$PATH:$GOPATH/bin"
+		TF_ACC = "1"
+        TF_LOG = "DEBUG"
+        TF_LOG_PATH = "../test.log"
 		GENESYSCLOUD_REGION = "us-east-1"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
