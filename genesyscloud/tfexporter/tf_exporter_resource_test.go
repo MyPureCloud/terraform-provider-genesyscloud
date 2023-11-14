@@ -123,7 +123,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_messagingcampaign"] = ob.ResourceOutboundMessagingCampaign()
 	providerResources["genesyscloud_outbound_sequence"] = obSequence.ResourceOutboundSequence()
 	providerResources["genesyscloud_outbound_dnclist"] = ob.ResourceOutboundDncList()
-	providerResources["genesyscloud_outbound_campaignrule"] = obCampaignRule.ResourceOutboundCampaignRule()
+	providerResources["genesyscloud_outbound_campaignrule"] = obCampaignRule.ResourceOutboundCampaignrule()
 	providerResources["genesyscloud_outbound_wrapupcodemappings"] = obw.ResourceOutboundWrapUpCodeMappings()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_responsemanagement_response"] = gcloud.ResourceResponsemanagementResponse()
