@@ -107,10 +107,6 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 		resourcedata.SetNillableValue(d, "properties", schemaPropsPtr)
 		resourcedata.SetNillableValue(d, "enabled", schema.Enabled)
 
-		if schemaPropsPtr != nil {
-			log.Printf("PRINCE: read: %s", *schemaPropsPtr)
-		}
-
 		log.Printf("Read task management workitem schema %s %s", d.Id(), *schema.Name)
 		return cc.CheckState()
 	})

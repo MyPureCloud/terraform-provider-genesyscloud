@@ -2,7 +2,6 @@ package task_management_workitem_schema
 
 import (
 	"encoding/json"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
@@ -46,13 +45,11 @@ func BuildSdkWorkitemSchema(d *schema.ResourceData, version *int) (*platformclie
 	// Custom attributes for the schema
 	if d.Get("properties") != "" {
 		var properties map[string]interface{}
-		log.Printf("PRINCE: %s", d.Get("properties").(string))
 		if err := json.Unmarshal([]byte(d.Get("properties").(string)), &properties); err != nil {
 			return nil, err
 		}
 
 		dataSchema.JsonSchema.Properties = &properties
-		log.Printf("PRINCE: creation: %s", properties)
 	}
 
 	return dataSchema, nil

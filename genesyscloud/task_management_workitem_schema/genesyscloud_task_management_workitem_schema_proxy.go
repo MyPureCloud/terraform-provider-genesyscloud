@@ -97,6 +97,7 @@ func (p *taskManagementProxy) deleteTaskManagementWorkitemSchema(ctx context.Con
 	return p.deleteTaskManagementWorkitemSchemaAttr(ctx, p, id)
 }
 
+// getTaskManagementWorkitemSchemaDeletedStatus gets the deleted status of a Genesys Cloud task management workitem schema
 func (p *taskManagementProxy) getTaskManagementWorkitemSchemaDeletedStatus(ctx context.Context, schemaId string) (isDeleted bool, statusCode int, err error) {
 	return p.getTaskManagementWorkitemSchemaDeletedStatusAttr(ctx, p, schemaId)
 }
@@ -179,6 +180,7 @@ func deleteTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 	return resp.StatusCode, nil
 }
 
+// getTaskManagementWorkitemSchemaDeletedStatusFn is an implementation function to get the 'deleted' status of a Genesys Cloud task management workitem schema
 func getTaskManagementWorkitemSchemaDeletedStatusFn(ctx context.Context, p *taskManagementProxy, schemaId string) (isDeleted bool, statusCode int, err error) {
 	apiClient := &p.clientConfig.APIClient
 
