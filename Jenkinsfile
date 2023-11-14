@@ -34,6 +34,7 @@ pipeline {
        stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies'
+                sh 'ls'
                 sh 'go version'
                 sh 'go mod download'
                 sh 'go build'
