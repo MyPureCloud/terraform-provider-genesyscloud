@@ -24,13 +24,15 @@ func getOutboundWrapupCodeMappings(ctx context.Context, clientConfig *platformcl
 	proxy := getOutboundWrapupCodeMappingsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	_, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
+	wucMappings, _, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 	if err != nil {
-		if gcloud.IsStatus404(resp) {
-			// Don't export if config doesn't exist
-			return resources, nil
-		}
 		return nil, diag.Errorf("Failed to get wrap-up code mappings: %v", err)
+	}
+
+	// Do not export the mappings if the `defaultset` doesn't exist (has default values - which are all flags
+	// toggled off) AND if there are no custom mappings set.
+	if len(*wucMappings.Mapping) == 0 && len(*wucMappings.DefaultSet) > 0 {
+		return resources, nil
 	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "wrapupcodemappings"}
@@ -87,9 +89,14 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 		sdkWrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read Outbound Wrap-up Code Mappings: %s", err))
+				return retry.RetryableError(fmt.Errorf("failed to read Outbound Wrap-up Code Mappings: %s", err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read Outbound Wrap-up Code Mappings: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Wrap-up Code Mappings: %s", err))
+		}
+
+		wrapupCodes, err := proxy.getAllWrapupCodes(ctx)
+		if err != nil {
+			return retry.NonRetryableError(fmt.Errorf("failed to get wrapup codes: %s", err))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings())
@@ -108,8 +115,13 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 			}
 		}
 
+		existingWrapupCodes := make([]string, 0)
+		for _, wuc := range *wrapupCodes {
+			existingWrapupCodes = append(existingWrapupCodes, *wuc.Id)
+		}
+
 		if sdkWrapupCodeMappings.Mapping != nil {
-			d.Set("mappings", flattenOutboundWrapupCodeMappings(d, sdkWrapupCodeMappings))
+			d.Set("mappings", flattenOutboundWrapupCodeMappings(d, sdkWrapupCodeMappings, &existingWrapupCodes))
 		}
 
 		log.Print("Read Outbound Wrap-up Code Mappings")

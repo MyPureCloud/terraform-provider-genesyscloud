@@ -11,22 +11,28 @@ var internalProxy *outboundWrapupCodeMappingsProxy
 
 type getAllOutboundWrapupCodeMappingsFunc func(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (wrapupcodeMappings *platformclientv2.Wrapupcodemapping, resp *platformclientv2.APIResponse, err error)
 type updateOutboundWrapUpCodeMappingsFunc func(ctx context.Context, p *outboundWrapupCodeMappingsProxy, outBoundWrappingCodes *platformclientv2.Wrapupcodemapping) (updatedWrapupCodeMappings *platformclientv2.Wrapupcodemapping, resp *platformclientv2.APIResponse, err error)
+type getAllWrapupCodesFunc func(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (updatedWrapupCodeMappings *[]platformclientv2.Wrapupcode, err error)
 
 type outboundWrapupCodeMappingsProxy struct {
 	clientConfig                         *platformclientv2.Configuration
 	outboundApi                          *platformclientv2.OutboundApi
+	routingApi                           *platformclientv2.RoutingApi
 	getAllOutboundWrapupCodeMappingsAttr getAllOutboundWrapupCodeMappingsFunc
 	updateOutboundWrapUpCodeMappingsAttr updateOutboundWrapUpCodeMappingsFunc
+	getAllWrapupCodesAttr                getAllWrapupCodesFunc
 }
 
 // newOutboundWrapupCodeMappingsProxy is a constructor to create a new outboundWrapupCodeMappingsProxy struct instance
 func newOutboundWrapupCodeMappingsProxy(clientConfig *platformclientv2.Configuration) *outboundWrapupCodeMappingsProxy {
-	api := platformclientv2.NewOutboundApiWithConfig(clientConfig)
+	outboundApi := platformclientv2.NewOutboundApiWithConfig(clientConfig)
+	routingApi := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 	return &outboundWrapupCodeMappingsProxy{
 		clientConfig:                         clientConfig,
-		outboundApi:                          api,
+		outboundApi:                          outboundApi,
+		routingApi:                           routingApi,
 		getAllOutboundWrapupCodeMappingsAttr: getAllOutboundWrapupCodeMappingsFn,
 		updateOutboundWrapUpCodeMappingsAttr: updateOutboundWrapUpCodeMappingsFn,
+		getAllWrapupCodesAttr:                getAllWrapupCodesFn,
 	}
 }
 
@@ -49,6 +55,11 @@ func (p *outboundWrapupCodeMappingsProxy) updateOutboundWrapUpCodeMappings(ctx c
 	return p.updateOutboundWrapUpCodeMappingsAttr(ctx, p, &outBoundWrapupCodes)
 }
 
+// getAllWrapupCodes gets all the wrapup codes in the org.  This is the struct implementation that should be consumed by everyone.
+func (p *outboundWrapupCodeMappingsProxy) getAllWrapupCodes(ctx context.Context) (updatedWrapupCodeMappings *[]platformclientv2.Wrapupcode, err error) {
+	return p.getAllWrapupCodesAttr(ctx, p)
+}
+
 // getAllOutboundWrapupCodeMappingsFn( is the implementation of the getAllOutboundWrapupCodeMappings call
 func getAllOutboundWrapupCodeMappingsFn(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (wrapupcodeMappings *platformclientv2.Wrapupcodemapping, resp *platformclientv2.APIResponse, err error) {
 	wrapupcodemappings, resp, err := p.outboundApi.GetOutboundWrapupcodemappings()
@@ -62,4 +73,35 @@ func updateOutboundWrapUpCodeMappingsFn(ctx context.Context, p *outboundWrapupCo
 		return nil, resp, fmt.Errorf("failed to update wrap-up code mappings: %s", err)
 	}
 	return w, resp, nil
+}
+
+// getAllWrapupCodesFn is the implementation of the getAllWrapupCodes call
+func getAllWrapupCodesFn(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (updatedWrapupCodeMappings *[]platformclientv2.Wrapupcode, err error) {
+	wucs := []platformclientv2.Wrapupcode{}
+	const pageSize = 100
+
+	wucList, _, err := p.routingApi.GetRoutingWrapupcodes(pageSize, 1, "", "", "", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, wuc := range *wucList.Entities {
+		wucs = append(wucs, wuc)
+	}
+
+	for pageNum := 2; pageNum <= *wucList.PageCount; pageNum++ {
+		wucList, _, err := p.routingApi.GetRoutingWrapupcodes(pageSize, 1, "", "", "", nil, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		if wucList.Entities == nil || len(*wucList.Entities) == 0 {
+			break
+		}
+
+		for _, wuc := range *wucList.Entities {
+			wucs = append(wucs, wuc)
+		}
+	}
+
+	return &wucs, nil
 }

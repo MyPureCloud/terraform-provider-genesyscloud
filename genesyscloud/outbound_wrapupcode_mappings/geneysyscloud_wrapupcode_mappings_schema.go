@@ -46,7 +46,7 @@ func ResourceOutboundWrapUpCodeMappings() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			`default_set`: {
 				Description: `The default set of wrap-up flags. These will be used if there is no entry for a given wrap-up code in the mapping.`,
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
@@ -55,7 +55,7 @@ func ResourceOutboundWrapUpCodeMappings() *schema.Resource {
 			},
 			`mappings`: {
 				Description: `A map from wrap-up code identifiers to a set of wrap-up flags.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeList,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -75,13 +75,6 @@ func ResourceOutboundWrapUpCodeMappings() *schema.Resource {
 						},
 					},
 				},
-			},
-			`placeholder`: {
-				Description:  `Placeholder data used internally by the provider.`,
-				Optional:     true,
-				Type:         schema.TypeString,
-				Default:      "***",
-				ValidateFunc: validation.StringIsNotEmpty,
 			},
 		},
 	}
