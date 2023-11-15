@@ -16,7 +16,7 @@ import (
 )
 
 /** Unit Test **/
-func TestUnitResourceArchitectCreate(t *testing.T) {
+func TestUnitResourceWorkitemSchemaCreate(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "Unit Test Schema"
 	tDescription := "CX as Code Unit Test Workitem Schema"
