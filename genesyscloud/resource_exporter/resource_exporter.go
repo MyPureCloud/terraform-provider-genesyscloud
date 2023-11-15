@@ -86,6 +86,12 @@ type ResourceExporter struct {
 	// By default zero values are removed from the config due to lack of "null" support in the plugin SDK
 	AllowZeroValues []string
 
+	// AllowEmptyArrays is a list of List attributes that should allow empty arrays in export.
+	// By default, empty arrays are removed but some array attributes may be required in the schema
+	// or depending on the API behavior better presented explicitly in the API as empty arrays.
+	// If the state has this as null or empty array, then the attribute will be returned as an empty array.
+	AllowEmptyArrays []string
+
 	// Some of our dependencies can not be exported properly because they have interdependencies between attributes.  You can
 	// define a map of custom attribute resolvers with an exporter.  See resource_genesyscloud_routing_queue for an example of how to define this.
 	// NOTE: CustomAttributeResolvers should be the exception and not the norm so use them when you have to do logic that will help you
@@ -166,6 +172,10 @@ func (r *ResourceExporter) ContainsNestedRefAttrs(attribute string) ([]string, b
 
 func (r *ResourceExporter) AllowForZeroValues(attribute string) bool {
 	return lists.ItemInSlice(attribute, r.AllowZeroValues)
+}
+
+func (r *ResourceExporter) AllowForEmptyArrays(attribute string) bool {
+	return lists.ItemInSlice(attribute, r.AllowEmptyArrays)
 }
 
 func (r *ResourceExporter) IsJsonEncodable(attribute string) bool {

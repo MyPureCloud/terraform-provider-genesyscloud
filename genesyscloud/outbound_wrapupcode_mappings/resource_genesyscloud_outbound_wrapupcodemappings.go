@@ -115,6 +115,8 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 			}
 		}
 
+		log.Printf("PRINCE: default_set: %v", d.Get("default_set"))
+
 		existingWrapupCodes := make([]string, 0)
 		for _, wuc := range *wrapupCodes {
 			existingWrapupCodes = append(existingWrapupCodes, *wuc.Id)

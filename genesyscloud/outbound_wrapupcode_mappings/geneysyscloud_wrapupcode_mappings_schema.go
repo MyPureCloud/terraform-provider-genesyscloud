@@ -28,6 +28,7 @@ func OutboundWrapupCodeMappingsExporter() *resourceExporter.ResourceExporter {
 				RefType: `genesyscloud_routing_wrapupcode`,
 			},
 		},
+		AllowEmptyArrays: []string{"default_set", "mappings.flags"},
 	}
 }
 

@@ -29,6 +29,8 @@ type JsonExporter struct {
 }
 
 func NewJsonExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, dirPath string, splitFilesByResource bool) *JsonExporter {
+	log.Printf("PRINCE: NewJsonExporter: %v", resourceTypesJSONMaps)
+
 	jsonExporter := &JsonExporter{
 		resourceTypesJSONMaps: resourceTypesJSONMaps,
 		unresolvedAttrs:       unresolvedAttrs,

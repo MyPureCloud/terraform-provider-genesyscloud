@@ -2,6 +2,7 @@ package tfexporter
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -270,19 +271,30 @@ func createHCLObject(v map[string]interface{}) zclconfCty.Value {
 
 func handleInterfaceArray(body *hclwrite.Body, k string, v []interface{}) {
 	var listItems []zclconfCty.Value
+
+	log.Printf("PRINCE: handleInterfaceArray: handling %s", k)
+
+	nestedBlock := false
 	for _, val := range v {
+		log.Printf("PRINCE: handleInterfaceArray: handling val %v", val)
 		// k { ... }
 		if valMap, ok := val.(map[string]interface{}); ok {
 			block := body.AppendNewBlock(k, nil)
 			for key, value := range valMap {
 				addValue(block.Body(), key, value)
 			}
+			nestedBlock = true
 			// k = [ ... ]
 		} else {
 			listItems = append(listItems, getCtyValue(val))
+			nestedBlock = false
 		}
 	}
 	if len(listItems) > 0 {
+		log.Printf("PRINCE: handleInterfaceArray: %s listitems > 0", k)
 		body.SetAttributeValue(k, zclconfCty.ListVal(listItems))
+	} else if len(listItems) == 0 && !nestedBlock {
+		body.SetAttributeValue(k, zclconfCty.ListValEmpty(zclconfCty.NilType))
+		log.Printf("PRINCE: handleInterfaceArray: %s listitems == 0", k)
 	}
 }
