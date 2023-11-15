@@ -2,7 +2,7 @@
 pipeline {
     agent {
         node{
-        label "dev_mesos_large_v2"
+            label "dev_mesos_large_v2"
         }
     }
 
@@ -24,38 +24,47 @@ pipeline {
     }
 
     stages {
-        
-       stage('Install Dependencies') {
+      
+        stage('Install Dependencies & Build') {
             steps {
                 echo 'Installing dependencies'
-                sh 'ls'
                 sh 'go version'
                 sh 'go mod download'
                 sh 'go build -v .'
             }
-	   }
+	    }
 
-       stage('Terraform Check') {
+        stage('Terraform Check') {
             steps {
                 echo 'Check Terraform Installation'
                 sh 'terraform -version'
 
             }
-    }
-        stage('Running Tests') {
+        }
+
+        stage('Tests') {
             steps {
+            
+                catchError(buildResult: 'SUCCESS', stageResult:'FAILURE'){
+                    echo 'Attempting to Run Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
+                        {
+                            echo 'Loading Genesys OAuth Credentials'
+                            sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 8 -coverprofile=coverage.out'
+                            
+                        }
 
-                echo 'Attempting to Run Tests'
-                withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
-                    {
-                        echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out'
-
-                    }
+                }
 
             }
         }
 
+        stage('Generate Readable Coverage Report') {
+            steps {
+                sh 'go tool cover -html coverage.out cover.html'
 
-  }
+            }
+        }
+
+    } 
 }
