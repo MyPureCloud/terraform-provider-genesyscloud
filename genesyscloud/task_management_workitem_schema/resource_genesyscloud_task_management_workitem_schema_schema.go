@@ -6,6 +6,8 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -40,9 +42,10 @@ func ResourceTaskManagementWorkitemSchema() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "The name of the Workitem Schema",
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:  "The name of the Workitem Schema",
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringLenBetween(1, 50),
 			},
 			"description": {
 				Description: "The description of the Workitem Schema",
@@ -68,8 +71,9 @@ func ResourceTaskManagementWorkitemSchema() *schema.Resource {
 // TaskManagementWorkitemSchemaExporter returns the resourceExporter object used to hold the genesyscloud_task_management_workitem_schema exporter's config
 func TaskManagementWorkitemSchemaExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllTaskManagementWorkitemSchemas),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		GetResourcesFunc:     gcloud.GetAllWithPooledClient(getAllTaskManagementWorkitemSchemas),
+		RefAttrs:             map[string]*resourceExporter.RefAttrSettings{},
+		JsonEncodeAttributes: []string{"properties"},
 	}
 }
 
