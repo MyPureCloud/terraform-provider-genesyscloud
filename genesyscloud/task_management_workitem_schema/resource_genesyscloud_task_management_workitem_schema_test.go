@@ -3,12 +3,15 @@ package task_management_workitem_schema
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
@@ -113,42 +116,65 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 			varType:     CHECKBOX,
 		}
 
-		// TODO: enum and tag type fields
+		// enum field
+		attr10 = customField{
+			title:       "Custom_enum_attribute",
+			description: "Custom_enum_attribute description",
+			varType:     ENUM,
+			additionalProps: map[string]interface{}{
+				"enum": []interface{}{"option_1", "option_2"},
+				"_enumProperties": map[string]interface{}{
+					"option_1": map[string]interface{}{
+						"title":     "Option 1",
+						"_disabled": false,
+					},
+					"option_2": map[string]interface{}{
+						"title":     "Option 2",
+						"_disabled": false,
+					},
+				},
+			},
+		}
+
+		// tag field
+		attr11 = customField{
+			title:       "Custom_tag_attribute",
+			description: "Custom_tag_attribute description",
+			varType:     TAG,
+			additionalProps: map[string]interface{}{
+				"items": map[string]interface{}{
+					"minLength": 1,
+					"maxLength": 100,
+				},
+				"minItems":    0,
+				"maxItems":    10,
+				"uniqueItems": true,
+			},
+		}
 
 		customProperties = gcloud.GenerateJsonEncodedProperties(
 			generateJsonSchemaProperty(attr1.title, attr1.description, attr1.varType,
-				generateStrLengthFields(attr1.additionalProps["minLength"].(int), attr1.additionalProps["maxLength"].(int))),
+				generateAdditionalProperties(attr1.additionalProps)),
 			generateJsonSchemaProperty(attr2.title, attr2.description, attr2.varType,
-				generateStrLengthFields(attr2.additionalProps["minLength"].(int), attr2.additionalProps["maxLength"].(int))),
+				generateAdditionalProperties(attr2.additionalProps)),
 			generateJsonSchemaProperty(attr3.title, attr3.description, attr3.varType,
-				generateStrLengthFields(attr3.additionalProps["minLength"].(int), attr3.additionalProps["maxLength"].(int))),
+				generateAdditionalProperties(attr3.additionalProps)),
 			generateJsonSchemaProperty(attr4.title, attr4.description, attr4.varType,
-				generateStrLengthFields(attr4.additionalProps["minLength"].(int), attr4.additionalProps["maxLength"].(int))),
+				generateAdditionalProperties(attr4.additionalProps)),
 
 			generateJsonSchemaProperty(attr5.title, attr5.description, attr5.varType,
-				generateNumLimitsFields(attr5.additionalProps["minimum"].(int), attr5.additionalProps["maximum"].(int))),
+				generateAdditionalProperties(attr5.additionalProps)),
 			generateJsonSchemaProperty(attr6.title, attr6.description, attr6.varType,
-				generateNumLimitsFields(attr6.additionalProps["minimum"].(int), attr6.additionalProps["maximum"].(int))),
+				generateAdditionalProperties(attr6.additionalProps)),
 
 			generateJsonSchemaProperty(attr7.title, attr7.description, attr7.varType, ""),
 			generateJsonSchemaProperty(attr8.title, attr8.description, attr8.varType, ""),
 			generateJsonSchemaProperty(attr9.title, attr9.description, attr9.varType, ""),
-		)
 
-		config1 = generateWorkitemSchemaResource(
-			schemaResId,
-			schemaName,
-			schemaDescription,
-			customProperties,
-			gcloud.TrueValue,
-		)
-
-		config2 = generateWorkitemSchemaResource(
-			schemaResId,
-			schemaName,
-			schemaDescription,
-			customProperties,
-			gcloud.FalseValue,
+			generateJsonSchemaProperty(attr10.title, attr10.description, attr10.varType,
+				generateAdditionalProperties(attr10.additionalProps)),
+			generateJsonSchemaProperty(attr11.title, attr11.description, attr11.varType,
+				generateAdditionalProperties(attr11.additionalProps)),
 		)
 	)
 
@@ -156,33 +182,69 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
+			// Barebones schema. No custom fields
 			{
-				Config: config1,
+				Config: generateWorkitemSchemaResourceBasic(
+					schemaResId,
+					schemaName,
+					schemaDescription,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "name", schemaName),
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "description", schemaDescription),
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", gcloud.TrueValue),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr1),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr2),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr3),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr4),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr5),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr6),
+				),
+			},
+			// Update with fields
+			{
+				Config: generateWorkitemSchemaResource(
+					schemaResId,
+					schemaName,
+					schemaDescription,
+					customProperties,
+					gcloud.TrueValue,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "name", schemaName),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "description", schemaDescription),
+					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", gcloud.TrueValue),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr1.title+"_"+attr1.varType, attr1),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr2.title+"_"+attr2.varType, attr2),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr3.title+"_"+attr3.varType, attr3),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr4.title+"_"+attr4.varType, attr4),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr5.title+"_"+attr5.varType, attr5),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr6.title+"_"+attr6.varType, attr6),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr7.title+"_"+attr7.varType, attr7),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr8.title+"_"+attr8.varType, attr8),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr9.title+"_"+attr9.varType, attr9),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr10.title+"_"+attr10.varType, attr10),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr11.title+"_"+attr11.varType, attr11),
 				),
 			},
 			// Disable the schema
 			{
-				Config: config2,
+				Config: generateWorkitemSchemaResource(
+					schemaResId,
+					schemaName,
+					schemaDescription,
+					customProperties,
+					gcloud.FalseValue,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "name", schemaName),
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "description", schemaDescription),
 					resource.TestCheckResourceAttr(resourceName+"."+schemaResId, "enabled", gcloud.FalseValue),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr1),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr2),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr3),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr4),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr5),
-					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr6),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr1.title+"_"+attr1.varType, attr1),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr2.title+"_"+attr2.varType, attr2),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr3.title+"_"+attr3.varType, attr3),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr4.title+"_"+attr4.varType, attr4),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr5.title+"_"+attr5.varType, attr5),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr6.title+"_"+attr6.varType, attr6),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr7.title+"_"+attr7.varType, attr7),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr8.title+"_"+attr8.varType, attr8),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr9.title+"_"+attr9.varType, attr9),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr10.title+"_"+attr10.varType, attr10),
+					validateWorkitemSchemaField(resourceName+"."+schemaResId, attr11.title+"_"+attr11.varType, attr11),
 				),
 			},
 		},
@@ -222,23 +284,33 @@ func testVerifyTaskManagementWorkitemSchemaDestroyed(state *terraform.State) err
 	return nil
 }
 
-func validateWorkitemSchemaField(resourceName string, field customField) resource.TestCheckFunc {
-	fullFieldName := field.title + "_" + field.varType
-
+func validateWorkitemSchemaField(resourceName string, fieldName string, checkField customField) resource.TestCheckFunc {
+	// Tests for the dynamic properties of the custom field
 	additionalFieldsTest := []resource.TestCheckFunc{}
-	if field.additionalProps != nil {
-		for k, v := range field.additionalProps {
-			additionalFieldsTest = append(additionalFieldsTest,
-				gcloud.ValidateValueInJsonAttr(resourceName, "properties", fullFieldName+"."+k, fmt.Sprint(v)),
-			)
+	if checkField.additionalProps != nil {
+		for k, v := range checkField.additionalProps {
+			vv := reflect.ValueOf(v)
+			switch vv.Kind() {
+			case reflect.Slice:
+				// If slice, do a test for each element
+				for _, elem := range v.([]interface{}) {
+					additionalFieldsTest = append(additionalFieldsTest,
+						gcloud.ValidateValueInJsonAttr(resourceName, "properties", fieldName+"."+k, fmt.Sprint(elem)),
+					)
+				}
+			default:
+				additionalFieldsTest = append(additionalFieldsTest,
+					gcloud.ValidateValueInJsonAttr(resourceName, "properties", fieldName+"."+k, fmt.Sprint(v)),
+				)
+			}
 		}
 	}
 	additionalFieldsComposeTest := resource.ComposeTestCheckFunc(additionalFieldsTest...)
 
 	return resource.ComposeTestCheckFunc(
-		gcloud.ValidateValueInJsonAttr(resourceName, "properties", fullFieldName+".title", field.title),
-		gcloud.ValidateValueInJsonAttr(resourceName, "properties", fullFieldName+".description", field.description),
-		validateCustomFieldType(resourceName, fullFieldName, field.varType),
+		gcloud.ValidateValueInJsonAttr(resourceName, "properties", fieldName+".title", checkField.title),
+		gcloud.ValidateValueInJsonAttr(resourceName, "properties", fieldName+".description", checkField.description),
+		validateCustomFieldType(resourceName, fieldName, checkField.varType),
 		additionalFieldsComposeTest,
 	)
 }
@@ -283,23 +355,36 @@ func generateJsonSchemaProperty(title, description, coreType, otherFields string
             "$ref" = "#/definitions/%s"
           }
         ],
-        "title" = "%s",
-        "description" = "%s",
+        "title" = "%s"
+        "description" = "%s"
         %s
 	}
 	`, title, coreType, coreType, title, description, otherFields)
 }
 
-func generateStrLengthFields(min int, max int) string {
-	return fmt.Sprintf(`"minLength": %v,
-		"maxLength": %v
-		`, min, max)
-}
-
-func generateNumLimitsFields(min int, max int) string {
-	return fmt.Sprintf(`"minimum": %v,
-		"maximum": %v
-		`, min, max)
+func generateAdditionalProperties(props map[string]interface{}) string {
+	ret := ""
+	for k, v := range props {
+		vv := reflect.ValueOf(v)
+		switch vv.Kind() {
+		case reflect.String:
+			ret += gcloud.GenerateMapProperty(k, strconv.Quote(v.(string)))
+		case reflect.Map:
+			ret += gcloud.GenerateMapAttr(k, generateAdditionalProperties(v.(map[string]interface{})))
+		case reflect.Slice:
+			ret += gcloud.GenerateJsonArrayPropertyEnquote(k, lists.InterfaceListToStrings(v.([]interface{}))...)
+		case reflect.Int:
+			fallthrough
+		case reflect.Float32:
+			fallthrough
+		case reflect.Float64:
+			fallthrough
+		case reflect.Bool:
+			ret += fmt.Sprintf("\"%s\" = %v \n", k, v)
+		}
+		ret += "\n"
+	}
+	return ret
 }
 
 func generateWorkitemSchemaResource(resourceId, name, description, properties, enabledStr string) string {

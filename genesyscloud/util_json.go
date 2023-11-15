@@ -92,7 +92,7 @@ func interfaceToString(val interface{}) string {
 	return fmt.Sprintf("%v", val)
 }
 
-func interfaceToJson(val interface{}) (string, error) {
+func InterfaceToJson(val interface{}) (string, error) {
 	j, err := json.Marshal(val)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal %v: %v", val, err)

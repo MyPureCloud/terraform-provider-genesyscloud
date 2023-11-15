@@ -28,7 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_task_management_workitem_schema"] = ResourceTaskManagementWorkitemSchema()
+	providerResources[resourceName] = ResourceTaskManagementWorkitemSchema()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -36,7 +36,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_task_management_workitem_schema"] = DataSourceTaskManagementWorkitemSchema()
+	providerDataSources[resourceName] = DataSourceTaskManagementWorkitemSchema()
 }
 
 // initTestresources initializes all test resources and data sources.
