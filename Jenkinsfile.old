@@ -5,9 +5,8 @@ pipeline {
     tools {
         go 'go'
     }
-            environment {
-        GENESYSCLOUD_OAUTHCLIENT_ID = credentials('GENESYSCLOUD_OAUTHCLIENT_ID')
-        GENESYSCLOUD_OAUTHCLIENT_SECRET = credentials('GENESYSCLOUD_OAUTHCLIENT_SECRET')
+    environment {
+        CREDENTIALS_ID  = "GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET" 
         GOPATH = "${JENKINS_HOME}/jobs/${JOB_NAME}/builds/${BUILD_ID}"
 		TF_ACC = "1"
         TF_LOG = "DEBUG"
@@ -15,35 +14,51 @@ pipeline {
 		GENESYSCLOUD_REGION = "us-east-1"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
-      }
+    }
       
   stages {
       
-       stage('Install Dependencies') {
+        stage('Install Dependencies & Build') {
             steps {
                 echo 'Installing dependencies'
                 sh 'go version'
                 sh 'go mod download'
                 sh 'go build -v .'
             }
-	   }
+	    }
 
-       stage('Terraform Check') {
+        stage('Terraform Check') {
             steps {
                 echo 'Check Terraform Installation'
-				//sh 'terraform init'
                 sh 'terraform -version'
 
             }
-    }
+        }
 
-       stage('Tests') {
+        stage('Tests') {
             steps {
-                echo 'Running Tests'
-                sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out'
+            
+                catchError(buildResult: 'SUCCESS', stageResult:'FAILURE'){
+                    echo 'Attempting to Run Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
+                        {
+                            echo 'Loading Genesys OAuth Credentials'
+                            sh 'go test -timeout 80m -v -cover ./genesyscloud/... -coverprofile=coverage.out'
+                            
+                        }
+
+                }
 
             }
-    }
-  }
+        }
+
+        stage('Generate Readable Coverage Report') {
+            steps {
+                sh 'go tool cover -html coverage.out cover.html'
+
+            }
+        }
+
+    } 
 
 }

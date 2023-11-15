@@ -16,7 +16,7 @@ pipeline {
 		GENESYSCLOUD_REGION = "us-east-1"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
-        GO120MODULE= 'on'
+        //GO120MODULE= 'on'
     }
     tools {
         go 'Go 1.20'
@@ -25,16 +25,6 @@ pipeline {
 
     stages {
         
-        /*stage('Load and Set Credentials') {
-            steps {
-                script{
-                withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
-                {
-                    echo 'Loading Genesys OAuth Credentials'
-                }
-                }
-            }
-        }*/
        stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies'
