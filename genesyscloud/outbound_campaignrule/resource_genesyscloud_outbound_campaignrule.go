@@ -37,7 +37,7 @@ func getAllAuthCampaignRules(ctx context.Context, clientConfig *platformclientv2
 
 func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := newOutboundCampaignruleProxy(sdkConfig)
+	proxy := getOutboundCampaignruleProxy(sdkConfig)
 
 	rule := getCampaignruleFromResourceData(d)
 
@@ -65,7 +65,7 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 
 func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := newOutboundCampaignruleProxy(sdkConfig)
+	proxy := getOutboundCampaignruleProxy(sdkConfig)
 	enabled := d.Get("enabled").(bool)
 
 	rule := getCampaignruleFromResourceData(d)
@@ -85,7 +85,7 @@ func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 
 func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := newOutboundCampaignruleProxy(sdkConfig)
+	proxy := getOutboundCampaignruleProxy(sdkConfig)
 
 	log.Printf("Reading Outbound Campaign Rule %s", d.Id())
 
@@ -105,7 +105,11 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 			d.Set("campaign_rule_entities", flattenCampaignRuleEntities(campaignRule.CampaignRuleEntities))
 		}
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "campaign_rule_conditions", campaignRule.CampaignRuleConditions, flattenCampaignRuleConditions)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "campaign_rule_actions", campaignRule.CampaignRuleActions, flattenCampaignRuleAction)
+		if campaignRule.CampaignRuleActions != nil {
+			d.Set("campaign_rule_actions", flattenCampaignRuleAction(campaignRule.CampaignRuleActions, flattenCampaignRuleActionEntities))
+		} else {
+			d.Set("campaign_rule_actions", nil)
+		}
 		resourcedata.SetNillableValue(d, "match_any_conditions", campaignRule.MatchAnyConditions)
 		resourcedata.SetNillableValue(d, "enabled", campaignRule.Enabled)
 
@@ -116,7 +120,7 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 
 func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := newOutboundCampaignruleProxy(sdkConfig)
+	proxy := getOutboundCampaignruleProxy(sdkConfig)
 
 	ruleEnabled := d.Get("enabled").(bool)
 	if ruleEnabled {

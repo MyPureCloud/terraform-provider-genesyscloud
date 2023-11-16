@@ -93,7 +93,6 @@ func (p *outboundCampaignruleProxy) deleteOutboundCampaignrule(ctx context.Conte
 
 // createOutboundCampaignruleFn is an implementation function for creating a Genesys Cloud outbound campaignrule
 func createOutboundCampaignruleFn(ctx context.Context, p *outboundCampaignruleProxy, outboundCampaignrule *platformclientv2.Campaignrule) (*platformclientv2.Campaignrule, error) {
-	fmt.Println("Campaign rule " + outboundCampaignrule.String())
 	rule, _, err := p.outboundApi.PostOutboundCampaignrules(*outboundCampaignrule)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create campaign rule %s", err)

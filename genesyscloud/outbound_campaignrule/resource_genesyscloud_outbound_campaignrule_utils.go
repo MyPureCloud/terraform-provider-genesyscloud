@@ -167,6 +167,7 @@ func flattenCampaignRuleConditions(campaignRuleConditions *[]platformclientv2.Ca
 	for _, currentSdkCondition := range *campaignRuleConditions {
 		campaignRuleConditionsMap := make(map[string]interface{})
 
+		resourcedata.SetMapValueIfNotNil(campaignRuleConditionsMap, "id", currentSdkCondition.Id)
 		resourcedata.SetMapValueIfNotNil(campaignRuleConditionsMap, "condition_type", currentSdkCondition.ConditionType)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(campaignRuleConditionsMap, "parameters", currentSdkCondition.Parameters, flattenRuleParameters)
 
@@ -175,7 +176,7 @@ func flattenCampaignRuleConditions(campaignRuleConditions *[]platformclientv2.Ca
 	return ruleConditionList
 }
 
-func flattenCampaignRuleAction(campaignRuleActions *[]platformclientv2.Campaignruleaction) []interface{} {
+func flattenCampaignRuleAction[T any](campaignRuleActions *[]platformclientv2.Campaignruleaction, actionEntitiesFunc func(*platformclientv2.Campaignruleactionentities) T) []interface{} {
 	if campaignRuleActions == nil {
 		return nil
 	}
@@ -189,7 +190,7 @@ func flattenCampaignRuleAction(campaignRuleActions *[]platformclientv2.Campaignr
 		resourcedata.SetMapValueIfNotNil(actionMap, "action_type", currentAction.ActionType)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionMap, "parameters", currentAction.Parameters, flattenRuleParameters)
 		if currentAction.CampaignRuleActionEntities != nil {
-			actionMap["campaign_rule_action_entities"] = flattenCampaignRuleActionEntities(currentAction.CampaignRuleActionEntities)
+			actionMap["campaign_rule_action_entities"] = actionEntitiesFunc(currentAction.CampaignRuleActionEntities)
 		}
 
 		ruleActionsList = append(ruleActionsList, actionMap)
