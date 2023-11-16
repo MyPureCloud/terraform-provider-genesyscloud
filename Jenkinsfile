@@ -9,14 +9,12 @@ pipeline {
     environment {
         CREDENTIALS_ID  = "GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECERET"
         GOPATH = "$HOME/go"
-        //PATH = "$PATH:$GOPATH/bin"
 		TF_ACC = "1"
         TF_LOG = "DEBUG"
         TF_LOG_PATH = "../test.log"
 		GENESYSCLOUD_REGION = "us-east-1"
         GENESYSCLOUD_SDK_DEBUG =  "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
-        //GO120MODULE= 'on'
     }
     tools {
         go 'Go 1.20'
@@ -25,7 +23,7 @@ pipeline {
 
     stages {
       
-        /*
+        
         stage('Install Dependencies & Build') {
             steps {
                 echo 'Installing dependencies'
@@ -33,7 +31,7 @@ pipeline {
                 sh 'go mod download'
                 sh 'go build -v .'
             }
-	    }*/
+	    }
 
         stage('Terraform Check') {
             steps {
@@ -42,7 +40,7 @@ pipeline {
 
             }
         }
-        /*
+        
         stage('Tests') {
             steps {
             
@@ -58,7 +56,7 @@ pipeline {
                 }
 
             }
-        }*/
+        }
 
         stage('Generate Readable Coverage Report') {
             steps {
@@ -66,6 +64,15 @@ pipeline {
 
             }
         }
+        
+
+        stage('Archive artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'cover.html', allowEmptyArchive: true
+
+            }
+        }
+
 
     } 
 }

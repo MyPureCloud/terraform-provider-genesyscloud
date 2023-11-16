@@ -17,7 +17,7 @@ pipeline {
     }
       
   stages {
-        /*
+        
         stage('Install Dependencies & Build') {
             steps {
                 echo 'Installing dependencies'
@@ -25,7 +25,7 @@ pipeline {
                 sh 'go mod download'
                 sh 'go build -v .'
             }
-	    }*/
+	    }
 
         stage('Terraform Check') {
             steps {
@@ -34,7 +34,7 @@ pipeline {
 
             }
         }
-        /*
+        
         stage('Tests') {
             steps {
             
@@ -50,7 +50,7 @@ pipeline {
                 }
 
             }
-        } */
+        } 
 
         stage('Generate Readable Coverage Report') {
             steps {
@@ -61,7 +61,7 @@ pipeline {
 
         stage('Archive artifacts') {
             steps {
-                archiveArtifacts artifacts: 'cover.html', onlyIfSuccessful: true
+                archiveArtifacts artifacts: 'cover.html', allowEmptyArchive: true
 
             }
         }
