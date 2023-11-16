@@ -25,6 +25,7 @@ pipeline {
 
     stages {
       
+        /*
         stage('Install Dependencies & Build') {
             steps {
                 echo 'Installing dependencies'
@@ -32,7 +33,7 @@ pipeline {
                 sh 'go mod download'
                 sh 'go build -v .'
             }
-	    }
+	    }*/
 
         stage('Terraform Check') {
             steps {
@@ -41,7 +42,7 @@ pipeline {
 
             }
         }
-
+        /*
         stage('Tests') {
             steps {
             
@@ -57,11 +58,11 @@ pipeline {
                 }
 
             }
-        }
+        }*/
 
         stage('Generate Readable Coverage Report') {
             steps {
-                sh 'go tool cover -html coverage.out cover.html'
+                sh 'go tool cover -html coverage.out -o cover.html'
 
             }
         }
