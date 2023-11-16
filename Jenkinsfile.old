@@ -59,6 +59,13 @@ pipeline {
             }
         }
 
+        stage('Archive artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'cover.html', onlyIfSuccessful: true
+
+            }
+        }
+
     } 
 
 }
