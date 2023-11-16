@@ -319,15 +319,11 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 		}
 
-		log.Printf("PRINCE: buildResourceConfigMap pre-sanitize: %v", jsonResult)
-
 		// Removes zero values and sets proper reference expressions
 		unresolved, _ := sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL)
 		if len(unresolved) > 0 {
 			g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
 		}
-
-		log.Printf("PRINCE: buildResourceConfigMap post-sanitize: %v", jsonResult)
 
 		exporters := *g.exporters
 		exporter := *exporters[resource.Type]
@@ -344,10 +340,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 				g.resourceTypesHCLBlocks[resource.Type] = make(resourceHCLBlock, 0)
 			}
 			g.resourceTypesHCLBlocks[resource.Type] = append(g.resourceTypesHCLBlocks[resource.Type], instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult))
-			log.Printf("PRINCE: hclblocks: %v", string(instanceStateToHCLBlock(resource.Type, resource.Name, jsonResult)))
 		}
-
-		log.Printf("PRINCE: buildResourceConfigMap final map: %v", jsonResult)
 
 		g.resourceTypesMaps[resource.Type][resource.Name] = jsonResult
 	}
@@ -734,11 +727,9 @@ func sanitizeConfigMap(
 		}
 
 		// Nil arrays will be turned into empty arrays if they're defined in AllowEmptyArrays.
-		// We do this after the sanitization of empty arrays to nil
+		// We do this after the initial sanitization of empty arrays to nil
 		// so this will cover both cases where the attribute on the state is: null or [].
-		log.Printf("PRINCE: currAttr: %v", currAttr)
 		if exporter.AllowForEmptyArrays(currAttr) {
-			log.Println("PRINCE: It is on AllowEmptyArrays")
 			if configMap[key] == nil {
 				configMap[key] = []interface{}{}
 			}
