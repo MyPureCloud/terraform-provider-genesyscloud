@@ -733,7 +733,8 @@ func sanitizeConfigMap(
 			removeZeroValues(key, configMap[key], configMap)
 		}
 
-		// Nil arrays will be turned into empty arrays. We do this after the sanitization of empty arrays to nil
+		// Nil arrays will be turned into empty arrays if they're defined in AllowEmptyArrays.
+		// We do this after the sanitization of empty arrays to nil
 		// so this will cover both cases where the attribute on the state is: null or [].
 		log.Printf("PRINCE: currAttr: %v", currAttr)
 		if exporter.AllowForEmptyArrays(currAttr) {
