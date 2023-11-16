@@ -376,7 +376,7 @@ func GenerateJsonSchemaDocStr(properties ...string) string {
 	)
 }
 
-func randString(length int) string {
+func RandString(length int) string {
 	rand.Seed(time.Now().UnixNano())
 
 	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
