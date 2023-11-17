@@ -17,6 +17,10 @@ type getAllWebDeploymentsConfigurationFunc func(ctx context.Context, p *webDeplo
 type getWebdeploymentsConfigurationVersionFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, id string, version string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error)
 type determineLatestVersionFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) string
 type deleteWebDeploymentConfigurationFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) (*platformclientv2.APIResponse, error)
+type getWebdeploymentsConfigurationVersionsDraftFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error)
+type createWebdeploymentsConfigurationFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationVersion platformclientv2.Webdeploymentconfigurationversion) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error)
+type createWebdeploymentsConfigurationVersionsDraftPublishFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error)
+type updateWebdeploymentsConfigurationVersionsDraftFunc func(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string, configurationVersion platformclientv2.Webdeploymentconfigurationversion) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error)
 
 func newWebDeploymentsConfigurationProxy(clientConfig *platformclientv2.Configuration) *webDeploymentsConfigurationProxy {
 	webDeploymentsConfigurationApi := platformclientv2.NewWebDeploymentsApiWithConfig(clientConfig)
@@ -25,10 +29,14 @@ func newWebDeploymentsConfigurationProxy(clientConfig *platformclientv2.Configur
 		clientConfig:      clientConfig,
 		webDeploymentsApi: webDeploymentsConfigurationApi,
 
-		getAllWebDeploymentConfigurationsAttr:     getAllWebDeploymentsConfigurationFn,
-		determineLatestVersionAttr:                determineLatestVersionFn,
-		getWebdeploymentsConfigurationVersionAttr: getWebdeploymentsConfigurationVersionFn,
-		deleteWebDeploymentConfigurationAttr:      deleteWebDeploymentConfigurationFn,
+		getAllWebDeploymentConfigurationsAttr:                     getAllWebDeploymentsConfigurationFn,
+		determineLatestVersionAttr:                                determineLatestVersionFn,
+		getWebdeploymentsConfigurationVersionAttr:                 getWebdeploymentsConfigurationVersionFn,
+		deleteWebDeploymentConfigurationAttr:                      deleteWebDeploymentConfigurationFn,
+		getWebdeploymentsConfigurationVersionsDraftAttr:           getWebdeploymentsConfigurationVersionsDraftFn,
+		createWebdeploymentsConfigurationAttr:                     createWebdeploymentsConfigurationFn,
+		createWebdeploymentsConfigurationVersionsDraftPublishAttr: createWebdeploymentsConfigurationVersionsDraftPublishFn,
+		updateWebdeploymentsConfigurationVersionsDraftAttr:        updateWebdeploymentsConfigurationVersionsDraftFn,
 	}
 }
 
@@ -43,10 +51,14 @@ type webDeploymentsConfigurationProxy struct {
 	clientConfig      *platformclientv2.Configuration
 	webDeploymentsApi *platformclientv2.WebDeploymentsApi
 
-	getAllWebDeploymentConfigurationsAttr     getAllWebDeploymentsConfigurationFunc
-	getWebdeploymentsConfigurationVersionAttr getWebdeploymentsConfigurationVersionFunc
-	determineLatestVersionAttr                determineLatestVersionFunc
-	deleteWebDeploymentConfigurationAttr      deleteWebDeploymentConfigurationFunc
+	getAllWebDeploymentConfigurationsAttr                     getAllWebDeploymentsConfigurationFunc
+	getWebdeploymentsConfigurationVersionAttr                 getWebdeploymentsConfigurationVersionFunc
+	determineLatestVersionAttr                                determineLatestVersionFunc
+	deleteWebDeploymentConfigurationAttr                      deleteWebDeploymentConfigurationFunc
+	getWebdeploymentsConfigurationVersionsDraftAttr           getWebdeploymentsConfigurationVersionsDraftFunc
+	createWebdeploymentsConfigurationAttr                     createWebdeploymentsConfigurationFunc
+	createWebdeploymentsConfigurationVersionsDraftPublishAttr createWebdeploymentsConfigurationVersionsDraftPublishFunc
+	updateWebdeploymentsConfigurationVersionsDraftAttr        updateWebdeploymentsConfigurationVersionsDraftFunc
 }
 
 func (p *webDeploymentsConfigurationProxy) getWebDeploymentsConfiguration(ctx context.Context) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, error) {
@@ -63,6 +75,22 @@ func (p *webDeploymentsConfigurationProxy) determineLatestVersion(ctx context.Co
 
 func (p *webDeploymentsConfigurationProxy) deleteWebDeploymentConfiguration(ctx context.Context, configurationId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteWebDeploymentConfigurationAttr(ctx, p, configurationId)
+}
+
+func (p *webDeploymentsConfigurationProxy) getWebdeploymentsConfigurationVersionsDraft(ctx context.Context, configurationId string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	return p.getWebdeploymentsConfigurationVersionsDraftAttr(ctx, p, configurationId)
+}
+
+func (p *webDeploymentsConfigurationProxy) createWebdeploymentsConfiguration(ctx context.Context, configurationVersion platformclientv2.Webdeploymentconfigurationversion) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	return p.createWebdeploymentsConfigurationAttr(ctx, p, configurationVersion)
+}
+
+func (p *webDeploymentsConfigurationProxy) createWebdeploymentsConfigurationVersionsDraftPublish(ctx context.Context, configurationId string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	return p.createWebdeploymentsConfigurationVersionsDraftPublishAttr(ctx, p, configurationId)
+}
+
+func (p *webDeploymentsConfigurationProxy) updateWebdeploymentsConfigurationVersionsDraft(ctx context.Context, configurationId string, configurationVersion platformclientv2.Webdeploymentconfigurationversion) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	return p.updateWebdeploymentsConfigurationVersionsDraftAttr(ctx, p, configurationId, configurationVersion)
 }
 
 func getAllWebDeploymentsConfigurationFn(ctx context.Context, p *webDeploymentsConfigurationProxy) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, error) {
@@ -121,4 +149,20 @@ func determineLatestVersionFn(ctx context.Context, p *webDeploymentsConfiguratio
 
 func deleteWebDeploymentConfigurationFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) (*platformclientv2.APIResponse, error) {
 	return p.webDeploymentsApi.DeleteWebdeploymentsConfiguration(configurationId)
+}
+
+func getWebdeploymentsConfigurationVersionsDraftFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	return p.webDeploymentsApi.GetWebdeploymentsConfigurationVersionsDraft(configurationId)
+}
+
+func createWebdeploymentsConfigurationFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationVersion platformclientv2.Webdeploymentconfigurationversion) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	return p.webDeploymentsApi.PostWebdeploymentsConfigurations(configurationVersion)
+}
+
+func createWebdeploymentsConfigurationVersionsDraftPublishFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	return p.webDeploymentsApi.PostWebdeploymentsConfigurationVersionsDraftPublish(configurationId)
+}
+
+func updateWebdeploymentsConfigurationVersionsDraftFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string, configurationVersion platformclientv2.Webdeploymentconfigurationversion) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	return p.webDeploymentsApi.PutWebdeploymentsConfigurationVersionsDraft(configurationId, configurationVersion)
 }

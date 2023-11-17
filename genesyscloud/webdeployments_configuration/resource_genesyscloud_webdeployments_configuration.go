@@ -13,12 +13,10 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
 func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -37,9 +35,12 @@ func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platfo
 	return resources, nil
 }
 
-func waitForConfigurationDraftToBeActive(ctx context.Context, api *platformclientv2.WebDeploymentsApi, id string) diag.Diagnostics {
+func waitForConfigurationDraftToBeActive(ctx context.Context, meta interface{}, id string) diag.Diagnostics {
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
+
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		configuration, resp, err := api.GetWebdeploymentsConfigurationVersionsDraft(id)
+		configuration, resp, err := wp.getWebdeploymentsConfigurationVersionsDraft(ctx, id)
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Error verifying active status for new web deployment configuration %s: %s", id, err))
@@ -55,107 +56,15 @@ func waitForConfigurationDraftToBeActive(ctx context.Context, api *platformclien
 	})
 }
 
-func readWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (string, *platformclientv2.Webdeploymentconfigurationversion) {
-	name := d.Get("name").(string)
-	languages := lists.InterfaceListToStrings(d.Get("languages").([]interface{}))
-	defaultLanguage := d.Get("default_language").(string)
-
-	inputCfg := &platformclientv2.Webdeploymentconfigurationversion{
-		Name:            &name,
-		Languages:       &languages,
-		DefaultLanguage: &defaultLanguage,
-	}
-
-	description, ok := d.Get("description").(string)
-	if ok {
-		inputCfg.Description = &description
-	}
-
-	messengerSettings := readMessengerSettings(d)
-	if messengerSettings != nil {
-		inputCfg.Messenger = messengerSettings
-	}
-
-	cobrowseSettings := readCobrowseSettings(d)
-	if cobrowseSettings != nil {
-		inputCfg.Cobrowse = cobrowseSettings
-	}
-
-	journeySettings := readJourneySettings(d)
-	if journeySettings != nil {
-		inputCfg.JourneyEvents = journeySettings
-	}
-
-	return name, inputCfg
-}
-
-func readJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyeventssettings {
-	value, ok := d.GetOk("journey_events")
-	if !ok {
-		return nil
-	}
-
-	cfgs := value.([]interface{})
-	if len(cfgs) < 1 {
-		return nil
-	}
-
-	cfg := cfgs[0].(map[string]interface{})
-	enabled, _ := cfg["enabled"].(bool)
-	journeySettings := &platformclientv2.Journeyeventssettings{
-		Enabled: &enabled,
-	}
-
-	excludedQueryParams := lists.InterfaceListToStrings(cfg["excluded_query_parameters"].([]interface{}))
-	journeySettings.ExcludedQueryParameters = &excludedQueryParams
-
-	if keepUrlFragment, ok := cfg["should_keep_url_fragment"].(bool); ok && keepUrlFragment {
-		journeySettings.ShouldKeepUrlFragment = &keepUrlFragment
-	}
-
-	searchQueryParameters := lists.InterfaceListToStrings(cfg["search_query_parameters"].([]interface{}))
-	journeySettings.SearchQueryParameters = &searchQueryParameters
-
-	pageviewConfig := cfg["pageview_config"]
-	if value, ok := pageviewConfig.(string); ok {
-		if value != "" {
-			journeySettings.PageviewConfig = &value
-		}
-	}
-
-	if clickEvents := readSelectorEventTriggers(cfg["click_event"].([]interface{})); clickEvents != nil {
-		journeySettings.ClickEvents = clickEvents
-	}
-
-	if formsTrackEvents := readFormsTrackTriggers(cfg["form_track_event"].([]interface{})); formsTrackEvents != nil {
-		journeySettings.FormsTrackEvents = formsTrackEvents
-	}
-
-	if idleEvents := readIdleEventTriggers(cfg["idle_event"].([]interface{})); idleEvents != nil {
-		journeySettings.IdleEvents = idleEvents
-	}
-
-	if inViewportEvents := readSelectorEventTriggers(cfg["in_viewport_event"].([]interface{})); inViewportEvents != nil {
-		journeySettings.InViewportEvents = inViewportEvents
-	}
-
-	if scrollDepthEvents := readScrollPercentageEventTriggers(cfg["scroll_depth_event"].([]interface{})); scrollDepthEvents != nil {
-		journeySettings.ScrollDepthEvents = scrollDepthEvents
-	}
-
-	return journeySettings
-}
-
 func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	name, inputCfg := readWebDeploymentConfigurationFromResourceData(d)
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
+	name, inputCfg := readWebDeploymentConfigurationFromResourceData(d)
 	log.Printf("Creating web deployment configuration %s", name)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
-
 	diagErr := gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		configuration, resp, err := api.PostWebdeploymentsConfigurations(*inputCfg)
+		configuration, resp, err := wp.createWebdeploymentsConfiguration(ctx, *inputCfg)
 		if err != nil {
 			var extraErrorInfo string
 			featureIsNotImplemented, fieldName := featureNotImplemented(resp)
@@ -176,13 +85,13 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		return diagErr
 	}
 
-	activeError := waitForConfigurationDraftToBeActive(ctx, api, d.Id())
+	activeError := waitForConfigurationDraftToBeActive(ctx, meta, d.Id())
 	if activeError != nil {
 		return diag.Errorf("Web deployment configuration %s did not become active and could not be published", name)
 	}
 
 	diagErr = gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		configuration, resp, err := api.PostWebdeploymentsConfigurationVersionsDraftPublish(d.Id())
+		configuration, resp, err := wp.createWebdeploymentsConfigurationVersionsDraftPublish(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus400(resp) {
 				return retry.RetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
@@ -240,15 +149,14 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 }
 
 func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 	name, inputCfg := readWebDeploymentConfigurationFromResourceData(d)
 
 	log.Printf("Updating web deployment configuration %s", name)
 
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
-
 	diagErr := gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := api.PutWebdeploymentsConfigurationVersionsDraft(d.Id(), *inputCfg)
+		_, resp, err := wp.updateWebdeploymentsConfigurationVersionsDraft(ctx, d.Id(), *inputCfg)
 		if err != nil {
 			if gcloud.IsStatus400(resp) {
 				return retry.RetryableError(fmt.Errorf("Error updating web deployment configuration %s: %s", name, err))
@@ -261,13 +169,13 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		return diagErr
 	}
 
-	activeError := waitForConfigurationDraftToBeActive(ctx, api, d.Id())
+	activeError := waitForConfigurationDraftToBeActive(ctx, meta, d.Id())
 	if activeError != nil {
 		return diag.Errorf("Web deployment configuration %s did not become active and could not be published", name)
 	}
 
 	diagErr = gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		configuration, resp, err := api.PostWebdeploymentsConfigurationVersionsDraftPublish(d.Id())
+		configuration, resp, err := wp.createWebdeploymentsConfigurationVersionsDraftPublish(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus400(resp) {
 				return retry.RetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
@@ -290,7 +198,6 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
 	log.Printf("Deleting web deployment configuration %s", name)
@@ -302,8 +209,7 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 
-		//TODO STOPPED HERE
-		_, resp, err := api.GetWebdeploymentsConfigurationVersionsDraft(d.Id())
+		_, resp, err := wp.getWebdeploymentsConfigurationVersionsDraft(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
 				log.Printf("Deleted web deployment configuration %s", d.Id())

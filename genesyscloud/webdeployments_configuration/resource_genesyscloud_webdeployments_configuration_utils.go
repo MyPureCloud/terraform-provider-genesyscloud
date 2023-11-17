@@ -385,3 +385,94 @@ func flattenScrollPercentageEventTriggers(triggers *[]platformclientv2.Scrollper
 	}
 	return result
 }
+
+func readWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (string, *platformclientv2.Webdeploymentconfigurationversion) {
+	name := d.Get("name").(string)
+	languages := lists.InterfaceListToStrings(d.Get("languages").([]interface{}))
+	defaultLanguage := d.Get("default_language").(string)
+
+	inputCfg := &platformclientv2.Webdeploymentconfigurationversion{
+		Name:            &name,
+		Languages:       &languages,
+		DefaultLanguage: &defaultLanguage,
+	}
+
+	description, ok := d.Get("description").(string)
+	if ok {
+		inputCfg.Description = &description
+	}
+
+	messengerSettings := readMessengerSettings(d)
+	if messengerSettings != nil {
+		inputCfg.Messenger = messengerSettings
+	}
+
+	cobrowseSettings := readCobrowseSettings(d)
+	if cobrowseSettings != nil {
+		inputCfg.Cobrowse = cobrowseSettings
+	}
+
+	journeySettings := readJourneySettings(d)
+	if journeySettings != nil {
+		inputCfg.JourneyEvents = journeySettings
+	}
+
+	return name, inputCfg
+}
+
+func readJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyeventssettings {
+	value, ok := d.GetOk("journey_events")
+	if !ok {
+		return nil
+	}
+
+	cfgs := value.([]interface{})
+	if len(cfgs) < 1 {
+		return nil
+	}
+
+	cfg := cfgs[0].(map[string]interface{})
+	enabled, _ := cfg["enabled"].(bool)
+	journeySettings := &platformclientv2.Journeyeventssettings{
+		Enabled: &enabled,
+	}
+
+	excludedQueryParams := lists.InterfaceListToStrings(cfg["excluded_query_parameters"].([]interface{}))
+	journeySettings.ExcludedQueryParameters = &excludedQueryParams
+
+	if keepUrlFragment, ok := cfg["should_keep_url_fragment"].(bool); ok && keepUrlFragment {
+		journeySettings.ShouldKeepUrlFragment = &keepUrlFragment
+	}
+
+	searchQueryParameters := lists.InterfaceListToStrings(cfg["search_query_parameters"].([]interface{}))
+	journeySettings.SearchQueryParameters = &searchQueryParameters
+
+	pageviewConfig := cfg["pageview_config"]
+	if value, ok := pageviewConfig.(string); ok {
+		if value != "" {
+			journeySettings.PageviewConfig = &value
+		}
+	}
+
+	if clickEvents := readSelectorEventTriggers(cfg["click_event"].([]interface{})); clickEvents != nil {
+		journeySettings.ClickEvents = clickEvents
+	}
+
+	if formsTrackEvents := readFormsTrackTriggers(cfg["form_track_event"].([]interface{})); formsTrackEvents != nil {
+		journeySettings.FormsTrackEvents = formsTrackEvents
+	}
+
+	if idleEvents := readIdleEventTriggers(cfg["idle_event"].([]interface{})); idleEvents != nil {
+		journeySettings.IdleEvents = idleEvents
+	}
+
+	if inViewportEvents := readSelectorEventTriggers(cfg["in_viewport_event"].([]interface{})); inViewportEvents != nil {
+		journeySettings.InViewportEvents = inViewportEvents
+	}
+
+	if scrollDepthEvents := readScrollPercentageEventTriggers(cfg["scroll_depth_event"].([]interface{})); scrollDepthEvents != nil {
+		journeySettings.ScrollDepthEvents = scrollDepthEvents
+	}
+
+	return journeySettings
+}
