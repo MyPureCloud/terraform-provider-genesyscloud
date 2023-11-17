@@ -63,11 +63,13 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 
 	// If enabled is set to 'false' do an update call to the schema
 	if enabled, ok := d.Get("enabled").(bool); ok && !enabled {
+		log.Printf("Updating task management workitem schema: %s, to set 'enabled' to 'false'", *schema.Name)
 		dataSchema.Version = platformclientv2.Int(1)
 		_, err := proxy.updateTaskManagementWorkitemSchema(ctx, *schema.Id, dataSchema)
 		if err != nil {
 			return diag.Errorf("failed to update task management workitem schema: %s", err)
 		}
+		log.Printf("Updated newly created workitem schema: %s. 'enabled' set to to 'false'", *schema.Name)
 	}
 
 	log.Printf("Created task management workitem schema %s: %s", *schema.Name, *schema.Id)

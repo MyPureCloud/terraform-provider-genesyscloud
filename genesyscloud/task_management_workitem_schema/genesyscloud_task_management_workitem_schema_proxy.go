@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
@@ -104,7 +105,9 @@ func (p *taskManagementProxy) getTaskManagementWorkitemSchemaDeletedStatus(ctx c
 
 // createTaskManagementWorkitemSchemaFn is an implementation function for creating a Genesys Cloud task management workitem schema
 func createTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagementProxy, schema *platformclientv2.Dataschema) (*platformclientv2.Dataschema, error) {
-	createdSchema, _, err := p.taskManagementApi.PostTaskmanagementWorkitemsSchemas(*schema)
+	log.Printf("Creating task management workitem schema: %s", *schema.Name)
+	createdSchema, resp, err := p.taskManagementApi.PostTaskmanagementWorkitemsSchemas(*schema)
+	log.Printf("Completed call to create task management workitem schema %s with status code %d, correlation id %s and err %s", *schema.Name, resp.StatusCode, resp.CorrelationID, err)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create task management workitem schema: %s", err)
 	}
