@@ -72,7 +72,7 @@ func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy
 		if err != nil {
 			log.Printf("Error calling GetFlow: %v\n", err)
 		}
-		if data != nil && data.PublishedVersion.Id != nil {
+		if data != nil && data.PublishedVersion != nil && data.PublishedVersion.Id != nil {
 			pageCount := 1
 			for pageNum := 1; pageNum <= pageCount; pageNum++ {
 				const pageSize = 100
