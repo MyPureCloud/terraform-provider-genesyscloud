@@ -3,6 +3,7 @@ package outbound_campaignrule
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
@@ -27,28 +28,10 @@ func TestUnitResourceOutboundCampaignruleCreate(t *testing.T) {
 	}
 
 	campaignRuleProxy.createOutboundCampaignruleAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, campaignRule *platformclientv2.Campaignrule) (*platformclientv2.Campaignrule, error) {
-		assert.Equal(t, *testCampaignRule.Name, *campaignRule.Name, "campaignRule.Name check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *testCampaignRule.Enabled, *campaignRule.Enabled, "campaignRule.Enabled check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *testCampaignRule.MatchAnyConditions, *campaignRule.MatchAnyConditions, "campaignRule.MatchAnyConditions check failed in create createOutboundCampaignruleAttr")
-		assert.EqualValues(t, testCampaignRule.CampaignRuleEntities.Campaigns, campaignRule.CampaignRuleEntities.Campaigns, "campaignRule.CampaignRuleEntities.Campaigns check failed in create createOutboundCampaignruleAttr")
-		assert.EqualValues(t, testCampaignRule.CampaignRuleEntities.Sequences, campaignRule.CampaignRuleEntities.Sequences, "campaignRule.CampaignRuleEntities.Sequences check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Id, *(*campaignRule.CampaignRuleConditions)[0].Id, "campaignRule.CampaignRuleConditions[0].Id check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].ConditionType, *(*campaignRule.CampaignRuleConditions)[0].ConditionType, "campaignRule.CampaignRuleConditions[0].Id check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.Priority, *(*campaignRule.CampaignRuleConditions)[0].Parameters.Priority, "campaignRule.CampaignRuleConditions[0].Parameters.Priority check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.Operator, *(*campaignRule.CampaignRuleConditions)[0].Parameters.Operator, "campaignRule.CampaignRuleConditions[0].Parameters.Operator check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.Value, *(*campaignRule.CampaignRuleConditions)[0].Parameters.Value, "campaignRule.CampaignRuleConditions[0].Parameters.Value check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.DialingMode, *(*campaignRule.CampaignRuleConditions)[0].Parameters.DialingMode, "campaignRule.CampaignRuleConditions[0].Parameters.DialingMode check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Id, *(*campaignRule.CampaignRuleActions)[0].Id, "campaignRule.CampaignRuleActions[0].Id check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].ActionType, *(*campaignRule.CampaignRuleActions)[0].ActionType, "campaignRule.CampaignRuleActions[0].ActionType check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.Operator, *(*campaignRule.CampaignRuleActions)[0].Parameters.Operator, "campaignRule.CampaignRuleActions[0].Parameters.Operator check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.Priority, *(*campaignRule.CampaignRuleActions)[0].Parameters.Priority, "campaignRule.CampaignRuleActions[0].Parameters.Priority check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.Value, *(*campaignRule.CampaignRuleActions)[0].Parameters.Value, "campaignRule.CampaignRuleActions[0].Parameters.Value check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.DialingMode, *(*campaignRule.CampaignRuleActions)[0].Parameters.DialingMode, "campaignRule.CampaignRuleActions[0].Parameters.DialingMode check failed in create createOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.UseTriggeringEntity, *(*campaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.UseTriggeringEntity, "campaignRule.CampaignRuleActions[0].CampaignRuleActionEntities.UseTriggeringEntity check failed in create createOutboundCampaignruleAttr")
-		assert.EqualValues(t, *(*testCampaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.Sequences, *(*campaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.Sequences, "campaignRule.CampaignRuleActions[0].CampaignRuleActionEntities.Sequences check failed in create createOutboundCampaignruleAttr")
-		assert.EqualValues(t, *(*testCampaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.Campaigns, *(*campaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.Campaigns, "campaignRule.CampaignRuleActions[0].CampaignRuleActionEntities.Campaigns check failed in create createOutboundCampaignruleAttr")
-
 		campaignRule.Id = &tId
+
+		equal := cmp.Equal(testCampaignRule, *campaignRule)
+		assert.Equal(t, true, equal, "campaignRule not equal to expected value in create: %s", cmp.Diff(testCampaignRule, *campaignRule))
 
 		return campaignRule, nil
 	}
@@ -106,29 +89,12 @@ func TestUnitResourceOutboundCampaignruleRead(t *testing.T) {
 	diag := readOutboundCampaignRule(ctx, d, gcloud)
 	assert.Equal(t, false, diag.HasError())
 	assert.Equal(t, tId, d.Id())
-	assert.Equal(t, *testCampaignRule.Name, d.Get("name").(string))
-	assert.Equal(t, *testCampaignRule.Enabled, d.Get("enabled").(bool))
-	assert.Equal(t, *testCampaignRule.MatchAnyConditions, d.Get("match_any_conditions").(bool))
-	campaignRuleEntities := buildCampaignRuleEntities(d.Get("campaign_rule_entities").(*schema.Set))
-	assert.EqualValues(t, testCampaignRule.CampaignRuleEntities.Campaigns, campaignRuleEntities.Campaigns)
-	assert.EqualValues(t, testCampaignRule.CampaignRuleEntities.Sequences, campaignRuleEntities.Sequences)
-	campaignRuleConditions := buildCampaignRuleConditions(d.Get("campaign_rule_conditions").([]interface{}))
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Id, *(*campaignRuleConditions)[0].Id)
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].ConditionType, *(*campaignRuleConditions)[0].ConditionType)
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.Value, *(*campaignRuleConditions)[0].Parameters.Value)
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.Priority, *(*campaignRuleConditions)[0].Parameters.Priority)
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.Operator, *(*campaignRuleConditions)[0].Parameters.Operator)
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.DialingMode, *(*campaignRuleConditions)[0].Parameters.DialingMode)
-	campaignRuleActions := buildCampaignRuleAction(d.Get("campaign_rule_actions").([]interface{}))
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Id, *(*campaignRuleActions)[0].Id)
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].ActionType, *(*campaignRuleActions)[0].ActionType)
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.Value, *(*campaignRuleActions)[0].Parameters.Value)
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.Operator, *(*campaignRuleActions)[0].Parameters.Operator)
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.Priority, *(*campaignRuleActions)[0].Parameters.Priority)
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.DialingMode, *(*campaignRuleActions)[0].Parameters.DialingMode)
-	assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.UseTriggeringEntity, *(*campaignRuleActions)[0].CampaignRuleActionEntities.UseTriggeringEntity)
-	assert.EqualValues(t, *(*testCampaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.Campaigns, *(*campaignRuleActions)[0].CampaignRuleActionEntities.Campaigns)
-	assert.EqualValues(t, *(*testCampaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.Sequences, *(*campaignRuleActions)[0].CampaignRuleActionEntities.Sequences)
+
+	campaignRule := getCampaignruleFromResourceData(d)
+	campaignRule.Id = platformclientv2.String(d.Id())
+
+	equal := cmp.Equal(testCampaignRule, campaignRule)
+	assert.Equal(t, true, equal, "campaignRule not equal to expected value in read: %s", cmp.Diff(testCampaignRule, campaignRule))
 }
 
 func TestUnitResourceOutboundCampaignruleUpdate(t *testing.T) {
@@ -146,28 +112,10 @@ func TestUnitResourceOutboundCampaignruleUpdate(t *testing.T) {
 	}
 
 	campaignRulePoxy.updateOutboundCampaignruleAttr = func(ctx context.Context, proxy *outboundCampaignruleProxy, id string, campaignRule *platformclientv2.Campaignrule) (*platformclientv2.Campaignrule, error) {
-		assert.Equal(t, *testCampaignRule.Name, *campaignRule.Name, "campaignRule.Name check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *testCampaignRule.Enabled, *campaignRule.Enabled, "campaignRule.Enabled check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *testCampaignRule.MatchAnyConditions, *campaignRule.MatchAnyConditions, "campaignRule.MatchAnyConditions check failed in update updateOutboundCampaignruleAttr")
-		assert.EqualValues(t, testCampaignRule.CampaignRuleEntities.Campaigns, campaignRule.CampaignRuleEntities.Campaigns, "campaignRule.CampaignRuleEntities.Campaigns check failed in update updateOutboundCampaignruleAttr")
-		assert.EqualValues(t, testCampaignRule.CampaignRuleEntities.Sequences, campaignRule.CampaignRuleEntities.Sequences, "campaignRule.CampaignRuleEntities.Sequences check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Id, *(*campaignRule.CampaignRuleConditions)[0].Id, "campaignRule.CampaignRuleConditions[0].Id check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].ConditionType, *(*campaignRule.CampaignRuleConditions)[0].ConditionType, "campaignRule.CampaignRuleConditions[0].Id check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.Priority, *(*campaignRule.CampaignRuleConditions)[0].Parameters.Priority, "campaignRule.CampaignRuleConditions[0].Parameters.Priority check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.Operator, *(*campaignRule.CampaignRuleConditions)[0].Parameters.Operator, "campaignRule.CampaignRuleConditions[0].Parameters.Operator check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.Value, *(*campaignRule.CampaignRuleConditions)[0].Parameters.Value, "campaignRule.CampaignRuleConditions[0].Parameters.Value check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleConditions)[0].Parameters.DialingMode, *(*campaignRule.CampaignRuleConditions)[0].Parameters.DialingMode, "campaignRule.CampaignRuleConditions[0].Parameters.DialingMode check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Id, *(*campaignRule.CampaignRuleActions)[0].Id, "campaignRule.CampaignRuleActions[0].Id check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].ActionType, *(*campaignRule.CampaignRuleActions)[0].ActionType, "campaignRule.CampaignRuleActions[0].ActionType check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.Operator, *(*campaignRule.CampaignRuleActions)[0].Parameters.Operator, "campaignRule.CampaignRuleActions[0].Parameters.Operator check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.Priority, *(*campaignRule.CampaignRuleActions)[0].Parameters.Priority, "campaignRule.CampaignRuleActions[0].Parameters.Priority check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.Value, *(*campaignRule.CampaignRuleActions)[0].Parameters.Value, "campaignRule.CampaignRuleActions[0].Parameters.Value check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].Parameters.DialingMode, *(*campaignRule.CampaignRuleActions)[0].Parameters.DialingMode, "campaignRule.CampaignRuleActions[0].Parameters.DialingMode check failed in update updateOutboundCampaignruleAttr")
-		assert.Equal(t, *(*testCampaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.UseTriggeringEntity, *(*campaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.UseTriggeringEntity, "campaignRule.CampaignRuleActions[0].CampaignRuleActionEntities.UseTriggeringEntity check failed in update updateOutboundCampaignruleAttr")
-		assert.EqualValues(t, *(*testCampaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.Sequences, *(*campaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.Sequences, "campaignRule.CampaignRuleActions[0].CampaignRuleActionEntities.Sequences check failed in update updateOutboundCampaignruleAttr")
-		assert.EqualValues(t, *(*testCampaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.Campaigns, *(*campaignRule.CampaignRuleActions)[0].CampaignRuleActionEntities.Campaigns, "campaignRule.CampaignRuleActions[0].CampaignRuleActionEntities.Campaigns check failed in update updateOutboundCampaignruleAttr")
-
 		campaignRule.Id = &tId
+
+		equal := cmp.Equal(testCampaignRule, *campaignRule)
+		assert.Equal(t, true, equal, "campaignRule not equal to expected value in update: %s", cmp.Diff(testCampaignRule, *campaignRule))
 
 		return campaignRule, nil
 	}

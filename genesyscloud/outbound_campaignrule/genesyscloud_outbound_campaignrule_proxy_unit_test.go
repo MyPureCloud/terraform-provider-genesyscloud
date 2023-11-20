@@ -1,1 +1,0 @@
-package outbound_campaignrule
