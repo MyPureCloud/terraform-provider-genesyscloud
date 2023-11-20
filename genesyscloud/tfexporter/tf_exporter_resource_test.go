@@ -23,6 +23,7 @@ import (
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
+	webdeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	"testing"
 
 	obw "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
@@ -110,6 +111,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_trunk"] = gcloud.ResourceTrunk()
 	providerResources["genesyscloud_user_roles"] = gcloud.ResourceUserRoles()
 	providerResources["genesyscloud_webdeployments_deployment"] = gcloud.ResourceWebDeployment()
+	providerResources["genesyscloud_webdeployments_configuration"] = webdeployConfig.ResourceWebDeploymentConfiguration()
 	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
 	providerResources["genesyscloud_processautomation_trigger"] = pat.ResourceProcessAutomationTrigger()
 
@@ -209,6 +211,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_user", gcloud.UserExporter())
 	RegisterExporter("genesyscloud_user_roles", gcloud.UserRolesExporter())
 	RegisterExporter("genesyscloud_webdeployments_deployment", gcloud.WebDeploymentExporter())
+	RegisterExporter("genesyscloud_webdeployments_configuration", webdeployConfig.WebDeploymentConfigurationExporter())
 	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
 
 	RegisterExporter("genesyscloud_knowledge_document_variation", gcloud.KnowledgeDocumentVariationExporter())
