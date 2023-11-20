@@ -14,7 +14,7 @@ type TestAssertion struct {
 }
 
 // Tests the original sanitizing algorithm
-func TestSanitizeResourceNameOriginal(t *testing.T) {
+func TestUnitSanitizeResourceNameOriginal(t *testing.T) {
 	simpleString := "foobar"
 	intString := "1234"
 	underscore := "_"
@@ -23,6 +23,11 @@ func TestSanitizeResourceNameOriginal(t *testing.T) {
 	unsafeAscii := "#%@&"
 
 	randNumSuffix := "_[0-9]+$"
+
+	envVarName := "GENESYS_SANITIZER_LEGACY"
+	envVarValue := "1"
+	os.Setenv(envVarName, envVarValue)
+	defer func() { os.Unsetenv(envVarName) }()
 
 	assertions := [14]TestAssertion{
 		{
@@ -109,7 +114,7 @@ func TestSanitizeResourceNameOriginal(t *testing.T) {
 }
 
 // Tests the optimized sanitizing algorithm
-func TestSanitizeResourceNamesOptimized(t *testing.T) {
+func TestUnitSanitizeResourceNamesOptimized(t *testing.T) {
 	randNumSuffix := "_[0-9]+"
 	metaMap := make(ResourceIDMetaMap)
 	metaMap["1"] = &ResourceMeta{Name: "wrapupcodemappings"}
@@ -122,17 +127,7 @@ func TestSanitizeResourceNamesOptimized(t *testing.T) {
 	metaMap["8"] = &ResourceMeta{Name: "unsafeUnicodeÊƩHere"}
 	metaMap["9"] = &ResourceMeta{Name: "unsafeUnicodeÊƩȺ®Here"}
 
-	//We set the GENESYS_SANITIZER_OPTIMIZED environment variable to ensure the new optimized  is used
-	envVarName := "GENESYS_SANITIZER_OPTIMIZED"
-	envVarValue := "1"
-	os.Setenv(envVarName, envVarValue)
 	sanitizer := NewSanitizerProvider()
-
-	//Make sure we unset the GENESYS_SANITIZER_OPTIMIZED environment variable after the test runs
-	unsetEnv := func() {
-		os.Unsetenv("GENESYS_SANITIZER_OPTIMIZED")
-	}
-	defer unsetEnv()
 
 	sanitizer.S.Sanitize(metaMap)
 

@@ -105,3 +105,11 @@ func FileContentHashResolver(configMap map[string]interface{}, filepath string) 
 	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256(var.%s)}`, filepath)
 	return nil
 }
+
+func CampaignStatusResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter) error {
+	if configMap["campaign_status"] != "off" && configMap["campaign_status"] != "on" {
+		configMap["campaign_status"] = "off"
+	}
+
+	return nil
+}
