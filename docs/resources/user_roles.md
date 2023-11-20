@@ -40,7 +40,7 @@ resource "genesyscloud_user_roles" "user-roles" {
 
 ### Optional
 
-- `roles` (Block List) Roles and their divisions assigned to this user. (see [below for nested schema](#nestedblock--roles))
+- `roles` (Block Set) Roles and their divisions assigned to this user. (see [below for nested schema](#nestedblock--roles))
 
 ### Read-Only
 
