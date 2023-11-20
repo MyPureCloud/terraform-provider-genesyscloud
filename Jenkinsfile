@@ -60,7 +60,7 @@ pipeline {
 
         stage('Generate Readable Coverage Report') {
             steps {
-                sh 'go tool cover -html coverage.out -o cover.html'
+                sh 'go tool cover -html coverage.out -o coverage.html'
 
             }
         }
@@ -68,7 +68,7 @@ pipeline {
 
         stage('Upload artifacts') {
             steps {
-                archiveArtifacts artifacts: 'cover.html', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'coverage.html', allowEmptyArchive: true
 
             }
         }
