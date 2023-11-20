@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	outboundmessagingcampaigncontactsortResource = &schema.Resource{
+	OutboundmessagingcampaigncontactsortResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`field_name`: {
 				Description: `The field name by which to sort contacts.`,
@@ -42,6 +42,7 @@ var (
 			},
 		},
 	}
+
 	outboundmessagingcampaignsmsconfigResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`message_column`: {
@@ -137,7 +138,7 @@ func ResourceOutboundMessagingCampaign() *schema.Resource {
 				Description: `The order in which to sort contacts for dialing, based on up to four columns.`,
 				Optional:    true,
 				Type:        schema.TypeList,
-				Elem:        outboundmessagingcampaigncontactsortResource,
+				Elem:        OutboundmessagingcampaigncontactsortResource,
 			},
 			`messages_per_minute`: {
 				Description: `How many messages this messaging campaign will send per minute.`,
@@ -487,4 +488,20 @@ func flattenSdkOutboundMessagingCampaignSmsconfig(smsconfig *platformclientv2.Sm
 	smsconfigSet.Add(smsconfigMap)
 
 	return smsconfigSet
+}
+
+func GenerateOutboundMessagingCampaignContactSort(fieldName string, direction string, numeric string) string {
+	if direction != "" {
+		direction = fmt.Sprintf(`direction = "%s"`, direction)
+	}
+	if numeric != "" {
+		numeric = fmt.Sprintf(`numeric = %s`, numeric)
+	}
+	return fmt.Sprintf(`
+	contact_sorts {
+		field_name = "%s"
+		%s
+        %s
+	}
+`, fieldName, direction, numeric)
 }

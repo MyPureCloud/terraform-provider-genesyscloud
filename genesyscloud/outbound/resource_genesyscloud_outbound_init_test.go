@@ -4,8 +4,10 @@ import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	outboundCampaignrule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
+	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
@@ -26,14 +28,13 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources["genesyscloud_outbound_callabletimeset"] = ResourceOutboundCallabletimeset()
-	providerResources["genesyscloud_outbound_campaignrule"] = ResourceOutboundCampaignRule()
+	providerResources["genesyscloud_outbound_campaignrule"] = outboundCampaignrule.ResourceOutboundCampaignRule()
 	providerResources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.ResourceOutboundAttemptLimit()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = ResourceOutboundCallAnalysisResponseSet()
-	providerResources["genesyscloud_outbound_campaign"] = ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = ResourceOutboundContactListFilter()
 	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_outbound_messagingcampaign"] = ResourceOutboundMessagingCampaign()
-	providerResources["genesyscloud_outbound_sequence"] = ResourceOutboundSequence()
+	providerResources["genesyscloud_outbound_sequence"] = outboundSequence.ResourceOutboundSequence()
 	providerResources["genesyscloud_outbound_settings"] = ResourceOutboundSettings()
 
 	providerResources["genesyscloud_outbound_dnclist"] = ResourceOutboundDncList()
@@ -56,12 +57,11 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_outbound_callabletimeset"] = dataSourceOutboundCallabletimeset()
 	providerDataSources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.DataSourceOutboundAttemptLimit()
 	providerDataSources["genesyscloud_outbound_callanalysisresponseset"] = dataSourceOutboundCallAnalysisResponseSet()
-	providerDataSources["genesyscloud_outbound_campaign"] = dataSourceOutboundCampaign()
-	providerDataSources["genesyscloud_outbound_campaignrule"] = dataSourceOutboundCampaignRule()
+	providerDataSources["genesyscloud_outbound_campaignrule"] = outboundCampaignrule.DataSourceOutboundCampaignrule()
 	providerDataSources["genesyscloud_outbound_contact_list"] = obContactList.DataSourceOutboundContactList()
 	providerDataSources["genesyscloud_outbound_messagingcampaign"] = dataSourceOutboundMessagingcampaign()
 	providerDataSources["genesyscloud_outbound_contactlistfilter"] = dataSourceOutboundContactListFilter()
-	providerDataSources["genesyscloud_outbound_sequence"] = dataSourceOutboundSequence()
+	providerDataSources["genesyscloud_outbound_sequence"] = outboundSequence.DataSourceOutboundSequence()
 	providerDataSources["genesyscloud_outbound_dnclist"] = dataSourceOutboundDncList()
 
 	// external package dependencies for outbound

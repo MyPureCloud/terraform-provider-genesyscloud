@@ -20,6 +20,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
+# When exporting outbound campaigns, any campaign with campaign_status = "stopping" will be
+# given 5 minutes to stop. If it does not stop in that time it will not be exported.
+# This is to avoid the exporter crashing when trying to export a campaign in the stopping state
 resource "genesyscloud_outbound_campaign" "campaign" {
   name                          = "Example Voice Campaign"
   dialing_mode                  = "agentless"

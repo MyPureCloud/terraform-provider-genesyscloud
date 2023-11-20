@@ -90,6 +90,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", ivrConfig.Division)
 
 		log.Printf("Read IVR config %s %s", d.Id(), *ivrConfig.Name)
+
 		return cc.CheckState()
 	})
 }
@@ -156,7 +157,7 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 		if ivr.State != nil && *ivr.State == "deleted" {
 			// IVR config deleted
-			log.Printf("Deleted IVR config %s", d.Id())
+			log.Printf("Deleted IVR config with a deleted state %s", d.Id())
 			return nil
 		}
 

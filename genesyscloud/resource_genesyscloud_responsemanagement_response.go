@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -37,6 +38,11 @@ var (
 	}
 	responsemanagementresponseresponsesubstitutionResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			`id`: {
+				Description: `Response substitution identifier.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
 			`description`: {
 				Description: `Response substitution description.`,
 				Optional:    true,
@@ -423,6 +429,7 @@ func buildSdkresponsemanagementresponseResponsesubstitutionSlice(responsesubstit
 	for _, configresponsesubstitution := range responsesubstitutionList {
 		var sdkResponsesubstitution platformclientv2.Responsesubstitution
 		responsesubstitutionMap := configresponsesubstitution.(map[string]interface{})
+		sdkResponsesubstitution.Id = platformclientv2.String(responsesubstitutionMap["id"].(string))
 		if description := responsesubstitutionMap["description"].(string); description != "" {
 			sdkResponsesubstitution.Description = &description
 		}
@@ -520,12 +527,9 @@ func flattenSdkresponsemanagementresponseResponsesubstitutionSlice(responsesubst
 	for _, responsesubstitution := range responsesubstitutions {
 		responsesubstitutionMap := make(map[string]interface{})
 
-		if responsesubstitution.Description != nil {
-			responsesubstitutionMap["description"] = *responsesubstitution.Description
-		}
-		if responsesubstitution.DefaultValue != nil {
-			responsesubstitutionMap["default_value"] = *responsesubstitution.DefaultValue
-		}
+		resourcedata.SetMapValueIfNotNil(responsesubstitutionMap, "id", responsesubstitution.Id)
+		resourcedata.SetMapValueIfNotNil(responsesubstitutionMap, "description", responsesubstitution.Description)
+		resourcedata.SetMapValueIfNotNil(responsesubstitutionMap, "default_value", responsesubstitution.DefaultValue)
 
 		responsesubstitutionSet.Add(responsesubstitutionMap)
 	}

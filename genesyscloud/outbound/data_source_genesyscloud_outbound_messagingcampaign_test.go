@@ -37,13 +37,13 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 
 		callableTimeSetResourceId = "callable_time_set"
 		callableTimeSetName       = "Test CTS " + uuid.NewString()
-		callableTimeSetResource   = generateOutboundCallabletimeset(
+		callableTimeSetResource   = GenerateOutboundCallabletimeset(
 			callableTimeSetResourceId,
 			callableTimeSetName,
-			generateCallableTimesBlock(
+			GenerateCallableTimesBlock(
 				"Europe/Dublin",
-				generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
-				generateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
+				GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+				GenerateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
 			),
 		)
 
@@ -64,14 +64,14 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 			),
 		)
 
-		contactListFilterResource = generateOutboundContactListFilter(
+		contactListFilterResource = GenerateOutboundContactListFilter(
 			clfResourceId,
 			clfName,
 			"genesyscloud_outbound_contact_list."+contactListResourceId+".id",
 			"",
-			generateOutboundContactListFilterClause(
+			GenerateOutboundContactListFilterClause(
 				"",
-				generateOutboundContactListFilterPredicates(
+				GenerateOutboundContactListFilterPredicates(
 					column1,
 					"alphabetic",
 					"EQUALS",
@@ -122,12 +122,12 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 							column1,
 							smsConfigSenderSMSPhoneNumber,
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column1,
 							"",
 							"",
 						),
-						generateOutboundMessagingCampaignContactSort(
+						GenerateOutboundMessagingCampaignContactSort(
 							column2,
 							"DESC",
 							TrueValue,

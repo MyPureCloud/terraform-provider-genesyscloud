@@ -23,13 +23,13 @@ func TestAccDataSourceOutboundCallableTimeset(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateOutboundCallabletimeset(
+				Config: GenerateOutboundCallabletimeset(
 					resourceId,
 					callabeTimesetName,
-					generateCallableTimesBlock(
+					GenerateCallableTimesBlock(
 						timeZone,
-						generateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
-						generateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
+						GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+						GenerateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
 					),
 				) + generateOutboundCallabletimesetDataSource(
 					dataSourceId,
