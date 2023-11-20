@@ -99,27 +99,6 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 		},
 	}
 
-	workitemSchemaResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`json_schema`: {
-				Description:      `The JSON Schema document`,
-				Required:         true,
-				Type:             schema.TypeString,
-				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
-			},
-			`name`: {
-				Description: `The name of the schema`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`enabled`: {
-				Description: `The schema's enabled/disabled status. A disabled schema cannot be assigned to any other entities, but the data on those entities from the schema still exists.`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-		},
-	}
-
 	return &schema.Resource{
 		Description: `Genesys Cloud task management worktype`,
 
@@ -210,12 +189,10 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeBool,
 			},
-			`schema`: {
+			`schema_id`: {
 				Description: `The schema defining the custom attributes for Workitems created from the Worktype.`,
 				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        workitemSchemaResource,
+				Type:        schema.TypeString,
 			},
 		},
 	}
@@ -231,6 +208,7 @@ func TaskManagementWorktypeExporter() *resourceExporter.ResourceExporter {
 			"default_language_id": {RefType: "genesyscloud_routing_language"},
 			"default_queue_id":    {RefType: "genesyscloud_routing_queue"},
 			"default_skills_ids":  {RefType: "genesyscloud_routing_skill"},
+			"schema_id":           {RefType: "genesyscloud_task_management_workitem_schema"},
 		},
 	}
 }
