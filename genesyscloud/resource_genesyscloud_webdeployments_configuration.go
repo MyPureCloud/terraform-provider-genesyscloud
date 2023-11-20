@@ -315,12 +315,12 @@ var (
 			"default_value": {
 				Description: "Custom message default value.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 			"type": {
 				Description: "Custom message type.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 		},
 	}
@@ -330,17 +330,17 @@ var (
 			"enabled_categories_id": {
 				Description: "Enabled categories id.",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 			"self_uri": {
 				Description: "Enabled categories URI",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 			"image_source": {
 				Description: "Enabled categories image source",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 		},
 	}
@@ -350,47 +350,47 @@ var (
 			"hero_style_background_color": {
 				Description: "Hero style background color.",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 			"hero_style_text_color": {
 				Description: "Hero style background color",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 			"hero_style_image": {
 				Description: "Hero style image",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 			"global_style_background_color": {
 				Description: "Global style background color",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 			"global_style_primary_color": {
 				Description: "Global style primary color",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 			"global_style_primary_color_dark": {
 				Description: "Global style primary color dark",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 			"global_style_primary_color_light": {
 				Description: "Global style primary color light",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 			"global_style_text_color": {
 				Description: "Global style text color",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 			"global_style_font_family": {
 				Description: "Global style font family",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 		},
 	}
@@ -406,13 +406,11 @@ var (
 			"module_settings_type": {
 				Description: "Screen module type.",
 				Type:        schema.TypeString,
-				MaxItems:    1,
 				Optional:    true,
 			},
 			"module_settings_enabled": {
 				Description: "Whether or not support center screen module is enabled",
 				Type:        schema.TypeBool,
-				MaxItems:    1,
 				Optional:    true,
 			},
 			"module_settings_compact_category_module_template": {
@@ -440,19 +438,16 @@ var (
 			"knowledge_base_id": {
 				Description: "The knowledge base for support center.",
 				Type:        schema.TypeString,
-				MaxItems:    1,
 				Optional:    true,
 			},
 			"knowledge_base_uri": {
 				Description: "The knowledge base uri for support center.",
 				Type:        schema.TypeString,
-				MaxItems:    1,
 				Optional:    true,
 			},
 			"router_type": {
 				Description: "Router type for support center.",
 				Type:        schema.TypeString,
-				MaxItems:    1,
 				Optional:    true,
 			},
 			"custom_messages": {
@@ -464,8 +459,8 @@ var (
 			"feedback_enabled": {
 				Description: "Customer feedback settings.",
 				Type:        schema.TypeBool,
-				MaxItems:    1,
 				Optional:    true,
+				Computed:    true,
 			},
 			"enabled_categories": {
 				Description: "Enabled article categories for support center.",
@@ -482,7 +477,6 @@ var (
 			"screens": {
 				Description: "Settings concerning support center",
 				Type:        schema.TypeList,
-				MaxItems:    1,
 				Optional:    true,
 				Elem:        supportCenterScreens,
 			},
