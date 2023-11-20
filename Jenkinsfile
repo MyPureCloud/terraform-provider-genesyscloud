@@ -64,9 +64,9 @@ pipeline {
 
             }
         }
-        
 
-        stage('Archive artifacts') {
+
+        stage('Upload artifacts') {
             steps {
                 archiveArtifacts artifacts: 'cover.html', allowEmptyArchive: true
 
