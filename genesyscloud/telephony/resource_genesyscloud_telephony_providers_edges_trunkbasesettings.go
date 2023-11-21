@@ -84,7 +84,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	trunkMetaBase := gcloud.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
-	properties := buildBaseSettingsProperties(d)
+	properties := gcloud.BuildBaseSettingsProperties(d)
 
 	trunkType := d.Get("trunk_type").(string)
 	managed := d.Get("managed").(bool)
@@ -121,7 +121,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	trunkMetaBase := gcloud.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
-	properties := buildBaseSettingsProperties(d)
+	properties := gcloud.BuildBaseSettingsProperties(d)
 	trunkType := d.Get("trunk_type").(string)
 	managed := d.Get("managed").(bool)
 	id := d.Id()
@@ -223,7 +223,7 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		d.Set("properties", nil)
 		if trunkBaseSettings.Properties != nil {
-			properties, err := flattenBaseSettingsProperties(trunkBaseSettings.Properties)
+			properties, err := gcloud.FlattenBaseSettingsProperties(trunkBaseSettings.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}

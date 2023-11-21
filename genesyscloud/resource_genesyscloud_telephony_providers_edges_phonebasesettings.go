@@ -135,7 +135,7 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	phoneMetaBase := BuildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := buildBaseSettingsProperties(d)
+	properties := BuildBaseSettingsProperties(d)
 
 	phoneBase := platformclientv2.Phonebase{
 		Name:          &name,
@@ -174,7 +174,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	phoneMetaBase := BuildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := buildBaseSettingsProperties(d)
+	properties := BuildBaseSettingsProperties(d)
 	id := d.Id()
 
 	phoneBase := platformclientv2.Phonebase{
@@ -243,7 +243,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		d.Set("properties", nil)
 		if phoneBaseSettings.Properties != nil {
-			properties, err := flattenBaseSettingsProperties(phoneBaseSettings.Properties)
+			properties, err := FlattenBaseSettingsProperties(phoneBaseSettings.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}

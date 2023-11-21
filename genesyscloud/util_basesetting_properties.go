@@ -10,7 +10,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
-func buildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{} {
+func BuildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{} {
 	returnValue := make(map[string]interface{})
 
 	if properties := d.Get("properties"); properties != nil {
@@ -24,7 +24,7 @@ func buildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{}
 	return &returnValue
 }
 
-func flattenBaseSettingsProperties(properties interface{}) (string, diag.Diagnostics) {
+func FlattenBaseSettingsProperties(properties interface{}) (string, diag.Diagnostics) {
 	if properties == nil {
 		return "", nil
 	}
