@@ -424,38 +424,43 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 	filterList := make([]string, 0)
 	proxy := dependentconsumers.GetDependentConsumerProxy(nil)
 
-	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
 			proxy = dependentconsumers.GetDependentConsumerProxy(clientConfig)
 			resources := make(resourceExporter.ResourceIDMetaMap)
-			resources, err := proxy.GetDependentConsumers(ctx, resourceKeys)
+			resources, dependsMap, err := proxy.GetDependentConsumers(ctx, resourceKeys)
 
 			if err != nil {
-				return nil, diag.Errorf("Failed to retrieve Dependent Flows %s: %s", resourceKeys.State.ID, err)
+				return nil, nil, diag.Errorf("Failed to retrieve Dependent Flows %s: %s", resourceKeys.State.ID, err)
 			}
-			return resources, nil
+			return resources, dependsMap, nil
 		}
 	}
 
 	for _, resourceKeys := range g.resources {
 
-		resources, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+		resources, dependsMap, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
 		if err != nil {
 			return nil, err
 		}
 
 		if len(resources) > 0 {
 			resourcesTobeExported := retrieveExportResources(g.resources, resources)
-			dependsList := make([]string, 0)
+			//dependsList := make([]string, 0)
 			for _, meta := range resourcesTobeExported {
 				resource := strings.Split(meta.Name, " ")
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
-				dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], resource[1]))
 			}
 
-			dependsMap := make(map[string][]string)
-			dependsMap[resourceKeys.State.ID] = dependsList
+			//for _, meta := range resources {
+			//	resource := strings.Split(meta.Name, " ")
+			//	dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], resource[1]))
+			//}
+			//
+			//dependsMap := make(map[string][]string)
+			//dependsMap[resourceKeys.State.ID] = dependsList
 
+			//g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
 			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
 		}
 	}

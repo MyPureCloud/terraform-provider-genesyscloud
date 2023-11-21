@@ -143,13 +143,13 @@ func TestUnitBuildDependsOnResources(t *testing.T) {
 		"queue resources": meta,
 	}
 
-	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, error) {
-		return resources, nil
+	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
+		return resources, nil, nil
 	}
 
-	getAllPooledFn := func(method gcloud.GetAllConfigFunc) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	getAllPooledFn := func(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
 		//assert.Equal(t, targetName, name)
-		return resources, nil
+		return resources, nil, nil
 	}
 
 	dependencyProxy := &dependentconsumers.DependentConsumerProxy{

@@ -2,9 +2,12 @@ package dependent_consumers
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
@@ -17,16 +20,16 @@ type DependentConsumerProxy struct {
 	GetPooledClientAttr            retrievePooledClientFunc
 }
 
-func (p *DependentConsumerProxy) GetDependentConsumers(ctx context.Context, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, error) {
+func (p *DependentConsumerProxy) GetDependentConsumers(ctx context.Context, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	return p.RetrieveDependentConsumersAttr(ctx, p, resourceKeys)
 }
 
-func (p *DependentConsumerProxy) GetAllWithPooledClient(method gcloud.GetAllConfigFunc) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func (p *DependentConsumerProxy) GetAllWithPooledClient(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
 	return p.GetPooledClientAttr(method)
 }
 
-type retrieveDependentConsumersFunc func(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, error)
-type retrievePooledClientFunc func(method gcloud.GetAllConfigFunc) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics)
+type retrieveDependentConsumersFunc func(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error)
+type retrievePooledClientFunc func(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics)
 
 var InternalProxy *DependentConsumerProxy
 
@@ -53,22 +56,27 @@ func newDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *De
 	return InternalProxy
 }
 
-func retrievePooledClientFn(method gcloud.GetAllConfigFunc) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resourcefunc := gcloud.GetAllWithPooledClient(method)
+func retrievePooledClientFn(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+	resourcefunc := gcloud.GetAllWithPooledClientCustom(method)
 	ctx, _ := context.WithCancel(context.Background())
-	resources, err := resourcefunc(ctx)
+	resources, dependsMap, err := resourcefunc(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return resources, err
+	return resources, dependsMap, err
 }
 
-func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, error) {
+func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	resourceKey := resourceKeys.State.ID
-	return fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, make(resourceExporter.ResourceIDMetaMap))
+	dependsMap := make(map[string][]string)
+	dependentResources, dependsMap, err := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, make(resourceExporter.ResourceIDMetaMap), dependsMap)
+	if err != nil {
+		return nil, nil, err
+	}
+	return dependentResources, buildDependsMap(dependentResources, dependsMap, resourceKey), nil
 }
 
-func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType string, resourceKey string, resources resourceExporter.ResourceIDMetaMap) (resourceExporter.ResourceIDMetaMap, error) {
+func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType string, resourceKey string, resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	if resType == "genesyscloud_flow" {
 		dependentConsumerMap := SetDependentObjectMaps()
 		data, _, err := p.ArchitectApi.GetFlow(resourceKey, false)
@@ -81,7 +89,7 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 				const pageSize = 100
 				dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, *data.VarType+"FLOW", nil, pageNum, pageSize)
 				if err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 				if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
 					break
@@ -93,9 +101,10 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 						resourceFilter := resourceType + " " + *consumer.Name
 						resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
 						if resourceType == "genesyscloud_flow" {
-							resources, err = fetchDepConsumers(ctx, p, resourceType, *consumer.Id, resources)
+							innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, resources, dependsMap)
+							dependsMap = stringmap.MergeMaps(dependsMap, buildDependsMap(innerDependentResources, innerDependsMap, *consumer.Id))
 							if err != nil {
-								return nil, err
+								return nil, nil, err
 							}
 						}
 					}
@@ -105,5 +114,15 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 			}
 		}
 	}
-	return resources, nil
+	return resources, dependsMap, nil
+}
+
+func buildDependsMap(resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, id string) map[string][]string {
+	dependsList := make([]string, 0)
+	for _, meta := range resources {
+		resource := strings.Split(meta.Name, " ")
+		dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], resource[1]))
+	}
+	dependsMap[id] = dependsList
+	return dependsMap
 }
