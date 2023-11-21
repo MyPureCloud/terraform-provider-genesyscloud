@@ -742,6 +742,8 @@ func correctInterpolatedFileShaFunctions(config string) string {
 	return correctedConfig
 }
 
+// terraform doesn't accept quotes references in HCL https://discuss.hashicorp.com/t/terraform-0-12-14-released/3898
+// Added a corrected HCL during export and also for JSON export
 func correctDependsOn(config string, isHcl bool) string {
 	correctedConfig := config
 	re := regexp.MustCompile(`"\$dep\$([^$]+)\$dep\$"`)
@@ -795,6 +797,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			wildcardAttr = prevAttr + "." + "*"
 		}
 
+		// Identify configMap for the parent resource and add depends_on for the parent resource
 		if parentKey {
 			if currAttr == "id" {
 				g.addDependsOnValues(val.(string), configMap)
@@ -953,6 +956,7 @@ func removeZeroValues(key string, val interface{}, configMap gcloud.JsonMap) {
 	}
 }
 
+// Identify the parent config map and if the resources have further dependent resources add a new attribute depends_on
 func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap gcloud.JsonMap) {
 	list, exists := g.dependsList[key]
 	resourceDependsList := make([]string, 0)

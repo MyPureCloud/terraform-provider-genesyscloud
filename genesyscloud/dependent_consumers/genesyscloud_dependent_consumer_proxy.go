@@ -65,8 +65,11 @@ func retrievePooledClientFn(method gcloud.GetAllConfigFunc) (resourceExporter.Re
 
 func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, error) {
 	resourceKey := resourceKeys.State.ID
-	resources := make(resourceExporter.ResourceIDMetaMap)
-	if resourceKeys.Type == "genesyscloud_flow" {
+	return fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, make(resourceExporter.ResourceIDMetaMap))
+}
+
+func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType string, resourceKey string, resources resourceExporter.ResourceIDMetaMap) (resourceExporter.ResourceIDMetaMap, error) {
+	if resType == "genesyscloud_flow" {
 		dependentConsumerMap := SetDependentObjectMaps()
 		data, _, err := p.ArchitectApi.GetFlow(resourceKey, false)
 		if err != nil {
@@ -85,10 +88,16 @@ func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy
 				}
 
 				for _, consumer := range *dependencies.Entities {
-					resType, exists := dependentConsumerMap[*consumer.VarType]
+					resourceType, exists := dependentConsumerMap[*consumer.VarType]
 					if exists {
-						resourceFilter := resType + " " + *consumer.Name
+						resourceFilter := resourceType + " " + *consumer.Name
 						resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
+						if resourceType == "genesyscloud_flow" {
+							resources, err = fetchDepConsumers(ctx, p, resourceType, *consumer.Id, resources)
+							if err != nil {
+								return nil, err
+							}
+						}
 					}
 
 				}
@@ -96,6 +105,5 @@ func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy
 			}
 		}
 	}
-
 	return resources, nil
 }

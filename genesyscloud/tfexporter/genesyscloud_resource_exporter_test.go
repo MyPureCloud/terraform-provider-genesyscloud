@@ -205,7 +205,7 @@ func TestUnitMergeExporters(t *testing.T) {
 	}
 
 	// Check if the exporters in the result have the expected keys
-	for exporterID, expected := range *result {
+	for exporterID, actual := range *result {
 
 		exporter, ok := expectedKeys[exporterID]
 		if !ok {
@@ -213,8 +213,8 @@ func TestUnitMergeExporters(t *testing.T) {
 			continue
 		}
 
-		if !reflect.DeepEqual(exporter, expected.AllowZeroValues) {
-			t.Errorf("Exporter %s has unexpected keys. Expected: %v, Got: %v", exporterID, expected, exporter)
+		if !reflect.DeepEqual(exporter, actual.AllowZeroValues) {
+			t.Errorf("Exporter %s has unexpected keys. Expected: %v, Got: %v", exporterID, actual, exporter)
 		}
 	}
 }
