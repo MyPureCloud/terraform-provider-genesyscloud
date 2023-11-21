@@ -62,7 +62,7 @@ func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 	return applyPropertyDefaults(diff, phoneBaseSetting.Properties)
 }
 
-func customizeTrunkBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+func CustomizeTrunkBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	// Defaults must be set on missing properties
 	if !diff.NewValueKnown("properties") {
 		// properties value not yet in final state. Nothing to do.

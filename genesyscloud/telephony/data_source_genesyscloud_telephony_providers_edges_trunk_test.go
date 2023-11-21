@@ -1,7 +1,8 @@
-package genesyscloud
+package telephony
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -42,8 +43,8 @@ func TestAccDataSourceTrunk(t *testing.T) {
 		false)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateEdgeGroupResourceWithCustomAttrs(

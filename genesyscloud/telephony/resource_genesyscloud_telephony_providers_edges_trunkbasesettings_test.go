@@ -1,9 +1,10 @@
-package genesyscloud
+package telephony
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -26,8 +27,8 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
@@ -41,7 +42,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 						name1,
 						"1m",
 						"25",
-						FalseValue,
+						gcloud.FalseValue,
 						[]string{strconv.Quote("audio/pcmu")}),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -69,7 +70,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 					generateTrunkBaseSettingsProperties(name2,
 						"2m",
 						"50",
-						TrueValue,
+						gcloud.TrueValue,
 						[]string{strconv.Quote("audio/opus")}),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -106,7 +107,7 @@ func testVerifyTrunkBaseSettingsDestroyed(state *terraform.State) error {
 		trunkBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(rs.Primary.ID, true)
 		if trunkBaseSettings != nil {
 			return fmt.Errorf("TrunkBaseSettings (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if gcloud.IsStatus404(resp) {
 			// TrunkBaseSettings not found as expected
 			continue
 		} else {
@@ -120,36 +121,36 @@ func testVerifyTrunkBaseSettingsDestroyed(state *terraform.State) error {
 
 func generateTrunkBaseSettingsProperties(settingsName, trunkMaxDialTimeout, trunkTransportSipDscpValue, trunkMediaDisconnectOnIdleRtp string, trunkMediaCodec []string) string {
 	// A random selection of properties
-	return "properties = " + GenerateJsonEncodedProperties(
-		GenerateJsonProperty(
-			"trunk_label", GenerateJsonObject(
-				GenerateJsonProperty(
-					"value", GenerateJsonObject(
-						GenerateJsonProperty("instance", strconv.Quote(settingsName)),
+	return "properties = " + gcloud.GenerateJsonEncodedProperties(
+		gcloud.GenerateJsonProperty(
+			"trunk_label", gcloud.GenerateJsonObject(
+				gcloud.GenerateJsonProperty(
+					"value", gcloud.GenerateJsonObject(
+						gcloud.GenerateJsonProperty("instance", strconv.Quote(settingsName)),
 					)))),
-		GenerateJsonProperty(
-			"trunk_max_dial_timeout", GenerateJsonObject(
-				GenerateJsonProperty(
-					"value", GenerateJsonObject(
-						GenerateJsonProperty("instance", strconv.Quote(trunkMaxDialTimeout)),
+		gcloud.GenerateJsonProperty(
+			"trunk_max_dial_timeout", gcloud.GenerateJsonObject(
+				gcloud.GenerateJsonProperty(
+					"value", gcloud.GenerateJsonObject(
+						gcloud.GenerateJsonProperty("instance", strconv.Quote(trunkMaxDialTimeout)),
 					)))),
-		GenerateJsonProperty(
-			"trunk_transport_sip_dscp_value", GenerateJsonObject(
-				GenerateJsonProperty(
-					"value", GenerateJsonObject(
-						GenerateJsonProperty("instance", trunkTransportSipDscpValue),
+		gcloud.GenerateJsonProperty(
+			"trunk_transport_sip_dscp_value", gcloud.GenerateJsonObject(
+				gcloud.GenerateJsonProperty(
+					"value", gcloud.GenerateJsonObject(
+						gcloud.GenerateJsonProperty("instance", trunkTransportSipDscpValue),
 					)))),
-		GenerateJsonProperty(
-			"trunk_media_disconnect_on_idle_rtp", GenerateJsonObject(
-				GenerateJsonProperty(
-					"value", GenerateJsonObject(
-						GenerateJsonProperty("instance", trunkMediaDisconnectOnIdleRtp),
+		gcloud.GenerateJsonProperty(
+			"trunk_media_disconnect_on_idle_rtp", gcloud.GenerateJsonObject(
+				gcloud.GenerateJsonProperty(
+					"value", gcloud.GenerateJsonObject(
+						gcloud.GenerateJsonProperty("instance", trunkMediaDisconnectOnIdleRtp),
 					)))),
-		GenerateJsonProperty(
-			"trunk_media_codec", GenerateJsonObject(
-				GenerateJsonProperty(
-					"value", GenerateJsonObject(
-						GenerateJsonArrayProperty("instance", strings.Join(trunkMediaCodec, ",")),
+		gcloud.GenerateJsonProperty(
+			"trunk_media_codec", gcloud.GenerateJsonObject(
+				gcloud.GenerateJsonProperty(
+					"value", gcloud.GenerateJsonObject(
+						gcloud.GenerateJsonArrayProperty("instance", strings.Join(trunkMediaCodec, ",")),
 					)))),
 	)
 }
