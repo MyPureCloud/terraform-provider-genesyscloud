@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func ResourceTrunkBaseSettings() *schema.Resource {
@@ -57,6 +57,11 @@ func ResourceTrunkBaseSettings() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"inbound_site_id": {
+				Description: "The site to which inbound calls will be routed.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
 			"properties": {
 				Description:      "trunk base settings properties",
 				Type:             schema.TypeString,
@@ -84,6 +89,8 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	trunkMetaBase := gcloud.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
+	//inboundSite := gcloud.BuildSdkDomainEntityRef(d, "inbound_site_id")
+
 	properties := gcloud.BuildBaseSettingsProperties(d)
 
 	trunkType := d.Get("trunk_type").(string)

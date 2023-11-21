@@ -1,15 +1,17 @@
 package architect_ivr
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
-	"github.com/stretchr/testify/assert"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
 
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 

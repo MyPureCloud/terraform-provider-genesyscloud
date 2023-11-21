@@ -3,8 +3,9 @@ package architect_grammar
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 	"log"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 /*
