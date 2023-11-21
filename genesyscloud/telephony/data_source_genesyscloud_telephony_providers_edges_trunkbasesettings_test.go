@@ -3,6 +3,7 @@ package telephony
 import (
 	"fmt"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
 	"github.com/google/uuid"
@@ -19,6 +20,36 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 		trunkMetaBaseId          = "external_sip_pcv_byoc_carrier.json"
 		trunkType                = "EXTERNAL"
 		managed                  = false
+		locationResourceId       = "location"
+		siteId                   = "site"
+	)
+
+	referencedResources := gcloud.GenerateLocationResource(
+		locationResourceId,
+		"tf location "+uuid.NewString(),
+		"HQ1",
+		[]string{},
+		gcloud.GenerateLocationEmergencyNum(
+			"+13178793428",
+			gcloud.NullValue,
+		),
+		gcloud.GenerateLocationAddress(
+			"7601 Interactive Way",
+			"Indianapolis",
+			"IN",
+			"US",
+			"46278",
+		),
+	) + edgeSite.GenerateSiteResourceWithCustomAttrs(
+		siteId,
+		"tf site "+uuid.NewString(),
+		"test description",
+		"genesyscloud_location."+locationResourceId+".id",
+		"Cloud",
+		false,
+		"[\"us-east-1\"]",
+		gcloud.NullValue,
+		gcloud.NullValue,
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -26,11 +57,12 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+				Config: referencedResources + GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 					trunkBaseSettingsRes,
 					name,
 					description,
 					trunkMetaBaseId,
+					"genesyscloud_telephony_providers_edges_site."+siteId+".id",
 					trunkType,
 					managed,
 				) + generateTrunkBaseSettingsDataSource(

@@ -89,7 +89,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	trunkMetaBase := gcloud.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
-	//inboundSite := gcloud.BuildSdkDomainEntityRef(d, "inbound_site_id")
+	inboundSite := gcloud.BuildSdkDomainEntityRef(d, "inbound_site_id")
 
 	properties := gcloud.BuildBaseSettingsProperties(d)
 
@@ -99,6 +99,7 @@ func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	trunkBase := platformclientv2.Trunkbase{
 		Name:          &name,
 		TrunkMetabase: trunkMetaBase,
+		InboundSite:   inboundSite,
 		TrunkType:     &trunkType,
 		Managed:       &managed,
 		Properties:    properties,
@@ -128,6 +129,8 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	trunkMetaBase := gcloud.BuildSdkDomainEntityRef(d, "trunk_meta_base_id")
+	inboundSite := gcloud.BuildSdkDomainEntityRef(d, "inbound_site_id")
+
 	properties := gcloud.BuildBaseSettingsProperties(d)
 	trunkType := d.Get("trunk_type").(string)
 	managed := d.Get("managed").(bool)
@@ -137,6 +140,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		Id:            &id,
 		Name:          &name,
 		TrunkMetabase: trunkMetaBase,
+		InboundSite:   inboundSite,
 		TrunkType:     &trunkType,
 		Managed:       &managed,
 		Properties:    properties,
@@ -225,6 +229,9 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 		}
 		if trunkBaseSettings.TrunkMetabase != nil {
 			d.Set("trunk_meta_base_id", *trunkBaseSettings.TrunkMetabase.Id)
+		}
+		if trunkBaseSettings.InboundSite != nil {
+			d.Set("inbound_site_id", *trunkBaseSettings.InboundSite.Id)
 		}
 		d.Set("trunk_type", *trunkBaseSettings.TrunkType)
 
@@ -371,6 +378,7 @@ func GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 	name,
 	description,
 	trunkMetaBaseId,
+	inboundSiteId,
 	trunkType string,
 	managed bool,
 	otherAttrs ...string) string {
@@ -378,9 +386,10 @@ func GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		name = "%s"
 		description = "%s"
 		trunk_meta_base_id = "%s"
+		inbound_site_id=%s
 		trunk_type = "%s"
 		managed = %v
 		%s
 	}
-	`, trunkBaseSettingsRes, name, description, trunkMetaBaseId, trunkType, managed, strings.Join(otherAttrs, "\n"))
+	`, trunkBaseSettingsRes, name, description, trunkMetaBaseId, inboundSiteId, trunkType, managed, strings.Join(otherAttrs, "\n"))
 }

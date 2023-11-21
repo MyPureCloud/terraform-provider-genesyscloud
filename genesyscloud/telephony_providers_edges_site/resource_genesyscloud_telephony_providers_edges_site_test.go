@@ -414,6 +414,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
 		"external_sip.json",
+		"site1",
 		"EXTERNAL",
 		false)
 
@@ -422,6 +423,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
 		"external_sip.json",
+		"site2",
 		"EXTERNAL",
 		false)
 
@@ -431,6 +433,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"test description",
 		"external_sip.json",
 		"EXTERNAL",
+		"site3",
 		false)
 
 	resource.Test(t, resource.TestCase{

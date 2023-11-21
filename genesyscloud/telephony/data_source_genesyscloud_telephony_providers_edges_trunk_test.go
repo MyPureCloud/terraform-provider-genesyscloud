@@ -31,6 +31,7 @@ func TestAccDataSourceTrunk(t *testing.T) {
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
+		"site",
 		"PHONE",
 		false)
 
@@ -39,6 +40,7 @@ func TestAccDataSourceTrunk(t *testing.T) {
 		"test trunk base settings "+uuid.NewString(),
 		"test description 1",
 		"phone_connections_webrtc.json",
+		"site",
 		"PHONE",
 		false)
 
