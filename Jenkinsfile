@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        CREDENTIALS_ID  = "GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECERET"
+        CREDENTIALS_ID  = "GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET"
         GOPATH = "$HOME/go"
 		TF_ACC = "1"
         TF_LOG = "DEBUG"
