@@ -412,6 +412,7 @@ var (
 				Description: "Whether or not support center screen module is enabled",
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 			},
 			"module_settings_compact_category_module_template": {
 				Description: "Compact category module template",
