@@ -60,7 +60,6 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_telephony_providers_edges_phonebasesettings", dataSourcePhoneBaseSettings())
 	l.RegisterDataSource("genesyscloud_telephony_providers_edges_trunk", dataSourceTrunk())
 	l.RegisterDataSource("genesyscloud_telephony_providers_edges_trunkbasesettings", dataSourceTrunkBaseSettings())
-	l.RegisterDataSource("genesyscloud_webdeployments_deployment", dataSourceWebDeploymentsDeployment())
 	l.RegisterDataSource("genesyscloud_widget_deployment", dataSourceWidgetDeployments())
 }
 
@@ -125,7 +124,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_telephony_providers_edges_trunk", ResourceTrunk())
 	l.RegisterResource("genesyscloud_user", ResourceUser())
 	l.RegisterResource("genesyscloud_user_roles", ResourceUserRoles())
-	l.RegisterResource("genesyscloud_webdeployments_deployment", ResourceWebDeployment())
 	l.RegisterResource("genesyscloud_widget_deployment", ResourceWidgetDeployment())
 
 }
@@ -179,7 +177,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_telephony_providers_edges_trunk", TrunkExporter())
 	l.RegisterExporter("genesyscloud_user", UserExporter())
 	l.RegisterExporter("genesyscloud_user_roles", UserRolesExporter())
-	l.RegisterExporter("genesyscloud_webdeployments_deployment", WebDeploymentExporter())
 	l.RegisterExporter("genesyscloud_widget_deployment", WidgetDeploymentExporter())
 
 	l.RegisterExporter("genesyscloud_knowledge_v1_document", KnowledgeDocumentExporterV1())

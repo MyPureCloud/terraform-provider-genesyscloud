@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -133,15 +131,30 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeploymentConfiguration())
 		d.Set("name", *configuration.Name)
 
-		resourcedata.SetNillableValue(d, "description", configuration.Description)
-		resourcedata.SetNillableValue(d, "languages", configuration.Languages)
-		resourcedata.SetNillableValue(d, "default_language", configuration.DefaultLanguage)
-		resourcedata.SetNillableValue(d, "status", configuration.Status)
-		resourcedata.SetNillableValue(d, "version", configuration.Version)
-
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "messenger", configuration.Messenger, flattenMessengerSettings)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "cobrowse", configuration.Cobrowse, flattenCobrowseSettings)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "journey_events", configuration.JourneyEvents, flattenJourneyEvents)
+		if configuration.Description != nil {
+			d.Set("description", *configuration.Description)
+		}
+		if configuration.Languages != nil {
+			d.Set("languages", *configuration.Languages)
+		}
+		if configuration.DefaultLanguage != nil {
+			d.Set("default_language", *configuration.DefaultLanguage)
+		}
+		if configuration.Status != nil {
+			d.Set("status", *configuration.Status)
+		}
+		if configuration.Version != nil {
+			d.Set("version", *configuration.Version)
+		}
+		if configuration.Messenger != nil {
+			d.Set("messenger", flattenMessengerSettings(configuration.Messenger))
+		}
+		if configuration.Cobrowse != nil {
+			d.Set("cobrowse", flattenCobrowseSettings(configuration.Cobrowse))
+		}
+		if configuration.JourneyEvents != nil {
+			d.Set("journey_events", flattenJourneyEvents(configuration.JourneyEvents))
+		}
 
 		log.Printf("Read web deployment configuration %s %s", d.Id(), *configuration.Name)
 		return cc.CheckState()
