@@ -446,21 +446,10 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 		if len(resources) > 0 {
 			resourcesTobeExported := retrieveExportResources(g.resources, resources)
-			//dependsList := make([]string, 0)
 			for _, meta := range resourcesTobeExported {
 				resource := strings.Split(meta.Name, " ")
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
 			}
-
-			//for _, meta := range resources {
-			//	resource := strings.Split(meta.Name, " ")
-			//	dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], resource[1]))
-			//}
-			//
-			//dependsMap := make(map[string][]string)
-			//dependsMap[resourceKeys.State.ID] = dependsList
-
-			//g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
 			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
 		}
 	}

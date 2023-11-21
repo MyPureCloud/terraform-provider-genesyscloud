@@ -31,3 +31,30 @@ func TestUnitMergeMaps(t *testing.T) {
 		}
 	}
 }
+
+func TestUnitMergeMapsStrings(t *testing.T) {
+	m1 := map[string][]string{
+		"key1": {"1", "2", "3"},
+		"key2": {"4", "5", "6"},
+	}
+
+	m2 := map[string][]string{
+		"key3": {},
+		"key4": {},
+	}
+
+	result := MergeMaps(m1, m2)
+
+	// Check if the result contains all the keys from m1 and m2
+	for key, value := range m1 {
+		if !reflect.DeepEqual(result[key], value) {
+			t.Errorf("Unexpected value for key %s in result. Expected: %v, Got: %v", key, value, result[key])
+		}
+	}
+
+	for key, value := range m2 {
+		if !reflect.DeepEqual(result[key], value) {
+			t.Errorf("Unexpected value for key %s in result. Expected: %v, Got: %v", key, value, result[key])
+		}
+	}
+}
