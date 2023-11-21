@@ -111,6 +111,13 @@ func ResourceTfExport() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				ForceNew:    true,
 			},
+			"add_depends_on_capability": {
+				Description: "Add Depends On Capability for Flows",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				ForceNew:    true,
+			},
 		},
 	}
 }

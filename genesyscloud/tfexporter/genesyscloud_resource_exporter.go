@@ -66,6 +66,7 @@ type GenesysCloudResourceExporter struct {
 	exportAsHCL            bool
 	splitFilesByResource   bool
 	logPermissionErrors    bool
+	addDependsOn           bool
 	includeStateFile       bool
 	version                string
 	provider               *schema.Provider
@@ -126,6 +127,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		exportAsHCL:          d.Get("export_as_hcl").(bool),
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
+		addDependsOn:         d.Get("add_depends_on_capability").(bool),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
 		version:              meta.(*gcloud.ProviderMeta).Version,
@@ -402,15 +404,18 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 
 func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResources() diag.Diagnostics {
 
-	filterList, err := g.processAndBuildDependencies()
-	if err != nil {
-		return err
-	}
-	if len(filterList) > 0 {
-		diagErr := g.exportDependentResources(filterList)
-		if diagErr != nil {
-			return diagErr
+	if g.addDependsOn {
+		filterList, err := g.processAndBuildDependencies()
+		if err != nil {
+			return err
 		}
+		if len(filterList) > 0 {
+			diagErr := g.exportDependentResources(filterList)
+			if diagErr != nil {
+				return diagErr
+			}
+		}
+		return nil
 	}
 	return nil
 }
@@ -722,7 +727,7 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 
 func correctCustomFunctions(config string) string {
 	config = correctInterpolatedFileShaFunctions(config)
-	return correctDependsOn(config)
+	return correctDependsOn(config, true)
 }
 
 // find & replace ${filesha256(\"...\")} with ${filesha256("...")}
@@ -737,18 +742,19 @@ func correctInterpolatedFileShaFunctions(config string) string {
 	return correctedConfig
 }
 
-func correctDependsOn(config string) string {
+func correctDependsOn(config string, isHcl bool) string {
 	correctedConfig := config
 	re := regexp.MustCompile(`"\$dep\$([^$]+)\$dep\$"`)
 	matches := re.FindAllString(config, -1)
 
 	for _, match := range matches {
 		value := re.FindStringSubmatch(match)
-		log.Printf(" depfthyui %v", value)
-		log.Printf(" match %v", match)
 		if len(value) == 2 {
-			// Replace the entire match with the extracted value without quotes
-			correctedConfig = strings.Replace(correctedConfig, match, value[1], -1)
+			if !isHcl {
+				correctedConfig = strings.Replace(correctedConfig, match, fmt.Sprintf(`"%s"`, value[1]), -1)
+			} else {
+				correctedConfig = strings.Replace(correctedConfig, match, value[1], -1)
+			}
 		}
 	}
 
