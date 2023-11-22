@@ -127,7 +127,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		exportAsHCL:          d.Get("export_as_hcl").(bool),
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
-		addDependsOn:         d.Get("add_depends_on_capability").(bool),
+		addDependsOn:         d.Get("enable_flow_depends_on").(bool),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
 		version:              meta.(*gcloud.ProviderMeta).Version,
@@ -405,12 +405,12 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResources() diag.Diagnostics {
 
 	if g.addDependsOn {
-		filterList, err := g.processAndBuildDependencies()
+		filterList, resources, err := g.processAndBuildDependencies()
 		if err != nil {
 			return err
 		}
 		if len(filterList) > 0 {
-			diagErr := g.exportDependentResources(filterList)
+			diagErr := g.exportDependentResources(filterList, resources)
 			if diagErr != nil {
 				return diagErr
 			}
@@ -420,8 +420,9 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResources() diag.D
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []string, diagErr diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []string, resources resourceExporter.ResourceIDMetaMap, diagErr diag.Diagnostics) {
 	filterList := make([]string, 0)
+	totalResources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := dependentconsumers.GetDependentConsumerProxy(nil)
 
 	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
@@ -441,29 +442,31 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 		resources, dependsMap, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		if len(resources) > 0 {
 			resourcesTobeExported := retrieveExportResources(g.resources, resources)
 			for _, meta := range resourcesTobeExported {
-				resource := strings.Split(meta.Name, " ")
+				resource := strings.Split(meta.Name, "::::")
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
 			}
 			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
+			totalResources = stringmap.MergeSingularMaps(totalResources, resources)
 		}
 	}
-	return filterList, nil
+	return filterList, totalResources, nil
 }
 
-func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []string) (diagErr diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []string, resources resourceExporter.ResourceIDMetaMap) (diagErr diag.Diagnostics) {
 	g.resourceTypeFilter = IncludeFilterByResourceType
 	g.resourceFilter = FilterResourceByName
 	g.filterList = &filterList
 	existingExporters := g.exporters
 	existingResources := g.resources
 	g.resources = nil
-
+	uniqueResources := make([]resourceExporter.ResourceInfo, 0)
+	removeChan := make([]string, 0)
 	g.retrieveExporters()
 	diagErr = g.buildSanitizedResourceMaps(*g.exporters, filterList, g.logPermissionErrors)
 	if diagErr != nil {
@@ -475,8 +478,28 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 		return diagErr
 	}
 	// retain the exporters and resources
+
+	for _, exporter := range *g.exporters {
+		for id, _ := range exporter.SanitizedResourceMap {
+			_, exists := resources[id]
+			if !exists {
+				removeChan = append(removeChan, id)
+			}
+		}
+		for _, removeId := range removeChan {
+			delete(exporter.SanitizedResourceMap, removeId)
+		}
+	}
+
 	g.exporters = mergeExporters(existingExporters, g.exporters)
-	g.resources = append(g.resources, existingResources...)
+	for _, resource := range g.resources {
+		_, exists := resources[resource.State.ID]
+		if exists {
+			uniqueResources = append(uniqueResources, resource)
+		}
+	}
+
+	g.resources = append(existingResources, uniqueResources...)
 	return nil
 }
 
@@ -551,9 +574,15 @@ func mergeExporters(m1, m2 *map[string]*resourceExporter.ResourceExporter) *map[
 	}
 
 	for k, v := range *m2 {
-		result[k] = v
+		_, exists := result[k]
+		if exists {
+			for id, value := range v.SanitizedResourceMap {
+				result[k].SanitizedResourceMap[id] = value
+			}
+		} else {
+			result[k] = v
+		}
 	}
-
 	return &result
 }
 
@@ -957,8 +986,8 @@ func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap 
 	if exists {
 		for _, res := range list {
 			for _, resource := range g.resources {
-				if resource.Name == strings.Split(res, ".")[1] {
-					resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", res))
+				if resource.State.ID == strings.Split(res, ".")[1] {
+					resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", strings.Split(res, ".")[0]+"."+resource.Name))
 				}
 			}
 		}

@@ -76,3 +76,17 @@ func MergeMaps[T, U comparable](m1, m2 map[T][]U) map[T][]U {
 
 	return result
 }
+
+func MergeSingularMaps[T, U comparable](m1, m2 map[T]U) map[T]U {
+	result := make(map[T]U)
+
+	for key, value := range m1 {
+		result[key] = value
+	}
+
+	for key, value := range m2 {
+		result[key] = value
+	}
+
+	return result
+}

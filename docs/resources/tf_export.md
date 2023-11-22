@@ -34,7 +34,7 @@ resource "genesyscloud_tf_export" "export" {
 
 ### Optional
 
-- `add_depends_on_capability` (Boolean) Add Depends On Capability for Flows Defaults to `false`.
+- `enable_flow_depends_on` (Boolean) Add Depends On Capability for Flows Defaults to `false`.
 - `directory` (String) Directory where the config and state files will be exported. Defaults to `./genesyscloud`.
 - `exclude_attributes` (List of String) Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_name}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.
 - `exclude_filter_resources` (List of String) Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information

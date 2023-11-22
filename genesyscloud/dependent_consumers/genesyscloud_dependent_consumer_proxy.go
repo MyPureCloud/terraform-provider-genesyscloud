@@ -85,36 +85,46 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 		}
 		// Fetch Dependent Consumed Resources only for Published Versions
 		if data != nil && data.PublishedVersion != nil && data.PublishedVersion.Id != nil {
-			pageCount := 1
-			const pageSize = 100
-			dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, *data.VarType+"FLOW", nil, pageCount, pageSize)
-			pageCount = *dependencies.PageCount
+			flowTypeObjectMaps := SetFlowTypeObjectMaps()
+			objectType, flowTypeExists := flowTypeObjectMaps[*data.VarType]
+			if flowTypeExists {
+				pageCount := 1
+				const pageSize = 100
+				dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageCount, pageSize)
 
-			// return empty dependsMap and  resources
-			if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
-				return resources, dependsMap, nil
-			}
-
-			// iterate dependencies
-			if pageCount < 2 {
-				resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p)
 				if err != nil {
 					return nil, nil, err
 				}
-				return resources, dependsMap, nil
-			}
 
-			for pageNum := 1; pageNum <= pageCount; pageNum++ {
-				dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, *data.VarType+"FLOW", nil, pageNum, pageSize)
-				if err != nil {
-					return nil, nil, err
-				}
+				pageCount = *dependencies.PageCount
+
+				// return empty dependsMap and  resources
 				if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
-					break
+					return resources, dependsMap, nil
 				}
-				resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p)
-				if err != nil {
-					return nil, nil, err
+
+				// iterate dependencies
+				if pageCount < 2 {
+					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p)
+					log.Printf("dependencies GetArchitectDependencytrackingConsumedresources: %v\n", resources)
+					if err != nil {
+						return nil, nil, err
+					}
+					return resources, dependsMap, nil
+				}
+
+				for pageNum := 1; pageNum <= pageCount; pageNum++ {
+					dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageNum, pageSize)
+					if err != nil {
+						return nil, nil, err
+					}
+					if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
+						break
+					}
+					resources, dependsMap, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p)
+					if err != nil {
+						return nil, nil, err
+					}
 				}
 			}
 		}
@@ -124,32 +134,35 @@ func fetchDepConsumers(ctx context.Context, p *DependentConsumerProxy, resType s
 
 func buildDependsMap(resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, id string) map[string][]string {
 	dependsList := make([]string, 0)
-	for _, meta := range resources {
-		resource := strings.Split(meta.Name, " ")
-		dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], resource[1]))
+	for depId, meta := range resources {
+		resource := strings.Split(meta.Name, "::::")
+		if id != depId {
+			dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], depId))
+		}
 	}
 	dependsMap[id] = dependsList
 	return dependsMap
 }
 
-// This private funciton includes iteration of the dependent Consumers and build DependsList for each Resource
+// This private function includes iteration of the dependent Consumers and build DependsList for each Resource
 // This also checks for dependent flows and again export those dependencies
 func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentitylisting, resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, ctx context.Context, p *DependentConsumerProxy) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
 	dependentConsumerMap := SetDependentObjectMaps()
 	for _, consumer := range *dependencies.Entities {
 		resourceType, exists := dependentConsumerMap[*consumer.VarType]
 		if exists {
-			resourceFilter := resourceType + " " + *consumer.Name
-			resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
-			if resourceType == "genesyscloud_flow" {
-				innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, resources, dependsMap)
-				dependsMap = stringmap.MergeMaps(dependsMap, buildDependsMap(innerDependentResources, innerDependsMap, *consumer.Id))
-				if err != nil {
-					return nil, nil, err
+			resourceFilter := resourceType + "::::" + *consumer.Name
+			if _, resourceExists := resources[*consumer.Id]; !resourceExists {
+				resources[*consumer.Id] = &resourceExporter.ResourceMeta{Name: resourceFilter}
+				if resourceType == "genesyscloud_flow" {
+					innerDependentResources, innerDependsMap, err := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, resources, dependsMap)
+					dependsMap = stringmap.MergeMaps(dependsMap, buildDependsMap(innerDependentResources, innerDependsMap, *consumer.Id))
+					if err != nil {
+						return nil, nil, err
+					}
 				}
 			}
 		}
-
 	}
 	return resources, dependsMap, nil
 }
