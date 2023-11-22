@@ -62,7 +62,6 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 }
 
 func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
-	t.Parallel()
 	var (
 		configName        = "Test Configuration " + gcloud.RandString(8)
 		configDescription = "Test Configuration description " + gcloud.RandString(32)
