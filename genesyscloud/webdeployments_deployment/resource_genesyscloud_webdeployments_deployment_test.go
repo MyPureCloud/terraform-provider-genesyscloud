@@ -13,6 +13,7 @@ import (
 )
 
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
+	t.Parallel()
 	var (
 		deploymentName        = "Test Deployment " + genesyscloud.RandString(8)
 		deploymentDescription = "Test Deployment description " + genesyscloud.RandString(32)
@@ -45,6 +46,7 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 }
 
 func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
+	t.Parallel()
 	var (
 		deploymentName   = "Test Deployment " + genesyscloud.RandString(8)
 		fullResourceName = "genesyscloud_webdeployments_deployment.basicWithAllowedDomains"
@@ -87,6 +89,7 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 }
 
 func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
+	t.Parallel()
 	var (
 		deploymentName             = "Test Deployment " + genesyscloud.RandString(8)
 		fullDeploymentResourceName = "genesyscloud_webdeployments_deployment.versioning"
