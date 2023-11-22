@@ -18,7 +18,7 @@ func TestAccDataSourceScript(t *testing.T) {
 		scriptDataSource = "script-data"
 		resourceId       = "script"
 		name             = "tfscript" + uuid.NewString()
-		filePath         = getTestDataPath("resource", "genesyscloud_script", "test_script.json")
+		filePath         = getTestDataPath("resource", resourceName, "test_script.json")
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -37,8 +37,8 @@ func TestAccDataSourceScript(t *testing.T) {
 					resourceId,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_script."+scriptDataSource, "id",
-						"genesyscloud_script."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair(fmt.Sprintf("data.%s.%s", resourceName, scriptDataSource), "id",
+						resourceName+"."+resourceId, "id"),
 				),
 			},
 		},
@@ -50,13 +50,13 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 	var (
 		callbackDataSource = "callback-script-data"
 		callbackName       = "Default Callback Script"
-		callbackId         = "ffde0662-8395-9b04-7dcb-b90172109065"
+		callbackId         = "1a5ab5f6-a967-4010-8c54-bd88f092e5a8"
 		inboundDataSource  = "inbound-script-data"
 		inboundName        = "Default Inbound Script"
-		inboundId          = "766f1221-047a-11e5-bba2-db8c0964d007"
+		inboundId          = "28bfd948-427f-4956-947e-600ad17ced68"
 		outboundDataSource = "outbound-script-data"
 		outboundName       = "Default Outbound Script"
-		outboundId         = "476c2b71-7429-11e4-9a5b-3f91746bffa3"
+		outboundId         = "e86ac8b2-fdbc-4d85-8c6c-16da0a6493a0"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -70,7 +70,7 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_script."+callbackDataSource, "id",
+					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, callbackDataSource), "id",
 						callbackId,
 					),
 				),
@@ -82,7 +82,7 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_script."+inboundDataSource, "id",
+					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, inboundDataSource), "id",
 						inboundId,
 					),
 				),
@@ -94,7 +94,7 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_script."+outboundDataSource, "id",
+					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, outboundDataSource), "id",
 						outboundId,
 					),
 				),
@@ -105,15 +105,15 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 
 func generateScriptDataSource(dataSourceID, name, resourceId string) string {
 	if resourceId != "" {
-		return fmt.Sprintf(`data "genesyscloud_script" "%s" {
+		return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
-		depends_on = [genesyscloud_script.%s]
+		depends_on = [%s.%s]
 	}
-	`, dataSourceID, name, resourceId)
+	`, resourceName, dataSourceID, name, resourceName, resourceId)
 	} else {
-		return fmt.Sprintf(`data "genesyscloud_script" "%s" {
+		return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 	}
-	`, dataSourceID, name)
+	`, resourceName, dataSourceID, name)
 	}
 }
