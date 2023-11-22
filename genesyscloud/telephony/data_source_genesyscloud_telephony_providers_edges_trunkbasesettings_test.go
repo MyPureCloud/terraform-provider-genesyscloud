@@ -30,7 +30,7 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 		"HQ1",
 		[]string{},
 		gcloud.GenerateLocationEmergencyNum(
-			"+13178793428",
+			"+13178791201",
 			gcloud.NullValue,
 		),
 		gcloud.GenerateLocationAddress(

@@ -57,11 +57,7 @@ func ResourceTrunkBaseSettings() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"inbound_site_id": {
-				Description: "The site to which inbound calls will be routed.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
+
 			"properties": {
 				Description:      "trunk base settings properties",
 				Type:             schema.TypeString,
@@ -79,6 +75,11 @@ func ResourceTrunkBaseSettings() *schema.Resource {
 				Description: "Is this trunk being managed remotely. This property is synchronized with the managed property of the Edge Group to which it is assigned.",
 				Type:        schema.TypeBool,
 				Optional:    true,
+			},
+			"inbound_site_id": {
+				Description: "The site to which inbound calls will be routed.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 		CustomizeDiff: gcloud.CustomizeTrunkBaseSettingsPropertiesDiff,
@@ -227,6 +228,8 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 		if trunkBaseSettings.Managed != nil {
 			d.Set("managed", *trunkBaseSettings.Managed)
 		}
+
+		// check if Id is null or not for both metabase and inboundsite
 		if trunkBaseSettings.TrunkMetabase != nil {
 			d.Set("trunk_meta_base_id", *trunkBaseSettings.TrunkMetabase.Id)
 		}

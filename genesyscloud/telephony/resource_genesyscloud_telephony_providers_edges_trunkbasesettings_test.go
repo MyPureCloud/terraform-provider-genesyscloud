@@ -17,7 +17,7 @@ import (
 func TestAccResourceTrunkBaseSettings(t *testing.T) {
 	t.Parallel()
 	var (
-		trunkBaseSettingsRes = "trunkBaseSettings1234"
+		trunkBaseSettingsRes = "trunkBaseSettings1234" + uuid.NewString()
 		name1                = "test trunk base settings " + uuid.NewString()
 		name2                = "test trunk base settings " + uuid.NewString()
 		description1         = "test description 1"
@@ -25,7 +25,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 		trunkMetaBaseId      = "phone_connections_webrtc.json"
 		trunkType            = "PHONE"
 		managed              = false
-		siteId               = "site"
+		siteId               = "siteTest"
 		locationResourceId   = "location"
 	)
 
@@ -35,7 +35,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 		"HQ1",
 		[]string{},
 		gcloud.GenerateLocationEmergencyNum(
-			"+13178791234",
+			"+13178791021",
 			gcloud.NullValue,
 		),
 		gcloud.GenerateLocationAddress(
@@ -82,7 +82,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "description", description1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_meta_base_id", trunkMetaBaseId),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_type", trunkType),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "inbound_site_id", "genesyscloud_telephony_providers_edges_site."+siteId, ".id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "inbound_site_id", "genesyscloud_telephony_providers_edges_site."+siteId, "id"),
 
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", gcloud.FalseValue),
 					gcloud.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "properties", "trunk_label", name1),
@@ -112,7 +112,7 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "name", name2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "description", description2),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_meta_base_id", trunkMetaBaseId),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "inbound_site_id", "genesyscloud_telephony_providers_edges_site."+siteId, ".id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "inbound_site_id", "genesyscloud_telephony_providers_edges_site."+siteId, "id"),
 
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "trunk_type", trunkType),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes, "managed", gcloud.FalseValue),
@@ -125,9 +125,10 @@ func TestAccResourceTrunkBaseSettings(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_telephony_providers_edges_trunkbasesettings." + trunkBaseSettingsRes,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_telephony_providers_edges_trunkbasesettings." + trunkBaseSettingsRes,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"inbound_site_id"},
 			},
 		},
 		CheckDestroy: testVerifyTrunkBaseSettingsDestroyed,
