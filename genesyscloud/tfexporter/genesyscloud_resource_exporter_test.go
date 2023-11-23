@@ -134,7 +134,7 @@ func TestRemoveZeroValuesFunc(t *testing.T) {
 func TestUnitBuildDependsOnResources(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
-		Name:     "example resource",
+		Name:     "example::::resource",
 		IdPrefix: "prefix_",
 	}
 
@@ -176,7 +176,7 @@ func TestUnitBuildDependsOnResources(t *testing.T) {
 		Type:  resourceType,
 	}
 	gre.resources = []resourceExporter.ResourceInfo{*resourceInfo}
-	filterList, err := gre.processAndBuildDependencies()
+	filterList, _, err := gre.processAndBuildDependencies()
 	if err != nil {
 		t.Errorf("Error during building Dependencies %v", err)
 	}

@@ -332,8 +332,8 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			algorithm := fnv.New32()
 			algorithm.Write([]byte(uuid.NewString()))
 			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+			g.updateSanitiseMap(*g.exporters, resource)
 		}
-
 		// Removes zero values and sets proper reference expressions
 		unresolved, _ := g.sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL, true)
 		if len(unresolved) > 0 {
@@ -361,6 +361,18 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 	}
 
 	return nil
+}
+
+func (g *GenesysCloudResourceExporter) updateSanitiseMap(exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
+	resource resourceExporter.ResourceInfo) {
+	if exporters[resource.Type] != nil {
+		// Get the sanitized name from the ID returned as a reference expression
+		if idMetaMap := exporters[resource.Type].SanitizedResourceMap; idMetaMap != nil {
+			if meta := idMetaMap[resource.State.ID]; meta != nil && meta.Name != "" {
+				meta.Name = resource.Name
+			}
+		}
+	}
 }
 
 func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.InstanceState, ctyType cty.Type) (gcloud.JsonMap, diag.Diagnostics) {
