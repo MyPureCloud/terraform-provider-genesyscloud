@@ -1,7 +1,7 @@
 package task_management_worktype
 
 import (
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -13,66 +13,82 @@ The resource_genesyscloud_task_management_worktype_utils.go file contains variou
 and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 
-// getTaskManagementWorktypeFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktype
-func getTaskManagementWorktypeFromResourceData(d *schema.ResourceData) platformclientv2.Worktype {
-	return platformclientv2.Worktype{
-		Name:                      platformclientv2.String(d.Get("name").(string)),
-		Division:                  &platformclientv2.Writabledivision{Id: platformclientv2.String(d.Get("division_id").(string))},
-		Description:               platformclientv2.String(d.Get("description").(string)),
-		DefaultWorkbin:            buildWorkbinReference(d.Get("default_workbin").([]interface{})),
-		DefaultStatus:             buildWorkitemStatusReference(d.Get("default_status").([]interface{})),
-		Statuses:                  buildWorkitemStatuss(d.Get("statuses").([]interface{})),
-		DefaultDurationSeconds:    platformclientv2.Int(d.Get("default_duration_seconds").(int)),
-		DefaultExpirationSeconds:  platformclientv2.Int(d.Get("default_expiration_seconds").(int)),
-		DefaultDueDurationSeconds: platformclientv2.Int(d.Get("default_due_duration_seconds").(int)),
-		DefaultPriority:           platformclientv2.Int(d.Get("default_priority").(int)),
-		DefaultLanguage:           buildLanguageReference(d.Get("default_language").([]interface{})),
-		DefaultTtlSeconds:         platformclientv2.Int(d.Get("default_ttl_seconds").(int)),
-		DefaultQueue:              buildQueueReference(d.Get("default_queue").([]interface{})),
-		DefaultSkills:             buildRoutingSkillReferences(d.Get("default_skills").([]interface{})),
-		AssignmentEnabled:         platformclientv2.Bool(d.Get("assignment_enabled").(bool)),
-		Schema:                    buildWorkitemSchema(d.Get("schema").([]interface{})),
-	}
-}
+// getWorktypeCreateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypecreate
+func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.Worktypecreate {
+	worktype := platformclientv2.Worktypecreate{
+		Name:                         platformclientv2.String(d.Get("name").(string)),
+		DivisionId:                   platformclientv2.String(d.Get("division_id").(string)),
+		Description:                  platformclientv2.String(d.Get("description").(string)),
+		DisableDefaultStatusCreation: platformclientv2.Bool(true),
+		DefaultWorkbinId:             platformclientv2.String(d.Get("default_workbin_id").(string)),
 
-// buildWorkbinReferences maps an []interface{} into a Genesys Cloud *[]platformclientv2.Workbinreference
-func buildWorkbinReferences(workbinReferences []interface{}) *[]platformclientv2.Workbinreference {
-	workbinReferencesSlice := make([]platformclientv2.Workbinreference, 0)
-	for _, workbinReference := range workbinReferences {
-		var sdkWorkbinReference platformclientv2.Workbinreference
-		workbinReferencesMap, ok := workbinReference.(map[string]interface{})
-		if !ok {
-			continue
-		}
+		DefaultPriority: platformclientv2.Int(d.Get("default_priority").(int)),
 
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkbinReference.Name, workbinReferencesMap, "name")
-
-		workbinReferencesSlice = append(workbinReferencesSlice, sdkWorkbinReference)
+		DefaultLanguageId: platformclientv2.String(d.Get("default_language_id").(string)),
+		DefaultQueueId:    platformclientv2.String(d.Get("default_queue_id").(string)),
+		DefaultSkillIds:   lists.BuildSdkStringListFromInterfaceArray(d, "default_skills_ids"),
+		AssignmentEnabled: platformclientv2.Bool(d.Get("assignment_enabled").(bool)),
+		SchemaId:          platformclientv2.String(d.Get("schema_id").(string)),
 	}
 
-	return &workbinReferencesSlice
-}
-
-// buildWorkitemStatusReferences maps an []interface{} into a Genesys Cloud *[]platformclientv2.Workitemstatusreference
-func buildWorkitemStatusReferences(workitemStatusReferences []interface{}) *[]platformclientv2.Workitemstatusreference {
-	workitemStatusReferencesSlice := make([]platformclientv2.Workitemstatusreference, 0)
-	for _, workitemStatusReference := range workitemStatusReferences {
-		var sdkWorkitemStatusReference platformclientv2.Workitemstatusreference
-		workitemStatusReferencesMap, ok := workitemStatusReference.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatusReference.Name, workitemStatusReferencesMap, "name")
-
-		workitemStatusReferencesSlice = append(workitemStatusReferencesSlice, sdkWorkitemStatusReference)
+	// For the following we want the 0 value, but also nil (which has a different default value set by API)
+	if d.Get("default_duration_seconds") != nil {
+		worktype.DefaultDurationSeconds = platformclientv2.Int(d.Get("default_duration_seconds").(int))
 	}
 
-	return &workitemStatusReferencesSlice
+	if d.Get("default_expiration_seconds") != nil {
+		worktype.DefaultExpirationSeconds = platformclientv2.Int(d.Get("default_expiration_seconds").(int))
+	}
+
+	if d.Get("default_due_duration_seconds") != nil {
+		worktype.DefaultDueDurationSeconds = platformclientv2.Int(d.Get("default_due_duration_seconds").(int))
+	}
+
+	if d.Get("default_ttl_seconds") != nil {
+		worktype.DefaultTtlSeconds = platformclientv2.Int(d.Get("default_ttl_seconds").(int))
+	}
+
+	return worktype
 }
 
-// buildLocalTimes maps an []interface{} into a Genesys Cloud *[]platformclientv2.Localtime
-func buildLocalTimes(localTimes []interface{}) *[]platformclientv2.Localtime {
+// getWorktypeupdateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypeupdate
+func getWorktypeupdateFromResourceData(d *schema.ResourceData) platformclientv2.Worktypeupdate {
+	worktype := platformclientv2.Worktypeupdate{
+		Name:             platformclientv2.String(d.Get("name").(string)),
+		Description:      platformclientv2.String(d.Get("description").(string)),
+		DefaultWorkbinId: platformclientv2.String(d.Get("default_workbin_id").(string)),
+
+		DefaultPriority: platformclientv2.Int(d.Get("default_priority").(int)),
+
+		DefaultLanguageId: platformclientv2.String(d.Get("default_language_id").(string)),
+		DefaultQueueId:    platformclientv2.String(d.Get("default_queue_id").(string)),
+		DefaultSkillIds:   lists.BuildSdkStringListFromInterfaceArray(d, "default_skills_ids"),
+		AssignmentEnabled: platformclientv2.Bool(d.Get("assignment_enabled").(bool)),
+		SchemaId:          platformclientv2.String(d.Get("schema_id").(string)),
+	}
+
+	// For the following we want the 0 value, but also nil (which has a different default value set by API)
+	if d.Get("default_duration_seconds") != nil {
+		worktype.DefaultDurationSeconds = platformclientv2.Int(d.Get("default_duration_seconds").(int))
+	}
+
+	if d.Get("default_expiration_seconds") != nil {
+		worktype.DefaultExpirationSeconds = platformclientv2.Int(d.Get("default_expiration_seconds").(int))
+	}
+
+	if d.Get("default_due_duration_seconds") != nil {
+		worktype.DefaultDueDurationSeconds = platformclientv2.Int(d.Get("default_due_duration_seconds").(int))
+	}
+
+	if d.Get("default_ttl_seconds") != nil {
+		worktype.DefaultTtlSeconds = platformclientv2.Int(d.Get("default_ttl_seconds").(int))
+	}
+
+	return worktype
+}
+
+// buildLocalTime converts a local time []interface{} into a Genesys Cloud *platformclientv2.Localtime
+func buildLocalTime(localTimes []interface{}) *platformclientv2.Localtime {
 	localTimesSlice := make([]platformclientv2.Localtime, 0)
 	for _, localTime := range localTimes {
 		var sdkLocalTime platformclientv2.Localtime
@@ -84,37 +100,18 @@ func buildLocalTimes(localTimes []interface{}) *[]platformclientv2.Localtime {
 		sdkLocalTime.Hour = platformclientv2.Int(localTimesMap["hour"].(int))
 		sdkLocalTime.Minute = platformclientv2.Int(localTimesMap["minute"].(int))
 		sdkLocalTime.Second = platformclientv2.Int(localTimesMap["second"].(int))
-		sdkLocalTime.Nano = platformclientv2.Int(localTimesMap["nano"].(int))
 
 		localTimesSlice = append(localTimesSlice, sdkLocalTime)
 	}
 
-	return &localTimesSlice
+	return &(localTimesSlice[0])
 }
 
-// buildWorktypeReferences maps an []interface{} into a Genesys Cloud *[]platformclientv2.Worktypereference
-func buildWorktypeReferences(worktypeReferences []interface{}) *[]platformclientv2.Worktypereference {
-	worktypeReferencesSlice := make([]platformclientv2.Worktypereference, 0)
-	for _, worktypeReference := range worktypeReferences {
-		var sdkWorktypeReference platformclientv2.Worktypereference
-		worktypeReferencesMap, ok := worktypeReference.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorktypeReference.Name, worktypeReferencesMap, "name")
-
-		worktypeReferencesSlice = append(worktypeReferencesSlice, sdkWorktypeReference)
-	}
-
-	return &worktypeReferencesSlice
-}
-
-// buildWorkitemStatuss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Workitemstatus
-func buildWorkitemStatuss(workitemStatuss []interface{}) *[]platformclientv2.Workitemstatus {
-	workitemStatussSlice := make([]platformclientv2.Workitemstatus, 0)
-	for _, workitemStatus := range workitemStatuss {
-		var sdkWorkitemStatus platformclientv2.Workitemstatus
+// buildWorkitemStatusCreates maps an []interface{} into a Genesys Cloud *[]platformclientv2.Workitemstatuscreate
+func buildWorkitemStatusCreates(workitemStatuses []interface{}) *[]platformclientv2.Workitemstatuscreate {
+	workitemStatussSlice := make([]platformclientv2.Workitemstatuscreate, 0)
+	for _, workitemStatus := range workitemStatuses {
+		var sdkWorkitemStatus platformclientv2.Workitemstatuscreate
 		workitemStatussMap, ok := workitemStatus.(map[string]interface{})
 		if !ok {
 			continue
@@ -122,12 +119,9 @@ func buildWorkitemStatuss(workitemStatuss []interface{}) *[]platformclientv2.Wor
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Name, workitemStatussMap, "name")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Category, workitemStatussMap, "category")
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.DestinationStatuses, workitemStatussMap, "destination_statuses", buildWorkitemStatusReferences)
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatussMap, "description")
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.DefaultDestinationStatus, workitemStatussMap, "default_destination_status", buildWorkitemStatusReference)
 		sdkWorkitemStatus.StatusTransitionDelaySeconds = platformclientv2.Int(workitemStatussMap["status_transition_delay_seconds"].(int))
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.StatusTransitionTime, workitemStatussMap, "status_transition_time", buildLocalTime)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.Worktype, workitemStatussMap, "worktype", buildWorktypeReference)
 
 		workitemStatussSlice = append(workitemStatussSlice, sdkWorkitemStatus)
 	}
@@ -135,52 +129,71 @@ func buildWorkitemStatuss(workitemStatuss []interface{}) *[]platformclientv2.Wor
 	return &workitemStatussSlice
 }
 
-// buildLanguageReferences maps an []interface{} into a Genesys Cloud *[]platformclientv2.Languagereference
-func buildLanguageReferences(languageReferences []interface{}) *[]platformclientv2.Languagereference {
-	languageReferencesSlice := make([]platformclientv2.Languagereference, 0)
-	for _, languageReference := range languageReferences {
-		var sdkLanguageReference platformclientv2.Languagereference
-		languageReferencesMap, ok := languageReference.(map[string]interface{})
-		if !ok {
-			continue
+// getStatusIdFromName gets a status id from a  *[]platformclientv2.Workitemstatu by status name
+func getStatusIdFromName(statusName string, statuses *[]platformclientv2.Workitemstatus) *string {
+	for _, apiStatus := range *statuses {
+		if statusName == *apiStatus.Name {
+			return &statusName
 		}
-
-		languageReferencesSlice = append(languageReferencesSlice, sdkLanguageReference)
 	}
 
-	return &languageReferencesSlice
+	return nil
 }
 
-// buildQueueReferences maps an []interface{} into a Genesys Cloud *[]platformclientv2.Queuereference
-func buildQueueReferences(queueReferences []interface{}) *[]platformclientv2.Queuereference {
-	queueReferencesSlice := make([]platformclientv2.Queuereference, 0)
-	for _, queueReference := range queueReferences {
-		var sdkQueueReference platformclientv2.Queuereference
-		queueReferencesMap, ok := queueReference.(map[string]interface{})
-		if !ok {
-			continue
+// getStatusIdFromName gets the status name from a  *[]platformclientv2.Workitemstatu by status id
+func getStatusNameFromId(statusId string, statuses *[]platformclientv2.Workitemstatus) *string {
+	for _, apiStatus := range *statuses {
+		if statusId == *apiStatus.Id {
+			return &statusId
 		}
-
-		queueReferencesSlice = append(queueReferencesSlice, sdkQueueReference)
 	}
 
-	return &queueReferencesSlice
+	return nil
 }
 
-// buildRoutingSkillReferences maps an []interface{} into a Genesys Cloud *[]platformclientv2.Routingskillreference
-func buildRoutingSkillReferences(routingSkillReferences []interface{}) *[]platformclientv2.Routingskillreference {
-	routingSkillReferencesSlice := make([]platformclientv2.Routingskillreference, 0)
-	for _, routingSkillReference := range routingSkillReferences {
-		var sdkRoutingSkillReference platformclientv2.Routingskillreference
-		routingSkillReferencesMap, ok := routingSkillReference.(map[string]interface{})
+// buildWorkitemStatusUpdates maps an []interface{} into a Genesys Cloud *[]platformclientv2.Workitemstatusupdate
+// workitemStatuses is the terraform resource object attribute while apiStatuses is the existing Genesys Cloud
+// statuses to be used as reference for the 'destination status ids'
+func buildWorkitemStatusUpdates(workitemStatuses []interface{}, apiStatuses *[]platformclientv2.Workitemstatus) *[]platformclientv2.Workitemstatusupdate {
+	workitemStatussSlice := make([]platformclientv2.Workitemstatusupdate, 0)
+
+	// Inner func get the status id from a status name.
+	getStatusIdFromNameFn := func(statusName string) *string {
+		return getStatusIdFromName(statusName, apiStatuses)
+	}
+
+	// Inner func for use in building the destination status ids from the status names defined
+	buildStatusIdFn := func(statusNames []interface{}) *[]string {
+		statusIds := []string{}
+		for _, name := range statusNames {
+			if statusId := getStatusIdFromName(name.(string), apiStatuses); statusId != nil {
+				statusIds = append(statusIds, *statusId)
+			}
+		}
+
+		return &statusIds
+	}
+
+	for _, workitemStatus := range workitemStatuses {
+		var sdkWorkitemStatus platformclientv2.Workitemstatusupdate
+		workitemStatussMap, ok := workitemStatus.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
-		routingSkillReferencesSlice = append(routingSkillReferencesSlice, sdkRoutingSkillReference)
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Name, workitemStatussMap, "name")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatussMap, "description")
+		sdkWorkitemStatus.StatusTransitionDelaySeconds = platformclientv2.Int(workitemStatussMap["status_transition_delay_seconds"].(int))
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.StatusTransitionTime, workitemStatussMap, "status_transition_time", buildLocalTime)
+
+		// Destination Statuses
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.DestinationStatusIds, workitemStatussMap, "destination_status_names", buildStatusIdFn)
+		resourcedata.BuildSDKStringValueIfNotNilTransform(&sdkWorkitemStatus.DefaultDestinationStatusId, workitemStatussMap, "default_destination_status_name", getStatusIdFromNameFn)
+
+		workitemStatussSlice = append(workitemStatussSlice, sdkWorkitemStatus)
 	}
 
-	return &routingSkillReferencesSlice
+	return &workitemStatussSlice
 }
 
 // buildWorkitemSchemas maps an []interface{} into a Genesys Cloud *[]platformclientv2.Workitemschema
@@ -201,24 +214,6 @@ func buildWorkitemSchemas(workitemSchemas []interface{}) *[]platformclientv2.Wor
 	return &workitemSchemasSlice
 }
 
-// flattenWorkbinReferences maps a Genesys Cloud *[]platformclientv2.Workbinreference into a []interface{}
-func flattenWorkbinReferences(workbinReferences *[]platformclientv2.Workbinreference) []interface{} {
-	if len(*workbinReferences) == 0 {
-		return nil
-	}
-
-	var workbinReferenceList []interface{}
-	for _, workbinReference := range *workbinReferences {
-		workbinReferenceMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(workbinReferenceMap, "name", workbinReference.Name)
-
-		workbinReferenceList = append(workbinReferenceList, workbinReferenceMap)
-	}
-
-	return workbinReferenceList
-}
-
 // flattenWorkitemStatusReferences maps a Genesys Cloud *[]platformclientv2.Workitemstatusreference into a []interface{}
 func flattenWorkitemStatusReferences(workitemStatusReferences *[]platformclientv2.Workitemstatusreference) []interface{} {
 	if len(*workitemStatusReferences) == 0 {
@@ -237,8 +232,8 @@ func flattenWorkitemStatusReferences(workitemStatusReferences *[]platformclientv
 	return workitemStatusReferenceList
 }
 
-// flattenLocalTimes maps a Genesys Cloud *[]platformclientv2.Localtime into a []interface{}
-func flattenLocalTimes(localTimes *[]platformclientv2.Localtime) []interface{} {
+// flattenLocalTime maps a Genesys Cloud *[]platformclientv2.Localtime into a []interface{}
+func flattenLocalTime(localTimes *[]platformclientv2.Localtime) []interface{} {
 	if len(*localTimes) == 0 {
 		return nil
 	}
@@ -250,7 +245,6 @@ func flattenLocalTimes(localTimes *[]platformclientv2.Localtime) []interface{} {
 		resourcedata.SetMapValueIfNotNil(localTimeMap, "hour", localTime.Hour)
 		resourcedata.SetMapValueIfNotNil(localTimeMap, "minute", localTime.Minute)
 		resourcedata.SetMapValueIfNotNil(localTimeMap, "second", localTime.Second)
-		resourcedata.SetMapValueIfNotNil(localTimeMap, "nano", localTime.Nano)
 
 		localTimeList = append(localTimeList, localTimeMap)
 	}
@@ -258,79 +252,31 @@ func flattenLocalTimes(localTimes *[]platformclientv2.Localtime) []interface{} {
 	return localTimeList
 }
 
-// flattenWorktypeReferences maps a Genesys Cloud *[]platformclientv2.Worktypereference into a []interface{}
-func flattenWorktypeReferences(worktypeReferences *[]platformclientv2.Worktypereference) []interface{} {
-	if len(*worktypeReferences) == 0 {
-		return nil
-	}
-
-	var worktypeReferenceList []interface{}
-	for _, worktypeReference := range *worktypeReferences {
-		worktypeReferenceMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(worktypeReferenceMap, "name", worktypeReference.Name)
-
-		worktypeReferenceList = append(worktypeReferenceList, worktypeReferenceMap)
-	}
-
-	return worktypeReferenceList
-}
-
 // flattenWorkitemStatuss maps a Genesys Cloud *[]platformclientv2.Workitemstatus into a []interface{}
-func flattenWorkitemStatuss(workitemStatuss *[]platformclientv2.Workitemstatus) []interface{} {
-	if len(*workitemStatuss) == 0 {
+func flattenWorkitemStatuses(workitemStatuses *[]platformclientv2.Workitemstatus) []interface{} {
+	if len(*workitemStatuses) == 0 {
 		return nil
 	}
 
 	var workitemStatusList []interface{}
-	for _, workitemStatus := range *workitemStatuss {
+	for _, workitemStatus := range *workitemStatuses {
 		workitemStatusMap := make(map[string]interface{})
 
 		resourcedata.SetMapValueIfNotNil(workitemStatusMap, "name", workitemStatus.Name)
 		resourcedata.SetMapValueIfNotNil(workitemStatusMap, "category", workitemStatus.Category)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(workitemStatusMap, "destination_statuses", workitemStatus.DestinationStatuses, flattenWorkitemStatusReferences)
 		resourcedata.SetMapValueIfNotNil(workitemStatusMap, "description", workitemStatus.Description)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(workitemStatusMap, "default_destination_status", workitemStatus.DefaultDestinationStatus, flattenWorkitemStatusReference)
 		resourcedata.SetMapValueIfNotNil(workitemStatusMap, "status_transition_delay_seconds", workitemStatus.StatusTransitionDelaySeconds)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(workitemStatusMap, "status_transition_time", workitemStatus.StatusTransitionTime, flattenLocalTime)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(workitemStatusMap, "worktype", workitemStatus.Worktype, flattenWorktypeReference)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(workitemStatusMap, "status_transition_time", &[]platformclientv2.Localtime{*workitemStatus.StatusTransitionTime}, flattenLocalTime)
+
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(workitemStatusMap, "destination_statuses", workitemStatus.DestinationStatuses, flattenWorkitemStatusReferences)
+		if workitemStatus.DefaultDestinationStatus != nil {
+			resourcedata.SetMapValueIfNotNil(workitemStatusMap, "default_destination_status", getStatusNameFromId(*workitemStatus.DefaultDestinationStatus.Id, workitemStatuses))
+		}
 
 		workitemStatusList = append(workitemStatusList, workitemStatusMap)
 	}
 
 	return workitemStatusList
-}
-
-// flattenLanguageReferences maps a Genesys Cloud *[]platformclientv2.Languagereference into a []interface{}
-func flattenLanguageReferences(languageReferences *[]platformclientv2.Languagereference) []interface{} {
-	if len(*languageReferences) == 0 {
-		return nil
-	}
-
-	var languageReferenceList []interface{}
-	for _, languageReference := range *languageReferences {
-		languageReferenceMap := make(map[string]interface{})
-
-		languageReferenceList = append(languageReferenceList, languageReferenceMap)
-	}
-
-	return languageReferenceList
-}
-
-// flattenQueueReferences maps a Genesys Cloud *[]platformclientv2.Queuereference into a []interface{}
-func flattenQueueReferences(queueReferences *[]platformclientv2.Queuereference) []interface{} {
-	if len(*queueReferences) == 0 {
-		return nil
-	}
-
-	var queueReferenceList []interface{}
-	for _, queueReference := range *queueReferences {
-		queueReferenceMap := make(map[string]interface{})
-
-		queueReferenceList = append(queueReferenceList, queueReferenceMap)
-	}
-
-	return queueReferenceList
 }
 
 // flattenRoutingSkillReferences maps a Genesys Cloud *[]platformclientv2.Routingskillreference into a []interface{}
@@ -341,28 +287,8 @@ func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Ro
 
 	var routingSkillReferenceList []interface{}
 	for _, routingSkillReference := range *routingSkillReferences {
-		routingSkillReferenceMap := make(map[string]interface{})
-
-		routingSkillReferenceList = append(routingSkillReferenceList, routingSkillReferenceMap)
+		routingSkillReferenceList = append(routingSkillReferenceList, *routingSkillReference.Id)
 	}
 
 	return routingSkillReferenceList
-}
-
-// flattenWorkitemSchemas maps a Genesys Cloud *[]platformclientv2.Workitemschema into a []interface{}
-func flattenWorkitemSchemas(workitemSchemas *[]platformclientv2.Workitemschema) []interface{} {
-	if len(*workitemSchemas) == 0 {
-		return nil
-	}
-
-	var workitemSchemaList []interface{}
-	for _, workitemSchema := range *workitemSchemas {
-		workitemSchemaMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(workitemSchemaMap, "name", workitemSchema.Name)
-
-		workitemSchemaList = append(workitemSchemaList, workitemSchemaMap)
-	}
-
-	return workitemSchemaList
 }

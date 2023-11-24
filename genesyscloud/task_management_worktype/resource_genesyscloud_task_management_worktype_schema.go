@@ -33,23 +33,18 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 	localTimeResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`hour`: {
-				Description: ``,
-				Optional:    true,
+				Description: `The hour value for the time`,
+				Required:    true,
 				Type:        schema.TypeInt,
 			},
 			`minute`: {
-				Description: ``,
-				Optional:    true,
+				Description: `The minute value for the time`,
+				Required:    true,
 				Type:        schema.TypeInt,
 			},
 			`second`: {
-				Description: ``,
-				Optional:    true,
-				Type:        schema.TypeInt,
-			},
-			`nano`: {
-				Description: ``,
-				Optional:    true,
+				Description: `The second value for the time`,
+				Required:    true,
 				Type:        schema.TypeInt,
 			},
 		},
@@ -57,9 +52,18 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 
 	workitemStatusResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			`id`: {
+				Description: `Read-only identifier of the workitem status`,
+				Computed:    true,
+			},
 			`name`: {
 				Description: `Name of the status`,
 				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`description`: {
+				Description: `The description of the Status.`,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`category`: {
@@ -68,19 +72,14 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{"Open", "InProgress", "Waiting", "Closed"}, false),
 			},
-			`destination_statuses`: {
-				Description: `The Statuses the Status can transition to.`,
+			`destination_status_names`: {
+				Description: `The names of the Statuses the Status can transition to. If null, the status can transition to any other status.`,
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			`description`: {
-				Description: `The description of the Status.`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`default_destination_status`: {
-				Description: `Default destination status to which this Status will transition to if auto status transition enabled.`,
+			`default_destination_status_name`: {
+				Description: `Name of the default destination status to which this Status will transition to if auto status transition enabled.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
@@ -90,7 +89,7 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Type:        schema.TypeInt,
 			},
 			`status_transition_time`: {
-				Description: `Time in HH:MM:SS format at which auto status transition will occur after statusTransitionDelaySeconds delay. To set Time, the statusTransitionDelaySeconds must be equal to or greater than 86400 i.e. a day`,
+				Description: `Time at which auto status transition will occur after statusTransitionDelaySeconds delay. To set Time, the statusTransitionDelaySeconds must be equal to or greater than 86400 i.e. a day`,
 				Optional:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
@@ -116,23 +115,13 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Required:    true,
 				Type:        schema.TypeString,
 			},
-			`default_workbin_id`: {
-				Description: `The default Workbin for Workitems created from the Worktype.`,
-				Required:    true,
-				Type:        schema.TypeString,
-			},
-			`division_id`: {
-				Description: `The division to which this entity belongs.`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
 			`description`: {
 				Description: `The description of the Worktype.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`default_status`: {
-				Description: `The default status for Workitems created from the Worktype.`,
+			`division_id`: {
+				Description: `The division to which this entity belongs.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
@@ -142,36 +131,50 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        workitemStatusResource,
 			},
+			`default_status_name`: {
+				Description: `The name of the default status for Workitems created from the Worktype. This status should be defined in 'statuses'.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`default_workbin_id`: {
+				Description: `The default Workbin for Workitems created from the Worktype.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
 			`default_duration_seconds`: {
 				Description: `The default duration in seconds for Workitems created from the Worktype.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeInt,
 			},
 			`default_expiration_seconds`: {
 				Description: `The default expiration time in seconds for Workitems created from the Worktype.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeInt,
 			},
 			`default_due_duration_seconds`: {
 				Description: `The default due duration in seconds for Workitems created from the Worktype.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeInt,
 			},
 			`default_priority`: {
 				Description:  `The default priority for Workitems created from the Worktype. The valid range is between -25,000,000 and 25,000,000.`,
 				Optional:     true,
+				Computed:     true,
 				Type:         schema.TypeInt,
 				ValidateFunc: validation.IntBetween(-25000000, 25000000),
-			},
-			`default_language_id`: {
-				Description: `The default routing language for Workitems created from the Worktype.`,
-				Optional:    true,
-				Type:        schema.TypeString,
 			},
 			`default_ttl_seconds`: {
 				Description: `The default time to time to live in seconds for Workitems created from the Worktype.`,
 				Optional:    true,
 				Type:        schema.TypeInt,
+			},
+			`default_language_id`: {
+				Description: `The default routing language for Workitems created from the Worktype.`,
+				Optional:    true,
+				Type:        schema.TypeString,
 			},
 			`default_queue_id`: {
 				Description: `The default queue for Workitems created from the Worktype.`,
@@ -183,6 +186,7 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				MaxItems:    20,
 			},
 			`assignment_enabled`: {
 				Description: `When set to true, Workitems will be sent to the queue of the Worktype as they are created. Default value is false.`,
@@ -190,9 +194,14 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Type:        schema.TypeBool,
 			},
 			`schema_id`: {
-				Description: `The schema defining the custom attributes for Workitems created from the Worktype.`,
-				Optional:    true,
+				Description: `Id of the workitem schema.`,
+				Required:    true,
 				Type:        schema.TypeString,
+			},
+			`schema_version`: {
+				Description: `Version of the workitem schema to use. If not provided, the worktype will use the latest version.`,
+				Optional:    true,
+				Type:        schema.TypeInt,
 			},
 		},
 	}

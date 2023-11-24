@@ -1,7 +1,6 @@
 package task_management_worktype
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -9,7 +8,6 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 /*

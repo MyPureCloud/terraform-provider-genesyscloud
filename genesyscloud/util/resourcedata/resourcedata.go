@@ -24,6 +24,14 @@ func BuildSDKStringValueIfNotNil(field **string, targetMap map[string]interface{
 	}
 }
 
+// BuildSDKStringValueIfNotNilTransform will read a map and set the string property on an object if the value exists
+// and takes a func argument to transform the string before setting the value
+func BuildSDKStringValueIfNotNilTransform(field **string, targetMap map[string]interface{}, key string, f func(string) *string) {
+	if value := targetMap[key].(string); value != "" {
+		*field = f(value)
+	}
+}
+
 // BuildSDKInterfaceArrayValueIfNotNil will read a map and use the provided function to read the nested values if the value exists
 func BuildSDKInterfaceArrayValueIfNotNil[T any](field **T, targetMap map[string]interface{}, key string, f func([]interface{}) *T) {
 	if values := targetMap[key]; values != nil {
