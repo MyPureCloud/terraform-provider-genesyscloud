@@ -8,6 +8,7 @@ import (
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
@@ -134,6 +135,7 @@ func registerResources() {
 	team.SetRegistrar(regInstance)                          //Registering team
 	webDeployConfig.SetRegistrar(regInstance)               //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)               //Registering webdeployments_deploy
+	authorizatioProduct.SetRegistrar(regInstance)           //Registering Authorization Product
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
