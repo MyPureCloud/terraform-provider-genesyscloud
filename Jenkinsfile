@@ -17,7 +17,7 @@ pipeline {
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
     }
     tools {
-        go 'Go 1.20'
+        go 'Go 1.21'
         terraform 'Terraform 1.0.10'
     }
 
@@ -66,7 +66,7 @@ pipeline {
         }
 
 
-        stage('Upload artifacts') {
+        stage('Upload Coverage Report') {
             steps {
                 archiveArtifacts artifacts: 'coverage.html', allowEmptyArchive: true
 
