@@ -47,6 +47,7 @@ __debug_bin
 
 # Ignore coverage reports
 coverage.out
+coverage.html
 cover.html
 coverage_unit.out
 cover_unit.html
