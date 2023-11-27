@@ -17,7 +17,7 @@ pipeline {
         GENESYSCLOUD_TOKEN_POOL_SIZE =  20
     }
     tools {
-        go 'Go 1.21'
+        go 'go 1.21'
         terraform 'Terraform 1.0.10'
     }
 
