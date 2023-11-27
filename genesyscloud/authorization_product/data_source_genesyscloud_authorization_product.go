@@ -15,25 +15,6 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 )
 
-func DataSourceAuthorizationProduct() *schema.Resource {
-	return &schema.Resource{
-		Description: `Data source for Genesys Cloud Authorisation Products.`,
-
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceAuthorizationProductRead),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: `Authorization Product name.`,
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
-
 func dataSourceAuthorizationProductRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getauthProductProxy(sdkConfig)
