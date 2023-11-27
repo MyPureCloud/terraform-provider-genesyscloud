@@ -49,7 +49,7 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 
 	for _, externalContact := range *externalContacts {
 		log.Printf("Dealing with external contact id : %s", *externalContact.Id)
-		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{Name: *externalContact.FirstName}
+		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{Name: *externalContact.Id}
 	}
 
 	return resources, nil
