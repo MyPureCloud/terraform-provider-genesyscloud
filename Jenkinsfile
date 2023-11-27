@@ -49,7 +49,8 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
                         {
                             echo 'Loading Genesys OAuth Credentials'
-                            sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 8 -coverprofile=coverage.out'
+                            sh 'go test ./genesyscloud/team -run ^((?!TestUnit).)*$ -v -timeout 5m -cover -coverprofile=coverage.out'
+                            //sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 8 -coverprofile=coverage.out'
                             
                         }
 

@@ -54,3 +54,4 @@ GOARCH = $(shell go env GOARCH)
 sideload: build
 	mkdir -p ${PLUGINS_DIR}/${PLUGIN_PATH}/${DEV_VERSION}/$(GOOS)_$(GOARCH)
 	cp ${BIN_PATH} ${PLUGINS_DIR}/${PLUGIN_PATH}/${DEV_VERSION}/$(GOOS)_$(GOARCH)/${BIN_NAME}
+go test ./genesyscloud/team -run ^((?!TestUnit).)*$ -v -timeout 5m -cover -coverprofile=coverage.out
