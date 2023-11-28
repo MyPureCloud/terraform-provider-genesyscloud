@@ -40,18 +40,45 @@ pipeline {
 
             }
         }
-        
-        stage('Tests') {
+
+        stage('Change Directory to Root') {
+            steps {
+                sh 'cd ../../'
+
+            }
+        } 
+
+        stage('Unit Tests') {
+            steps {
+            
+                catchError(buildResult: 'FAILURE', stageResult:'FAILURE'){
+                    echo 'Attempting to Run Unit Tests'
+                    withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
+                        {
+
+                            env.TF_UNIT=1
+                            echo 'Loading Genesys OAuth Credentials'
+                            sh 'go test ./genesyscloud/team -run TestUnit -v -timeout 15m -count=1 -cover -coverprofile=coverageUnit.out'                            
+
+ 
+                        }
+
+                }
+
+            }
+        }
+
+
+        stage('Acceptance Tests') {
             steps {
             
                 catchError(buildResult: 'SUCCESS', stageResult:'FAILURE'){
                     echo 'Attempting to Run Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
                         {
+                            env.TF_ACC=1
                             echo 'Loading Genesys OAuth Credentials'
-                            sh 'go test ./genesyscloud/team -run ^((?!TestUnit).)*$ -v -timeout 5m -cover -coverprofile=coverage.out'
-                            //sh 'go test -timeout 80m -v -cover ./genesyscloud/... -parallel 8 -coverprofile=coverage.out'
-                            
+                            sh 'go test ./genesyscloud/team -run TestAcc -v -timeout 80m -cover -coverprofile=coverageAcceptance.out'                            
                         }
 
                 }
@@ -61,7 +88,7 @@ pipeline {
 
         stage('Generate Readable Coverage Report') {
             steps {
-                sh 'go tool cover -html coverage.out -o coverage.html'
+                sh 'go tool cover -html coverageAcceptance.out -o coverageAcceptance.html'
 
             }
         }
@@ -69,7 +96,7 @@ pipeline {
 
         stage('Upload Coverage Report') {
             steps {
-                archiveArtifacts artifacts: 'coverage.html', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'coverageAcceptance.html', allowEmptyArchive: true
 
             }
         }
