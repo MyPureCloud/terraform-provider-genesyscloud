@@ -1,7 +1,7 @@
 @Library('pipeline-library') _
 pipeline {
     agent {
-        node{
+        node {
             label "dev_mesos_large_v2"
         }
     }
@@ -40,37 +40,22 @@ pipeline {
             }
         }
 
-        stage('Change Directory to Root') {
-            steps {
-                echo 'Just saying'
-                //sh 'cd ../../'
-
-            }
-        } 
-
         stage('Unit Tests') {
 
-
             environment {
-            TF_UNIT=1
+                TF_UNIT=1
             }
+
             steps {
-            
-
-
             catchError(buildResult: 'FAILURE', stageResult:'FAILURE'){
                 echo 'Attempting to Run Unit Tests'
                 withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
                     {
-
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/team -run TestUnit -v -timeout 15m -count=1 -cover -coverprofile=coverageUnit.out'                            
-
+                        sh 'go test ./genesyscloud/... -run TestUnit -v -timeout 30m -count=1 -cover -coverprofile=coverageUnit.out'
 
                     }
-
-            }
-
+                }
             }
         }
 
@@ -78,28 +63,26 @@ pipeline {
         stage('Acceptance Tests') {
 
             environment {
-            TF_ACC=1
-            
+                TF_ACC=1
             }
+
             steps {
-
-
             catchError(buildResult: 'SUCCESS', stageResult:'FAILURE'){
-                echo 'Attempting to Run Tests'
+                echo 'Attempting to Run Acceptance Tests'
                 withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
                     {
                         echo 'Loading Genesys OAuth Credentials'
                         sh 'go test ./genesyscloud/team -run TestAcc -v -timeout 80m -cover -coverprofile=coverageAcceptance.out'                            
                     }
-
-            }
-
+                }
             }
         }
 
         stage('Generate Readable Coverage Report') {
             steps {
                 sh 'go tool cover -html coverageAcceptance.out -o coverageAcceptance.html'
+                sh 'go tool cover -html coverageUnit.out -o coverageUnit.html'
+
 
             }
         }
@@ -108,7 +91,7 @@ pipeline {
         stage('Upload Coverage Report') {
             steps {
                 archiveArtifacts artifacts: 'coverageAcceptance.html', allowEmptyArchive: true
-
+                archiveArtifacts artifacts: 'coverageUnit.html', allowEmptyArchive: true
             }
         }
 
