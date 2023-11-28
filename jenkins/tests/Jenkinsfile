@@ -72,13 +72,13 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
                     {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'go test ./genesyscloud/team -run TestAcc -v -timeout 80m -cover -coverprofile=coverageAcceptance.out'                            
+                        sh 'go test ./genesyscloud/... -run TestAcc -v -timeout 80m -cover -coverprofile=coverageAcceptance.out'                            
                     }
                 }
             }
         }
 
-        stage('Generate Readable Coverage Report') {
+        stage('Generating Readable Coverage Report') {
             steps {
                 sh 'go tool cover -html coverageAcceptance.out -o coverageAcceptance.html'
                 sh 'go tool cover -html coverageUnit.out -o coverageUnit.html'
@@ -88,7 +88,7 @@ pipeline {
         }
 
 
-        stage('Upload Coverage Report') {
+        stage('Uploading Coverage Report') {
             steps {
                 archiveArtifacts artifacts: 'coverageAcceptance.html', allowEmptyArchive: true
                 archiveArtifacts artifacts: 'coverageUnit.html', allowEmptyArchive: true
