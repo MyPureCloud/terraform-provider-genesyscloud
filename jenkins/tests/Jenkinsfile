@@ -48,12 +48,15 @@ pipeline {
         } 
 
         stage('Unit Tests') {
+
+
+            environment {
+            TF_UNIT=1
+            }
             steps {
             
 
-                environment {
-                    TF_UNIT=1
-                }
+
                 catchError(buildResult: 'FAILURE', stageResult:'FAILURE'){
                     echo 'Attempting to Run Unit Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
@@ -72,11 +75,14 @@ pipeline {
 
 
         stage('Acceptance Tests') {
+
+            environment {
+            TF_ACC=1
+            
+            }
             steps {
 
-                environment {
-                    TF_ACC=1
-                }
+
                 catchError(buildResult: 'SUCCESS', stageResult:'FAILURE'){
                     echo 'Attempting to Run Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID',passwordVariable:'GENESYSCLOUD_OAUTHCLIENT_SECRET')])
