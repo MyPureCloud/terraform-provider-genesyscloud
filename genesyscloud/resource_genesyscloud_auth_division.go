@@ -181,10 +181,16 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		return nil
 	}
 
-	log.Printf("Deleting division %s", name)
-	_, err := authAPI.DeleteAuthorizationDivision(d.Id(), false)
-	if err != nil {
-		return diag.Errorf("Failed to delete division %s: %s", name, err)
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Deleting division %s", name)
+		resp, err := authAPI.DeleteAuthorizationDivision(d.Id(), false)
+		if err != nil {
+			return resp, diag.Errorf("Failed to delete division %s: %s", name, err)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
