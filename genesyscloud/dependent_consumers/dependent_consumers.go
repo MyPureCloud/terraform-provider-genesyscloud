@@ -12,7 +12,7 @@ func SetDependentObjectMaps() map[string]string {
 		dependentConsumerMap["BOTFLOW"] = "genesyscloud_flow"
 		dependentConsumerMap["COMPOSERSCRIPT"] = "genesyscloud_script"
 		dependentConsumerMap["COMMONMODULEFLOW"] = "genesyscloud_flow"
-		dependentConsumerMap["CONTACTLIST"] = "genesyscloud_outbound_contactlist"
+		dependentConsumerMap["CONTACTLIST"] = "genesyscloud_outbound_contact_list"
 		dependentConsumerMap["DATAACTION"] = "genesyscloud_integration_action"
 		dependentConsumerMap["DATATABLE"] = "genesyscloud_architect_datatable"
 		dependentConsumerMap["EMAILROUTE"] = "genesyscloud_routing_email_route"
