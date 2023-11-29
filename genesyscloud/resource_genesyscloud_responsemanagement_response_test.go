@@ -25,7 +25,7 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 		substitutionsDescription  = "Substitutions description"
 		substitutionsDefaultValue = "Substitutions default value"
 		substitutionsSchema       = "schema document"
-		responseTypes             = []string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`}
+		responseTypes             = []string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`, `Footer`}
 		templateName              = "Sample template name"
 		templateNamespace         = "Template namespace"
 

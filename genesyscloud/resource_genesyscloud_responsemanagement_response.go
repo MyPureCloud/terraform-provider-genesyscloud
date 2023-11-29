@@ -142,7 +142,7 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 				Description:  `The response type represented by the response.`,
 				Optional:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`, `Footer`}, false),
 			},
 			`messaging_template`: {
 				Description: `An optional messaging template definition for responseType.MessagingTemplate.`,
