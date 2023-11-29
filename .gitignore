@@ -50,4 +50,3 @@ coverage.out
 cover.html
 coverage_unit.out
 cover_unit.html
-jenkins/tests/coverageUnit.out
