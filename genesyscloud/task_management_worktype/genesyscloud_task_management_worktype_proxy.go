@@ -125,7 +125,7 @@ func createTaskManagementWorktypeFn(ctx context.Context, p *taskManagementWorkty
 	worktype, resp, err := p.taskManagementApi.PostTaskmanagementWorktypes(*taskManagementWorktype)
 	log.Printf("Completed call to create task management worktype %s with status code %d, correlation id %s and err %s", *taskManagementWorktype.Name, resp.StatusCode, resp.CorrelationID, err)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create task management worktype: %s", err)
+		return nil, fmt.Errorf("failed to create task management worktype: %s", err)
 	}
 
 	return worktype, nil

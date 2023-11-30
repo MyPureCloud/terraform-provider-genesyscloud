@@ -15,6 +15,7 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -54,51 +55,31 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("failed to create task management worktype: %s", err)
 	}
 
-	log.Printf("Creating the base task management worktype %s", *worktype.Id)
+	log.Printf("Created the base task management worktype %s", *worktype.Id)
 	d.SetId(*worktype.Id)
 
 	// Create the worktype statuses
 	log.Printf("Creating the task management worktype statuses of %s", *worktype.Id)
-	sdkWorkitemStatusCreates := buildWorkitemStatusCreates(d.Get("statuses").([]interface{}))
-	for _, statusCreate := range *sdkWorkitemStatusCreates {
-		_, err := proxy.createTaskManagementWorktypeStatus(ctx, *worktype.Id, &statusCreate)
-		if err != nil {
-			return diag.Errorf("failed to create worktype status %s: %v", *statusCreate.Name, err)
-		}
-	}
 
-	// Get all the worktype statuses so we'll have the new statuses for referencing
-	worktype, _, err = proxy.getTaskManagementWorktypeById(ctx, *worktype.Id)
-	if err != nil {
-		return diag.Errorf("failed to get task management worktype %s: %v", *worktype.Name, err)
+	statuses := d.Get("statuses").(*schema.Set).List()
+	if _, err := createWorktypeStatuses(ctx, proxy, *worktype.Id, statuses); err != nil {
+		return diag.Errorf("failed to create task management worktype statuses: %v", err)
 	}
-
-	// Update the worktype statuses as they need to build the "destination status" references
 	log.Printf("Updating the destination statuses of the statuses of worktype %s", *worktype.Id)
-	sdkWorkitemStatusUpdates := buildWorkitemStatusUpdates(d.Get("statuses").([]interface{}), worktype.Statuses)
-	for _, statusUpdate := range *sdkWorkitemStatusUpdates {
-		statusId := getStatusIdFromName(*statusUpdate.Name, worktype.Statuses)
+	if _, err := updateWorktypeStatuses(ctx, proxy, *worktype.Id, statuses, true); err != nil {
+		return diag.Errorf("failed to update task management worktype statuses: %v", err)
+	}
 
-		// API does not allow updating a status with no actual change.
-		// This update portion is only for resolving status references, so skip statuses where
-		// "destination statuses" and "default destination id" are not set.
-		if (statusUpdate.DefaultDestinationStatusId == nil || *statusUpdate.DefaultDestinationStatusId == "") &&
-			(statusUpdate.DestinationStatusIds == nil || len(*statusUpdate.DestinationStatusIds) == 0) {
-			continue
-		}
-
-		if statusId == nil {
-			return diag.Errorf("failed to update a status %s. Not found in the worktype %s: %v", *statusUpdate.Name, *worktype.Name, err)
-		}
-
-		_, err := proxy.updateTaskManagementWorktypeStatus(ctx, *worktype.Id, *statusId, &statusUpdate)
+	// Update the worktype if 'default_status_name' is set
+	if d.HasChange("default_status_name") {
+		time.Sleep(5 * time.Second)
+		err := updateDefaultStatusName(ctx, proxy, d, *worktype.Id)
 		if err != nil {
-			return diag.Errorf("failed to update worktype status %s: %v", *statusUpdate.Name, err)
+			return diag.Errorf("failed to update default status name of worktype: %v", err)
 		}
 	}
-	log.Printf("Created the task management worktype statuses of %s", *worktype.Id)
 
-	log.Printf("Finalized creation of task management worktype %s", *worktype.Id)
+	log.Printf("Created the task management worktype statuses of %s", *worktype.Id)
 	return readTaskManagementWorktype(ctx, d, meta)
 }
 
@@ -133,7 +114,7 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 		// Default status can be an empty object
 		if worktype.DefaultStatus != nil && worktype.DefaultStatus.Id != nil {
 			if statusName := getStatusNameFromId(*worktype.DefaultStatus.Id, worktype.Statuses); statusName != nil {
-				d.Set("default_status", statusName)
+				d.Set("default_status_name", statusName)
 			}
 		}
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "statuses", worktype.Statuses, flattenWorkitemStatuses)
@@ -169,20 +150,118 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeProxy(sdkConfig)
 
-	taskManagementWorktype := getWorktypeupdateFromResourceData(d)
+	taskManagementWorktype := getWorktypeupdateFromResourceData(d, nil)
+	if d.HasChangesExcept("statuses", "default_status_name") {
+		worktype, err := proxy.updateTaskManagementWorktype(ctx, d.Id(), &taskManagementWorktype)
+		if err != nil {
+			return diag.Errorf("failed to update task management worktype: %s", err)
+		}
 
-	log.Printf("Updating task management worktype %s", *taskManagementWorktype.Name)
-	worktype, err := proxy.updateTaskManagementWorktype(ctx, d.Id(), &taskManagementWorktype)
-	if err != nil {
-		return diag.Errorf("failed to update task management worktype: %s", err)
+		log.Printf("Updated base configuration of task management worktype %s", *worktype.Id)
 	}
 
-	log.Printf("Updated task management worktype %s", *worktype.Id)
+	// Get the current state of the worktype because we will cross-check if any of the existing ones
+	// need to be deleted
+	oldWorktype, _, err := proxy.getTaskManagementWorktypeById(ctx, d.Id())
+	if err != nil {
+		return diag.Errorf("failed to get task management worktype: %s", err)
+	}
+	oldStatusIds := []string{}
+	for _, oldStatus := range *oldWorktype.Statuses {
+		oldStatusIds = append(oldStatusIds, *oldStatus.Id)
+	}
 
-	// Update the worktype statuses
-	// if d.HasChange("statuses") {
+	// We'll use this to keep track of the actual status ids as a result of the worktype update.
+	// Any ids not here will be deleted eventually as the last step.
+	statusIdsToStay := []string{}
 
-	// }
+	statuses := d.Get("statuses").(*schema.Set).List()
+
+	// If the status still has an id that means there is no update to it and so should not be included
+	// in the API update (GC API gives error if update is called but actually no diff).
+	forUpdateOrCreation := make([]interface{}, 0)
+	for _, status := range statuses {
+		statusMap := status.(map[string]interface{})
+		if statusMap["id"] == "" {
+			forUpdateOrCreation = append(forUpdateOrCreation, status)
+		} else {
+			statusIdsToStay = append(statusIdsToStay, statusMap["id"].(string))
+		}
+	}
+
+	// We will consider it the same status and update in-place if the name and the category matches.
+	// else, a new status will be created.
+	forCreation := make([]interface{}, 0)
+	forUpdate := make([]interface{}, 0)
+	for _, status := range forUpdateOrCreation {
+		statusMap := status.(map[string]interface{})
+		statusName, ok := statusMap["name"]
+		if !ok {
+			continue
+		}
+		statusCat, ok := statusMap["category"]
+		if !ok {
+			continue
+		}
+		toCreateNewStatus := true
+
+		// If the status matches an existing name and same category then we'll consider
+		// it the same and not create a new one.
+		for _, existingStatus := range *oldWorktype.Statuses {
+			if *existingStatus.Name == statusName && *existingStatus.Category == statusCat {
+				toCreateNewStatus = false
+				break
+			}
+		}
+
+		if toCreateNewStatus {
+			forCreation = append(forCreation, status)
+		} else {
+			forUpdate = append(forUpdate, status)
+		}
+	}
+
+	// Create new statuses
+	log.Printf("Creating the task management worktype statuses of %s", d.Id())
+	if _, err := createWorktypeStatuses(ctx, proxy, d.Id(), forCreation); err != nil {
+		return diag.Errorf("failed to create task management worktype statuses: %v", err)
+	}
+
+	// Update the newly created statuses with status refs
+	log.Printf("Updating the newly created statuses of worktype %s", d.Id())
+	createdStatuses, err := updateWorktypeStatuses(ctx, proxy, d.Id(), forCreation, true)
+	if err != nil {
+		return diag.Errorf("failed to update task management worktype statuses: %v", err)
+	}
+	for _, updateStat := range *createdStatuses {
+		statusIdsToStay = append(statusIdsToStay, *updateStat.Id)
+	}
+
+	// Update the other already existing statuses
+	log.Printf("Updating the destination statuses of the statuses of worktype %s", d.Id())
+	updatedStatuses, err := updateWorktypeStatuses(ctx, proxy, d.Id(), forUpdate, false)
+	if err != nil {
+		return diag.Errorf("failed to update task management worktype statuses: %v", err)
+	}
+	for _, updateStat := range *updatedStatuses {
+		statusIdsToStay = append(statusIdsToStay, *updateStat.Id)
+	}
+
+	// Delete statuses that are no longer defined in the configuration
+	for _, forDeletionId := range lists.SliceDifference(oldStatusIds, statusIdsToStay) {
+		if _, err := proxy.deleteTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId); err != nil {
+			return diag.Errorf("failed to delete task management worktype status %s: %v", forDeletionId, err)
+		}
+	}
+
+	// Update the worktype if 'default_status_name' is changed
+	if d.HasChange("default_status_name") {
+		time.Sleep(5 * time.Second)
+		err := updateDefaultStatusName(ctx, proxy, d, d.Id())
+		if err != nil {
+			return diag.Errorf("failed to update default status name of worktype: %v", err)
+		}
+	}
 
 	return readTaskManagementWorktype(ctx, d, meta)
 }

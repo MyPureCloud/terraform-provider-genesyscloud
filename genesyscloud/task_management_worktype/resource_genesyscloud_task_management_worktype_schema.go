@@ -133,7 +133,7 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 			`statuses`: {
 				Description: `The list of possible statuses for Workitems created from the Worktype.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        workitemStatusResource,
 			},
 			`default_status_name`: {
