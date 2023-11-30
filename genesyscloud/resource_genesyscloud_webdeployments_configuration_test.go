@@ -156,7 +156,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_uri", "/api/v2/knowledge/knowledgebases/dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.default_value", "Welcome to Knowledge Portal"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.1.type", "Welcome"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", "test"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", "hash"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.feedback_enabled", "true"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.enabled_categories_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.self_uri", "https://my-domain/images/my-logo.png"),
@@ -206,18 +206,18 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
-					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
-					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", FalseValue),
-					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", FalseValue),
-					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "2"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
-					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "2"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
-					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "2"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "2"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "2"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "2"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
+					ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
@@ -258,7 +258,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_uri", "/api/v2/knowledge/knowledgebases/dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.default_value", "Welcome to Knowledge Portal"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.1.type", "Welcome"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", "test"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", "hash"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.feedback_enabled", "true"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.enabled_categories_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.self_uri", "https://my-domain/images/my-logo.png"),
@@ -397,8 +397,8 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 				default_value = "Welcome to Knowledge Portal"
 				type ="Welcome"
 			}
-			router_type = ""
-			feedback_enabled = ""
+			router_type = "hash"
+			feedback_enabled = true
 			enabled_categories {
 				enabled_categories_id = "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"
 				self_uri = "https://example.com/image"
@@ -419,12 +419,8 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 				type = "Home"
 				module_settings_type = "Search"
 				module_settings_enabled = true
-				module_settings_compact_category_module_template = false
-				module_settings_detailed_category_module_template = false
-
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				module_settings_compact_category_module_template = [ false ]
+				module_settings_detailed_category_module_template = [ false ]
 			}
 		}
 		%s
@@ -454,7 +450,7 @@ func generateSupportCenterSettings(enabled, knowledgeBaseID, knowledgeBaseURI st
 				default_value = "Welcome to Knowledge Portal"
 				type = "Welcome"
 			}
-			router_type = ""
+			router_type = "hash"
 			feedback_enabled = ""
 			enabled_categories {
 				enabled_categories_id = "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"
