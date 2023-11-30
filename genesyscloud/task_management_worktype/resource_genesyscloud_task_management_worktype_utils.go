@@ -21,31 +21,19 @@ func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.
 		Description:                  platformclientv2.String(d.Get("description").(string)),
 		DisableDefaultStatusCreation: platformclientv2.Bool(true),
 		DefaultWorkbinId:             platformclientv2.String(d.Get("default_workbin_id").(string)),
+		SchemaId:                     platformclientv2.String(d.Get("schema_id").(string)),
 
 		DefaultPriority: platformclientv2.Int(d.Get("default_priority").(int)),
 
-		DefaultLanguageId: platformclientv2.String(d.Get("default_language_id").(string)),
-		DefaultQueueId:    platformclientv2.String(d.Get("default_queue_id").(string)),
+		DefaultLanguageId: resourcedata.GetNillableValue[string](d, "default_language_id"),
+		DefaultQueueId:    resourcedata.GetNillableValue[string](d, "default_queue_id"),
 		DefaultSkillIds:   lists.BuildSdkStringListFromInterfaceArray(d, "default_skills_ids"),
 		AssignmentEnabled: platformclientv2.Bool(d.Get("assignment_enabled").(bool)),
-		SchemaId:          platformclientv2.String(d.Get("schema_id").(string)),
-	}
 
-	// For the following we want the 0 value, but also nil (which has a different default value set by API)
-	if d.Get("default_duration_seconds") != nil {
-		worktype.DefaultDurationSeconds = platformclientv2.Int(d.Get("default_duration_seconds").(int))
-	}
-
-	if d.Get("default_expiration_seconds") != nil {
-		worktype.DefaultExpirationSeconds = platformclientv2.Int(d.Get("default_expiration_seconds").(int))
-	}
-
-	if d.Get("default_due_duration_seconds") != nil {
-		worktype.DefaultDueDurationSeconds = platformclientv2.Int(d.Get("default_due_duration_seconds").(int))
-	}
-
-	if d.Get("default_ttl_seconds") != nil {
-		worktype.DefaultTtlSeconds = platformclientv2.Int(d.Get("default_ttl_seconds").(int))
+		DefaultDurationSeconds:    resourcedata.GetNillableValue[int](d, "default_duration_seconds"),
+		DefaultExpirationSeconds:  resourcedata.GetNillableValue[int](d, "default_expiration_seconds"),
+		DefaultDueDurationSeconds: resourcedata.GetNillableValue[int](d, "default_due_duration_seconds"),
+		DefaultTtlSeconds:         resourcedata.GetNillableValue[int](d, "default_ttl_seconds"),
 	}
 
 	return worktype
@@ -57,31 +45,19 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData) platformclientv2.
 		Name:             platformclientv2.String(d.Get("name").(string)),
 		Description:      platformclientv2.String(d.Get("description").(string)),
 		DefaultWorkbinId: platformclientv2.String(d.Get("default_workbin_id").(string)),
+		SchemaId:         platformclientv2.String(d.Get("schema_id").(string)),
 
 		DefaultPriority: platformclientv2.Int(d.Get("default_priority").(int)),
 
-		DefaultLanguageId: platformclientv2.String(d.Get("default_language_id").(string)),
-		DefaultQueueId:    platformclientv2.String(d.Get("default_queue_id").(string)),
+		DefaultLanguageId: resourcedata.GetNillableValue[string](d, "default_language_id"),
+		DefaultQueueId:    resourcedata.GetNillableValue[string](d, "default_queue_id"),
 		DefaultSkillIds:   lists.BuildSdkStringListFromInterfaceArray(d, "default_skills_ids"),
 		AssignmentEnabled: platformclientv2.Bool(d.Get("assignment_enabled").(bool)),
-		SchemaId:          platformclientv2.String(d.Get("schema_id").(string)),
-	}
 
-	// For the following we want the 0 value, but also nil (which has a different default value set by API)
-	if d.Get("default_duration_seconds") != nil {
-		worktype.DefaultDurationSeconds = platformclientv2.Int(d.Get("default_duration_seconds").(int))
-	}
-
-	if d.Get("default_expiration_seconds") != nil {
-		worktype.DefaultExpirationSeconds = platformclientv2.Int(d.Get("default_expiration_seconds").(int))
-	}
-
-	if d.Get("default_due_duration_seconds") != nil {
-		worktype.DefaultDueDurationSeconds = platformclientv2.Int(d.Get("default_due_duration_seconds").(int))
-	}
-
-	if d.Get("default_ttl_seconds") != nil {
-		worktype.DefaultTtlSeconds = platformclientv2.Int(d.Get("default_ttl_seconds").(int))
+		DefaultDurationSeconds:    resourcedata.GetNillableValue[int](d, "default_duration_seconds"),
+		DefaultExpirationSeconds:  resourcedata.GetNillableValue[int](d, "default_expiration_seconds"),
+		DefaultDueDurationSeconds: resourcedata.GetNillableValue[int](d, "default_due_duration_seconds"),
+		DefaultTtlSeconds:         resourcedata.GetNillableValue[int](d, "default_ttl_seconds"),
 	}
 
 	return worktype
@@ -104,36 +80,18 @@ func buildLocalTime(localTimes []interface{}) *platformclientv2.Localtime {
 		localTimesSlice = append(localTimesSlice, sdkLocalTime)
 	}
 
-	return &(localTimesSlice[0])
-}
-
-// buildWorkitemStatusCreates maps an []interface{} into a Genesys Cloud *[]platformclientv2.Workitemstatuscreate
-func buildWorkitemStatusCreates(workitemStatuses []interface{}) *[]platformclientv2.Workitemstatuscreate {
-	workitemStatussSlice := make([]platformclientv2.Workitemstatuscreate, 0)
-	for _, workitemStatus := range workitemStatuses {
-		var sdkWorkitemStatus platformclientv2.Workitemstatuscreate
-		workitemStatussMap, ok := workitemStatus.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Name, workitemStatussMap, "name")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Category, workitemStatussMap, "category")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatussMap, "description")
-		sdkWorkitemStatus.StatusTransitionDelaySeconds = platformclientv2.Int(workitemStatussMap["status_transition_delay_seconds"].(int))
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.StatusTransitionTime, workitemStatussMap, "status_transition_time", buildLocalTime)
-
-		workitemStatussSlice = append(workitemStatussSlice, sdkWorkitemStatus)
+	if len(localTimesSlice) > 0 {
+		return &localTimesSlice[0]
 	}
 
-	return &workitemStatussSlice
+	return nil
 }
 
 // getStatusIdFromName gets a status id from a  *[]platformclientv2.Workitemstatu by status name
 func getStatusIdFromName(statusName string, statuses *[]platformclientv2.Workitemstatus) *string {
 	for _, apiStatus := range *statuses {
 		if statusName == *apiStatus.Name {
-			return &statusName
+			return apiStatus.Id
 		}
 	}
 
@@ -149,6 +107,31 @@ func getStatusNameFromId(statusId string, statuses *[]platformclientv2.Workitems
 	}
 
 	return nil
+}
+
+// buildWorkitemStatusCreates maps an []interface{} into a Genesys Cloud *[]platformclientv2.Workitemstatuscreate
+func buildWorkitemStatusCreates(workitemStatuses []interface{}) *[]platformclientv2.Workitemstatuscreate {
+	workitemStatusesSlice := make([]platformclientv2.Workitemstatuscreate, 0)
+
+	for _, workitemStatus := range workitemStatuses {
+		var sdkWorkitemStatus platformclientv2.Workitemstatuscreate
+		workitemStatussMap, ok := workitemStatus.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Name, workitemStatussMap, "name")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Category, workitemStatussMap, "category")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatussMap, "description")
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.StatusTransitionTime, workitemStatussMap, "status_transition_time", buildLocalTime)
+		if statusTransitionDelaySec, ok := workitemStatussMap["status_transition_delay_seconds"]; ok && statusTransitionDelaySec.(int) > 0 {
+			sdkWorkitemStatus.StatusTransitionDelaySeconds = platformclientv2.Int(statusTransitionDelaySec.(int))
+		}
+
+		workitemStatusesSlice = append(workitemStatusesSlice, sdkWorkitemStatus)
+	}
+
+	return &workitemStatusesSlice
 }
 
 // buildWorkitemStatusUpdates maps an []interface{} into a Genesys Cloud *[]platformclientv2.Workitemstatusupdate
@@ -183,8 +166,10 @@ func buildWorkitemStatusUpdates(workitemStatuses []interface{}, apiStatuses *[]p
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Name, workitemStatussMap, "name")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatussMap, "description")
-		sdkWorkitemStatus.StatusTransitionDelaySeconds = platformclientv2.Int(workitemStatussMap["status_transition_delay_seconds"].(int))
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.StatusTransitionTime, workitemStatussMap, "status_transition_time", buildLocalTime)
+		if statusTransitionDelaySec, ok := workitemStatussMap["status_transition_delay_seconds"]; ok && statusTransitionDelaySec.(int) > 0 {
+			sdkWorkitemStatus.StatusTransitionDelaySeconds = platformclientv2.Int(statusTransitionDelaySec.(int))
+		}
 
 		// Destination Statuses
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.DestinationStatusIds, workitemStatussMap, "destination_status_names", buildStatusIdFn)
@@ -266,11 +251,13 @@ func flattenWorkitemStatuses(workitemStatuses *[]platformclientv2.Workitemstatus
 		resourcedata.SetMapValueIfNotNil(workitemStatusMap, "category", workitemStatus.Category)
 		resourcedata.SetMapValueIfNotNil(workitemStatusMap, "description", workitemStatus.Description)
 		resourcedata.SetMapValueIfNotNil(workitemStatusMap, "status_transition_delay_seconds", workitemStatus.StatusTransitionDelaySeconds)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(workitemStatusMap, "status_transition_time", &[]platformclientv2.Localtime{*workitemStatus.StatusTransitionTime}, flattenLocalTime)
+		if workitemStatus.StatusTransitionTime != nil {
+			resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(workitemStatusMap, "status_transition_time", &[]platformclientv2.Localtime{*workitemStatus.StatusTransitionTime}, flattenLocalTime)
+		}
 
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(workitemStatusMap, "destination_statuses", workitemStatus.DestinationStatuses, flattenWorkitemStatusReferences)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(workitemStatusMap, "destination_status_names", workitemStatus.DestinationStatuses, flattenWorkitemStatusReferences)
 		if workitemStatus.DefaultDestinationStatus != nil {
-			resourcedata.SetMapValueIfNotNil(workitemStatusMap, "default_destination_status", getStatusNameFromId(*workitemStatus.DefaultDestinationStatus.Id, workitemStatuses))
+			resourcedata.SetMapValueIfNotNil(workitemStatusMap, "default_destination_status_name", getStatusNameFromId(*workitemStatus.DefaultDestinationStatus.Id, workitemStatuses))
 		}
 
 		workitemStatusList = append(workitemStatusList, workitemStatusMap)

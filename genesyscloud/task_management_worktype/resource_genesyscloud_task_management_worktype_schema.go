@@ -55,6 +55,7 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 			`id`: {
 				Description: `Read-only identifier of the workitem status`,
 				Computed:    true,
+				Type:        schema.TypeString,
 			},
 			`name`: {
 				Description: `Name of the status`,
@@ -84,13 +85,16 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`status_transition_delay_seconds`: {
-				Description: `Delay in seconds for auto status transition`,
-				Optional:    true,
-				Type:        schema.TypeInt,
+				Description:  `Delay in seconds for auto status transition`,
+				Optional:     true,
+				Computed:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntAtLeast(60),
 			},
 			`status_transition_time`: {
 				Description: `Time at which auto status transition will occur after statusTransitionDelaySeconds delay. To set Time, the statusTransitionDelaySeconds must be equal to or greater than 86400 i.e. a day`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        localTimeResource,
@@ -123,6 +127,7 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 			`division_id`: {
 				Description: `The division to which this entity belongs.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`statuses`: {
@@ -169,6 +174,7 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 			`default_ttl_seconds`: {
 				Description: `The default time to time to live in seconds for Workitems created from the Worktype.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeInt,
 			},
 			`default_language_id`: {

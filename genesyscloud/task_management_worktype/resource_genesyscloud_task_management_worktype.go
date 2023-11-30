@@ -67,19 +67,28 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	// Get all the worktype statuses so we'll have the new statuses
+	// Get all the worktype statuses so we'll have the new statuses for referencing
 	worktype, _, err = proxy.getTaskManagementWorktypeById(ctx, *worktype.Id)
 	if err != nil {
 		return diag.Errorf("failed to get task management worktype %s: %v", *worktype.Name, err)
 	}
 
-	// Update the worktype statuses as they need to build the destination status references
+	// Update the worktype statuses as they need to build the "destination status" references
 	log.Printf("Updating the destination statuses of the statuses of worktype %s", *worktype.Id)
 	sdkWorkitemStatusUpdates := buildWorkitemStatusUpdates(d.Get("statuses").([]interface{}), worktype.Statuses)
 	for _, statusUpdate := range *sdkWorkitemStatusUpdates {
 		statusId := getStatusIdFromName(*statusUpdate.Name, worktype.Statuses)
+
+		// API does not allow updating a status with no actual change.
+		// This update portion is only for resolving status references, so skip statuses where
+		// "destination statuses" and "default destination id" are not set.
+		if (statusUpdate.DefaultDestinationStatusId == nil || *statusUpdate.DefaultDestinationStatusId == "") &&
+			(statusUpdate.DestinationStatusIds == nil || len(*statusUpdate.DestinationStatusIds) == 0) {
+			continue
+		}
+
 		if statusId == nil {
-			return diag.Errorf("failed to update a status %s. But not found in the worktype %s: %v", *statusUpdate.Name, *worktype.Name, err)
+			return diag.Errorf("failed to update a status %s. Not found in the worktype %s: %v", *statusUpdate.Name, *worktype.Name, err)
 		}
 
 		_, err := proxy.updateTaskManagementWorktypeStatus(ctx, *worktype.Id, *statusId, &statusUpdate)
@@ -89,7 +98,7 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	}
 	log.Printf("Created the task management worktype statuses of %s", *worktype.Id)
 
-	log.Printf("Finalized createion of task management worktype %s", *worktype.Id)
+	log.Printf("Finalized creation of task management worktype %s", *worktype.Id)
 	return readTaskManagementWorktype(ctx, d, meta)
 }
 
@@ -112,12 +121,20 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorktype())
 
 		resourcedata.SetNillableValue(d, "name", worktype.Name)
-		resourcedata.SetNillableValue(d, "division_id", worktype.Division)
 		resourcedata.SetNillableValue(d, "description", worktype.Description)
-		resourcedata.SetNillableValue(d, "default_workbin_id", worktype.DefaultWorkbin)
 
-		if worktype.DefaultStatus != nil {
-			d.Set("default_status", *getStatusNameFromId(*worktype.DefaultStatus.Id, worktype.Statuses))
+		if worktype.Division != nil {
+			resourcedata.SetNillableValue(d, "division_id", worktype.Division.Id)
+		}
+		if worktype.DefaultWorkbin != nil {
+			resourcedata.SetNillableValue(d, "default_workbin_id", worktype.DefaultWorkbin.Id)
+		}
+
+		// Default status can be an empty object
+		if worktype.DefaultStatus != nil && worktype.DefaultStatus.Id != nil {
+			if statusName := getStatusNameFromId(*worktype.DefaultStatus.Id, worktype.Statuses); statusName != nil {
+				d.Set("default_status", statusName)
+			}
 		}
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "statuses", worktype.Statuses, flattenWorkitemStatuses)
 
@@ -134,7 +151,7 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 			resourcedata.SetNillableValue(d, "default_queue_id", worktype.DefaultQueue.Id)
 		}
 
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "default_skills", worktype.DefaultSkills, flattenRoutingSkillReferences)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "default_skills_ids", worktype.DefaultSkills, flattenRoutingSkillReferences)
 		resourcedata.SetNillableValue(d, "assignment_enabled", worktype.AssignmentEnabled)
 
 		if worktype.Schema != nil {
@@ -163,6 +180,9 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("Updated task management worktype %s", *worktype.Id)
 
 	// Update the worktype statuses
+	// if d.HasChange("statuses") {
+
+	// }
 
 	return readTaskManagementWorktype(ctx, d, meta)
 }
