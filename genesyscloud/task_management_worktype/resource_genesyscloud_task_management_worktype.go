@@ -150,6 +150,7 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeProxy(sdkConfig)
 
+	// Update the base configuration of the Worktype
 	taskManagementWorktype := getWorktypeupdateFromResourceData(d, nil)
 	if d.HasChangesExcept("statuses", "default_status_name") {
 		worktype, err := proxy.updateTaskManagementWorktype(ctx, d.Id(), &taskManagementWorktype)
@@ -177,7 +178,7 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 
 	statuses := d.Get("statuses").(*schema.Set).List()
 
-	// If the status still has an id that means there is no update to it and so should not be included
+	// If the status in the state still has an id that means there is no update to it and so should not be included
 	// in the API update (GC API gives error if update is called but actually no diff).
 	forUpdateOrCreation := make([]interface{}, 0)
 	for _, status := range statuses {
@@ -188,38 +189,7 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 			statusIdsToStay = append(statusIdsToStay, statusMap["id"].(string))
 		}
 	}
-
-	// We will consider it the same status and update in-place if the name and the category matches.
-	// else, a new status will be created.
-	forCreation := make([]interface{}, 0)
-	forUpdate := make([]interface{}, 0)
-	for _, status := range forUpdateOrCreation {
-		statusMap := status.(map[string]interface{})
-		statusName, ok := statusMap["name"]
-		if !ok {
-			continue
-		}
-		statusCat, ok := statusMap["category"]
-		if !ok {
-			continue
-		}
-		toCreateNewStatus := true
-
-		// If the status matches an existing name and same category then we'll consider
-		// it the same and not create a new one.
-		for _, existingStatus := range *oldWorktype.Statuses {
-			if *existingStatus.Name == statusName && *existingStatus.Category == statusCat {
-				toCreateNewStatus = false
-				break
-			}
-		}
-
-		if toCreateNewStatus {
-			forCreation = append(forCreation, status)
-		} else {
-			forUpdate = append(forUpdate, status)
-		}
-	}
+	forCreation, forUpdate := getStatusesForUpdateAndCreation(forUpdateOrCreation, oldWorktype.Statuses)
 
 	// Create new statuses
 	log.Printf("Creating the task management worktype statuses of %s", d.Id())
@@ -237,7 +207,7 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		statusIdsToStay = append(statusIdsToStay, *updateStat.Id)
 	}
 
-	// Update the other already existing statuses
+	// Update the other already existing statuses for reference or other property updates
 	log.Printf("Updating the destination statuses of the statuses of worktype %s", d.Id())
 	updatedStatuses, err := updateWorktypeStatuses(ctx, proxy, d.Id(), forUpdate, false)
 	if err != nil {
@@ -248,20 +218,45 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	// Delete statuses that are no longer defined in the configuration
-	for _, forDeletionId := range lists.SliceDifference(oldStatusIds, statusIdsToStay) {
+	log.Printf("Cleaning up statuses of worktype %s", d.Id())
+	forDeletionIds := lists.SliceDifference(oldStatusIds, statusIdsToStay)
+
+	// Go through and clear the status references first to avoid dependency errors on deletion
+	log.Printf("Clearing references of statuses for deletion of worktype %s", d.Id())
+	for _, forDeletionId := range forDeletionIds {
+		updateForCleaning := platformclientv2.Workitemstatusupdate{}
+
+		// Force these properties as 'null' for the API request
+		updateForCleaning.SetField("DestinationStatusIds", &[]string{})
+		updateForCleaning.SetField("DefaultDestinationStatusId", nil)
+		updateForCleaning.SetField("StatusTransitionDelaySeconds", nil)
+		updateForCleaning.SetField("StatusTransitionTime", nil)
+
+		if _, err := proxy.updateTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId, &updateForCleaning); err != nil {
+			return diag.Errorf("failed to clean up references of task management worktype status %s: %v", forDeletionId, err)
+		}
+	}
+
+	// Actually delete the status
+	log.Printf("Deleting unused statuses of worktype %s", d.Id())
+	for _, forDeletionId := range forDeletionIds {
 		if _, err := proxy.deleteTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId); err != nil {
 			return diag.Errorf("failed to delete task management worktype status %s: %v", forDeletionId, err)
 		}
 	}
 
 	// Update the worktype if 'default_status_name' is changed
+	// We do this last so that the statuses are surely updated first
 	if d.HasChange("default_status_name") {
+		log.Printf("Updating default status of worktype %s", d.Id())
 		time.Sleep(5 * time.Second)
 		err := updateDefaultStatusName(ctx, proxy, d, d.Id())
 		if err != nil {
 			return diag.Errorf("failed to update default status name of worktype: %v", err)
 		}
 	}
+
+	log.Printf("Finished updating worktype %s", d.Id())
 
 	return readTaskManagementWorktype(ctx, d, meta)
 }

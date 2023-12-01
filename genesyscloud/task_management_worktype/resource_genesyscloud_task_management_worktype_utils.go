@@ -185,21 +185,50 @@ func buildWorkitemStatusUpdates(workitemStatuses []interface{}, apiStatuses *[]p
 
 	for _, workitemStatus := range workitemStatuses {
 		var sdkWorkitemStatus platformclientv2.Workitemstatusupdate
-		workitemStatussMap, ok := workitemStatus.(map[string]interface{})
+		workitemStatusMap, ok := workitemStatus.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Name, workitemStatussMap, "name")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatussMap, "description")
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.StatusTransitionTime, workitemStatussMap, "status_transition_time", buildLocalTime)
-		if statusTransitionDelaySec, ok := workitemStatussMap["status_transition_delay_seconds"]; ok && statusTransitionDelaySec.(int) > 0 {
-			sdkWorkitemStatus.StatusTransitionDelaySeconds = platformclientv2.Int(statusTransitionDelaySec.(int))
+		// resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Name, workitemStatussMap, "name")
+		// resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatussMap, "description")
+		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.StatusTransitionTime, workitemStatussMap, "status_transition_time", buildLocalTime)
+		// if statusTransitionDelaySec, ok := workitemStatussMap["status_transition_delay_seconds"]; ok && statusTransitionDelaySec.(int) > 0 {
+		// 	sdkWorkitemStatus.StatusTransitionDelaySeconds = platformclientv2.Int(statusTransitionDelaySec.(int))
+		// }
+
+		// // Destination Statuses
+		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.DestinationStatusIds, workitemStatussMap, "destination_status_names", buildStatusIdFn)
+		// resourcedata.BuildSDKStringValueIfNotNilTransform(&sdkWorkitemStatus.DefaultDestinationStatusId, workitemStatussMap, "default_destination_status_name", getStatusIdFromNameFn)
+		if name, ok := workitemStatusMap["name"]; ok {
+			strName := name.(string)
+			sdkWorkitemStatus.SetField("Name", &strName)
+		}
+		if description, ok := workitemStatusMap["description"]; ok {
+			strDescription := description.(string)
+			sdkWorkitemStatus.SetField("Description", &strDescription)
+		}
+		if transitionTime, ok := workitemStatusMap["status_transition_time"]; ok {
+			sdkWorkitemStatus.SetField("StatusTransitionTime", buildLocalTime(transitionTime.([]interface{})))
+		}
+		if transitionDelay, ok := workitemStatusMap["status_transition_delay_seconds"]; ok && transitionDelay.(int) > 0 {
+			transitionDelayInt := transitionDelay.(int)
+			sdkWorkitemStatus.SetField("StatusTransitionDelaySeconds", &transitionDelayInt)
+		}
+		if destinationStatuses, ok := workitemStatusMap["destination_status_names"]; ok {
+			sdkWorkitemStatus.SetField("DestinationStatusIds", buildStatusIdFn(destinationStatuses.([]interface{})))
+		}
+		if defaultDestination, ok := workitemStatusMap["default_destination_status_name"]; ok {
+			sdkWorkitemStatus.SetField("DefaultDestinationStatusId", getStatusIdFromNameFn(defaultDestination.(string)))
 		}
 
-		// Destination Statuses
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.DestinationStatusIds, workitemStatussMap, "destination_status_names", buildStatusIdFn)
-		resourcedata.BuildSDKStringValueIfNotNilTransform(&sdkWorkitemStatus.DefaultDestinationStatusId, workitemStatussMap, "default_destination_status_name", getStatusIdFromNameFn)
+		// If the default destination status id is nil, we need to force it and the other properties
+		// related to it as "null" for the API.
+		// if sdkWorkitemStatus.DefaultDestinationStatusId == nil {
+		// 	sdkWorkitemStatus.SetField("DefaultDestinationStatusId", nil)
+		// 	sdkWorkitemStatus.SetField("StatusTransitionDelaySeconds", nil)
+		// 	sdkWorkitemStatus.SetField("StatusTransitionTime", nil)
+		// }
 
 		workitemStatussSlice = append(workitemStatussSlice, sdkWorkitemStatus)
 	}
@@ -295,6 +324,45 @@ func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Ro
 	}
 
 	return routingSkillReferenceList
+}
+
+// getStatusesForUpdateAndCreation takes a resource data list []interface{} of statuses and determines if they
+// are to be created or just updated. Returns the two lists.
+func getStatusesForUpdateAndCreation(statuses []interface{}, existingStatuses *[]platformclientv2.Workitemstatus) (forCreation []interface{}, forUpdate []interface{}) {
+	forCreation = make([]interface{}, 0)
+	forUpdate = make([]interface{}, 0)
+
+	// We will consider it the same status and update in-place if the name and the category matches.
+	// else, a new status will be created.
+	for _, status := range statuses {
+		statusMap := status.(map[string]interface{})
+		statusName, ok := statusMap["name"]
+		if !ok {
+			continue
+		}
+		statusCat, ok := statusMap["category"]
+		if !ok {
+			continue
+		}
+		toCreateNewStatus := true
+
+		// If the status matches an existing name and same category then we'll consider
+		// it the same and not create a new one.
+		for _, existingStatus := range *existingStatuses {
+			if *existingStatus.Name == statusName && *existingStatus.Category == statusCat {
+				toCreateNewStatus = false
+				break
+			}
+		}
+
+		if toCreateNewStatus {
+			forCreation = append(forCreation, status)
+		} else {
+			forUpdate = append(forUpdate, status)
+		}
+	}
+
+	return forCreation, forUpdate
 }
 
 // createWorktypeStatuses creates new statuses as defined in the config. This is just the initial
