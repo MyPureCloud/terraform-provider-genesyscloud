@@ -73,7 +73,7 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading roles for user %s", d.Id())
-	d.Set("user_id", d.Id())
+	_ = d.Set("user_id", d.Id())
 	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		roles, _, err := readSubjectRoles(d.Id(), authAPI)
 		if err != nil {
@@ -102,7 +102,7 @@ func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 	return readUserRoles(ctx, d, meta)
 }
 
-func deleteUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteUserRoles(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	// Does not delete users or roles. This resource will just no longer manage roles.
 	return nil
 }
