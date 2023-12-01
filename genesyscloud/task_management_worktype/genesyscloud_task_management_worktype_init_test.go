@@ -4,6 +4,9 @@ import (
 	"sync"
 	"testing"
 
+	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	workItemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -29,7 +32,8 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceTaskManagementWorktype()
-	// TODO: Add references
+	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
+	providerResources["genesyscloud_task_management_workitem_schema"] = workItemSchema.ResourceTaskManagementWorkitemSchema()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -38,7 +42,8 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[resourceName] = DataSourceTaskManagementWorktype()
-	// TODO: Add references
+	providerDataSources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
+	providerDataSources["genesyscloud_task_management_workitem_schema"] = workItemSchema.DataSourceTaskManagementWorkitemSchema()
 }
 
 // initTestResources initializes all test resources and data sources.

@@ -190,16 +190,8 @@ func buildWorkitemStatusUpdates(workitemStatuses []interface{}, apiStatuses *[]p
 			continue
 		}
 
-		// resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Name, workitemStatussMap, "name")
-		// resourcedata.BuildSDKStringValueIfNotNil(&sdkWorkitemStatus.Description, workitemStatussMap, "description")
-		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.StatusTransitionTime, workitemStatussMap, "status_transition_time", buildLocalTime)
-		// if statusTransitionDelaySec, ok := workitemStatussMap["status_transition_delay_seconds"]; ok && statusTransitionDelaySec.(int) > 0 {
-		// 	sdkWorkitemStatus.StatusTransitionDelaySeconds = platformclientv2.Int(statusTransitionDelaySec.(int))
-		// }
-
-		// // Destination Statuses
-		// resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkWorkitemStatus.DestinationStatusIds, workitemStatussMap, "destination_status_names", buildStatusIdFn)
-		// resourcedata.BuildSDKStringValueIfNotNilTransform(&sdkWorkitemStatus.DefaultDestinationStatusId, workitemStatussMap, "default_destination_status_name", getStatusIdFromNameFn)
+		// We use SetFields because we want the "null" values to be
+		// sent to the API specifically for the default destination status and related properties.
 		if name, ok := workitemStatusMap["name"]; ok {
 			strName := name.(string)
 			sdkWorkitemStatus.SetField("Name", &strName)
@@ -221,14 +213,6 @@ func buildWorkitemStatusUpdates(workitemStatuses []interface{}, apiStatuses *[]p
 		if defaultDestination, ok := workitemStatusMap["default_destination_status_name"]; ok {
 			sdkWorkitemStatus.SetField("DefaultDestinationStatusId", getStatusIdFromNameFn(defaultDestination.(string)))
 		}
-
-		// If the default destination status id is nil, we need to force it and the other properties
-		// related to it as "null" for the API.
-		// if sdkWorkitemStatus.DefaultDestinationStatusId == nil {
-		// 	sdkWorkitemStatus.SetField("DefaultDestinationStatusId", nil)
-		// 	sdkWorkitemStatus.SetField("StatusTransitionDelaySeconds", nil)
-		// 	sdkWorkitemStatus.SetField("StatusTransitionTime", nil)
-		// }
 
 		workitemStatussSlice = append(workitemStatussSlice, sdkWorkitemStatus)
 	}
