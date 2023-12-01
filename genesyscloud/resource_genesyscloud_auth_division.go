@@ -181,6 +181,8 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		return nil
 	}
 
+	// Sometimes a division with resources in it priorly still thinks it is attached to those resources during a destroy run.
+	// We're retrying again as those resources should detach completely eventually.
 	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting division %s", name)
 		resp, err := authAPI.DeleteAuthorizationDivision(d.Id(), false)
