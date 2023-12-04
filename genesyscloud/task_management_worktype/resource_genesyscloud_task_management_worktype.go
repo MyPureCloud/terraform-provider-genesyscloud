@@ -7,6 +7,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
@@ -231,6 +232,13 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		updateForCleaning.SetField("DefaultDestinationStatusId", nil)
 		updateForCleaning.SetField("StatusTransitionDelaySeconds", nil)
 		updateForCleaning.SetField("StatusTransitionTime", nil)
+
+		// We put a random description so we can ensure there is a 'change' in the status.
+		// Else we'll get a 400 error if the status has no destination status /default status to begin with
+		// This is simpler than checking the status fields if there are any changes.
+		// Since this status is for deletion anyway we shouldn't care about this managed update.
+		description := "this status is set for deletion by CX as Code " + uuid.NewString()
+		updateForCleaning.SetField("Description", &description)
 
 		if _, err := proxy.updateTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId, &updateForCleaning); err != nil {
 			return diag.Errorf("failed to clean up references of task management worktype status %s: %v", forDeletionId, err)

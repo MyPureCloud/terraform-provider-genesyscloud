@@ -73,10 +73,6 @@ func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	}
 }
 
-func GenerateStringArray(vals ...string) string {
-	return fmt.Sprintf("[%s]", strings.Join(vals, ","))
-}
-
 // For fields such as genesyscloud_outbound_campaign.campaign_status, which use a diff suppress func,
 // and may return as "on", or "complete" depending on how long the operation takes
 func VerifyAttributeInArrayOfPotentialValues(resource string, key string, potentialValues []string) resource.TestCheckFunc {
@@ -327,6 +323,19 @@ func GenerateJsonObject(properties ...string) string {
 	return fmt.Sprintf(`{
 		%s
 	}`, strings.Join(properties, "\n"))
+}
+
+func GenerateStringArray(vals ...string) string {
+	return fmt.Sprintf("[%s]", strings.Join(vals, ","))
+}
+
+func GenerateStringArrayEnquote(vals ...string) string {
+	quotedVals := []string{}
+	for _, strv := range vals {
+		quotedVals = append(quotedVals, strconv.Quote(strv))
+	}
+
+	return fmt.Sprintf("[%s]", strings.Join(quotedVals, ","))
 }
 
 func GenerateMapProperty(propName string, propValue string) string {
