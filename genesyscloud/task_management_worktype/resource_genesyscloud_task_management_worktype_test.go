@@ -24,39 +24,6 @@ The resource_genesyscloud_task_management_worktype_test.go contains all of the t
 tests for task_management_worktype.
 */
 
-type worktypeConfig struct {
-	resID             string
-	name              string
-	description       string
-	divisionId        string
-	statuses          []worktypeStatusConfig
-	defaultStatusName string
-	defaultWorkbinId  string
-
-	defaultDurationS    int
-	defaultExpirationS  int
-	defaultDueDurationS int
-	defaultPriority     int
-	defaultTtlS         int
-
-	defaultLanguageId string
-	defaultQueueId    string
-	defaultSkillIds   []string
-	assignmentEnabled bool
-
-	schemaId      string
-	schemaVersion int
-}
-
-type worktypeStatusConfig struct {
-	name                         string
-	description                  string
-	category                     string
-	destinationStatusNames       []string
-	defaultDestinationStatusName string
-	transitionDelay              int
-}
-
 // Basic test with create and update excluding workitem statusses
 func TestAccResourceTaskManagementWorktype(t *testing.T) {
 	t.Parallel()

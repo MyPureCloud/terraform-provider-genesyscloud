@@ -3,9 +3,10 @@ package task_management_worktype
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -28,11 +29,11 @@ func dataSourceTaskManagementWorktypeRead(ctx context.Context, d *schema.Resourc
 		worktypeId, retryable, err := proxy.getTaskManagementWorktypeIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching task management worktype %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error searching task management worktype %s: %s", name, err))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("No task management worktype found with name %s", name))
+			return retry.RetryableError(fmt.Errorf("no task management worktype found with name %s", name))
 		}
 
 		d.SetId(worktypeId)

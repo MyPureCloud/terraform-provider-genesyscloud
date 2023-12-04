@@ -231,7 +231,7 @@ func TaskManagementWorktypeExporter() *resourceExporter.ResourceExporter {
 // DataSourceTaskManagementWorktype registers the genesyscloud_task_management_worktype data source
 func DataSourceTaskManagementWorktype() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud task management worktype data source. Select an task management worktype by name`,
+		Description: `Genesys Cloud task management worktype data source. Select a task management worktype by name`,
 		ReadContext: gcloud.ReadWithPooledClient(dataSourceTaskManagementWorktypeRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -239,11 +239,6 @@ func DataSourceTaskManagementWorktype() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: `Task management worktype name`,
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"default_workbin_id": {
-				Description: `The default workbin id assigned to the worktype`,
 				Type:        schema.TypeString,
 				Required:    true,
 			},

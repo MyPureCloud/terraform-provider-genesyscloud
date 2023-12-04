@@ -15,6 +15,40 @@ The resource_genesyscloud_task_management_worktype_utils.go file contains variou
 and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 
+type worktypeConfig struct {
+	resID             string
+	name              string
+	description       string
+	divisionId        string
+	statuses          []worktypeStatusConfig
+	defaultStatusName string
+	defaultWorkbinId  string
+
+	defaultDurationS    int
+	defaultExpirationS  int
+	defaultDueDurationS int
+	defaultPriority     int
+	defaultTtlS         int
+
+	defaultLanguageId string
+	defaultQueueId    string
+	defaultSkillIds   []string
+	assignmentEnabled bool
+
+	schemaId      string
+	schemaVersion int
+}
+
+type worktypeStatusConfig struct {
+	id                           string
+	name                         string
+	description                  string
+	category                     string
+	destinationStatusNames       []string
+	defaultDestinationStatusName string
+	transitionDelay              int
+}
+
 // getWorktypeCreateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypecreate
 func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.Worktypecreate {
 	worktype := platformclientv2.Worktypecreate{
@@ -422,6 +456,17 @@ func updateDefaultStatusName(ctx context.Context, proxy *taskManagementWorktypeP
 	_, err = proxy.updateTaskManagementWorktype(ctx, *worktype.Id, &taskManagementWorktype)
 	if err != nil {
 		return fmt.Errorf("failed to update worktype's default status name %s", err)
+	}
+
+	return nil
+}
+
+// getStatusIdFromName gets the status id from name for the test util struct worktypeConfig
+func (wt *worktypeConfig) getStatusIdFromName(name string) *string {
+	for _, s := range wt.statuses {
+		if s.name == name {
+			return &s.id
+		}
 	}
 
 	return nil
