@@ -513,32 +513,11 @@ func buildSdkresponsemanagementresponseFooterTemplate(footerTemplateList []inter
 		}
 
 		//sampleList := lists.InterfaceListToStrings(footerTemplateMap["applicable_resources"].([]interface{}))
+		//hardcoding while testing
 		sdkFootertemplate.ApplicableResources = &[]string{"Campaign"}
 	}
 
-	//sdkFootertemplate.VarType = &validType
-	//sdkFootertemplate.ApplicableResources = &validApplicableResources
 	return &sdkFootertemplate
-
-}
-
-func ValidateListofStrings(sourceList []string, validList []string) bool {
-
-	validSet := make(map[string]struct{})
-
-	for _, value := range validList {
-		validSet[value] = struct{}{}
-	}
-
-	for _, value := range sourceList {
-
-		if _, exists := validSet[value]; !exists {
-
-			return false
-		}
-	}
-
-	return true
 
 }
 
