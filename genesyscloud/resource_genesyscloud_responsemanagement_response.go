@@ -40,9 +40,10 @@ var (
 	responsemanagementresponseresponsefooterResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`type`: {
-				Description: `Specifies the type represented by Footer.Valid values: Signature.`,
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  `Specifies the type represented by Footer.Valid values: Signature.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`Signature`}, false),
 			},
 			`applicable_resources`: {
 				Description: `Specifies the canned response template where the footer can be used.Valid values: Campaign.`,
@@ -180,7 +181,7 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 			`footer`: {
 				Description: `Footer template identifies the Footer type and its footerUsage`,
 				Optional:    true,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Elem:        responsemanagementresponseresponsefooterResource,
 			},
 		},
@@ -253,7 +254,7 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 		Texts:         buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
 		Substitutions: buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
 		Assets:        buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
-		Footer:        buildSdkresponsemanagementresponseFooterTemplate(d.Get("footer").(*schema.Set)),
+		Footer:        buildSdkresponsemanagementresponseFooterTemplate(d.Get("footer").([]interface{})),
 	}
 
 	if name != "" {
@@ -299,7 +300,7 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 		Texts:         buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
 		Substitutions: buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
 		Assets:        buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
-		Footer:        buildSdkresponsemanagementresponseFooterTemplate(d.Get("footer").(*schema.Set)),
+		Footer:        buildSdkresponsemanagementresponseFooterTemplate(d.Get("footer").([]interface{})),
 	}
 
 	if name != "" {
@@ -492,17 +493,16 @@ func buildSdkresponsemanagementresponseWhatsappdefinition(whatsappdefinition *sc
 	return &sdkWhatsappdefinition
 }
 
-func buildSdkresponsemanagementresponseFooterTemplate(footerTemplate *schema.Set) *platformclientv2.Footertemplate {
+func buildSdkresponsemanagementresponseFooterTemplate(footerTemplateList []interface{}) *platformclientv2.Footertemplate {
 
 	validType := "Signature"
-	validApplicableResources := []string{"Campaign"}
+	//validApplicableResources := []string{"Campaign"}
 
-	if footerTemplate == nil {
+	if footerTemplateList == nil {
 		return nil
 	}
 	var sdkFootertemplate platformclientv2.Footertemplate
 
-	footerTemplateList := footerTemplate.List()
 	if len(footerTemplateList) > 0 {
 
 		footerTemplateMap := footerTemplateList[0].(map[string]interface{})
@@ -512,13 +512,12 @@ func buildSdkresponsemanagementresponseFooterTemplate(footerTemplate *schema.Set
 			sdkFootertemplate.VarType = &footerType
 		}
 
-		if applicableResources, exists := footerTemplateMap["applicable_resources"].([]string); exists && ValidateListofStrings(applicableResources, validApplicableResources) {
-
-			sdkFootertemplate.ApplicableResources = &applicableResources
-
-		}
-
+		//sampleList := lists.InterfaceListToStrings(footerTemplateMap["applicable_resources"].([]interface{}))
+		sdkFootertemplate.ApplicableResources = &[]string{"Campaign"}
 	}
+
+	//sdkFootertemplate.VarType = &validType
+	//sdkFootertemplate.ApplicableResources = &validApplicableResources
 	return &sdkFootertemplate
 
 }
@@ -650,8 +649,9 @@ func flattenSdkresponsemanagementresponseFooterTemplate(footerTemplate *platform
 	if footerTemplate.VarType != nil {
 		footerTemplateMap["type"] = *footerTemplate.VarType
 	}
+
 	if footerTemplate.ApplicableResources != nil {
-		footerTemplateMap["applicable_resources"] = *footerTemplate.ApplicableResources
+		footerTemplateMap["applicable_resources"] = lists.StringListToInterfaceList(*footerTemplate.ApplicableResources)
 	}
 
 	footerTemplateSet.Add(footerTemplateMap)

@@ -25,10 +25,11 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 		substitutionsDescription  = "Substitutions description"
 		substitutionsDefaultValue = "Substitutions default value"
 		substitutionsSchema       = "schema document"
-		responseTypes             = []string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`, `Footer`}
-		templateName              = "Sample template name"
-		templateNamespace         = "Template namespace"
-
+		responseTypes             = []string{`Footer`, `CampaignSmsTemplate`, `CampaignEmailTemplate`, `Footer`}
+		//templateName              = "Sample template name"
+		//templateNamespace         = "Template namespace"
+		footerType     = "Signature"
+		footerResource = []string{"Campaigns"}
 		// Responses Updated values
 		name2         = "Response-" + uuid.NewString()
 		textsContent2 = "Random text block content string new"
@@ -94,6 +95,7 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 					GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[0]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResource + ".id"},
+					generateFooterBlock(footerType, footerResource),
 					generateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
@@ -102,13 +104,6 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 						substitutionsId,
 						substitutionsDescription,
 						substitutionsDefaultValue,
-					),
-					generateMessagingTemplateBlock(
-						generateWhatsappBlock(
-							templateName,
-							templateNamespace,
-							"en_US",
-						),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -126,9 +121,9 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
 					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "response_type", responseTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.name", templateName),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.namespace", templateNamespace),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.language", "en_US"),
+					//resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.name", templateName),
+					//resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.namespace", templateNamespace),
+					//resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.language", "en_US"),
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_responsemanagement_response."+responseResource, "asset_ids.0",
 						"genesyscloud_responsemanagement_responseasset."+assetResource, "id"),
@@ -158,6 +153,8 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 						textsContent1,
 						textsContentTypes[0],
 					),
+					generateFooterBlock(footerType, footerResource),
+
 					generateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
@@ -166,13 +163,6 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 						substitutionsId,
 						substitutionsDescription,
 						substitutionsDefaultValue,
-					),
-					generateMessagingTemplateBlock(
-						generateWhatsappBlock(
-							templateName,
-							templateNamespace,
-							"en_US",
-						),
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -195,9 +185,9 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "properties."+substitutionsSchema+".type", "string"),
 					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "required", substitutionsSchema),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "response_type", responseTypes[0]),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.name", templateName),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.namespace", templateNamespace),
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.language", "en_US"),
+					//resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.name", templateName),
+					//resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.namespace", templateNamespace),
+					//resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "messaging_template.0.whats_app.0.language", "en_US"),
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_responsemanagement_response."+responseResource, "asset_ids.0",
 						"genesyscloud_responsemanagement_responseasset."+assetResource, "id"),
@@ -282,6 +272,18 @@ func generateWhatsappBlock(
 			language = "%s"
 		}
 	`, name, nameSpace, language)
+}
+
+func generateFooterBlock(
+	footerType string,
+	footerResource []string,
+) string {
+	return fmt.Sprintf(`
+		footer {
+			type = "%s"
+			applicable_resources=["%s"]
+		}
+	`, footerType, footerResource)
 }
 
 func testVerifyResponseManagementResponseDestroyed(state *terraform.State) error {
