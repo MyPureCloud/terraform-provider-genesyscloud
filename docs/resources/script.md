@@ -38,7 +38,7 @@ resource "genesyscloud_script" "script" {
 
 - `file_content_hash` (String) Hash value of the script file content. Used to detect changes.
 - `filepath` (String) Path to the script file to upload.
-- `script_name` (String) Display name for the script. A reliably unique name is recommended.
+- `script_name` (String) Display name for the script. A reliably unique name is recommended. Updating this field will result in the script being dropped and recreated with a new GUID.
 
 ### Optional
 

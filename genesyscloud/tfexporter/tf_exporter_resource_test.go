@@ -22,7 +22,11 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
+	webdeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
+	webdeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+
 	"testing"
 
 	obw "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
@@ -109,8 +113,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = gcloud.ResourceTrunkBaseSettings()
 	providerResources["genesyscloud_telephony_providers_edges_trunk"] = gcloud.ResourceTrunk()
 	providerResources["genesyscloud_user_roles"] = gcloud.ResourceUserRoles()
-	providerResources["genesyscloud_webdeployments_configuration"] = gcloud.ResourceWebDeploymentConfiguration()
-	providerResources["genesyscloud_webdeployments_deployment"] = gcloud.ResourceWebDeployment()
+	providerResources["genesyscloud_webdeployments_deployment"] = webdeployDeploy.ResourceWebDeployment()
+	providerResources["genesyscloud_webdeployments_configuration"] = webdeployConfig.ResourceWebDeploymentConfiguration()
 	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
 	providerResources["genesyscloud_processautomation_trigger"] = pat.ResourceProcessAutomationTrigger()
 
@@ -123,7 +127,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_messagingcampaign"] = ob.ResourceOutboundMessagingCampaign()
 	providerResources["genesyscloud_outbound_sequence"] = obSequence.ResourceOutboundSequence()
 	providerResources["genesyscloud_outbound_dnclist"] = ob.ResourceOutboundDncList()
-	providerResources["genesyscloud_outbound_campaignrule"] = obCampaignRule.ResourceOutboundCampaignRule()
+	providerResources["genesyscloud_outbound_campaignrule"] = obCampaignRule.ResourceOutboundCampaignrule()
 	providerResources["genesyscloud_outbound_wrapupcodemappings"] = obw.ResourceOutboundWrapUpCodeMappings()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_responsemanagement_response"] = gcloud.ResourceResponsemanagementResponse()
@@ -132,6 +136,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = didPool.ResourceTelephonyDidPool()
 
 	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
+	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
@@ -209,8 +214,8 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_telephony_providers_edges_trunk", gcloud.TrunkExporter())
 	RegisterExporter("genesyscloud_user", gcloud.UserExporter())
 	RegisterExporter("genesyscloud_user_roles", gcloud.UserRolesExporter())
-	RegisterExporter("genesyscloud_webdeployments_configuration", gcloud.WebDeploymentConfigurationExporter())
-	RegisterExporter("genesyscloud_webdeployments_deployment", gcloud.WebDeploymentExporter())
+	RegisterExporter("genesyscloud_webdeployments_deployment", webdeployDeploy.WebDeploymentExporter())
+	RegisterExporter("genesyscloud_webdeployments_configuration", webdeployConfig.WebDeploymentConfigurationExporter())
 	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
 
 	RegisterExporter("genesyscloud_knowledge_document_variation", gcloud.KnowledgeDocumentVariationExporter())
@@ -221,6 +226,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", didPool.TelephonyDidPoolExporter())
 
 	RegisterExporter("genesyscloud_task_management_workbin", workbin.TaskManagementWorkbinExporter())
+	RegisterExporter("genesyscloud_task_management_workitem_schema", workbin.TaskManagementWorkbinExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }

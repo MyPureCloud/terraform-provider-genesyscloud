@@ -6,7 +6,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -28,6 +30,8 @@ type ResourceMeta struct {
 type ResourceIDMetaMap map[string]*ResourceMeta
 
 // GetAllResourcesFunc is a method that returns all resource IDs
+type GetAllCustomResourcesFunc func(context.Context) (ResourceIDMetaMap, map[string][]string, diag.Diagnostics)
+
 type GetAllResourcesFunc func(context.Context) (ResourceIDMetaMap, diag.Diagnostics)
 
 // RefAttrSettings contains behavior settings for references
@@ -38,6 +42,13 @@ type RefAttrSettings struct {
 
 	// Values that may be set that should not be treated as IDs
 	AltValues []string
+}
+
+type ResourceInfo struct {
+	State   *terraform.InstanceState
+	Name    string
+	Type    string
+	CtyType cty.Type
 }
 
 // Allows the definition of a custom resolver for an exporter.

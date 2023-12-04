@@ -256,6 +256,9 @@ func OutboundCampaignExporter() *resourceExporter.ResourceExporter {
 				RefType: "genesyscloud_script",
 			},
 		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"campaign_status": {ResolverFunc: resourceExporter.CampaignStatusResolver},
+		},
 	}
 }
 

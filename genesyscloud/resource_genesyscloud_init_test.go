@@ -85,10 +85,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_trunk"] = ResourceTrunk()
 	providerResources["genesyscloud_user"] = ResourceUser()
 	providerResources["genesyscloud_user_roles"] = ResourceUserRoles()
-	providerResources["genesyscloud_webdeployments_configuration"] = ResourceWebDeploymentConfiguration()
-	providerResources["genesyscloud_webdeployments_deployment"] = ResourceWebDeployment()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
-
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
@@ -144,8 +141,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_telephony_providers_edges_phonebasesettings"] = dataSourcePhoneBaseSettings()
 	providerDataSources["genesyscloud_telephony_providers_edges_trunk"] = dataSourceTrunk()
 	providerDataSources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = dataSourceTrunkBaseSettings()
-	providerDataSources["genesyscloud_webdeployments_configuration"] = dataSourceWebDeploymentsConfiguration()
-	providerDataSources["genesyscloud_webdeployments_deployment"] = dataSourceWebDeploymentsDeployment()
 	providerDataSources["genesyscloud_widget_deployment"] = dataSourceWidgetDeployments()
 
 }

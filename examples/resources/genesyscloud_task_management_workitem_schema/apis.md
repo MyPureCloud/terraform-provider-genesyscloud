@@ -1,0 +1,5 @@
+* [POST /api/v2/taskmanagement/workitems/schemas](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-workitems-schemas)
+* [GET /api/v2/taskmanagement/workitems/schemas](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-taskmanagement-workitems-schemas)
+* [GET /api/v2/taskmanagement/workitems/schemas/{schemaId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-taskmanagement-workitems-schemas--schemaId-)
+* [PUT /api/v2/taskmanagement/workitems/schemas/{schemaId}](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-taskmanagement-workitems-schemas--schemaId-)
+* [DELETE /api/v2/taskmanagement/workitems/schemas/{schemaId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-taskmanagement-workitems-schemas--schemaId-)

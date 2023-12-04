@@ -21,6 +21,7 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 		textsContent1             = "Random text block content string"
 		textsContentTypes         = []string{"text/plain", "text/html"}
 		interactionTypes          = []string{"chat", "email", "twitter"}
+		substitutionsId           = "sub123"
 		substitutionsDescription  = "Substitutions description"
 		substitutionsDefaultValue = "Substitutions default value"
 		substitutionsSchema       = "schema document"
@@ -98,6 +99,7 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 						textsContentTypes[1],
 					),
 					generateSubstitutionsBlock(
+						substitutionsId,
 						substitutionsDescription,
 						substitutionsDefaultValue,
 					),
@@ -117,6 +119,7 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content", textsContent2),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.0.content_type", textsContentTypes[1]),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "interaction_type", interactionTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.id", substitutionsId),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.description", substitutionsDescription),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.default_value", substitutionsDefaultValue),
 					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
@@ -160,6 +163,7 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 						textsContentTypes[1],
 					),
 					generateSubstitutionsBlock(
+						substitutionsId,
 						substitutionsDescription,
 						substitutionsDefaultValue,
 					),
@@ -184,6 +188,7 @@ func TestAccResourceResponseManagementResponse(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.content", textsContent1),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "texts.1.content_type", textsContentTypes[0]),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "interaction_type", interactionTypes[0]),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.id", substitutionsId),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.description", substitutionsDescription),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions.0.default_value", substitutionsDefaultValue),
 					ValidateValueInJsonAttr("genesyscloud_responsemanagement_response."+responseResource, "substitutions_schema_id", "type", "object"),
@@ -245,16 +250,14 @@ func generateTextsBlock(
 	`, content, contentType)
 }
 
-func generateSubstitutionsBlock(
-	description string,
-	defaultValue string,
-) string {
+func generateSubstitutionsBlock(id, description, defaultValue string) string {
 	return fmt.Sprintf(`
 		substitutions {
-			description = "%s"
+			id            = "%s"
+			description   = "%s"
 			default_value = "%s"
 		}
-	`, description, defaultValue)
+	`, id, description, defaultValue)
 }
 
 func generateMessagingTemplateBlock(

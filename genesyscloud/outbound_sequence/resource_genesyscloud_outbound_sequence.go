@@ -34,7 +34,7 @@ func getAllAuthOutboundSequences(ctx context.Context, clientConfig *platformclie
 	}
 
 	for _, campaignSequence := range *campaignSequences {
-		resources[*campaignSequence.Id] = &resourceExporter.ResourceMeta{Name: *campaignSequence.Id}
+		resources[*campaignSequence.Id] = &resourceExporter.ResourceMeta{Name: *campaignSequence.Name}
 	}
 
 	return resources, nil

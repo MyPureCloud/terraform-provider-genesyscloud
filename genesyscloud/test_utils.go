@@ -310,6 +310,15 @@ func GenerateJsonProperty(propName string, propValue string) string {
 	return fmt.Sprintf(`"%s" = %s`, propName, propValue)
 }
 
+func GenerateJsonArrayPropertyEnquote(propName string, propValues ...string) string {
+	quotedVals := []string{}
+	for _, strv := range propValues {
+		quotedVals = append(quotedVals, strconv.Quote(strv))
+	}
+
+	return GenerateJsonArrayProperty(propName, quotedVals...)
+}
+
 func GenerateJsonArrayProperty(propName string, propValues ...string) string {
 	return fmt.Sprintf(`"%s" = [%s]`, propName, strings.Join(propValues, ", "))
 }
@@ -376,7 +385,7 @@ func GenerateJsonSchemaDocStr(properties ...string) string {
 	)
 }
 
-func randString(length int) string {
+func RandString(length int) string {
 	rand.Seed(time.Now().UnixNano())
 
 	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")

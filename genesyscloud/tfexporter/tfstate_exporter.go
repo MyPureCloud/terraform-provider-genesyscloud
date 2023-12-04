@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -21,12 +22,12 @@ The other functions in this file deal with how to generate the TFVars we create 
 */
 type TFStateFileWriter struct {
 	ctx            context.Context
-	resources      []resourceInfo
+	resources      []resourceExporter.ResourceInfo
 	d              *schema.ResourceData
 	providerSource string
 }
 
-func NewTFStateWriter(ctx context.Context, resources []resourceInfo, d *schema.ResourceData, providerSource string) *TFStateFileWriter {
+func NewTFStateWriter(ctx context.Context, resources []resourceExporter.ResourceInfo, d *schema.ResourceData, providerSource string) *TFStateFileWriter {
 	tfwriter := &TFStateFileWriter{
 		ctx:            ctx,
 		resources:      resources,
