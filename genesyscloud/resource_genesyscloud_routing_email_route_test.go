@@ -86,7 +86,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + generateRoutingSkillResource(
+				) + GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + generateRoutingEmailRouteResource(
@@ -141,7 +141,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + generateRoutingSkillResource(
+				) + GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + generateRoutingEmailRouteResource(
@@ -197,7 +197,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + generateRoutingSkillResource(
+				) + GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + generateRoutingEmailRouteResource(

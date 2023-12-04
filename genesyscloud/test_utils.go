@@ -73,7 +73,7 @@ func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	}
 }
 
-func generateStringArray(vals ...string) string {
+func GenerateStringArray(vals ...string) string {
 	return fmt.Sprintf("[%s]", strings.Join(vals, ","))
 }
 

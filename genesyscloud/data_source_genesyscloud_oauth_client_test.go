@@ -40,7 +40,7 @@ func TestAccDataSourceOAuthClient(t *testing.T) {
 					grantTypeClientCreds,
 					tokenSec1,
 					NullValue, // Default state
-					generateStringArray(strconv.Quote(redirectURI1)),
+					GenerateStringArray(strconv.Quote(redirectURI1)),
 					NullValue, // No scopes for client creds
 					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", NullValue),
 				) + generateOAuthClientDataSource(

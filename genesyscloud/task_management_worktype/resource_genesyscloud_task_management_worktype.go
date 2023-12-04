@@ -49,6 +49,7 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 
 	taskManagementWorktype := getWorktypecreateFromResourceData(d)
 
+	// Create the base worktype
 	log.Printf("Creating task management worktype %s", *taskManagementWorktype.Name)
 	worktype, err := proxy.createTaskManagementWorktype(ctx, &taskManagementWorktype)
 	if err != nil {
@@ -58,9 +59,8 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("Created the base task management worktype %s", *worktype.Id)
 	d.SetId(*worktype.Id)
 
-	// Create the worktype statuses
+	// Create and update (for referencing other status) the worktype statuses
 	log.Printf("Creating the task management worktype statuses of %s", *worktype.Id)
-
 	statuses := d.Get("statuses").(*schema.Set).List()
 	if _, err := createWorktypeStatuses(ctx, proxy, *worktype.Id, statuses); err != nil {
 		return diag.Errorf("failed to create task management worktype statuses: %v", err)

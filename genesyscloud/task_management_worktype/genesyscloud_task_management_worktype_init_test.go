@@ -4,8 +4,9 @@ import (
 	"sync"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
-	workItemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -33,7 +34,10 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[resourceName] = ResourceTaskManagementWorktype()
 	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
-	providerResources["genesyscloud_task_management_workitem_schema"] = workItemSchema.ResourceTaskManagementWorkitemSchema()
+	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
+	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
+	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
+	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -42,8 +46,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[resourceName] = DataSourceTaskManagementWorktype()
-	providerDataSources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
-	providerDataSources["genesyscloud_task_management_workitem_schema"] = workItemSchema.DataSourceTaskManagementWorkitemSchema()
+	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 
 // initTestResources initializes all test resources and data sources.

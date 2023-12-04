@@ -24,6 +24,7 @@ func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.
 		DisableDefaultStatusCreation: platformclientv2.Bool(true),
 		DefaultWorkbinId:             platformclientv2.String(d.Get("default_workbin_id").(string)),
 		SchemaId:                     platformclientv2.String(d.Get("schema_id").(string)),
+		SchemaVersion:                resourcedata.GetNillableValue[int](d, "schema_version"),
 
 		DefaultPriority: platformclientv2.Int(d.Get("default_priority").(int)),
 
@@ -61,6 +62,7 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData, statuses *[]platf
 		DefaultTtlSeconds:         resourcedata.GetNillableValue[int](d, "default_ttl_seconds"),
 
 		DefaultStatusId: getStatusIdFromName(d.Get("default_status_name").(string), statuses),
+		SchemaVersion:   resourcedata.GetNillableValue[int](d, "schema_version"),
 	}
 
 	return worktype
@@ -221,8 +223,8 @@ func buildWorkitemStatusUpdates(workitemStatuses []interface{}, apiStatuses *[]p
 }
 
 // flattenWorkitemStatusReferences maps a Genesys Cloud *[]platformclientv2.Workitemstatusreference into a []interface{}
-// Sadly the API only returns the ID as reference, so we need the existingStatuses parameter to get the name
-// for resolving back into resource data
+// Sadly the API only returns the ID in the ref object (even if the name is defined in the API model), so we still need the
+// existingStatuses parameter to get the name for resolving back into resource data
 func flattenWorkitemStatusReferences(workitemStatusReferences *[]platformclientv2.Workitemstatusreference, existingStatuses *[]platformclientv2.Workitemstatus) []interface{} {
 	if len(*workitemStatusReferences) == 0 {
 		return nil

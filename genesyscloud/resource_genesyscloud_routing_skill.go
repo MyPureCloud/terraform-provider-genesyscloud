@@ -149,3 +149,12 @@ func deleteRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 		return retry.RetryableError(fmt.Errorf("Routing skill %s still exists", d.Id()))
 	})
 }
+
+func GenerateRoutingSkillResource(
+	resourceID string,
+	name string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
+		name = "%s"
+	}
+	`, resourceID, name)
+}
