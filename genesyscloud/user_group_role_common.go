@@ -27,7 +27,6 @@ var (
 				Description: "Division IDs applied to this resource. If not set, the home division will be used. '*' may be set for all divisions.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
@@ -54,10 +53,15 @@ func getAssignedGrants(subjectID string, authAPI *platformclientv2.Authorization
 	return grants, resp, nil
 }
 
-func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationApi) (*schema.Set, *platformclientv2.APIResponse, diag.Diagnostics) {
-	grants, resp, err := getAssignedGrants(subjectID, authAPI)
+func readSubjectRoles(d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi) (*schema.Set, *platformclientv2.APIResponse, diag.Diagnostics) {
+	grants, resp, err := getAssignedGrants(d.Id(), authAPI)
 	if err != nil {
 		return nil, resp, err
+	}
+
+	homeDivId, err := getHomeDivisionID()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	roleDivsMap := make(map[string]*schema.Set)
@@ -73,7 +77,7 @@ func readSubjectRoles(subjectID string, authAPI *platformclientv2.AuthorizationA
 	for roleID, divs := range roleDivsMap {
 		role := make(map[string]interface{})
 		role["role_id"] = roleID
-		role["division_ids"] = divs
+		role["division_ids"] = addDivisionIdsSetToRole(d, divs, roleID, homeDivId)
 		roleSet.Add(role)
 	}
 	return roleSet, resp, nil
@@ -158,6 +162,38 @@ func updateSubjectRoles(_ context.Context, d *schema.ResourceData, authAPI *plat
 	return nil
 }
 
+// If the user provides no division ids, we add the home division to that set for them. Previously, we had division_ids: Computed
+// to avoid errors. This only caused more problems with testing because division_ids would always cause a plan not empty error,
+// going from ["<home division ID>"] to [(known after apply)]
+// Solution: Remove the computed attribute from schema and use the function below to set the division_ids field on read.
+// addDivisionIdsSetToRole - checks if the home division was already included in the division_ids set in the local config resource schema
+// If yes, set it as such on the read. If not, do not set it back in on the read.
+func addDivisionIdsSetToRole(d *schema.ResourceData, divIdsFromApi *schema.Set, roleId, homeDivId string) *schema.Set {
+	rolesSet, ok := d.Get("roles").(*schema.Set)
+	if !ok {
+		return divIdsFromApi
+	}
+	rolesMaps := rolesSet.List()
+	for _, role := range rolesMaps {
+		roleMap, ok := role.(map[string]interface{})
+		// find the role in question
+		if !ok || roleMap["role_id"].(string) != roleId {
+			continue
+		}
+		divs := roleMap["division_ids"].(*schema.Set)
+		for _, div := range divs.List() {
+			// home division id was included in original config -> use division_ids read from API
+			if div.(string) == homeDivId {
+				return divIdsFromApi
+			}
+		}
+		// home division ID was not included in original config for this role -> keep it out
+		divIdsFromApi.Remove(homeDivId)
+		break
+	}
+	return divIdsFromApi
+}
+
 func createRoleDivisionPair(roleID string, divisionID string) string {
 	return roleID + ":" + divisionID
 }
@@ -202,12 +238,13 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		}
 		roleID := roleResource.Primary.ID
 
+		homeDiv, err := getHomeDivisionID()
+		if err != nil {
+			return fmt.Errorf("failed to query home div: %v", err)
+		}
+
 		if len(divisions) == 0 {
 			// If no division specified, role should be in the home division
-			homeDiv, err := getHomeDivisionID()
-			if err != nil {
-				return fmt.Errorf("Failed to query home div: %v", err)
-			}
 			divisions = []string{homeDiv}
 		} else if divisions[0] != "*" {
 			// Get the division IDs from state
@@ -241,6 +278,11 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 
 				missingDivs := lists.SliceDifference(divisions, stateDivs)
 				if len(missingDivs) > 0 {
+					if len(missingDivs) == 1 {
+						if missingDivs[0] == homeDiv {
+							return nil
+						}
+					}
 					return fmt.Errorf("missing expected divisions for role %s in state: %v", roleID, missingDivs)
 				}
 

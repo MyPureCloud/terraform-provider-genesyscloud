@@ -65,6 +65,7 @@ Terraform expects to manage the resources that are defined in its stack. You can
 func createUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	userID := d.Get("user_id").(string)
 	d.SetId(userID)
+	log.Printf("Creating roles for user %s", d.Id())
 	return updateUserRoles(ctx, d, meta)
 }
 
@@ -75,7 +76,7 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Reading roles for user %s", d.Id())
 	_ = d.Set("user_id", d.Id())
 	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		roles, _, err := readSubjectRoles(d.Id(), authAPI)
+		roles, _, err := readSubjectRoles(d, authAPI)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
