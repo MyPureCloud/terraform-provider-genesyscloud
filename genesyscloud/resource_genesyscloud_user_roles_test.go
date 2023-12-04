@@ -33,7 +33,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 			{
 				// Create user with 1 role in default division
 				// Also add employee role reference as new user's automatically get this role
-				Config: GenerateBasicUserResource(
+				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}\n" + GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -44,19 +44,23 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 				) + GenerateUserRoles(
 					userRoleResource,
 					userResource1,
-					GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+					GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "data.genesyscloud_auth_division_home.home.id"),
 					GenerateResourceRoles("data.genesyscloud_auth_role."+empRoleDataSrc+".id"),
 				) + generateDefaultAuthRoleDataSource(
 					empRoleDataSrc,
 					strconv.Quote(empRoleName),
 				),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.0.division_ids.#", "1"),
+					resource.TestCheckResourceAttrPair("genesyscloud_user_roles."+userRoleResource, "roles.0.division_ids.0",
+						"data.genesyscloud_auth_division_home.home", "id"),
+					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.1.division_ids.#", "0"),
 					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1),
 				),
 			},
 			{
 				// Create another role and division and add to the user
-				Config: GenerateBasicUserResource(
+				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}\n" + GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,
@@ -72,11 +76,15 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userRoleResource,
 					userResource1,
 					GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
-					GenerateResourceRoles("genesyscloud_auth_role."+roleResource2+".id", "genesyscloud_auth_division."+divResource+".id"),
+					GenerateResourceRoles("genesyscloud_auth_role."+roleResource2+".id",
+						"genesyscloud_auth_division."+divResource+".id", "data.genesyscloud_auth_division_home.home.id"),
 				) + GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.1.division_ids.#", "0"),
+					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.0.division_ids.#", "2"),
 					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1),
-					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource2, "genesyscloud_auth_division."+divResource),
+					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource2,
+						"genesyscloud_auth_division."+divResource, "data.genesyscloud_auth_division_home.home"),
 				),
 			},
 			{

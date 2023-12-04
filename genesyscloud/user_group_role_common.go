@@ -238,21 +238,18 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		}
 		roleID := roleResource.Primary.ID
 
-		homeDiv, err := getHomeDivisionID()
+		homeDivID, err := getHomeDivisionID()
 		if err != nil {
-			return fmt.Errorf("failed to query home div: %v", err)
+			return fmt.Errorf("failed to retrieve home division ID: %v", err)
 		}
 
-		if len(divisions) == 0 {
-			// If no division specified, role should be in the home division
-			divisions = []string{homeDiv}
-		} else if divisions[0] != "*" {
+		if len(divisions) > 0 && divisions[0] != "*" {
 			// Get the division IDs from state
 			divisionIDs := make([]string, len(divisions))
 			for i, divResourceName := range divisions {
 				divResource, ok := state.RootModule().Resources[divResourceName]
 				if !ok {
-					return fmt.Errorf("Failed to find %s in state", divResourceName)
+					return fmt.Errorf("failed to find %s in state", divResourceName)
 				}
 				divisionIDs[i] = divResource.Primary.ID
 			}
@@ -273,16 +270,13 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 
 				extraDivs := lists.SliceDifference(stateDivs, divisions)
 				if len(extraDivs) > 0 {
-					return fmt.Errorf("unexpected divisions found for role %s in state: %v", roleID, extraDivs)
+					if len(extraDivs) > 1 || extraDivs[0] != homeDivID {
+						return fmt.Errorf("unexpected divisions found for role %s in state: %v", roleID, extraDivs)
+					}
 				}
 
 				missingDivs := lists.SliceDifference(divisions, stateDivs)
 				if len(missingDivs) > 0 {
-					if len(missingDivs) == 1 {
-						if missingDivs[0] == homeDiv {
-							return nil
-						}
-					}
 					return fmt.Errorf("missing expected divisions for role %s in state: %v", roleID, missingDivs)
 				}
 
