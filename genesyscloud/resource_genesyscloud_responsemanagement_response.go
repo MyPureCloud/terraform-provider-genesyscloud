@@ -495,27 +495,28 @@ func buildSdkresponsemanagementresponseWhatsappdefinition(whatsappdefinition *sc
 
 func buildSdkresponsemanagementresponseFooterTemplate(footerTemplate *schema.Set) *platformclientv2.Footertemplate {
 
-	validType := "Signature"
-	//validApplicableResources := []string{"Campaign"}
-
 	if footerTemplate == nil {
 		return nil
 	}
 	footerTemplateList := footerTemplate.List()
+
 	var sdkFootertemplate platformclientv2.Footertemplate
 
 	if len(footerTemplateList) > 0 {
 
 		footerTemplateMap := footerTemplateList[0].(map[string]interface{})
 
-		if footerType, exists := footerTemplateMap["type"].(string); exists && (footerType == validType) {
+		if footerType, exists := footerTemplateMap["type"].(string); exists {
 
 			sdkFootertemplate.VarType = &footerType
 		}
 
-		//sampleList := lists.InterfaceListToStrings(footerTemplateMap["applicable_resources"].([]interface{}))
-		//hardcoding while testing
-		sdkFootertemplate.ApplicableResources = &[]string{"Campaign"}
+		if applicableResources, exists := footerTemplateMap["applicable_resources"].([]interface{}); exists {
+
+			applicableResourcesList := lists.InterfaceListToStrings(applicableResources)
+
+			sdkFootertemplate.ApplicableResources = &applicableResourcesList
+		}
 	}
 
 	return &sdkFootertemplate
