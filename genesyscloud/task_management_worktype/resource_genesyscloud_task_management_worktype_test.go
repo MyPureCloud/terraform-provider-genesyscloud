@@ -2,7 +2,6 @@ package task_management_worktype
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -184,7 +183,8 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 					description:                  "Description of open status. Updated",
 					defaultDestinationStatusName: "WIP",
 					destinationStatusNames:       []string{"WIP", "Waiting Status"},
-					transitionDelay:              120,
+					statusTransitionTime:         "10:09:08",
+					transitionDelay:              86500,
 					category:                     "Open",
 				},
 				{
@@ -213,7 +213,8 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 					description:                  "Description of open status. Updated 2",
 					defaultDestinationStatusName: "Close Status",
 					transitionDelay:              300,
-					category:                     "Open",
+
+					category: "Open",
 				},
 				{
 					name:        "Close Status",
@@ -270,6 +271,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						"category":                        regexp.MustCompile(statusUpdates.statuses[0].category),
 						"default_destination_status_name": regexp.MustCompile(statusUpdates.statuses[0].defaultDestinationStatusName),
 						"status_transition_delay_seconds": regexp.MustCompile(fmt.Sprintf("%v", statusUpdates.statuses[0].transitionDelay)),
+						"status_transition_time":          regexp.MustCompile(fmt.Sprintf("%v", statusUpdates.statuses[0].statusTransitionTime)),
 						"destination_status_names.0":      regexp.MustCompile(statusUpdates.statuses[0].destinationStatusNames[0]),
 						"destination_status_names.1":      regexp.MustCompile(statusUpdates.statuses[0].destinationStatusNames[1]),
 					}),
@@ -395,7 +397,6 @@ func generateWorktypeResource(wt worktypeConfig) string {
 		wt.schemaVersion,
 		statuses,
 	)
-	log.Printf("%v", tfConfig)
 	return tfConfig
 }
 
@@ -419,6 +420,9 @@ func generateWorktypeStatus(wtStatus worktypeStatusConfig) string {
 	}
 	if wtStatus.transitionDelay != 0 {
 		additional = append(additional, gcloud.GenerateMapProperty("status_transition_delay_seconds", strconv.Itoa(wtStatus.transitionDelay)))
+	}
+	if wtStatus.statusTransitionTime != "" {
+		additional = append(additional, gcloud.GenerateMapProperty("status_transition_time", strconv.Quote(wtStatus.statusTransitionTime)))
 	}
 
 	return fmt.Sprintf(`statuses {

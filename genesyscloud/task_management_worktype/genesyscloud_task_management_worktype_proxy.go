@@ -2,8 +2,11 @@ package task_management_worktype
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
@@ -21,12 +24,12 @@ var internalProxy *taskManagementWorktypeProxy
 type createTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktype *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, error)
 type getAllTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy) (*[]platformclientv2.Worktype, error)
 type getTaskManagementWorktypeIdByNameFunc func(ctx context.Context, p *taskManagementWorktypeProxy, name string) (id string, retryable bool, err error)
-type getTaskManagementWorktypeByIdFunc func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (worktype *platformclientv2.Worktype, responseCode int, err error)
+type getTaskManagementWorktypeByIdFunc func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (worktype *Worktype, responseCode int, err error)
 type updateTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy, id string, worktype *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, error)
 type deleteTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (responseCode int, err error)
 
-type createTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, error)
-type updateTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, error)
+type createTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *Workitemstatuscreate) (*Workitemstatus, error)
+type updateTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *Workitemstatusupdate) (*Workitemstatus, error)
 type deleteTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string) (responseCode int, err error)
 
 // taskManagementWorktypeProxy contains all of the methods that call genesys cloud APIs.
@@ -90,7 +93,7 @@ func (p *taskManagementWorktypeProxy) getTaskManagementWorktypeIdByName(ctx cont
 }
 
 // getTaskManagementWorktypeById returns a single Genesys Cloud task management worktype by Id
-func (p *taskManagementWorktypeProxy) getTaskManagementWorktypeById(ctx context.Context, id string) (taskManagementWorktype *platformclientv2.Worktype, statusCode int, err error) {
+func (p *taskManagementWorktypeProxy) getTaskManagementWorktypeById(ctx context.Context, id string) (taskManagementWorktype *Worktype, statusCode int, err error) {
 	return p.getTaskManagementWorktypeByIdAttr(ctx, p, id)
 }
 
@@ -105,12 +108,12 @@ func (p *taskManagementWorktypeProxy) deleteTaskManagementWorktype(ctx context.C
 }
 
 // createTaskManagementWorktypeStatus creates a Genesys Cloud task management worktype status
-func (p *taskManagementWorktypeProxy) createTaskManagementWorktypeStatus(ctx context.Context, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, error) {
+func (p *taskManagementWorktypeProxy) createTaskManagementWorktypeStatus(ctx context.Context, worktypeId string, status *Workitemstatuscreate) (*Workitemstatus, error) {
 	return p.createTaskManagementWorktypeStatusAttr(ctx, p, worktypeId, status)
 }
 
 // updateTaskManagementWorktypeStatus updates a Genesys Cloud task management worktype status
-func (p *taskManagementWorktypeProxy) updateTaskManagementWorktypeStatus(ctx context.Context, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, error) {
+func (p *taskManagementWorktypeProxy) updateTaskManagementWorktypeStatus(ctx context.Context, worktypeId string, statusId string, statusUpdate *Workitemstatusupdate) (*Workitemstatus, error) {
 	return p.updateTaskManagementWorktypeStatusAttr(ctx, p, worktypeId, statusId, statusUpdate)
 }
 
@@ -196,13 +199,42 @@ func getTaskManagementWorktypeIdByNameFn(ctx context.Context, p *taskManagementW
 }
 
 // getTaskManagementWorktypeByIdFn is an implementation of the function to get a Genesys Cloud task management worktype by Id
-func getTaskManagementWorktypeByIdFn(ctx context.Context, p *taskManagementWorktypeProxy, id string) (taskManagementWorktype *platformclientv2.Worktype, statusCode int, err error) {
-	worktype, resp, err := p.taskManagementApi.GetTaskmanagementWorktype(id, []string{})
-	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("failed to retrieve task management worktype by id %s: %s", id, err)
+func getTaskManagementWorktypeByIdFn(ctx context.Context, p *taskManagementWorktypeProxy, id string) (taskManagementWorktype *Worktype, statusCode int, err error) {
+	apiClient := &p.clientConfig.APIClient
+
+	// create path and map variables
+	path := p.clientConfig.BasePath + "/api/v2/taskmanagement/worktypes/" + id
+
+	headerParams := make(map[string]string)
+	queryParams := make(map[string]string)
+
+	// oauth required
+	if p.clientConfig.AccessToken != "" {
+		headerParams["Authorization"] = "Bearer " + p.clientConfig.AccessToken
+	}
+	// add default headers if any
+	for key := range p.clientConfig.DefaultHeader {
+		headerParams[key] = p.clientConfig.DefaultHeader[key]
 	}
 
-	return worktype, resp.StatusCode, nil
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	var successPayload Worktype
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
+	if err != nil {
+		return nil, response.StatusCode, fmt.Errorf("failed to get worktype %s: %v", id, err)
+	}
+	if response.Error != nil {
+		return nil, response.StatusCode, fmt.Errorf("failed to get worktype %s: %v", id, errors.New(response.ErrorMessage))
+	}
+
+	err = json.Unmarshal([]byte(response.RawBody), &successPayload)
+	if err != nil {
+		return nil, response.StatusCode, fmt.Errorf("failed to get worktype %s: %v", id, err)
+	}
+
+	return &successPayload, response.StatusCode, nil
 }
 
 // updateTaskManagementWorktypeFn is an implementation of the function to update a Genesys Cloud task management worktype
@@ -225,25 +257,83 @@ func deleteTaskManagementWorktypeFn(ctx context.Context, p *taskManagementWorkty
 }
 
 // createTaskManagementWorktypeStatusFn is an implementation function for creating a Genesys Cloud task management worktype status
-func createTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, error) {
-	log.Printf("Creating task management worktype status: %s", *status.Name)
-	createdStatus, resp, err := p.taskManagementApi.PostTaskmanagementWorktypeStatuses(worktypeId, *status)
-	log.Printf("Completed call to create task management worktype status %s with status code %d, correlation id %s and err %s", *status.Name, resp.StatusCode, resp.CorrelationID, err)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create task management worktype status (%s): %v", *status.Name, err)
+func createTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *Workitemstatuscreate) (*Workitemstatus, error) {
+	apiClient := &p.clientConfig.APIClient
+
+	// create path and map variables
+	path := p.clientConfig.BasePath + "/api/v2/taskmanagement/worktypes/" + worktypeId + "/statuses"
+
+	headerParams := make(map[string]string)
+	queryParams := make(map[string]string)
+
+	// oauth required
+	if p.clientConfig.AccessToken != "" {
+		headerParams["Authorization"] = "Bearer " + p.clientConfig.AccessToken
+	}
+	// add default headers if any
+	for key := range p.clientConfig.DefaultHeader {
+		headerParams[key] = p.clientConfig.DefaultHeader[key]
 	}
 
-	return createdStatus, nil
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	var successPayload Workitemstatus
+	log.Printf("Creating task management worktype status: %s", *status.Name)
+	response, err := apiClient.CallAPI(path, http.MethodPost, status, headerParams, queryParams, nil, "", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create status %s for worktype %s: %v", *status.Name, worktypeId, err)
+	}
+	if response.Error != nil {
+		return nil, fmt.Errorf("failed to create status %s for worktype %s: %v", *status.Name, worktypeId, errors.New(response.ErrorMessage))
+	}
+	log.Printf("Completed call to create task management worktype status %s with status code %d, correlation id %s and err %s", *status.Name, response.StatusCode, response.CorrelationID, err)
+
+	err = json.Unmarshal([]byte(response.RawBody), &successPayload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get newly created worktype status %s of worktype %s: %v", *status.Name, worktypeId, err)
+	}
+
+	return &successPayload, nil
 }
 
 // updateTaskManagementWorktypeStatusFn is an implementation of the function to update a Genesys Cloud task management worktype status
-func updateTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, error) {
-	updatedStatus, _, err := p.taskManagementApi.PatchTaskmanagementWorktypeStatus(worktypeId, statusId, *statusUpdate)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update task management worktype status (%s) of worktype (%s): %v", statusId, worktypeId, err)
+func updateTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *Workitemstatusupdate) (*Workitemstatus, error) {
+	apiClient := &p.clientConfig.APIClient
+
+	// create path and map variables
+	path := p.clientConfig.BasePath + "/api/v2/taskmanagement/worktypes/" + worktypeId + "/statuses/" + statusId
+
+	headerParams := make(map[string]string)
+	queryParams := make(map[string]string)
+
+	// oauth required
+	if p.clientConfig.AccessToken != "" {
+		headerParams["Authorization"] = "Bearer " + p.clientConfig.AccessToken
+	}
+	// add default headers if any
+	for key := range p.clientConfig.DefaultHeader {
+		headerParams[key] = p.clientConfig.DefaultHeader[key]
 	}
 
-	return updatedStatus, nil
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	var successPayload Workitemstatus
+	response, err := apiClient.CallAPI(path, http.MethodPatch, statusUpdate, headerParams, queryParams, nil, "", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update status %s for worktype %s: %v", statusId, worktypeId, err)
+	}
+	if response.Error != nil {
+		return nil, fmt.Errorf("failed to update status %s for worktype %s: %v", statusId, worktypeId, errors.New(response.ErrorMessage))
+	}
+
+	err = json.Unmarshal([]byte(response.RawBody), &successPayload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get newly created worktype status %s of worktype %s: %v", *statusUpdate.Name, worktypeId, err)
+	}
+
+	return &successPayload, nil
 }
 
 // deleteTaskManagementWorktypeStatusFn is an implementation function for deleting a Genesys Cloud task management worktype status

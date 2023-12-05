@@ -29,27 +29,6 @@ func SetRegistrar(regInstance registrar.Registrar) {
 
 // ResourceTaskManagementWorktype registers the genesyscloud_task_management_worktype resource with Terraform
 func ResourceTaskManagementWorktype() *schema.Resource {
-
-	localTimeResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`hour`: {
-				Description: `The hour value for the time`,
-				Required:    true,
-				Type:        schema.TypeInt,
-			},
-			`minute`: {
-				Description: `The minute value for the time`,
-				Required:    true,
-				Type:        schema.TypeInt,
-			},
-			`second`: {
-				Description: `The second value for the time`,
-				Required:    true,
-				Type:        schema.TypeInt,
-			},
-		},
-	}
-
 	workitemStatusResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`id`: {
@@ -92,12 +71,11 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				ValidateFunc: validation.IntAtLeast(60),
 			},
 			`status_transition_time`: {
-				Description: `Time at which auto status transition will occur after statusTransitionDelaySeconds delay. To set Time, the statusTransitionDelaySeconds must be equal to or greater than 86400 i.e. a day`,
-				Optional:    true,
-				Computed:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        localTimeResource,
+				Description:      `Time (HH:MM:SS format) at which auto status transition will occur after statusTransitionDelaySeconds delay. To set Time, the statusTransitionDelaySeconds must be equal to or greater than 86400 i.e. a day`,
+				Optional:         true,
+				Computed:         true,
+				Type:             schema.TypeString,
+				ValidateDiagFunc: gcloud.ValidateTime,
 			},
 		},
 	}

@@ -74,7 +74,7 @@ func TestUnitResourceWorkitemSchemaCreate(t *testing.T) {
 
 	taskProxy := &taskManagementWorktypeProxy{}
 
-	// First step is creation of the worktype itself, this does not include the properties relating to statuses
+	// Creation of the worktype itself, this does not include the properties relating to statuses
 	taskProxy.createTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, create *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, error) {
 		assert.Equal(t, wt.name, *create.Name, "wt.Name check failed in create createTaskManagementWorktypeAttr")
 		assert.Equal(t, wt.description, *create.Description, "wt.Description check failed in create createTaskManagementWorktypeAttr")
@@ -120,19 +120,13 @@ func TestUnitResourceWorkitemSchemaCreate(t *testing.T) {
 		}, nil
 	}
 
-	// Second step is creation of the statuses. This includes the basic configuration and called for
-	// every defined status but does not include the reference to other status ids (destination status related properties)
-	// taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, error) {
-
-	// }
-
 	// The final complete worktype for read
 	// This is where we'll be asserting the statuses
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, int, error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*Worktype, int, error) {
 		assert.Equal(t, tId, id)
 
 		// The expected final form of the worktype
-		wt := &platformclientv2.Worktype{
+		wt := &Worktype{
 			Id:          &tId,
 			Name:        &wt.name,
 			Description: &wt.description,
@@ -166,8 +160,9 @@ func TestUnitResourceWorkitemSchemaCreate(t *testing.T) {
 				Version: &wt.schemaVersion,
 			},
 
-			Statuses: &[]platformclientv2.Workitemstatus{
+			Statuses: &[]Workitemstatus{
 				{
+					Id:          &wt.statuses[0].id,
 					Name:        &wt.statuses[0].name,
 					Description: &wt.statuses[0].description,
 					DefaultDestinationStatus: &platformclientv2.Workitemstatusreference{
@@ -178,27 +173,34 @@ func TestUnitResourceWorkitemSchemaCreate(t *testing.T) {
 							Id: wt.getStatusIdFromName(wt.statuses[0].destinationStatusNames[0]),
 						},
 						{
-							Id: wt.getStatusIdFromName(wt.statuses[1].destinationStatusNames[1]),
+							Id: wt.getStatusIdFromName(wt.statuses[0].destinationStatusNames[1]),
 						},
 					},
 					StatusTransitionDelaySeconds: &wt.statuses[0].transitionDelay,
 					Category:                     &wt.statuses[0].category,
 				},
 				{
+					Id:          &wt.statuses[1].id,
 					Name:        &wt.statuses[1].name,
 					Description: &wt.statuses[1].description,
 					Category:    &wt.statuses[1].category,
 				},
 				{
+					Id:          &wt.statuses[2].id,
 					Name:        &wt.statuses[2].name,
 					Description: &wt.statuses[2].description,
 					Category:    &wt.statuses[2].category,
 				},
 				{
+					Id:          &wt.statuses[3].id,
 					Name:        &wt.statuses[3].name,
 					Description: &wt.statuses[3].description,
 					Category:    &wt.statuses[3].category,
 				},
+			},
+
+			DefaultStatus: &platformclientv2.Workitemstatusreference{
+				Id: wt.getStatusIdFromName(wt.defaultStatusName),
 			},
 		}
 
