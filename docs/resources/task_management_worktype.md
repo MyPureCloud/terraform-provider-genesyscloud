@@ -54,7 +54,8 @@ resource "genesyscloud_task_management_worktype" "worktype_1" {
     category                        = "Open"
     destination_status_names        = ["WIP", "Waiting Status"]
     default_destination_status_name = "WIP"
-    status_transition_delay_seconds = 120
+    status_transition_delay_seconds = 86500
+    status_transition_time          = "04:20:00"
   }
 
   statuses {
