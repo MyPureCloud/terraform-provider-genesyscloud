@@ -181,7 +181,7 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 			`footer`: {
 				Description: `Footer template identifies the Footer type and its footerUsage`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        responsemanagementresponseresponsefooterResource,
 			},
 		},
@@ -254,7 +254,7 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 		Texts:         buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
 		Substitutions: buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
 		Assets:        buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
-		Footer:        buildSdkresponsemanagementresponseFooterTemplate(d.Get("footer").([]interface{})),
+		Footer:        buildSdkresponsemanagementresponseFooterTemplate(d.Get("footer").(*schema.Set)),
 	}
 
 	if name != "" {
@@ -300,7 +300,7 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 		Texts:         buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
 		Substitutions: buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
 		Assets:        buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
-		Footer:        buildSdkresponsemanagementresponseFooterTemplate(d.Get("footer").([]interface{})),
+		Footer:        buildSdkresponsemanagementresponseFooterTemplate(d.Get("footer").(*schema.Set)),
 	}
 
 	if name != "" {
@@ -493,14 +493,15 @@ func buildSdkresponsemanagementresponseWhatsappdefinition(whatsappdefinition *sc
 	return &sdkWhatsappdefinition
 }
 
-func buildSdkresponsemanagementresponseFooterTemplate(footerTemplateList []interface{}) *platformclientv2.Footertemplate {
+func buildSdkresponsemanagementresponseFooterTemplate(footerTemplate *schema.Set) *platformclientv2.Footertemplate {
 
 	validType := "Signature"
 	//validApplicableResources := []string{"Campaign"}
 
-	if footerTemplateList == nil {
+	if footerTemplate == nil {
 		return nil
 	}
+	footerTemplateList := footerTemplate.List()
 	var sdkFootertemplate platformclientv2.Footertemplate
 
 	if len(footerTemplateList) > 0 {
