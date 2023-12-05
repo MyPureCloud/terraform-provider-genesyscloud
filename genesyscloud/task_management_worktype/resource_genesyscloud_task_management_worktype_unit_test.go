@@ -209,6 +209,18 @@ func TestUnitResourceWorkitemSchemaCreate(t *testing.T) {
 		return wt, apiResponse.StatusCode, nil
 	}
 
+	taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *Workitemstatuscreate) (*Workitemstatus, error) {
+		return nil, nil
+	}
+
+	taskProxy.updateTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *Workitemstatusupdate) (*Workitemstatus, error) {
+		return nil, nil
+	}
+
+	taskProxy.updateTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string, worktype *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, error) {
+		return nil, nil
+	}
+
 	internalProxy = taskProxy
 	defer func() { internalProxy = nil }()
 
@@ -232,11 +244,11 @@ func TestUnitResourceWorkitemSchemaCreate(t *testing.T) {
 
 func buildWorktypeResourceMap(tId string, wt *worktypeConfig) map[string]interface{} {
 	resourceDataMap := map[string]interface{}{
-		"id":          tId,
-		"name":        wt.name,
-		"description": wt.description,
-		"division_id": wt.divisionId,
-		// TODO: statuses
+		"id":                           tId,
+		"name":                         wt.name,
+		"description":                  wt.description,
+		"division_id":                  wt.divisionId,
+		"statuses":                     buildWorktypeStatusesList(&wt.statuses),
 		"default_workbin_id":           wt.defaultWorkbinId,
 		"default_duration_seconds":     wt.defaultDurationS,
 		"default_expiration_seconds":   wt.defaultExpirationS,
@@ -252,4 +264,26 @@ func buildWorktypeResourceMap(tId string, wt *worktypeConfig) map[string]interfa
 	}
 
 	return resourceDataMap
+}
+
+func buildWorktypeStatusesList(statuses *[]worktypeStatusConfig) []interface{} {
+	statusList := []interface{}{}
+	for _, s := range *statuses {
+		statusList = append(statusList, buildWorktypeStatusResourceMap(&s))
+	}
+
+	return statusList
+}
+
+func buildWorktypeStatusResourceMap(status *worktypeStatusConfig) map[string]interface{} {
+	return map[string]interface{}{
+		"id":                              status.id,
+		"name":                            status.name,
+		"description":                     status.description,
+		"category":                        status.category,
+		"destination_status_names":        lists.StringListToInterfaceList(status.destinationStatusNames),
+		"default_destination_status_name": status.defaultDestinationStatusName,
+		"status_transition_delay_seconds": status.transitionDelay,
+		"status_transition_time":          status.statusTransitionTime,
+	}
 }
