@@ -203,6 +203,7 @@ func TaskManagementWorktypeExporter() *resourceExporter.ResourceExporter {
 			"default_skills_ids":  {RefType: "genesyscloud_routing_skill"},
 			"schema_id":           {RefType: "genesyscloud_task_management_workitem_schema"},
 		},
+		ExcludedAttributes: []string{"statuses.id"},
 	}
 }
 
