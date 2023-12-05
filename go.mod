@@ -1,6 +1,6 @@
 module terraform-provider-genesyscloud
 
-go 1.21
+go 1.20
 
 require (
 	github.com/google/go-cmp v0.6.0
@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.30.0
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mypurecloud/platform-client-sdk-go/v115 v115.0.0
-	github.com/nyaruka/phonenumbers v1.1.9
+	github.com/nyaruka/phonenumbers v1.2.2
 	github.com/rjNemo/underscore v0.6.1
 	github.com/zclconf/go-cty v1.14.1
 	gonum.org/v1/gonum v0.14.0
@@ -85,10 +85,10 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
-	golang.org/x/crypto v0.15.0 // indirect
+	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/mod v0.13.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/net v0.19.0
+	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.57.1 // indirect

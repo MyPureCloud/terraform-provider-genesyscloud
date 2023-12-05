@@ -51,7 +51,7 @@ func ResourceGroupRoles() *schema.Resource {
 			},
 			"roles": {
 				Description: "Roles and their divisions assigned to this group.",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        roleAssignmentResource,
 			},
@@ -75,7 +75,7 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupRoles())
 		_ = d.Set("group_id", d.Id())
 
-		roles, resp, err := readSubjectRoles(d, d.Id(), authAPI)
+		roles, resp, err := readSubjectRoles(d, authAPI)
 		if err != nil {
 			if IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read roles for group %s: %v", d.Id(), err))

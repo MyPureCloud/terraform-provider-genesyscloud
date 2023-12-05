@@ -1,10 +1,11 @@
-package genesyscloud
+package webdeployments_configuration
 
 import (
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -15,15 +16,15 @@ import (
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 	t.Parallel()
 	var (
-		configName               = "Test Configuration " + randString(8)
-		configDescription        = "Test Configuration description " + randString(32)
+		configName               = "Test Configuration " + gcloud.RandString(8)
+		configDescription        = "Test Configuration description " + gcloud.RandString(32)
 		updatedConfigDescription = configDescription + " Updated"
 		fullResourceName         = "genesyscloud_webdeployments_configuration.basic"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: basicConfigurationResource(configName, configDescription),
@@ -61,10 +62,9 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 }
 
 func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
-	t.Parallel()
 	var (
-		configName        = "Test Configuration " + randString(8)
-		configDescription = "Test Configuration description " + randString(32)
+		configName        = "Test Configuration " + gcloud.RandString(8)
+		configDescription = "Test Configuration description " + gcloud.RandString(32)
 		fullResourceName  = "genesyscloud_webdeployments_configuration.complex"
 
 		channels       = []string{strconv.Quote("Webmessaging")}
@@ -72,16 +72,16 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: complexConfigurationResource(
 					configName,
 					configDescription,
 					generateWebDeploymentConfigCobrowseSettings(
-						TrueValue,
-						TrueValue,
+						gcloud.TrueValue,
+						gcloud.TrueValue,
 						channels,
 						[]string{strconv.Quote("selector-one")},
 						[]string{strconv.Quote("selector-one")},
@@ -93,9 +93,9 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
 					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.launcher_button.0.visibility", "OnDemand"),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.styles.0.primary_color", "#B0B0B0"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.#", "2"),
@@ -106,8 +106,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.0", "Webmessaging"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "1"),
@@ -115,7 +115,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.0", "selector-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.0", "excluded-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.pageview_config", "Auto"),
@@ -127,12 +127,12 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.selector", "form-selector-1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.form_name", "form-1"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_abandon", TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_submit", FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_abandon", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_submit", gcloud.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.selector", "form-selector-2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.form_name", "form-3"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_abandon", FalseValue),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_submit", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_abandon", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_submit", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.event_name", "idle-event-1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.idle_after_seconds", "88"),
@@ -156,8 +156,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					configName,
 					configDescription,
 					generateWebDeploymentConfigCobrowseSettings(
-						FalseValue,
-						FalseValue,
+						gcloud.FalseValue,
+						gcloud.FalseValue,
 						channelsUpdate,
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
@@ -169,9 +169,9 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
 					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.launcher_button.0.visibility", "OnDemand"),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.styles.0.primary_color", "#B0B0B0"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.#", "2"),
@@ -182,19 +182,19 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", FalseValue),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", gcloud.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "2"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
+					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
+					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "2"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
+					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
+					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "2"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
-					ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
+					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
+					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.0", "excluded-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.pageview_config", "Auto"),
@@ -206,12 +206,12 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.selector", "form-selector-1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.form_name", "form-1"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_abandon", TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_submit", FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_abandon", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.0.capture_data_on_form_submit", gcloud.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.selector", "form-selector-2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.form_name", "form-3"),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_abandon", FalseValue),
-					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_submit", TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_abandon", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.form_track_event.1.capture_data_on_form_submit", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.event_name", "idle-event-1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.idle_event.0.idle_after_seconds", "88"),
@@ -367,7 +367,7 @@ func verifyConfigurationDestroyed(state *terraform.State) error {
 
 		_, response, err := api.GetWebdeploymentsConfigurationVersionsDraft(rs.Primary.ID)
 
-		if IsStatus404(response) {
+		if gcloud.IsStatus404(response) {
 			continue
 		}
 

@@ -28,7 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources["genesyscloud_outbound_callabletimeset"] = ResourceOutboundCallabletimeset()
-	providerResources["genesyscloud_outbound_campaignrule"] = outboundCampaignrule.ResourceOutboundCampaignRule()
+	providerResources["genesyscloud_outbound_campaignrule"] = outboundCampaignrule.ResourceOutboundCampaignrule()
 	providerResources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.ResourceOutboundAttemptLimit()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = ResourceOutboundCallAnalysisResponseSet()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = ResourceOutboundContactListFilter()

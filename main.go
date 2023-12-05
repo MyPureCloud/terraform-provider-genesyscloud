@@ -8,6 +8,7 @@ import (
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
@@ -39,6 +40,8 @@ import (
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
+	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
+	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
@@ -132,6 +135,9 @@ func registerResources() {
 	worktype.SetRegistrar(regInstance)                      //Registering task management worktype
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	team.SetRegistrar(regInstance)                          //Registering team
+	webDeployConfig.SetRegistrar(regInstance)               //Registering webdeployments_config
+	webDeployDeploy.SetRegistrar(regInstance)               //Registering webdeployments_deploy
+	authorizatioProduct.SetRegistrar(regInstance)           //Registering Authorization Product
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter

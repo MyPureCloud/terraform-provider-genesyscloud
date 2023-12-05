@@ -1,29 +1,28 @@
-package genesyscloud
+package webdeployments_deployment
 
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
-	"testing"
-
 	"github.com/google/uuid"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"regexp"
+	"terraform-provider-genesyscloud/genesyscloud"
+	"testing"
 )
 
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName        = "Test Deployment " + randString(8)
-		deploymentDescription = "Test Deployment description " + randString(32)
+		deploymentName        = "Test Deployment " + genesyscloud.RandString(8)
+		deploymentDescription = "Test Deployment description " + genesyscloud.RandString(32)
 		fullResourceName      = "genesyscloud_webdeployments_deployment.basic"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: basicDeploymentResource(deploymentName, deploymentDescription),
@@ -42,22 +41,22 @@ func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"status"},
 			},
 		},
-		CheckDestroy: testVerifyLanguagesDestroyed,
+		CheckDestroy: verifyLanguagesDestroyed,
 	})
 }
 
 func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName   = "Test Deployment " + randString(8)
+		deploymentName   = "Test Deployment " + genesyscloud.RandString(8)
 		fullResourceName = "genesyscloud_webdeployments_deployment.basicWithAllowedDomains"
-		firstDomain      = "genesys-" + randString(8) + ".com"
-		secondDomain     = "genesys-" + randString(8) + ".com"
+		firstDomain      = "genesys-" + genesyscloud.RandString(8) + ".com"
+		secondDomain     = "genesys-" + genesyscloud.RandString(8) + ".com"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: deploymentResourceWithAllowedDomains(t, deploymentName, firstDomain),
@@ -92,14 +91,14 @@ func TestAccResourceWebDeploymentsDeployment_AllowedDomains(t *testing.T) {
 func TestAccResourceWebDeploymentsDeployment_Versioning(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName             = "Test Deployment " + randString(8)
+		deploymentName             = "Test Deployment " + genesyscloud.RandString(8)
 		fullDeploymentResourceName = "genesyscloud_webdeployments_deployment.versioning"
 		fullConfigResourceName     = "genesyscloud_webdeployments_configuration.minimal"
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: versioningDeploymentResource(t, deploymentName, "description 1", "en-us", []string{"en-us"}),
@@ -212,7 +211,7 @@ func verifyDeploymentDestroyed(state *terraform.State) error {
 
 		_, response, err := api.GetWebdeploymentsDeployment(rs.Primary.ID, []string{})
 
-		if IsStatus404(response) {
+		if genesyscloud.IsStatus404(response) {
 			continue
 		}
 
@@ -223,5 +222,31 @@ func verifyDeploymentDestroyed(state *terraform.State) error {
 		return fmt.Errorf("Deployment %s still exists when it was expected to have been destroyed", rs.Primary.ID)
 	}
 
+	return nil
+}
+
+func verifyLanguagesDestroyed(state *terraform.State) error {
+	routingApi := platformclientv2.NewRoutingApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != "genesyscloud_routing_language" {
+			continue
+		}
+
+		lang, resp, err := routingApi.GetRoutingLanguage(rs.Primary.ID)
+		if lang != nil {
+			if lang.State != nil && *lang.State == "deleted" {
+				// Language deleted
+				continue
+			}
+			return fmt.Errorf("Language (%s) still exists", rs.Primary.ID)
+		} else if genesyscloud.IsStatus404(resp) {
+			// Language not found as expected
+			continue
+		} else {
+			// Unexpected error
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+	}
+	// Success. All languages destroyed
 	return nil
 }

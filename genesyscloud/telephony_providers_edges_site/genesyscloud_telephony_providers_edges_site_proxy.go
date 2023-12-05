@@ -3,7 +3,6 @@ package telephony_providers_edges_site
 import (
 	"context"
 	"fmt"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
@@ -83,7 +82,7 @@ type siteProxy struct {
 	getDefaultSiteIdAttr         getDefaultSiteIdFunc
 }
 
-// newSiteProxy initializes the Site proxy with all of the data needed to communicate with Genesys Cloud
+// newSiteProxy initializes the Site proxy with all the data needed to communicate with Genesys Cloud
 func newSiteProxy(clientConfig *platformclientv2.Configuration) *siteProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	locationsApi := platformclientv2.NewLocationsApiWithConfig(clientConfig)
