@@ -2,10 +2,11 @@ package webdeployments_configuration
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func customizeConfigurationDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {

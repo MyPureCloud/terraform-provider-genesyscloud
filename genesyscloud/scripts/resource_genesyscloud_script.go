@@ -3,12 +3,13 @@ package scripts
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 	"log"
 	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 

@@ -2,10 +2,6 @@ package architect_grammar_language
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 	"io"
 	"net/http"
 	"os"
@@ -14,6 +10,11 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	architectGrammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func TestAccResourceArchitectGrammarLanguage(t *testing.T) {

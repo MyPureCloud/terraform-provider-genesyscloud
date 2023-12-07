@@ -2,7 +2,8 @@ package webdeployments_deployment
 
 import (
 	"context"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 var internalProxy *webDeploymentsProxy
