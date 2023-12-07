@@ -30,13 +30,17 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
       }
     }
   })
-  response_type = "MessagingTemplate" // Possible values: MessagingTemplate, CampaignSmsTemplate, CampaignEmailTemplate
+  response_type = "MessagingTemplate" // Possible values: MessagingTemplate, CampaignSmsTemplate, CampaignEmailTemplate, Footer
   messaging_template {
     whats_app {
       name      = "Sample name"
       namespace = "Sample namespace"
       language  = "en_US"
     }
+  }
+  footer {
+    type                = "Signature"
+    applicableResources = ["Campaign"]
   }
   asset_ids = [genesyscloud_responsemanagement_responseasset.asset_1.id, genesyscloud_responsemanagement_responseasset.asset_2.id]
 }
