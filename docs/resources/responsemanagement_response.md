@@ -60,7 +60,7 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
       language  = "en_US"
     }
   }
-  footer = {
+  footer {
     type                = "Signature"
     applicableResources = ["Campaign"]
   }
