@@ -185,7 +185,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"members.user_id":                          {RefType: "genesyscloud_user"},
 			"wrapup_codes":                             {RefType: "genesyscloud_routing_wrapupcode"},
 			"skill_groups":                             {RefType: "genesyscloud_routing_skill_group"},
-			"teams":                                    {}, //Need to add this when we get teams resources implemented
+			"teams":                                    {RefType: "genesyscloud_team"},
 			"groups":                                   {RefType: "genesyscloud_group"},
 			"conditional_group_routing_rules.queue_id": {RefType: "genesyscloud_routing_queue"},
 		},
