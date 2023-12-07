@@ -49,6 +49,7 @@ var (
 				Description: `Specifies the canned response template where the footer can be used.Valid values: Campaign.`,
 				Optional:    true,
 				Type:        schema.TypeList,
+				MaxItems:    1,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
@@ -499,28 +500,18 @@ func buildSdkresponsemanagementresponseFooterTemplate(footerTemplate *schema.Set
 		return nil
 	}
 	footerTemplateList := footerTemplate.List()
-
 	var sdkFootertemplate platformclientv2.Footertemplate
-
 	if len(footerTemplateList) > 0 {
-
 		footerTemplateMap := footerTemplateList[0].(map[string]interface{})
-
 		if footerType, exists := footerTemplateMap["type"].(string); exists {
-
 			sdkFootertemplate.VarType = &footerType
 		}
-
 		if applicableResources, exists := footerTemplateMap["applicable_resources"].([]interface{}); exists {
-
 			applicableResourcesList := lists.InterfaceListToStrings(applicableResources)
-
 			sdkFootertemplate.ApplicableResources = &applicableResourcesList
 		}
 	}
-
 	return &sdkFootertemplate
-
 }
 
 func buildSdkresponsemanagementresponseMessagingtemplate(messagingtemplate *schema.Set) *platformclientv2.Messagingtemplate {
@@ -623,20 +614,15 @@ func flattenSdkresponsemanagementresponseFooterTemplate(footerTemplate *platform
 	if footerTemplate == nil {
 		return nil
 	}
-
 	footerTemplateSet := schema.NewSet(schema.HashResource(responsemanagementresponseresponsefooterResource), []interface{}{})
 	footerTemplateMap := make(map[string]interface{})
-
 	if footerTemplate.VarType != nil {
 		footerTemplateMap["type"] = *footerTemplate.VarType
 	}
-
 	if footerTemplate.ApplicableResources != nil {
 		footerTemplateMap["applicable_resources"] = lists.StringListToInterfaceList(*footerTemplate.ApplicableResources)
 	}
-
 	footerTemplateSet.Add(footerTemplateMap)
-
 	return footerTemplateSet
 }
 
