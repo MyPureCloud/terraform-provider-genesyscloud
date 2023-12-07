@@ -1,9 +1,10 @@
-package genesyscloud
+package telephony
 
 import (
 	"context"
 	"fmt"
 	"log"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -22,10 +23,10 @@ func ResourceEdgeGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Edge Group. NOTE: This resource is being kept here for backwards compatibility with older Genesys Cloud Organization. You may get an error if you try to create an edge group with a Genesys Cloud Organization created in 2022 or later.`,
 
-		CreateContext: CreateWithPooledClient(createEdgeGroup),
-		ReadContext:   ReadWithPooledClient(readEdgeGroup),
-		UpdateContext: UpdateWithPooledClient(updateEdgeGroup),
-		DeleteContext: DeleteWithPooledClient(deleteEdgeGroup),
+		CreateContext: gcloud.CreateWithPooledClient(createEdgeGroup),
+		ReadContext:   gcloud.ReadWithPooledClient(readEdgeGroup),
+		UpdateContext: gcloud.UpdateWithPooledClient(updateEdgeGroup),
+		DeleteContext: gcloud.DeleteWithPooledClient(deleteEdgeGroup),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -86,10 +87,10 @@ func createEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		edgeGroup.Description = &description
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := gcloud.RetryWhen(gcloud.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Creating edge group %s", name)
 		edgeGroup, resp, err := edgesAPI.PostTelephonyProvidersEdgesEdgegroups(*edgeGroup)
 		if err != nil {
@@ -127,13 +128,13 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		edgeGroup.Description = &description
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	diagErr := RetryWhen(IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		edgeGroupFromApi, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				return resp, diag.Errorf("The edge group does not exist %s: %s", d.Id(), getErr)
 			}
 			return resp, diag.Errorf("Failed to read edge group %s: %s", d.Id(), getErr)
@@ -156,7 +157,7 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting edge group")
@@ -165,10 +166,10 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 		return diag.Errorf("Failed to delete edge group: %s", err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		edgeGroup, resp, err := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
 		if err != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				// Edge group deleted
 				log.Printf("Deleted Edge group %s", d.Id())
 				return nil
@@ -187,14 +188,14 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 }
 
 func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading edge group %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		edgeGroup, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(d.Id(), nil)
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read edge group %s: %s", d.Id(), getErr))
@@ -277,7 +278,7 @@ func getAllEdgeGroups(_ context.Context, sdkConfig *platformclientv2.Configurati
 
 func EdgeGroupExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllEdgeGroups),
+		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllEdgeGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"phone_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 		},
