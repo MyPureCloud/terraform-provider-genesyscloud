@@ -80,7 +80,7 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
 ### Optional
 
 - `asset_ids` (Set of String) Assets used in the response
-- `footer` (Block Set) Footer template identifies the Footer type and its footerUsage (see [below for nested schema](#nestedblock--footer))
+- `footer` (Block Set, Max: 1) Footer template identifies the Footer type and its footerUsage (see [below for nested schema](#nestedblock--footer))
 - `interaction_type` (String) The interaction type for this response.
 - `messaging_template` (Block Set, Max: 1) An optional messaging template definition for responseType.MessagingTemplate. (see [below for nested schema](#nestedblock--messaging_template))
 - `response_type` (String) The response type represented by the response.
