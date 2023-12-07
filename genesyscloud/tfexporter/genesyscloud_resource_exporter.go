@@ -80,6 +80,7 @@ type GenesysCloudResourceExporter struct {
 	ctx                    context.Context
 	meta                   interface{}
 	dependsList            map[string][]string
+	buildSecondDeps        map[string][]string
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -460,6 +461,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 		if len(resources) > 0 {
 			resourcesTobeExported := retrieveExportResources(g.resources, resources)
 			for _, meta := range resourcesTobeExported {
+
 				resource := strings.Split(meta.Name, "::::")
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
 			}
@@ -467,6 +469,10 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			totalResources = stringmap.MergeSingularMaps(totalResources, resources)
 		}
 	}
+
+	log.Printf("final filterList: %v\n", filterList)
+	log.Printf("final g.dependsList : %v\n", g.dependsList)
+
 	return filterList, totalResources, nil
 }
 
@@ -503,7 +509,6 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 		}
 	}
 
-	g.exporters = mergeExporters(existingExporters, g.exporters)
 	for _, resource := range g.resources {
 		_, exists := resources[resource.State.ID]
 		if exists {
@@ -511,7 +516,38 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 		}
 	}
 
-	g.resources = append(existingResources, uniqueResources...)
+	g.exportAndResolveDependencyAttributes(uniqueResources, existingResources, existingExporters)
+
+	return nil
+}
+
+func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes(uniqueResources []resourceExporter.ResourceInfo,
+	existingResources []resourceExporter.ResourceInfo,
+	existingExporters *map[string]*resourceExporter.ResourceExporter) (diagErr diag.Diagnostics) {
+
+	depExporters := g.exporters
+	g.resources = nil
+	g.resourceFilter = FilterResourceById
+	filterListById := make([]string, 0)
+	for refType, guidList := range g.buildSecondDeps {
+		filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guidList))
+	}
+
+	g.filterList = &filterListById
+	g.retrieveExporters()
+	diagErr = g.buildSanitizedResourceMaps(*g.exporters, filterListById, g.logPermissionErrors)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = g.retrieveGenesysCloudObjectInstances()
+	if diagErr != nil {
+		return diagErr
+	}
+	g.buildResourceConfigMap()
+
+	g.resources = append(existingResources, append(uniqueResources, g.resources...)...)
+	g.exporters = mergeExporters(existingExporters, mergeExporters(depExporters, g.exporters))
 	return nil
 }
 
@@ -878,7 +914,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		case string:
 			// Check if string contains nested Ref Attributes (can occur if the string is escaped json)
 			if _, ok := exporter.ContainsNestedRefAttrs(currAttr); ok {
-				resolvedJsonString, err := resolveRefAttributesInJsonString(currAttr, val.(string), exporter, exporters, exportingState)
+				resolvedJsonString, err := g.resolveRefAttributesInJsonString(currAttr, val.(string), exporter, exporters, exportingState)
 				if err != nil {
 					log.Println(err)
 				} else {
@@ -896,7 +932,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			}
 
 			if refSettings != nil {
-				configMap[key] = resolveReference(refSettings, val.(string), exporters, exportingState)
+				configMap[key] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
 			} else {
 				configMap[key] = escapeString(val.(string))
 			}
@@ -994,6 +1030,7 @@ func removeZeroValues(key string, val interface{}, configMap gcloud.JsonMap) {
 // Identify the parent config map and if the resources have further dependent resources add a new attribute depends_on
 func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap gcloud.JsonMap) {
 	list, exists := g.dependsList[key]
+	//configMap["key"] = key
 	resourceDependsList := make([]string, 0)
 	if exists {
 		for _, res := range list {
@@ -1006,6 +1043,7 @@ func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap 
 		if len(resourceDependsList) > 0 {
 			configMap["depends_on"] = resourceDependsList
 		}
+
 	}
 }
 
@@ -1042,7 +1080,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 		case string:
 			// Check if we are on a reference attribute and update value in array
 			if refSettings := exporter.GetRefAttrSettings(currAttr); refSettings != nil {
-				referenceVal := resolveReference(refSettings, val.(string), exporters, exportingState)
+				referenceVal := g.resolveReference(refSettings, val.(string), exporters, exportingState)
 				if referenceVal != "" {
 					result = append(result, referenceVal)
 				}
@@ -1077,4 +1115,37 @@ func populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExpor
 		log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceName)
 	}
 	return nil
+}
+
+func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExporter.RefAttrSettings, refID string, exporters map[string]*resourceExporter.ResourceExporter, exportingState bool) string {
+	if lists.ItemInSlice(refID, refSettings.AltValues) {
+		// This is not actually a reference to another object. Keep the value
+		return refID
+	}
+
+	if exporters[refSettings.RefType] != nil {
+		// Get the sanitized name from the ID returned as a reference expression
+		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
+			if meta := idMetaMap[refID]; meta != nil && meta.Name != "" {
+				return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.Name)
+			}
+
+			if g.buildSecondDeps == nil {
+				g.buildSecondDeps = make(map[string][]string)
+			}
+			if g.buildSecondDeps[refSettings.RefType] != nil {
+				guidList := g.buildSecondDeps[refSettings.RefType]
+				guidList = append(guidList, refID)
+				g.buildSecondDeps[refSettings.RefType] = guidList
+			}
+			g.buildSecondDeps[refSettings.RefType] = []string{refID}
+		}
+	}
+
+	if exportingState {
+		// Don't remove unmatched IDs when exporting state. This will keep existing config in an org
+		return refID
+	}
+	// No match found. Remove the value from the config since we do not have a reference to use
+	return ""
 }

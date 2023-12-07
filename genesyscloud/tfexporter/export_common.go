@@ -88,6 +88,30 @@ func FilterResourceByName(result resourceExporter.ResourceIDMetaMap, name string
 	return result
 }
 
+func FilterResourceById(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap {
+	if lists.SubStringInSlice(fmt.Sprintf("%v::", name), filter) {
+		names := make([]string, 0)
+		for _, f := range filter {
+			n := fmt.Sprintf("%v::", name)
+
+			if strings.Contains(f, n) {
+				names = append(names, strings.Replace(f, n, "", 1))
+			}
+		}
+		newResult := make(resourceExporter.ResourceIDMetaMap)
+		for _, name := range names {
+			for k, v := range result {
+				if k == name {
+					newResult[k] = v
+				}
+			}
+		}
+		return newResult
+	}
+
+	return result
+}
+
 func IncludeFilterResourceByRegex(result resourceExporter.ResourceIDMetaMap, name string, filter []string) resourceExporter.ResourceIDMetaMap {
 	newFilters := make([]string, 0)
 	for _, f := range filter {
@@ -185,29 +209,6 @@ func determineVarValue(s *schema.Schema) interface{} {
 	}
 
 	return nil
-}
-
-func resolveReference(refSettings *resourceExporter.RefAttrSettings, refID string, exporters map[string]*resourceExporter.ResourceExporter, exportingState bool) string {
-	if lists.ItemInSlice(refID, refSettings.AltValues) {
-		// This is not actually a reference to another object. Keep the value
-		return refID
-	}
-
-	if exporters[refSettings.RefType] != nil {
-		// Get the sanitized name from the ID returned as a reference expression
-		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
-			if meta := idMetaMap[refID]; meta != nil && meta.Name != "" {
-				return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.Name)
-			}
-		}
-	}
-
-	if exportingState {
-		// Don't remove unmatched IDs when exporting state. This will keep existing config in an org
-		return refID
-	}
-	// No match found. Remove the value from the config since we do not have a reference to use
-	return ""
 }
 
 // Correct exported e164 number e.g. +(1) 111-222-333 --> +1111222333

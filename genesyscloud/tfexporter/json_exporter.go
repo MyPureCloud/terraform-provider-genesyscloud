@@ -187,7 +187,7 @@ func getDecodedData(jsonString string, currAttr string) (string, error) {
 	return decodedJson, nil
 }
 
-func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *resourceExporter.ResourceExporter, exporters map[string]*resourceExporter.ResourceExporter, exportingState bool) (string, error) {
+func (g *GenesysCloudResourceExporter) resolveRefAttributesInJsonString(currAttr string, currVal string, exporter *resourceExporter.ResourceExporter, exporters map[string]*resourceExporter.ResourceExporter, exportingState bool) (string, error) {
 	var jsonData interface{}
 	err := json.Unmarshal([]byte(currVal), &jsonData)
 	if err != nil {
@@ -200,11 +200,11 @@ func resolveRefAttributesInJsonString(currAttr string, currVal string, exporter 
 		if data, ok := jsonData.(map[string]interface{}); ok {
 			switch data[value].(type) {
 			case string:
-				data[value] = resolveReference(refSettings, data[value].(string), exporters, exportingState)
+				data[value] = g.resolveReference(refSettings, data[value].(string), exporters, exportingState)
 			case []interface{}:
 				array := data[value].([]interface{})
 				for k, v := range array {
-					array[k] = resolveReference(refSettings, v.(string), exporters, exportingState)
+					array[k] = g.resolveReference(refSettings, v.(string), exporters, exportingState)
 				}
 				data[value] = array
 			}
