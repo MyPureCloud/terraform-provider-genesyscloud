@@ -21,19 +21,7 @@ import (
 
 // getOutboundWrapupCodeMappings is used by the exporter to return all wrapupcode mappings
 func getOutboundWrapupCodeMappings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := getOutboundWrapupCodeMappingsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-
-	wucMappings, _, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
-	if err != nil {
-		return nil, diag.Errorf("Failed to get wrap-up code mappings: %v", err)
-	}
-
-	// Do not export the mappings if the `defaultset` doesn't exist (has default values - which are all flags
-	// toggled off) AND if there are no custom mappings set.
-	if len(*wucMappings.Mapping) == 0 && len(*wucMappings.DefaultSet) > 0 {
-		return resources, nil
-	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{Name: "wrapupcodemappings"}
 	return resources, nil
@@ -44,38 +32,6 @@ func createOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 	log.Printf("Creating Outbound Wrap-up Code Mappings")
 	d.SetId("wrapupcodemappings")
 	return updateOutboundWrapUpCodeMappings(ctx, d, meta)
-}
-
-// updateOutboundWrapUpCodeMappings is sued to update the Terraform backing state associated with an outbound wrapup code mapping
-func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
-
-	log.Printf("Updating Outbound Wrap-up Code Mappings")
-	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		wrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
-		if err != nil {
-			return resp, diag.Errorf("failed to read wrap-up code mappings: %s", err)
-		}
-
-		wrapupCodeUpdate := platformclientv2.Wrapupcodemapping{
-			DefaultSet: lists.BuildSdkStringListFromInterfaceArray(d, "default_set"),
-			Mapping:    buildWrapupCodeMappings(d),
-			Version:    wrapupCodeMappings.Version,
-		}
-		_, _, err = proxy.updateOutboundWrapUpCodeMappings(ctx, wrapupCodeUpdate)
-		if err != nil {
-			return resp, diag.Errorf("failed to update wrap-up code mappings: %s", err)
-		}
-		return resp, nil
-	})
-
-	if diagErr != nil {
-		return diagErr
-	}
-
-	log.Print("Updated Outbound Wrap-up Code Mappings")
-	return readOutboundWrapUpCodeMappings(ctx, d, meta)
 }
 
 // readOutboundWrapUpCodeMappings reads the current state of the outboundwrapupcode mapping object
@@ -127,6 +83,38 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 		log.Print("Read Outbound Wrap-up Code Mappings")
 		return cc.CheckState()
 	})
+}
+
+// updateOutboundWrapUpCodeMappings is sued to update the Terraform backing state associated with an outbound wrapup code mapping
+func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
+
+	log.Printf("Updating Outbound Wrap-up Code Mappings")
+	diagErr := gcloud.RetryWhen(gcloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		wrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
+		if err != nil {
+			return resp, diag.Errorf("failed to read wrap-up code mappings: %s", err)
+		}
+
+		wrapupCodeUpdate := platformclientv2.Wrapupcodemapping{
+			DefaultSet: lists.BuildSdkStringListFromInterfaceArray(d, "default_set"),
+			Mapping:    buildWrapupCodeMappings(d),
+			Version:    wrapupCodeMappings.Version,
+		}
+		_, _, err = proxy.updateOutboundWrapUpCodeMappings(ctx, wrapupCodeUpdate)
+		if err != nil {
+			return resp, diag.Errorf("failed to update wrap-up code mappings: %s", err)
+		}
+		return resp, nil
+	})
+
+	if diagErr != nil {
+		return diagErr
+	}
+
+	log.Print("Updated Outbound Wrap-up Code Mappings")
+	return readOutboundWrapUpCodeMappings(ctx, d, meta)
 }
 
 // deleteOutboundWrapUpCodeMappings This a no up to satisfy the deletion of outbound wrapping resource
