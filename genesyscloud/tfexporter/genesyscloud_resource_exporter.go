@@ -3,6 +3,12 @@ package tfexporter
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mohae/deepcopy"
 	"hash/fnv"
 	"log"
 	"os"
@@ -11,21 +17,13 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
-
-	"github.com/google/uuid"
-
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	stringmap "terraform-provider-genesyscloud/genesyscloud/util/stringmap"
+	"time"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
@@ -72,6 +70,7 @@ type GenesysCloudResourceExporter struct {
 	provider               *schema.Provider
 	exportDirPath          string
 	exporters              *map[string]*resourceExporter.ResourceExporter
+	existingExporters      *map[string]*resourceExporter.ResourceExporter
 	resources              []resourceExporter.ResourceInfo
 	resourceTypesHCLBlocks map[string]resourceHCLBlock
 	resourceTypesMaps      map[string]resourceJSONMaps
@@ -470,9 +469,6 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 		}
 	}
 
-	log.Printf("final filterList: %v\n", filterList)
-	log.Printf("final g.dependsList : %v\n", g.dependsList)
-
 	return filterList, totalResources, nil
 }
 
@@ -480,7 +476,10 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	g.resourceTypeFilter = IncludeFilterByResourceType
 	g.resourceFilter = FilterResourceByName
 	g.filterList = &filterList
-	existingExporters := g.exporters
+	//existingExporters := g.exporters
+	existingExportersInterface := deepcopy.Copy(*g.exporters)
+	existingExporters, _ := existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
+
 	existingResources := g.resources
 	g.resources = nil
 	uniqueResources := make([]resourceExporter.ResourceInfo, 0)
@@ -505,6 +504,7 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 			}
 		}
 		for _, removeId := range removeChan {
+			log.Printf("deleted removeId %v", removeId)
 			delete(exporter.SanitizedResourceMap, removeId)
 		}
 	}
@@ -515,39 +515,93 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 			uniqueResources = append(uniqueResources, resource)
 		}
 	}
+	//depExportersInterface := g.exporters
+	depExportersInterface := deepcopy.Copy(*g.exporters)
+	depExporters, _ := depExportersInterface.(map[string]*resourceExporter.ResourceExporter)
 
-	g.exportAndResolveDependencyAttributes(uniqueResources, existingResources, existingExporters)
+	// will make sure only dependency resources are resolved
+	g.buildResourceConfigMap()
+
+	g.exportAndResolveDependencyAttributes()
+
+	g.resources = append(existingResources, append(uniqueResources, g.resources...)...)
+	g.exporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.exporters))
 
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes(uniqueResources []resourceExporter.ResourceInfo,
-	existingResources []resourceExporter.ResourceInfo,
-	existingExporters *map[string]*resourceExporter.ResourceExporter) (diagErr diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (diagErr diag.Diagnostics) {
 
-	depExporters := g.exporters
 	g.resources = nil
-	g.resourceFilter = FilterResourceById
+	exp := make(map[string]*resourceExporter.ResourceExporter, 0)
 	filterListById := make([]string, 0)
 	for refType, guidList := range g.buildSecondDeps {
-		filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guidList))
+		if refType != "" {
+			for _, guid := range guidList {
+				if guid != "" {
+					filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
+				}
+			}
+		}
+	}
+	exports := make(map[string]*resourceExporter.ResourceExporter, 0)
+	g.existingExporters = &exports
+	if len(filterListById) > 0 {
+		g.resourceFilter = FilterResourceById
+		g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp, 0)
 	}
 
+	return nil
+}
+
+// Recursive function to perform operations based on filterListById length
+func (g *GenesysCloudResourceExporter) chainDependencies(
+	existingResources []resourceExporter.ResourceInfo,
+	existingExporters map[string]*resourceExporter.ResourceExporter, level int) (diagErr diag.Diagnostics) {
+	filterListById := make([]string, 0)
+
+	for refType, guidList := range g.buildSecondDeps {
+		if refType != "" {
+			for _, guid := range guidList {
+				if guid != "" {
+					filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
+				}
+			}
+		}
+	}
 	g.filterList = &filterListById
-	g.retrieveExporters()
-	diagErr = g.buildSanitizedResourceMaps(*g.exporters, filterListById, g.logPermissionErrors)
-	if diagErr != nil {
-		return diagErr
-	}
+	g.buildSecondDeps = nil
+	if len(*g.filterList) > 0 {
+		g.resources = nil
+		g.exporters = nil
+		level = level + 1
+		g.retrieveExporters()
+		diagErr := g.buildSanitizedResourceMaps(*g.exporters, *g.filterList, g.logPermissionErrors)
+		if diagErr != nil {
+			return diagErr
+		}
 
-	diagErr = g.retrieveGenesysCloudObjectInstances()
-	if diagErr != nil {
-		return diagErr
-	}
-	g.buildResourceConfigMap()
+		diagErr = g.retrieveGenesysCloudObjectInstances()
+		if diagErr != nil {
+			return diagErr
+		}
 
-	g.resources = append(existingResources, append(uniqueResources, g.resources...)...)
-	g.exporters = mergeExporters(existingExporters, mergeExporters(depExporters, g.exporters))
+		g.buildResourceConfigMap()
+
+		g.resources = append(existingResources, g.resources...)
+
+		g.exporters = mergeExporters(existingExporters, *g.exporters)
+
+		existingResources1 := g.resources
+		*g.existingExporters = *g.exporters
+
+		existingExporters1 := deepcopy.Copy(*g.exporters)
+
+		existingExporters, _ = existingExporters1.(map[string]*resourceExporter.ResourceExporter)
+
+		// Recursive call
+		return g.chainDependencies(existingResources1, existingExporters, level)
+	}
 	return nil
 }
 
@@ -614,14 +668,14 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	}
 }
 
-func mergeExporters(m1, m2 *map[string]*resourceExporter.ResourceExporter) *map[string]*resourceExporter.ResourceExporter {
+func mergeExporters(m1, m2 map[string]*resourceExporter.ResourceExporter) *map[string]*resourceExporter.ResourceExporter {
 	result := make(map[string]*resourceExporter.ResourceExporter)
 
-	for k, v := range *m1 {
+	for k, v := range m1 {
 		result[k] = v
 	}
 
-	for k, v := range *m2 {
+	for k, v := range m2 {
 		_, exists := result[k]
 		if exists {
 			for id, value := range v.SanitizedResourceMap {
@@ -756,6 +810,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *re
 
 	// Remove resources that weren't found in this pass
 	for id := range removeChan {
+		log.Printf("deleted %v", id)
 		delete(exporter.SanitizedResourceMap, id)
 	}
 
@@ -1079,6 +1134,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 			}
 		case string:
 			// Check if we are on a reference attribute and update value in array
+
 			if refSettings := exporter.GetRefAttrSettings(currAttr); refSettings != nil {
 				referenceVal := g.resolveReference(refSettings, val.(string), exporters, exportingState)
 				if referenceVal != "" {
@@ -1129,17 +1185,26 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 			if meta := idMetaMap[refID]; meta != nil && meta.Name != "" {
 				return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.Name)
 			}
-
-			if g.buildSecondDeps == nil {
-				g.buildSecondDeps = make(map[string][]string)
-			}
-			if g.buildSecondDeps[refSettings.RefType] != nil {
-				guidList := g.buildSecondDeps[refSettings.RefType]
-				guidList = append(guidList, refID)
-				g.buildSecondDeps[refSettings.RefType] = guidList
-			}
-			g.buildSecondDeps[refSettings.RefType] = []string{refID}
 		}
+
+	}
+	if g.buildSecondDeps == nil || len(g.buildSecondDeps) == 0 {
+		g.buildSecondDeps = make(map[string][]string)
+	}
+	if g.buildSecondDeps[refSettings.RefType] != nil {
+		guidList := g.buildSecondDeps[refSettings.RefType]
+		present := false
+		for _, element := range guidList {
+			if element == refID {
+				present = true // String found in the slice
+			}
+		}
+		if !present {
+			guidList = append(guidList, refID)
+			g.buildSecondDeps[refSettings.RefType] = guidList
+		}
+	} else {
+		g.buildSecondDeps[refSettings.RefType] = []string{refID}
 	}
 
 	if exportingState {
