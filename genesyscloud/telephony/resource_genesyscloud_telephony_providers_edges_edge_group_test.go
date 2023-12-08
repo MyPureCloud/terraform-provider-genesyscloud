@@ -33,7 +33,6 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
-		"site",
 		"PHONE",
 		false)
 	phoneTrunkBaseSetting2 := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
@@ -41,7 +40,6 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
-		"site",
 		"PHONE",
 		false)
 
@@ -51,7 +49,6 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
-		"site",
 		"PHONE",
 		false)
 
