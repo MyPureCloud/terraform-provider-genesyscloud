@@ -77,7 +77,7 @@ func ResourceTrunkBaseSettings() *schema.Resource {
 				Optional:    true,
 			},
 			"inbound_site_id": {
-				Description: "The site to which inbound calls will be routed.",
+				Description: "The site to which inbound calls will be routed. Only valid for External BYOC Trunks.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
