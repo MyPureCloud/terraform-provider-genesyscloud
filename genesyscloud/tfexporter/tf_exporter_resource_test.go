@@ -31,7 +31,6 @@ import (
 
 	"testing"
 
-	obw "terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
