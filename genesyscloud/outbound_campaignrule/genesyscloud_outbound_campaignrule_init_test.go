@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	"terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
+	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
@@ -42,7 +42,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = outbound.ResourceOutboundCallAnalysisResponseSet()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
-	providerResources["genesyscloud_outbound_sequence"] = outbound_sequence.ResourceOutboundSequence()
+	providerResources["genesyscloud_outbound_sequence"] = outboundSequence.ResourceOutboundSequence()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

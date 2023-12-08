@@ -21,9 +21,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	r_registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	stringmap "terraform-provider-genesyscloud/genesyscloud/util/stringmap"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 /*
@@ -62,18 +66,20 @@ type GenesysCloudResourceExporter struct {
 	exportAsHCL            bool
 	splitFilesByResource   bool
 	logPermissionErrors    bool
+	addDependsOn           bool
 	includeStateFile       bool
 	version                string
 	provider               *schema.Provider
 	exportDirPath          string
 	exporters              *map[string]*resourceExporter.ResourceExporter
-	resources              []resourceInfo
+	resources              []resourceExporter.ResourceInfo
 	resourceTypesHCLBlocks map[string]resourceHCLBlock
 	resourceTypesMaps      map[string]resourceJSONMaps
 	unresolvedAttrs        []unresolvableAttributeInfo
 	d                      *schema.ResourceData
 	ctx                    context.Context
 	meta                   interface{}
+	dependsList            map[string][]string
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -121,6 +127,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		exportAsHCL:          d.Get("export_as_hcl").(bool),
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
+		addDependsOn:         d.Get("enable_flow_depends_on").(bool),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
 		version:              meta.(*gcloud.ProviderMeta).Version,
@@ -164,6 +171,12 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	}
 
 	// Step #5 Convert the Genesys Cloud resources to neutral format (e.g. map of maps)
+	diagErr = g.buildAndExportDependsOnResources()
+	if diagErr != nil {
+		return diagErr
+	}
+
+	// Step #6 Convert the Genesys Cloud resources to neutral format (e.g. map of maps)
 	diagErr = g.buildResourceConfigMap()
 	if diagErr != nil {
 		return diagErr
@@ -194,6 +207,8 @@ func (g *GenesysCloudResourceExporter) setUpExportDirPath() (diagErr diag.Diagno
 func (g *GenesysCloudResourceExporter) retrieveExporters() {
 	log.Printf("Retrieving exporters list")
 	exports := resourceExporter.GetResourceExporters()
+
+	log.Printf("Retrieving exporters list %v", g.filterList)
 
 	if g.resourceTypeFilter != nil && g.filterList != nil {
 		exports = g.resourceTypeFilter(exports, *g.filterList)
@@ -261,7 +276,6 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
-
 	// We use concurrency here to spin off each exporter type and getting the data
 	for resType, exporter := range *g.exporters {
 		wg.Add(1)
@@ -269,6 +283,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 			defer wg.Done()
 			//
 			typeResources, err := getResourcesForType(resType, g.provider, exporter, g.meta)
+
 			if err != nil {
 				select {
 				case <-ctx.Done():
@@ -317,10 +332,10 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			algorithm := fnv.New32()
 			algorithm.Write([]byte(uuid.NewString()))
 			resource.Name = resource.Name + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+			g.updateSanitiseMap(*g.exporters, resource)
 		}
-
 		// Removes zero values and sets proper reference expressions
-		unresolved, _ := sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL)
+		unresolved, _ := g.sanitizeConfigMap(resource.Type, resource.Name, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL, true)
 		if len(unresolved) > 0 {
 			g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
 		}
@@ -348,6 +363,18 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 	return nil
 }
 
+func (g *GenesysCloudResourceExporter) updateSanitiseMap(exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
+	resource resourceExporter.ResourceInfo) {
+	if exporters[resource.Type] != nil {
+		// Get the sanitized name from the ID returned as a reference expression
+		if idMetaMap := exporters[resource.Type].SanitizedResourceMap; idMetaMap != nil {
+			if meta := idMetaMap[resource.State.ID]; meta != nil && meta.Name != "" {
+				meta.Name = resource.Name
+			}
+		}
+	}
+}
+
 func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.InstanceState, ctyType cty.Type) (gcloud.JsonMap, diag.Diagnostics) {
 	stateVal, err := schema.StateValueFromInstanceState(state, ctyType)
 	if err != nil {
@@ -355,6 +382,7 @@ func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.Insta
 	}
 
 	jsonMap, err := schema.StateValueToJSONMap(stateVal, ctyType)
+
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
@@ -383,6 +411,107 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		return err
 	}
 
+	return nil
+}
+
+func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResources() diag.Diagnostics {
+
+	if g.addDependsOn {
+		filterList, resources, err := g.processAndBuildDependencies()
+		if err != nil {
+			return err
+		}
+		if len(filterList) > 0 {
+			diagErr := g.exportDependentResources(filterList, resources)
+			if diagErr != nil {
+				return diagErr
+			}
+		}
+		return nil
+	}
+	return nil
+}
+
+func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []string, resources resourceExporter.ResourceIDMetaMap, diagErr diag.Diagnostics) {
+	filterList := make([]string, 0)
+	totalResources := make(resourceExporter.ResourceIDMetaMap)
+	proxy := dependentconsumers.GetDependentConsumerProxy(nil)
+
+	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+			proxy = dependentconsumers.GetDependentConsumerProxy(clientConfig)
+			resources := make(resourceExporter.ResourceIDMetaMap)
+			resources, dependsMap, err := proxy.GetDependentConsumers(ctx, resourceKeys)
+
+			if err != nil {
+				return nil, nil, diag.Errorf("Failed to retrieve Dependent Flows %s: %s", resourceKeys.State.ID, err)
+			}
+			return resources, dependsMap, nil
+		}
+	}
+
+	for _, resourceKeys := range g.resources {
+
+		resources, dependsMap, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if len(resources) > 0 {
+			resourcesTobeExported := retrieveExportResources(g.resources, resources)
+			for _, meta := range resourcesTobeExported {
+				resource := strings.Split(meta.Name, "::::")
+				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
+			}
+			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsMap)
+			totalResources = stringmap.MergeSingularMaps(totalResources, resources)
+		}
+	}
+	return filterList, totalResources, nil
+}
+
+func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []string, resources resourceExporter.ResourceIDMetaMap) (diagErr diag.Diagnostics) {
+	g.resourceTypeFilter = IncludeFilterByResourceType
+	g.resourceFilter = FilterResourceByName
+	g.filterList = &filterList
+	existingExporters := g.exporters
+	existingResources := g.resources
+	g.resources = nil
+	uniqueResources := make([]resourceExporter.ResourceInfo, 0)
+	removeChan := make([]string, 0)
+	g.retrieveExporters()
+	diagErr = g.buildSanitizedResourceMaps(*g.exporters, filterList, g.logPermissionErrors)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = g.retrieveGenesysCloudObjectInstances()
+	if diagErr != nil {
+		return diagErr
+	}
+	// retain the exporters and resources
+
+	for _, exporter := range *g.exporters {
+		for id, _ := range exporter.SanitizedResourceMap {
+			_, exists := resources[id]
+			if !exists {
+				removeChan = append(removeChan, id)
+			}
+		}
+		for _, removeId := range removeChan {
+			delete(exporter.SanitizedResourceMap, removeId)
+		}
+	}
+
+	g.exporters = mergeExporters(existingExporters, g.exporters)
+	for _, resource := range g.resources {
+		_, exists := resources[resource.State.ID]
+		if exists {
+			uniqueResources = append(uniqueResources, resource)
+		}
+	}
+
+	g.resources = append(existingResources, uniqueResources...)
 	return nil
 }
 
@@ -449,6 +578,45 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	}
 }
 
+func mergeExporters(m1, m2 *map[string]*resourceExporter.ResourceExporter) *map[string]*resourceExporter.ResourceExporter {
+	result := make(map[string]*resourceExporter.ResourceExporter)
+
+	for k, v := range *m1 {
+		result[k] = v
+	}
+
+	for k, v := range *m2 {
+		_, exists := result[k]
+		if exists {
+			for id, value := range v.SanitizedResourceMap {
+				result[k].SanitizedResourceMap[id] = value
+			}
+		} else {
+			result[k] = v
+		}
+	}
+	return &result
+}
+
+func retrieveExportResources(existingResources []resourceExporter.ResourceInfo, resources resourceExporter.ResourceIDMetaMap) map[string]*resourceExporter.ResourceMeta {
+	foundTypes := make(map[string]bool)
+	resourcesTobeExported := make(map[string]*resourceExporter.ResourceMeta)
+
+	for _, data := range existingResources {
+		if _, ok := resources[data.State.ID]; ok {
+			foundTypes[data.State.ID] = true
+		}
+	}
+
+	for resourceType, meta := range resources {
+		if !foundTypes[resourceType] {
+			resourcesTobeExported[resourceType] = meta
+		}
+	}
+
+	return resourcesTobeExported
+}
+
 func containsPermissionsErrorOnly(err diag.Diagnostics) bool {
 	foundPermissionsError := false
 	for _, v := range err {
@@ -474,13 +642,14 @@ func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
 	return err
 }
 
-func getResourcesForType(resType string, provider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceInfo, diag.Diagnostics) {
+func getResourcesForType(resType string, provider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceExporter.ResourceInfo, diag.Diagnostics) {
 	lenResources := len(exporter.SanitizedResourceMap)
 	errorChan := make(chan diag.Diagnostics, lenResources)
-	resourceChan := make(chan resourceInfo, lenResources)
+	resourceChan := make(chan resourceExporter.ResourceInfo, lenResources)
 	removeChan := make(chan string, lenResources)
 
 	res := provider.ResourcesMap[resType]
+
 	if res == nil {
 		return nil, diag.Errorf("Resource type %v not defined", resType)
 	}
@@ -510,7 +679,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *re
 					return nil
 				}
 
-				resourceChan <- resourceInfo{
+				resourceChan <- resourceExporter.ResourceInfo{
 					State:   instanceState,
 					Name:    resMeta.Name,
 					Type:    resType,
@@ -544,7 +713,7 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *re
 		close(removeChan)
 	}()
 
-	var resources []resourceInfo
+	var resources []resourceExporter.ResourceInfo
 	for r := range resourceChan {
 		resources = append(resources, r)
 	}
@@ -591,6 +760,11 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 	return state, nil
 }
 
+func correctCustomFunctions(config string) string {
+	config = correctInterpolatedFileShaFunctions(config)
+	return correctDependsOn(config, true)
+}
+
 // find & replace ${filesha256(\"...\")} with ${filesha256("...")}
 func correctInterpolatedFileShaFunctions(config string) string {
 	correctedConfig := config
@@ -600,6 +774,27 @@ func correctInterpolatedFileShaFunctions(config string) string {
 		correctedMatch := strings.Replace(match, `\"`, `"`, -1)
 		correctedConfig = strings.Replace(correctedConfig, match, correctedMatch, -1)
 	}
+	return correctedConfig
+}
+
+// terraform doesn't accept quotes references in HCL https://discuss.hashicorp.com/t/terraform-0-12-14-released/3898
+// Added a corrected HCL during export and also for JSON export
+func correctDependsOn(config string, isHcl bool) string {
+	correctedConfig := config
+	re := regexp.MustCompile(`"\$dep\$([^$]+)\$dep\$"`)
+	matches := re.FindAllString(config, -1)
+
+	for _, match := range matches {
+		value := re.FindStringSubmatch(match)
+		if len(value) == 2 {
+			if !isHcl {
+				correctedConfig = strings.Replace(correctedConfig, match, fmt.Sprintf(`"%s"`, value[1]), -1)
+			} else {
+				correctedConfig = strings.Replace(correctedConfig, match, value[1], -1)
+			}
+		}
+	}
+
 	return correctedConfig
 }
 
@@ -616,14 +811,15 @@ func writeToFile(bytes []byte, path string) diag.Diagnostics {
 // attribute syntax requires attributes be set to null
 // that would otherwise be optional in nested block form:
 // https://www.terraform.io/docs/language/attr-as-blocks.html#arbitrary-expressions-with-argument-syntax
-func sanitizeConfigMap(
+func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	resourceType string,
 	resourceName string,
 	configMap map[string]interface{},
 	prevAttr string,
 	exporters map[string]*resourceExporter.ResourceExporter, //Map of all of the exporters
 	exportingState bool,
-	exportingAsHCL bool) ([]unresolvableAttributeInfo, bool) {
+	exportingAsHCL bool,
+	parentKey bool) ([]unresolvableAttributeInfo, bool) {
 	exporter := exporters[resourceType] //Get the specific export that we will be working with
 
 	unresolvableAttrs := make([]unresolvableAttributeInfo, 0)
@@ -634,6 +830,13 @@ func sanitizeConfigMap(
 		if prevAttr != "" {
 			currAttr = prevAttr + "." + key
 			wildcardAttr = prevAttr + "." + "*"
+		}
+
+		// Identify configMap for the parent resource and add depends_on for the parent resource
+		if parentKey {
+			if currAttr == "id" {
+				g.addDependsOnValues(val.(string), configMap)
+			}
 		}
 
 		if currAttr == "id" {
@@ -660,13 +863,13 @@ func sanitizeConfigMap(
 		case map[string]interface{}:
 			// Maps are sanitized in-place
 			currMap := val.(map[string]interface{})
-			_, res := sanitizeConfigMap(resourceType, "", val.(map[string]interface{}), currAttr, exporters, exportingState, exportingAsHCL)
+			_, res := g.sanitizeConfigMap(resourceType, "", val.(map[string]interface{}), currAttr, exporters, exportingState, exportingAsHCL, false)
 			if !res || len(currMap) == 0 {
 				// Remove empty maps or maps indicating they should be removed
 				configMap[key] = nil
 			}
 		case []interface{}:
-			if arr := sanitizeConfigArray(resourceType, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
+			if arr := g.sanitizeConfigArray(resourceType, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
 				configMap[key] = arr
 			} else {
 				// Remove empty arrays
@@ -788,6 +991,24 @@ func removeZeroValues(key string, val interface{}, configMap gcloud.JsonMap) {
 	}
 }
 
+// Identify the parent config map and if the resources have further dependent resources add a new attribute depends_on
+func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap gcloud.JsonMap) {
+	list, exists := g.dependsList[key]
+	resourceDependsList := make([]string, 0)
+	if exists {
+		for _, res := range list {
+			for _, resource := range g.resources {
+				if resource.State.ID == strings.Split(res, ".")[1] {
+					resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", strings.Split(res, ".")[0]+"."+resource.Name))
+				}
+			}
+		}
+		if len(resourceDependsList) > 0 {
+			configMap["depends_on"] = resourceDependsList
+		}
+	}
+}
+
 func escapeString(strValue string) string {
 	// Check for any '${' or '%{' in the exported string and escape them
 	// https://www.terraform.io/docs/language/expressions/strings.html#escape-sequences
@@ -796,7 +1017,7 @@ func escapeString(strValue string) string {
 	return escapedVal
 }
 
-func sanitizeConfigArray(
+func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 	resourceType string,
 	anArray []interface{},
 	currAttr string,
@@ -810,12 +1031,12 @@ func sanitizeConfigArray(
 		case map[string]interface{}:
 			// Only include in the result if sanitizeConfigMap returns true and the map is not empty
 			currMap := val.(map[string]interface{})
-			_, res := sanitizeConfigMap(resourceType, "", currMap, currAttr, exporters, exportingState, exportingAsHCL)
+			_, res := g.sanitizeConfigMap(resourceType, "", currMap, currAttr, exporters, exportingState, exportingAsHCL, false)
 			if res && len(currMap) > 0 {
 				result = append(result, val)
 			}
 		case []interface{}:
-			if arr := sanitizeConfigArray(resourceType, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
+			if arr := g.sanitizeConfigArray(resourceType, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
 				result = append(result, arr)
 			}
 		case string:

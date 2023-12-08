@@ -1,10 +1,10 @@
-package genesyscloud
+package webdeployments_deployment
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -16,15 +16,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 )
 
 func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	webDeploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(clientConfig)
+	wd := getWebDeploymentsProxy(clientConfig)
 
-	deployments, _, getErr := webDeploymentsAPI.GetWebdeploymentsDeployments([]string{})
+	deployments, _, getErr := wd.getWebDeployments(ctx)
 	if getErr != nil {
 		return nil, diag.Errorf("Failed to get web deployments: %v", getErr)
 	}
@@ -34,104 +33,6 @@ func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Co
 	}
 
 	return resources, nil
-}
-
-func WebDeploymentExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllWebDeployments),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"flow_id":          {RefType: "genesyscloud_flow"},
-			"configuration.id": {RefType: "genesyscloud_webdeployments_configuration"},
-		},
-	}
-}
-
-func ResourceWebDeployment() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud Web Deployment",
-
-		CreateContext: CreateWithPooledClient(createWebDeployment),
-		ReadContext:   ReadWithPooledClient(readWebDeployment),
-		UpdateContext: UpdateWithPooledClient(updateWebDeployment),
-		DeleteContext: DeleteWithPooledClient(deleteWebDeployment),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Deployment name",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"description": {
-				Description: "Deployment description",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"allow_all_domains": {
-				Description: "Whether all domains are allowed or not. allowedDomains must be empty when this is true.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"allowed_domains": {
-				Description: "The list of domains that are approved to use this deployment; the list will be added to CORS headers for ease of web use.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"flow_id": {
-				Description: "A reference to the inboundshortmessage flow used by this deployment.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"status": {
-				Description: "The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				ValidateFunc: validation.StringInSlice([]string{
-					"Pending",
-					"Active",
-					"Inactive",
-					"Error",
-					"Deleting",
-				}, false),
-				DiffSuppressFunc: validateDeploymentStatusChange,
-			},
-			"configuration": {
-				Description: "The published configuration version used by this deployment",
-				Type:        schema.TypeList,
-				Required:    true,
-				MaxItems:    1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"id": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"version": {
-							Type:             schema.TypeString,
-							Optional:         true,
-							Computed:         true,
-							DiffSuppressFunc: alwaysDifferent, // The newly-computed configuration version is not available when computing the diff so we assume it will be different
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func alwaysDifferent(k, old, new string, d *schema.ResourceData) bool {
-	return false
-}
-
-func validateDeploymentStatusChange(k, old, new string, d *schema.ResourceData) bool {
-	// Deployments will begin in a pending status and may or may not make it to active (or error) by the time we retrieve their state,
-	// so allow the status to change from pending to a less ephemeral status
-	return old == "Pending"
 }
 
 func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -145,15 +46,15 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to create web deployment %s: %s", name, err)
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	wd := getWebDeploymentsProxy(sdkConfig)
 
 	log.Printf("Creating web deployment %s", name)
 
 	configId := d.Get("configuration.0.id").(string)
 	configVersion := d.Get("configuration.0.version").(string)
 
-	flow := BuildSdkDomainEntityRef(d, "flow_id")
+	flow := genesyscloud.BuildSdkDomainEntityRef(d, "flow_id")
 
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
@@ -173,10 +74,10 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		inputDeployment.Flow = flow
 	}
 
-	diagErr := WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		deployment, resp, err := api.PostWebdeploymentsDeployments(inputDeployment)
+	diagErr := genesyscloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		deployment, resp, err := wd.createWebDeployment(ctx, inputDeployment)
 		if err != nil {
-			if IsStatus400(resp) {
+			if genesyscloud.IsStatus400(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to create web deployment %s: %s", name, err))
@@ -193,7 +94,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	time.Sleep(10 * time.Second)
-	activeError := waitForDeploymentToBeActive(ctx, api, d.Id())
+	activeError := waitForDeploymentToBeActive(ctx, sdkConfig, d.Id())
 	if activeError != nil {
 		return diag.Errorf("Web deployment %s did not become active and could not be created", name)
 	}
@@ -201,11 +102,12 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	return readWebDeployment(ctx, d, meta)
 }
 
-func waitForDeploymentToBeActive(ctx context.Context, api *platformclientv2.WebDeploymentsApi, id string) diag.Diagnostics {
-	return WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-		deployment, resp, err := api.GetWebdeploymentsDeployment(id, []string{})
+func waitForDeploymentToBeActive(ctx context.Context, sdkConfig *platformclientv2.Configuration, id string) diag.Diagnostics {
+	wd := getWebDeploymentsProxy(sdkConfig)
+	return genesyscloud.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+		deployment, resp, err := wd.getWebDeployment(ctx, id)
 		if err != nil {
-			if IsStatus404(resp) {
+			if genesyscloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment %s: %s", id, err))
@@ -220,14 +122,14 @@ func waitForDeploymentToBeActive(ctx context.Context, api *platformclientv2.WebD
 }
 
 func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	wd := getWebDeploymentsProxy(sdkConfig)
 
 	log.Printf("Reading web deployment %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		deployment, resp, getErr := api.GetWebdeploymentsDeployment(d.Id(), []string{})
+	return genesyscloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		deployment, resp, getErr := wd.getWebDeployment(ctx, d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if genesyscloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read web deployment %s: %s", d.Id(), getErr))
@@ -235,6 +137,7 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeployment())
 		d.Set("name", *deployment.Name)
+
 		if deployment.Description != nil {
 			d.Set("description", *deployment.Description)
 		}
@@ -257,13 +160,6 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 	})
 }
 
-func flattenConfiguration(configuration *platformclientv2.Webdeploymentconfigurationversionentityref) []interface{} {
-	return []interface{}{map[string]interface{}{
-		"id":      *configuration.Id,
-		"version": *configuration.Version,
-	}}
-}
-
 func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
@@ -276,15 +172,15 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to update web deployment %s: %s", name, err)
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	wd := getWebDeploymentsProxy(sdkConfig)
 
 	log.Printf("Updating web deployment %s", name)
 
 	configId := d.Get("configuration.0.id").(string)
 	configVersion := d.Get("configuration.0.version").(string)
 
-	flow := BuildSdkDomainEntityRef(d, "flow_id")
+	flow := genesyscloud.BuildSdkDomainEntityRef(d, "flow_id")
 
 	inputDeployment := platformclientv2.Webdeployment{
 		Name: &name,
@@ -305,10 +201,10 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		inputDeployment.Flow = flow
 	}
 
-	diagErr := WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := api.PutWebdeploymentsDeployment(d.Id(), inputDeployment)
+	diagErr := genesyscloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		_, resp, err := wd.updateWebDeployment(ctx, d.Id(), inputDeployment)
 		if err != nil {
-			if IsStatus400(resp) {
+			if genesyscloud.IsStatus400(resp) {
 				return retry.RetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Error updating web deployment %s: %s", name, err))
@@ -320,7 +216,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		return diagErr
 	}
 
-	activeError := waitForDeploymentToBeActive(ctx, api, d.Id())
+	activeError := waitForDeploymentToBeActive(ctx, sdkConfig, d.Id())
 	if activeError != nil {
 		return diag.Errorf("Web deployment %s did not become active and could not be created", name)
 	}
@@ -332,20 +228,20 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	api := platformclientv2.NewWebDeploymentsApiWithConfig(sdkConfig)
+	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
+	wd := getWebDeploymentsProxy(sdkConfig)
 
 	log.Printf("Deleting web deployment %s", name)
-	_, err := api.DeleteWebdeploymentsDeployment(d.Id())
+	_, err := wd.deleteWebDeployment(ctx, d.Id())
 
 	if err != nil {
 		return diag.Errorf("Failed to delete web deployment %s: %s", name, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := api.GetWebdeploymentsDeployment(d.Id(), []string{})
+	return genesyscloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		_, resp, err := wd.getWebDeployment(ctx, d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if genesyscloud.IsStatus404(resp) {
 				log.Printf("Deleted web deployment %s", d.Id())
 				return nil
 			}
@@ -354,19 +250,4 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 		return retry.RetryableError(fmt.Errorf("Web deployment %s still exists", d.Id()))
 	})
-}
-
-func validAllowedDomainsSettings(d *schema.ResourceData) error {
-	allowAllDomains := d.Get("allow_all_domains").(bool)
-	_, allowedDomainsSet := d.GetOk("allowed_domains")
-
-	if allowAllDomains && allowedDomainsSet {
-		return errors.New("Allowed domains cannot be specified when all domains are allowed")
-	}
-
-	if !allowAllDomains && !allowedDomainsSet {
-		return errors.New("Either allowed domains must be specified or all domains must be allowed")
-	}
-
-	return nil
 }

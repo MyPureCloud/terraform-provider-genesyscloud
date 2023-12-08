@@ -8,7 +8,7 @@ import (
 )
 
 /*
-Initializes and registers datasources and resources for the scripts test package
+Initializes and registers data sources and resources for the scripts test package
 */
 var providerDataSources map[string]*schema.Resource
 var providerResources map[string]*schema.Resource
@@ -23,37 +23,33 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_script"] = ResourceScript()
-
+	providerResources[resourceName] = ResourceScript()
 }
 
 // registerTestResource registers the CX as Code resources used in test
 func (r *registerTestInstance) registerTestDataSources() {
-
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_script"] = DataSourceScript()
-
+	providerDataSources[resourceName] = DataSourceScript()
 }
 
-// initTestresources initializes all the data sources and resources
-func initTestresources() {
+// initTestResources initializes all the data sources and resources
+func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
-	reg_instance := &registerTestInstance{}
+	regInstance := &registerTestInstance{}
 
-	reg_instance.registerTestDataSources()
-	reg_instance.registerTestResources()
-
+	regInstance.registerTestDataSources()
+	regInstance.registerTestResources()
 }
 
-// TestMain acts as a setup class that gets call before the tests cases fir tge resiyrce ryb'
+// TestMain acts as a setup class that gets called before the tests cases to register resources
 func TestMain(m *testing.M) {
 
 	// Run setup function before starting the test suite for Outbound Package
-	initTestresources()
+	initTestResources()
 
 	// Run the test suite for outbound
 	m.Run()

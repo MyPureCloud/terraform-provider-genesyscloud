@@ -1,8 +1,15 @@
 package tfexporter
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"reflect"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"testing"
+
+	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 )
 
 type PostProcessHclBytesTestCase struct {
@@ -121,5 +128,93 @@ func TestRemoveZeroValuesFunc(t *testing.T) {
 	}
 	if m["zeroInt"] != nil {
 		t.Errorf("Expected 'zeroInt' map item to be: nil, got: %v", m["zeroInt"])
+	}
+}
+
+func TestUnitBuildDependsOnResources(t *testing.T) {
+
+	meta := &resourceExporter.ResourceMeta{
+		Name:     "example::::resource",
+		IdPrefix: "prefix_",
+	}
+
+	// Create an instance of ResourceIDMetaMap and add the meta to it
+	resources := resourceExporter.ResourceIDMetaMap{
+		"queue resources": meta,
+	}
+
+	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, map[string][]string, error) {
+		return resources, nil, nil
+	}
+
+	getAllPooledFn := func(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+		//assert.Equal(t, targetName, name)
+		return resources, nil, nil
+	}
+
+	dependencyProxy := &dependentconsumers.DependentConsumerProxy{
+		RetrieveDependentConsumersAttr: retrievePooledClientFn,
+		GetPooledClientAttr:            getAllPooledFn,
+	}
+
+	dependentconsumers.InternalProxy = dependencyProxy
+	ctx := context.Background()
+
+	gre := &GenesysCloudResourceExporter{
+		ctx: ctx,
+	}
+
+	state := &terraform.InstanceState{}
+	state.ID = "1"
+	name := "genesyscloud_resource_queue"
+	resourceType := "example_type"
+
+	// Create an instance of ResourceInfo
+	resourceInfo := &resourceExporter.ResourceInfo{
+		State: state,
+		Name:  name,
+		Type:  resourceType,
+	}
+	gre.resources = []resourceExporter.ResourceInfo{*resourceInfo}
+	filterList, _, err := gre.processAndBuildDependencies()
+	if err != nil {
+		t.Errorf("Error during building Dependencies %v", err)
+	}
+	if len(filterList) < 1 {
+		t.Errorf("Error creating the filterList  %v", err)
+	}
+
+}
+
+func TestUnitMergeExporters(t *testing.T) {
+
+	m1 := map[string]*resourceExporter.ResourceExporter{
+		"exporter1": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key1", "key2"}},
+	}
+
+	m2 := map[string]*resourceExporter.ResourceExporter{
+		"exporter2": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
+	}
+
+	// Call the function
+	result := mergeExporters(&m1, &m2)
+
+	expectedKeys := map[string][]string{
+		"exporter1": {"key1", "key2"},
+		"exporter2": {"key3", "key4"},
+	}
+
+	// Check if the exporters in the result have the expected keys
+	for exporterID, actual := range *result {
+
+		exporter, ok := expectedKeys[exporterID]
+		if !ok {
+			t.Errorf("Exporter %s not found in result", exporterID)
+			continue
+		}
+
+		if !reflect.DeepEqual(exporter, actual.AllowZeroValues) {
+			t.Errorf("Exporter %s has unexpected keys. Expected: %v, Got: %v", exporterID, actual, exporter)
+		}
 	}
 }
