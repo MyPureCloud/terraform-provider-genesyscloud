@@ -31,7 +31,7 @@ func getAllAuthArchitectGrammar(ctx context.Context, clientConfig *platformclien
 	}
 
 	for _, grammar := range *grammars {
-		resources[*grammar.Id] = &resourceExporter.ResourceMeta{Name: *grammar.Id}
+		resources[*grammar.Id] = &resourceExporter.ResourceMeta{Name: *grammar.Name}
 	}
 
 	return resources, nil

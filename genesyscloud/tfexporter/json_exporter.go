@@ -263,8 +263,14 @@ func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
 	}
 
 	log.Printf("Writing export config file to %s", path)
-	if err := writeToFile(dataJSONBytes, path); err != nil {
+	if err := writeToFile(postProcessJsonBytes(dataJSONBytes), path); err != nil {
 		return err
 	}
 	return nil
+}
+
+func postProcessJsonBytes(resource []byte) []byte {
+	resourceStr := string(resource)
+	resourceStr = correctDependsOn(resourceStr, false)
+	return []byte(resourceStr)
 }

@@ -86,6 +86,13 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG", false),
 					Description: "Enables debug tracing in the Genesys Cloud SDK. Output will be written to the local file 'sdk_debug.log'.",
 				},
+				"sdk_debug_format": {
+					Type:         schema.TypeString,
+					Optional:     true,
+					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG_FORMAT", "Text"),
+					Description:  "Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Default value is Text.",
+					ValidateFunc: validation.StringInSlice([]string{"Text", "Json"}, false),
+				},
 				"token_pool_size": {
 					Type:         schema.TypeInt,
 					Optional:     true,
@@ -237,8 +244,13 @@ func initClientConfig(data *schema.ResourceData, version string, config *platfor
 			LogResponseBody: true,
 		}
 		config.LoggingConfiguration.SetLogToConsole(false)
-		config.LoggingConfiguration.SetLogFormat(platformclientv2.Text)
 		config.LoggingConfiguration.SetLogFilePath("sdk_debug.log")
+
+		if format := data.Get("sdk_debug_format"); format == "Json" {
+			config.LoggingConfiguration.SetLogFormat(platformclientv2.JSON)
+		} else {
+			config.LoggingConfiguration.SetLogFormat(platformclientv2.Text)
+		}
 	}
 
 	proxySet := data.Get("proxy").(*schema.Set)

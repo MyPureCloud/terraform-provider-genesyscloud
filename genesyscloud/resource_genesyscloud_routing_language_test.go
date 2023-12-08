@@ -37,11 +37,11 @@ func TestAccResourceRoutingLanguageBasic(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyLanguagesDestroyed,
+		CheckDestroy: ValidateLanguagesDestroyed,
 	})
 }
 
-func testVerifyLanguagesDestroyed(state *terraform.State) error {
+func ValidateLanguagesDestroyed(state *terraform.State) error {
 	routingApi := platformclientv2.NewRoutingApi()
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_routing_language" {

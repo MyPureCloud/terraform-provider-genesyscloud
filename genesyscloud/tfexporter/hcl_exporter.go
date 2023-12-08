@@ -170,8 +170,7 @@ func postProcessHclBytes(resource []byte) []byte {
 		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
 	}
 
-	resourceStr = correctInterpolatedFileShaFunctions(resourceStr)
-
+	resourceStr = correctCustomFunctions(resourceStr)
 	return []byte(resourceStr)
 }
 
@@ -247,6 +246,12 @@ func getCtyValue(v interface{}) zclconfCty.Value {
 		value = zclconfCty.NumberFloatVal(vFloat64)
 	} else if vMapInter, ok := v.(map[string]interface{}); ok {
 		value = createHCLObject(vMapInter)
+	} else if vMapInter, ok := v.([]string); ok {
+		var values []zclconfCty.Value
+		for _, s := range vMapInter {
+			values = append(values, zclconfCty.StringVal(s))
+		}
+		value = zclconfCty.ListVal(values)
 	} else {
 		value = zclconfCty.NilVal
 	}

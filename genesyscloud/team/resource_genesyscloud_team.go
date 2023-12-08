@@ -34,7 +34,7 @@ func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configu
 	}
 
 	for _, team := range *teams {
-		resources[*team.Id] = &resourceExporter.ResourceMeta{Name: *team.Id}
+		resources[*team.Id] = &resourceExporter.ResourceMeta{Name: *team.Name}
 	}
 
 	return resources, nil
