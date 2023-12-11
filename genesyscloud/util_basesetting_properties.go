@@ -7,10 +7,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
-func buildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{} {
+func BuildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{} {
 	returnValue := make(map[string]interface{})
 
 	if properties := d.Get("properties"); properties != nil {
@@ -24,7 +24,7 @@ func buildBaseSettingsProperties(d *schema.ResourceData) *map[string]interface{}
 	return &returnValue
 }
 
-func flattenBaseSettingsProperties(properties interface{}) (string, diag.Diagnostics) {
+func FlattenBaseSettingsProperties(properties interface{}) (string, diag.Diagnostics) {
 	if properties == nil {
 		return "", nil
 	}
@@ -62,7 +62,7 @@ func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 	return applyPropertyDefaults(diff, phoneBaseSetting.Properties)
 }
 
-func customizeTrunkBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+func CustomizeTrunkBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	// Defaults must be set on missing properties
 	if !diff.NewValueKnown("properties") {
 		// properties value not yet in final state. Nothing to do.

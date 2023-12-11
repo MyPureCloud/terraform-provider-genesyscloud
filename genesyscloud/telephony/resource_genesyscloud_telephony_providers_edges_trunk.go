@@ -1,4 +1,4 @@
-package genesyscloud
+package telephony
 
 import (
 	"context"
@@ -8,23 +8,24 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func ResourceTrunk() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Trunk. Created by assigning a trunk base settings to an edge or edge group",
 
-		CreateContext: CreateWithPooledClient(createTrunk),
-		ReadContext:   ReadWithPooledClient(readTrunk),
-		UpdateContext: UpdateWithPooledClient(updateTrunk),
-		DeleteContext: DeleteWithPooledClient(deleteTrunk),
+		CreateContext: gcloud.CreateWithPooledClient(createTrunk),
+		ReadContext:   gcloud.ReadWithPooledClient(readTrunk),
+		UpdateContext: gcloud.UpdateWithPooledClient(updateTrunk),
+		DeleteContext: gcloud.DeleteWithPooledClient(deleteTrunk),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -60,12 +61,12 @@ func ResourceTrunk() *schema.Resource {
 func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	trunkBaseSettingsId := d.Get("trunk_base_settings_id").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	trunkBase, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingsId, true)
 	if getErr != nil {
-		if IsStatus404(resp) {
+		if gcloud.IsStatus404(resp) {
 			return nil
 		}
 		return diag.Errorf("Failed to read trunk base settings %s: %s", d.Id(), getErr)
@@ -76,7 +77,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		edgeId := edgeIdI.(string)
 		edge, resp, getErr := edgesAPI.GetTelephonyProvidersEdge(edgeId, nil)
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				return nil
 			}
 			return diag.Errorf("Failed to read edge %s: %s", edgeId, getErr)
@@ -98,7 +99,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		edgeGroupId := edgeGroupIdI.(string)
 		edgeGroup, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(edgeGroupId, nil)
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				return diag.Errorf("Failed to get edge group %s: %s", edgeGroupId, getErr)
 			}
 			return diag.Errorf("Failed to read edge group %s: %s", edgeGroupId, getErr)
@@ -129,7 +130,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func getTrunkByTrunkBaseId(trunkBaseId string, meta interface{}) (*platformclientv2.Trunk, error) {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	time.Sleep(2 * time.Second)
@@ -160,14 +161,14 @@ func updateTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 }
 
 func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading trunk %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		trunk, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunk(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
@@ -198,7 +199,7 @@ func deleteTrunk(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.
 
 func TrunkExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllTrunks),
+		GetResourcesFunc: gcloud.GetAllWithPooledClient(getAllTrunks),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"trunk_base_settings_id": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 			"edge_group_id":          {RefType: "genesyscloud_telephony_providers_edges_edge_group"},
@@ -214,12 +215,12 @@ func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	err := WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	err := gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			trunks, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
 			if getErr != nil {
-				if IsStatus404(resp) {
+				if gcloud.IsStatus404(resp) {
 					return retry.RetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
 				}
 				return retry.NonRetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))

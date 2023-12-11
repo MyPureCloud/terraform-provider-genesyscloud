@@ -26,6 +26,7 @@ resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSe
   trunk_meta_base_id = "phone_connections_webrtc.json"
   trunk_type         = "PHONE"
   managed            = false
+  inbound_site_id    = "site_id"
   properties = jsonencode({
     "trunk_label" = {
       "value" = {
@@ -66,7 +67,7 @@ resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSe
 - `trunk_type` (String) The type of this trunk base.Valid values: EXTERNAL, PHONE, EDGE.
 
 ### Optional
-
+- `inbound_site_id` (String) The site to which inbound calls will be routed. Only valid for External BYOC Trunks.
 - `description` (String) The resource's description.
 - `managed` (Boolean) Is this trunk being managed remotely. This property is synchronized with the managed property of the Edge Group to which it is assigned.
 - `properties` (String) trunk base settings properties

@@ -1,8 +1,9 @@
-package genesyscloud
+package telephony
 
 import (
 	"context"
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -14,7 +15,7 @@ import (
 func dataSourceTrunkBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Trunk Base Settings. Select a trunk base settings by name",
-		ReadContext: ReadWithPooledClient(dataSourceTrunkBaseSettingsRead),
+		ReadContext: gcloud.ReadWithPooledClient(dataSourceTrunkBaseSettingsRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Trunk Base Settings name.",
@@ -26,11 +27,11 @@ func dataSourceTrunkBaseSettings() *schema.Resource {
 }
 
 func dataSourceTrunkBaseSettingsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
 
 	name := d.Get("name").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			trunkBaseSettings, _, getErr := getTelephonyProvidersEdgesTrunkbasesettings(sdkConfig, pageNum, pageSize, name)
