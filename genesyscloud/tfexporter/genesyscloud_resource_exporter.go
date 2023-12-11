@@ -689,7 +689,14 @@ func mergeExporters(m1, m2 map[string]*resourceExporter.ResourceExporter) *map[s
 		if exists {
 			for id, value := range v.SanitizedResourceMap {
 				result[k].SanitizedResourceMap[id] = value
+
 			}
+			if result[k].ExcludedAttributes != nil {
+				result[k].ExcludedAttributes = append(result[k].ExcludedAttributes, v.ExcludedAttributes...)
+			} else {
+				result[k].ExcludedAttributes = v.ExcludedAttributes
+			}
+
 		} else {
 			result[k] = v
 		}
@@ -1177,7 +1184,7 @@ func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[stri
 				if depends_on == true {
 					excludedAttr := excluded[resourceIdx+1:]
 					log.Printf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceName)
-					return nil
+					continue
 				}
 			}
 			return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceName)
