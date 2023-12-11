@@ -149,19 +149,14 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 
 func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	// Step #1 Retrieve the exporters we are have registered and have been requested by the user
-	g.retrieveExporters()
-
+	diagErr = g.retrieveExporters()
+	if diagErr != nil {
+		return diagErr
+	}
 	// Step #2 Retrieve all of the individual resources we are going to export
 	diagErr = g.retrieveSanitizedResourceMaps()
 	if diagErr != nil {
 		return diagErr
-	}
-
-	// Step #3 Build a list of exporters that have an attribute we want to exclude
-	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
-		if diagErr := populateConfigExcluded(*g.exporters, lists.InterfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
-			return diagErr
-		}
 	}
 
 	// Step #4 Retrieve the individual genesys cloud object instances
@@ -204,7 +199,7 @@ func (g *GenesysCloudResourceExporter) setUpExportDirPath() (diagErr diag.Diagno
 
 // retrieveExporters will return a list of all the registered exporters. If the resource_type on the exporter contains any elements, only the defined
 // elements in the resource_type attribute will be returned.
-func (g *GenesysCloudResourceExporter) retrieveExporters() {
+func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnostics) {
 	log.Printf("Retrieving exporters list")
 	exports := resourceExporter.GetResourceExporters()
 
@@ -216,6 +211,12 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() {
 
 	g.exporters = &exports
 
+	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
+		if diagErr := g.populateConfigExcluded(*g.exporters, lists.InterfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
+			return diagErr
+		}
+	}
+	return nil
 }
 
 // Removes the ::resource_name from the resource_types list
@@ -484,7 +485,11 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	g.resources = nil
 	uniqueResources := make([]resourceExporter.ResourceInfo, 0)
 	removeChan := make([]string, 0)
-	g.retrieveExporters()
+	diagErr = g.retrieveExporters()
+	if diagErr != nil {
+		return diagErr
+	}
+
 	diagErr = g.buildSanitizedResourceMaps(*g.exporters, filterList, g.logPermissionErrors)
 	if diagErr != nil {
 		return diagErr
@@ -575,7 +580,11 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		g.resources = nil
 		g.exporters = nil
 		level = level + 1
-		g.retrieveExporters()
+		diagErr = g.retrieveExporters()
+		if diagErr != nil {
+			return diagErr
+		}
+
 		diagErr := g.buildSanitizedResourceMaps(*g.exporters, *g.filterList, g.logPermissionErrors)
 		if diagErr != nil {
 			return diagErr
@@ -1150,7 +1159,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 	return result
 }
 
-func populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
 	for _, excluded := range configExcluded {
 		resourceIdx := strings.Index(excluded, ".")
 		if resourceIdx == -1 {
@@ -1164,8 +1173,16 @@ func populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExpor
 		resourceName := excluded[:resourceIdx]
 		exporter := exporters[resourceName]
 		if exporter == nil {
+			if depends_on, ok := g.d.GetOk("enable_flow_depends_on"); ok {
+				if depends_on == true {
+					excludedAttr := excluded[resourceIdx+1:]
+					log.Printf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceName)
+					return nil
+				}
+			}
 			return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceName)
 		}
+
 		excludedAttr := excluded[resourceIdx+1:]
 		exporter.AddExcludedAttribute(excludedAttr)
 		log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceName)
