@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func UserRolesExporter() *resourceExporter.ResourceExporter {
@@ -65,6 +65,7 @@ Terraform expects to manage the resources that are defined in its stack. You can
 func createUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	userID := d.Get("user_id").(string)
 	d.SetId(userID)
+	log.Printf("Creating roles for user %s", d.Id())
 	return updateUserRoles(ctx, d, meta)
 }
 
@@ -73,9 +74,9 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Reading roles for user %s", d.Id())
-	d.Set("user_id", d.Id())
+	_ = d.Set("user_id", d.Id())
 	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		roles, _, err := readSubjectRoles(d.Id(), authAPI)
+		roles, _, err := readSubjectRoles(d, authAPI)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
@@ -102,7 +103,7 @@ func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 	return readUserRoles(ctx, d, meta)
 }
 
-func deleteUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteUserRoles(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	// Does not delete users or roles. This resource will just no longer manage roles.
 	return nil
 }

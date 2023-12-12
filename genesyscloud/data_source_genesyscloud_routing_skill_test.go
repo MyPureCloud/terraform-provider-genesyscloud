@@ -20,7 +20,7 @@ func TestAccDataSourceRoutingSkill(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateRoutingSkillResource(
+				Config: GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + generateRoutingSkillDataSource(skillDataSource, "genesyscloud_routing_skill."+skillResource+".name", "genesyscloud_routing_skill."+skillResource),

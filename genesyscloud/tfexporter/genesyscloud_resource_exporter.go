@@ -27,7 +27,7 @@ import (
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	stringmap "terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 /*

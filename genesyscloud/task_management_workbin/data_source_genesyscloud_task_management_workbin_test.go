@@ -28,7 +28,7 @@ func TestAccDataSourceTaskManagementWorkbin(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateWorkbinResource(workbinResId, workbinName, workDescription, nullValue) +
+				Config: GenerateWorkbinResource(workbinResId, workbinName, workDescription, nullValue) +
 					generateWorkbinDataSource(workbinDataSourceId, workbinName, resourceName+"."+workbinResId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workbinDataSourceId, "id", resourceName+"."+workbinResId, "id"),

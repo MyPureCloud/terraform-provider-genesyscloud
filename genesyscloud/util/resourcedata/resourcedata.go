@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 const (
@@ -21,6 +21,14 @@ const (
 func BuildSDKStringValueIfNotNil(field **string, targetMap map[string]interface{}, key string) {
 	if value := targetMap[key].(string); value != "" {
 		*field = &value
+	}
+}
+
+// BuildSDKStringValueIfNotNilTransform will read a map and set the string property on an object if the value exists
+// and takes a func argument to transform the string before setting the value
+func BuildSDKStringValueIfNotNilTransform(field **string, targetMap map[string]interface{}, key string, f func(string) *string) {
+	if value := targetMap[key].(string); value != "" {
+		*field = f(value)
 	}
 }
 

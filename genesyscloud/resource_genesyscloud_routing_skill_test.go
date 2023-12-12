@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func TestAccResourceRoutingSkillBasic(t *testing.T) {
@@ -22,7 +22,7 @@ func TestAccResourceRoutingSkillBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingSkillResource(
+				Config: GenerateRoutingSkillResource(
 					skillResource1,
 					skillName1,
 				),
@@ -39,15 +39,6 @@ func TestAccResourceRoutingSkillBasic(t *testing.T) {
 		},
 		CheckDestroy: testVerifySkillsDestroyed,
 	})
-}
-
-func generateRoutingSkillResource(
-	resourceID string,
-	name string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
-		name = "%s"
-	}
-	`, resourceID, name)
 }
 
 func testVerifySkillsDestroyed(state *terraform.State) error {

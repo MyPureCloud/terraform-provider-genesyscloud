@@ -2,8 +2,9 @@ package webdeployments_deployment
 
 import (
 	"errors"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func alwaysDifferent(k, old, new string, d *schema.ResourceData) bool {

@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func testAccCheckSkillConditions(resourceName string, targetSkillConditionJson string) resource.TestCheckFunc {
@@ -422,7 +422,7 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) 
 		}
 	)
 
-	routingSkillResource := generateRoutingSkillResource(routingSkillResourceId, routingSkillName)
+	routingSkillResource := GenerateRoutingSkillResource(routingSkillResourceId, routingSkillName)
 
 	division1Resource := GenerateAuthDivisionBasic(division1ResourceId, division1Name)
 	division2Resource := GenerateAuthDivisionBasic(division2ResourceId, division2Name)

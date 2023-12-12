@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func TestAccResourceUserBasic(t *testing.T) {
@@ -388,7 +388,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 					email1,
 					userName1,
 					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource1+".id", proficiency1),
-				) + generateRoutingSkillResource(skillResource1, skillName1),
+				) + GenerateRoutingSkillResource(skillResource1, skillName1),
 				Check: resource.ComposeTestCheckFunc(
 					validateUserSkill("genesyscloud_user."+userResource1, "genesyscloud_routing_skill."+skillResource1, proficiency1),
 				),
@@ -401,10 +401,10 @@ func TestAccResourceUserSkills(t *testing.T) {
 					userName1,
 					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource1+".id", proficiency1),
 					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource2+".id", proficiency2),
-				) + generateRoutingSkillResource(
+				) + GenerateRoutingSkillResource(
 					skillResource1,
 					skillName1,
-				) + generateRoutingSkillResource(
+				) + GenerateRoutingSkillResource(
 					skillResource2,
 					skillName2,
 				),
@@ -420,7 +420,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 					email1,
 					userName1,
 					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResource2+".id", proficiency1),
-				) + generateRoutingSkillResource(
+				) + GenerateRoutingSkillResource(
 					skillResource2,
 					skillName2,
 				),

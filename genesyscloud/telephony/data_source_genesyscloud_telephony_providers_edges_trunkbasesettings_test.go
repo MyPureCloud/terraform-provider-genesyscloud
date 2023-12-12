@@ -1,7 +1,8 @@
-package genesyscloud
+package telephony
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -15,14 +16,14 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 		trunkBaseSettingsDataRes = "trunkBaseSettingsData"
 		name                     = "test trunk base settings " + uuid.NewString()
 		description              = "test description"
-		trunkMetaBaseId          = "external_sip_pcv_byoc_carrier.json"
-		trunkType                = "EXTERNAL"
+		trunkMetaBaseId          = "phone_connections_webrtc.json"
+		trunkType                = "PHONE"
 		managed                  = false
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(

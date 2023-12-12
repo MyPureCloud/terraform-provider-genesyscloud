@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
@@ -86,7 +86,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + generateRoutingSkillResource(
+				) + GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + generateRoutingEmailRouteResource(
@@ -141,7 +141,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + generateRoutingSkillResource(
+				) + GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + generateRoutingEmailRouteResource(
@@ -197,7 +197,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 				) + GenerateRoutingLanguageResource(
 					langResource,
 					langName,
-				) + generateRoutingSkillResource(
+				) + GenerateRoutingSkillResource(
 					skillResource,
 					skillName,
 				) + generateRoutingEmailRouteResource(

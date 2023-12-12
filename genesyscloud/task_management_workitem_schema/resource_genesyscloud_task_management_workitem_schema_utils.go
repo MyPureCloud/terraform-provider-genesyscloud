@@ -2,9 +2,10 @@ package task_management_workitem_schema
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 const (
@@ -53,4 +54,14 @@ func BuildSdkWorkitemSchema(d *schema.ResourceData, version *int) (*platformclie
 	}
 
 	return dataSchema, nil
+}
+
+// GenerateWorkitemSchemaResourceBasic is a public util method to generate the simplest
+// schema terraform resource for testing
+func GenerateWorkitemSchemaResourceBasic(resourceId, name, description string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		name = "%s"
+		description = "%s"
+	}
+	`, resourceName, resourceId, name, description)
 }

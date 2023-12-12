@@ -4,6 +4,7 @@ resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSe
   trunk_meta_base_id = "phone_connections_webrtc.json"
   trunk_type         = "PHONE"
   managed            = false
+  inbound_site_id    = "site_id"
   properties = jsonencode({
     "trunk_label" = {
       "value" = {
