@@ -12,7 +12,7 @@ import (
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
-	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+	"terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
@@ -30,11 +30,12 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	smsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
-	station "terraform-provider-genesyscloud/genesyscloud/station"
+	"terraform-provider-genesyscloud/genesyscloud/station"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
-	team "terraform-provider-genesyscloud/genesyscloud/team"
+	"terraform-provider-genesyscloud/genesyscloud/team"
+	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
@@ -135,6 +136,7 @@ func registerResources() {
 	worktype.SetRegistrar(regInstance)                      //Registering task management worktype
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	team.SetRegistrar(regInstance)                          //Registering team
+	telephony.SetRegistrar(regInstance)                     //Registering telephony package
 	webDeployConfig.SetRegistrar(regInstance)               //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)               //Registering webdeployments_deploy
 	authorizatioProduct.SetRegistrar(regInstance)           //Registering Authorization Product

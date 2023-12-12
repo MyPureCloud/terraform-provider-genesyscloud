@@ -1,12 +1,13 @@
 package authorization_product
 
 import (
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
-	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 

@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -104,10 +104,8 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 
 		resourcedata.SetNillableValue(d, "name", worktype.Name)
 		resourcedata.SetNillableValue(d, "description", worktype.Description)
+		resourcedata.SetNillableReferenceDivision(d, "division_id", worktype.Division)
 
-		if worktype.Division != nil {
-			resourcedata.SetNillableValue(d, "division_id", worktype.Division.Id)
-		}
 		if worktype.DefaultWorkbin != nil {
 			resourcedata.SetNillableValue(d, "default_workbin_id", worktype.DefaultWorkbin.Id)
 		}
