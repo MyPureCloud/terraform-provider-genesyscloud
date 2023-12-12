@@ -2,8 +2,8 @@ package telephony
 
 import (
 	"fmt"
-	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	"testing"
 
 	"github.com/google/uuid"
@@ -49,13 +49,13 @@ func TestAccResourceTrunk(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create the trunk by creating trunk base settings and an edge group and assigning the trunk base settings to the edge group
 			{
-				Config: GenerateEdgeGroupResourceWithCustomAttrs(
+				Config: edgeGroup.GenerateEdgeGroupResourceWithCustomAttrs(
 					edgeGroupRes1,
 					"test edge group "+uuid.NewString(),
 					"edge group description 1",
 					false,
 					false,
-					generatePhoneTrunkBaseIds(
+					edgeGroup.GeneratePhoneTrunkBaseIds(
 						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes+".id",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes+".id",
 					),
@@ -67,13 +67,13 @@ func TestAccResourceTrunk(t *testing.T) {
 			},
 			//Create a new edge group and assign the trunk base settings to a new edge group to update the trunk
 			{
-				Config: GenerateEdgeGroupResourceWithCustomAttrs(
+				Config: edgeGroup.GenerateEdgeGroupResourceWithCustomAttrs(
 					edgeGroupRes2,
 					"test edge group "+uuid.NewString(),
 					"edge group description 2",
 					false,
 					false,
-					generatePhoneTrunkBaseIds(
+					edgeGroup.GeneratePhoneTrunkBaseIds(
 						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes+".id",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes+".id",
 					),
@@ -96,26 +96,4 @@ func generateTrunk(
 		edge_group_id = %s
 	}
 	`, trunkRes, trunkBaseSettingsId, edgeGroupId)
-}
-
-func GenerateEdgeGroupResourceWithCustomAttrs(
-	edgeGroupRes,
-	name,
-	description string,
-	managed,
-	hybrid bool,
-	otherAttrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_edge_group" "%s" {
-		name = "%s"
-		description = "%s"
-		managed = "%v"
-		hybrid = "%v"
-		%s
-	}
-	`, edgeGroupRes, name, description, managed, hybrid, strings.Join(otherAttrs, "\n"))
-}
-
-func generatePhoneTrunkBaseIds(userIDs ...string) string {
-	return fmt.Sprintf(`phone_trunk_base_ids = [%s]
-	`, strings.Join(userIDs, ","))
 }

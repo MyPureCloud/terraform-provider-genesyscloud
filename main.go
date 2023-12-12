@@ -136,7 +136,7 @@ func registerResources() {
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	team.SetRegistrar(regInstance)                          //Registering team
 	telephony.SetRegistrar(regInstance)                     //Registering telephony package
-	edgeGroup.SetRegistrar(regInstance)                     //Registering edge edge group
+	edgeGroup.SetRegistrar(regInstance)                     //Registering edges edge group
 	webDeployConfig.SetRegistrar(regInstance)               //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)               //Registering webdeployments_deploy
 	authorizatioProduct.SetRegistrar(regInstance)           //Registering Authorization Product

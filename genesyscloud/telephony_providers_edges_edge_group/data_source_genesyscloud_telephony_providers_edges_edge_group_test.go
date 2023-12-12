@@ -48,7 +48,7 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 					edgeGroupDescription1,
 					false,
 					false,
-					generatePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes1+".id",
+					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes1+".id",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes2+".id"),
 				) + generateEdgeGroupDataSource(
 					edgeGroupData,
