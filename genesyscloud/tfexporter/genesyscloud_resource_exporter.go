@@ -70,7 +70,6 @@ type GenesysCloudResourceExporter struct {
 	provider               *schema.Provider
 	exportDirPath          string
 	exporters              *map[string]*resourceExporter.ResourceExporter
-	existingExporters      *map[string]*resourceExporter.ResourceExporter
 	resources              []resourceExporter.ResourceInfo
 	resourceTypesHCLBlocks map[string]resourceHCLBlock
 	resourceTypesMaps      map[string]resourceJSONMaps
@@ -496,7 +495,6 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	g.resourceTypeFilter = IncludeFilterByResourceType
 	g.resourceFilter = FilterResourceByName
 	g.filterList = &filterList
-	//existingExporters := g.exporters
 	existingExportersInterface := deepcopy.Copy(*g.exporters)
 	existingExporters, _ := existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
 
