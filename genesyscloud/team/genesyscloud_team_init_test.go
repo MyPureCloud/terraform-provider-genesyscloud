@@ -40,7 +40,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_team"] = DataSourceTeam()
 }
 
-// initTestresources initializes all test resources and data sources.
+// initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
