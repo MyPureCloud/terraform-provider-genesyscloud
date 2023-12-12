@@ -14,7 +14,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
-func dataSourceEdgeGroup() *schema.Resource {
+func DataSourceEdgeGroup() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Edge Group. Select an edge group by name",
 		ReadContext: gcloud.ReadWithPooledClient(dataSourceEdgeGroupRead),

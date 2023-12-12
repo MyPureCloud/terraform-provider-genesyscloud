@@ -2,6 +2,7 @@ package telephony
 
 import (
 	"fmt"
+	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
@@ -95,4 +96,26 @@ func generateTrunk(
 		edge_group_id = %s
 	}
 	`, trunkRes, trunkBaseSettingsId, edgeGroupId)
+}
+
+func GenerateEdgeGroupResourceWithCustomAttrs(
+	edgeGroupRes,
+	name,
+	description string,
+	managed,
+	hybrid bool,
+	otherAttrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_edge_group" "%s" {
+		name = "%s"
+		description = "%s"
+		managed = "%v"
+		hybrid = "%v"
+		%s
+	}
+	`, edgeGroupRes, name, description, managed, hybrid, strings.Join(otherAttrs, "\n"))
+}
+
+func generatePhoneTrunkBaseIds(userIDs ...string) string {
+	return fmt.Sprintf(`phone_trunk_base_ids = [%s]
+	`, strings.Join(userIDs, ","))
 }
