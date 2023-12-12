@@ -159,19 +159,19 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 		return diagErr
 	}
 
-	// Step #4 Retrieve the individual genesys cloud object instances
+	// Step #3 Retrieve the individual genesys cloud object instances
 	diagErr = g.retrieveGenesysCloudObjectInstances()
 	if diagErr != nil {
 		return diagErr
 	}
 
-	// Step #5 Convert the Genesys Cloud resources to neutral format (e.g. map of maps)
+	// Step #4 Convert the Genesys Cloud resources to neutral format (e.g. map of maps)
 	diagErr = g.buildAndExportDependsOnResources()
 	if diagErr != nil {
 		return diagErr
 	}
 
-	// Step #6 Convert the Genesys Cloud resources to neutral format (e.g. map of maps)
+	// Step #5 Convert the Genesys Cloud resources to neutral format (e.g. map of maps)
 	diagErr = g.buildResourceConfigMap()
 	if diagErr != nil {
 		return diagErr
@@ -211,6 +211,7 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 
 	g.exporters = &exports
 
+	// Assign excluded attributes to the config Map
 	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
 		if diagErr := g.populateConfigExcluded(*g.exporters, lists.InterfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
 			return diagErr
@@ -473,18 +474,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 	return filterList, totalResources, nil
 }
 
-func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []string, resources resourceExporter.ResourceIDMetaMap) (diagErr diag.Diagnostics) {
-	g.resourceTypeFilter = IncludeFilterByResourceType
-	g.resourceFilter = FilterResourceByName
-	g.filterList = &filterList
-	//existingExporters := g.exporters
-	existingExportersInterface := deepcopy.Copy(*g.exporters)
-	existingExporters, _ := existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
-
-	existingResources := g.resources
-	g.resources = nil
-	uniqueResources := make([]resourceExporter.ResourceInfo, 0)
-	removeChan := make([]string, 0)
+func (g *GenesysCloudResourceExporter) rebuildExports(filterList []string) (diagErr diag.Diagnostics) {
 	diagErr = g.retrieveExporters()
 	if diagErr != nil {
 		return diagErr
@@ -499,8 +489,28 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	if diagErr != nil {
 		return diagErr
 	}
-	// retain the exporters and resources
+	return nil
+}
 
+func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []string, resources resourceExporter.ResourceIDMetaMap) (diagErr diag.Diagnostics) {
+	g.resourceTypeFilter = IncludeFilterByResourceType
+	g.resourceFilter = FilterResourceByName
+	g.filterList = &filterList
+	//existingExporters := g.exporters
+	existingExportersInterface := deepcopy.Copy(*g.exporters)
+	existingExporters, _ := existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
+
+	existingResources := g.resources
+	g.resources = nil
+	uniqueResources := make([]resourceExporter.ResourceInfo, 0)
+	removeChan := make([]string, 0)
+
+	err := g.rebuildExports(filterList)
+	if err != nil {
+		return err
+	}
+
+	// retain the exporters and resources
 	for _, exporter := range *g.exporters {
 		for id, _ := range exporter.SanitizedResourceMap {
 			_, exists := resources[id]
@@ -520,13 +530,12 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 			uniqueResources = append(uniqueResources, resource)
 		}
 	}
-	//depExportersInterface := g.exporters
+	// deep copy is needed here else exporters being overridden
 	depExportersInterface := deepcopy.Copy(*g.exporters)
 	depExporters, _ := depExportersInterface.(map[string]*resourceExporter.ResourceExporter)
 
-	// will make sure only dependency resources are resolved
+	// this is done before the merge of exporters and this will make sure only dependency resources are resolved
 	g.buildResourceConfigMap()
-
 	g.exportAndResolveDependencyAttributes()
 
 	g.resources = append(existingResources, append(uniqueResources, g.resources...)...)
@@ -540,6 +549,8 @@ func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (d
 	g.resources = nil
 	exp := make(map[string]*resourceExporter.ResourceExporter, 0)
 	filterListById := make([]string, 0)
+
+	// build filter list with guid.
 	for refType, guidList := range g.buildSecondDeps {
 		if refType != "" {
 			for _, guid := range guidList {
@@ -549,11 +560,10 @@ func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (d
 			}
 		}
 	}
-	exports := make(map[string]*resourceExporter.ResourceExporter, 0)
-	g.existingExporters = &exports
+
 	if len(filterListById) > 0 {
 		g.resourceFilter = FilterResourceById
-		g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp, 0)
+		g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp)
 	}
 
 	return nil
@@ -562,7 +572,7 @@ func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (d
 // Recursive function to perform operations based on filterListById length
 func (g *GenesysCloudResourceExporter) chainDependencies(
 	existingResources []resourceExporter.ResourceInfo,
-	existingExporters map[string]*resourceExporter.ResourceExporter, level int) (diagErr diag.Diagnostics) {
+	existingExporters map[string]*resourceExporter.ResourceExporter) (diagErr diag.Diagnostics) {
 	filterListById := make([]string, 0)
 
 	for refType, guidList := range g.buildSecondDeps {
@@ -579,37 +589,24 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 	if len(*g.filterList) > 0 {
 		g.resources = nil
 		g.exporters = nil
-		level = level + 1
-		diagErr = g.retrieveExporters()
-		if diagErr != nil {
-			return diagErr
-		}
-
-		diagErr := g.buildSanitizedResourceMaps(*g.exporters, *g.filterList, g.logPermissionErrors)
-		if diagErr != nil {
-			return diagErr
-		}
-
-		diagErr = g.retrieveGenesysCloudObjectInstances()
-		if diagErr != nil {
-			return diagErr
+		err := g.rebuildExports(*g.filterList)
+		if err != nil {
+			return err
 		}
 
 		g.buildResourceConfigMap()
 
+		//append the resources and exporters
 		g.resources = append(existingResources, g.resources...)
-
 		g.exporters = mergeExporters(existingExporters, *g.exporters)
 
-		existingResources1 := g.resources
-		*g.existingExporters = *g.exporters
+		// deep copy is needed here else exporters being overridden
+		existingExportersInterface := deepcopy.Copy(*g.exporters)
+		existingExporters, _ = existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
+		existingResources = g.resources
 
-		existingExporters1 := deepcopy.Copy(*g.exporters)
-
-		existingExporters, _ = existingExporters1.(map[string]*resourceExporter.ResourceExporter)
-
-		// Recursive call
-		return g.chainDependencies(existingResources1, existingExporters, level)
+		// Recursive call until all the dependencies are addressed.
+		return g.chainDependencies(existingResources, existingExporters)
 	}
 	return nil
 }

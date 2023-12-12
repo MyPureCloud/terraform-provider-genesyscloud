@@ -197,7 +197,7 @@ func TestUnitMergeExporters(t *testing.T) {
 	}
 
 	// Call the function
-	result := mergeExporters(&m1, &m2)
+	result := mergeExporters(m1, m2)
 
 	expectedKeys := map[string][]string{
 		"exporter1": {"key1", "key2"},
