@@ -1,9 +1,10 @@
-package telephony
+package telephony_providers_edges_edge_group
 
 import (
 	"fmt"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	"testing"
 
 	"github.com/google/uuid"
@@ -28,14 +29,14 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 	)
 
 	// Original phone settings
-	phoneTrunkBaseSetting1 := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting1 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes1,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
 		"PHONE",
 		false)
-	phoneTrunkBaseSetting2 := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting2 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes2,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
@@ -44,7 +45,7 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 		false)
 
 	// Updated phone settings
-	phoneTrunkBaseSetting3 := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting3 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes3,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
@@ -57,7 +58,7 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + generateEdgeGroupResourceWithCustomAttrs(
+				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + GenerateEdgeGroupResourceWithCustomAttrs(
 					edgeGroupRes,
 					edgeGroupName1,
 					edgeGroupDescription1,
@@ -74,7 +75,7 @@ func TestAccResourceEdgeGroup(t *testing.T) {
 			},
 			// Update with new name, description and phone trunk base
 			{
-				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + phoneTrunkBaseSetting3 + generateEdgeGroupResourceWithCustomAttrs(
+				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + phoneTrunkBaseSetting3 + GenerateEdgeGroupResourceWithCustomAttrs(
 					edgeGroupRes,
 					edgeGroupName2,
 					edgeGroupDescription2,
@@ -123,7 +124,7 @@ func testVerifyEdgeGroupsDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func generateEdgeGroupResourceWithCustomAttrs(
+func GenerateEdgeGroupResourceWithCustomAttrs(
 	edgeGroupRes,
 	name,
 	description string,

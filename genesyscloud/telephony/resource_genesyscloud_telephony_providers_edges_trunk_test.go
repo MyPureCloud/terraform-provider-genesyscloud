@@ -48,7 +48,7 @@ func TestAccResourceTrunk(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create the trunk by creating trunk base settings and an edge group and assigning the trunk base settings to the edge group
 			{
-				Config: generateEdgeGroupResourceWithCustomAttrs(
+				Config: GenerateEdgeGroupResourceWithCustomAttrs(
 					edgeGroupRes1,
 					"test edge group "+uuid.NewString(),
 					"edge group description 1",
@@ -66,7 +66,7 @@ func TestAccResourceTrunk(t *testing.T) {
 			},
 			//Create a new edge group and assign the trunk base settings to a new edge group to update the trunk
 			{
-				Config: generateEdgeGroupResourceWithCustomAttrs(
+				Config: GenerateEdgeGroupResourceWithCustomAttrs(
 					edgeGroupRes2,
 					"test edge group "+uuid.NewString(),
 					"edge group description 2",

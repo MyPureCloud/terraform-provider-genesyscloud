@@ -47,7 +47,7 @@ func TestAccDataSourceTrunk(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateEdgeGroupResourceWithCustomAttrs(
+				Config: GenerateEdgeGroupResourceWithCustomAttrs(
 					edgeGroupRes1,
 					"test edge group "+uuid.NewString(),
 					"edge group description 1",

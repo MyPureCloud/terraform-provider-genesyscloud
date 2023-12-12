@@ -1,4 +1,4 @@
-package telephony
+package telephony_providers_edges_edge_group
 
 import (
 	"context"

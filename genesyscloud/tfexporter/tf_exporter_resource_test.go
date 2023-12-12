@@ -26,6 +26,7 @@ import (
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
+	"terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	webdeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
@@ -206,7 +207,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_routing_sms_address", routingSmsAddress.RoutingSmsAddressExporter())
 	RegisterExporter("genesyscloud_routing_utilization", gcloud.RoutingUtilizationExporter())
 	RegisterExporter("genesyscloud_routing_wrapupcode", gcloud.RoutingWrapupCodeExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_edge_group", telephony.EdgeGroupExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_edge_group", telephony_providers_edges_edge_group.EdgeGroupExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", gcloud.TelephonyExtensionPoolExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_phone", edgePhone.PhoneExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_site", edgeSite.SiteExporter())
