@@ -2,11 +2,16 @@ package tfexporter
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"reflect"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/stretchr/testify/assert"
+
 	"testing"
 
 	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
@@ -129,6 +134,101 @@ func TestRemoveZeroValuesFunc(t *testing.T) {
 	if m["zeroInt"] != nil {
 		t.Errorf("Expected 'zeroInt' map item to be: nil, got: %v", m["zeroInt"])
 	}
+}
+
+// TestAllowEmptyArray will test if fields included in the exporter property `AllowEmptyArrays`
+// will retain empty arrays in the configMap when their state values are null or [].
+// Empty array fields not included in `AllowEmptyArrays` will be sanitized to nil by default,
+// and other arrays shouldn't be affected.
+func TestAllowEmptyArray(t *testing.T) {
+	testResourceType := "test_allow_empty_array_resource"
+	testResourceId := "test_id"
+	testResourceName := "test_res_name"
+	testExporter := &resourceExporter.ResourceExporter{
+		AllowEmptyArrays: []string{"null_arr_attr", "nested.arr_attr"},
+	}
+
+	// Test Resource Schema
+	testResource := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"null_arr_attr": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{Type: schema.TypeString},
+			},
+			"arr_attr_2": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{Type: schema.TypeString},
+			},
+			"arr_attr_3": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{Type: schema.TypeString},
+			},
+			"nested": {
+				Type: schema.TypeList,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"arr_attr": {
+							Type: schema.TypeList,
+							Elem: &schema.Schema{Type: schema.TypeString},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Test Resource Exporter
+	testResourceExporter := GenesysCloudResourceExporter{
+		filterType:         IncludeResources,
+		resourceTypeFilter: IncludeFilterByResourceType,
+		resourceFilter:     IncludeFilterResourceByRegex,
+		exportAsHCL:        true,
+		exporters: &map[string]*resourceExporter.ResourceExporter{
+			testResourceType: testExporter,
+		},
+		resources: []resourceExporter.ResourceInfo{
+			{
+				Name: testResourceName,
+				Type: testResourceType,
+				State: &terraform.InstanceState{
+					ID: testResourceId,
+					Attributes: map[string]string{
+						// Empty array and included in `AllowEmptyArrays`
+						"nested.#":            "1",
+						"nested.0.arr_attr.#": "0",
+
+						// Empty array but not included in `AllowEmptyArrays`
+						"arr_attr_2.#": "0",
+
+						// An non-empty array
+						"arr_attr_3.#": "1",
+						"arr_attr_3.0": "some value",
+					},
+				},
+				CtyType: testResource.CoreConfigSchema().ImpliedType(),
+			},
+		},
+	}
+
+	diagErr := testResourceExporter.buildResourceConfigMap()
+	if diagErr != nil {
+		t.Errorf("failure: %v", diagErr)
+	}
+
+	configMap := testResourceExporter.resourceTypesMaps[testResourceType][testResourceName]
+
+	// Empty array fields included in `AllowEmptyArrays` should be empty arrays
+	assert.NotNil(t, configMap["null_arr_attr"])
+	assert.Len(t, configMap["null_arr_attr"], 0)
+	assert.NotNil(t, configMap["nested"].([]interface{})[0].(map[string]interface{})["arr_attr"])
+	assert.Len(t, configMap["nested"].([]interface{})[0].(map[string]interface{})["arr_attr"], 0)
+
+	// Empty arrays not in `AllowEmptyArrays` should be nil
+	assert.Nil(t, configMap["arr_attr_2"])
+
+	// Arrays with values, no effect
+	assert.NotNil(t, configMap["arr_attr_3"])
+	assert.Len(t, configMap["arr_attr_3"], 1)
 }
 
 func TestUnitBuildDependsOnResources(t *testing.T) {

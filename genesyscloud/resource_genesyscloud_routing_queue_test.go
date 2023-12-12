@@ -2,15 +2,16 @@ package genesyscloud
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -47,7 +48,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingSkillResource(queueSkillResource, queueSkillName) +
+				Config: GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
 					generateGroupResource(
 						bullseyeMemberGroupName,
 						"MySeries6Group",
@@ -769,7 +770,7 @@ func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateRoutingSkillResource(
+				Config: GenerateRoutingSkillResource(
 					skillResourceId,
 					skillName,
 				) + skillGroupConfig + user2Config +

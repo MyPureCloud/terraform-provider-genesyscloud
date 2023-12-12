@@ -3,14 +3,15 @@ package outbound_campaignrule
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUnitResourceOutboundCampaignruleCreate(t *testing.T) {

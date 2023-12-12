@@ -10,7 +10,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 /*
@@ -37,7 +37,7 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Default division
 			{
-				Config: generateWorkbinResource(workbinResId, workbinName, workDescription, nullValue) +
+				Config: GenerateWorkbinResource(workbinResId, workbinName, workDescription, nullValue) +
 					"\n data \"genesyscloud_auth_division_home\" \"home\" {}",
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+workbinResId, "name", workbinName),
@@ -49,7 +49,7 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 			{
 				Config: gcloud.GenerateAuthDivisionBasic(divisionResId1, divisionName1) +
 					gcloud.GenerateAuthDivisionBasic(divisionResId2, divisionName2) +
-					generateWorkbinResource(workbinResId, workbinName, workDescription, "genesyscloud_auth_division."+divisionResId1+".id"),
+					GenerateWorkbinResource(workbinResId, workbinName, workDescription, "genesyscloud_auth_division."+divisionResId1+".id"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+workbinResId, "name", workbinName),
 					resource.TestCheckResourceAttr(resourceName+"."+workbinResId, "description", workDescription),
@@ -59,7 +59,7 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 			{
 				Config: gcloud.GenerateAuthDivisionBasic(divisionResId1, divisionName1) +
 					gcloud.GenerateAuthDivisionBasic(divisionResId2, divisionName2) +
-					generateWorkbinResource(workbinResId, workbinName, workDescription, "genesyscloud_auth_division."+divisionResId2+".id"),
+					GenerateWorkbinResource(workbinResId, workbinName, workDescription, "genesyscloud_auth_division."+divisionResId2+".id"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(resourceName+"."+workbinResId, "division_id", "genesyscloud_auth_division."+divisionResId2, "id"),
 				),
@@ -89,13 +89,4 @@ func testVerifyTaskManagementWorkbinDestroyed(state *terraform.State) error {
 	}
 	// Success. All workbins destroyed
 	return nil
-}
-
-func generateWorkbinResource(resourceId string, name string, description string, divisionIdRef string) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
-		name = "%s"
-		description = "%s"
-		division_id = %s
-	}
-	`, resourceName, resourceId, name, description, divisionIdRef)
 }

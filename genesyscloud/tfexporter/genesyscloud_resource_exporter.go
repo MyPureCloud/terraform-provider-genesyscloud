@@ -25,7 +25,7 @@ import (
 	stringmap "terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 /*
@@ -1031,6 +1031,15 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		// AllowZeroValues list.
 		if !exporter.AllowForZeroValues(currAttr) {
 			removeZeroValues(key, configMap[key], configMap)
+		}
+
+		// Nil arrays will be turned into empty arrays if they're defined in AllowEmptyArrays.
+		// We do this after the initial sanitization of empty arrays to nil
+		// so this will cover both cases where the attribute on the state is: null or [].
+		if exporter.AllowForEmptyArrays(currAttr) {
+			if configMap[key] == nil {
+				configMap[key] = []interface{}{}
+			}
 		}
 
 		//If the exporter as has customer resolver for an attribute, invoke it.

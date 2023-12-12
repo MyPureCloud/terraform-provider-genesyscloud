@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func TestAccResourceIdpGeneric(t *testing.T) {
@@ -31,7 +31,7 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 				// Create
 				Config: generateIdpGenericResource(
 					name1,
-					generateStringArray(strconv.Quote(testCert1)),
+					GenerateStringArray(strconv.Quote(testCert1)),
 					uri1,
 					uri2,
 					NullValue, // No relying party ID
@@ -56,7 +56,7 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 				// Update with new values
 				Config: generateIdpGenericResource(
 					name2,
-					generateStringArray(strconv.Quote(testCert2)),
+					GenerateStringArray(strconv.Quote(testCert2)),
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID1),
@@ -81,7 +81,7 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 				// Update with multiple certs
 				Config: generateIdpGenericResource(
 					name2,
-					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					GenerateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
@@ -104,7 +104,7 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 				// Update to one cert in array
 				Config: generateIdpGenericResource(
 					name2,
-					generateStringArray(strconv.Quote(testCert1)),
+					GenerateStringArray(strconv.Quote(testCert1)),
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
@@ -127,7 +127,7 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 				// Update back to two certs in array
 				Config: generateIdpGenericResource(
 					name2,
-					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					GenerateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
 					uri2,
 					uri1,
 					strconv.Quote(relyingPartyID2),
