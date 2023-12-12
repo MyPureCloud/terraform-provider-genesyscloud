@@ -24,6 +24,7 @@ import (
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	webdeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
@@ -138,6 +139,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
 	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
+	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
 
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
@@ -228,6 +230,7 @@ func (r *registerTestInstance) registerTestExporters() {
 
 	RegisterExporter("genesyscloud_task_management_workbin", workbin.TaskManagementWorkbinExporter())
 	RegisterExporter("genesyscloud_task_management_workitem_schema", workbin.TaskManagementWorkbinExporter())
+	RegisterExporter("genesyscloud_task_management_worktype", worktype.TaskManagementWorktypeExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }

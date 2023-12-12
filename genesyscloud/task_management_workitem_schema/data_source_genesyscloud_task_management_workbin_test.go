@@ -28,7 +28,7 @@ func TestAccDataSourceTaskManagementWorkitemSchema(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateWorkitemSchemaResourceBasic(schemaResId, schemaName, schemaDescription) +
+				Config: GenerateWorkitemSchemaResourceBasic(schemaResId, schemaName, schemaDescription) +
 					generateWorkitemSchemaDataSource(schemaDataSourceId, schemaName, resourceName+"."+schemaResId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data."+resourceName+"."+schemaDataSourceId, "id", resourceName+"."+schemaResId, "id"),

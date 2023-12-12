@@ -422,7 +422,7 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) 
 		}
 	)
 
-	routingSkillResource := generateRoutingSkillResource(routingSkillResourceId, routingSkillName)
+	routingSkillResource := GenerateRoutingSkillResource(routingSkillResourceId, routingSkillName)
 
 	division1Resource := GenerateAuthDivisionBasic(division1ResourceId, division1Name)
 	division2Resource := GenerateAuthDivisionBasic(division2ResourceId, division2Name)

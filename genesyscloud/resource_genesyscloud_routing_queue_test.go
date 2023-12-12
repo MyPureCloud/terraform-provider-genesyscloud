@@ -48,7 +48,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingSkillResource(queueSkillResource, queueSkillName) +
+				Config: GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
 					generateGroupResource(
 						bullseyeMemberGroupName,
 						"MySeries6Group",
@@ -770,7 +770,7 @@ func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateRoutingSkillResource(
+				Config: GenerateRoutingSkillResource(
 					skillResourceId,
 					skillName,
 				) + skillGroupConfig + user2Config +
