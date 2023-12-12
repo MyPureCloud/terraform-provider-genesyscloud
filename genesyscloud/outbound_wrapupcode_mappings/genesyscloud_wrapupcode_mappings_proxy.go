@@ -84,12 +84,10 @@ func getAllWrapupCodesFn(ctx context.Context, p *outboundWrapupCodeMappingsProxy
 	if err != nil {
 		return nil, err
 	}
-	for _, wuc := range *wucList.Entities {
-		wucs = append(wucs, wuc)
-	}
+	wucs = append(wucs, *wucList.Entities...)
 
 	for pageNum := 2; pageNum <= *wucList.PageCount; pageNum++ {
-		wucList, _, err := p.routingApi.GetRoutingWrapupcodes(pageSize, 1, "", "", "", nil, nil)
+		wucList, _, err := p.routingApi.GetRoutingWrapupcodes(pageSize, pageNum, "", "", "", nil, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -98,9 +96,7 @@ func getAllWrapupCodesFn(ctx context.Context, p *outboundWrapupCodeMappingsProxy
 			break
 		}
 
-		for _, wuc := range *wucList.Entities {
-			wucs = append(wucs, wuc)
-		}
+		wucs = append(wucs, *wucList.Entities...)
 	}
 
 	return &wucs, nil
