@@ -28,14 +28,13 @@ func (r *registerTestInstance) registerTestResources() {
 
 }
 
-// initTestresources initializes all test resources and data sources.
-func initTestresources() {
+// initTestResources initializes all test resources and data sources.
+func initTestResources() {
 	providerResources = make(map[string]*schema.Resource)
 
-	reg_instance := &registerTestInstance{}
+	regInstance := &registerTestInstance{}
 
-	reg_instance.registerTestResources()
-
+	regInstance.registerTestResources()
 }
 
 // initTestDataSources is used to initialize data sources used in the test code.  There are no data sources associated with genesyscloud_wrapupcode_mappings resources.
@@ -45,7 +44,7 @@ func initTestDataSources() {
 
 // TestMain is a "setup" function called by the testing framework when run the
 func TestMain(m *testing.M) {
-	initTestresources()
+	initTestResources()
 	initTestDataSources()
 
 	m.Run()

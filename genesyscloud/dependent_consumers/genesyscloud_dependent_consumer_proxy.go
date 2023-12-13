@@ -33,7 +33,7 @@ type retrievePooledClientFunc func(method gcloud.GetCustomConfigFunc) (resourceE
 
 var InternalProxy *DependentConsumerProxy
 
-// getDependentConsumerProxy acts as a singleton to for the InternalProxy.
+// GetDependentConsumerProxy acts as a singleton to for the InternalProxy.
 func GetDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *DependentConsumerProxy {
 	return newDependentConsumerProxy(ClientConfig)
 }
@@ -57,9 +57,10 @@ func newDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *De
 }
 
 func retrievePooledClientFn(method gcloud.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
-	resourcefunc := gcloud.GetAllWithPooledClientCustom(method)
-	ctx, _ := context.WithCancel(context.Background())
-	resources, dependsMap, err := resourcefunc(ctx)
+	resourceFunc := gcloud.GetAllWithPooledClientCustom(method)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	resources, dependsMap, err := resourceFunc(ctx)
 	if err != nil {
 		return nil, nil, err
 	}

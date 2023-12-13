@@ -41,23 +41,22 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_integration_credential"] = DataSourceIntegrationCredential()
 }
 
-// initTestresources initializes all test resources and data sources.
-func initTestresources() {
+// initTestResources initializes all test resources and data sources.
+func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
-	reg_instance := &registerTestInstance{}
+	regInstance := &registerTestInstance{}
 
-	reg_instance.registerTestDataSources()
-	reg_instance.registerTestResources()
-
+	regInstance.registerTestDataSources()
+	regInstance.registerTestResources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
 	// Run setup function before starting the test suite for integration_credential package
-	initTestresources()
+	initTestResources()
 
-	// Run the test suite for suite for the integration_credential package
+	// Run the test suite for the integration_credential package
 	m.Run()
 }
