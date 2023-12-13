@@ -3,6 +3,7 @@ package outbound_wrapupcode_mappings
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -117,9 +118,7 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 	})
 }
 
-// The mappings field is built using a map before being sent to the API, meaning the ordering of keys is changed,
-// which makes it difficult to test values in the mappings list. This function loops through the state to find the correct
-// item before testing attribute values
+// verifyWrapupCodeMappingsMappingValues checks that the mapping attribute has the correct flags set.
 func verifyWrapupCodeMappingsMappingValues(resourceName string, wrapupCodeResourceName string, expectedFlags []string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		resourceState, ok := state.RootModule().Resources[resourceName]
@@ -133,26 +132,44 @@ func verifyWrapupCodeMappingsMappingValues(resourceName string, wrapupCodeResour
 		}
 		expectedWrapupCodeId := wrapupCodeResourceState.Primary.ID
 
-		numAttr, ok := resourceState.Primary.Attributes["mappings.#"]
+		_, ok = resourceState.Primary.Attributes["mappings.#"]
 		if !ok {
 			return fmt.Errorf("No mappings found for %s in state", resourceState.Primary.ID)
 		}
 
-		numValues, _ := strconv.Atoi(numAttr)
-		for i := 0; i < numValues; i++ {
-			if resourceState.Primary.Attributes["mappings."+strconv.Itoa(i)+".wrapup_code_id"] == expectedWrapupCodeId {
-				numFlagsStr := resourceState.Primary.Attributes["mappings."+strconv.Itoa(i)+".flags.#"]
-				numFlags, _ := strconv.Atoi(numFlagsStr)
-				flagsList := make([]string, 0)
-				for j := 0; j < numFlags; j++ {
-					flagsList = append(flagsList, resourceState.Primary.Attributes[fmt.Sprintf("mappings.%v.flags.%v", strconv.Itoa(i), strconv.Itoa(j))])
-				}
+		// Since we're dealing with a set, we'll keep track of the special index
+		// in the state that correspond to mappings attribute
+		mapSetIndices := make([]string, 0)
+		for stateKey := range resourceState.Primary.Attributes {
+			stateKeyParts := strings.Split(stateKey, ".")
+			if len(stateKeyParts) < 3 || stateKeyParts[0] != "mappings" {
+				continue
+			}
+			mapSetIndices = append(mapSetIndices, stateKeyParts[1])
+		}
+
+		for _, msi := range mapSetIndices {
+			wucId := resourceState.Primary.Attributes["mappings."+msi+".wrapup_code_id"]
+			flagsList := attributeFlagsToList("mappings."+msi+".flags", resourceState.Primary.Attributes)
+			if wucId == expectedWrapupCodeId {
 				if !lists.AreEquivalent(flagsList, expectedFlags) {
-					return fmt.Errorf("mismatch for field %v. Expected: %v, got: %v\n", fmt.Sprintf("mappings.%v.flags", strconv.Itoa(i)), expectedFlags, flagsList)
+					return fmt.Errorf("mismatch for field %v. Expected: %v, got: %v\n", fmt.Sprintf("mappings.%v.flags", msi), expectedFlags, flagsList)
 				}
 				return nil
 			}
 		}
 		return fmt.Errorf("Could not find wrapupcode with id %s in state", expectedWrapupCodeId)
 	}
+}
+
+// attributeFlagsToList return a list of the mapping flags from the tf state attributes
+func attributeFlagsToList(flagPrefix string, attr map[string]string) []string {
+	const maxFlags = 3
+	ret := make([]string, 0)
+	for i := 0; i < maxFlags; i++ {
+		if flagVal, ok := attr[flagPrefix+"."+strconv.Itoa(i)]; ok {
+			ret = append(ret, flagVal)
+		}
+	}
+	return ret
 }

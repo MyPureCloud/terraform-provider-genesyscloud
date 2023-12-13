@@ -12,6 +12,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -57,19 +58,7 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings())
 
-		// Match new random ordering of list returned from API
-		if sdkWrapupCodeMappings.DefaultSet != nil {
-			defaultSet := make([]string, 0)
-			schemaDefaultSet := d.Get("default_set").([]interface{})
-			for _, v := range schemaDefaultSet {
-				defaultSet = append(defaultSet, v.(string))
-			}
-			if lists.AreEquivalent(defaultSet, *sdkWrapupCodeMappings.DefaultSet) {
-				d.Set("default_set", defaultSet)
-			} else {
-				d.Set("default_set", lists.StringListToInterfaceList(*sdkWrapupCodeMappings.DefaultSet))
-			}
-		}
+		resourcedata.SetNillableValue(d, "default_set", sdkWrapupCodeMappings.DefaultSet)
 
 		existingWrapupCodes := make([]string, 0)
 		for _, wuc := range *wrapupCodes {
@@ -98,7 +87,7 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 		}
 
 		wrapupCodeUpdate := platformclientv2.Wrapupcodemapping{
-			DefaultSet: lists.BuildSdkStringListFromInterfaceArray(d, "default_set"),
+			DefaultSet: lists.BuildSdkStringList(d, "default_set"),
 			Mapping:    buildWrapupCodeMappings(d),
 			Version:    wrapupCodeMappings.Version,
 		}

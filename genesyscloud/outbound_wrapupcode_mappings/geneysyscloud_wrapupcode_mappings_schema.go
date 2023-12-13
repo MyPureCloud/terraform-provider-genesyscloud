@@ -13,6 +13,29 @@ import (
 
 const resourceName = "genesyscloud_outbound_wrapupcodemappings"
 
+var (
+	flagsSchema = &schema.Schema{
+		Type:         schema.TypeString,
+		ValidateFunc: validation.StringInSlice([]string{"CONTACT_UNCALLABLE", "NUMBER_UNCALLABLE", "RIGHT_PARTY_CONTACT"}, true),
+	}
+
+	mappingResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`wrapup_code_id`: {
+				Description: `The wrap-up code identifier.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`flags`: {
+				Description: `The set of wrap-up flags.`,
+				Required:    true,
+				Type:        schema.TypeSet,
+				Elem:        flagsSchema,
+			},
+		},
+	}
+)
+
 // SetRegistrar registers the resource objects and the exporter.  Note:  There is no datasource implementation
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource(resourceName, ResourceOutboundWrapUpCodeMappings())
@@ -48,34 +71,21 @@ func ResourceOutboundWrapUpCodeMappings() *schema.Resource {
 			`default_set`: {
 				Description: `The default set of wrap-up flags. These will be used if there is no entry for a given wrap-up code in the mapping.`,
 				Required:    true,
-				Type:        schema.TypeList,
-				Elem: &schema.Schema{
-					Type:         schema.TypeString,
-					ValidateFunc: validation.StringInSlice([]string{"CONTACT_UNCALLABLE", "NUMBER_UNCALLABLE", "RIGHT_PARTY_CONTACT"}, true),
-				},
+				Type:        schema.TypeSet,
+				Elem:        flagsSchema,
 			},
 			`mappings`: {
 				Description: `A map from wrap-up code identifiers to a set of wrap-up flags.`,
 				Optional:    true,
-				Type:        schema.TypeList,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						`wrapup_code_id`: {
-							Description: `The wrap-up code identifier.`,
-							Required:    true,
-							Type:        schema.TypeString,
-						},
-						`flags`: {
-							Description: `The set of wrap-up flags.`,
-							Required:    true,
-							Type:        schema.TypeList,
-							Elem: &schema.Schema{
-								Type:         schema.TypeString,
-								ValidateFunc: validation.StringInSlice([]string{"CONTACT_UNCALLABLE", "NUMBER_UNCALLABLE", "RIGHT_PARTY_CONTACT"}, true),
-							},
-						},
-					},
-				},
+				Type:        schema.TypeSet,
+				Elem:        mappingResource,
+			},
+			`placeholder`: {
+				Description:  `Placeholder data used internally by the provider.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				Default:      "***",
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 		},
 	}
