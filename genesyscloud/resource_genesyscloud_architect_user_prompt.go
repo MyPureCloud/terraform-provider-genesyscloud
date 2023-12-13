@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -797,8 +798,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	prompt := platformclientv2.Prompt{
-		Name:        &name,
-		Description: &description,
+		Name: &name,
 	}
 
 	if description != "" {
@@ -819,23 +819,23 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 			resourceLanguage := resourceMap["language"].(string)
 
 			tag := make(map[string][]string)
-			tag["filename"] = []string{resourceMap["filename"].(string)}
+			resourceFilenameStr := ""
+			if filename, ok := resourceMap["filename"].(string); ok && filename != "" {
+				tag["filename"] = []string{filename}
+				resourceFilenameStr = filename
+			}
 
 			promptResource := platformclientv2.Promptassetcreate{
 				Language: &resourceLanguage,
 				Tags:     &tag,
 			}
 
-			resourceTtsString := resourceMap["tts_string"]
-			if resourceTtsString != nil || resourceTtsString.(string) != "" {
-				strResourceTtsString := resourceTtsString.(string)
-				promptResource.TtsString = &strResourceTtsString
+			if resourceTtsString, ok := resourceMap["tts_string"].(string); ok && resourceTtsString != "" {
+				promptResource.TtsString = &resourceTtsString
 			}
 
-			resourceText := resourceMap["text"]
-			if resourceText != nil || resourceText.(string) != "" {
-				strResourceText := resourceText.(string)
-				promptResource.Text = &strResourceText
+			if resourceText, ok := resourceMap["text"].(string); ok && resourceText != "" {
+				promptResource.Text = &resourceText
 			}
 
 			log.Printf("Creating user prompt resource for language: %s", resourceLanguage)
@@ -845,11 +845,9 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 			}
 			uploadUri := userPromptResource.UploadUri
 
-			resourceFilename := resourceMap["filename"]
-			if resourceFilename.(string) == "" {
+			if resourceFilenameStr == "" {
 				continue
 			}
-			resourceFilenameStr := resourceFilename.(string)
 
 			if err := uploadPrompt(uploadUri, &resourceFilenameStr, sdkConfig); err != nil {
 				d.SetId(*userPrompt.Id)
@@ -886,24 +884,19 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt())
-		if userPrompt.Name != nil {
-			d.Set("name", *userPrompt.Name)
-		} else {
-			d.Set("name", nil)
-		}
 
-		if userPrompt.Description != nil {
-			d.Set("description", *userPrompt.Description)
-		} else {
-			d.Set("description", nil)
-		}
+		resourcedata.SetNillableValue(d, "name", userPrompt.Name)
+		resourcedata.SetNillableValue(d, "description", userPrompt.Description)
 
-		if resources, ok := d.GetOk("resources"); ok && resources != nil {
-			promptResources := resources.(*schema.Set).List()
+		if resourcesSet, ok := d.Get("resources").(*schema.Set); ok && resourcesSet != nil {
+			promptResources := resourcesSet.List()
 			for _, promptResource := range promptResources {
-				resourceMap := promptResource.(map[string]interface{})
-				resourceFilename := resourceMap["filename"]
-				if resourceFilename.(string) == "" {
+				resourceMap, ok := promptResource.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				resourceFilename, ok := resourceMap["filename"].(string)
+				if !ok || resourceFilename == "" {
 					continue
 				}
 				APIResources := *userPrompt.Resources
@@ -911,8 +904,12 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 				for _, APIResource := range APIResources {
 					if APIResource.Tags != nil {
 						tags := *APIResource.Tags
-						if len(tags["filename"]) > 0 {
-							if tags["filename"][0] == resourceFilename {
+						filenameTag, ok := tags["filename"]
+						if !ok {
+							continue
+						}
+						if len(filenameTag) > 0 {
+							if filenameTag[0] == resourceFilename {
 								if *APIResource.UploadStatus == "transcoded" {
 									isTranscoded = true
 								}
@@ -921,12 +918,12 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 					}
 				}
 				if !isTranscoded {
-					return retry.RetryableError(fmt.Errorf("prompt file not transcoded"))
+					return retry.RetryableError(fmt.Errorf("prompt file not transcoded. User prompt ID: '%s'. Filename: '%s'", d.Id(), resourceFilename))
 				}
 			}
 		}
 
-		d.Set("resources", flattenPromptResources(d, userPrompt.Resources))
+		_ = d.Set("resources", flattenPromptResources(d, userPrompt.Resources))
 
 		log.Printf("Read Audio Prompt %s %s", d.Id(), *userPrompt.Id)
 		return cc.CheckState()
@@ -941,8 +938,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
 	prompt := platformclientv2.Prompt{
-		Name:        &name,
-		Description: &description,
+		Name: &name,
 	}
 
 	if description != "" {
@@ -1192,7 +1188,7 @@ func getArchitectPromptAudioData(promptId string, meta interface{}) ([]PromptAud
 		return nil, err
 	}
 
-	promptResourceData := []PromptAudioData{}
+	var promptResourceData []PromptAudioData
 	for _, r := range *data.Resources {
 		var data PromptAudioData
 		if r.MediaUri != nil && *r.MediaUri != "" {
