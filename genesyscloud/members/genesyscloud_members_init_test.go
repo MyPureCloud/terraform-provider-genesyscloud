@@ -46,7 +46,6 @@ func initTestresources() {
 func TestMain(m *testing.M) {
 	// Run setup function before starting the test suite for the members package
 	initTestresources()
-
 	// Run the test suite for the members package
 	m.Run()
 }
