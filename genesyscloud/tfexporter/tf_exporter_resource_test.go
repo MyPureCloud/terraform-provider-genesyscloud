@@ -27,6 +27,8 @@ import (
 	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
+	edgeExtension "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
+
 	webdeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
@@ -107,7 +109,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_utilization"] = gcloud.ResourceRoutingUtilization()
 
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = gcloud.ResourceTelephonyExtensionPool()
+	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = edgeExtension.ResourceTelephonyExtensionPool()
 	providerResources["genesyscloud_telephony_providers_edges_phone"] = edgePhone.ResourcePhone()
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
 	providerResources["genesyscloud_telephony_providers_edges_phonebasesettings"] = gcloud.ResourcePhoneBaseSettings()
@@ -209,7 +211,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_routing_utilization", gcloud.RoutingUtilizationExporter())
 	RegisterExporter("genesyscloud_routing_wrapupcode", gcloud.RoutingWrapupCodeExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_edge_group", edgeGroup.EdgeGroupExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", gcloud.TelephonyExtensionPoolExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", edgeExtension.TelephonyExtensionPoolExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_phone", edgePhone.PhoneExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_site", edgeSite.SiteExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_phonebasesettings", gcloud.PhoneBaseSettingsExporter())
