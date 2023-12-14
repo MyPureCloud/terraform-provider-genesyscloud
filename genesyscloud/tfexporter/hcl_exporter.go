@@ -275,6 +275,8 @@ func createHCLObject(v map[string]interface{}) zclconfCty.Value {
 
 func handleInterfaceArray(body *hclwrite.Body, k string, v []interface{}) {
 	var listItems []zclconfCty.Value
+
+	nestedBlock := false
 	for _, val := range v {
 		// k { ... }
 		if valMap, ok := val.(map[string]interface{}); ok {
@@ -282,12 +284,16 @@ func handleInterfaceArray(body *hclwrite.Body, k string, v []interface{}) {
 			for key, value := range valMap {
 				addValue(block.Body(), key, value)
 			}
+			nestedBlock = true
 			// k = [ ... ]
 		} else {
 			listItems = append(listItems, getCtyValue(val))
+			nestedBlock = false
 		}
 	}
 	if len(listItems) > 0 {
 		body.SetAttributeValue(k, zclconfCty.ListVal(listItems))
+	} else if len(listItems) == 0 && !nestedBlock {
+		body.SetAttributeValue(k, zclconfCty.ListValEmpty(zclconfCty.NilType))
 	}
 }

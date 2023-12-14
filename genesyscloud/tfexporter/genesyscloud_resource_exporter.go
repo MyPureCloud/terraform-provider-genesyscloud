@@ -929,6 +929,15 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			removeZeroValues(key, configMap[key], configMap)
 		}
 
+		// Nil arrays will be turned into empty arrays if they're defined in AllowEmptyArrays.
+		// We do this after the initial sanitization of empty arrays to nil
+		// so this will cover both cases where the attribute on the state is: null or [].
+		if exporter.AllowForEmptyArrays(currAttr) {
+			if configMap[key] == nil {
+				configMap[key] = []interface{}{}
+			}
+		}
+
 		//If the exporter as has customer resolver for an attribute, invoke it.
 		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
 			log.Printf("Custom resolver invoked for attribute: %s", currAttr)

@@ -33,6 +33,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/station"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	"terraform-provider-genesyscloud/genesyscloud/team"
 	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
@@ -133,6 +134,7 @@ func registerResources() {
 	archIvr.SetRegistrar(regInstance)                       //Registering architect ivr
 	workbin.SetRegistrar(regInstance)                       //Registering task management workbin
 	workitemSchema.SetRegistrar(regInstance)                //Registering task management workitem schema
+	worktype.SetRegistrar(regInstance)                      //Registering task management worktype
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	team.SetRegistrar(regInstance)                          //Registering team
 	telephony.SetRegistrar(regInstance)                     //Registering telephony package
