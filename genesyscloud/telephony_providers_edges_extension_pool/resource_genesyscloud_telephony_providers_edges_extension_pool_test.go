@@ -12,6 +12,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
+var (
+	sdkConfig *platformclientv2.Configuration
+)
+
 type extensionPoolStruct struct {
 	resourceID  string
 	startNumber string
@@ -77,6 +81,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 }
 
 func deleteExtensionPoolWithNumber(startNumber string) error {
+
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
