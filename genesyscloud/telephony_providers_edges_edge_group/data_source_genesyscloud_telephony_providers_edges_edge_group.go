@@ -1,4 +1,4 @@
-package telephony
+package telephony_providers_edges_edge_group
 
 import (
 	"context"
@@ -13,26 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
-
-func dataSourceEdgeGroup() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Edge Group. Select an edge group by name",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceEdgeGroupRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Edge Group name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"managed": {
-				Description: "Return entities that are managed by Genesys Cloud.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-		},
-	}
-}
 
 func dataSourceEdgeGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig

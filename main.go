@@ -38,6 +38,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
+	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
@@ -137,6 +138,7 @@ func registerResources() {
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	team.SetRegistrar(regInstance)                          //Registering team
 	telephony.SetRegistrar(regInstance)                     //Registering telephony package
+	edgeGroup.SetRegistrar(regInstance)                     //Registering edges edge group
 	webDeployConfig.SetRegistrar(regInstance)               //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)               //Registering webdeployments_deploy
 	authorizatioProduct.SetRegistrar(regInstance)           //Registering Authorization Product

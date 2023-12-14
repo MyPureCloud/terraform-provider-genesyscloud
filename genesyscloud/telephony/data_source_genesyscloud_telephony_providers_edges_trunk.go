@@ -13,7 +13,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
-func dataSourceTrunk() *schema.Resource {
+func DataSourceTrunk() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Trunk. Select a trunk by name",
 		ReadContext: gcloud.ReadWithPooledClient(dataSourceTrunkRead),
