@@ -1,4 +1,4 @@
-package genesyscloud
+package telephony_providers_edges_extension_pool
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
-func dataSourceExtensionPool() *schema.Resource {
+func DataSourceExtensionPool() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Extension pool. Select an Extension pool by starting number and ending number",
 		ReadContext: ReadWithPooledClient(dataSourceExtensionPoolRead),

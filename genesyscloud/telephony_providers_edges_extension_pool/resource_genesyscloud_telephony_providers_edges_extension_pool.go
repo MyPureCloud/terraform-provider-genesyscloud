@@ -1,4 +1,4 @@
-package genesyscloud
+package telephony_providers_edges_extension_pool
 
 import (
 	"context"
@@ -40,49 +40,6 @@ func getAllExtensionPools(_ context.Context, clientConfig *platformclientv2.Conf
 	}
 
 	return resources, nil
-}
-
-func TelephonyExtensionPoolExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllExtensionPools),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
-	}
-}
-
-func ResourceTelephonyExtensionPool() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud Extension Pool",
-
-		CreateContext: CreateWithPooledClient(createExtensionPool),
-		ReadContext:   ReadWithPooledClient(readExtensionPool),
-		UpdateContext: UpdateWithPooledClient(updateExtensionPool),
-		DeleteContext: DeleteWithPooledClient(deleteExtensionPool),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"start_number": {
-				Description:      "Starting phone number of the Extension Pool range. Changing the start_number attribute will cause the extension object to be dropped and recreated with a new ID.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ForceNew:         true,
-				ValidateDiagFunc: validateExtensionPool,
-			},
-			"end_number": {
-				Description:      "Ending phone number of the Extension Pool range. Changing the end_number attribute will cause the extension object to be dropped and recreated with a new ID.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ForceNew:         true,
-				ValidateDiagFunc: validateExtensionPool,
-			},
-			"description": {
-				Description: "Extension Pool description.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
 }
 
 func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

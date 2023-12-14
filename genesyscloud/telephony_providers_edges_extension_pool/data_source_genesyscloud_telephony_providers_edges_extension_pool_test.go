@@ -1,4 +1,4 @@
-package genesyscloud
+package telephony_providers_edges_extension_pool
 
 import (
 	"fmt"
