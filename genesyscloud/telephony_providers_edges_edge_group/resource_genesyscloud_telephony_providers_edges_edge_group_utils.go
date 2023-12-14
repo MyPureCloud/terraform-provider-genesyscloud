@@ -47,7 +47,7 @@ func GeneratePhoneTrunkBaseIds(userIDs ...string) string {
 	`, strings.Join(userIDs, ","))
 }
 
-func FlattenPhoneTrunkBases(trunkBases []platformclientv2.Trunkbase) *schema.Set {
+func flattenPhoneTrunkBases(trunkBases []platformclientv2.Trunkbase) *schema.Set {
 	interfaceList := make([]interface{}, len(trunkBases))
 	for i, v := range trunkBases {
 		interfaceList[i] = *v.Id

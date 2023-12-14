@@ -163,7 +163,7 @@ func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 		d.Set("phone_trunk_base_ids", nil)
 		if edgeGroup.PhoneTrunkBases != nil {
-			d.Set("phone_trunk_base_ids", FlattenPhoneTrunkBases(*edgeGroup.PhoneTrunkBases))
+			d.Set("phone_trunk_base_ids", flattenPhoneTrunkBases(*edgeGroup.PhoneTrunkBases))
 		}
 
 		log.Printf("Read edge group %s %s", d.Id(), *edgeGroup.Name)
