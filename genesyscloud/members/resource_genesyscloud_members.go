@@ -37,7 +37,7 @@ func createMembers(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 
 	d.SetId(*teamMemberResponse.)
-	log.Printf("Created members %s", *teamMemberResponse.Id)
+	//log.Printf("Created members %s", *teamMemberResponse.Id)
 	return readMembers(ctx, d, meta)
 }
 

@@ -25,6 +25,7 @@ var (
 		},
 	}
 )
+
 /*
 resource_genesycloud_members_schema.go holds four functions within it:
 
@@ -64,7 +65,12 @@ func ResourceMembers() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			``
+			`members`: {
+				Description: `Specifies the members`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        userReferenceWithnameResource,
+			},
 		},
 	}
 }
