@@ -40,7 +40,7 @@ utils function in the package.  This will keep the code manageable and easy to w
 
 // getAllIntegrations retrieves all of the integrations via Terraform in the Genesys Cloud and is used for the exporter
 func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	ip := getIntegrationsProxy(clientConfig)
+	ip := GetIntegrationsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	integrations, err := ip.getAllIntegrations(ctx)
@@ -62,7 +62,7 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	integrationType := d.Get("integration_type").(string)
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	ip := getIntegrationsProxy(sdkConfig)
+	ip := GetIntegrationsProxy(sdkConfig)
 
 	createIntegrationReq := &platformclientv2.Createintegrationrequest{
 		IntegrationType: &platformclientv2.Integrationtype{
@@ -101,12 +101,12 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 // readIntegration is used by the integration resource to read an integration from genesys cloud.
 func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	ip := getIntegrationsProxy(sdkConfig)
+	ip := GetIntegrationsProxy(sdkConfig)
 
 	log.Printf("Reading integration %s", d.Id())
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		currentIntegration, resp, getErr := ip.getIntegrationById(ctx, d.Id())
+		currentIntegration, resp, getErr := ip.GetIntegrationById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("failed to read integration %s: %s", d.Id(), getErr))
@@ -137,7 +137,7 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	intendedState := d.Get("intended_state").(string)
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	ip := getIntegrationsProxy(sdkConfig)
+	ip := GetIntegrationsProxy(sdkConfig)
 
 	diagErr, name := updateIntegrationConfigFromResourceData(ctx, d, ip)
 	if diagErr != nil {
@@ -161,7 +161,7 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 // deleteIntegration is used by the integration resource to delete an integration from Genesys cloud.
 func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	ip := getIntegrationsProxy(sdkConfig)
+	ip := GetIntegrationsProxy(sdkConfig)
 
 	_, err := ip.deleteIntegration(ctx, d.Id())
 	if err != nil {
@@ -169,7 +169,7 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	}
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := ip.getIntegrationById(ctx, d.Id())
+		_, resp, err := ip.GetIntegrationById(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
 				// Integration deleted
