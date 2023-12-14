@@ -143,12 +143,9 @@ func initTestResources() {
 	if sdkConfig, err = AuthorizeSdk(); err != nil {
 		log.Fatal(err)
 	}
-
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
-
 	regInstance := &registerTestInstance{}
-
 	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
 }
@@ -156,7 +153,6 @@ func initTestResources() {
 func TestMain(m *testing.M) {
 	// Run setup function before starting the test suite for resources in GenesysCloud Parent Package.
 	initTestResources()
-
 	// Run the test suite
 	m.Run()
 }

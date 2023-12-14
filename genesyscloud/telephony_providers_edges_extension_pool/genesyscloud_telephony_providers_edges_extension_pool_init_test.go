@@ -2,7 +2,6 @@ package telephony_providers_edges_extension_pool
 
 import (
 	"sync"
-
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -19,14 +18,13 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_telephony_providers_extension_pool"] = ResourceTelephonyExtensionPool()
+	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = ResourceTelephonyExtensionPool()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_telephony_providers_extension_pool"] = DataSourceExtensionPool()
-
+	providerDataSources["genesyscloud_telephony_providers_edges_extension_pool"] = DataSourceExtensionPool()
 }
 
 func initTestresources() {
@@ -35,12 +33,11 @@ func initTestresources() {
 	regInstance := &registerTestInstance{}
 	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
-
 }
 
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for Edges Edge group
+	// Run setup function before starting the test suite
 	initTestresources()
-	// Run the test suite for outbound
+	// Run the actual test suite
 	m.Run()
 }

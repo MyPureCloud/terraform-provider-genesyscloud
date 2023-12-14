@@ -2,6 +2,7 @@ package telephony_providers_edges_extension_pool
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
@@ -10,10 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
-)
-
-var (
-	sdkConfig *platformclientv2.Configuration
 )
 
 type extensionPoolStruct struct {
@@ -34,9 +31,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 	}
 	deleteExtensionPoolWithNumber(extensionPoolStartNumber1)
 	deleteExtensionPoolWithNumber(extensionPoolEndNumber1)
-
 	extensionPoolDescription1 := "Test description"
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
@@ -81,7 +76,10 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 }
 
 func deleteExtensionPoolWithNumber(startNumber string) error {
-
+	sdkConfig, err := gcloud.AuthorizeSdk()
+	if err != nil {
+		log.Fatal(err)
+	}
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {

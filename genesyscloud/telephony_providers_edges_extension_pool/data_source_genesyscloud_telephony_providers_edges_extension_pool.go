@@ -6,33 +6,11 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
-
-func DataSourceExtensionPool() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Extension pool. Select an Extension pool by starting number and ending number",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceExtensionPoolRead),
-		Schema: map[string]*schema.Schema{
-			"start_number": {
-				Description:      "Starting number of the Extension Pool range.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: gcloud.ValidateExtensionPool,
-			},
-			"end_number": {
-				Description:      "Ending number of the Extension Pool range.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: gcloud.ValidateExtensionPool,
-			},
-		},
-	}
-}
 
 func dataSourceExtensionPoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig

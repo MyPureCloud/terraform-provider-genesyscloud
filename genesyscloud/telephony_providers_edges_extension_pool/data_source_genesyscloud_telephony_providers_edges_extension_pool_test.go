@@ -11,12 +11,11 @@ import (
 func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 	t.Parallel()
 	var (
-		extensionPoolStartNumber = "1400"
-		extensionPoolEndNumber   = "1499"
+		extensionPoolStartNumber = "2500"
+		extensionPoolEndNumber   = "2599"
 		extensionPoolRes         = "extensionPool"
 		extensionPoolDataRes     = "extensionPoolData"
 	)
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
