@@ -90,7 +90,7 @@ jobs:
 
     - name: 'Upload Export Result'
       if: ${{ always() }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: export-result ${{ matrix.terraform }}
         path: ./.terraform/
@@ -98,7 +98,7 @@ jobs:
 
     - name: 'Upload Logs'
       if: ${{ always() }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: logs ${{ matrix.terraform }}
         path: ./test.log
@@ -106,7 +106,7 @@ jobs:
 
     - name: 'Upload SDK Log'
       if: ${{ always() }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: sdk_log ${{ matrix.terraform }}
         path: ./genesyscloud/sdk_debug.log
