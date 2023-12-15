@@ -59,6 +59,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 			_, resp, err := integrationsProxy.GetIntegrationById(ctx, integrationId)
 			if err != nil {
 				if gcloud.IsStatus404(resp) {
+					log.Printf("Integration id %s no longer exist, we are therefore not exporting the associated integration credential id %s", integrationId, *cred.Id)
 					continue
 				} else {
 					log.Printf("Integration id %s exists but we got an unexpected error retrieving it: %v", integrationId, err)
