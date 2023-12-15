@@ -144,6 +144,10 @@ $make testunit
 
 If you want to go off of an example, we recommend using the [external contacts](https://github.com/MyPureCloud/terraform-provider-genesyscloud/tree/main/genesyscloud/external_contacts) package.
 
+### Cx As Code Resource Generator 
+
+[The Cx as Code Resource Generator](https://github.com/MyPureCloud/cxascode-resource-generator) is a tool that can help generate resources for Cx as Code and speed up development. The reource gnerator will generate resources using the package structure mentioned above. The project can be found [here](https://github.com/MyPureCloud/cxascode-resource-generator) and all usage is documented in the README. Please note that the resource generator is not perfect, it is a tool to help with development and the generated code will require review and the package will still need to be registered manually in `main.go`.
+
 ### Using the Provider locally
 
 In order to use a locally compiled version of the provider, the correct binary for your system must be copied to the local `~/.terraform.d/plugins` folder. Run `make sideload` to build the provider and copy it to the correct folder. In your Terraform config file, specify version `0.1.0` and set the provider source to `genesys.com/mypurecloud/genesyscloud`. Run `terraform init` and verify that it finds the local version.
