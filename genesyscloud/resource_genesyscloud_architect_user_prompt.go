@@ -900,25 +900,22 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 					continue
 				}
 				APIResources := *userPrompt.Resources
-				isTranscoded := false
 				for _, APIResource := range APIResources {
-					if APIResource.Tags != nil {
-						tags := *APIResource.Tags
-						filenameTag, ok := tags["filename"]
-						if !ok {
-							continue
-						}
-						if len(filenameTag) > 0 {
-							if filenameTag[0] == resourceFilename {
-								if *APIResource.UploadStatus == "transcoded" {
-									isTranscoded = true
-								}
+					if APIResource.Tags == nil {
+						continue
+					}
+					tags := *APIResource.Tags
+					filenameTag, ok := tags["filename"]
+					if !ok {
+						continue
+					}
+					if len(filenameTag) > 0 {
+						if filenameTag[0] == resourceFilename {
+							if *APIResource.UploadStatus != "transcoded" {
+								return retry.RetryableError(fmt.Errorf("prompt file not transcoded. User prompt ID: '%s'. Filename: '%s'", d.Id(), resourceFilename))
 							}
 						}
 					}
-				}
-				if !isTranscoded {
-					return retry.RetryableError(fmt.Errorf("prompt file not transcoded. User prompt ID: '%s'. Filename: '%s'", d.Id(), resourceFilename))
 				}
 			}
 		}
