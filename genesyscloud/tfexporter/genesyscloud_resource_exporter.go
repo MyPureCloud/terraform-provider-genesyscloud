@@ -1105,7 +1105,6 @@ func removeZeroValues(key string, val interface{}, configMap gcloud.JsonMap) {
 // Identify the parent config map and if the resources have further dependent resources add a new attribute depends_on
 func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap gcloud.JsonMap) {
 	list, exists := g.dependsList[key]
-	//configMap["key"] = key
 	resourceDependsList := make([]string, 0)
 	if exists {
 		for _, res := range list {
