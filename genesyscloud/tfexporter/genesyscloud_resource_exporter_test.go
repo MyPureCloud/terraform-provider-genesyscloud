@@ -286,6 +286,50 @@ func TestUnitBuildDependsOnResources(t *testing.T) {
 
 }
 
+func TestFilterResourceById(t *testing.T) {
+
+	meta := &resourceExporter.ResourceMeta{
+		Name:     "example resource1",
+		IdPrefix: "prefix_",
+	}
+
+	// Create an instance of ResourceIDMetaMap and add the meta to it
+	result := resourceExporter.ResourceIDMetaMap{
+		"queue_resources_1": meta,
+		"queue_resources_2": &resourceExporter.ResourceMeta{
+			Name:     "example resource2",
+			IdPrefix: "prefix_",
+		},
+	}
+
+	// Test case 1: When the name is found in the filter
+	name := "Resource2"
+	filter := []string{"Resource1::queue_resources", "Resource2::queue_resources_2"}
+
+	expectedResult := resourceExporter.ResourceIDMetaMap{
+		"queue_resources_2": &resourceExporter.ResourceMeta{
+			Name:     "example resource2",
+			IdPrefix: "prefix_",
+		},
+	}
+	actualResult := FilterResourceById(result, name, filter)
+
+	if !reflect.DeepEqual(actualResult, expectedResult) {
+		t.Errorf("Expected result: %v, but got: %v", expectedResult, actualResult)
+	}
+
+	// Test case 2: When the name is not found in the filter
+	name = "Resource4"
+	filter = []string{"Resource1::", "Resource2::"}
+
+	expectedResult = result // The result should remain unchanged
+	actualResult = FilterResourceById(result, name, filter)
+
+	if !reflect.DeepEqual(actualResult, expectedResult) {
+		t.Errorf("Expected result: %v, but got: %v", expectedResult, actualResult)
+	}
+}
+
 func TestUnitMergeExporters(t *testing.T) {
 
 	m1 := map[string]*resourceExporter.ResourceExporter{
@@ -297,7 +341,7 @@ func TestUnitMergeExporters(t *testing.T) {
 	}
 
 	// Call the function
-	result := mergeExporters(&m1, &m2)
+	result := mergeExporters(m1, m2)
 
 	expectedKeys := map[string][]string{
 		"exporter1": {"key1", "key2"},
