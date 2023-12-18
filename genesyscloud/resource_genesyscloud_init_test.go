@@ -76,7 +76,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_settings"] = ResourceRoutingSettings()
 	providerResources["genesyscloud_routing_utilization"] = ResourceRoutingUtilization()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_telephony_providers_edges_phonebasesettings"] = ResourcePhoneBaseSettings()
 	providerResources["genesyscloud_user"] = ResourceUser()
 	providerResources["genesyscloud_user_roles"] = ResourceUserRoles()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
@@ -126,7 +125,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 	providerDataSources["genesyscloud_user"] = DataSourceUser()
 	providerDataSources["genesyscloud_telephony_providers_edges_linebasesettings"] = dataSourceLineBaseSettings()
-	providerDataSources["genesyscloud_telephony_providers_edges_phonebasesettings"] = dataSourcePhoneBaseSettings()
 	providerDataSources["genesyscloud_widget_deployment"] = dataSourceWidgetDeployments()
 
 }

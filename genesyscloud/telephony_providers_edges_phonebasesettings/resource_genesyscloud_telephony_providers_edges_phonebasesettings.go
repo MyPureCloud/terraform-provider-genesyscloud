@@ -1,4 +1,4 @@
-package genesyscloud
+package telephony_providers_edges_phonebasesettings
 
 import (
 	"context"
@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -21,121 +21,11 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
-var (
-	phoneCapabilities = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"provisions": {
-				Description: "Provisions",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"registers": {
-				Description: "Registers",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"dual_registers": {
-				Description: "Dual Registers",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"hardware_id_type": {
-				Description: "HardwareId Type",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"allow_reboot": {
-				Description: "Allow Reboot",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"no_rebalance": {
-				Description: "No Rebalance",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"no_cloud_provisioning": {
-				Description: "No Cloud Provisioning",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"media_codecs": {
-				Description: "Media Codecs",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem: &schema.Schema{
-					Type:         schema.TypeString,
-					ValidateFunc: validation.StringInSlice([]string{"audio/opus", "audio/pcmu", "audio/pcma", "audio/g729", "audio/g722"}, false),
-				},
-			},
-			"cdm": {
-				Description: "CDM",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-		},
-	}
-)
-
-func ResourcePhoneBaseSettings() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud Phone Base Settings",
-
-		CreateContext: CreateWithPooledClient(createPhoneBaseSettings),
-		ReadContext:   ReadWithPooledClient(readPhoneBaseSettings),
-		UpdateContext: UpdateWithPooledClient(updatePhoneBaseSettings),
-		DeleteContext: DeleteWithPooledClient(deletePhoneBaseSettings),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "The name of the entity.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"description": {
-				Description: "The resource's description.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"phone_meta_base_id": {
-				Description: "A phone metabase is essentially a database for storing phone configuration settings, which simplifies the configuration process.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"properties": {
-				Description:      "phone base settings properties",
-				Type:             schema.TypeString,
-				Optional:         true,
-				Computed:         true,
-				DiffSuppressFunc: SuppressEquivalentJsonDiffs,
-			},
-			"capabilities": {
-				Description: "Phone Capabilities.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        phoneCapabilities,
-			},
-			"line_base_settings_id": {
-				Description: "Computed line base settings id",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-		},
-		CustomizeDiff: customizePhoneBaseSettingsPropertiesDiff,
-	}
-}
-
 func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	phoneMetaBase := BuildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := BuildBaseSettingsProperties(d)
+	phoneMetaBase := gcloud.BuildSdkDomainEntityRef(d, "phone_meta_base_id")
+	properties := gcloud.BuildBaseSettingsProperties(d)
 
 	phoneBase := platformclientv2.Phonebase{
 		Name:          &name,
@@ -154,7 +44,7 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		phoneBase.Description = &description
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Creating phone base settings %s", name)
@@ -173,8 +63,8 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	phoneMetaBase := BuildSdkDomainEntityRef(d, "phone_meta_base_id")
-	properties := BuildBaseSettingsProperties(d)
+	phoneMetaBase := gcloud.BuildSdkDomainEntityRef(d, "phone_meta_base_id")
+	properties := gcloud.BuildBaseSettingsProperties(d)
 	id := d.Id()
 
 	phoneBase := platformclientv2.Phonebase{
@@ -195,12 +85,12 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		phoneBase.Description = &description
 	}
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
 	if getErr != nil {
-		if IsStatus404(resp) {
+		if gcloud.IsStatus404(resp) {
 			return nil
 		}
 		return diag.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr)
@@ -219,14 +109,14 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading phone base settings %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
@@ -243,7 +133,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		d.Set("properties", nil)
 		if phoneBaseSettings.Properties != nil {
-			properties, err := FlattenBaseSettingsProperties(phoneBaseSettings.Properties)
+			properties, err := gcloud.FlattenBaseSettingsProperties(phoneBaseSettings.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
@@ -265,7 +155,7 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting phone base settings")
@@ -274,10 +164,10 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("Failed to delete phone base settings: %s", err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		phoneBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				// Phone base settings deleted
 				log.Printf("Deleted Phone base settings %s", d.Id())
 				return nil
@@ -300,12 +190,12 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
-	err := WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	err := gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, "")
 			if getErr != nil {
-				if IsStatus404(resp) {
+				if gcloud.IsStatus404(resp) {
 					return retry.RetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
 				}
 				return retry.NonRetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
@@ -326,14 +216,6 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 	})
 
 	return resources, err
-}
-
-func PhoneBaseSettingsExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc:     GetAllWithPooledClient(getAllPhoneBaseSettings),
-		RefAttrs:             map[string]*resourceExporter.RefAttrSettings{},
-		JsonEncodeAttributes: []string{"properties"},
-	}
 }
 
 func buildSdkCapabilities(d *schema.ResourceData) *platformclientv2.Phonecapabilities {
