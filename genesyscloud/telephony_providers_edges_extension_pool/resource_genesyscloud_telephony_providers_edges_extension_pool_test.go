@@ -1,8 +1,10 @@
-package genesyscloud
+package telephony_providers_edges_extension_pool
 
 import (
 	"fmt"
+	"log"
 	"strconv"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 	"time"
 
@@ -23,18 +25,16 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 	extensionPoolResource1 := "test-extensionpool1"
 	extensionPoolStartNumber1 := "15000"
 	extensionPoolEndNumber1 := "15001"
-	_, err := AuthorizeSdk()
+	_, err := gcloud.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
 	deleteExtensionPoolWithNumber(extensionPoolStartNumber1)
 	deleteExtensionPoolWithNumber(extensionPoolEndNumber1)
-
 	extensionPoolDescription1 := "Test description"
-
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -42,7 +42,7 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 					extensionPoolResource1,
 					extensionPoolStartNumber1,
 					extensionPoolEndNumber1,
-					NullValue, // No description
+					gcloud.NullValue, // No description
 				}),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "start_number", extensionPoolStartNumber1),
@@ -76,6 +76,10 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 }
 
 func deleteExtensionPoolWithNumber(startNumber string) error {
+	sdkConfig, err := gcloud.AuthorizeSdk()
+	if err != nil {
+		log.Fatal(err)
+	}
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -128,7 +132,7 @@ func testVerifyExtensionPoolsDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Extension Pool (%s) still exists", rs.Primary.ID)
 		}
 
-		if IsStatus404(resp) {
+		if gcloud.IsStatus404(resp) {
 			// Extension pool not found as expected
 			continue
 		}

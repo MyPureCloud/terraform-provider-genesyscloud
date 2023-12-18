@@ -1,4 +1,4 @@
-package genesyscloud
+package telephony_providers_edges_extension_pool
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -42,55 +43,12 @@ func getAllExtensionPools(_ context.Context, clientConfig *platformclientv2.Conf
 	return resources, nil
 }
 
-func TelephonyExtensionPoolExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllExtensionPools),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
-	}
-}
-
-func ResourceTelephonyExtensionPool() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud Extension Pool",
-
-		CreateContext: CreateWithPooledClient(createExtensionPool),
-		ReadContext:   ReadWithPooledClient(readExtensionPool),
-		UpdateContext: UpdateWithPooledClient(updateExtensionPool),
-		DeleteContext: DeleteWithPooledClient(deleteExtensionPool),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"start_number": {
-				Description:      "Starting phone number of the Extension Pool range. Changing the start_number attribute will cause the extension object to be dropped and recreated with a new ID.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ForceNew:         true,
-				ValidateDiagFunc: validateExtensionPool,
-			},
-			"end_number": {
-				Description:      "Ending phone number of the Extension Pool range. Changing the end_number attribute will cause the extension object to be dropped and recreated with a new ID.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ForceNew:         true,
-				ValidateDiagFunc: validateExtensionPool,
-			},
-			"description": {
-				Description: "Extension Pool description.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-}
-
 func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	startNumber := d.Get("start_number").(string)
 	endNumber := d.Get("end_number").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Creating Extension pool %s", startNumber)
@@ -110,14 +68,14 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Reading Extension pool %s", d.Id())
-	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		extensionPool, resp, getErr := telephonyApi.GetTelephonyProvidersEdgesExtensionpool(d.Id())
 		if getErr != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read Extension pool %s: %s", d.Id(), getErr))
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read Extension pool %s: %s", d.Id(), getErr))
@@ -148,7 +106,7 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	endNumber := d.Get("end_number").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	extensionPoolBody := platformclientv2.Extensionpool{
@@ -169,7 +127,7 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	startNumber := d.Get("start_number").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	log.Printf("Deleting Extension pool with starting number %s", startNumber)
@@ -177,10 +135,10 @@ func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 		return diag.Errorf("Failed to delete Extension pool with starting number %s: %s", startNumber, err)
 	}
 
-	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		extensionPool, resp, err := telephonyApi.GetTelephonyProvidersEdgesExtensionpool(d.Id())
 		if err != nil {
-			if IsStatus404(resp) {
+			if gcloud.IsStatus404(resp) {
 				// Extension pool deleted
 				log.Printf("Deleted Extension pool %s", d.Id())
 				return nil

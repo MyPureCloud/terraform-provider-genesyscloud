@@ -39,6 +39,7 @@ import (
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
+	extPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
@@ -142,6 +143,7 @@ func registerResources() {
 	webDeployConfig.SetRegistrar(regInstance)               //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)               //Registering webdeployments_deploy
 	authorizatioProduct.SetRegistrar(regInstance)           //Registering Authorization Product
+	extPool.SetRegistrar(regInstance)                       //Registering Extension Pool
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
