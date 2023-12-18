@@ -146,7 +146,7 @@ If you want to go off of an example, we recommend using the [external contacts](
 
 ### Cx As Code Resource Generator 
 
-[The Cx as Code Resource Generator](https://github.com/MyPureCloud/cxascode-resource-generator) is a tool that can help generate resources for Cx as Code and speed up development. The reource gnerator will generate resources using the package structure mentioned above. The project can be found [here](https://github.com/MyPureCloud/cxascode-resource-generator) and all usage is documented in the README. Please note that the resource generator is not perfect, it is a tool to help with development and the generated code will require review and the package will still need to be registered manually in `main.go`.
+[The Cx as Code Resource Generator](https://github.com/MyPureCloud/cxascode-resource-generator) is a tool that can help generate resources for Cx as Code and speed up development. The resource generator will generate resources using the package structure mentioned above. The project can be found [here](https://github.com/MyPureCloud/cxascode-resource-generator) and all usage is documented in the README. Please note that the resource generator is not perfect, it is a tool to help with development and the generated code will require review and the package will still need to be registered manually in `main.go`.
 
 ### Using the Provider locally
 
