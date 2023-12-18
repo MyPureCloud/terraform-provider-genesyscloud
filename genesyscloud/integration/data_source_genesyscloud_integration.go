@@ -23,7 +23,7 @@ import (
 // dataSourceIntegrationRead retrieves by name the integration id in question
 func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
-	ip := getIntegrationsProxy(sdkConfig)
+	ip := GetIntegrationsProxy(sdkConfig)
 
 	integrationName := d.Get("name").(string)
 

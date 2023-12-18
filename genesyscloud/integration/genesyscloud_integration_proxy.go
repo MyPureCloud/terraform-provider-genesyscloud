@@ -72,9 +72,9 @@ func newIntegrationsProxy(clientConfig *platformclientv2.Configuration) *integra
 	}
 }
 
-// getIntegrationsProxy acts as a singleton to for the internalProxy.  It also ensures
+// GetIntegrationsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
-func getIntegrationsProxy(clientConfig *platformclientv2.Configuration) *integrationsProxy {
+func GetIntegrationsProxy(clientConfig *platformclientv2.Configuration) *integrationsProxy {
 	if internalProxy == nil {
 		internalProxy = newIntegrationsProxy(clientConfig)
 	}
@@ -92,8 +92,8 @@ func (p *integrationsProxy) createIntegration(ctx context.Context, integrationRe
 	return p.createIntegrationAttr(ctx, p, integrationReq)
 }
 
-// getIntegrationById gets Genesys Cloud Integration by id
-func (p *integrationsProxy) getIntegrationById(ctx context.Context, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+// GetIntegrationById gets Genesys Cloud Integration by id
+func (p *integrationsProxy) GetIntegrationById(ctx context.Context, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	return p.getIntegrationByIdAttr(ctx, p, integrationId)
 }
 
