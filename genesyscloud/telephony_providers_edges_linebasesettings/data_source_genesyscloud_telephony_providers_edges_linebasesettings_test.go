@@ -1,7 +1,9 @@
-package genesyscloud
+package telephony_providers_edges_linebasesettings
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -16,12 +18,12 @@ func TestAccDataSourceLineBaseSettings(t *testing.T) {
 	lineBaseSettingsDataRes := "lineBaseSettings1234"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Creating a phone base settings will result in a line base settings of the same name being created
-				Config: GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+				Config: phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					phoneBaseSettingsName,
 					"phoneBaseSettings description",

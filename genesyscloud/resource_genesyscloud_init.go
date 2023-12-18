@@ -53,7 +53,6 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_routing_wrapupcode", DataSourceRoutingWrapupcode())
 	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
 	l.RegisterDataSource("genesyscloud_user", DataSourceUser())
-	l.RegisterDataSource("genesyscloud_telephony_providers_edges_linebasesettings", dataSourceLineBaseSettings())
 	l.RegisterDataSource("genesyscloud_widget_deployment", dataSourceWidgetDeployments())
 }
 

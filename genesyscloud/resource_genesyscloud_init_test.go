@@ -124,7 +124,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_routing_email_domain"] = DataSourceRoutingEmailDomain()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 	providerDataSources["genesyscloud_user"] = DataSourceUser()
-	providerDataSources["genesyscloud_telephony_providers_edges_linebasesettings"] = dataSourceLineBaseSettings()
 	providerDataSources["genesyscloud_widget_deployment"] = dataSourceWidgetDeployments()
 
 }
