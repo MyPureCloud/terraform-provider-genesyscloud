@@ -12,7 +12,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -43,10 +42,9 @@ utils function in the package.  This will keep the code manageable and easy to w
 // getAllCredentials retrieves all of the integration credentials via Terraform in the Genesys Cloud and is used for the exporter
 func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	integrationCredsProxy := getIntegrationCredsProxy(clientConfig)
-	integrationsProxy := integration.GetIntegrationsProxy(clientConfig)
+	ip := getIntegrationCredsProxy(clientConfig)
 
-	credentials, err := integrationCredsProxy.getAllIntegrationCreds(ctx)
+	credentials, err := ip.getAllIntegrationCreds(ctx)
 	if err != nil {
 		return nil, diag.Errorf("Failed to get all credentials: %v", err)
 	}
@@ -56,7 +54,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 		if cred.Name != nil { // Credential is possible to have no name
 			// Verify that the integration entity itself exist before exporting the integration credentials associated to it: DEVTOOLING-282
 			integrationId := strings.Split(*cred.Name, "Integration-")[1]
-			_, resp, err := integrationsProxy.GetIntegrationById(ctx, integrationId)
+			_, resp, err := ip.getIntegrationById(ctx, integrationId)
 			if err != nil {
 				if gcloud.IsStatus404(resp) {
 					log.Printf("Integration id %s no longer exist, we are therefore not exporting the associated integration credential id %s", integrationId, *cred.Id)
