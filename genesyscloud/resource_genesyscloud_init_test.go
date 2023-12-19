@@ -30,8 +30,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = ResourceRoutingQueue()
 	providerResources["genesyscloud_flow"] = ResourceFlow()
 	providerResources["genesyscloud_location"] = ResourceLocation()
-	providerResources["genesyscloud_architect_datatable"] = ResourceArchitectDatatable()
-	providerResources["genesyscloud_architect_datatable_row"] = ResourceArchitectDatatableRow()
 	providerResources["genesyscloud_architect_emergencygroup"] = ResourceArchitectEmergencyGroup()
 	providerResources["genesyscloud_flow"] = ResourceFlow()
 	providerResources["genesyscloud_architect_schedules"] = ResourceArchitectSchedules()
@@ -43,7 +41,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_group"] = ResourceGroup()
 	providerResources["genesyscloud_group_roles"] = ResourceGroupRoles()
 	providerResources["genesyscloud_idp_adfs"] = ResourceIdpAdfs()
-
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()
@@ -95,8 +92,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_flow"] = DataSourceFlow()
 	providerDataSources["genesyscloud_location"] = DataSourceLocation()
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
-
-	providerDataSources["genesyscloud_architect_datatable"] = DataSourceArchitectDatatable()
 	providerDataSources["genesyscloud_architect_emergencygroup"] = DataSourceArchitectEmergencyGroup()
 	providerDataSources["genesyscloud_architect_schedules"] = DataSourceSchedule()
 	providerDataSources["genesyscloud_architect_schedulegroups"] = DataSourceArchitectScheduleGroups()
