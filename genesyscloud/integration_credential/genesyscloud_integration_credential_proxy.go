@@ -64,6 +64,7 @@ func newIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *int
 		getIntegrationCredByNameAttr: getIntegrationCredByNameFn,
 		updateIntegrationCredAttr:    updateIntegrationCredFn,
 		deleteIntegrationCredAttr:    deleteIntegrationCredFn,
+		getIntegrationByIdAttr:       getIntegrationByIdFn,
 	}
 }
 
@@ -201,4 +202,16 @@ func deleteIntegrationCredFn(ctx context.Context, p *integrationCredsProxy, cred
 	}
 
 	return resp.StatusCode, nil
+}
+
+// getIntegrationByIdFn is the implementation for getting a Genesys Cloud Integration by id
+func getIntegrationByIdFn(ctx context.Context, p *integrationCredsProxy, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+	const pageSize = 100
+	const pageNum = 1
+	integration, resp, err := p.integrationsApi.GetIntegration(integrationId, pageSize, pageNum, "", nil, "", "")
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return integration, resp, nil
 }
