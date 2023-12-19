@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -122,9 +123,9 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings())
 		d.Set("name", *phoneBaseSettings.Name)
-		if phoneBaseSettings.Description != nil {
-			d.Set("description", *phoneBaseSettings.Description)
-		}
+
+		resourcedata.SetNillableValue(d, "description", phoneBaseSettings.Description)
+
 		if phoneBaseSettings.PhoneMetaBase != nil {
 			d.Set("phone_meta_base_id", *phoneBaseSettings.PhoneMetaBase.Id)
 		}
