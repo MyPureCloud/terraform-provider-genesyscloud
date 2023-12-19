@@ -141,3 +141,53 @@ func getTeamFromResourceData(d *schema.ResourceData) platformclientv2.Team {
 		Description: platformclientv2.String(d.Get("description").(string)),
 	}
 }
+
+// readMembers is used by the members resource to read a members from genesys cloud
+func readMembers(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	proxy := getMembersProxy(sdkConfig)
+
+	log.Printf("Reading members %s", d.Id())
+
+	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		teamMemberEntityListing, respCode, getErr := proxy.getMembersById(ctx, d.Id())
+		if getErr != nil {
+			if gcloud.IsStatus404ByInt(respCode) {
+				return retry.RetryableError(fmt.Errorf("Failed to read members %s: %s", d.Id(), getErr))
+			}
+			return retry.NonRetryableError(fmt.Errorf("Failed to read members %s: %s", d.Id(), getErr))
+		}
+
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceMembers())
+
+		resourcedata.SetNillableValue(d, "name", userReferenceWithName.Name)
+
+		log.Printf("Read members %s %s", d.Id(), *userReferenceWithName.Name)
+		return cc.CheckState()
+	})
+}
+
+// deleteMembers is used by the members resource to delete a members from Genesys cloud
+func deleteMembers(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	proxy := getMembersProxy(sdkConfig)
+
+	_, err := proxy.deleteMembers(ctx, d.Id())
+	if err != nil {
+		return diag.Errorf("Failed to delete members %s: %s", d.Id(), err)
+	}
+
+	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+		_, respCode, err := proxy.getMembersById(ctx, d.Id())
+
+		if err != nil {
+			if gcloud.IsStatus404ByInt(respCode) {
+				log.Printf("Deleted members %s", d.Id())
+				return nil
+			}
+			return retry.NonRetryableError(fmt.Errorf("Error deleting members %s: %s", d.Id(), err))
+		}
+
+		return retry.RetryableError(fmt.Errorf("members %s still exists", d.Id()))
+	})
+}
