@@ -72,11 +72,6 @@ func ResourceTeam() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`team_id`: {
-				Description: `Specifies the team id to which the members belong to.`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
 			`member_ids`: {
 				Description: `Specifies the members`,
 				Optional:    true,

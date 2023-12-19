@@ -25,6 +25,9 @@ type getTeamIdByNameFunc func(ctx context.Context, p *teamProxy, name string) (i
 type getTeamByIdFunc func(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, responseCode int, err error)
 type updateTeamFunc func(ctx context.Context, p *teamProxy, id string, team *platformclientv2.Team) (*platformclientv2.Team, error)
 type deleteTeamFunc func(ctx context.Context, p *teamProxy, id string) (responseCode int, err error)
+type createMembersFunc func(ctx context.Context, p *teamProxy, teamId string, members platformclientv2.Teammembers) (*platformclientv2.Teammemberaddlistingresponse, error)
+type getMembersByIdFunc func(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, err error)
+type deleteMembersFunc func(ctx context.Context, p *teamProxy, teamId string, memberId string) (responseCode int, err error)
 
 // teamProxy contains all of the methods that call genesys cloud APIs.
 type teamProxy struct {
@@ -36,6 +39,9 @@ type teamProxy struct {
 	getTeamByIdAttr     getTeamByIdFunc
 	updateTeamAttr      updateTeamFunc
 	deleteTeamAttr      deleteTeamFunc
+	createMembersAttr   createMembersFunc
+	getMembersByIdAttr  getMembersByIdFunc
+	deleteMembersAttr   deleteMembersFunc
 }
 
 // newTeamProxy initializes the team proxy with all of the data needed to communicate with Genesys Cloud
@@ -50,6 +56,9 @@ func newTeamProxy(clientConfig *platformclientv2.Configuration) *teamProxy {
 		getTeamByIdAttr:     getTeamByIdFn,
 		updateTeamAttr:      updateTeamFn,
 		deleteTeamAttr:      deleteTeamFn,
+		createMembersAttr:   createMembersFn,
+		getMembersByIdAttr:  getMembersByIdFn,
+		deleteMembersAttr:   deleteMembersFn,
 	}
 }
 
@@ -91,6 +100,21 @@ func (p *teamProxy) updateTeam(ctx context.Context, id string, team *platformcli
 // deleteTeam deletes a Genesys Cloud team by Id
 func (p *teamProxy) deleteTeam(ctx context.Context, id string) (statusCode int, err error) {
 	return p.deleteTeamAttr(ctx, p, id)
+}
+
+// createMembers creates a Genesys Cloud members
+func (p *teamProxy) createMembers(ctx context.Context, teamId string, members platformclientv2.Teammembers) (*platformclientv2.Teammemberaddlistingresponse, error) {
+	return p.createMembersAttr(ctx, p, teamId, members)
+}
+
+// getMembersById returns a single Genesys Cloud members by Id
+func (p *teamProxy) getMembersById(ctx context.Context, teamId string) (members *[]platformclientv2.Userreferencewithname, err error) {
+	return p.getMembersByIdAttr(ctx, p, teamId)
+}
+
+// deleteMembers deletes a Genesys Cloud members by Id
+func (p *teamProxy) deleteMembers(ctx context.Context, teamId string, memberId string) (statusCode int, err error) {
+	return p.deleteMembersAttr(ctx, p, teamId, memberId)
 }
 
 // createTeamFn is an implementation function for creating a Genesys Cloud team
@@ -191,6 +215,63 @@ func deleteTeamFn(ctx context.Context, p *teamProxy, id string) (statusCode int,
 	resp, err := p.teamsApi.DeleteTeam(id)
 	if err != nil {
 		return resp.StatusCode, fmt.Errorf("Failed to delete team: %s", err)
+	}
+
+	return resp.StatusCode, nil
+}
+
+// createMembersFn is an implementation function for creating a Genesys Cloud members
+func createMembersFn(ctx context.Context, p *teamProxy, teamId string, members platformclientv2.Teammembers) (*platformclientv2.Teammemberaddlistingresponse, error) {
+
+	teamListingResponse, _, err := p.teamsApi.PostTeamMembers(teamId, members)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create members: %s", err)
+	}
+
+	return teamListingResponse, nil
+}
+
+// getMembersByIdFn is an implementation of the function to get a Genesys Cloud members by Id
+func getMembersByIdFn(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, err error) {
+
+	var (
+		after      string
+		allMembers []platformclientv2.Userreferencewithname
+	)
+	const pageSize = 100
+
+	for i := 0; ; i++ {
+		members, _, getErr := p.teamsApi.GetTeamMembers(teamId, pageSize, "", after, "")
+		if getErr != nil {
+			return nil, fmt.Errorf("Unable to find member entities %s", getErr)
+		}
+		if members.Entities == nil || len(*members.Entities) == 0 {
+			break
+		}
+		allMembers = append(allMembers, *members.Entities...)
+		if members.NextUri == nil || *members.NextUri == "" {
+			break
+		}
+		u, err := url.Parse(*members.NextUri)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to find member entities %s", err)
+		}
+		m, _ := url.ParseQuery(u.RawQuery)
+		if afterSlice, ok := m["after"]; ok && len(afterSlice) > 0 {
+			after = afterSlice[0]
+		}
+		if after == "" {
+			break
+		}
+	}
+	return &allMembers, nil
+}
+
+// deleteMembersFn is an implementation function for deleting a Genesys Cloud members
+func deleteMembersFn(ctx context.Context, p *teamProxy, teamId string, memberIds string) (statusCode int, err error) {
+	resp, err := p.teamsApi.DeleteTeamMembers(teamId, memberIds)
+	if err != nil {
+		return resp.StatusCode, fmt.Errorf("Failed to delete members: %s", err)
 	}
 
 	return resp.StatusCode, nil

@@ -145,49 +145,45 @@ func getTeamFromResourceData(d *schema.ResourceData) platformclientv2.Team {
 // readMembers is used by the members resource to read a members from genesys cloud
 func readMembers(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := getMembersProxy(sdkConfig)
+	proxy := getTeamProxy(sdkConfig)
 
 	log.Printf("Reading members %s", d.Id())
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		teamMemberEntityListing, respCode, getErr := proxy.getMembersById(ctx, d.Id())
+		teamMemberListing, getErr := proxy.getMembersById(ctx, d.Id())
 		if getErr != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read members %s: %s", d.Id(), getErr))
-			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read members %s: %s", d.Id(), getErr))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceMembers())
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam())
 
-		resourcedata.SetNillableValue(d, "name", userReferenceWithName.Name)
+		if teamMemberListing != nil {
+			d.Set("members", flattenTeamEntityListing(*teamMemberListing))
+		}
 
-		log.Printf("Read members %s %s", d.Id(), *userReferenceWithName.Name)
+		log.Printf("Reading members of team %s", d.Id())
 		return cc.CheckState()
 	})
 }
 
-// deleteMembers is used by the members resource to delete a members from Genesys cloud
-func deleteMembers(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := getMembersProxy(sdkConfig)
-
-	_, err := proxy.deleteMembers(ctx, d.Id())
-	if err != nil {
-		return diag.Errorf("Failed to delete members %s: %s", d.Id(), err)
+// getMembersFromResourceData maps data from schema ResourceData object to a platformclientv2.Userreferencewithname
+func getMembersFromResourceData(d *schema.ResourceData) platformclientv2.Userreferencewithname {
+	return platformclientv2.Userreferencewithname{
+		Name: platformclientv2.String(d.Get("name").(string)),
 	}
+}
 
-	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, respCode, err := proxy.getMembersById(ctx, d.Id())
+func flattenTeamEntityListing(teamEntityListing []platformclientv2.Userreferencewithname) []interface{} {
+	memberList := []interface{}{}
 
-		if err != nil {
-			if gcloud.IsStatus404ByInt(respCode) {
-				log.Printf("Deleted members %s", d.Id())
-				return nil
-			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting members %s: %s", d.Id(), err))
-		}
-
-		return retry.RetryableError(fmt.Errorf("members %s still exists", d.Id()))
-	})
+	if len(teamEntityListing) == 0 {
+		return nil
+	}
+	for _, teamEntity := range teamEntityListing {
+		memberInformation := make(map[string]interface{})
+		memberInformation["member_id"] = teamEntity.Id
+		memberInformation["member_name"] = teamEntity.Name
+		memberList = append(memberList, memberInformation)
+	}
+	return memberList
 }
