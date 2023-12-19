@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 /*
@@ -219,6 +219,7 @@ func getFormsEvaluationFn(ctx context.Context, p *policyProxy, formId string) (*
 		return nil, err
 	}
 
+	// Should be Evaluationform, but the api is returning Evaluationformresponse
 	return form, nil
 }
 

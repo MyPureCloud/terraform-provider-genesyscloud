@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 var (
@@ -182,7 +182,7 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Updating Routing Utilization")
 
-	_, _, err := routingAPI.PutRoutingUtilization(platformclientv2.Utilization{
+	_, _, err := routingAPI.PutRoutingUtilization(platformclientv2.Utilizationrequest{
 		Utilization: buildSdkRoutingUtilizations(d),
 	})
 	if err != nil {
