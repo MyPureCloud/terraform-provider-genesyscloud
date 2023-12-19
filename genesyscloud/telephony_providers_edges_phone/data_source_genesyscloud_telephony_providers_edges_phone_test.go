@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
@@ -57,7 +58,7 @@ func TestAccDataSourcePhone(t *testing.T) {
 					gcloud.NullValue, // Default acdAutoAnswer
 					"",               // No profile skills
 					"",               // No certs
-				) + gcloud.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+				) + phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 					phoneBaseSettingsRes,
 					phoneBaseSettingsName,
 					"phoneBaseSettings description",
