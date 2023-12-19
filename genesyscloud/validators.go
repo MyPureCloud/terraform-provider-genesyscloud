@@ -35,7 +35,7 @@ func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // Validates a phone extension pool
-func validateExtensionPool(number interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateExtensionPool(number interface{}, _ cty.Path) diag.Diagnostics {
 	if numberStr, ok := number.(string); ok {
 
 		re := regexp.MustCompile(`^\d{3,9}$`)

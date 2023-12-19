@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -51,6 +52,17 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 	for _, cred := range *credentials {
 		log.Printf("Dealing with credential id : %s", *cred.Id)
 		if cred.Name != nil { // Credential is possible to have no name
+			// Verify that the integration entity itself exist before exporting the integration credentials associated to it: DEVTOOLING-282
+			integrationId := strings.Split(*cred.Name, "Integration-")[1]
+			_, resp, err := ip.getIntegrationById(ctx, integrationId)
+			if err != nil {
+				if gcloud.IsStatus404(resp) {
+					log.Printf("Integration id %s no longer exist, we are therefore not exporting the associated integration credential id %s", integrationId, *cred.Id)
+					continue
+				} else {
+					log.Printf("Integration id %s exists but we got an unexpected error retrieving it: %v", integrationId, err)
+				}
+			}
 			resources[*cred.Id] = &resourceExporter.ResourceMeta{Name: *cred.Name}
 		}
 	}
