@@ -166,11 +166,28 @@ func readMembers(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	})
 }
 
-// getMembersFromResourceData maps data from schema ResourceData object to a platformclientv2.Userreferencewithname
-func getMembersFromResourceData(d *schema.ResourceData) platformclientv2.Userreferencewithname {
-	return platformclientv2.Userreferencewithname{
-		Name: platformclientv2.String(d.Get("name").(string)),
+// createMembers is used by the members resource to create Genesys cloud members
+func createMembers(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	proxy := getTeamProxy(sdkConfig)
+	log.Printf("Creating members for team %s", d.Id())
+	_, err := proxy.createMembers(ctx, d.Id(), buildTeamMembers(d.Get("members").([]interface{})))
+	if err != nil {
+		return diag.Errorf("Failed to create members: %s", err)
 	}
+
+	log.Printf("Created members %s", d.Id())
+	return readMembers(ctx, d, meta)
+}
+
+func buildTeamMembers(teamMembers []interface{}) platformclientv2.Teammembers {
+	var teamMemberObject platformclientv2.Teammembers
+	members := make([]string, len(teamMembers))
+	for i, member := range teamMembers {
+		members[i] = member.(string)
+	}
+	teamMemberObject.MemberIds = &members
+	return teamMemberObject
 }
 
 func flattenTeamEntityListing(teamEntityListing []platformclientv2.Userreferencewithname) []interface{} {
