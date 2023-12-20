@@ -35,7 +35,7 @@ func FlattenBaseSettingsProperties(properties interface{}) (string, diag.Diagnos
 	return string(propertiesBytes), nil
 }
 
-func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+func CustomizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	// Defaults must be set on missing properties
 	if !diff.NewValueKnown("properties") {
 		// properties value not yet in final state. Nothing to do.

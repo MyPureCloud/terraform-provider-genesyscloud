@@ -53,8 +53,6 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_routing_wrapupcode", DataSourceRoutingWrapupcode())
 	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
 	l.RegisterDataSource("genesyscloud_user", DataSourceUser())
-	l.RegisterDataSource("genesyscloud_telephony_providers_edges_linebasesettings", dataSourceLineBaseSettings())
-	l.RegisterDataSource("genesyscloud_telephony_providers_edges_phonebasesettings", dataSourcePhoneBaseSettings())
 	l.RegisterDataSource("genesyscloud_widget_deployment", dataSourceWidgetDeployments())
 }
 
@@ -96,7 +94,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_knowledge_label", ResourceKnowledgeLabel())
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
 	l.RegisterResource("genesyscloud_oauth_client", ResourceOAuthClient())
-
 	l.RegisterResource("genesyscloud_orgauthorization_pairing", resourceOrgauthorizationPairing())
 	l.RegisterResource("genesyscloud_quality_forms_evaluation", ResourceEvaluationForm())
 	l.RegisterResource("genesyscloud_quality_forms_survey", ResourceSurveyForm())
@@ -112,7 +109,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_routing_settings", ResourceRoutingSettings())
 	l.RegisterResource("genesyscloud_routing_utilization", ResourceRoutingUtilization())
 	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
-	l.RegisterResource("genesyscloud_telephony_providers_edges_phonebasesettings", ResourcePhoneBaseSettings())
 	l.RegisterResource("genesyscloud_user", ResourceUser())
 	l.RegisterResource("genesyscloud_user_roles", ResourceUserRoles())
 	l.RegisterResource("genesyscloud_widget_deployment", ResourceWidgetDeployment())
@@ -161,7 +157,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_routing_skill_group", ResourceSkillGroupExporter())
 	l.RegisterExporter("genesyscloud_routing_utilization", RoutingUtilizationExporter())
 	l.RegisterExporter("genesyscloud_routing_wrapupcode", RoutingWrapupCodeExporter())
-	l.RegisterExporter("genesyscloud_telephony_providers_edges_phonebasesettings", PhoneBaseSettingsExporter())
 	l.RegisterExporter("genesyscloud_user", UserExporter())
 	l.RegisterExporter("genesyscloud_user_roles", UserRolesExporter())
 	l.RegisterExporter("genesyscloud_widget_deployment", WidgetDeploymentExporter())
