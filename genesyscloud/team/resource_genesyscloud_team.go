@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"time"
 
@@ -166,6 +167,28 @@ func readMembers(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	})
 }
 
+// deleteMembers is used by the members resource to delete a members from Genesys cloud
+func deleteMembers(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	proxy := getTeamProxy(sdkConfig)
+
+	_, err := proxy.deleteMembers(ctx, d.Id(), convertMemberListtoString(d.Get("members").([]interface{})))
+	if err != nil {
+		return diag.Errorf("Failed to delete members %s: %s", d.Id(), err)
+	}
+
+	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+		_, err := proxy.getMembersById(ctx, d.Id())
+
+		if err != nil {
+
+			return retry.NonRetryableError(fmt.Errorf("Error deleting members %s: %s", d.Id(), err))
+		}
+
+		return retry.NonRetryableError(fmt.Errorf("members %s still exists", d.Id()))
+	})
+}
+
 // createMembers is used by the members resource to create Genesys cloud members
 func createMembers(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
@@ -188,6 +211,15 @@ func buildTeamMembers(teamMembers []interface{}) platformclientv2.Teammembers {
 	}
 	teamMemberObject.MemberIds = &members
 	return teamMemberObject
+}
+
+func convertMemberListtoString(teamMembers []interface{}) string {
+	var memberList []string
+	for _, v := range teamMembers {
+		memberList = append(memberList, v.(string))
+	}
+	memberString := strings.Join(memberList, ", ")
+	return memberString
 }
 
 func flattenTeamEntityListing(teamEntityListing []platformclientv2.Userreferencewithname) []interface{} {
