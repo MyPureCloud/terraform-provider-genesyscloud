@@ -258,6 +258,13 @@ func (a *architectIvrProxy) uploadArchitectIvrWithChunkingLogic(ctx context.Cont
 	if len(dnisChunks) > 1 {
 		respIvr, resp, err = a.uploadIvrDnisChunks(ctx, dnisChunks, id)
 		if err != nil {
+			// if the chunking logic failed on create - delete the IVR that was created above
+			// Otherwise the CreateContext func will fail and terraform will assume the IVR was never created
+			if post {
+				if _, deleteErr := a.deleteArchitectIvr(ctx, id); deleteErr != nil {
+					log.Printf("failed to delete ivr '%s' after dnis chunking logic failed: %v", id, deleteErr)
+				}
+			}
 			return respIvr, resp, err
 		}
 	}
