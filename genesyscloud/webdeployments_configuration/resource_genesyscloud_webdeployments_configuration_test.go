@@ -97,13 +97,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.launcher_button.0.visibility", "OnDemand"),
-<<<<<<< HEAD:genesyscloud/resource_genesyscloud_webdeployments_configuration_test.go
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.logo_url", ""),
-=======
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
->>>>>>> origin/main:genesyscloud/webdeployments_configuration/resource_genesyscloud_webdeployments_configuration_test.go
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.styles.0.primary_color", "#B0B0B0"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.0.file_types.#", "1"),
@@ -112,27 +107,15 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
-<<<<<<< HEAD:genesyscloud/resource_genesyscloud_webdeployments_configuration_test.go
 					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
-					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", TrueValue),
-					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", TrueValue),
+					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", gcloud.TrueValue),
+					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", gcloud.TrueValue),
 					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "1"),
 					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.0", "Webmessaging"),
 					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "1"),
 					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.0", "selector-one"),
 					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "1"),
 					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.0", "selector-one"),
-=======
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", gcloud.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", gcloud.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.0", "Webmessaging"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.0", "selector-one"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.0", "selector-one"),
->>>>>>> origin/main:genesyscloud/webdeployments_configuration/resource_genesyscloud_webdeployments_configuration_test.go
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
@@ -213,13 +196,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.launcher_button.0.visibility", "OnDemand"),
-<<<<<<< HEAD:genesyscloud/resource_genesyscloud_webdeployments_configuration_test.go
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.logo_url", ""),
-=======
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
->>>>>>> origin/main:genesyscloud/webdeployments_configuration/resource_genesyscloud_webdeployments_configuration_test.go
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.styles.0.primary_color", "#B0B0B0"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.#", "2"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.0.file_types.#", "1"),
@@ -228,33 +206,18 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
-<<<<<<< HEAD:genesyscloud/resource_genesyscloud_webdeployments_configuration_test.go
 					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
-					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", FalseValue),
-					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", FalseValue),
+					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", gcloud.FalseValue),
+					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", gcloud.FalseValue),
 					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "2"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
+					// gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
+					// gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
 					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "2"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
+					// gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
+					// gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
 					// resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "2"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
-					// ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
-=======
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", gcloud.FalseValue),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", gcloud.FalseValue),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.channels.#", "2"),
-					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Webmessaging"),
-					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.channels", "Voice"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.#", "2"),
-					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-one"),
-					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.mask_selectors", "selector-two"),
-					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "2"),
-					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
-					gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
->>>>>>> origin/main:genesyscloud/webdeployments_configuration/resource_genesyscloud_webdeployments_configuration_test.go
+					// gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-one"),
+					// gcloud.ValidateStringInArray(fullResourceName, "cobrowse.0.readonly_selectors", "selector-two"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
@@ -294,12 +257,12 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_uri", "/api/v2/knowledge/knowledgebases/dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.default_value", "Welcome to Knowledge Portal"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.1.type", "Welcome"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.type", "Welcome"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", "hash"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.feedback_enabled", "true"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.enabled_categories_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.self_uri", "https://my-domain/images/my-logo.png"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.image_source", ""),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.image_source", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_background_color", "#5C3D5C"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_text_color", "#FFFFFF"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_image", "https://my-domain/images/my-logo.png"),
@@ -312,6 +275,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", "Home"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_type", "Search"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", "true"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template", "false"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", "false"),
 				),
 			},
 			{
@@ -438,13 +403,13 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 			feedback_enabled = true
 			enabled_categories {
 				enabled_categories_id = "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"
-				self_uri = "https://example.com/image"
-				image_source = "https://example.com/image"
+				self_uri = "https://my-domain/images/my-logo.png"
+				image_source = "https://my-domain/images/my-logo.png"
 			}
 			style_setting {
 				hero_style_background_color = "#5C3D5C"
 				hero_style_text_color = "#FFFFFF"
-				hero_style_image = "https://example.com/image"
+				hero_style_image = "https://my-domain/images/my-logo.png"
 				global_style_background_color = "#FAF8F7"
 				global_style_primary_color = "#FF4F1F"
 				global_style_primary_color_dark = "#CC3F19"
