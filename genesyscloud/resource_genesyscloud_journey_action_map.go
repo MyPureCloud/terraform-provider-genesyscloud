@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 var (
@@ -414,7 +414,7 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Creating journey action map %s", *actionMap.DisplayName)
 	result, resp, err := journeyApi.PostJourneyActionmaps(*actionMap)
 	if err != nil {
-		input, _ := interfaceToJson(*actionMap)
+		input, _ := InterfaceToJson(*actionMap)
 		return diag.Errorf("failed to create journey action map %s: %s\n(input: %+v)\n(resp: %s)", *actionMap.DisplayName, err, input, GetBody(resp))
 	}
 
@@ -462,7 +462,7 @@ func updateJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 		patchActionMap.Version = actionMap.Version
 		_, resp, patchErr := journeyApi.PatchJourneyActionmap(d.Id(), *patchActionMap)
 		if patchErr != nil {
-			input, _ := interfaceToJson(*patchActionMap)
+			input, _ := InterfaceToJson(*patchActionMap)
 			return resp, diag.Errorf("Error updating journey action map %s: %s\n(input: %+v)\n(resp: %s)", *patchActionMap.DisplayName, patchErr, input, GetBody(resp))
 		}
 		return resp, nil
@@ -812,7 +812,7 @@ func flattenOpenActionFields(openActionFields *platformclientv2.Openactionfields
 	architectFlowFieldsMap := make(map[string]interface{})
 	architectFlowFieldsMap["open_action"] = lists.FlattenAsList(openActionFields.OpenAction, flattenOpenActionDomainEntityRef)
 	if openActionFields.ConfigurationFields != nil {
-		jsonString, err := interfaceToJson(openActionFields.ConfigurationFields)
+		jsonString, err := InterfaceToJson(openActionFields.ConfigurationFields)
 		if err != nil {
 			log.Printf("Error marshalling '%s': %v", "configuration_fields", err)
 		}

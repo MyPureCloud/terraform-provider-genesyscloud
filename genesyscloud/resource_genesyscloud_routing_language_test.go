@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func TestAccResourceRoutingLanguageBasic(t *testing.T) {
@@ -37,11 +37,11 @@ func TestAccResourceRoutingLanguageBasic(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyLanguagesDestroyed,
+		CheckDestroy: ValidateLanguagesDestroyed,
 	})
 }
 
-func testVerifyLanguagesDestroyed(state *terraform.State) error {
+func ValidateLanguagesDestroyed(state *terraform.State) error {
 	routingApi := platformclientv2.NewRoutingApi()
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_routing_language" {

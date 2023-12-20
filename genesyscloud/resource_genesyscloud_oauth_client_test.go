@@ -50,7 +50,7 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					grantTypeClientCreds,
 					tokenSec1,
 					NullValue, // Default state
-					generateStringArray(strconv.Quote(redirectURI1)),
+					GenerateStringArray(strconv.Quote(redirectURI1)),
 					NullValue, // No scopes for client creds
 					credentialName1,
 					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", NullValue),
@@ -80,7 +80,7 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					grantTypeClientCreds,
 					tokenSec2,
 					strconv.Quote(stateInactive),
-					generateStringArray(strconv.Quote(redirectURI2)),
+					GenerateStringArray(strconv.Quote(redirectURI2)),
 					NullValue, // No scopes for client creds
 					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", NullValue),
 				),
@@ -103,8 +103,8 @@ func TestAccResourceOAuthClient(t *testing.T) {
 					grantTypeCode,
 					tokenSec1,
 					strconv.Quote(stateActive),
-					generateStringArray(strconv.Quote(redirectURI1)),
-					generateStringArray(strconv.Quote(scope1)),
+					GenerateStringArray(strconv.Quote(redirectURI1)),
+					GenerateStringArray(strconv.Quote(scope1)),
 					// No roles for CODE type
 				),
 				Check: resource.ComposeTestCheckFunc(

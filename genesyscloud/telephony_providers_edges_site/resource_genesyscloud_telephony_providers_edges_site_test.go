@@ -9,11 +9,12 @@ import (
 	"time"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 var (
@@ -408,7 +409,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 			"46278",
 		))
 
-	trunkBaseSettings1 := gcloud.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings1 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings1",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -416,7 +417,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings2 := gcloud.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings2 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings2",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -424,7 +425,7 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings3 := gcloud.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings3 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings3",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",

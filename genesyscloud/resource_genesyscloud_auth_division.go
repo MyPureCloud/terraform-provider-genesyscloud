@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -181,10 +181,18 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		return nil
 	}
 
-	log.Printf("Deleting division %s", name)
-	_, err := authAPI.DeleteAuthorizationDivision(d.Id(), false)
-	if err != nil {
-		return diag.Errorf("Failed to delete division %s: %s", name, err)
+	// Sometimes a division with resources in it priorly still thinks it is attached to those resources during a destroy run.
+	// We're retrying again as those resources should detach completely eventually.
+	diagErr := RetryWhen(IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Deleting division %s", name)
+		resp, err := authAPI.DeleteAuthorizationDivision(d.Id(), false)
+		if err != nil {
+			return resp, diag.Errorf("Failed to delete division %s: %s", name, err)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

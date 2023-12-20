@@ -3,10 +3,6 @@ package architect_grammar_language
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 	"log"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -14,6 +10,11 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 /*
@@ -32,7 +33,7 @@ func getAllAuthArchitectGrammarLanguage(ctx context.Context, clientConfig *platf
 
 	for _, language := range *languages {
 		languageId := *language.GrammarId + ":" + *language.Language
-		resources[languageId] = &resourceExporter.ResourceMeta{Name: languageId}
+		resources[languageId] = &resourceExporter.ResourceMeta{Name: *language.Language}
 	}
 
 	return resources, nil

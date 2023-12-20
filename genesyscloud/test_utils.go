@@ -73,10 +73,6 @@ func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	}
 }
 
-func generateStringArray(vals ...string) string {
-	return fmt.Sprintf("[%s]", strings.Join(vals, ","))
-}
-
 // For fields such as genesyscloud_outbound_campaign.campaign_status, which use a diff suppress func,
 // and may return as "on", or "complete" depending on how long the operation takes
 func VerifyAttributeInArrayOfPotentialValues(resource string, key string, potentialValues []string) resource.TestCheckFunc {
@@ -217,7 +213,7 @@ func ValidateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 	}
 }
 
-func validateValueInJsonPropertiesAttr(resourceName string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
+func ValidateValueInJsonPropertiesAttr(resourceName string, attrName string, jsonProp string, jsonValue string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		resourceState, ok := state.RootModule().Resources[resourceName]
 		if !ok {
@@ -310,6 +306,15 @@ func GenerateJsonProperty(propName string, propValue string) string {
 	return fmt.Sprintf(`"%s" = %s`, propName, propValue)
 }
 
+func GenerateJsonArrayPropertyEnquote(propName string, propValues ...string) string {
+	quotedVals := []string{}
+	for _, strv := range propValues {
+		quotedVals = append(quotedVals, strconv.Quote(strv))
+	}
+
+	return GenerateJsonArrayProperty(propName, quotedVals...)
+}
+
 func GenerateJsonArrayProperty(propName string, propValues ...string) string {
 	return fmt.Sprintf(`"%s" = [%s]`, propName, strings.Join(propValues, ", "))
 }
@@ -318,6 +323,19 @@ func GenerateJsonObject(properties ...string) string {
 	return fmt.Sprintf(`{
 		%s
 	}`, strings.Join(properties, "\n"))
+}
+
+func GenerateStringArray(vals ...string) string {
+	return fmt.Sprintf("[%s]", strings.Join(vals, ","))
+}
+
+func GenerateStringArrayEnquote(vals ...string) string {
+	quotedVals := []string{}
+	for _, strv := range vals {
+		quotedVals = append(quotedVals, strconv.Quote(strv))
+	}
+
+	return fmt.Sprintf("[%s]", strings.Join(quotedVals, ","))
 }
 
 func GenerateMapProperty(propName string, propValue string) string {
@@ -376,7 +394,7 @@ func GenerateJsonSchemaDocStr(properties ...string) string {
 	)
 }
 
-func randString(length int) string {
+func RandString(length int) string {
 	rand.Seed(time.Now().UnixNano())
 
 	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")

@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 // SDKClientPool holds a pool of client configs for the Genesys Cloud SDK. One should be
@@ -96,7 +96,8 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) {
 }
 
 type resContextFunc func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics
-type getAllConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics)
+type GetAllConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics)
+type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics)
 
 func CreateWithPooledClient(method resContextFunc) schema.CreateContextFunc {
 	return schema.CreateContextFunc(runWithPooledClient(method))
@@ -136,7 +137,7 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 }
 
 // Inject a pooled SDK client connection into an exporter's getAll* method
-func GetAllWithPooledClient(method getAllConfigFunc) resourceExporter.GetAllResourcesFunc {
+func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllResourcesFunc {
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 		clientConfig := sdkClientPool.acquire()
 		defer sdkClientPool.release(clientConfig)
@@ -145,6 +146,22 @@ func GetAllWithPooledClient(method getAllConfigFunc) resourceExporter.GetAllReso
 		select {
 		case <-ctx.Done():
 			return nil, diag.FromErr(ctx.Err()) // Error somewhere, terminate
+		default:
+		}
+
+		return method(ctx, clientConfig)
+	}
+}
+
+func GetAllWithPooledClientCustom(method GetCustomConfigFunc) resourceExporter.GetAllCustomResourcesFunc {
+	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, map[string][]string, diag.Diagnostics) {
+		clientConfig := sdkClientPool.acquire()
+		defer sdkClientPool.release(clientConfig)
+
+		// Check if the request has been cancelled
+		select {
+		case <-ctx.Done():
+			return nil, nil, diag.FromErr(ctx.Err()) // Error somewhere, terminate
 		default:
 		}
 

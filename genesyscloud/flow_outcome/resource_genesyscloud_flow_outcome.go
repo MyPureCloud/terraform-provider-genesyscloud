@@ -3,11 +3,12 @@ package flow_outcome
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 	"log"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -33,7 +34,7 @@ func getAllAuthFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.
 	}
 
 	for _, flowOutcome := range *flowOutcomes {
-		resources[*flowOutcome.Id] = &resourceExporter.ResourceMeta{Name: *flowOutcome.Id}
+		resources[*flowOutcome.Id] = &resourceExporter.ResourceMeta{Name: *flowOutcome.Name}
 	}
 
 	return resources, nil
@@ -66,6 +67,7 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flowOutcome, respCode, getErr := proxy.getFlowOutcomeById(ctx, d.Id())
+
 		if getErr != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
 				return retry.RetryableError(fmt.Errorf("Failed to read flow outcome %s: %s", d.Id(), getErr))

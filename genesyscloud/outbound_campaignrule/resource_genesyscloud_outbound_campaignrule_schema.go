@@ -19,15 +19,14 @@ resource_genesycloud_outbound_campaignrule_schema.go holds four functions within
 */
 const resourceName = "genesyscloud_outbound_campaignrule"
 
-// SetRegistrar registers all of the resources, datasources and exporters in the package
-func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundCampaignrule())
-	regInstance.RegisterDataSource(resourceName, DataSourceOutboundCampaignrule())
-	regInstance.RegisterExporter(resourceName, OutboundCampaignruleExporter())
-}
+var (
+	outboundCampaignRuleEntities = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`campaign_ids`: outboundCampaignRuleEntityCampaignRuleId,
+			`sequence_ids`: outboundCampaignRuleEntitySequenceRuleId,
+		},
+	}
 
-// ResourceOutboundCampaignrule registers the genesyscloud_outbound_campaignrule resource with Terraform
-func ResourceOutboundCampaignrule() *schema.Resource {
 	outboundCampaignRuleEntityCampaignRuleId = &schema.Schema{
 		Description: `The list of campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.`,
 		Optional:    true,
@@ -44,13 +43,6 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 		Elem:        &schema.Schema{Type: schema.TypeString},
 	}
 
-	outboundCampaignRuleEntities = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`campaign_ids`: outboundCampaignRuleEntityCampaignRuleId,
-			`sequence_ids`: outboundCampaignRuleEntitySequenceRuleId,
-		},
-	}
-
 	outboundCampaignRuleActionEntities = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`campaign_ids`: outboundCampaignRuleEntityCampaignRuleId,
@@ -63,8 +55,18 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 			},
 		},
 	}
+)
 
-	campaignRuleParameters = &schema.Resource{
+// SetRegistrar registers all of the resources, datasources and exporters in the package
+func SetRegistrar(regInstance registrar.Registrar) {
+	regInstance.RegisterResource(resourceName, ResourceOutboundCampaignrule())
+	regInstance.RegisterDataSource(resourceName, DataSourceOutboundCampaignrule())
+	regInstance.RegisterExporter(resourceName, OutboundCampaignruleExporter())
+}
+
+// ResourceOutboundCampaignrule registers the genesyscloud_outbound_campaignrule resource with Terraform
+func ResourceOutboundCampaignrule() *schema.Resource {
+	campaignRuleParameters := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`operator`: {
 				Description:  `The operator for comparison. Required for a CampaignRuleCondition.`,
@@ -92,11 +94,12 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 		},
 	}
 
-	outboundCampaignRuleCondition = &schema.Resource{
+	outboundCampaignRuleCondition := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`id`: {
 				Description: `The ID of the CampaignRuleCondition.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`parameters`: {
@@ -114,11 +117,12 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 		},
 	}
 
-	outboundCampaignRuleAction = &schema.Resource{
+	outboundCampaignRuleAction := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`id`: {
 				Description: `The ID of the CampaignRuleAction.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`parameters`: {

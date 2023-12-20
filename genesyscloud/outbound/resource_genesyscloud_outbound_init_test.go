@@ -28,7 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources["genesyscloud_outbound_callabletimeset"] = ResourceOutboundCallabletimeset()
-	providerResources["genesyscloud_outbound_campaignrule"] = outboundCampaignrule.ResourceOutboundCampaignRule()
+	providerResources["genesyscloud_outbound_campaignrule"] = outboundCampaignrule.ResourceOutboundCampaignrule()
 	providerResources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.ResourceOutboundAttemptLimit()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = ResourceOutboundCallAnalysisResponseSet()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = ResourceOutboundContactListFilter()
@@ -75,21 +75,20 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 }
 
-func initTestresources() {
+func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
-	reg_instance := &registerTestInstance{}
+	regInstance := &registerTestInstance{}
 
-	reg_instance.registerTestDataSources()
-	reg_instance.registerTestResources()
-
+	regInstance.registerTestDataSources()
+	regInstance.registerTestResources()
 }
 
 func TestMain(m *testing.M) {
 
 	// Run setup function before starting the test suite for Outbound Package
-	initTestresources()
+	initTestResources()
 
 	// Run the test suite for outbound
 	m.Run()

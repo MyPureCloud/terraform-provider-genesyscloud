@@ -20,32 +20,27 @@ type Sanitizer interface {
 type sanitizerOriginal struct{}
 type sanitizerOptimized struct{}
 
-// NewSanitizierProvider returns a Sanitizer. Without a GENESYS_SANITIZER_OPTIMIZED environment variable set it will always use the original Sanitizer
+// NewSanitizierProvider returns a Sanitizer. Without a GENESYS_SANITIZER_LEGACY environment variable set it will always use the optimized Sanitizer
 func NewSanitizerProvider() *SanitizerProvider {
 	// Check if the environment variable is set
-	_, exists := os.LookupEnv("GENESYS_SANITIZER_OPTIMIZED")
+	_, exists := os.LookupEnv("GENESYS_SANITIZER_LEGACY")
 
-	//If the
+	//If the GENESYS_SANITIZER_LEGACY is set use the original name sanitizer
 	if exists {
-		log.Print("Using the optimized resource name sanitizer")
+		log.Print("Using the original resource name sanitizer")
 		return &SanitizerProvider{
-			S: &sanitizerOptimized{},
+			S: &sanitizerOriginal{},
 		}
 	}
 
-	log.Print("Using the original resource name sanitizer")
+	log.Print("Using the optimized resource name sanitizer")
 	return &SanitizerProvider{
-		S: &sanitizerOriginal{},
+		S: &sanitizerOptimized{},
 	}
+
 }
 
-/**
-	The next two functions are the original Sanitizer functions and is a bit heavier then Brian Goad's implementation.(DEVENGAGE-2891)
-	The problem is that the PS team built some of their migration tools around the old names. Even though this is not a contract I am
-    trying to be a good citizen and keep their apps running
-*/
-
-// Sanitize sanitizes all of the resource names using the original algorithm
+// Sanitize sanitizes all the resource names using the original algorithm
 func (so *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
 	for _, meta := range idMetaMap {
 		meta.Name = so.SanitizeResourceName(meta.Name)
@@ -70,11 +65,7 @@ func (so *sanitizerOriginal) SanitizeResourceName(inputName string) string {
 	return name
 }
 
-/**
-  The next two functions are Brian Goad's (DEVENGAGE-2891) more optimized and easier to read resource names.
-*/
-
-// Santize sanitizes all resource name using the optimized algorithm
+// Sanitize sanitizes all resource name using the optimized algorithm
 func (sod *sanitizerOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 	// Pull out all the original names of the resources for reference later
 	originalResourceNames := make(map[string]string)

@@ -29,6 +29,7 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
   }
   interaction_type = "chat" // Possible values: chat, email, twitter
   substitutions {
+    id            = "sample_id"
     description   = "Sample description"
     default_value = "Sample default value"
   }
@@ -51,13 +52,17 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
       }
     }
   })
-  response_type = "MessagingTemplate" // Possible values: MessagingTemplate, CampaignSmsTemplate, CampaignEmailTemplate
+  response_type = "MessagingTemplate" // Possible values: MessagingTemplate, CampaignSmsTemplate, CampaignEmailTemplate, Footer
   messaging_template {
     whats_app {
       name      = "Sample name"
       namespace = "Sample namespace"
       language  = "en_US"
     }
+  }
+  footer {
+    type                = "Signature"
+    applicableResources = ["Campaign"]
   }
   asset_ids = [genesyscloud_responsemanagement_responseasset.asset_1.id, genesyscloud_responsemanagement_responseasset.asset_2.id]
 }
@@ -75,6 +80,7 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
 ### Optional
 
 - `asset_ids` (Set of String) Assets used in the response
+- `footer` (Block Set, Max: 1) Footer template identifies the Footer type and its footerUsage (see [below for nested schema](#nestedblock--footer))
 - `interaction_type` (String) The interaction type for this response.
 - `messaging_template` (Block Set, Max: 1) An optional messaging template definition for responseType.MessagingTemplate. (see [below for nested schema](#nestedblock--messaging_template))
 - `response_type` (String) The response type represented by the response.
@@ -97,6 +103,15 @@ Optional:
 - `content_type` (String) Response text content type.
 
 
+<a id="nestedblock--footer"></a>
+### Nested Schema for `footer`
+
+Optional:
+
+- `applicable_resources` (List of String) Specifies the canned response template where the footer can be used.Valid values: Campaign.
+- `type` (String) Specifies the type represented by Footer.Valid values: Signature.
+
+
 <a id="nestedblock--messaging_template"></a>
 ### Nested Schema for `messaging_template`
 
@@ -117,6 +132,10 @@ Required:
 
 <a id="nestedblock--substitutions"></a>
 ### Nested Schema for `substitutions`
+
+Required:
+
+- `id` (String) Response substitution identifier.
 
 Optional:
 

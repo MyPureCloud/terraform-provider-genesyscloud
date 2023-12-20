@@ -6,7 +6,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -28,6 +30,8 @@ type ResourceMeta struct {
 type ResourceIDMetaMap map[string]*ResourceMeta
 
 // GetAllResourcesFunc is a method that returns all resource IDs
+type GetAllCustomResourcesFunc func(context.Context) (ResourceIDMetaMap, map[string][]string, diag.Diagnostics)
+
 type GetAllResourcesFunc func(context.Context) (ResourceIDMetaMap, diag.Diagnostics)
 
 // RefAttrSettings contains behavior settings for references
@@ -38,6 +42,13 @@ type RefAttrSettings struct {
 
 	// Values that may be set that should not be treated as IDs
 	AltValues []string
+}
+
+type ResourceInfo struct {
+	State   *terraform.InstanceState
+	Name    string
+	Type    string
+	CtyType cty.Type
 }
 
 // Allows the definition of a custom resolver for an exporter.
@@ -85,6 +96,12 @@ type ResourceExporter struct {
 	// AllowZeroValues is a list of attributes that should allow zero values in the export.
 	// By default zero values are removed from the config due to lack of "null" support in the plugin SDK
 	AllowZeroValues []string
+
+	// AllowEmptyArrays is a list of List attributes that should allow empty arrays in export.
+	// By default, empty arrays are removed but some array attributes may be required in the schema
+	// or depending on the API behavior better presented explicitly in the API as empty arrays.
+	// If the state has this as null or empty array, then the attribute will be returned as an empty array.
+	AllowEmptyArrays []string
 
 	// Some of our dependencies can not be exported properly because they have interdependencies between attributes.  You can
 	// define a map of custom attribute resolvers with an exporter.  See resource_genesyscloud_routing_queue for an example of how to define this.
@@ -166,6 +183,10 @@ func (r *ResourceExporter) ContainsNestedRefAttrs(attribute string) ([]string, b
 
 func (r *ResourceExporter) AllowForZeroValues(attribute string) bool {
 	return lists.ItemInSlice(attribute, r.AllowZeroValues)
+}
+
+func (r *ResourceExporter) AllowForEmptyArrays(attribute string) bool {
+	return lists.ItemInSlice(attribute, r.AllowEmptyArrays)
 }
 
 func (r *ResourceExporter) IsJsonEncodable(attribute string) bool {

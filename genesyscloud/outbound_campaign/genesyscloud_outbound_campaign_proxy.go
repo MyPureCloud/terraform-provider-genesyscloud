@@ -3,8 +3,9 @@ package outbound_campaign
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 	"log"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 /*
@@ -170,7 +171,7 @@ func getOutboundCampaignByIdFn(ctx context.Context, p *outboundCampaignProxy, id
 func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id string, outboundCampaign *platformclientv2.Campaign) (*platformclientv2.Campaign, error) {
 	campaign, _, err := getOutboundCampaignByIdFn(ctx, p, id)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to ruleset by id %s: %s", id, err)
+		return nil, fmt.Errorf("Failed to campaign by id %s: %s", id, err)
 	}
 
 	outboundCampaign.Version = campaign.Version

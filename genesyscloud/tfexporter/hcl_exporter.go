@@ -170,8 +170,7 @@ func postProcessHclBytes(resource []byte) []byte {
 		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
 	}
 
-	resourceStr = correctInterpolatedFileShaFunctions(resourceStr)
-
+	resourceStr = correctCustomFunctions(resourceStr)
 	return []byte(resourceStr)
 }
 
@@ -247,6 +246,12 @@ func getCtyValue(v interface{}) zclconfCty.Value {
 		value = zclconfCty.NumberFloatVal(vFloat64)
 	} else if vMapInter, ok := v.(map[string]interface{}); ok {
 		value = createHCLObject(vMapInter)
+	} else if vMapInter, ok := v.([]string); ok {
+		var values []zclconfCty.Value
+		for _, s := range vMapInter {
+			values = append(values, zclconfCty.StringVal(s))
+		}
+		value = zclconfCty.ListVal(values)
 	} else {
 		value = zclconfCty.NilVal
 	}
@@ -270,6 +275,8 @@ func createHCLObject(v map[string]interface{}) zclconfCty.Value {
 
 func handleInterfaceArray(body *hclwrite.Body, k string, v []interface{}) {
 	var listItems []zclconfCty.Value
+
+	nestedBlock := false
 	for _, val := range v {
 		// k { ... }
 		if valMap, ok := val.(map[string]interface{}); ok {
@@ -277,12 +284,16 @@ func handleInterfaceArray(body *hclwrite.Body, k string, v []interface{}) {
 			for key, value := range valMap {
 				addValue(block.Body(), key, value)
 			}
+			nestedBlock = true
 			// k = [ ... ]
 		} else {
 			listItems = append(listItems, getCtyValue(val))
+			nestedBlock = false
 		}
 	}
 	if len(listItems) > 0 {
 		body.SetAttributeValue(k, zclconfCty.ListVal(listItems))
+	} else if len(listItems) == 0 && !nestedBlock {
+		body.SetAttributeValue(k, zclconfCty.ListValEmpty(zclconfCty.NilType))
 	}
 }

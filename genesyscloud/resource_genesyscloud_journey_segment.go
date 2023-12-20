@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 var (
@@ -308,7 +308,7 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Creating journey segment %s", *journeySegment.DisplayName)
 	result, resp, err := journeyApi.PostJourneySegments(*journeySegment)
 	if err != nil {
-		input, _ := interfaceToJson(*journeySegment)
+		input, _ := InterfaceToJson(*journeySegment)
 		return diag.Errorf("failed to create journey segment %s: %s\n(input: %+v)\n(resp: %s)", *journeySegment.DisplayName, err, input, GetBody(resp))
 	}
 
@@ -356,7 +356,7 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 		patchSegment.Version = journeySegment.Version
 		_, resp, patchErr := journeyApi.PatchJourneySegment(d.Id(), *patchSegment)
 		if patchErr != nil {
-			input, _ := interfaceToJson(*patchSegment)
+			input, _ := InterfaceToJson(*patchSegment)
 			return resp, diag.Errorf("Error updating journey segment %s: %s\n(input: %+v)\n(resp: %s)", *patchSegment.DisplayName, patchErr, input, GetBody(resp))
 		}
 		return resp, nil

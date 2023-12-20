@@ -3,12 +3,13 @@ package flow_milestone
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 	"log"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -34,7 +35,7 @@ func getAllAuthFlowMilestones(ctx context.Context, clientConfig *platformclientv
 	}
 
 	for _, flowMilestone := range *flowMilestones {
-		resources[*flowMilestone.Id] = &resourceExporter.ResourceMeta{Name: *flowMilestone.Id}
+		resources[*flowMilestone.Id] = &resourceExporter.ResourceMeta{Name: *flowMilestone.Name}
 	}
 
 	return resources, nil

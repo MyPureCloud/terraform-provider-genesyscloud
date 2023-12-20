@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func TestAccResourceIdpOnelogin(t *testing.T) {
@@ -23,7 +23,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 			{
 				// Create
 				Config: generateIdpOneloginResource(
-					generateStringArray(strconv.Quote(testCert1)),
+					GenerateStringArray(strconv.Quote(testCert1)),
 					uri1,
 					uri2,
 					NullValue, // Not disabled
@@ -38,7 +38,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 			{
 				// Update with new values
 				Config: generateIdpOneloginResource(
-					generateStringArray(strconv.Quote(testCert2)),
+					GenerateStringArray(strconv.Quote(testCert2)),
 					uri2,
 					uri1,
 					TrueValue, // disabled
@@ -53,7 +53,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 			{
 				// Update with multiple certs
 				Config: generateIdpOneloginResource(
-					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					GenerateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
 					uri2,
 					uri1,
 					FalseValue, // disabled
@@ -69,7 +69,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 			{
 				// Update to one cert in array
 				Config: generateIdpOneloginResource(
-					generateStringArray(strconv.Quote(testCert1)),
+					GenerateStringArray(strconv.Quote(testCert1)),
 					uri2,
 					uri1,
 					FalseValue, // disabled
@@ -85,7 +85,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 			{
 				// Update back to two certs in array
 				Config: generateIdpOneloginResource(
-					generateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
+					GenerateStringArray(strconv.Quote(testCert1), strconv.Quote(testCert2)),
 					uri2,
 					uri1,
 					FalseValue, // disabled

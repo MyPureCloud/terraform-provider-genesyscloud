@@ -3,9 +3,10 @@ package architect_grammar_language
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
 	"net/http"
 	"os"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 type FileType int

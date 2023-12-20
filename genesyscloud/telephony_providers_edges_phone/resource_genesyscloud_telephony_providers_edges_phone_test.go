@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func TestAccResourcePhoneBasic(t *testing.T) {
@@ -73,7 +74,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 	}
 
 	config1 := gcloud.GenerateOrganizationMe() + user1 + user2 +
-		gcloud.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+		phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 			phoneBaseSettingsRes,
 			phoneBaseSettingsName,
 			"phoneBaseSettings description",
@@ -103,7 +104,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 
 	// Update phone with new user and name
 	config2 := gcloud.GenerateOrganizationMe() + user1 + user2 +
-		gcloud.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+		phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 			phoneBaseSettingsRes,
 			phoneBaseSettingsName,
 			"phoneBaseSettings description",
@@ -252,7 +253,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 		[]string{},
 	)
 
-	config := gcloud.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+	config := phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 		phoneBaseSettingsRes,
 		phoneBaseSettingsName,
 		"phoneBaseSettings description",

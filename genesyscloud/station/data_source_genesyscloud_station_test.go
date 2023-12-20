@@ -3,11 +3,11 @@ package station
 import (
 	"fmt"
 	"strconv"
-	"testing"
-
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
+	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -54,7 +54,7 @@ func TestAccDataSourceStation(t *testing.T) {
 		gcloud.NullValue, // Default acdAutoAnswer
 		"",               // No profile skills
 		"",               // No certs
-	) + gcloud.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+	) + phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
 		phoneBaseSettingsRes,
 		phoneBaseSettingsName,
 		"phoneBaseSettings description",

@@ -29,7 +29,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_grammar"] = architectGrammar.ResourceArchitectGrammar()
 }
 
-// initTestresources initializes all test_data resources and data sources.
+// initTestResources initializes all test_data resources and data sources.
 func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)

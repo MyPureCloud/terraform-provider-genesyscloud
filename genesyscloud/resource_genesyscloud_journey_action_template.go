@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 var (
@@ -336,7 +336,7 @@ func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 	log.Printf("Creating Journey Action Template %s", *actionTemplate.Name)
 	result, resp, err := journeyApi.PostJourneyActiontemplates(*actionTemplate)
 	if err != nil {
-		input, _ := interfaceToJson(*actionTemplate)
+		input, _ := InterfaceToJson(*actionTemplate)
 		return diag.Errorf("failed to create journey action template %s: %s\n(input: %+v)\n(resp: %s)", *actionTemplate.Name, err, input, GetBody(resp))
 	}
 	data.SetId(*result.Id)
@@ -374,7 +374,7 @@ func updateJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 		patchActionTemplate.Version = actionTemplate.Version
 		_, resp, patchErr := journeyApi.PatchJourneyActiontemplate(data.Id(), *patchActionTemplate)
 		if patchErr != nil {
-			input, _ := interfaceToJson(*patchActionTemplate)
+			input, _ := InterfaceToJson(*patchActionTemplate)
 			return resp, diag.Errorf("error updating journey action template %s: %s\n(input: %+v)\n(resp: %s)", *patchActionTemplate.Name, patchErr, input, GetBody(resp))
 		}
 		return resp, nil

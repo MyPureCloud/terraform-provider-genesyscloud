@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -16,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 var (
@@ -35,8 +36,31 @@ var (
 			},
 		},
 	}
+
+	responsemanagementresponseresponsefooterResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`type`: {
+				Description:  `Specifies the type represented by Footer.Valid values: Signature.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`Signature`}, false),
+			},
+			`applicable_resources`: {
+				Description: `Specifies the canned response template where the footer can be used.Valid values: Campaign.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+		},
+	}
+
 	responsemanagementresponseresponsesubstitutionResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			`id`: {
+				Description: `Response substitution identifier.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
 			`description`: {
 				Description: `Response substitution description.`,
 				Optional:    true,
@@ -136,7 +160,7 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 				Description:  `The response type represented by the response.`,
 				Optional:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`, `Footer`}, false),
 			},
 			`messaging_template`: {
 				Description: `An optional messaging template definition for responseType.MessagingTemplate.`,
@@ -153,6 +177,13 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			`footer`: {
+				Description: `Footer template identifies the Footer type and its footerUsage`,
+				Optional:    true,
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Elem:        responsemanagementresponseresponsefooterResource,
 			},
 		},
 	}
@@ -216,7 +247,6 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	substitutionsSchema := d.Get("substitutions_schema_id").(string)
 	responseType := d.Get("response_type").(string)
 	messagingTemplate := d.Get("messaging_template").(*schema.Set)
-
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	responseManagementApi := platformclientv2.NewResponseManagementApiWithConfig(sdkConfig)
 
@@ -225,6 +255,7 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 		Texts:         buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
 		Substitutions: buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
 		Assets:        buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
+		Footer:        buildSdkresponsemanagementresponseFooterTemplate(d.Get("footer").(*schema.Set)),
 	}
 
 	if name != "" {
@@ -270,6 +301,7 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 		Texts:         buildSdkresponsemanagementresponseResponsetextSlice(d.Get("texts").(*schema.Set)),
 		Substitutions: buildSdkresponsemanagementresponseResponsesubstitutionSlice(d.Get("substitutions").(*schema.Set)),
 		Assets:        buildSdkresponsemanagementresponseAddressableentityrefSlice(d.Get("asset_ids").(*schema.Set)),
+		Footer:        buildSdkresponsemanagementresponseFooterTemplate(d.Get("footer").(*schema.Set)),
 	}
 
 	if name != "" {
@@ -356,6 +388,10 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 			d.Set("asset_ids", flattenSdkresponsemanagementresponseAddressableentityrefSlice(*sdkresponse.Assets))
 		}
 
+		if sdkresponse.Footer != nil {
+			d.Set("footer", flattenSdkresponsemanagementresponseFooterTemplate(sdkresponse.Footer))
+		}
+
 		log.Printf("Read Responsemanagement Response %s %s", d.Id(), *sdkresponse.Name)
 		return cc.CheckState()
 	})
@@ -423,6 +459,7 @@ func buildSdkresponsemanagementresponseResponsesubstitutionSlice(responsesubstit
 	for _, configresponsesubstitution := range responsesubstitutionList {
 		var sdkResponsesubstitution platformclientv2.Responsesubstitution
 		responsesubstitutionMap := configresponsesubstitution.(map[string]interface{})
+		sdkResponsesubstitution.Id = platformclientv2.String(responsesubstitutionMap["id"].(string))
 		if description := responsesubstitutionMap["description"].(string); description != "" {
 			sdkResponsesubstitution.Description = &description
 		}
@@ -455,6 +492,26 @@ func buildSdkresponsemanagementresponseWhatsappdefinition(whatsappdefinition *sc
 	}
 
 	return &sdkWhatsappdefinition
+}
+
+func buildSdkresponsemanagementresponseFooterTemplate(footerTemplate *schema.Set) *platformclientv2.Footertemplate {
+
+	if footerTemplate == nil {
+		return nil
+	}
+	footerTemplateList := footerTemplate.List()
+	var sdkFootertemplate platformclientv2.Footertemplate
+	if len(footerTemplateList) > 0 {
+		footerTemplateMap := footerTemplateList[0].(map[string]interface{})
+		if footerType, exists := footerTemplateMap["type"].(string); exists {
+			sdkFootertemplate.VarType = &footerType
+		}
+		if applicableResources, exists := footerTemplateMap["applicable_resources"].([]interface{}); exists {
+			applicableResourcesList := lists.InterfaceListToStrings(applicableResources)
+			sdkFootertemplate.ApplicableResources = &applicableResourcesList
+		}
+	}
+	return &sdkFootertemplate
 }
 
 func buildSdkresponsemanagementresponseMessagingtemplate(messagingtemplate *schema.Set) *platformclientv2.Messagingtemplate {
@@ -520,12 +577,9 @@ func flattenSdkresponsemanagementresponseResponsesubstitutionSlice(responsesubst
 	for _, responsesubstitution := range responsesubstitutions {
 		responsesubstitutionMap := make(map[string]interface{})
 
-		if responsesubstitution.Description != nil {
-			responsesubstitutionMap["description"] = *responsesubstitution.Description
-		}
-		if responsesubstitution.DefaultValue != nil {
-			responsesubstitutionMap["default_value"] = *responsesubstitution.DefaultValue
-		}
+		resourcedata.SetMapValueIfNotNil(responsesubstitutionMap, "id", responsesubstitution.Id)
+		resourcedata.SetMapValueIfNotNil(responsesubstitutionMap, "description", responsesubstitution.Description)
+		resourcedata.SetMapValueIfNotNil(responsesubstitutionMap, "default_value", responsesubstitution.DefaultValue)
 
 		responsesubstitutionSet.Add(responsesubstitutionMap)
 	}
@@ -554,6 +608,22 @@ func flattenSdkresponsemanagementresponseWhatsappdefinition(whatsappdefinition *
 	whatsappdefinitionSet.Add(whatsappdefinitionMap)
 
 	return whatsappdefinitionSet
+}
+
+func flattenSdkresponsemanagementresponseFooterTemplate(footerTemplate *platformclientv2.Footertemplate) *schema.Set {
+	if footerTemplate == nil {
+		return nil
+	}
+	footerTemplateSet := schema.NewSet(schema.HashResource(responsemanagementresponseresponsefooterResource), []interface{}{})
+	footerTemplateMap := make(map[string]interface{})
+	if footerTemplate.VarType != nil {
+		footerTemplateMap["type"] = *footerTemplate.VarType
+	}
+	if footerTemplate.ApplicableResources != nil {
+		footerTemplateMap["applicable_resources"] = lists.StringListToInterfaceList(*footerTemplate.ApplicableResources)
+	}
+	footerTemplateSet.Add(footerTemplateMap)
+	return footerTemplateSet
 }
 
 func flattenSdkresponsemanagementresponseMessagingtemplate(messagingtemplate *platformclientv2.Messagingtemplate) *schema.Set {

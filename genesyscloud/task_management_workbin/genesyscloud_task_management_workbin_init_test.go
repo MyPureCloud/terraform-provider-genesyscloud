@@ -45,21 +45,21 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 
-// initTestresources initializes all test resources and data sources.
-func initTestresources() {
+// initTestResources initializes all test resources and data sources.
+func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
-	reg_instance := &registerTestInstance{}
+	regInstance := &registerTestInstance{}
 
-	reg_instance.registerTestResources()
-	reg_instance.registerTestDataSources()
+	regInstance.registerTestResources()
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
 	// Run setup function before starting the test suite for the task_management_workbin package
-	initTestresources()
+	initTestResources()
 
 	// Run the test suite for the task_management_workbin package
 	m.Run()

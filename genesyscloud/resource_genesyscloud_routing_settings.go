@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -13,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
 func ResourceRoutingSettings() *schema.Resource {
@@ -166,6 +167,8 @@ func updateRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 	if err != nil {
 		return diag.Errorf("Failed to update routing settings: %s", err)
 	}
+
+	time.Sleep(5 * time.Second)
 
 	log.Printf("Updated Routing Settings")
 	return readRoutingSettings(ctx, d, meta)

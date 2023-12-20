@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -19,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v115/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -124,84 +123,50 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	errorChan := make(chan error)
-	wgDone := make(chan bool)
-	usersChan := make(chan platformclientv2.User, 200)
-	defer close(usersChan)
-
-	// Cancel remaining goroutines if an error occurs
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	var wg sync.WaitGroup
-
-	getUsersByStatus := func(userStatus string) {
-		defer wg.Done()
-
+	// Inner function to get user based on status
+	getUsersByStatus := func(userStatus string) (*[]platformclientv2.User, error) {
+		users := []platformclientv2.User{}
 		const pageSize = 100
-		users, _, err := usersAPI.GetUsers(pageSize, 1, nil, nil, "", nil, "", userStatus)
+
+		usersList, _, err := usersAPI.GetUsers(pageSize, 1, nil, nil, "", nil, "", userStatus)
 		if err != nil {
-			errorChan <- err
-			cancel()
-			return
+			return nil, err
 		}
-		for _, user := range *users.Entities {
-			usersChan <- user
-		}
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
+		users = append(users, *usersList.Entities...)
 
-		for pageNum := 2; pageNum <= *users.PageCount; pageNum++ {
-			users, _, err := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", userStatus)
+		for pageNum := 2; pageNum <= *usersList.PageCount; pageNum++ {
+			usersList, _, err := usersAPI.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", userStatus)
 			if err != nil {
-				errorChan <- err
-				cancel()
-				return
+				return nil, err
 			}
 
-			for _, user := range *users.Entities {
-				usersChan <- user
-			}
-
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
+			users = append(users, *usersList.Entities...)
 		}
+
+		return &users, nil
 	}
 
-	wg.Add(2)
-	go getUsersByStatus("active")
-	go getUsersByStatus("inactive")
+	// Get all "active" and "inactive" users
+	allUsers := []platformclientv2.User{}
 
-	go func() {
-		wg.Wait()
-
-		// Make sure the buffer channel is emptied out
-		for {
-			if len(usersChan) == 0 {
-				wgDone <- true
-			}
-		}
-	}()
-
-	go func() {
-		for user := range usersChan {
-			resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
-		}
-	}()
-
-	// Wait until either WaitGroup is done or an error is received
-	select {
-	case <-wgDone:
-		return resources, nil
-	case err := <-errorChan:
-		return nil, diag.Errorf("Failed to get all users: %v", err)
+	activeUsers, err := getUsersByStatus("active")
+	if err != nil {
+		return nil, diag.Errorf("failed to get 'active' users: %v", err)
 	}
+	allUsers = append(allUsers, *activeUsers...)
+
+	inactiveUsers, err := getUsersByStatus("inactive")
+	if err != nil {
+		return nil, diag.Errorf("failed to get 'inactive' users: %v", err)
+	}
+	allUsers = append(allUsers, *inactiveUsers...)
+
+	// Add resources to metamap
+	for _, user := range allUsers {
+		resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
+	}
+
+	return resources, nil
 }
 
 func UserExporter() *resourceExporter.ResourceExporter {
