@@ -156,6 +156,8 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 		if configuration.JourneyEvents != nil {
 			d.Set("journey_events", flattenJourneyEvents(configuration.JourneyEvents))
 		}
+		if configuration.SupportCenter != nil {
+		}
 
 		log.Printf("Read web deployment configuration %s %s", d.Id(), *configuration.Name)
 		return cc.CheckState()

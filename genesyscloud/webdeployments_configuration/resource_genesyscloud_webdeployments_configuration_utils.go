@@ -205,6 +205,146 @@ func readCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesett
 	}
 }
 
+func readSupportCenterCategory(triggers []interface{}) *[]platformclientv2.Supportcentercategory {
+	if triggers == nil || len(triggers) < 1 {
+		return nil
+	}
+
+	results := make([]platformclientv2.Supportcentercategory, len(triggers))
+	for i, value := range triggers {
+		if trigger, ok := value.(map[string]interface{}); ok {
+			id := trigger["enabled_categories_id"].(string)
+			selfuri := trigger["self_uri"].(string)
+			imageSource := trigger["image_source"].(string)
+
+			image := &platformclientv2.Supportcenterimage{
+				Source: &platformclientv2.Supportcenterimagesource{
+					DefaultUrl: &imageSource,
+				},
+			}
+
+			results[i] = platformclientv2.Supportcentercategory{
+				Id:      &id,
+				SelfUri: &selfuri,
+				Image:   image,
+			}
+		}
+	}
+
+	return &results
+}
+
+func readSupportCenterCustomMessage(triggers []interface{}) *[]platformclientv2.Supportcentercustommessage {
+	if triggers == nil || len(triggers) < 1 {
+		return nil
+	}
+
+	results := make([]platformclientv2.Supportcentercustommessage, len(triggers))
+	for i, value := range triggers {
+		if trigger, ok := value.(map[string]interface{}); ok {
+			defaultValue := trigger["default_value"].(string)
+			varType := trigger["type"].(string)
+
+			results[i] = platformclientv2.Supportcentercustommessage{
+				DefaultValue: &defaultValue,
+				VarType:      &varType,
+			}
+		}
+	}
+
+	return &results
+}
+
+func readSupportCenterStyleSetting(triggers []interface{}) *[]platformclientv2.Supportcenterstylesetting {
+	if triggers == nil || len(triggers) < 1 {
+		return nil
+	}
+
+	results := make([]platformclientv2.Supportcenterstylesetting, len(triggers))
+	for i, value := range triggers {
+		if trigger, ok := value.(map[string]interface{}); ok {
+			herobackground := trigger["hero_style_background_color"].(string)
+			herotextcolor := trigger["hero_style_text_color"].(string)
+			heroimage := trigger["hero_style_image"].(string)
+
+			herostyle := platformclientv2.Supportcenterstylesetting{
+				HeroStyle: &platformclientv2.Supportcenterherostyle{
+					BackgroundColor: &herobackground,
+					TextColor:       &herotextcolor,
+					Image: &platformclientv2.Supportcenterimage{
+						Source: &platformclientv2.Supportcenterimagesource{
+							DefaultUrl: &heroimage,
+						},
+					},
+				},
+			}
+
+			globalbackground := trigger["global_style_background_color"].(string)
+			globalprimarycolor := trigger["global_style_primary_color"].(string)
+			globalprimarycolordark := trigger["global_style_primary_color_dark"].(string)
+			globalprimarycolorlight := trigger["global_style_primary_color_light"].(string)
+			globaltextcolor := trigger["global_style_text_color"].(string)
+			globalfontfamily := trigger["global_style_font_family"].(string)
+
+			globalstyle := platformclientv2.Supportcenterstylesetting{
+				GlobalStyle: &platformclientv2.Supportcenterglobalstyle{
+					BackgroundColor:   &globalbackground,
+					PrimaryColor:      &globalprimarycolor,
+					PrimaryColorDark:  &globalprimarycolordark,
+					PrimaryColorLight: &globalprimarycolorlight,
+					TextColor:         &globaltextcolor,
+					FontFamily:        &globalfontfamily,
+				},
+			}
+
+			// Assuming Supportcenterstylesetting has both HeroStyle and GlobalStyle
+			results[i] = platformclientv2.Supportcenterstylesetting{
+				HeroStyle:   herostyle.HeroStyle,
+				GlobalStyle: globalstyle.GlobalStyle,
+			}
+		}
+	}
+
+	return &results
+}
+
+func readSupportCenterScreens(triggers []interface{}) *[]platformclientv2.Supportcenterscreen {
+	if triggers == nil || len(triggers) < 1 {
+		return nil
+	}
+
+	results := make([]platformclientv2.Supportcenterscreen, len(triggers))
+	for i, value := range triggers {
+		if trigger, ok := value.(map[string]interface{}); ok {
+			varType := trigger["type"].(string)
+			moduleSettingsType := trigger["module_settings_type"].(string)
+			moduleSettingsEnabled := trigger["module_settings_enabled"].(bool)
+			moduleSettingsCompactCategoryModuleTemplate := trigger["module_settings_compact_category_module_template"].(bool)
+			moduleSettingsDetailedCategoryModuleTemplate := trigger["module_settings_detailed_category_module_template"].(bool)
+
+			moduleSettings := []platformclientv2.Supportcentermodulesetting{
+				{
+					VarType: &moduleSettingsType,
+					Enabled: &moduleSettingsEnabled,
+					CompactCategoryModuleTemplate: &platformclientv2.Supportcentercompactcategorymoduletemplate{
+						Active: &moduleSettingsCompactCategoryModuleTemplate,
+					},
+					DetailedCategoryModuleTemplate: &platformclientv2.Supportcenterdetailedcategorymoduletemplate{
+						Active: &moduleSettingsDetailedCategoryModuleTemplate,
+					},
+				},
+			}
+
+			results[i] = platformclientv2.Supportcenterscreen{
+				VarType:        &varType,
+				ModuleSettings: &moduleSettings,
+			}
+		}
+	}
+
+	return &results
+}
+
 // featureNotImplemented checks the response object to find out if the request failed because a feature is not yet
 // implemented in the org that it was ran against. If true, we can pass back the field name and give more context
 // in the final error message.
@@ -325,6 +465,60 @@ func flattenJourneyEvents(journeyEvents *platformclientv2.Journeyeventssettings)
 	}}
 }
 
+func flattenSupportCenterSettings(supportCenterSettings *platformclientv2.Supportcentersettings) []interface{} {
+	if supportCenterSettings == nil {
+		return nil
+	}
+
+	return []interface{}{map[string]interface{}{
+		"enabled":            supportCenterSettings.Enabled,
+		"knowledgebase":      flattenKnowledgeBase(supportCenterSettings.KnowledgeBase),
+		"custom_messages":    flattenSupportCenterCustomMessage(supportCenterSettings.CustomMessages),
+		"enabled_categories": flattenSupportCenterCategory(supportCenterSettings.EnabledCategories),
+	}}
+}
+
+func flattenSupportCenterCategory(triggers *[]platformclientv2.Supportcentercategory) []interface{} {
+	if triggers == nil || len(*triggers) < 1 {
+		return nil
+	}
+
+	result := make([]interface{}, len(*triggers))
+	for i, trigger := range *triggers {
+		result[i] = map[string]interface{}{
+			"enabled_categories_id": trigger.Id,
+			"self_uri":              trigger.SelfUri,
+			"image_source":          trigger.Image,
+		}
+	}
+	return result
+}
+
+func flattenSupportCenterCustomMessage(triggers *[]platformclientv2.Supportcentercustommessage) []interface{} {
+	if triggers == nil || len(*triggers) < 1 {
+		return nil
+	}
+
+	result := make([]interface{}, len(*triggers))
+	for i, trigger := range *triggers {
+		result[i] = map[string]interface{}{
+			"default_value": trigger.DefaultValue,
+			"type":          trigger.VarType,
+		}
+	}
+	return result
+}
+
+func flattenKnowledgeBase(knowledgebase *platformclientv2.Addressableentityref) []interface{} {
+	if knowledgebase == nil {
+		return nil
+	}
+
+	return []interface{}{map[string]interface{}{
+		"knowledgebase_id": knowledgebase.Id,
+	}}
+}
+
 func flattenSelectorEventTriggers(triggers *[]platformclientv2.Selectoreventtrigger) []interface{} {
 	if triggers == nil || len(*triggers) < 1 {
 		return nil
@@ -418,6 +612,11 @@ func readWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (str
 		inputCfg.JourneyEvents = journeySettings
 	}
 
+	supportCenterSettings := readSupportCenterSettings(d)
+	if supportCenterSettings != nil {
+		inputCfg.SupportCenter = supportCenterSettings
+	}
+
 	return name, inputCfg
 }
 
@@ -476,4 +675,54 @@ func readJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyevents
 	}
 
 	return journeySettings
+}
+
+func readSupportCenterSettings(d *schema.ResourceData) *platformclientv2.Supportcentersettings {
+	value, ok := d.GetOk("support_center")
+	if !ok {
+		return nil
+	}
+
+	cfgs := value.([]interface{})
+	if len(cfgs) < 1 {
+		return nil
+	}
+
+	cfg := cfgs[0].(map[string]interface{})
+	enabled, _ := cfg["enabled"].(bool)
+	supportCenterSettings := &platformclientv2.Supportcentersettings{
+		Enabled: &enabled,
+	}
+
+	if id, ok := cfg["knowledge_base_id"].(string); ok {
+		supportCenterSettings.KnowledgeBase = &platformclientv2.Addressableentityref{
+			Id: &id,
+		}
+	}
+
+	if selfuri, ok := cfg["knowledge_base_uri"].(string); ok {
+		supportCenterSettings.KnowledgeBase = &platformclientv2.Addressableentityref{
+			SelfUri: &selfuri,
+		}
+	}
+
+	if routertype, ok := cfg["router_type"].(string); ok {
+		supportCenterSettings.RouterType = &routertype
+	}
+
+	if customMessages := readSupportCenterCustomMessage(cfg["custom_messages"].([]interface{})); supportCenterCustomMessage != nil {
+		supportCenterSettings.CustomMessages = customMessages
+	}
+
+	if supportCenterCategory := readSupportCenterCategory(cfg["enabled_categories"].([]interface{})); supportCenterCategory != nil {
+		supportCenterSettings.EnabledCategories = supportCenterCategory
+	}
+
+	if feedbackEnabled, ok := cfg["feedback_enabled"].(bool); ok {
+		supportCenterSettings.Feedback = &platformclientv2.Supportcenterfeedbacksettings{
+			Enabled: &feedbackEnabled,
+		}
+	}
+
+	return supportCenterSettings
 }
