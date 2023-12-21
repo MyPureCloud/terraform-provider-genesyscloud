@@ -35,7 +35,7 @@ func SubStringInSlice(a string, list []string) bool {
 	return false
 }
 
-// difference returns the elements in a that aren't in b
+// SliceDifference returns the elements in a that aren't in b
 func SliceDifference(a, b []string) []string {
 	var diff []string
 	if len(a) == 0 {
@@ -160,4 +160,14 @@ func NilToEmptyList[T interface{}](list *[]T) *[]T {
 		return &emptyArray
 	}
 	return list
+}
+
+// Remove an item from a string list based on the value
+func Remove[T comparable](s []T, r T) []T {
+	for i, v := range s {
+		if v == r {
+			return append(s[:i], s[i+1:]...)
+		}
+	}
+	return s
 }

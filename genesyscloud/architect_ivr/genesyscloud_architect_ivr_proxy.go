@@ -224,15 +224,8 @@ func (a *architectIvrProxy) uploadArchitectIvrWithChunkingLogic(ctx context.Cont
 		dnisChunks [][]string
 	)
 
-	// If dnis array is not nil, break it into chunks of size a.maxDnisPerRequest
-	if ivr.Dnis != nil {
-		dnisChunks = utillists.ChunkStringSlice(*ivr.Dnis, a.maxDnisPerRequest)
-		// If there is only one chunk - upload it with the request body as normal
-		if len(dnisChunks) == 1 {
-			ivr.Dnis = &dnisChunks[0]
-		} else {
-			ivr.Dnis = nil
-		}
+	if ivr.Dnis != nil && len(*ivr.Dnis) > 0 {
+		ivr.Dnis, dnisChunks = a.getIvrDnisAndChunks(ctx, id, post, &ivr)
 	}
 
 	// Perform initial post/put
@@ -243,19 +236,17 @@ func (a *architectIvrProxy) uploadArchitectIvrWithChunkingLogic(ctx context.Cont
 	}
 
 	if err != nil {
-		var operation string
+		operation := "update"
 		if post {
 			operation = "create"
-		} else {
-			operation = "update"
 		}
 		return respIvr, resp, fmt.Errorf("error performing %s inside function uploadArchitectIvrWithChunkingLogic: %v", operation, err)
 	}
 
 	id = *respIvr.Id
 
-	// If there is more than only chunk, call our function to perform each put request
-	if len(dnisChunks) > 1 {
+	// If there are chunks, call our function to perform each put request
+	if len(dnisChunks) > 0 {
 		respIvr, resp, err = a.uploadIvrDnisChunks(ctx, dnisChunks, id)
 		if err != nil {
 			// if the chunking logic failed on create - delete the IVR that was created above
@@ -294,7 +285,7 @@ func (a *architectIvrProxy) uploadIvrDnisChunks(ctx context.Context, dnisChunks 
 	return ivr, nil, nil
 }
 
-// uploadDnisChunk Takes an IVR object and a chunk of dnis numbers as parameters, appends the dnis numbers from the chunk to the
+// uploadDnisChunk takes an IVR object and a chunk of dnis numbers as parameters, appends the dnis numbers from the chunk to the
 // dnis numbers on the IVR object, and performs a basic PUT request
 func (a *architectIvrProxy) uploadDnisChunk(ctx context.Context, ivr platformclientv2.Ivr, chunk []string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 	var dnis []string
@@ -312,4 +303,51 @@ func (a *architectIvrProxy) uploadDnisChunk(ctx context.Context, ivr platformcli
 		return putIvr, resp, fmt.Errorf("error occured updating ivr %s in function uploadDnisChunk: %v", *ivr.Id, putErr)
 	}
 	return putIvr, resp, nil
+}
+
+// getIvrDnisAndChunks returns the dnis array to attach to the ivr on the initial POST/PUT
+// along with the chunks to PUT after, if necessary.
+func (a *architectIvrProxy) getIvrDnisAndChunks(ctx context.Context, id string, post bool, ivr *platformclientv2.Ivr) (*[]string, [][]string) {
+	var (
+		dnisChunks                [][]string
+		dnisSliceForInitialUpload *[]string
+	)
+
+	// Create
+	if post {
+		dnisChunks = utillists.ChunkStringSlice(*ivr.Dnis, a.maxDnisPerRequest)
+		dnisSliceForInitialUpload = &dnisChunks[0]
+		dnisChunks = dnisChunks[1:] // all chunks after index 0, if they exist
+		return dnisSliceForInitialUpload, dnisChunks
+	}
+
+	// Update
+	// read the ivr to get current dnis array
+	currentIvr, _, err := a.getArchitectIvr(ctx, id)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// slice to establish what we're adding
+	dnisToAdd := utillists.SliceDifference(*ivr.Dnis, *currentIvr.Dnis)
+
+	// chunk that if necessary
+	if len(dnisToAdd) > a.maxDnisPerRequest {
+		dnisChunks = utillists.ChunkStringSlice(dnisToAdd, a.maxDnisPerRequest)
+		dnisForInitialCall := removeItemsToBeAddedFromOriginalList(*ivr.Dnis, dnisToAdd)
+		// append the first chunk
+		dnisForInitialCall = append(dnisForInitialCall, dnisChunks[0]...)
+		// return dnis for initial upload along with any chunks that may exist after index 0
+		return &dnisForInitialCall, dnisChunks[1:]
+	}
+
+	// no chunking logic necessary
+	return ivr.Dnis, nil
+}
+
+func removeItemsToBeAddedFromOriginalList(allDnis []string, toBeAdded []string) []string {
+	for _, number := range toBeAdded {
+		allDnis = utillists.Remove(allDnis, number)
+	}
+	return allDnis
 }

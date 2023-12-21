@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
 	"github.com/google/uuid"
@@ -139,6 +140,171 @@ func TestUnitUploadIvrDnisChunksError(t *testing.T) {
 			t.Errorf("Expected to receive error containing '%v', got '%v'", test.mockError, err)
 		}
 	}
+}
+
+func TestUnitRemoveItemsToBeAddedFromOriginalList(t *testing.T) {
+	type TestCase struct {
+		originalList []string
+		toAddList    []string
+		expected     []string
+	}
+
+	testCases := []TestCase{
+		{
+			originalList: []string{"a", "b", "c", "d", "e", "f"},
+			toAddList:    []string{"a", "d", "f"},
+			expected:     []string{"b", "c", "e"},
+		},
+		{
+			originalList: []string{"a", "b", "c", "d", "e", "f"},
+			toAddList:    []string{},
+			expected:     []string{"a", "b", "c", "d", "e", "f"},
+		},
+		{
+			originalList: []string{"a", "b", "c", "d", "e", "f"},
+			toAddList:    []string{"a", "b", "c", "d", "e", "f"},
+			expected:     []string{},
+		},
+		{
+			originalList: []string{"a", "b", "c", "d", "e", "f"},
+			toAddList:    []string{"a", "f"},
+			expected:     []string{"b", "c", "d", "e"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		resultingList := removeItemsToBeAddedFromOriginalList(testCase.originalList, testCase.toAddList)
+		if !utillists.AreEquivalent(resultingList, testCase.expected) {
+			t.Errorf("expected %v, got %v", testCase.expected, resultingList)
+		}
+	}
+}
+
+func TestUnitGetIvrDnisAndChunks(t *testing.T) {
+	var (
+		ivrId = uuid.NewString()
+	)
+
+	testCases := []GetIvrDnisAndChunksFuncTestCase{
+		// Updates
+		{
+			ivrFromSchema: &platformclientv2.Ivr{
+				Dnis: &[]string{"1", "2", "3", "4"},
+			},
+			post:                      false,
+			maxPerRequest:             3,
+			dnisReturnedFromGet:       &[]string{"1", "2", "3"},
+			expectedInitialUploadDnis: &[]string{"1", "2", "3", "4"},
+			expectedChunks:            [][]string{},
+		},
+		{
+			ivrFromSchema: &platformclientv2.Ivr{
+				Dnis: &[]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"},
+			},
+			maxPerRequest:             3,
+			post:                      false,
+			dnisReturnedFromGet:       &[]string{"1", "2", "3", "4"},
+			expectedInitialUploadDnis: &[]string{"1", "2", "3", "4", "5", "6", "7"},
+			expectedChunks: [][]string{
+				{"8", "9", "10"},
+			},
+		},
+		{
+			ivrFromSchema: &platformclientv2.Ivr{
+				Dnis: &[]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"},
+			},
+			maxPerRequest:             3,
+			post:                      false,
+			dnisReturnedFromGet:       &[]string{"1", "2", "3", "4", "5"},
+			expectedInitialUploadDnis: &[]string{"1", "2", "3", "4", "5", "6", "7", "8"},
+			expectedChunks: [][]string{
+				{"9", "10", "11"},
+				{"12"},
+			},
+		},
+		{
+			ivrFromSchema: &platformclientv2.Ivr{
+				Dnis: &[]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"},
+			},
+			maxPerRequest:             3,
+			post:                      false,
+			dnisReturnedFromGet:       &[]string{"1"},
+			expectedInitialUploadDnis: &[]string{"1", "2", "3", "4"},
+			expectedChunks: [][]string{
+				{"5", "6", "7"},
+				{"8", "9", "10"},
+				{"11", "12"},
+			},
+		},
+		// Creates
+		{
+			ivrFromSchema: &platformclientv2.Ivr{
+				Dnis: &[]string{"1", "2", "3"},
+			},
+			maxPerRequest:             3,
+			post:                      true,
+			dnisReturnedFromGet:       nil,
+			expectedInitialUploadDnis: &[]string{"1", "2", "3"},
+			expectedChunks:            [][]string{},
+		},
+		{
+			ivrFromSchema: &platformclientv2.Ivr{
+				Dnis: &[]string{"1", "2", "3", "4"},
+			},
+			maxPerRequest:             3,
+			post:                      true,
+			dnisReturnedFromGet:       nil,
+			expectedInitialUploadDnis: &[]string{"1", "2", "3"},
+			expectedChunks:            [][]string{{"4"}},
+		},
+		{
+			ivrFromSchema: &platformclientv2.Ivr{
+				Dnis: &[]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"},
+			},
+			maxPerRequest:             3,
+			post:                      true,
+			dnisReturnedFromGet:       nil,
+			expectedInitialUploadDnis: &[]string{"1", "2", "3"},
+			expectedChunks: [][]string{
+				{"4", "5", "6"},
+				{"7", "8", "9"},
+				{"10", "11", "12"},
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		architectIvrProxy := newArchitectIvrProxy(nil)
+		architectIvrProxy.maxDnisPerRequest = testCase.maxPerRequest
+
+		if !testCase.post {
+			architectIvrProxy.getArchitectIvrAttr = createMockGetIvrFunc(ivrId, *testCase.dnisReturnedFromGet, nil)
+		}
+
+		initialUploadDnis, chunks := architectIvrProxy.getIvrDnisAndChunks(context.TODO(), ivrId, testCase.post, testCase.ivrFromSchema)
+
+		if !utillists.AreEquivalent(*initialUploadDnis, *testCase.expectedInitialUploadDnis) {
+			t.Errorf("expected initial dnis slice to be %v, got %v", *testCase.expectedInitialUploadDnis, *initialUploadDnis)
+		}
+		if len(chunks) != len(testCase.expectedChunks) {
+			t.Errorf("expected length of chunks array to be %v, got %v", len(testCase.expectedChunks), len(chunks))
+		}
+		for i := range chunks {
+			if !utillists.AreEquivalent(chunks[i], testCase.expectedChunks[i]) {
+				t.Errorf("expected chunk item to be %v, got %v", chunks[i], testCase.expectedChunks[i])
+			}
+		}
+	}
+}
+
+type GetIvrDnisAndChunksFuncTestCase struct {
+	ivrFromSchema       *platformclientv2.Ivr
+	maxPerRequest       int
+	post                bool
+	dnisReturnedFromGet *[]string
+
+	expectedInitialUploadDnis *[]string
+	expectedChunks            [][]string
 }
 
 func createMockGetIvrFunc(ivrId string, dnis []string, err error) getArchitectIvrFunc {
