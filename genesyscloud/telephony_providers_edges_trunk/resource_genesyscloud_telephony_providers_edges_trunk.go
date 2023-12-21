@@ -1,4 +1,4 @@
-package telephony
+package telephony_providers_edges_trunk
 
 import (
 	"context"
@@ -17,46 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
-
-func ResourceTrunk() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud Trunk. Created by assigning a trunk base settings to an edge or edge group",
-
-		CreateContext: gcloud.CreateWithPooledClient(createTrunk),
-		ReadContext:   gcloud.ReadWithPooledClient(readTrunk),
-		UpdateContext: gcloud.UpdateWithPooledClient(updateTrunk),
-		DeleteContext: gcloud.DeleteWithPooledClient(deleteTrunk),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"trunk_base_settings_id": {
-				Description: "The trunk base settings reference",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"edge_group_id": {
-				Description: "The edge group associated with this trunk. Either this or \"edge_id\" must be set",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"edge_id": {
-				Description: "The edge associated with this trunk. Either this or \"edge_group_id\" must be set",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"name": {
-				Description: "The name of the trunk. This property is read only and populated with the auto generated name.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-		},
-	}
-}
 
 func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	trunkBaseSettingsId := d.Get("trunk_base_settings_id").(string)
