@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceTrunkBaseSettings() *schema.Resource {
+func DataSourceTrunkBaseSettings() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Trunk Base Settings. Select a trunk base settings by name",
 		ReadContext: gcloud.ReadWithPooledClient(dataSourceTrunkBaseSettingsRead),

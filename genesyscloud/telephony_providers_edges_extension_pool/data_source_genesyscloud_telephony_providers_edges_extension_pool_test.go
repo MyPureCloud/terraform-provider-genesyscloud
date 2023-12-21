@@ -1,7 +1,8 @@
-package genesyscloud
+package telephony_providers_edges_extension_pool
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -10,15 +11,14 @@ import (
 func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 	t.Parallel()
 	var (
-		extensionPoolStartNumber = "1400"
-		extensionPoolEndNumber   = "1499"
+		extensionPoolStartNumber = "2500"
+		extensionPoolEndNumber   = "2599"
 		extensionPoolRes         = "extensionPool"
 		extensionPoolDataRes     = "extensionPoolData"
 	)
-
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -26,7 +26,7 @@ func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 					extensionPoolRes,
 					extensionPoolStartNumber,
 					extensionPoolEndNumber,
-					NullValue, // No description
+					gcloud.NullValue, // No description
 				}) + generateExtensionPoolDataSource(extensionPoolDataRes,
 					extensionPoolStartNumber,
 					extensionPoolEndNumber,

@@ -1,46 +1,25 @@
-package genesyscloud
+package telephony_providers_edges_extension_pool
 
 import (
 	"context"
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
 
-func dataSourceExtensionPool() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Extension pool. Select an Extension pool by starting number and ending number",
-		ReadContext: ReadWithPooledClient(dataSourceExtensionPoolRead),
-		Schema: map[string]*schema.Schema{
-			"start_number": {
-				Description:      "Starting number of the Extension Pool range.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validateExtensionPool,
-			},
-			"end_number": {
-				Description:      "Ending number of the Extension Pool range.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ValidateDiagFunc: validateExtensionPool,
-			},
-		},
-	}
-}
-
 func dataSourceExtensionPoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*ProviderMeta).ClientConfig
+	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
 	telephonyAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	extensionPoolStartPhoneNumber := d.Get("start_number").(string)
 	extensionPoolEndPhoneNumber := d.Get("end_number").(string)
 
-	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
 			extensionPools, _, getErr := telephonyAPI.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "")

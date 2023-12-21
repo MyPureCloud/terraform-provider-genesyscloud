@@ -3,6 +3,7 @@ package telephony
 import (
 	"fmt"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	"testing"
 
 	"github.com/google/uuid"
@@ -47,13 +48,13 @@ func TestAccDataSourceTrunk(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateEdgeGroupResourceWithCustomAttrs(
+				Config: edgeGroup.GenerateEdgeGroupResourceWithCustomAttrs(
 					edgeGroupRes1,
 					"test edge group "+uuid.NewString(),
 					"edge group description 1",
 					false,
 					false,
-					generatePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes+".id"),
+					edgeGroup.GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes+".id"),
 				) + phoneTrunkBaseSettings + trunkBaseSettingsConfig + generateTrunk(
 					trunkRes,
 					"genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsRes+".id",

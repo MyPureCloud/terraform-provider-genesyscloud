@@ -23,7 +23,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_outbound_wrapupcodemappings"] = ResourceOutboundWrapUpCodeMappings()
+	providerResources[resourceName] = ResourceOutboundWrapUpCodeMappings()
 	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
 
 }

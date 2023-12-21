@@ -1,7 +1,7 @@
-package genesyscloud
+package telephony_providers_edges_phonebasesettings
 
 import (
-	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -19,8 +19,8 @@ func TestAccDataSourcePhoneBaseSettings(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GeneratePhoneBaseSettingsResourceWithCustomAttrs(
@@ -38,17 +38,4 @@ func TestAccDataSourcePhoneBaseSettings(t *testing.T) {
 			},
 		},
 	})
-}
-
-func generatePhoneBaseSettingsDataSource(
-	resourceID string,
-	name string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
-	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_phonebasesettings" "%s" {
-		name = "%s"
-		depends_on=[%s]
-	}
-	`, resourceID, name, dependsOnResource)
 }

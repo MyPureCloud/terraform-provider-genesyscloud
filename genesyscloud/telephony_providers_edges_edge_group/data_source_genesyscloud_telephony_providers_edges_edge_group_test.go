@@ -1,8 +1,9 @@
-package telephony
+package telephony_providers_edges_edge_group
 
 import (
 	"fmt"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/telephony"
 	"testing"
 
 	"github.com/google/uuid"
@@ -21,14 +22,14 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 		phoneTrunkBaseSettingsRes2 = "phoneTrunkBaseSettingsRes2"
 	)
 
-	phoneTrunkBaseSetting1 := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting1 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes1,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
 		"PHONE",
 		false)
-	phoneTrunkBaseSetting2 := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting2 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes2,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
@@ -41,13 +42,13 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + generateEdgeGroupResourceWithCustomAttrs(
+				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + GenerateEdgeGroupResourceWithCustomAttrs(
 					edgeGroupRes,
 					edgeGroupName1,
 					edgeGroupDescription1,
 					false,
 					false,
-					generatePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes1+".id",
+					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes1+".id",
 						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes2+".id"),
 				) + generateEdgeGroupDataSource(
 					edgeGroupData,
