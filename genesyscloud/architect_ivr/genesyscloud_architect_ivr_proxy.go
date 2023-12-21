@@ -225,7 +225,10 @@ func (a *architectIvrProxy) uploadArchitectIvrWithChunkingLogic(ctx context.Cont
 	)
 
 	if ivr.Dnis != nil && len(*ivr.Dnis) > 0 {
-		ivr.Dnis, dnisChunks = a.getIvrDnisAndChunks(ctx, id, post, &ivr)
+		ivr.Dnis, dnisChunks, err = a.getIvrDnisAndChunks(ctx, id, post, &ivr)
+		if err != nil {
+			return nil, resp, err
+		}
 	}
 
 	// Perform initial post/put
@@ -307,7 +310,7 @@ func (a *architectIvrProxy) uploadDnisChunk(ctx context.Context, ivr platformcli
 
 // getIvrDnisAndChunks returns the dnis array to attach to the ivr on the initial POST/PUT
 // along with the chunks to PUT after, if necessary.
-func (a *architectIvrProxy) getIvrDnisAndChunks(ctx context.Context, id string, post bool, ivr *platformclientv2.Ivr) (*[]string, [][]string) {
+func (a *architectIvrProxy) getIvrDnisAndChunks(ctx context.Context, id string, post bool, ivr *platformclientv2.Ivr) (*[]string, [][]string, error) {
 	var (
 		dnisChunks                [][]string
 		dnisSliceForInitialUpload *[]string
@@ -318,14 +321,14 @@ func (a *architectIvrProxy) getIvrDnisAndChunks(ctx context.Context, id string, 
 		dnisChunks = utillists.ChunkStringSlice(*ivr.Dnis, a.maxDnisPerRequest)
 		dnisSliceForInitialUpload = &dnisChunks[0]
 		dnisChunks = dnisChunks[1:] // all chunks after index 0, if they exist
-		return dnisSliceForInitialUpload, dnisChunks
+		return dnisSliceForInitialUpload, dnisChunks, nil
 	}
 
 	// Update
 	// read the ivr to get current dnis array
 	currentIvr, _, err := a.getArchitectIvr(ctx, id)
 	if err != nil {
-		log.Println(err)
+		return nil, nil, err
 	}
 
 	// slice to establish what we're adding
@@ -333,21 +336,69 @@ func (a *architectIvrProxy) getIvrDnisAndChunks(ctx context.Context, id string, 
 
 	// chunk that if necessary
 	if len(dnisToAdd) > a.maxDnisPerRequest {
+		if err := a.validateDidNumbers(dnisToAdd); err != nil {
+			return nil, nil, err
+		}
+
 		dnisChunks = utillists.ChunkStringSlice(dnisToAdd, a.maxDnisPerRequest)
 		dnisForInitialCall := removeItemsToBeAddedFromOriginalList(*ivr.Dnis, dnisToAdd)
 		// append the first chunk
 		dnisForInitialCall = append(dnisForInitialCall, dnisChunks[0]...)
 		// return dnis for initial upload along with any chunks that may exist after index 0
-		return &dnisForInitialCall, dnisChunks[1:]
+		return &dnisForInitialCall, dnisChunks[1:], nil
 	}
 
 	// no chunking logic necessary
-	return ivr.Dnis, nil
+	return ivr.Dnis, nil, nil
 }
 
+// removeItemsToBeAddedFromOriginalList is used to remove the new did numbers from the dnis slice that we collected from the schema
+// We do this because we are keeping the new numbers separate in the chunks slice to be uploaded subsequently
 func removeItemsToBeAddedFromOriginalList(allDnis []string, toBeAdded []string) []string {
 	for _, number := range toBeAdded {
 		allDnis = utillists.Remove(allDnis, number)
 	}
 	return allDnis
+}
+
+// TODO: Proxy telephony api function to add unit tests & consider adding acceptance tests to check for this error also
+
+func (a *architectIvrProxy) validateDidNumbers(numbers []string) error {
+	maxRetries := 3
+	for _, number := range numbers {
+		for retryCount := 1; ; retryCount++ {
+			err := a.validatePhoneNumber(number)
+			if err == nil {
+				break
+			}
+			if retryCount == maxRetries {
+				return err
+			}
+			time.Sleep(3 * time.Second)
+		}
+	}
+	return nil
+}
+
+func (a *architectIvrProxy) validatePhoneNumber(number string) error {
+	const (
+		assignedAndUnassigned = "ASSIGNED_AND_UNASSIGNED"
+	)
+	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(a.clientConfig)
+	// Search the assigned numbers to confirm it is not there/is not assigned
+	data, _, err := telephonyApi.GetTelephonyProvidersEdgesDidpoolsDids(assignedAndUnassigned, nil, number, 100, 1, "")
+	if err != nil {
+		return fmt.Errorf("failed to query dids to validate number %s: %v", number, err)
+	}
+	if data.Entities == nil || len(*data.Entities) == 0 {
+		return fmt.Errorf("could not find did %s", number)
+	}
+	for _, entity := range *data.Entities {
+		if *entity.Number == number {
+			if *entity.Assigned {
+				return fmt.Errorf("phone number %s is already assigned. Owner type %s", number, *entity.OwnerType)
+			}
+		}
+	}
+	return nil
 }

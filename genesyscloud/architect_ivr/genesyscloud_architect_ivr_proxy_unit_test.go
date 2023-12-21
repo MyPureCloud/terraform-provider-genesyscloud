@@ -281,7 +281,7 @@ func TestUnitGetIvrDnisAndChunks(t *testing.T) {
 			architectIvrProxy.getArchitectIvrAttr = createMockGetIvrFunc(ivrId, *testCase.dnisReturnedFromGet, nil)
 		}
 
-		initialUploadDnis, chunks := architectIvrProxy.getIvrDnisAndChunks(context.TODO(), ivrId, testCase.post, testCase.ivrFromSchema)
+		initialUploadDnis, chunks, _ := architectIvrProxy.getIvrDnisAndChunks(context.TODO(), ivrId, testCase.post, testCase.ivrFromSchema)
 
 		if !utillists.AreEquivalent(*initialUploadDnis, *testCase.expectedInitialUploadDnis) {
 			t.Errorf("expected initial dnis slice to be %v, got %v", *testCase.expectedInitialUploadDnis, *initialUploadDnis)
