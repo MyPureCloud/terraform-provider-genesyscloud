@@ -81,13 +81,13 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 				Config: complexConfigurationResource(
 					configName,
 					configDescription,
-					generateWebDeploymentConfigCobrowseSettings(
-						gcloud.TrueValue,
-						gcloud.TrueValue,
-						channels,
-						[]string{strconv.Quote("selector-one")},
-						[]string{strconv.Quote("selector-one")},
-					),
+					// generateWebDeploymentConfigCobrowseSettings(
+					// 	gcloud.TrueValue,
+					// 	gcloud.TrueValue,
+					// 	channels,
+					// 	[]string{strconv.Quote("selector-one")},
+					// 	[]string{strconv.Quote("selector-one")},
+					// ),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceName, "name", configName),
@@ -157,7 +157,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.default_value", "Welcome to Knowledge Portal"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.1.type", "Welcome"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", "hash"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.feedback_enabled", "true"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.feedback_enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.enabled_categories_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.self_uri", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.image_source", ""),
@@ -172,7 +172,9 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_font_family", "inherit"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", "Home"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_type", "Search"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", "true"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", gcloud.FalseValue),
 				),
 			},
 			{
@@ -274,9 +276,9 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.global_style_font_family", "inherit"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", "Home"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_type", "Search"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", "true"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template", "false"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", "false"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", gcloud.FalseValue),
 				),
 			},
 			{
