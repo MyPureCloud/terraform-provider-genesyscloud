@@ -41,6 +41,9 @@ type deleteArchitectIvrFunc func(context.Context, *architectIvrProxy, string) (*
 type getAllArchitectIvrsFunc func(context.Context, *architectIvrProxy, string) (*[]platformclientv2.Ivr, error)
 type getArchitectIvrIdByNameFunc func(context.Context, *architectIvrProxy, string) (id string, retryable bool, err error)
 
+type getTelephonyDidPoolsDidsFunc func(ctx context.Context, a *architectIvrProxy, number, varType string) (*[]platformclientv2.Didnumber, error)
+type validatePhoneNumberFunc func(ctx context.Context, a *architectIvrProxy, number string) error
+
 // architectIvrProxy contains all methods that call genesys cloud APIs.
 type architectIvrProxy struct {
 	clientConfig *platformclientv2.Configuration
@@ -58,11 +61,17 @@ type architectIvrProxy struct {
 	// functions to perform basic put/post request without chunking logic
 	updateArchitectIvrBasicAttr updateArchitectIvrFunc
 	createArchitectIvrBasicAttr createArchitectIvrFunc
+
+	// needed for number validation
+	telephonyApi                 *platformclientv2.TelephonyProvidersEdgeApi
+	getTelephonyDidPoolsDidsAttr getTelephonyDidPoolsDidsFunc
+	validatePhoneNumberAttr      validatePhoneNumberFunc
 }
 
 // newArchitectIvrProxy initializes the proxy with all the data needed to communicate with Genesys Cloud
 func newArchitectIvrProxy(clientConfig *platformclientv2.Configuration) *architectIvrProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	return &architectIvrProxy{
 		clientConfig: clientConfig,
 		api:          api,
@@ -78,6 +87,11 @@ func newArchitectIvrProxy(clientConfig *platformclientv2.Configuration) *archite
 
 		createArchitectIvrBasicAttr: createArchitectIvrBasicFn,
 		updateArchitectIvrBasicAttr: updateArchitectIvrBasicFn,
+
+		// needed for number validation
+		telephonyApi:                 telephonyApi,
+		getTelephonyDidPoolsDidsAttr: getTelephonyDidPoolsDidsFn,
+		validatePhoneNumberAttr:      validatePhoneNumberFn,
 	}
 }
 
@@ -128,6 +142,16 @@ func (a *architectIvrProxy) createArchitectIvrBasic(ctx context.Context, ivr pla
 // updateArchitectIvrBasic updates a Genesys Cloud Architect IVR (without chunking logic)
 func (a *architectIvrProxy) updateArchitectIvrBasic(ctx context.Context, id string, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 	return a.updateArchitectIvrBasicAttr(ctx, a, id, ivr)
+}
+
+// getTelephonyDidPoolsDids retrieves all dids that match the number and varType (unassigned or assigned_and_unassigned)
+func (a *architectIvrProxy) getTelephonyDidPoolsDids(ctx context.Context, number, varType string) (*[]platformclientv2.Didnumber, error) {
+	return a.getTelephonyDidPoolsDidsAttr(ctx, a, number, varType)
+}
+
+// validatePhoneNumber validates that the phone number exists and is unassigned
+func (a *architectIvrProxy) validatePhoneNumber(ctx context.Context, number string) error {
+	return a.validatePhoneNumberAttr(ctx, a, number)
 }
 
 // createArchitectIvrFn is an implementation function for creating a Genesys Cloud Architect IVR
@@ -336,7 +360,7 @@ func (a *architectIvrProxy) getIvrDnisAndChunks(ctx context.Context, id string, 
 
 	// chunk that if necessary
 	if len(dnisToAdd) > a.maxDnisPerRequest {
-		if err := a.validateDidNumbers(dnisToAdd); err != nil {
+		if err := a.validateDidNumbers(ctx, dnisToAdd); err != nil {
 			return nil, nil, err
 		}
 
@@ -361,13 +385,13 @@ func removeItemsToBeAddedFromOriginalList(allDnis []string, toBeAdded []string) 
 	return allDnis
 }
 
-// TODO: Proxy telephony api function to add unit tests & consider adding acceptance tests to check for this error also
-
-func (a *architectIvrProxy) validateDidNumbers(numbers []string) error {
-	maxRetries := 3
+// validateDidNumbers implements a loop with custom retry logic to validate a list of phone numbers. Each individual number
+// is passed to validatePhoneNumber to be validated
+func (a *architectIvrProxy) validateDidNumbers(ctx context.Context, numbers []string) error {
+	const maxRetries = 3
 	for _, number := range numbers {
 		for retryCount := 1; ; retryCount++ {
-			err := a.validatePhoneNumber(number)
+			err := a.validatePhoneNumber(ctx, number)
 			if err == nil {
 				break
 			}
@@ -380,25 +404,57 @@ func (a *architectIvrProxy) validateDidNumbers(numbers []string) error {
 	return nil
 }
 
-func (a *architectIvrProxy) validatePhoneNumber(number string) error {
-	const (
-		assignedAndUnassigned = "ASSIGNED_AND_UNASSIGNED"
-	)
-	telephonyApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(a.clientConfig)
-	// Search the assigned numbers to confirm it is not there/is not assigned
-	data, _, err := telephonyApi.GetTelephonyProvidersEdgesDidpoolsDids(assignedAndUnassigned, nil, number, 100, 1, "")
+// validatePhoneNumberFn is the implementation function that validates a phone number exists and is unassigned
+func validatePhoneNumberFn(ctx context.Context, a *architectIvrProxy, number string) error {
+	const assignedAndUnassigned = "ASSIGNED_AND_UNASSIGNED"
+
+	dids, err := a.getTelephonyDidPoolsDids(ctx, number, assignedAndUnassigned)
 	if err != nil {
-		return fmt.Errorf("failed to query dids to validate number %s: %v", number, err)
+		return fmt.Errorf("failed to query dids to validate n %s: %v", number, err)
 	}
-	if data.Entities == nil || len(*data.Entities) == 0 {
-		return fmt.Errorf("could not find did %s", number)
+	if dids == nil || len(*dids) == 0 {
+		return fmt.Errorf("could not find any numbers that match did %s", number)
 	}
-	for _, entity := range *data.Entities {
-		if *entity.Number == number {
-			if *entity.Assigned {
-				return fmt.Errorf("phone number %s is already assigned. Owner type %s", number, *entity.OwnerType)
+	for _, n := range *dids {
+		if *n.Number == number {
+			if *n.Assigned {
+				return fmt.Errorf("phone number %s is already assigned. Owner type %s", number, *n.OwnerType)
 			}
+
+			// number found and it is unassigned
+			return nil
 		}
 	}
-	return nil
+
+	return fmt.Errorf("could not find did %s", number)
+}
+
+// getTelephonyDidPoolsDidsFn implementation function for retrieving all dids that match the number and varType
+// (unassigned or assigned_and_unassigned)
+func getTelephonyDidPoolsDidsFn(_ context.Context, a *architectIvrProxy, number, varType string) (*[]platformclientv2.Didnumber, error) {
+	var (
+		pageSize   = 100
+		pageCount  int
+		allNumbers []platformclientv2.Didnumber
+	)
+	data, _, err := a.telephonyApi.GetTelephonyProvidersEdgesDidpoolsDids(varType, nil, number, pageSize, 1, "")
+	if err != nil || data.Entities == nil || len(*data.Entities) == 0 {
+		return &allNumbers, err
+	}
+
+	allNumbers = append(allNumbers, *data.Entities...)
+
+	pageCount = *data.PageCount
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
+		data, _, err := a.telephonyApi.GetTelephonyProvidersEdgesDidpoolsDids(varType, nil, number, pageSize, pageNum, "")
+		if err != nil {
+			return nil, err
+		}
+		if data.Entities == nil || len(*data.Entities) == 0 {
+			break
+		}
+		allNumbers = append(allNumbers, *data.Entities...)
+	}
+
+	return &allNumbers, nil
 }
