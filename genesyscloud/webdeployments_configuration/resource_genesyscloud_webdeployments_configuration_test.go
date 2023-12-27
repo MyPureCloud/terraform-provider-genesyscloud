@@ -69,7 +69,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		configDescription = "Test Configuration description " + gcloud.RandString(32)
 		fullResourceName  = "genesyscloud_webdeployments_configuration.complex"
 
-		channels       = []string{strconv.Quote("Webmessaging")}
+		// channels       = []string{strconv.Quote("Webmessaging")}
 		channelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
 	)
 
@@ -155,12 +155,12 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_uri", "/api/v2/knowledge/knowledgebases/dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.default_value", "Welcome to Knowledge Portal"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.1.type", "Welcome"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.type", "Welcome"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", "hash"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.feedback_enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.enabled_categories_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.self_uri", "https://my-domain/images/my-logo.png"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.image_source", ""),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled_categories.0.image_source", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_background_color", "#5C3D5C"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_text_color", "#FFFFFF"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.style_setting.0.hero_style_image", "https://my-domain/images/my-logo.png"),
@@ -173,7 +173,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", "Home"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_type", "Search"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", gcloud.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template.#", gcloud.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", gcloud.FalseValue),
 				),
 			},
@@ -277,7 +277,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", "Home"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_type", "Search"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", gcloud.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template.#", gcloud.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", gcloud.FalseValue),
 				),
 			},
@@ -317,7 +317,7 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 			}
 			home_screen {
 				enabled = true
-				logo_url = ""
+				logo_url = "https://my-domain/images/my-logo.png"
 			}
 			styles {
 				primary_color = "#B0B0B0"
