@@ -173,8 +173,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", "Home"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_type", "Search"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", gcloud.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template.#", gcloud.FalseValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template.#", "false"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", "false"),
 				),
 			},
 			{
@@ -277,8 +277,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", "Home"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_type", "Search"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", gcloud.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template.#", gcloud.FalseValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template.#", "false"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", "false"),
 				),
 			},
 			{
@@ -423,8 +423,8 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 				type = "Home"
 				module_settings_type = "Search"
 				module_settings_enabled = true
-				module_settings_compact_category_module_template = [ false ]
-				module_settings_detailed_category_module_template = [ false ]
+				module_settings_compact_category_module_template = ["false"]
+				module_settings_detailed_category_module_template = ["false"]
 			}
 		}
 		%s
