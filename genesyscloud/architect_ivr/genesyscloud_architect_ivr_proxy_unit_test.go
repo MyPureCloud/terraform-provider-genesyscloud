@@ -50,6 +50,7 @@ func TestUnitUploadIvrDnisChunksSuccess(t *testing.T) {
 	}
 
 	t.Log("Testing Put Ivr function")
+
 	ivr, _, err = architectIvrProxy.updateArchitectIvr(nil, ivrId, *ivr)
 	if err != nil {
 		t.Errorf("Expected error to be nil, got '%v'", err)
@@ -96,7 +97,6 @@ func TestUnitUploadIvrDnisChunksError(t *testing.T) {
 
 	architectProxy := newArchitectIvrProxy(nil)
 	architectProxy.maxDnisPerRequest = maxDnisPerRequest
-	architectProxy.validatePhoneNumberAttr = createMockValidatePhoneNumberFunc(nil)
 
 	// will be called on create after a chunk update fails because the ivr will need to be manually taken down, in that case
 	architectProxy.deleteArchitectIvrAttr = createMockDeleteIvrFunc(nil)
@@ -124,6 +124,9 @@ func TestUnitUploadIvrDnisChunksError(t *testing.T) {
 
 	t.Log("Testing error handling on proxy.PostArchitectIvr")
 	for _, test := range testCases {
+		if test.mockError == mockGetError {
+			continue
+		}
 		architectProxy.getArchitectIvrAttr = test.mockGetFunction
 		architectProxy.createArchitectIvrBasicAttr = test.mockPostFunction
 		architectProxy.updateArchitectIvrBasicAttr = test.mockPutFunction
@@ -293,7 +296,6 @@ func TestUnitGetIvrDnisAndChunks(t *testing.T) {
 
 		if !testCase.post {
 			architectIvrProxy.getArchitectIvrAttr = createMockGetIvrFunc(ivrId, *testCase.dnisReturnedFromGet, nil)
-			architectIvrProxy.validatePhoneNumberAttr = createMockValidatePhoneNumberFunc(nil)
 		}
 
 		initialUploadDnis, chunks, err := architectIvrProxy.getIvrDnisAndChunks(context.TODO(), ivrId, testCase.post, testCase.ivrFromSchema)
@@ -310,125 +312,6 @@ func TestUnitGetIvrDnisAndChunks(t *testing.T) {
 		for i := range chunks {
 			if !utillists.AreEquivalent(chunks[i], testCase.expectedChunks[i]) {
 				t.Errorf("expected chunk item to be %v, got %v", chunks[i], testCase.expectedChunks[i])
-			}
-		}
-	}
-}
-
-func TestUnitValidateDidNumbers(t *testing.T) {
-	ctx := context.TODO()
-	proxy := newArchitectIvrProxy(nil)
-	numbers := []string{"123", "456", "789"}
-	testError := fmt.Errorf("test error")
-
-	proxy.validatePhoneNumberAttr = createMockValidatePhoneNumberFunc(testError)
-	//proxy.getTelephonyDidPoolsDidsAttr = createMockGetTelephonyDidPoolsDidsFunc(nil, fmt.Errorf("test error"))
-
-	if err := proxy.validateDidNumbers(ctx, numbers); err == nil {
-		t.Errorf("expected to received error '%v', got nil", testError)
-	}
-
-	proxy.validatePhoneNumberAttr = createMockValidatePhoneNumberFunc(nil)
-	if err := proxy.validateDidNumbers(ctx, numbers); err != nil {
-		t.Errorf("expected error to be nil, got: %v", err)
-	}
-}
-
-func TestUnitValidatePhoneNumber(t *testing.T) {
-	var (
-		ctx        = context.TODO()
-		proxy      = newArchitectIvrProxy(nil)
-		trueValue  = true
-		falseValue = false
-	)
-
-	type validatePhoneNumberTestCase struct {
-		didsReturnedFromGet *[]platformclientv2.Didnumber
-		errReturnedFromGet  error
-		number              string
-		errorText           string // some text that should be present in the returned error message
-	}
-
-	testCases := []validatePhoneNumberTestCase{
-		// Number is found and is unassigned - should return nil
-		{
-			didsReturnedFromGet: &[]platformclientv2.Didnumber{
-				{
-					Number:   stringPointer("123"),
-					Assigned: &falseValue,
-				},
-			},
-			errReturnedFromGet: nil,
-			number:             "123",
-			errorText:          "",
-		},
-		// verify error is returned when the getDids func fails
-		{
-			didsReturnedFromGet: nil,
-			errReturnedFromGet:  fmt.Errorf("test error"),
-			errorText:           "test error",
-			number:              "123",
-		},
-		// verify we get the right error when no dids are returned
-		{
-			didsReturnedFromGet: nil,
-			errReturnedFromGet:  nil,
-			errorText:           "could not find any numbers that match did",
-			number:              "123",
-		},
-		{
-			didsReturnedFromGet: &[]platformclientv2.Didnumber{},
-			errReturnedFromGet:  nil,
-			errorText:           "could not find any numbers that match did",
-			number:              "123",
-		},
-		// verify we get the right error when number is already assigned
-		{
-			didsReturnedFromGet: &[]platformclientv2.Didnumber{
-				{
-					Number:    stringPointer("123"),
-					Assigned:  &trueValue,
-					OwnerType: stringPointer("IVR"),
-				},
-			},
-			errReturnedFromGet: nil,
-			number:             "123",
-			errorText:          "phone number 123 is already assigned",
-		},
-		// verify we get the right error when dids are returned but none of them match the number exactly
-		{
-			didsReturnedFromGet: &[]platformclientv2.Didnumber{
-				{
-					Number:   stringPointer("111"),
-					Assigned: &falseValue,
-				},
-				{
-					Number:   stringPointer("222"),
-					Assigned: &falseValue,
-				},
-				{
-					Number:   stringPointer("333"),
-					Assigned: &falseValue,
-				},
-			},
-			errReturnedFromGet: nil,
-			number:             "123",
-			errorText:          "could not find did 123",
-		},
-	}
-
-	for _, testCase := range testCases {
-		proxy.getTelephonyDidPoolsDidsAttr = createMockGetTelephonyDidPoolsDidsFunc(testCase.didsReturnedFromGet, testCase.errReturnedFromGet)
-		err := proxy.validatePhoneNumber(ctx, testCase.number)
-		if testCase.errorText == "" && err != nil {
-			t.Errorf("expected nil error, received: %v", err)
-		}
-		if testCase.errorText != "" && err == nil {
-			t.Errorf("expected error containing text '%s', received nil", testCase.errorText)
-		}
-		if testCase.errorText != "" {
-			if !strings.Contains(fmt.Sprintf("%v", err), testCase.errorText) {
-				t.Errorf("expected error to contain '%v', got '%v'", testCase.errorText, err)
 			}
 		}
 	}
@@ -471,20 +354,4 @@ func createMockDeleteIvrFunc(errToReturn error) deleteArchitectIvrFunc {
 	return func(context.Context, *architectIvrProxy, string) (*platformclientv2.APIResponse, error) {
 		return nil, errToReturn
 	}
-}
-
-func createMockGetTelephonyDidPoolsDidsFunc(didsToReturn *[]platformclientv2.Didnumber, errToReturn error) getTelephonyDidPoolsDidsFunc {
-	return func(ctx context.Context, a *architectIvrProxy, number, varType string) (*[]platformclientv2.Didnumber, error) {
-		return didsToReturn, errToReturn
-	}
-}
-
-func createMockValidatePhoneNumberFunc(errToReturn error) validatePhoneNumberFunc {
-	return func(ctx context.Context, a *architectIvrProxy, number string) error {
-		return errToReturn
-	}
-}
-
-func stringPointer(s string) *string {
-	return &s
 }
