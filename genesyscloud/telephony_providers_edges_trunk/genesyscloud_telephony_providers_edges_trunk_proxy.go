@@ -8,56 +8,46 @@ import (
 
 //generate a proxy for telephony_providers_edges_trunk
 
-/*
-The genesyscloud_team_proxy.go file contains the proxy structures and methods that interact
-with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
-out during testing.
-*/
-
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *trunkProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createTrunkFunc func(ctx context.Context, p *trunkProxy, settingsId string, edgeId, edgeGroupId string) (*platformclientv2.Trunk, *platformclientv2.APIResponse, error)
-type getTrunkByTrunkBaseIdFunc func(ctx context.Context, p *trunkProxy, name string) (*[]platformclientv2.Team, error)
-type getTrunkFunc func(ctx context.Context, p *trunkProxy, name string) (id string, retryable bool, err error)
-type getAllTrunksFunc func(ctx context.Context, p *trunkProxy, id string) (team *platformclientv2.Team, responseCode int, err error)
+
+type getTrunkByIdFunc func(ctx context.Context, p *trunkProxy, id string) (*platformclientv2.Trunk, *platformclientv2.APIResponse, error)
+type getAllTrunksFunc func(ctx context.Context, p *trunkProxy, pageNum int, pageSize int) (*platformclientv2.Trunkentitylisting, *platformclientv2.APIResponse, error)
 type getTrunkBaseSettingsFunc func(ctx context.Context, p *trunkProxy, trunkBaseSettingsId string) (*platformclientv2.Trunkbase, *platformclientv2.APIResponse, error)
 type getEdgeFunc func(ctx context.Context, p *trunkProxy, edgeId string) (*platformclientv2.Edge, *platformclientv2.APIResponse, error)
 type putEdgeFunc func(ctx context.Context, p *trunkProxy, edgeId string, edge platformclientv2.Edge) (*platformclientv2.Edge, *platformclientv2.APIResponse, error)
 type getEdgeGroupFunc func(ctx context.Context, p *trunkProxy, edgeGroupId string) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error)
 type putEdgeGroupFunc func(ctx context.Context, p *trunkProxy, edgeGroupId string, edgeGroup platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error)
 
-// teamProxy contains all of the methods that call genesys cloud APIs.
+// Proxy contains all of the methods that call genesys cloud APIs.
 type trunkProxy struct {
-	clientConfig              platformclientv2.Configuration
-	edgesApi                  *platformclientv2.TelephonyProvidersEdgeApi
-	createTrunkAttr           createTrunkFunc
-	getTrunkByTrunkBaseIdAttr getTrunkByTrunkBaseIdFunc
-	getTrunkAttr              getTrunkFunc
-	getAllTrunksAttr          getAllTrunksFunc
-	getTrunkBaseSettingsAttr  getTrunkBaseSettingsFunc
-	getEdgeAttr               getEdgeFunc
-	putEdgeAttr               putEdgeFunc
-	getEdgeGroupAttr          getEdgeGroupFunc
-	putEdgeGroupAttr          putEdgeGroupFunc
+	clientConfig platformclientv2.Configuration
+	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
+
+	getTrunkByIdAttr         getTrunkByIdFunc
+	getAllTrunksAttr         getAllTrunksFunc
+	getTrunkBaseSettingsAttr getTrunkBaseSettingsFunc
+	getEdgeAttr              getEdgeFunc
+	putEdgeAttr              putEdgeFunc
+	getEdgeGroupAttr         getEdgeGroupFunc
+	putEdgeGroupAttr         putEdgeGroupFunc
 }
 
 // newTeamProxy initializes the team proxy with all of the data needed to communicate with Genesys Cloud
 func newTrunkProxy(clientConfig *platformclientv2.Configuration) *trunkProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	return &trunkProxy{
-		clientConfig:              *clientConfig,
-		edgesApi:                  edgesApi,
-		createTrunkAttr:           createTrunkFn,
-		getTrunkAttr:              getTrunkFn,
-		getTrunkByTrunkBaseIdAttr: getTrunkByTrunkBaseIdFn,
-		getAllTrunksAttr:          getAllTrunksFn,
-		getEdgeAttr:               getEdgeFn,
-		putEdgeAttr:               putEdgeFn,
-		getEdgeGroupAttr:          getEdgeGroupFn,
-		putEdgeGroupAttr:          putEdgeGroupFn,
-		getTrunkBaseSettingsAttr:  getTrunkBaseSettingsFn,
+		clientConfig:             *clientConfig,
+		edgesApi:                 edgesApi,
+		getTrunkByIdAttr:         getTrunkByIdFn,
+		getAllTrunksAttr:         getAllTrunksFn,
+		getEdgeAttr:              getEdgeFn,
+		putEdgeAttr:              putEdgeFn,
+		getEdgeGroupAttr:         getEdgeGroupFn,
+		putEdgeGroupAttr:         putEdgeGroupFn,
+		getTrunkBaseSettingsAttr: getTrunkBaseSettingsFn,
 	}
 }
 
@@ -91,20 +81,12 @@ func (p *trunkProxy) getTrunkBaseSettings(ctx context.Context, trunkBaseSettings
 	return p.getTrunkBaseSettingsAttr(ctx, p, trunkBaseSettingsId)
 }
 
-func (p *trunkProxy) createTrunk(ctx context.Context, settingsId string, edgeId, edgeGroupId string) (*platformclientv2.Trunk, *platformclientv2.APIResponse, error) {
-	return p.createTrunkAttr(ctx, p, settingsId, edgeId, edgeGroupId)
+func (p *trunkProxy) getTrunkById(ctx context.Context, id string) (*platformclientv2.Trunk, *platformclientv2.APIResponse, error) {
+	return p.getTrunkByIdAttr(ctx, p, id)
 }
 
-func (p *trunkProxy) getTrunkByTrunkBaseId(ctx context.Context, name string) (*[]platformclientv2.Team, error) {
-	return p.getTrunkByTrunkBaseIdAttr(ctx, p, name)
-}
-
-func (p *trunkProxy) getTrunk(ctx context.Context, name string) (id string, retryable bool, err error) {
-	return p.getTrunkAttr(ctx, p, name)
-}
-
-func (p *trunkProxy) getAllTrunks(ctx context.Context, id string) (team *platformclientv2.Team, responseCode int, err error) {
-	return p.getAllTrunksAttr(ctx, p, id)
+func (p *trunkProxy) getAllTrunks(ctx context.Context, pageNum int, pageSize int) (*platformclientv2.Trunkentitylisting, *platformclientv2.APIResponse, error) {
+	return p.getAllTrunksAttr(ctx, p, pageNum, pageSize)
 }
 
 func getEdgeFn(ctx context.Context, p *trunkProxy, edgeId string) (*platformclientv2.Edge, *platformclientv2.APIResponse, error) {
@@ -125,4 +107,13 @@ func putEdgeGroupFn(ctx context.Context, p *trunkProxy, edgeGroupId string, edge
 
 func getTrunkBaseSettingsFn(ctx context.Context, p *trunkProxy, trunkBaseSettingsId string) (*platformclientv2.Trunkbase, *platformclientv2.APIResponse, error) {
 	return p.edgesApi.GetTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingsId, true)
+}
+
+func getTrunkByIdFn(ctx context.Context, p *trunkProxy, trunkBaseSettingsId string) (*platformclientv2.Trunk, *platformclientv2.APIResponse, error) {
+	return p.edgesApi.GetTelephonyProvidersEdgesTrunk(trunkBaseSettingsId)
+}
+
+func getAllTrunksFn(ctx context.Context, p *trunkProxy, pageNum int, pageSize int) (*platformclientv2.Trunkentitylisting, *platformclientv2.APIResponse, error) {
+
+	return p.edgesApi.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
 }

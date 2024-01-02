@@ -79,7 +79,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("edge_id or edge_group_id were not set. One must be set in order to assign the trunk base settings")
 	}
 
-	trunk, err := getTrunkByTrunkBaseId(trunkBaseSettingsId, meta)
+	trunk, err := getTrunkByTrunkBaseId(ctx, trunkBaseSettingsId, meta)
 	if err != nil {
 		return diag.Errorf("Failed to get trunk by trunk base id %s: %s", trunkBaseSettingsId, err)
 	}
@@ -91,15 +91,15 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	return readTrunk(ctx, d, meta)
 }
 
-func getTrunkByTrunkBaseId(trunkBaseId string, meta interface{}) (*platformclientv2.Trunk, error) {
+func getTrunkByTrunkBaseId(ctx context.Context, trunkBaseId string, meta interface{}) (*platformclientv2.Trunk, error) {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	tp := newTrunkProxy(sdkConfig)
 
 	time.Sleep(2 * time.Second)
 	// It should return the trunk as the first object. Paginating to be safe
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		trunks, _, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
+		trunks, _, getErr := tp.getAllTrunks(ctx, pageNum, pageSize)
 		if getErr != nil {
 			return nil, fmt.Errorf("Failed to get page of trunks: %v", getErr)
 		}
@@ -124,11 +124,11 @@ func updateTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	tp := newTrunkProxy(sdkConfig)
 
 	log.Printf("Reading trunk %s", d.Id())
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		trunk, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunk(d.Id())
+		trunk, resp, getErr := tp.getTrunkById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read trunk %s: %s", d.Id(), getErr))
@@ -175,12 +175,12 @@ func TrunkExporter() *resourceExporter.ResourceExporter {
 func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	tp := newTrunkProxy(sdkConfig)
 
 	err := gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
 			const pageSize = 100
-			trunks, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
+			trunks, resp, getErr := tp.getAllTrunks(ctx, pageNum, pageSize)
 			if getErr != nil {
 				if gcloud.IsStatus404(resp) {
 					return retry.RetryableError(fmt.Errorf("Failed to get page of trunks: %v", getErr))
