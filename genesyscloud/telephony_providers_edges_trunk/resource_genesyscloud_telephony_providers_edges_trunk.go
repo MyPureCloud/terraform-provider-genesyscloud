@@ -24,8 +24,6 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	tp := newTrunkProxy(sdkConfig)
 
-	//edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
 	trunkBase, resp, getErr := tp.getTrunkBaseSettings(ctx, trunkBaseSettingsId)
 	if getErr != nil {
 		if gcloud.IsStatus404(resp) {

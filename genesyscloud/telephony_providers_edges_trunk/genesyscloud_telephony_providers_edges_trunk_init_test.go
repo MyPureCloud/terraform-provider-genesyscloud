@@ -27,7 +27,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.ResourceTrunkBaseSettings()
 	providerResources["genesyscloud_telephony_providers_edges_trunk"] = ResourceTrunk()
 
-	// external package dependencies for outbound
+	// external package dependencies
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
 
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
@@ -41,7 +41,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 	providerDataSources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.DataSourceTrunkBaseSettings()
 	providerDataSources["genesyscloud_telephony_providers_edges_trunk"] = DataSourceTrunk()
-	// external package dependencies for outbound
+	// external package dependencies
 	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
 
 }
@@ -57,9 +57,9 @@ func initTestResources() {
 }
 
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for Outbound Package
+	// Run setup function before starting the test suite
 	initTestResources()
 
-	// Run the test suite for outbound
+	// Run the test suite
 	m.Run()
 }

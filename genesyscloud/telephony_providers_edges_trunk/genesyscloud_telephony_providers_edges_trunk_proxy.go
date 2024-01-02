@@ -35,7 +35,7 @@ type trunkProxy struct {
 	putEdgeGroupAttr         putEdgeGroupFunc
 }
 
-// newTeamProxy initializes the team proxy with all of the data needed to communicate with Genesys Cloud
+// initializes the  proxy with all of the data needed to communicate with Genesys Cloud
 func newTrunkProxy(clientConfig *platformclientv2.Configuration) *trunkProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	return &trunkProxy{

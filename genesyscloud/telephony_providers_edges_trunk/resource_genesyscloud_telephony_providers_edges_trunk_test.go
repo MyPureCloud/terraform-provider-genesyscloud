@@ -1,7 +1,6 @@
 package telephony_providers_edges_trunk
 
 import (
-	"fmt"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
@@ -86,15 +85,4 @@ func TestAccResourceTrunk(t *testing.T) {
 			},
 		},
 	})
-}
-
-func generateTrunk(
-	trunkRes,
-	trunkBaseSettingsId,
-	edgeGroupId string) string {
-	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_trunk" "%s" {
-		trunk_base_settings_id = %s
-		edge_group_id = %s
-	}
-	`, trunkRes, trunkBaseSettingsId, edgeGroupId)
 }
