@@ -22,9 +22,11 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	trunkBaseSettingsId := d.Get("trunk_base_settings_id").(string)
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	tp := newTrunkProxy(sdkConfig)
 
-	trunkBase, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingsId, true)
+	//edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+
+	trunkBase, resp, getErr := tp.getTrunkBaseSettings(ctx, trunkBaseSettingsId)
 	if getErr != nil {
 		if gcloud.IsStatus404(resp) {
 			return nil
@@ -35,7 +37,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	// Assign to edge if edge_id is set
 	if edgeIdI, ok := d.GetOk("edge_id"); ok {
 		edgeId := edgeIdI.(string)
-		edge, resp, getErr := edgesAPI.GetTelephonyProvidersEdge(edgeId, nil)
+		edge, resp, getErr := tp.getEdge(ctx, edgeId)
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
 				return nil
@@ -51,13 +53,13 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Assigning trunk base settings to edge %s", edgeId)
-		_, _, err := edgesAPI.PutTelephonyProvidersEdge(edgeId, *edge)
+		_, _, err := tp.putEdge(ctx, edgeId, *edge)
 		if err != nil {
 			return diag.Errorf("Failed to assign trunk base settings to edge %s: %s", edgeId, err)
 		}
 	} else if edgeGroupIdI, ok := d.GetOk("edge_group_id"); ok {
 		edgeGroupId := edgeGroupIdI.(string)
-		edgeGroup, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesEdgegroup(edgeGroupId, nil)
+		edgeGroup, resp, getErr := tp.getEdgeGroup(ctx, edgeGroupId)
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
 				return diag.Errorf("Failed to get edge group %s: %s", edgeGroupId, getErr)
@@ -69,7 +71,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Assigning trunk base settings to edge group %s", edgeGroupId)
-		_, _, err := edgesAPI.PutTelephonyProvidersEdgesEdgegroup(edgeGroupId, *edgeGroup)
+		_, _, err := tp.putEdgeGroup(ctx, edgeGroupId, *edgeGroup)
 		if err != nil {
 			return diag.Errorf("Failed to assign trunk base settings to edge group %s: %s", edgeGroupId, err)
 		}
