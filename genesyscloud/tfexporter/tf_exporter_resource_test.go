@@ -44,6 +44,7 @@ import (
 func initTestResources() {
 	resourceExporters = make(map[string]*resourceExporter.ResourceExporter)
 	providerResources = make(map[string]*schema.Resource)
+	providerDataSources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 

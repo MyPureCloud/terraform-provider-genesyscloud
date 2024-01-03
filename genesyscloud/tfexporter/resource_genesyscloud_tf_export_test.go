@@ -3,7 +3,9 @@ package tfexporter
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 	"io"
+	"log"
 	"math/rand"
 	"os"
 	"path"
@@ -12,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"testing"
 	"time"
@@ -1340,6 +1343,36 @@ func testQueueExportEqual(filePath, resourceType, name string, expectedQueue Que
 	}
 }
 
+// testDependentContactList tests to see if all of the queues retrieved in the export match the regex passed into it.
+func testDependentContactList(filePath, resourceType, name string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			fmt.Println("Error reading file:", err)
+			return err
+		}
+
+		// Print the file content to the console
+		fmt.Println("File Content:")
+		fmt.Println(string(content))
+		fmt.Printf("AEEMEM %v", name)
+
+		raw, err := getResourceDefinition(filePath, resourceType)
+		fmt.Printf("raw %v", raw)
+		if err != nil {
+			return err
+		}
+
+		var r *json.RawMessage
+		if err := json.Unmarshal(*raw[name], &r); err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
 // testQueueExportMatchesRegEx tests to see if all of the queues retrieved in the export match the regex passed into it.
 func testQueueExportMatchesRegEx(filePath, resourceType, regEx string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
@@ -1662,6 +1695,27 @@ func generateTfExportByIncludeFilterResources(
 	`, resourceID, directory, includeState, strings.Join(items, ","), exportAsHCL, splitByResource, strings.Join(dependencies, ","))
 }
 
+func generateTfExportByFlowDependsOnResources(
+	resourceID string,
+	directory string,
+	includeState string,
+	items []string,
+	exportAsHCL string,
+	splitByResource string,
+	dependsOn string,
+) string {
+	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
+		directory = "%s"
+		include_state_file = %s
+		include_filter_resources = [%s]
+		export_as_hcl = %s
+		split_files_by_resource = %s
+		enable_flow_depends_on = %s
+		depends_on = [time_sleep.wait_10_seconds]
+	}
+	`, resourceID, directory, includeState, strings.Join(items, ","), exportAsHCL, splitByResource, dependsOn)
+}
+
 func generateTfExportByExcludeFilterResources(
 	resourceID string,
 	directory string,
@@ -1841,4 +1895,310 @@ func randString(length int) string {
 	}
 
 	return string(s)
+}
+
+func TestAccResourceTfExportEnableDependsOn(t *testing.T) {
+	var (
+		exportTestDir         = "../.terraform" + uuid.NewString()
+		exportResource        = "test-export2"
+		contactListResourceId = "contact_list" + uuid.NewString()
+		contatListname        = "terraform contact list" + uuid.NewString()
+		outboundFlowFilePath  = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		flowName              = "testflowcxcase"
+		flowResourceId        = "flow"
+		wrapupcodeResourceId  = "wrapupcode"
+	)
+	defer os.RemoveAll(exportTestDir)
+
+	//queueResourceDef := buildQueueResources(queueResources)
+	config := fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`+`
+resource "time_sleep" "wait_10_seconds" {
+create_duration = "100s"
+}
+`) + GenerateOutboundCampaignBasic(
+		contactListResourceId,
+		outboundFlowFilePath,
+		flowResourceId,
+		flowName,
+		"${data.genesyscloud_auth_division_home.home.name}",
+		wrapupcodeResourceId,
+		contatListname,
+	) +
+		generateTfExportByFlowDependsOnResources(
+			exportResource,
+			exportTestDir,
+			gcloud.TrueValue,
+			[]string{
+				strconv.Quote("genesyscloud_flow::" + flowName),
+			},
+			gcloud.FalseValue,
+			gcloud.FalseValue,
+			gcloud.TrueValue,
+		)
+
+	sanitizer := resourceExporter.NewSanitizerProvider()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {
+				VersionConstraint: "0.10.0",
+				Source:            "hashicorp/time",
+			},
+		},
+		Steps: []resource.TestStep{
+			{
+				// Generate a queue as well and export it
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow("genesyscloud_flow."+flowResourceId, flowName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+contactListResourceId, "name", contatListname),
+					testDependentContactList(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_outbound_contact_list", sanitizer.S.SanitizeResourceName(contatListname))),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+//	func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
+//		t.Parallel()
+//		var (
+//			contactListResourceId = "contact_list"
+//			outboundFlowFilePath  = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+//			flowName              = "test flow cx case"
+//			flowResourceId        = "flow"
+//			wrapupcodeResourceId  = "wrapupcode"
+//		)
+//
+//		// necessary to avoid errors during site creation
+//		_, err := gcloud.AuthorizeSdk()
+//		if err != nil {
+//			t.Fatal(err)
+//		}
+//
+//		// Test campaign_status can be turned on at time of creation as well
+//		resource.Test(t, resource.TestCase{
+//			PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+//			ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+//			Steps: []resource.TestStep{
+//				// Create resources for outbound campaign
+//				{
+//					Config: fmt.Sprintf(`
+//
+// data "genesyscloud_auth_division_home" "home" {}
+// `) + GenerateReferencedResourcesForOutboundCampaignTests(
+//
+//			contactListResourceId,
+//			outboundFlowFilePath,
+//			flowResourceId,
+//			flowName,
+//			"${data.genesyscloud_auth_division_home.home.name}",
+//			wrapupcodeResourceId,
+//		),
+//		// Add contacts to the contact list (because we have access to the state and can pull out the contactlist ID to pass to the API)
+//		Check: addContactsToContactList,
+//	},
+//	// Now, we create the outbound campaign and it should stay running because it has contacts to call. We leave it running to test
+//	// the destroy command takes care of turning it off before deleting.
+//	{
+//		Config: fmt.Sprintf(`
+//
+// data "genesyscloud_auth_division_home" "home" {}
+// `) + GenerateOutboundCampaignBasic(
+//
+//						contactListResourceId,
+//						outboundFlowFilePath,
+//						flowResourceId,
+//						flowName,
+//						"${data.genesyscloud_auth_division_home.home.name}",
+//						wrapupcodeResourceId,
+//					),
+//					Check: resource.ComposeTestCheckFunc(
+//						validateFlow("genesyscloud_flow."+flowResourceId, flowName),
+//						resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+contactListResourceId, "name", "terraform contact list")),
+//				},
+//			},
+//			CheckDestroy: testVerifyFlowDestroyed,
+//		})
+//	}
+func testVerifyFlowDestroyed(state *terraform.State) error {
+	architectAPI := platformclientv2.NewArchitectApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != "genesyscloud_flow" {
+			continue
+		}
+
+		flow, resp, err := architectAPI.GetFlow(rs.Primary.ID, false)
+		if flow != nil {
+			return fmt.Errorf("Flow (%s) still exists", rs.Primary.ID)
+		} else if resp != nil && resp.StatusCode == 410 {
+			// Flow not found as expected
+			log.Printf("Flow (%s) successfully deleted", rs.Primary.ID)
+			continue
+		} else {
+			// Unexpected error
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+	}
+	// Success. All Flows destroyed
+	return nil
+}
+
+func GenerateOutboundCampaignBasic(
+	contactListResourceId string,
+	outboundFlowFilePath string,
+	flowResourceId string,
+	flowName string,
+	divisionName,
+	wrapupcodeResourceId string,
+	contatListname string) string {
+	referencedResources := GenerateReferencedResourcesForOutboundCampaignTests(
+		contactListResourceId,
+		outboundFlowFilePath,
+		flowResourceId,
+		flowName,
+		divisionName,
+		wrapupcodeResourceId,
+		contatListname,
+	)
+	return fmt.Sprintf(`
+%s
+`, referencedResources)
+}
+
+func GenerateReferencedResourcesForOutboundCampaignTests(
+	contactListResourceId string,
+	outboundFlowFilePath string,
+	flowResourceId string,
+	flowName string,
+	divisionName string,
+	wrapUpCodeResourceId string,
+	contatListname string,
+) string {
+	var (
+		contactList             string
+		callAnalysisResponseSet string
+	)
+	if contactListResourceId != "" {
+		contactList = obContactList.GenerateOutboundContactList(
+			contactListResourceId,
+			contatListname,
+			gcloud.NullValue,
+			strconv.Quote("Cell"),
+			[]string{strconv.Quote("Cell")},
+			[]string{strconv.Quote("Cell"), strconv.Quote("Home"), strconv.Quote("zipcode")},
+			gcloud.FalseValue,
+			gcloud.NullValue,
+			gcloud.NullValue,
+			obContactList.GeneratePhoneColumnsBlock("Cell", "cell", strconv.Quote("Cell")),
+			obContactList.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
+	}
+
+	callAnalysisResponseSet = gcloud.GenerateRoutingWrapupcodeResource(
+		wrapUpCodeResourceId,
+		"wrapupcode "+uuid.NewString(),
+	) + gcloud.GenerateFlowResource(
+		flowResourceId,
+		outboundFlowFilePath,
+		"",
+		false,
+		gcloud.GenerateSubstitutionsMap(map[string]string{
+			"flow_name":          flowName,
+			"home_division_name": divisionName,
+			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
+			"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapUpCodeResourceId + ".name}",
+		}),
+	)
+
+	return fmt.Sprintf(`
+			%s
+			%s
+		`, contactList, callAnalysisResponseSet)
+}
+func addContactsToContactList(state *terraform.State) error {
+	outboundAPI := platformclientv2.NewOutboundApi()
+	resource := state.RootModule().Resources["genesyscloud_outbound_contact_list.contact_list"]
+	if resource == nil {
+		return fmt.Errorf("genesyscloud_outbound_contact_list.contact_list resource not found in state")
+	}
+
+	contactList, _, err := outboundAPI.GetOutboundContactlist(resource.Primary.ID, false, false)
+	if err != nil {
+		return fmt.Errorf("genesyscloud_outbound_contact_list (%s) not available", resource.Primary.ID)
+	}
+	contactsJSON := `[{
+			"data": {
+			  "FirstName": "Asa",
+			  "LastName": "Acosta",
+			  "Cell": "3335551234",
+			  "Home": "3335552345",
+			  "zipcode": "23849"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  },
+		  {
+			"data": {
+			  "FirstName": "Leonidas",
+			  "LastName": "Acosta",
+			  "Cell": "4445551234",
+			  "Home": "4445552345",
+			  "zipcode": "34567"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  },
+		  {
+			"data": {
+			  "FirstName": "Nolan",
+			  "LastName": "Adams",
+			  "Cell": "6665551234",
+			  "Home": "6665552345",
+			  "zipcode": "56789"
+			},
+			"callable": true,
+			"phoneNumberStatus": {}
+		  }]`
+	var contacts []platformclientv2.Writabledialercontact
+	err = json.Unmarshal([]byte(contactsJSON), &contacts)
+	if err != nil {
+		return fmt.Errorf("could not unmarshall JSON contacts to add to contact list")
+	}
+	_, _, err = outboundAPI.PostOutboundContactlistContacts(*contactList.Id, contacts, false, false, false)
+	if err != nil {
+		return fmt.Errorf("could not post contacts to contact list")
+	}
+	return nil
+}
+
+// Check if flow is published, then check if flow name and type are correct
+func validateFlow(flowResourceName, name string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		flowResource, ok := state.RootModule().Resources[flowResourceName]
+		fmt.Printf("%v flowResource", flowResource)
+		if !ok {
+			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
+		}
+		flowID := flowResource.Primary.ID
+		architectAPI := platformclientv2.NewArchitectApi()
+
+		flow, _, err := architectAPI.GetFlow(flowID, false)
+		fmt.Printf("%v flow", flow)
+		if err != nil {
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+
+		if flow == nil {
+			return fmt.Errorf("Flow (%s) not found. ", flowID)
+		}
+
+		if *flow.Name != name {
+			return fmt.Errorf("Returned flow (%s) has incorrect name. Expect: %s, Actual: %s", flowID, name, *flow.Name)
+		}
+
+		return nil
+	}
 }
