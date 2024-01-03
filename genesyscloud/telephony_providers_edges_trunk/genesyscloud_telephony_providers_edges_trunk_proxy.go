@@ -23,7 +23,7 @@ type putEdgeGroupFunc func(ctx context.Context, p *trunkProxy, edgeGroupId strin
 
 // Proxy contains all of the methods that call genesys cloud APIs.
 type trunkProxy struct {
-	clientConfig platformclientv2.Configuration
+	clientConfig *platformclientv2.Configuration
 	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
 
 	getTrunkByIdAttr         getTrunkByIdFunc
@@ -39,7 +39,7 @@ type trunkProxy struct {
 func newTrunkProxy(clientConfig *platformclientv2.Configuration) *trunkProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	return &trunkProxy{
-		clientConfig:             *clientConfig,
+		clientConfig:             clientConfig,
 		edgesApi:                 edgesApi,
 		getTrunkByIdAttr:         getTrunkByIdFn,
 		getAllTrunksAttr:         getAllTrunksFn,
