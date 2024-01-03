@@ -22,7 +22,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	trunkBaseSettingsId := d.Get("trunk_base_settings_id").(string)
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	tp := newTrunkProxy(sdkConfig)
+	tp := getTrunkProxy(sdkConfig)
 
 	trunkBase, resp, getErr := tp.getTrunkBaseSettings(ctx, trunkBaseSettingsId)
 	if getErr != nil {
@@ -91,7 +91,7 @@ func createTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 func getTrunkByTrunkBaseId(ctx context.Context, trunkBaseId string, meta interface{}) (*platformclientv2.Trunk, error) {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	tp := newTrunkProxy(sdkConfig)
+	tp := getTrunkProxy(sdkConfig)
 
 	time.Sleep(2 * time.Second)
 	// It should return the trunk as the first object. Paginating to be safe
@@ -122,7 +122,7 @@ func updateTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 func readTrunk(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	tp := newTrunkProxy(sdkConfig)
+	tp := getTrunkProxy(sdkConfig)
 
 	log.Printf("Reading trunk %s", d.Id())
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -173,7 +173,7 @@ func TrunkExporter() *resourceExporter.ResourceExporter {
 func getAllTrunks(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	tp := newTrunkProxy(sdkConfig)
+	tp := getTrunkProxy(sdkConfig)
 
 	err := gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		for pageNum := 1; ; pageNum++ {
