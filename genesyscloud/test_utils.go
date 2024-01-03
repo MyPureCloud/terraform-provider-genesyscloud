@@ -201,7 +201,7 @@ func ValidateValueInJsonAttr(resourceName string, attrName string, jsonProp stri
 				}
 				return fmt.Errorf("JSON array property for resourceState %s.%s does not contain expected %s", resourceName, jsonProp, jsonValue)
 			} else {
-				strVal := interfaceToString(val)
+				strVal := InterfaceToString(val)
 				if strVal != jsonValue {
 					return fmt.Errorf("JSON property for resource %s %s=%s does not match expected %s", resourceName, jsonProp, strVal, jsonValue)
 				}
