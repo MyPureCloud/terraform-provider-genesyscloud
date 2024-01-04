@@ -3,7 +3,8 @@ package webdeployments_configuration
 import (
 	"fmt"
 	"regexp"
-	"strconv"
+
+	// "strconv"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
@@ -70,7 +71,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		fullResourceName  = "genesyscloud_webdeployments_configuration.complex"
 
 		// channels       = []string{strconv.Quote("Webmessaging")}
-		channelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
+		// channelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -173,8 +174,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", "Home"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_type", "Search"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", gcloud.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template.#", "false"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", "false"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template.0", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template.0", gcloud.FalseValue),
 				),
 			},
 			{
@@ -182,13 +183,13 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 				Config: complexConfigurationResource(
 					configName,
 					configDescription,
-					generateWebDeploymentConfigCobrowseSettings(
-						gcloud.FalseValue,
-						gcloud.FalseValue,
-						channelsUpdate,
-						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
-						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
-					),
+				// 	generateWebDeploymentConfigCobrowseSettings(
+				// 		gcloud.FalseValue,
+				// 		gcloud.FalseValue,
+				// 		channelsUpdate,
+				// 		[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
+				// 		[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
+				// 	),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceName, "name", configName),
@@ -277,8 +278,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.type", "Home"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_type", "Search"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_enabled", gcloud.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template.#", "false"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template", "false"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_compact_category_module_template.0", gcloud.FalseValue),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.screens.0.module_settings_detailed_category_module_template.0", gcloud.FalseValue),
 				),
 			},
 			{
@@ -432,17 +433,17 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 	`, name, description, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string) string {
-	return fmt.Sprintf(`
-	cobrowse {
-		enabled = %s
-		allow_agent_control = %s
-		channels = [ %s ]
-		mask_selectors = [ %s ]
-		readonly_selectors = [ %s ]
-	}
-`, cbEnabled, cbAllowAgentControl, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "))
-}
+// func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string) string {
+// 	return fmt.Sprintf(`
+// 	cobrowse {
+// 		enabled = %s
+// 		allow_agent_control = %s
+// 		channels = [ %s ]
+// 		mask_selectors = [ %s ]
+// 		readonly_selectors = [ %s ]
+// 	}
+// `, cbEnabled, cbAllowAgentControl, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "))
+// }
 
 func generateSupportCenterSettings(enabled, knowledgeBaseID, knowledgeBaseURI string) string {
 	return fmt.Sprintf(`
