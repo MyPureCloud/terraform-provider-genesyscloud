@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -52,6 +53,13 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 	for _, cred := range *credentials {
 		log.Printf("Dealing with credential id : %s", *cred.Id)
 		if cred.Name != nil { // Credential is possible to have no name
+
+			// Export integration credential only if it matches the expected format: DEVTOOLING-310
+			regexPattern := regexp.MustCompile("Integration-.+")
+			if !regexPattern.MatchString(*cred.Name) {
+				log.Printf("integration credential name [%s] does not match the expected format [%s], not exporting integration credential id %s", *cred.Name, regexPattern.String(), *cred.Id)
+				continue
+			}
 			// Verify that the integration entity itself exist before exporting the integration credentials associated to it: DEVTOOLING-282
 			integrationId := strings.Split(*cred.Name, "Integration-")[1]
 			_, resp, err := ip.getIntegrationById(ctx, integrationId)

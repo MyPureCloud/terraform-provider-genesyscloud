@@ -1,8 +1,8 @@
-package telephony
+package telephony_providers_edges_trunk
 
 import (
-	"fmt"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	"testing"
 
@@ -27,7 +27,7 @@ func TestAccDataSourceTrunk(t *testing.T) {
 		trunkData = "trunkData"
 	)
 
-	phoneTrunkBaseSettings := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSettings := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsRes,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
@@ -35,7 +35,7 @@ func TestAccDataSourceTrunk(t *testing.T) {
 		"PHONE",
 		false)
 
-	trunkBaseSettingsConfig := GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettingsConfig := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		trunkBaseSettingsRes,
 		"test trunk base settings "+uuid.NewString(),
 		"test description 1",
@@ -71,17 +71,4 @@ func TestAccDataSourceTrunk(t *testing.T) {
 			},
 		},
 	})
-}
-
-func generateTrunkDataSource(
-	resourceID string,
-	name string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
-	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_trunk" "%s" {
-		name = %s
-		depends_on=[%s]
-	}
-	`, resourceID, name, dependsOnResource)
 }

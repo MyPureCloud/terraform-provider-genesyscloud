@@ -3,12 +3,12 @@
 page_title: "genesyscloud_architect_datatable Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud Architect Datatables. Select an architect datatable by name.
+  Data source for Genesys Cloud Architect Datatables. Select an architect architect_datatable by name.
 ---
 
 # genesyscloud_architect_datatable (Data Source)
 
-Data source for Genesys Cloud Architect Datatables. Select an architect datatable by name.
+Data source for Genesys Cloud Architect Datatables. Select an architect architect_datatable by name.
 
 ## Example Usage
 

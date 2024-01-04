@@ -18,7 +18,7 @@ copy-hooks:
 
 # Run acceptance tests
 testacc:
-	TF_ACC=1 go test ./... -v $(TESTARGS) -run TestAcc -timeout 120m -parallel 20  -coverprofile=coverage.out
+	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m -parallel 20  -coverprofile=coverage.out
 
 # Run unit tests
 testunit:

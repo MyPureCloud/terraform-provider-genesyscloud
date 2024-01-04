@@ -1,4 +1,4 @@
-package telephony
+package telephony_providers_edges_trunk
 
 import (
 	"context"
@@ -12,20 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
-
-func DataSourceTrunk() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Trunk. Select a trunk by name",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceTrunkRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Trunk name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
 
 func dataSourceTrunkRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig

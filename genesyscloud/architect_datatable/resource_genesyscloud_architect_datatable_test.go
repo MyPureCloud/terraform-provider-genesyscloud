@@ -1,9 +1,13 @@
-package genesyscloud
+package architect_datatable
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -41,17 +45,17 @@ func TestAccResourceArchitectDatatable(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create datatable with a key and one other property
+				// Create architect_datatable with a key and one other property
 				Config: generateArchitectDatatableResource(
 					tableResource1,
 					tableName1,
 					strconv.Quote(tableDesc1),
-					generateArchitectDatatableProperty(propBool, typeBool, NullValue, NullValue),
-					generateArchitectDatatableProperty(propNameKey, typeString, NullValue, NullValue),
+					generateArchitectDatatableProperty(propBool, typeBool, genesyscloud.NullValue, genesyscloud.NullValue),
+					generateArchitectDatatableProperty(propNameKey, typeString, genesyscloud.NullValue, genesyscloud.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "name", tableName1),
@@ -68,7 +72,7 @@ func TestAccResourceArchitectDatatable(t *testing.T) {
 					tableResource1,
 					tableName2,
 					strconv.Quote(tableDesc2),
-					generateArchitectDatatableProperty(propNameKey, typeString, strconv.Quote(propTitleKey), NullValue),
+					generateArchitectDatatableProperty(propNameKey, typeString, strconv.Quote(propTitleKey), genesyscloud.NullValue),
 					generateArchitectDatatableProperty(propInt, typeInt, strconv.Quote(propTitleInt), strconv.Quote(defInt1)),
 					generateArchitectDatatableProperty(propBool, typeBool, strconv.Quote(propTitleBool), strconv.Quote(defBool1)),
 					generateArchitectDatatableProperty(propNum, typeNum, strconv.Quote(propTitleNum), strconv.Quote(defNum1)),
@@ -104,6 +108,28 @@ func TestAccResourceArchitectDatatable(t *testing.T) {
 	})
 }
 
+func testVerifyDatatablesDestroyed(state *terraform.State) error {
+	archAPI := platformclientv2.NewArchitectApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != "genesyscloud_architect_datatable" {
+			continue
+		}
+
+		datatable, resp, err := sdkGetArchitectDatatable(rs.Primary.ID, "", archAPI)
+		if datatable != nil {
+			return fmt.Errorf("Datatable (%s) still exists", rs.Primary.ID)
+		} else if genesyscloud.IsStatus404(resp) {
+			// Datatable not found as expected
+			continue
+		} else {
+			// Unexpected error
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+	}
+	// Success. All Datatables destroyed
+	return nil
+}
+
 func generateArchitectDatatableResource(
 	resourceID string,
 	name string,
@@ -131,24 +157,38 @@ func generateArchitectDatatableProperty(
 	`, name, propType, title, defaultVal)
 }
 
-func testVerifyDatatablesDestroyed(state *terraform.State) error {
-	archAPI := platformclientv2.NewArchitectApi()
-	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_architect_datatable" {
-			continue
-		}
+// used for testing only
+func sdkGetArchitectDatatable(datatableId string, expand string, api *platformclientv2.ArchitectApi) (*Datatable, *platformclientv2.APIResponse, error) {
+	apiClient := &api.Configuration.APIClient
 
-		datatable, resp, err := sdkGetArchitectDatatable(rs.Primary.ID, "", archAPI)
-		if datatable != nil {
-			return fmt.Errorf("Datatable (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
-			// Datatable not found as expected
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
-		}
+	// create path and map variables
+	path := api.Configuration.BasePath + "/api/v2/flows/datatables/" + datatableId
+
+	headerParams := make(map[string]string)
+	queryParams := make(map[string]string)
+
+	// oauth required
+	if api.Configuration.AccessToken != "" {
+		headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
 	}
-	// Success. All Datatables destroyed
-	return nil
+	// add default headers if any
+	for key := range api.Configuration.DefaultHeader {
+		headerParams[key] = api.Configuration.DefaultHeader[key]
+	}
+
+	queryParams["expand"] = apiClient.ParameterToString(expand, "")
+
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	var successPayload *Datatable
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
+	if err != nil {
+		// Nothing special to do here, but do avoid processing the response
+	} else if response.Error != nil {
+		err = errors.New(response.ErrorMessage)
+	} else {
+		err = json.Unmarshal(response.RawBody, &successPayload)
+	}
+	return successPayload, response, err
 }

@@ -32,19 +32,19 @@ type UserExport struct {
 	Email        string `json:"email"`
 	Name         string `json:"name"`
 	State        string `json:"state"`
-	ResourceName string `-`
+	ResourceName string ``
 }
 
 type QueueExport struct {
 	AcwTimeoutMs int    `json:"acw_timeout_ms"`
 	Description  string `json:"description"`
 	Name         string `json:"name"`
-	ResourceName string `-`
+	ResourceName string ``
 }
 
 type WrapupcodeExport struct {
 	Name         string `json:"name"`
-	ResourceName string `-`
+	ResourceName string ``
 }
 
 // TestAccResourceTfExport does a basic test check to make sure the export file is created.

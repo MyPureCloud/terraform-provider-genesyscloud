@@ -39,6 +39,8 @@ type deleteTelephonyDidPool func(context.Context, *telephonyDidPoolProxy, string
 type getTelephonyDidPoolIdByStartAndEndNumber func(ctx context.Context, t *telephonyDidPoolProxy, start, end string) (id string, retryable bool, err error)
 type getAllTelephonyDidPools func(context.Context, *telephonyDidPoolProxy) (*[]platformclientv2.Didpool, error)
 
+type getTelephonyDidPoolsDids func(ctx context.Context, proxy *telephonyDidPoolProxy, number string, varType string) (*[]platformclientv2.Didnumber, error)
+
 // telephonyDidPoolProxy contains all methods that call genesys cloud APIs.
 type telephonyDidPoolProxy struct {
 	clientConfig                                 *platformclientv2.Configuration
