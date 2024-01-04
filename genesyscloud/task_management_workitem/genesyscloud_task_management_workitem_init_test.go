@@ -7,6 +7,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
+	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 )
 
 /*
@@ -31,7 +34,13 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceTaskManagementWorkitem()
-	// TODO: Add references
+	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
+	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
+	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
+	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
+	providerResources["genesyscloud_externalcontacts_contact"] = externalContacts.ResourceExternalContact()
+	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
+	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -40,7 +49,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[resourceName] = DataSourceTaskManagementWorkitem()
-	// TODO: Add references
 }
 
 // initTestResources initializes all test resources and data sources.

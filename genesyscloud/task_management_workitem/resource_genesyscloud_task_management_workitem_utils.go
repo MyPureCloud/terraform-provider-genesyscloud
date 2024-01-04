@@ -1,6 +1,7 @@
 package task_management_workitem
 
 import (
+	"encoding/json"
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -16,8 +17,8 @@ The resource_genesyscloud_task_management_workitem_utils.go file contains variou
 and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 
-// getTaskManagementWorkitemFromResourceData maps data from schema ResourceData object to a platformclientv2.Workitem
-func getTaskManagementWorkitemFromResourceData(d *schema.ResourceData) (*platformclientv2.Workitemcreate, error) {
+// getWorkitemCreateFromResourceData maps data from schema ResourceData object to a platformclientv2.Workitemcreate
+func getWorkitemCreateFromResourceData(d *schema.ResourceData) (*platformclientv2.Workitemcreate, error) {
 	customFields, err := buildCustomFieldsNillable(d.Get("custom_fields").(string))
 	if err != nil {
 		return nil, err
@@ -26,6 +27,40 @@ func getTaskManagementWorkitemFromResourceData(d *schema.ResourceData) (*platfor
 	return &platformclientv2.Workitemcreate{
 		Name:        platformclientv2.String(d.Get("name").(string)),
 		TypeId:      platformclientv2.String(d.Get("worktype_id").(string)),
+		Description: platformclientv2.String(d.Get("description").(string)),
+		LanguageId:  platformclientv2.String(d.Get("language_id").(string)),
+		Priority:    platformclientv2.Int(d.Get("priority").(int)),
+
+		DateDue:         resourcedata.GetNillableTime(d, "date_due"),
+		DateExpires:     resourcedata.GetNillableTime(d, "expires"),
+		DurationSeconds: platformclientv2.Int(d.Get("duration_seconds").(int)),
+		Ttl:             platformclientv2.Int(d.Get("ttl").(int)),
+
+		StatusId:             platformclientv2.String(d.Get("status_id").(string)),
+		WorkbinId:            platformclientv2.String(d.Get("workbin_id").(string)),
+		AssigneeId:           platformclientv2.String(d.Get("assignee_id").(string)),
+		ExternalContactId:    platformclientv2.String(d.Get("external_contact_id").(string)),
+		ExternalTag:          platformclientv2.String(d.Get("external_tag").(string)),
+		QueueId:              platformclientv2.String(d.Get("queue_id").(string)),
+		SkillIds:             lists.BuildSdkStringListFromInterfaceArray(d, "skills"),
+		PreferredAgentIds:    lists.BuildSdkStringListFromInterfaceArray(d, "preferred_agents"),
+		AutoStatusTransition: platformclientv2.Bool(d.Get("auto_status_transition").(bool)),
+
+		CustomFields: customFields,
+		ScoredAgents: buildWorkitemScoredAgents(d.Get("scored_agents").([]interface{})),
+	}, nil
+}
+
+// getWorkitemUpdateFromResourceData maps data from schema ResourceData object to a platformclientv2.Workitemupdate
+func getWorkitemUpdateFromResourceData(d *schema.ResourceData) (*platformclientv2.Workitemupdate, error) {
+	customFields, err := buildCustomFieldsNillable(d.Get("custom_fields").(string))
+	if err != nil {
+		return nil, err
+	}
+
+	// NOTE: The only difference from  Workitemcreate is that you can't change the Worktype
+	return &platformclientv2.Workitemupdate{
+		Name:        platformclientv2.String(d.Get("name").(string)),
 		Description: platformclientv2.String(d.Get("description").(string)),
 		LanguageId:  platformclientv2.String(d.Get("language_id").(string)),
 		Priority:    platformclientv2.Int(d.Get("priority").(int)),
@@ -115,8 +150,16 @@ func flattenUserReferences(userReferences *[]platformclientv2.Userreference) []i
 	return userIds
 }
 
-func flattenCustomFields(customFields *map[string]interface{}) string {
-
+// flattenCustomFields maps a Genesys Cloud custom fields *map[string]interface{} into a JSON string
+func flattenCustomFields(customFields *map[string]interface{}) (string, error) {
+	if customFields == nil {
+		return "", nil
+	}
+	cfBytes, err := json.Marshal(customFields)
+	if err != nil {
+		return "", fmt.Errorf("error marshalling action contract %v: %v", customFields, err)
+	}
+	return string(cfBytes), nil
 }
 
 // flattenWorkitemScoredAgents maps a Genesys Cloud *[]platformclientv2.Workitemscoredagent into a []interface{}

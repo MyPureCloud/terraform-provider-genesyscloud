@@ -169,9 +169,10 @@ func ResourceTaskManagementWorkitem() *schema.Resource {
 				Elem:        workitemScoredAgentResource,
 			},
 			`custom_fields`: {
-				Description: `JSON formatted object for custom field values defined in the schema referenced by the worktype of the workitem.`,
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:      `JSON formatted object for custom field values defined in the schema referenced by the worktype of the workitem.`,
+				Optional:         true,
+				Type:             schema.TypeString,
+				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
 			},
 		},
 	}
@@ -205,9 +206,19 @@ func DataSourceTaskManagementWorkitem() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: `task management workitem name`,
+				Description: `Task management workitem name`,
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+			"workbin_id": {
+				Description: `Id of the workbin where the desired workitem is.`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"worktype_id": {
+				Description: `Id of the worktype of the desired workitem.`,
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 		},
 	}

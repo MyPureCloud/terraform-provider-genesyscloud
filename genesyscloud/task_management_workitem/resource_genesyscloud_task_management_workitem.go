@@ -46,7 +46,7 @@ func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
 
-	taskManagementWorkitem, err := getTaskManagementWorkitemFromResourceData(d)
+	taskManagementWorkitem, err := getWorkitemCreateFromResourceData(d)
 	if err != nil {
 		return diag.Errorf("failed to build Workitem create from resource data: %v", err)
 	}
@@ -111,10 +111,18 @@ func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, met
 		if workitem.Queue != nil {
 			resourcedata.SetNillableValue(d, "queue_id", workitem.Queue.Id)
 		}
+
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "skills_ids", workitem.Skills, flattenRoutingSkillReferences)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "preferred_agents_ids", workitem.PreferredAgents, flattenUserReferences)
-		// TODO: Handle custom_fields property
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "scored_agents", workitem.ScoredAgents, flattenWorkitemScoredAgents)
+
+		if workitem.CustomFields != nil {
+			cf, err := flattenCustomFields(workitem.CustomFields)
+			if err != nil {
+				return retry.NonRetryableError(fmt.Errorf("failed to flatten custom fields: %v", err))
+			}
+			d.Set("custom_fields", cf)
+		}
 
 		log.Printf("Read task management workitem %s %s", d.Id(), *workitem.Name)
 		return cc.CheckState()
@@ -126,10 +134,13 @@ func updateTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
 
-	taskManagementWorkitem := getTaskManagementWorkitemFromResourceData(d)
+	taskManagementWorkitem, err := getWorkitemUpdateFromResourceData(d)
+	if err != nil {
+		return diag.Errorf("failed to update Workitem create from resource data: %v", err)
+	}
 
 	log.Printf("Updating task management workitem %s", *taskManagementWorkitem.Name)
-	workitem, err := proxy.updateTaskManagementWorkitem(ctx, d.Id(), &taskManagementWorkitem)
+	workitem, err := proxy.updateTaskManagementWorkitem(ctx, d.Id(), taskManagementWorkitem)
 	if err != nil {
 		return diag.Errorf("Failed to update task management workitem: %s", err)
 	}
