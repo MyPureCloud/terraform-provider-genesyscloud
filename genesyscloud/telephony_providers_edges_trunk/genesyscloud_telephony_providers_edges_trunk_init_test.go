@@ -1,11 +1,11 @@
-package telephony
+package telephony_providers_edges_trunk
 
 import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
+	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	edgeTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -24,10 +24,12 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = ResourceTrunkBaseSettings()
-	providerResources["genesyscloud_telephony_providers_edges_trunk"] = edgeTrunk.ResourceTrunk()
-	// external package dependencies for outbound
+	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.ResourceTrunkBaseSettings()
+	providerResources["genesyscloud_telephony_providers_edges_trunk"] = ResourceTrunk()
+
+	// external package dependencies
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
+
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 
 }
@@ -36,9 +38,10 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = DataSourceTrunkBaseSettings()
-	providerDataSources["genesyscloud_telephony_providers_edges_trunk"] = edgeTrunk.DataSourceTrunk()
-	// external package dependencies for outbound
+
+	providerDataSources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.DataSourceTrunkBaseSettings()
+	providerDataSources["genesyscloud_telephony_providers_edges_trunk"] = DataSourceTrunk()
+	// external package dependencies
 	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
 
 }
@@ -46,14 +49,17 @@ func (r *registerTestInstance) registerTestDataSources() {
 func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
+
 	regInstance := &registerTestInstance{}
+
 	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
 }
 
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for Outbound Package
+	// Run setup function before starting the test suite
 	initTestResources()
-	// Run the test suite for outbound
+
+	// Run the test suite
 	m.Run()
 }

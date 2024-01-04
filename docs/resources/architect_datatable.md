@@ -48,13 +48,13 @@ resource "genesyscloud_architect_datatable" "customers" {
 
 ### Required
 
-- `name` (String) Name of the datatable.
-- `properties` (Block List, Min: 1) Schema properties of the datatable. This must at a minimum contain a string property 'key' that will serve as the row key. Properties cannot be removed from a schema once they have been added (see [below for nested schema](#nestedblock--properties))
+- `name` (String) Name of the architect_datatable.
+- `properties` (Block List, Min: 1) Schema properties of the architect_datatable. This must at a minimum contain a string property 'key' that will serve as the row key. Properties cannot be removed from a schema once they have been added (see [below for nested schema](#nestedblock--properties))
 
 ### Optional
 
-- `description` (String) Description of the datatable.
-- `division_id` (String) The division to which this datatable will belong. If not set, the home division will be used.
+- `description` (String) Description of the architect_datatable.
+- `division_id` (String) The division to which this architect_datatable will belong. If not set, the home division will be used.
 
 ### Read-Only
 

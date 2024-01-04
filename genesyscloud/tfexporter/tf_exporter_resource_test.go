@@ -2,6 +2,8 @@ package tfexporter
 
 import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
+	"terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -30,6 +32,7 @@ import (
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeExtension "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	phonebaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
+	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	webdeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
@@ -60,8 +63,8 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_grammar"] = grammar.ResourceArchitectGrammar()
 	providerResources["genesyscloud_architect_grammar_language"] = grammarLanguage.ResourceArchitectGrammarLanguage()
-	providerResources["genesyscloud_architect_datatable"] = gcloud.ResourceArchitectDatatable()
-	providerResources["genesyscloud_architect_datatable_row"] = gcloud.ResourceArchitectDatatableRow()
+	providerResources["genesyscloud_architect_datatable"] = dt.ResourceArchitectDatatable()
+	providerResources["genesyscloud_architect_datatable_row"] = architect_datatable_row.ResourceArchitectDatatableRow()
 	providerResources["genesyscloud_architect_emergencygroup"] = gcloud.ResourceArchitectEmergencyGroup()
 	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
 	providerResources["genesyscloud_flow_milestone"] = flowMilestone.ResourceFlowMilestone()
@@ -115,7 +118,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
 	providerResources["genesyscloud_telephony_providers_edges_phonebasesettings"] = phonebaseSettings.ResourcePhoneBaseSettings()
 	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.ResourceTrunkBaseSettings()
-	providerResources["genesyscloud_telephony_providers_edges_trunk"] = telephony.ResourceTrunk()
+	providerResources["genesyscloud_telephony_providers_edges_trunk"] = edgesTrunk.ResourceTrunk()
 	providerResources["genesyscloud_telephony_providers_edges_edge_group"] = edgeGroup.ResourceEdgeGroup()
 
 	providerResources["genesyscloud_user_roles"] = gcloud.ResourceUserRoles()
@@ -151,8 +154,8 @@ func (r *registerTestInstance) registerTestResources() {
 func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_architect_grammar", grammar.ArchitectGrammarExporter())
 	RegisterExporter("genesyscloud_architect_grammar_language", grammarLanguage.ArchitectGrammarLanguageExporter())
-	RegisterExporter("genesyscloud_architect_datatable", gcloud.ArchitectDatatableExporter())
-	RegisterExporter("genesyscloud_architect_datatable_row", gcloud.ArchitectDatatableRowExporter())
+	RegisterExporter("genesyscloud_architect_datatable", dt.ArchitectDatatableExporter())
+	RegisterExporter("genesyscloud_architect_datatable_row", architect_datatable_row.ArchitectDatatableRowExporter())
 	RegisterExporter("genesyscloud_architect_emergencygroup", gcloud.ArchitectEmergencyGroupExporter())
 	RegisterExporter("genesyscloud_architect_ivr", archIvr.ArchitectIvrExporter())
 	RegisterExporter("genesyscloud_architect_schedules", gcloud.ArchitectSchedulesExporter())
@@ -218,7 +221,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_telephony_providers_edges_site", edgeSite.SiteExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_phonebasesettings", phonebaseSettings.PhoneBaseSettingsExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_trunkbasesettings", telephony.TrunkBaseSettingsExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_trunk", telephony.TrunkExporter())
+	RegisterExporter("genesyscloud_telephony_providers_edges_trunk", edgesTrunk.TrunkExporter())
 	RegisterExporter("genesyscloud_user", gcloud.UserExporter())
 	RegisterExporter("genesyscloud_user_roles", gcloud.UserRolesExporter())
 	RegisterExporter("genesyscloud_webdeployments_deployment", webdeployDeploy.WebDeploymentExporter())

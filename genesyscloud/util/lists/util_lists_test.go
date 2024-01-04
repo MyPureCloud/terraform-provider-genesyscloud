@@ -10,6 +10,12 @@ type AreEquivalentTestCase struct {
 	equivalent bool
 }
 
+type RemoveTestCase struct {
+	originalSlice  []string
+	resultingSlice []string
+	itemToRemove   string
+}
+
 func TestAreEquivalent(t *testing.T) {
 	testCases := []AreEquivalentTestCase{
 		{
@@ -66,6 +72,33 @@ func TestAreEquivalent(t *testing.T) {
 			if v != arrayBCopy[k] {
 				t.Errorf("arrayB has changed after going through the function. Should be %v, got %v", arrayBCopy, tc.arrayB)
 			}
+		}
+	}
+}
+
+func TestRemove(t *testing.T) {
+	testCases := []RemoveTestCase{
+		{
+			originalSlice:  []string{"a", "b", "c"},
+			itemToRemove:   "b",
+			resultingSlice: []string{"a", "c"},
+		},
+		{
+			originalSlice:  []string{"a", "b", "c"},
+			itemToRemove:   "a",
+			resultingSlice: []string{"b", "c"},
+		},
+		{
+			originalSlice:  []string{"a", "b", "c"},
+			itemToRemove:   "c",
+			resultingSlice: []string{"a", "b"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		res := Remove(testCase.originalSlice, testCase.itemToRemove)
+		if !AreEquivalent(res, testCase.resultingSlice) {
+			t.Errorf("expected %v, got %v", testCase.resultingSlice, res)
 		}
 	}
 }

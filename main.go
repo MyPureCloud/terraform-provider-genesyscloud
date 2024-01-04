@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 	"sync"
-
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
+	dtr "terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -44,6 +45,7 @@ import (
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
@@ -107,7 +109,8 @@ type RegisterInstance struct {
 
 func registerResources() {
 	regInstance := &RegisterInstance{}
-
+	dt.SetRegistrar(regInstance)                            //Registering architect data table
+	dtr.SetRegistrar(regInstance)                           //Registering architect data table row
 	grammar.SetRegistrar(regInstance)                       //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)               //Registering architect grammar language
 	edgePhone.SetRegistrar(regInstance)                     //Registering telephony providers edges phone
@@ -148,6 +151,7 @@ func registerResources() {
 	extPool.SetRegistrar(regInstance)                       //Registering Extension Pool
 	phoneBaseSettings.SetRegistrar(regInstance)             //Registering Phone Base Settings
 	lineBaseSettings.SetRegistrar(regInstance)              //Registering Line Base Settings
+	edgesTrunk.SetRegistrar(regInstance)                    //Registering Edges Trunk Settings
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter

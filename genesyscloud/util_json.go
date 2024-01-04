@@ -88,7 +88,7 @@ func jsonBytesEqual(b1, b2 []byte) bool {
 	return reflect.DeepEqual(o1, o2)
 }
 
-func interfaceToString(val interface{}) string {
+func InterfaceToString(val interface{}) string {
 	return fmt.Sprintf("%v", val)
 }
 
