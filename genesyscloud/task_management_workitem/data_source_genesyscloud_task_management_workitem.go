@@ -1,0 +1,41 @@
+package task_management_workitem
+
+import (
+	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+)
+
+/*
+   The data_source_genesyscloud_task_management_workitem.go contains the data source implementation
+   for the resource.
+*/
+
+// dataSourceTaskManagementWorkitemRead retrieves by name the id in question
+func dataSourceTaskManagementWorkitemRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
+	proxy := newTaskManagementWorkitemProxy(sdkConfig)
+
+	name := d.Get("name").(string)
+
+	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+		workitemId, retryable, err := proxy.getTaskManagementWorkitemIdByName(ctx, name)
+
+		if err != nil && !retryable {
+			return retry.NonRetryableError(fmt.Errorf("Error searching task management workitem %s: %s", name, err))
+		}
+
+		if retryable {
+			return retry.RetryableError(fmt.Errorf("No task management workitem found with name %s", name))
+		}
+
+		d.SetId(workitemId)
+		return nil
+	})
+}

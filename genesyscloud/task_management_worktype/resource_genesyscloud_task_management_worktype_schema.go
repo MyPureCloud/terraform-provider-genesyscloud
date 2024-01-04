@@ -221,6 +221,16 @@ func DataSourceTaskManagementWorktype() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"workbin_id": {
+				Description: `Id of the workbin where the desired workitem is.`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"worktype_id": {
+				Description: `Id of the worktype of the desired workitem.`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
 }
