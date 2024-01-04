@@ -50,6 +50,7 @@ func getTaskManagementWorkitemFromResourceData(d *schema.ResourceData) (*platfor
 	}, nil
 }
 
+// buildCustomFieldsNillable builds a Genesys Cloud *[]platformclientv2.Workitemscoredagent from a JSON string
 func buildCustomFieldsNillable(fieldsJson string) (*map[string]interface{}, error) {
 	if fieldsJson == "" {
 		return nil, nil
@@ -86,142 +87,18 @@ func buildWorkitemScoredAgents(workitemScoredAgents []interface{}) *[]platformcl
 	return &workitemScoredAgentsSlice
 }
 
-// flattenWorktypeReferences maps a Genesys Cloud *[]platformclientv2.Worktypereference into a []interface{}
-func flattenWorktypeReferences(worktypeReferences *[]platformclientv2.Worktypereference) []interface{} {
-	if len(*worktypeReferences) == 0 {
-		return nil
-	}
-
-	var worktypeReferenceList []interface{}
-	for _, worktypeReference := range *worktypeReferences {
-		worktypeReferenceMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(worktypeReferenceMap, "name", worktypeReference.Name)
-
-		worktypeReferenceList = append(worktypeReferenceList, worktypeReferenceMap)
-	}
-
-	return worktypeReferenceList
-}
-
-// flattenLanguageReferences maps a Genesys Cloud *[]platformclientv2.Languagereference into a []interface{}
-func flattenLanguageReferences(languageReferences *[]platformclientv2.Languagereference) []interface{} {
-	if len(*languageReferences) == 0 {
-		return nil
-	}
-
-	var languageReferenceList []interface{}
-	for _, languageReference := range *languageReferences {
-		languageReferenceMap := make(map[string]interface{})
-
-		languageReferenceList = append(languageReferenceList, languageReferenceMap)
-	}
-
-	return languageReferenceList
-}
-
-// flattenWorkitemStatusReferences maps a Genesys Cloud *[]platformclientv2.Workitemstatusreference into a []interface{}
-func flattenWorkitemStatusReferences(workitemStatusReferences *[]platformclientv2.Workitemstatusreference) []interface{} {
-	if len(*workitemStatusReferences) == 0 {
-		return nil
-	}
-
-	var workitemStatusReferenceList []interface{}
-	for _, workitemStatusReference := range *workitemStatusReferences {
-		workitemStatusReferenceMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(workitemStatusReferenceMap, "name", workitemStatusReference.Name)
-
-		workitemStatusReferenceList = append(workitemStatusReferenceList, workitemStatusReferenceMap)
-	}
-
-	return workitemStatusReferenceList
-}
-
-// flattenWorkbinReferences maps a Genesys Cloud *[]platformclientv2.Workbinreference into a []interface{}
-func flattenWorkbinReferences(workbinReferences *[]platformclientv2.Workbinreference) []interface{} {
-	if len(*workbinReferences) == 0 {
-		return nil
-	}
-
-	var workbinReferenceList []interface{}
-	for _, workbinReference := range *workbinReferences {
-		workbinReferenceMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(workbinReferenceMap, "name", workbinReference.Name)
-
-		workbinReferenceList = append(workbinReferenceList, workbinReferenceMap)
-	}
-
-	return workbinReferenceList
-}
-
-// flattenUserReferenceWithNames maps a Genesys Cloud *[]platformclientv2.Userreferencewithname into a []interface{}
-func flattenUserReferenceWithNames(userReferenceWithNames *[]platformclientv2.Userreferencewithname) []interface{} {
-	if len(*userReferenceWithNames) == 0 {
-		return nil
-	}
-
-	var userReferenceWithNameList []interface{}
-	for _, userReferenceWithName := range *userReferenceWithNames {
-		userReferenceWithNameMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(userReferenceWithNameMap, "name", userReferenceWithName.Name)
-
-		userReferenceWithNameList = append(userReferenceWithNameList, userReferenceWithNameMap)
-	}
-
-	return userReferenceWithNameList
-}
-
-// flattenExternalContactReferences maps a Genesys Cloud *[]platformclientv2.Externalcontactreference into a []interface{}
-func flattenExternalContactReferences(externalContactReferences *[]platformclientv2.Externalcontactreference) []interface{} {
-	if len(*externalContactReferences) == 0 {
-		return nil
-	}
-
-	var externalContactReferenceList []interface{}
-	for _, externalContactReference := range *externalContactReferences {
-		externalContactReferenceMap := make(map[string]interface{})
-
-		externalContactReferenceList = append(externalContactReferenceList, externalContactReferenceMap)
-	}
-
-	return externalContactReferenceList
-}
-
-// flattenWorkitemQueueReferences maps a Genesys Cloud *[]platformclientv2.Workitemqueuereference into a []interface{}
-func flattenWorkitemQueueReferences(workitemQueueReferences *[]platformclientv2.Workitemqueuereference) []interface{} {
-	if len(*workitemQueueReferences) == 0 {
-		return nil
-	}
-
-	var workitemQueueReferenceList []interface{}
-	for _, workitemQueueReference := range *workitemQueueReferences {
-		workitemQueueReferenceMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(workitemQueueReferenceMap, "name", workitemQueueReference.Name)
-
-		workitemQueueReferenceList = append(workitemQueueReferenceList, workitemQueueReferenceMap)
-	}
-
-	return workitemQueueReferenceList
-}
-
 // flattenRoutingSkillReferences maps a Genesys Cloud *[]platformclientv2.Routingskillreference into a []interface{}
 func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Routingskillreference) []interface{} {
 	if len(*routingSkillReferences) == 0 {
 		return nil
 	}
 
-	var routingSkillReferenceList []interface{}
+	var skillIds []interface{}
 	for _, routingSkillReference := range *routingSkillReferences {
-		routingSkillReferenceMap := make(map[string]interface{})
-
-		routingSkillReferenceList = append(routingSkillReferenceList, routingSkillReferenceMap)
+		skillIds = append(skillIds, routingSkillReference.Id)
 	}
 
-	return routingSkillReferenceList
+	return skillIds
 }
 
 // flattenUserReferences maps a Genesys Cloud *[]platformclientv2.Userreference into a []interface{}
@@ -230,14 +107,16 @@ func flattenUserReferences(userReferences *[]platformclientv2.Userreference) []i
 		return nil
 	}
 
-	var userReferenceList []interface{}
+	var userIds []interface{}
 	for _, userReference := range *userReferences {
-		userReferenceMap := make(map[string]interface{})
-
-		userReferenceList = append(userReferenceList, userReferenceMap)
+		userIds = append(userIds, userReference.Id)
 	}
 
-	return userReferenceList
+	return userIds
+}
+
+func flattenCustomFields(customFields *map[string]interface{}) string {
+
 }
 
 // flattenWorkitemScoredAgents maps a Genesys Cloud *[]platformclientv2.Workitemscoredagent into a []interface{}
@@ -250,7 +129,7 @@ func flattenWorkitemScoredAgents(workitemScoredAgents *[]platformclientv2.Workit
 	for _, workitemScoredAgent := range *workitemScoredAgents {
 		workitemScoredAgentMap := make(map[string]interface{})
 
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(workitemScoredAgentMap, "agent", workitemScoredAgent.Agent, flattenUserReference)
+		resourcedata.SetMapValueIfNotNil(workitemScoredAgentMap, "agent_id", workitemScoredAgent.Agent.Id)
 		resourcedata.SetMapValueIfNotNil(workitemScoredAgentMap, "score", workitemScoredAgent.Score)
 
 		workitemScoredAgentList = append(workitemScoredAgentList, workitemScoredAgentMap)

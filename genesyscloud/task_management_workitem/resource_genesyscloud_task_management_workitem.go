@@ -81,25 +81,38 @@ func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, met
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitem())
 
 		resourcedata.SetNillableValue(d, "name", workitem.Name)
-		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", workitem.Division)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "type", workitem.Type, flattenWorktypeReference)
 		resourcedata.SetNillableValue(d, "description", workitem.Description)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "language", workitem.Language, flattenLanguageReference)
 		resourcedata.SetNillableValue(d, "priority", workitem.Priority)
-		resourcedata.SetNillableValue(d, "date_due", workitem.DateDue)
-		resourcedata.SetNillableValue(d, "date_expires", workitem.DateExpires)
+		resourcedata.SetNillableTime(d, "date_due", workitem.DateDue)
+		resourcedata.SetNillableTime(d, "date_expires", workitem.DateExpires)
 		resourcedata.SetNillableValue(d, "duration_seconds", workitem.DurationSeconds)
 		resourcedata.SetNillableValue(d, "ttl", workitem.Ttl)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "status", workitem.Status, flattenWorkitemStatusReference)
-		resourcedata.SetNillableValue(d, "status_category", workitem.StatusCategory)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "workbin", workitem.Workbin, flattenWorkbinReference)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "assignee", workitem.Assignee, flattenUserReferenceWithName)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "external_contact", workitem.ExternalContact, flattenExternalContactReference)
 		resourcedata.SetNillableValue(d, "external_tag", workitem.ExternalTag)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "queue", workitem.Queue, flattenWorkitemQueueReference)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "skills", workitem.Skills, flattenRoutingSkillReferences)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "preferred_agents", workitem.PreferredAgents, flattenUserReferences)
 		resourcedata.SetNillableValue(d, "auto_status_transition", workitem.AutoStatusTransition)
+
+		if workitem.VarType != nil {
+			resourcedata.SetNillableValue(d, "worktype_id", workitem.VarType.Id)
+		}
+		if workitem.Language != nil {
+			resourcedata.SetNillableValue(d, "language_id", workitem.VarType.Id)
+		}
+		if workitem.Status != nil {
+			resourcedata.SetNillableValue(d, "status_id", workitem.Status.Id)
+		}
+		if workitem.Workbin != nil {
+			resourcedata.SetNillableValue(d, "workbin_id", workitem.Workbin.Id)
+		}
+		if workitem.Assignee != nil {
+			resourcedata.SetNillableValue(d, "assignee_id", workitem.Assignee.Id)
+		}
+		if workitem.ExternalContact != nil {
+			resourcedata.SetNillableValue(d, "external_contact_id", workitem.ExternalContact.Id)
+		}
+		if workitem.Queue != nil {
+			resourcedata.SetNillableValue(d, "queue_id", workitem.Queue.Id)
+		}
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "skills_ids", workitem.Skills, flattenRoutingSkillReferences)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "preferred_agents_ids", workitem.PreferredAgents, flattenUserReferences)
 		// TODO: Handle custom_fields property
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "scored_agents", workitem.ScoredAgents, flattenWorkitemScoredAgents)
 

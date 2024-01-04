@@ -185,7 +185,7 @@ func getTaskManagementWorkitemIdByNameFn(ctx context.Context, p *taskManagementW
 
 // getTaskManagementWorkitemByIdFn is an implementation of the function to get a Genesys Cloud task management workitem by Id
 func getTaskManagementWorkitemByIdFn(ctx context.Context, p *taskManagementWorkitemProxy, id string) (taskManagementWorkitem *platformclientv2.Workitem, statusCode int, err error) {
-	workitem, resp, err := p.taskManagementApi.GetTaskmanagementWorkitem(id, "status")
+	workitem, resp, err := p.taskManagementApi.GetTaskmanagementWorkitem(id, "")
 	if err != nil {
 		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve task management workitem by id %s: %s", id, err)
 	}
