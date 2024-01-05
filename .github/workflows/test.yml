@@ -81,20 +81,12 @@ jobs:
         GENESYSCLOUD_SDK_DEBUG: "true"
         GENESYSCLOUD_TOKEN_POOL_SIZE: 20
       run: |
-        run: |
           if [ "$TF_ACC_TERRAFORM_VERSION" == "0.14.7" ]; then
             sleep 300 # This avoids conflicts with the API and other related issues e.g. too many routing email domains
           fi
-        go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out
-        go tool cover -html coverage.out cover.html
-
-    - name: 'Upload Export Result'
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: export-result ${{ matrix.terraform }}
-        path: ./.terraform/
-        retention-days: 5
+          # Run all times, skipping the export & outbound tests. They are being ran in separate jobs.
+          go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out -skip="(TfExport)+|(Outbound)+"
+          go tool cover -html coverage.out -o cover.html
 
     - name: 'Upload Logs'
       if: ${{ always() }}
@@ -111,3 +103,148 @@ jobs:
         name: sdk_log ${{ matrix.terraform }}
         path: ./genesyscloud/sdk_debug.log
         retention-days: 5
+
+  outbound-test:
+    name: Matrix Test Outbound
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        # list whatever Terraform versions here you would like to support
+        terraform:
+          - '1.1.7'
+    steps:
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.20'
+        id: go
+
+      - name: Setup Terraform CLI
+        uses: hashicorp/setup-terraform@v3.0.0
+        with:
+          terraform_version: ${{ matrix.terraform }}
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
+      - name: Get dependencies
+        run: |
+          go mod download
+
+      - name: TF acceptance tests
+        timeout-minutes: 80
+        env:
+          TF_ACC: "1"
+          TF_LOG: "DEBUG"
+          TF_LOG_PATH: "../test.log"
+          TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
+
+          GENESYSCLOUD_OAUTHCLIENT_ID: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
+          GENESYSCLOUD_OAUTHCLIENT_SECRET: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
+          GENESYSCLOUD_REGION: "us-east-1"
+          GENESYSCLOUD_SDK_DEBUG: "true"
+          GENESYSCLOUD_TOKEN_POOL_SIZE: 20
+        run: |
+          run: |
+            if [ "$TF_ACC_TERRAFORM_VERSION" == "0.14.7" ]; then
+              sleep 300 # This avoids conflicts with the API and other related issues e.g. too many routing email domains
+            fi
+          # Run all times, skipping the export tests. They are being ran in the export-test job.
+          go test -timeout 80m -v -cover ./genesyscloud/... -parallel 20 -coverprofile=coverage.out -run="(Outbound)+"
+          go tool cover -html coverage.out -o cover.html
+
+      - name: 'Upload Logs'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs ${{ matrix.terraform }}
+          path: ./test.log
+          retention-days: 5
+
+      - name: 'Upload SDK Log'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk_log ${{ matrix.terraform }}
+          path: ./genesyscloud/sdk_debug.log
+          retention-days: 5
+
+  export-test:
+    name: Matrix Tests Export
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        # list whatever Terraform versions here you would like to support
+        terraform:
+          - '1.1.7'
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.20'
+        id: go
+
+      - name: Setup Terraform CLI
+        uses: hashicorp/setup-terraform@v3.0.0
+        with:
+          terraform_version: ${{ matrix.terraform }}
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
+      - name: Get dependencies
+        run: |
+          go mod download
+
+      - name: Export TF acceptance tests
+        timeout-minutes: 80
+        env:
+          TF_ACC: "1"
+          TF_LOG: "DEBUG"
+          TF_LOG_PATH: "../test.log"
+          TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
+
+          GENESYSCLOUD_OAUTHCLIENT_ID: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
+          GENESYSCLOUD_OAUTHCLIENT_SECRET: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
+          GENESYSCLOUD_REGION: "us-east-1"
+          GENESYSCLOUD_SDK_DEBUG: "true"
+          GENESYSCLOUD_TOKEN_POOL_SIZE: 20
+        run: |
+          if [ "$TF_ACC_TERRAFORM_VERSION" == "0.14.7" ]; then
+            sleep 300 # This avoids conflicts with the API and other related issues e.g. too many routing email domains
+          fi
+          go test -timeout 80m -v -cover ./genesyscloud/tfexporter/... -coverprofile=export_coverage.out
+          go tool cover -html=export_coverage.out -o export_cover.html
+
+      - name: 'Upload Export Result'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: export-result ${{ matrix.terraform }}
+          path: ./.terraform/
+          retention-days: 5
+
+      - name: 'Upload Logs'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: export_logs ${{ matrix.terraform }}
+          path: ./export_test.log
+          retention-days: 5
+
+      - name: 'Upload SDK Log'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: export_sdk_log ${{ matrix.terraform }}
+          path: ./genesyscloud/export_sdk_debug.log
+          retention-days: 5
