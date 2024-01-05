@@ -73,9 +73,9 @@ func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, met
 		workitem, respCode, getErr := proxy.getTaskManagementWorkitemById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read task management workitem %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read task management workitem %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read task management workitem %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read task management workitem %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitem())
@@ -167,7 +167,7 @@ func deleteTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 				log.Printf("Deleted task management workitem %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting task management workitem %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting task management workitem %s: %s", d.Id(), err))
 		}
 
 		return retry.RetryableError(fmt.Errorf("task management workitem %s still exists", d.Id()))

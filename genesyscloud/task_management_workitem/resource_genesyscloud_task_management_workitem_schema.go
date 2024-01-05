@@ -58,7 +58,7 @@ func ResourceTaskManagementWorkitem() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `The name of the Workitem.`,
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			`worktype_id`: {
@@ -153,17 +153,20 @@ func ResourceTaskManagementWorkitem() *schema.Resource {
 			`preferred_agents_ids`: {
 				Description: `Ids of the preferred agents of the Workitem.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`auto_status_transition`: {
 				Description: `Set it to false to disable auto status transition. By default, it is enabled.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeBool,
 			},
 			`scored_agents`: {
 				Description: `A list of scored agents for the Workitem.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				MaxItems:    20,
 				Elem:        workitemScoredAgentResource,
@@ -171,6 +174,7 @@ func ResourceTaskManagementWorkitem() *schema.Resource {
 			`custom_fields`: {
 				Description:      `JSON formatted object for custom field values defined in the schema referenced by the worktype of the workitem.`,
 				Optional:         true,
+				Computed:         true,
 				Type:             schema.TypeString,
 				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
 			},

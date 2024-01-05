@@ -28,23 +28,22 @@ func getWorkitemCreateFromResourceData(d *schema.ResourceData) (*platformclientv
 		Name:        platformclientv2.String(d.Get("name").(string)),
 		TypeId:      platformclientv2.String(d.Get("worktype_id").(string)),
 		Description: platformclientv2.String(d.Get("description").(string)),
-		LanguageId:  platformclientv2.String(d.Get("language_id").(string)),
-		Priority:    platformclientv2.Int(d.Get("priority").(int)),
 
-		DateDue:         resourcedata.GetNillableTime(d, "date_due"),
-		DateExpires:     resourcedata.GetNillableTime(d, "expires"),
-		DurationSeconds: platformclientv2.Int(d.Get("duration_seconds").(int)),
-		Ttl:             platformclientv2.Int(d.Get("ttl").(int)),
-
-		StatusId:             platformclientv2.String(d.Get("status_id").(string)),
-		WorkbinId:            platformclientv2.String(d.Get("workbin_id").(string)),
-		AssigneeId:           platformclientv2.String(d.Get("assignee_id").(string)),
-		ExternalContactId:    platformclientv2.String(d.Get("external_contact_id").(string)),
-		ExternalTag:          platformclientv2.String(d.Get("external_tag").(string)),
-		QueueId:              platformclientv2.String(d.Get("queue_id").(string)),
+		DateDue:              resourcedata.GetNillableTime(d, "date_due"),
+		DateExpires:          resourcedata.GetNillableTime(d, "expires"),
+		DurationSeconds:      resourcedata.GetNillableValue[int](d, "duration_seconds"),
+		Ttl:                  resourcedata.GetNillableValue[int](d, "ttl"),
+		Priority:             resourcedata.GetNillableValue[int](d, "priority"),
+		LanguageId:           resourcedata.GetNillableValue[string](d, "language_id"),
+		StatusId:             resourcedata.GetNillableValue[string](d, "status_id"),
+		WorkbinId:            resourcedata.GetNillableValue[string](d, "workbin_id"),
+		AssigneeId:           resourcedata.GetNillableValue[string](d, "assignee_id"),
+		ExternalContactId:    resourcedata.GetNillableValue[string](d, "external_contact_id"),
+		ExternalTag:          resourcedata.GetNillableValue[string](d, "external_tag"),
+		QueueId:              resourcedata.GetNillableValue[string](d, "queue_id"),
 		SkillIds:             lists.BuildSdkStringListFromInterfaceArray(d, "skills"),
 		PreferredAgentIds:    lists.BuildSdkStringListFromInterfaceArray(d, "preferred_agents"),
-		AutoStatusTransition: platformclientv2.Bool(d.Get("auto_status_transition").(bool)),
+		AutoStatusTransition: resourcedata.GetNillableValue[bool](d, "auto_status_transition"),
 
 		CustomFields: customFields,
 		ScoredAgents: buildWorkitemScoredAgents(d.Get("scored_agents").([]interface{})),
@@ -62,23 +61,22 @@ func getWorkitemUpdateFromResourceData(d *schema.ResourceData) (*platformclientv
 	return &platformclientv2.Workitemupdate{
 		Name:        platformclientv2.String(d.Get("name").(string)),
 		Description: platformclientv2.String(d.Get("description").(string)),
-		LanguageId:  platformclientv2.String(d.Get("language_id").(string)),
-		Priority:    platformclientv2.Int(d.Get("priority").(int)),
 
-		DateDue:         resourcedata.GetNillableTime(d, "date_due"),
-		DateExpires:     resourcedata.GetNillableTime(d, "expires"),
-		DurationSeconds: platformclientv2.Int(d.Get("duration_seconds").(int)),
-		Ttl:             platformclientv2.Int(d.Get("ttl").(int)),
-
-		StatusId:             platformclientv2.String(d.Get("status_id").(string)),
-		WorkbinId:            platformclientv2.String(d.Get("workbin_id").(string)),
-		AssigneeId:           platformclientv2.String(d.Get("assignee_id").(string)),
-		ExternalContactId:    platformclientv2.String(d.Get("external_contact_id").(string)),
-		ExternalTag:          platformclientv2.String(d.Get("external_tag").(string)),
-		QueueId:              platformclientv2.String(d.Get("queue_id").(string)),
+		DateDue:              resourcedata.GetNillableTime(d, "date_due"),
+		DateExpires:          resourcedata.GetNillableTime(d, "expires"),
+		DurationSeconds:      resourcedata.GetNillableValue[int](d, "duration_seconds"),
+		Ttl:                  resourcedata.GetNillableValue[int](d, "ttl"),
+		Priority:             resourcedata.GetNillableValue[int](d, "priority"),
+		LanguageId:           resourcedata.GetNillableValue[string](d, "language_id"),
+		StatusId:             resourcedata.GetNillableValue[string](d, "status_id"),
+		WorkbinId:            resourcedata.GetNillableValue[string](d, "workbin_id"),
+		AssigneeId:           resourcedata.GetNillableValue[string](d, "assignee_id"),
+		ExternalContactId:    resourcedata.GetNillableValue[string](d, "external_contact_id"),
+		ExternalTag:          resourcedata.GetNillableValue[string](d, "external_tag"),
+		QueueId:              resourcedata.GetNillableValue[string](d, "queue_id"),
 		SkillIds:             lists.BuildSdkStringListFromInterfaceArray(d, "skills"),
 		PreferredAgentIds:    lists.BuildSdkStringListFromInterfaceArray(d, "preferred_agents"),
-		AutoStatusTransition: platformclientv2.Bool(d.Get("auto_status_transition").(bool)),
+		AutoStatusTransition: resourcedata.GetNillableValue[bool](d, "auto_status_transition"),
 
 		CustomFields: customFields,
 		ScoredAgents: buildWorkitemScoredAgents(d.Get("scored_agents").([]interface{})),
@@ -97,7 +95,7 @@ func buildCustomFieldsNillable(fieldsJson string) (*map[string]interface{}, erro
 	}
 	fieldsMap, ok := fieldsInterface.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("custom fields is not a JSON 'object': %v", fieldsJson, err)
+		return nil, fmt.Errorf("custom fields is not a JSON 'object': %v", fieldsJson)
 	}
 
 	return &fieldsMap, nil

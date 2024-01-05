@@ -1,6 +1,7 @@
 package external_contacts
 
 import (
+	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -301,4 +302,11 @@ func hashFormattedPhoneNumber(val string) int {
 	}
 
 	return schema.HashString(formattedNumber)
+}
+
+func GenerateBasicExternalContactResource(resourceID string, title string) string {
+	return fmt.Sprintf(`resource "genesyscloud_externalcontacts_contact" "%s" {
+		title = "%s"
+	}
+	`, resourceID, title)
 }

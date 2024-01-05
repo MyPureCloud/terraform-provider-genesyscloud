@@ -98,7 +98,7 @@ func createTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkit
 	workitem, resp, err := p.taskManagementApi.PostTaskmanagementWorkitems(*taskManagementWorkitem)
 	log.Printf("Completed call to create task management worktype %s with status code %d, correlation id %s and err %s", *taskManagementWorkitem.Name, resp.StatusCode, resp.CorrelationID, err)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create task management workitem: %s", err)
+		return nil, fmt.Errorf("failed to create task management workitem: %s", err)
 	}
 
 	return workitem, nil
@@ -187,7 +187,7 @@ func getTaskManagementWorkitemIdByNameFn(ctx context.Context, p *taskManagementW
 func getTaskManagementWorkitemByIdFn(ctx context.Context, p *taskManagementWorkitemProxy, id string) (taskManagementWorkitem *platformclientv2.Workitem, statusCode int, err error) {
 	workitem, resp, err := p.taskManagementApi.GetTaskmanagementWorkitem(id, "")
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("Failed to retrieve task management workitem by id %s: %s", id, err)
+		return nil, resp.StatusCode, fmt.Errorf("failed to retrieve task management workitem by id %s: %s", id, err)
 	}
 
 	return workitem, resp.StatusCode, nil
@@ -197,7 +197,7 @@ func getTaskManagementWorkitemByIdFn(ctx context.Context, p *taskManagementWorki
 func updateTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkitemProxy, id string, taskManagementWorkitem *platformclientv2.Workitemupdate) (*platformclientv2.Workitem, error) {
 	workitem, _, err := p.taskManagementApi.PatchTaskmanagementWorkitem(id, *taskManagementWorkitem)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to update task management workitem: %s", err)
+		return nil, fmt.Errorf("failed to update task management workitem: %s", err)
 	}
 	return workitem, nil
 }
@@ -206,7 +206,7 @@ func updateTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkit
 func deleteTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkitemProxy, id string) (statusCode int, err error) {
 	resp, err := p.taskManagementApi.DeleteTaskmanagementWorkitem(id)
 	if err != nil {
-		return resp.StatusCode, fmt.Errorf("Failed to delete task management workitem: %s", err)
+		return resp.StatusCode, fmt.Errorf("failed to delete task management workitem: %s", err)
 	}
 
 	return resp.StatusCode, nil

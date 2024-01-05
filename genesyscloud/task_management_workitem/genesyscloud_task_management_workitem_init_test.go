@@ -9,6 +9,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 )
 
@@ -34,9 +35,10 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[resourceName] = ResourceTaskManagementWorkitem()
+	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
+	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
 	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
 	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
-	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 	providerResources["genesyscloud_externalcontacts_contact"] = externalContacts.ResourceExternalContact()
 	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
@@ -49,6 +51,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[resourceName] = DataSourceTaskManagementWorkitem()
+	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 
 // initTestResources initializes all test resources and data sources.
