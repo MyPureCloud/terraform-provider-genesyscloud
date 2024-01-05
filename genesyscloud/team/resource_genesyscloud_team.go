@@ -56,6 +56,20 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	d.SetId(*teamObj.Id)
 	log.Printf("Created team %s", *teamObj.Id)
+	//adding members to the team
+	members, ok := d.GetOk("member_ids")
+	if ok {
+		memberList := members.([]interface{})
+		//creating members along with teams
+		if len(memberList) > 0 {
+			_, err := proxy.createMembers(ctx, d.Id(), buildTeamMembers(memberList))
+			if err != nil {
+				return diag.Errorf("Failed to create members: %s", err)
+			}
+			log.Printf("Created members %s", d.Id())
+		}
+	}
+
 	return readTeam(ctx, d, meta)
 }
 
@@ -70,9 +84,9 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		team, respCode, getErr := proxy.getTeamById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read team %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read team %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam())
@@ -189,19 +203,19 @@ func deleteMembers(ctx context.Context, d *schema.ResourceData, meta interface{}
 	})
 }
 
-// createMembers is used by the members resource to create Genesys cloud members
+/* createMembers is used by the members resource to create Genesys cloud members
 func createMembers(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
 	log.Printf("Creating members for team %s", d.Id())
-	_, err := proxy.createMembers(ctx, d.Id(), buildTeamMembers(d.Get("members").([]interface{})))
+	_, err := proxy.createMembers(ctx, d.Id(), buildTeamMembers(d.Get("member_ids").([]interface{})))
 	if err != nil {
 		return diag.Errorf("Failed to create members: %s", err)
 	}
 
 	log.Printf("Created members %s", d.Id())
 	return readMembers(ctx, d, meta)
-}
+}*/
 
 func buildTeamMembers(teamMembers []interface{}) platformclientv2.Teammembers {
 	var teamMemberObject platformclientv2.Teammembers
@@ -232,6 +246,20 @@ func flattenTeamEntityListing(teamEntityListing []platformclientv2.Userreference
 		memberInformation := make(map[string]interface{})
 		memberInformation["member_id"] = teamEntity.Id
 		memberInformation["member_name"] = teamEntity.Name
+		memberList = append(memberList, memberInformation)
+	}
+	return memberList
+}
+
+func flattenMemberIds(teamEntityListing []platformclientv2.Userreferencewithname) []interface{} {
+	memberList := []interface{}{}
+
+	if len(teamEntityListing) == 0 {
+		return nil
+	}
+	for _, teamEntity := range teamEntityListing {
+		memberInformation := make(map[string]interface{})
+		memberInformation["member_id"] = teamEntity.Id
 		memberList = append(memberList, memberInformation)
 	}
 	return memberList
