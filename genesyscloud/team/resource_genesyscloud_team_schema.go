@@ -78,12 +78,6 @@ func ResourceTeam() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			`members`: {
-				Description: `Specifies the members`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				Elem:        userReferenceWithnameResource,
-			},
 		},
 	}
 }

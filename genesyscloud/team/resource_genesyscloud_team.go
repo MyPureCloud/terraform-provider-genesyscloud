@@ -102,7 +102,7 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		// reading members
 		members, err := readMembers(ctx, d, proxy)
 		if err != nil {
-			resourcedata.SetNillableValue(d, "member_ids", flattenMemberIds(members))
+			d.Set("member_ids", members)
 		}
 
 		return cc.CheckState()
@@ -194,6 +194,7 @@ func readMembers(ctx context.Context, d *schema.ResourceData, proxy *teamProxy) 
 	log.Printf("reading members %s", d.Id())
 	teamMemberListing, err := proxy.getMembersById(ctx, d.Id())
 	if err != nil {
+		log.Printf("unable to retrieve members %s", d.Id())
 		return nil, err
 	}
 	if teamMemberListing != nil {
@@ -217,13 +218,13 @@ func deleteMembers(ctx context.Context, teamId string, memberList []interface{},
 // createMembers is used by the members resource to create Genesys cloud members
 func createMembers(ctx context.Context, teamId string, members []interface{}, proxy *teamProxy) diag.Diagnostics {
 
-	log.Printf("Creating members for team %s", teamId)
+	log.Printf("adding members for team %s", teamId)
 	_, err := proxy.createMembers(ctx, teamId, buildTeamMembers(members))
 	if err != nil {
-		return diag.Errorf("Failed to create members: %s", err)
+		return diag.Errorf("failed to add members: %s", err)
 	}
 
-	log.Printf("Created members %s", teamId)
+	log.Printf("success adding members %s", teamId)
 	return nil
 }
 
