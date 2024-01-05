@@ -253,10 +253,18 @@ func deleteArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	log.Printf("Deleting schedule %s", d.Id())
-	_, err := archAPI.DeleteArchitectSchedulegroup(d.Id())
-	if err != nil {
-		return diag.Errorf("Failed to delete schedule group %s: %s", d.Id(), err)
+	// DEVTOOLING-313: a schedule group to an IVR will not be able to be deleted until that IVR is deleted. Retryig here to make sure it is cleared properly.
+	log.Printf("Deleting schedule group %s", d.Id())
+	diagErr := RetryWhen(IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Deleting schedule %s", d.Id())
+		resp, err := archAPI.DeleteArchitectSchedulegroup(d.Id())
+		if err != nil {
+			return resp, diag.Errorf("Failed to delete schedule group %s: %s", d.Id(), err)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
