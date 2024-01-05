@@ -98,6 +98,13 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		resourcedata.SetNillableValue(d, "description", team.Description)
 
 		log.Printf("Read team %s %s", d.Id(), *team.Name)
+
+		// reading members
+		members, err := readMembers(ctx, d, proxy)
+		if err != nil {
+			resourcedata.SetNillableValue(d, "member_ids", flattenMemberIds(members))
+		}
+
 		return cc.CheckState()
 	})
 }
@@ -132,9 +139,9 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		if len(memberList) > 0 {
 			currentMembers, err := readMembers(ctx, d, proxy)
 			if err != nil {
-				removeMembers, _ := SliceDifferenceMembers(currentMembers, memberList)
+				removeMembers, addMembers := SliceDifferenceMembers(currentMembers, memberList)
 				deleteMembers(ctx, d.Id(), removeMembers, proxy)
-
+				createMembers(ctx, d.Id(), addMembers, proxy)
 			}
 		}
 
@@ -162,7 +169,7 @@ func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				log.Printf("Deleted team %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting team %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting team %s: %s", d.Id(), err))
 		}
 
 		return retry.RetryableError(fmt.Errorf("team %s still exists", d.Id()))
@@ -207,6 +214,19 @@ func deleteMembers(ctx context.Context, teamId string, memberList []interface{},
 	return nil
 }
 
+// createMembers is used by the members resource to create Genesys cloud members
+func createMembers(ctx context.Context, teamId string, members []interface{}, proxy *teamProxy) diag.Diagnostics {
+
+	log.Printf("Creating members for team %s", teamId)
+	_, err := proxy.createMembers(ctx, teamId, buildTeamMembers(members))
+	if err != nil {
+		return diag.Errorf("Failed to create members: %s", err)
+	}
+
+	log.Printf("Created members %s", teamId)
+	return nil
+}
+
 func buildTeamMembers(teamMembers []interface{}) platformclientv2.Teammembers {
 	var teamMemberObject platformclientv2.Teammembers
 	members := make([]string, len(teamMembers))
@@ -224,21 +244,6 @@ func convertMemberListtoString(teamMembers []interface{}) string {
 	}
 	memberString := strings.Join(memberList, ", ")
 	return memberString
-}
-
-func flattenTeamEntityListing(teamEntityListing []platformclientv2.Userreferencewithname) []interface{} {
-	memberList := []interface{}{}
-
-	if len(teamEntityListing) == 0 {
-		return nil
-	}
-	for _, teamEntity := range teamEntityListing {
-		memberInformation := make(map[string]interface{})
-		memberInformation["member_id"] = teamEntity.Id
-		memberInformation["member_name"] = teamEntity.Name
-		memberList = append(memberList, memberInformation)
-	}
-	return memberList
 }
 
 func flattenMemberIds(teamEntityListing []platformclientv2.Userreferencewithname) []interface{} {
