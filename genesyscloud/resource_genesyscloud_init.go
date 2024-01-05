@@ -18,7 +18,6 @@ func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_flow", DataSourceFlow())
 	l.RegisterDataSource("genesyscloud_location", DataSourceLocation())
 	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
-	l.RegisterDataSource("genesyscloud_architect_emergencygroup", DataSourceArchitectEmergencyGroup())
 	l.RegisterDataSource("genesyscloud_architect_schedules", DataSourceSchedule())
 	l.RegisterDataSource("genesyscloud_architect_schedulegroups", DataSourceArchitectScheduleGroups())
 	l.RegisterDataSource("genesyscloud_architect_user_prompt", dataSourceUserPrompt())
@@ -61,7 +60,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_routing_queue", ResourceRoutingQueue())
 	l.RegisterResource("genesyscloud_flow", ResourceFlow())
 	l.RegisterResource("genesyscloud_location", ResourceLocation())
-	l.RegisterResource("genesyscloud_architect_emergencygroup", ResourceArchitectEmergencyGroup())
 	l.RegisterResource("genesyscloud_flow", ResourceFlow())
 	l.RegisterResource("genesyscloud_architect_schedules", ResourceArchitectSchedules())
 	l.RegisterResource("genesyscloud_architect_schedulegroups", ResourceArchitectScheduleGroups())
@@ -113,7 +111,6 @@ func registerResources(l registrar.Registrar) {
 }
 
 func registerExporters(l registrar.Registrar) {
-	l.RegisterExporter("genesyscloud_architect_emergencygroup", ArchitectEmergencyGroupExporter())
 	l.RegisterExporter("genesyscloud_architect_schedules", ArchitectSchedulesExporter())
 	l.RegisterExporter("genesyscloud_architect_schedulegroups", ArchitectScheduleGroupsExporter())
 	l.RegisterExporter("genesyscloud_architect_user_prompt", ArchitectUserPromptExporter())
