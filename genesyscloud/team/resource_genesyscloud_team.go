@@ -33,11 +33,9 @@ func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configu
 	if err != nil {
 		return nil, diag.Errorf("Failed to get team: %v", err)
 	}
-
 	for _, team := range *teams {
 		resources[*team.Id] = &resourceExporter.ResourceMeta{Name: *team.Name}
 	}
-
 	return resources, nil
 }
 
@@ -66,7 +64,6 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			log.Printf("Created members %s", d.Id())
 		}
 	}
-
 	return readTeam(ctx, d, meta)
 }
 
@@ -93,7 +90,6 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		if err != nil {
 			d.Set("member_ids", members)
 		}
-
 		return cc.CheckState()
 	})
 }
@@ -132,7 +128,6 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		log.Printf("Updated team %s", *teamObj.Id)
 	}
 	return readTeam(ctx, d, meta)
-
 }
 
 // deleteTeam is used by the team resource to delete an team from Genesys cloud
