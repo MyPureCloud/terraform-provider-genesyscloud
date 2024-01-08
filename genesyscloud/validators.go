@@ -112,7 +112,7 @@ func ValidateTimeHHMM(time interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // Validates a date string is in the format 2006-01-02T15:04:05.000000
-func validateLocalDateTimes(date interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateLocalDateTimes(date interface{}, _ cty.Path) diag.Diagnostics {
 	if dateStr, ok := date.(string); ok {
 		_, err := time.Parse(resourcedata.TimeParseFormat, dateStr)
 		if err != nil {

@@ -94,7 +94,7 @@ func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, met
 			resourcedata.SetNillableValue(d, "worktype_id", workitem.VarType.Id)
 		}
 		if workitem.Language != nil {
-			resourcedata.SetNillableValue(d, "language_id", workitem.VarType.Id)
+			resourcedata.SetNillableValue(d, "language_id", workitem.Language.Id)
 		}
 		if workitem.Status != nil {
 			resourcedata.SetNillableValue(d, "status_id", workitem.Status.Id)
@@ -122,6 +122,8 @@ func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, met
 				return retry.NonRetryableError(fmt.Errorf("failed to flatten custom fields: %v", err))
 			}
 			d.Set("custom_fields", cf)
+		} else {
+			d.Set("custom_fields", "")
 		}
 
 		log.Printf("Read task management workitem %s %s", d.Id(), *workitem.Name)

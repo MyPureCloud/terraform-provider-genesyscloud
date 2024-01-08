@@ -84,13 +84,13 @@ func ResourceArchitectSchedules() *schema.Resource {
 				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validateLocalDateTimes,
+				ValidateDiagFunc: ValidateLocalDateTimes,
 			},
 			"end": {
 				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validateLocalDateTimes,
+				ValidateDiagFunc: ValidateLocalDateTimes,
 			},
 			"rrule": {
 				Description: "An iCal Recurrence Rule (RRULE) string.",

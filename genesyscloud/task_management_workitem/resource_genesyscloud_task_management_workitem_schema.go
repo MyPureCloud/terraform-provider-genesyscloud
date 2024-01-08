@@ -89,14 +89,14 @@ func ResourceTaskManagementWorkitem() *schema.Resource {
 				Optional:         true,
 				Computed:         true,
 				Type:             schema.TypeString,
-				ValidateDiagFunc: gcloud.ValidateDateTime,
+				ValidateDiagFunc: gcloud.ValidateLocalDateTimes,
 			},
 			`date_expires`: {
 				Description:      `The expiry date of the Workitem. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z`,
 				Optional:         true,
 				Computed:         true,
 				Type:             schema.TypeString,
-				ValidateDiagFunc: gcloud.ValidateDateTime,
+				ValidateDiagFunc: gcloud.ValidateLocalDateTimes,
 			},
 			`duration_seconds`: {
 				Description: `The estimated duration in seconds to complete the workitem.`,

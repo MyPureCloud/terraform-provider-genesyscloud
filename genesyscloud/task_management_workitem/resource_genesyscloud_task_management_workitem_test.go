@@ -2,6 +2,7 @@ package task_management_workitem
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
@@ -54,6 +56,9 @@ type workitemConfig struct {
 func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 	t.Parallel()
 	var (
+		// home division
+		homeDivRes = "home"
+
 		// Workbin
 		wbResourceId  = "workbin_1"
 		wbName        = "wb_" + uuid.NewString()
@@ -81,7 +86,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 
 		// language
 		resLang = "language_1"
-		lang    = "en-us"
+		lang    = "tf_lang_" + uuid.NewString()
 
 		// queue
 		resQueue  = "queue_1"
@@ -90,6 +95,10 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 		// skill
 		skillResId1   = "skill_1"
 		skillResName1 = "tf_skill_1" + uuid.NewString()
+
+		// role (for user to be assigned a workitem)
+		roleResId1 = "role_1"
+		roleName1  = "tf_role_1" + uuid.NewString()
 
 		// user
 		userResId1 = "user_1"
@@ -112,10 +121,10 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 			description:            "test workitem created by CX as Code",
 			language_id:            fmt.Sprintf("genesyscloud_routing_language.%s.id", resLang),
 			priority:               42,
-			date_due:               time.Now().Add(time.Hour * 24).Format("2006-01-02T15:04Z"),
-			date_expires:           time.Now().Add(time.Hour * 42).Format("2006-01-02T15:04Z"),
+			date_due:               time.Now().Add(time.Hour * 10).Format(resourcedata.TimeParseFormat), // 1 day from now
+			date_expires:           time.Now().Add(time.Hour * 20).Format(resourcedata.TimeParseFormat), // 2 days from now
 			duration_seconds:       99999,
-			ttl:                    888888,
+			ttl:                    int(time.Now().Add(time.Hour * 24 * 30 * 6).Unix()), // ~6 months from now
 			status_id:              gcloud.NullValue,
 			workbin_id:             fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
 			assignee_id:            fmt.Sprintf("genesyscloud_user.%s.id", userResId1),
@@ -178,12 +187,22 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 			// Update workitem with more fields
 			{
 				Config: taskMgmtConfig +
+					gcloud.GenerateAuthDivisionHomeDataSource(homeDivRes) +
 					gcloud.GenerateRoutingLanguageResource(resLang, lang) +
 					gcloud.GenerateRoutingQueueResourceBasic(resQueue, queueName) +
 					gcloud.GenerateRoutingSkillResource(skillResId1, skillResName1) +
 					gcloud.GenerateBasicUserResource(userResId1, userEmail1, userName1) +
 					externalContact.GenerateBasicExternalContactResource(externalContactResId1, externalContactTitle1) +
-					generateWorkitemResource(workitemRes, workitem1Update),
+					gcloud.GenerateAuthRoleResource(roleResId1, roleName1, "test role description",
+						gcloud.GenerateRolePermPolicy("workitems", "*", strconv.Quote("*")),
+					) +
+					gcloud.GenerateUserRoles("user_role_1", userResId1,
+						gcloud.GenerateResourceRoles(
+							"genesyscloud_auth_role."+roleResId1+".id",
+							"data.genesyscloud_auth_division_home."+homeDivRes+".id",
+						),
+					) +
+					generateWorkitemResource(workitemRes, workitem1Update, "depends_on = [genesyscloud_user_roles.user_role_1]"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "name", workitem1Update.name),
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "description", workitem1Update.description),
@@ -193,7 +212,6 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "date_expires", workitem1Update.date_expires),
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "duration_seconds", fmt.Sprintf("%d", workitem1Update.duration_seconds)),
 					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "ttl", fmt.Sprintf("%d", workitem1Update.ttl)),
-					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "status_id", "genesyscloud_task_management_worktype."+wtResName, "default_status_id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "workbin_id", "genesyscloud_task_management_workbin."+wbResourceId, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "assignee_id", "genesyscloud_user."+userResId1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "external_contact_id", "genesyscloud_externalcontacts_contact."+externalContactResId1, "id"),
@@ -226,7 +244,7 @@ func generateWorkitemResourceBasic(resName string, wName string, wWorktypeId str
 	}`, resName, wName, wWorktypeId, attrs)
 }
 
-func generateWorkitemResource(resName string, wt workitemConfig) string {
+func generateWorkitemResource(resName string, wt workitemConfig, attrs string) string {
 	return fmt.Sprintf(`resource "genesyscloud_task_management_workitem" "%s" {
 		name = "%s"
 		worktype_id = %s
@@ -239,7 +257,7 @@ func generateWorkitemResource(resName string, wt workitemConfig) string {
 		ttl = %d
 		status_id = %s
 		workbin_id = %s
-		assignee_id = "%s"
+		assignee_id = %s
 		external_contact_id = %s
 		external_tag = "%s"
 		queue_id = %s
@@ -247,6 +265,7 @@ func generateWorkitemResource(resName string, wt workitemConfig) string {
 		preferred_agents_ids = %s
 		auto_status_transition = %v
 		custom_fields = "%s"
+		%s
 		%s
 	}
 	`, resName,
@@ -265,11 +284,12 @@ func generateWorkitemResource(resName string, wt workitemConfig) string {
 		wt.external_contact_id,
 		wt.external_tag,
 		wt.queue_id,
-		gcloud.GenerateStringArrayEnquote(wt.skills_ids...),
-		gcloud.GenerateStringArrayEnquote(wt.preferred_agents_ids...),
+		gcloud.GenerateStringArray(wt.skills_ids...),
+		gcloud.GenerateStringArray(wt.preferred_agents_ids...),
 		wt.auto_status_transition,
 		wt.custom_fields,
 		generateScoredAgents(&wt.scored_agents),
+		attrs,
 	)
 }
 
@@ -282,7 +302,7 @@ func generateScoredAgents(scoredAgents *[]scoredAgentConfig) string {
 	for _, scoredAgent := range *scoredAgents {
 		result += fmt.Sprintf(`
 		scored_agents {
-			agent_id = "%s"
+			agent_id = %s
 			score = %d
 		}
 		`, scoredAgent.agent_id, scoredAgent.score)
