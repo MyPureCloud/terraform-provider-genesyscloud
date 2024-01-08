@@ -25,24 +25,6 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(resourceName, TeamExporter())
 }
 
-var (
-	//required for read
-	userReferenceWithnameResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`member_id`: {
-				Description: `Response text content.`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`member_name`: {
-				Description: `Response text content type.`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-		},
-	}
-)
-
 // ResourceTeam registers the genesyscloud_team resource with Terraform
 func ResourceTeam() *schema.Resource {
 	return &schema.Resource{

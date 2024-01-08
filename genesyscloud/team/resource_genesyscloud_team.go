@@ -45,15 +45,12 @@ func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configu
 func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
-
 	team := getTeamFromResourceData(d)
-
 	log.Printf("Creating team %s", *team.Name)
 	teamObj, err := proxy.createTeam(ctx, &team)
 	if err != nil {
 		return diag.Errorf("Failed to create team: %s", err)
 	}
-
 	d.SetId(*teamObj.Id)
 	log.Printf("Created team %s", *teamObj.Id)
 	//adding members to the team
@@ -77,9 +74,7 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
-
 	log.Printf("Reading team %s", d.Id())
-
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		team, respCode, getErr := proxy.getTeamById(ctx, d.Id())
 		if getErr != nil {
@@ -88,17 +83,11 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			}
 			return retry.NonRetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
 		}
-
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam())
-
 		resourcedata.SetNillableValue(d, "name", team.Name)
-
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", team.Division)
-
 		resourcedata.SetNillableValue(d, "description", team.Description)
-
 		log.Printf("Read team %s %s", d.Id(), *team.Name)
-
 		// reading members
 		members, err := readMembers(ctx, d, proxy)
 		if err != nil {
@@ -113,15 +102,12 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
-
 	team := getTeamFromResourceData(d)
-
-	log.Printf("Updating team %s", *team.Name)
+	log.Printf("updating team %s", *team.Name)
 	teamObj, err := proxy.updateTeam(ctx, d.Id(), &team)
 	if err != nil {
-		return diag.Errorf("Failed to update team: %s", err)
+		return diag.Errorf("failed to update team: %s", err)
 	}
-
 	//check if member list is present
 	members, ok := d.GetOk("member_ids")
 	if ok {
@@ -134,7 +120,6 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				deleteMembers(ctx, d.Id(), currentMembers, proxy)
 			}
 		}
-
 		// get current members and do add/remove based on the difference
 		if len(memberList) > 0 {
 			currentMembers, err := readMembers(ctx, d, proxy)
@@ -144,7 +129,6 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				createMembers(ctx, d.Id(), addMembers, proxy)
 			}
 		}
-
 		log.Printf("Updated team %s", *teamObj.Id)
 	}
 	return readTeam(ctx, d, meta)
@@ -155,15 +139,12 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
-
 	_, err := proxy.deleteTeam(ctx, d.Id())
 	if err != nil {
 		return diag.Errorf("Failed to delete team %s: %s", d.Id(), err)
 	}
-
 	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getTeamById(ctx, d.Id())
-
 		if err != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
 				log.Printf("Deleted team %s", d.Id())
@@ -171,17 +152,14 @@ func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			}
 			return retry.NonRetryableError(fmt.Errorf("error deleting team %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("team %s still exists", d.Id()))
 	})
 }
 
 // getTeamFromResourceData maps data from schema ResourceData object to a platformclientv2.Team
 func getTeamFromResourceData(d *schema.ResourceData) platformclientv2.Team {
-
 	name := d.Get("name").(string)
 	division := d.Get("division_id").(string)
-
 	return platformclientv2.Team{
 		Name:        &name,
 		Division:    &platformclientv2.Writabledivision{Id: &division},
@@ -206,10 +184,9 @@ func readMembers(ctx context.Context, d *schema.ResourceData, proxy *teamProxy) 
 
 // deleteMembers is used by the members resource to delete a members from Genesys cloud
 func deleteMembers(ctx context.Context, teamId string, memberList []interface{}, proxy *teamProxy) diag.Diagnostics {
-
 	_, err := proxy.deleteMembers(ctx, teamId, convertMemberListtoString(memberList))
 	if err != nil {
-		return diag.Errorf("Failed to delete members %s: %s", teamId, err)
+		return diag.Errorf("failed to delete members %s: %s", teamId, err)
 	}
 	log.Printf("success deleting members %s", teamId)
 	return nil
@@ -217,13 +194,11 @@ func deleteMembers(ctx context.Context, teamId string, memberList []interface{},
 
 // createMembers is used by the members resource to create Genesys cloud members
 func createMembers(ctx context.Context, teamId string, members []interface{}, proxy *teamProxy) diag.Diagnostics {
-
 	log.Printf("adding members for team %s", teamId)
 	_, err := proxy.createMembers(ctx, teamId, buildTeamMembers(members))
 	if err != nil {
 		return diag.Errorf("failed to add members: %s", err)
 	}
-
 	log.Printf("success adding members %s", teamId)
 	return nil
 }
@@ -249,7 +224,6 @@ func convertMemberListtoString(teamMembers []interface{}) string {
 
 func flattenMemberIds(teamEntityListing []platformclientv2.Userreferencewithname) []interface{} {
 	memberList := []interface{}{}
-
 	if len(teamEntityListing) == 0 {
 		return nil
 	}
@@ -262,10 +236,8 @@ func flattenMemberIds(teamEntityListing []platformclientv2.Userreferencewithname
 func SliceDifferenceMembers(current, target []interface{}) ([]interface{}, []interface{}) {
 	var remove []interface{}
 	var add []interface{}
-
 	keysTarget := make(map[interface{}]bool)
 	keysCurrent := make(map[interface{}]bool)
-
 	for _, item := range target {
 		keysTarget[item] = true
 	}
