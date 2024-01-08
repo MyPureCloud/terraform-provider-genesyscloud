@@ -65,3 +65,13 @@ func GenerateWorkitemSchemaResourceBasic(resourceId, name, description string) s
 	}
 	`, resourceName, resourceId, name, description)
 }
+
+func GenerateWorkitemSchemaResource(resourceId, name, description, properties, enabledStr string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		name = "%s"
+		description = "%s"
+		properties = %s
+		enabled = %s
+	}
+	`, resourceName, resourceId, name, description, properties, enabledStr)
+}

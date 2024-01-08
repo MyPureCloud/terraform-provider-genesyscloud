@@ -134,7 +134,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 			skills_ids:             []string{fmt.Sprintf("genesyscloud_routing_skill.%s.id", skillResId1)},
 			preferred_agents_ids:   []string{fmt.Sprintf("genesyscloud_user.%s.id", userResId1)},
 			auto_status_transition: false,
-			custom_fields:          "",
+			custom_fields:          "", // tested on a separate test case
 			scored_agents: []scoredAgentConfig{{
 				agent_id: fmt.Sprintf("genesyscloud_user.%s.id", userResId1),
 				score:    42,
@@ -234,6 +234,296 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 		},
 		CheckDestroy: testVerifyTaskManagementWorkitemDestroyed,
 	})
+}
+
+// TestAccResourceTaskManagementWorkitemCustomFields tests having custom field values
+// for the workitem. Creation and updating.
+func TestAccResourceTaskManagementWorkitemCustomFields(t *testing.T) {
+	t.Parallel()
+	var (
+		// Workbin
+		wbResourceId  = "workbin_1"
+		wbName        = "wb_" + uuid.NewString()
+		wbDescription = "workbin created for CX as Code test case"
+
+		// Schema
+		wsResourceId  = "schema_1"
+		wsName        = "ws_" + uuid.NewString()
+		wsDescription = "workitem schema created for CX as Code test case"
+		wsProperties  = `jsonencode({
+			"custom_attribute_1_text" : {
+			  "allOf" : [
+				{
+				  "$ref" : "#/definitions/text"
+				}
+			  ],
+			  "title" : "custom_attribute_1",
+			  "description" : "Custom attribute for text",
+			  "minLength" : 0,
+			  "maxLength" : 100
+			},
+			"custom_attribute_2_longtext" : {
+			  "allOf" : [
+				{
+				  "$ref" : "#/definitions/longtext"
+				}
+			  ],
+			  "title" : "custom_attribute_2",
+			  "description" : "Custom attribute for long text",
+			  "minLength" : 0,
+			  "maxLength" : 1000
+			},
+			"custom_attribute_3_url" : {
+			  "allOf" : [
+				{
+				  "$ref" : "#/definitions/url"
+				}
+			  ],
+			  "title" : "custom_attribute_3",
+			  "description" : "Custom attribute for url",
+			  "minLength" : 0,
+			  "maxLength" : 200
+			},
+			"custom_attribute_4_identifier" : {
+			  "allOf" : [
+				{
+				  "$ref" : "#/definitions/identifier"
+				}
+			  ],
+			  "title" : "custom_attribute_4",
+			  "description" : "Custom attribute for identifier",
+			  "minLength" : 0,
+			  "maxLength" : 100
+			},
+			"custom_attribute_5_enum" : {
+			  "allOf" : [
+				{
+				  "$ref" : "#/definitions/enum"
+				}
+			  ],
+			  "title" : "custom_attribute_5",
+			  "description" : "Custom attribute for enum",
+			  "enum" : ["option_1", "option_2", "option_3"],
+			  "_enumProperties" : {
+				"option_1" : {
+				  "title" : "Option 1",
+				  "_disabled" : false
+				},
+				"option_2" : {
+				  "title" : "Option 2",
+				  "_disabled" : false
+				},
+				"option_3" : {
+				  "title" : "Option 3",
+				  "_disabled" : false
+				},
+			  },
+			},
+			"custom_attribute_6_date" : {
+			  "allOf" : [
+				{
+				  "$ref" : "#/definitions/date"
+				}
+			  ],
+			  "title" : "custom_attribute_6",
+			  "description" : "Custom attribute for date",
+			},
+			"custom_attribute_7_datetime" : {
+			  "allOf" : [
+				{
+				  "$ref" : "#/definitions/datetime"
+				}
+			  ],
+			  "title" : "custom_attribute_7",
+			  "description" : "Custom attribute for datetime",
+			},
+			"custom_attribute_8_integer" : {
+			  "allOf" : [
+				{
+				  "$ref" : "#/definitions/integer"
+				}
+			  ],
+			  "title" : "custom_attribute_8",
+			  "description" : "Custom attribute for integer",
+			  "minimum" : 1,
+			  "maximum" : 1000
+			},
+			"custom_attribute_9_number" : {
+			  "allOf" : [
+				{
+				  "$ref" : "#/definitions/number"
+				}
+			  ],
+			  "title" : "custom_attribute_9",
+			  "description" : "Custom attribute for number",
+			  "minimum" : 1,
+			  "maximum" : 1000
+			},
+			"custom_attribute_10_checkbox" : {
+			  "allOf" : [
+				{
+				  "$ref" : "#/definitions/checkbox"
+				}
+			  ],
+			  "title" : "custom_attribute_10",
+			  "description" : "Custom attribute for checkbox"
+			},
+			"custom_attribute_11_tag" : {
+			  "allOf" : [
+				{
+				  "$ref" : "#/definitions/tag"
+				}
+			  ],
+			  "title" : "custom_attribute_11",
+			  "description" : "Custom attribute for tag",
+			  "items" : {
+				"minLength" : 1,
+				"maxLength" : 100
+			  },
+			  "minItems" : 0,
+			  "maxItems" : 10,
+			  "uniqueItems" : true
+			},
+		  })
+		`
+
+		// worktype
+		wtResName         = "tf_worktype_1"
+		wtName            = "tf-worktype" + uuid.NewString()
+		wtDescription     = "tf-worktype-description"
+		wtOStatusName     = "Open Status"
+		wtOStatusDesc     = "Description of open status"
+		wtOStatusCategory = "Open"
+		wtCStatusName     = "Closed Status"
+		wtCStatusDesc     = "Description of closed status"
+		wtCStatusCategory = "Closed"
+
+		// basic workitem
+		workitemRes = "workitem_1"
+		workitem1   = workitemConfig{
+			name:        "tf-workitem" + uuid.NewString(),
+			worktype_id: fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResName),
+			custom_fields: `
+			  {
+				"custom_attribute_1_text" : "value_1 text",
+				"custom_attribute_2_longtext" : "value_2 longtext",
+				"custom_attribute_3_url" : "https://www.test.com",
+				"custom_attribute_4_identifier" : "value_4 identifier",
+				"custom_attribute_5_enum" : "option_1",
+				"custom_attribute_6_date" : "2021-01-01",
+				"custom_attribute_7_datetime" : "2021-01-01T00:00:00.000Z",
+				"custom_attribute_8_integer" : 8,
+				"custom_attribute_9_number" : 9,
+				"custom_attribute_10_checkbox" : true,
+				"custom_attribute_11_tag" : ["tag_1", "tag_2"]
+			  }
+			`,
+		}
+		workitem1update = workitemConfig{
+			name:        "tf-workitem" + uuid.NewString(),
+			worktype_id: fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResName),
+			custom_fields: `
+			  {
+				"custom_attribute_1_text" : "value_1 text update",
+				"custom_attribute_2_longtext" : "value_2 longtext update",
+				"custom_attribute_3_url" : "https://www.test-update.com",
+				"custom_attribute_4_identifier" : "value_4 identifier update",
+				"custom_attribute_5_enum" : "option_2",
+				"custom_attribute_6_date" : "2022-02-02",
+				"custom_attribute_7_datetime" : "2022-02-02T00:00:00.000Z",
+				"custom_attribute_8_integer" : 82,
+				"custom_attribute_9_number" : 92,
+				"custom_attribute_10_checkbox" : false,
+				"custom_attribute_11_tag" : ["tag_1_update", "tag_2_update"]
+			  }
+			`,
+		}
+
+		// String configuration of task management objects needed for the workitem: schema, workbin, workitem.
+		// They don't really change so they are defined here instead of in each step.
+		taskMgmtConfig = workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
+			workitemSchema.GenerateWorkitemSchemaResource(wsResourceId, wsName, wsDescription, wsProperties, gcloud.TrueValue) +
+			worktype.GenerateWorktypeResourceBasic(
+				wtResName,
+				wtName,
+				wtDescription,
+				fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
+				fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceId),
+				// Needs both an open and closed status or workitems cannot be created for worktype.
+				fmt.Sprintf(`
+				statuses {
+					name = "%s"
+					description = "%s"
+					category = "%s"
+				}
+				statuses {
+					name = "%s"
+					description = "%s"
+					category = "%s"
+				}
+				default_status_name = "%s"
+				`, wtOStatusName, wtOStatusDesc, wtOStatusCategory,
+					wtCStatusName, wtCStatusDesc, wtCStatusCategory,
+					wtOStatusName),
+			)
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: taskMgmtConfig +
+					generateWorkitemResourceBasic(
+						workitemRes,
+						workitem1.name,
+						workitem1.worktype_id,
+						fmt.Sprintf(`custom_fields = jsonencode(%s)`, workitem1.custom_fields),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "name", workitem1.name),
+					resource.TestCheckResourceAttrPair("genesyscloud_task_management_workitem."+workitemRes, "worktype_id", "genesyscloud_task_management_worktype."+wtResName, "id"),
+					validateWorkitemCustomFields("genesyscloud_task_management_workitem."+workitemRes, workitem1.custom_fields),
+				),
+			},
+			{
+				Config: taskMgmtConfig +
+					generateWorkitemResourceBasic(
+						workitemRes,
+						workitem1update.name,
+						workitem1update.worktype_id,
+						fmt.Sprintf(`custom_fields = jsonencode(%s)`, workitem1update.custom_fields),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_task_management_workitem."+workitemRes, "name", workitem1update.name),
+					validateWorkitemCustomFields("genesyscloud_task_management_workitem."+workitemRes, workitem1update.custom_fields),
+				),
+			},
+		},
+		CheckDestroy: testVerifyTaskManagementWorkitemDestroyed,
+	})
+}
+
+// validateWorkitemCustomFields validates the custom fields of the workitem
+func validateWorkitemCustomFields(resourceName string, jsonFields string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resourceState, ok := state.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find resource %s in state", resourceName)
+		}
+		resourceID := resourceState.Primary.ID
+
+		stateCustomFields, ok := resourceState.Primary.Attributes["custom_fields"]
+		if !ok {
+			return fmt.Errorf("No custom_fields found for %s in state", resourceID)
+		}
+
+		if !gcloud.EquivalentJsons(stateCustomFields, jsonFields) {
+			return fmt.Errorf("%s custom_fields does not match %s", stateCustomFields, jsonFields)
+		}
+
+		return nil
+	}
 }
 
 func generateWorkitemResourceBasic(resName string, wName string, wWorktypeId string, attrs string) string {
