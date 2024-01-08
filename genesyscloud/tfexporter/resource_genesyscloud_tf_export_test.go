@@ -3,6 +3,7 @@ package tfexporter
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 	"io"
 	"math/rand"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"testing"
 	"time"
@@ -1284,6 +1286,71 @@ func testUserPromptAudioFileExport(filePath, resourceType, resourceId, exportDir
 	}
 }
 
+func TestAccResourceTfExportEnableDependsOn(t *testing.T) {
+	var (
+		exportTestDir         = "../.terraform" + uuid.NewString()
+		exportResource        = "test-export2"
+		contactListResourceId = "contact_list" + uuid.NewString()
+		contatListname        = "terraform contact list" + uuid.NewString()
+		outboundFlowFilePath  = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		flowName              = "testflowcxcase"
+		flowResourceId        = "flow"
+		wrapupcodeResourceId  = "wrapupcode"
+	)
+	defer os.RemoveAll(exportTestDir)
+
+	config := fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`+`
+resource "time_sleep" "wait_10_seconds" {
+create_duration = "100s"
+}
+`) + GenerateOutboundCampaignBasicforFlowExport(
+		contactListResourceId,
+		outboundFlowFilePath,
+		flowResourceId,
+		flowName,
+		"${data.genesyscloud_auth_division_home.home.name}",
+		wrapupcodeResourceId,
+		contatListname,
+	) +
+		generateTfExportByFlowDependsOnResources(
+			exportResource,
+			exportTestDir,
+			gcloud.TrueValue,
+			[]string{
+				strconv.Quote("genesyscloud_flow::" + flowName),
+			},
+			gcloud.FalseValue,
+			gcloud.FalseValue,
+			gcloud.TrueValue,
+		)
+
+	sanitizer := resourceExporter.NewSanitizerProvider()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {
+				VersionConstraint: "0.10.0",
+				Source:            "hashicorp/time",
+			},
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow("genesyscloud_flow."+flowResourceId, flowName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_contact_list."+contactListResourceId, "name", contatListname),
+					testDependentContactList(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_outbound_contact_list", sanitizer.S.SanitizeResourceName(contatListname)),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
 func testUserExport(filePath, resourceType, resourceName string, expectedUser *UserExport) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		raw, err := getResourceDefinition(filePath, resourceType)
@@ -1334,6 +1401,31 @@ func testQueueExportEqual(filePath, resourceType, name string, expectedQueue Que
 
 		if *exportedQueue != expectedQueue {
 			return fmt.Errorf("objects are not equal. Expected: %v. Got: %v", expectedQueue, *exportedQueue)
+		}
+
+		return nil
+	}
+}
+
+// testDependentContactList tests to see if the dependedent conatctListResource for the flow is exported.
+func testDependentContactList(filePath, resourceType, name string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+
+		_, err := os.ReadFile(filePath)
+		if err != nil {
+			fmt.Println("Error reading file:", err)
+			return err
+		}
+
+		raw, err := getResourceDefinition(filePath, resourceType)
+		fmt.Printf("raw %v", raw)
+		if err != nil {
+			return err
+		}
+
+		var r *json.RawMessage
+		if err := json.Unmarshal(*raw[name], &r); err != nil {
+			return err
 		}
 
 		return nil
@@ -1662,6 +1754,27 @@ func generateTfExportByIncludeFilterResources(
 	`, resourceID, directory, includeState, strings.Join(items, ","), exportAsHCL, splitByResource, strings.Join(dependencies, ","))
 }
 
+func generateTfExportByFlowDependsOnResources(
+	resourceID string,
+	directory string,
+	includeState string,
+	items []string,
+	exportAsHCL string,
+	splitByResource string,
+	dependsOn string,
+) string {
+	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
+		directory = "%s"
+		include_state_file = %s
+		include_filter_resources = [%s]
+		export_as_hcl = %s
+		split_files_by_resource = %s
+		enable_flow_depends_on = %s
+		depends_on = [time_sleep.wait_10_seconds]
+	}
+	`, resourceID, directory, includeState, strings.Join(items, ","), exportAsHCL, splitByResource, dependsOn)
+}
+
 func generateTfExportByExcludeFilterResources(
 	resourceID string,
 	directory string,
@@ -1841,4 +1954,105 @@ func randString(length int) string {
 	}
 
 	return string(s)
+}
+
+func GenerateOutboundCampaignBasicforFlowExport(
+	contactListResourceId string,
+	outboundFlowFilePath string,
+	flowResourceId string,
+	flowName string,
+	divisionName,
+	wrapupcodeResourceId string,
+	contatListname string) string {
+	referencedResources := GenerateReferencedResourcesForOutboundCampaignTests(
+		contactListResourceId,
+		outboundFlowFilePath,
+		flowResourceId,
+		flowName,
+		divisionName,
+		wrapupcodeResourceId,
+		contatListname,
+	)
+	return fmt.Sprintf(`
+%s
+`, referencedResources)
+}
+
+func GenerateReferencedResourcesForOutboundCampaignTests(
+	contactListResourceId string,
+	outboundFlowFilePath string,
+	flowResourceId string,
+	flowName string,
+	divisionName string,
+	wrapUpCodeResourceId string,
+	contatListname string,
+) string {
+	var (
+		contactList             string
+		callAnalysisResponseSet string
+	)
+	if contactListResourceId != "" {
+		contactList = obContactList.GenerateOutboundContactList(
+			contactListResourceId,
+			contatListname,
+			gcloud.NullValue,
+			strconv.Quote("Cell"),
+			[]string{strconv.Quote("Cell")},
+			[]string{strconv.Quote("Cell"), strconv.Quote("Home"), strconv.Quote("zipcode")},
+			gcloud.FalseValue,
+			gcloud.NullValue,
+			gcloud.NullValue,
+			obContactList.GeneratePhoneColumnsBlock("Cell", "cell", strconv.Quote("Cell")),
+			obContactList.GeneratePhoneColumnsBlock("Home", "home", strconv.Quote("Home")))
+	}
+
+	callAnalysisResponseSet = gcloud.GenerateRoutingWrapupcodeResource(
+		wrapUpCodeResourceId,
+		"wrapupcode "+uuid.NewString(),
+	) + gcloud.GenerateFlowResource(
+		flowResourceId,
+		outboundFlowFilePath,
+		"",
+		false,
+		gcloud.GenerateSubstitutionsMap(map[string]string{
+			"flow_name":          flowName,
+			"home_division_name": divisionName,
+			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceId + ".name}",
+			"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapUpCodeResourceId + ".name}",
+		}),
+	)
+
+	return fmt.Sprintf(`
+			%s
+			%s
+		`, contactList, callAnalysisResponseSet)
+}
+
+// Check if flow is published, then check if flow name and type are correct
+func validateFlow(flowResourceName, name string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		flowResource, ok := state.RootModule().Resources[flowResourceName]
+		fmt.Printf("%v flowResource", flowResource)
+		if !ok {
+			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
+		}
+		flowID := flowResource.Primary.ID
+		architectAPI := platformclientv2.NewArchitectApi()
+
+		flow, _, err := architectAPI.GetFlow(flowID, false)
+		fmt.Printf("%v flow", flow)
+		if err != nil {
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+
+		if flow == nil {
+			return fmt.Errorf("Flow (%s) not found. ", flowID)
+		}
+
+		if *flow.Name != name {
+			return fmt.Errorf("Returned flow (%s) has incorrect name. Expect: %s, Actual: %s", flowID, name, *flow.Name)
+		}
+
+		return nil
+	}
 }
