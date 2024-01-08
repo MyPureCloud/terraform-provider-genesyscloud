@@ -9,7 +9,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 

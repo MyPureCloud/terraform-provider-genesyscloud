@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 /*
@@ -38,7 +38,7 @@ type getPolicyByIdFunc func(ctx context.Context, p *policyProxy, policyId string
 type getPolicyByNameFunc func(ctx context.Context, p *policyProxy, policyName string) (policy *platformclientv2.Policy, retryable bool, err error)
 type updatePolicyFunc func(ctx context.Context, p *policyProxy, policyId string, policy *platformclientv2.Policy) (*platformclientv2.Policy, error)
 type deletePolicyFunc func(ctx context.Context, p *policyProxy, policyId string) (responseCode int, err error)
-type getFormsEvaluationFunc func(ctx context.Context, p *policyProxy, formId string) (*platformclientv2.Evaluationform, error)
+type getFormsEvaluationFunc func(ctx context.Context, p *policyProxy, formId string) (*platformclientv2.Evaluationformresponse, error)
 type getEvaluationFormRecentVerIdFunc func(ctx context.Context, p *policyProxy, formId string) (string, error)
 type getQualityFormsSurveyByNameFunc func(ctx context.Context, p *policyProxy, surveyName string) (*platformclientv2.Publishedsurveyformreference, error)
 
@@ -119,7 +119,7 @@ func (p *policyProxy) deletePolicy(ctx context.Context, policyId string) (respon
 }
 
 // getFormsEvaluation gets a Genesys Cloud Evaluation Form by id
-func (p *policyProxy) getFormsEvaluation(ctx context.Context, formId string) (*platformclientv2.Evaluationform, error) {
+func (p *policyProxy) getFormsEvaluation(ctx context.Context, formId string) (*platformclientv2.Evaluationformresponse, error) {
 	return p.getFormsEvaluationAttr(ctx, p, formId)
 }
 
@@ -213,7 +213,7 @@ func deletePolicyFn(ctx context.Context, p *policyProxy, policyId string) (respo
 }
 
 // getFormsEvaluationFn is the implementation for getting an evaluation form in Genesys Cloud
-func getFormsEvaluationFn(ctx context.Context, p *policyProxy, formId string) (*platformclientv2.Evaluationform, error) {
+func getFormsEvaluationFn(ctx context.Context, p *policyProxy, formId string) (*platformclientv2.Evaluationformresponse, error) {
 	form, _, err := p.qualityApi.GetQualityFormsEvaluation(formId)
 	if err != nil {
 		return nil, err
