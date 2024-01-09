@@ -110,7 +110,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 			DefaultLanguage: &platformclientv2.Languagereference{
 				Id: &wt.defaultLanguageId,
 			},
-			DefaultQueue: &platformclientv2.Queuereference{
+			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
 			AssignmentEnabled: &wt.assignmentEnabled,
@@ -532,7 +532,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 			DefaultLanguage: &platformclientv2.Languagereference{
 				Id: &wt.defaultLanguageId,
 			},
-			DefaultQueue: &platformclientv2.Queuereference{
+			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
 			AssignmentEnabled: &wt.assignmentEnabled,
