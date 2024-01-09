@@ -52,7 +52,6 @@ func DataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceDat
 			// Once I get a result, cycle through until we find a name that matches
 			for _, domain := range *domains.Entities {
 				if domain.Id != nil && *domain.Id == name {
-
 					d.SetId(*domain.Id)
 					return nil
 				}

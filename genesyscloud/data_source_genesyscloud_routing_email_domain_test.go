@@ -2,9 +2,8 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"log"
-	"math/rand"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -16,14 +15,10 @@ import (
 func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 	var (
 		emailDomainResourceId = "email_domain_test"
-		emailDomainId         = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		emailDomainId         = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 		emailDataResourceId   = "email_domain_data"
 	)
 
-	_, err := AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
 	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
