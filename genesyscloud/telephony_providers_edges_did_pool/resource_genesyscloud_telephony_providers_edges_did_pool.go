@@ -136,9 +136,17 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
-	log.Printf("Deleting DID pool with starting number %s", startPhoneNumber)
-	if err := proxy.deleteTelephonyDidPool(ctx, d.Id()); err != nil {
-		return diag.Errorf("Failed to delete DID pool with starting number %s: %s", startPhoneNumber, err)
+	// DEVTOOLING-317: Unable to delete DID pool with a number assigned, retrying on HTTP 409
+	diagErr := gcloud.RetryWhen(gcloud.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Deleting DID pool with starting number %s", startPhoneNumber)
+		resp, err := proxy.deleteTelephonyDidPool(ctx, d.Id())
+		if err != nil {
+			return resp, diag.Errorf("Failed to delete DID pool with starting number %s: %s", startPhoneNumber, err)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

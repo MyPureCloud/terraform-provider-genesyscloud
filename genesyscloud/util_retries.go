@@ -141,3 +141,14 @@ func GetBody(apiResponse *platformclientv2.APIResponse) string {
 	}
 	return ""
 }
+
+func IsStatus409(resp *platformclientv2.APIResponse, additionalCodes ...int) bool {
+	if resp != nil {
+		if resp.StatusCode == http.StatusConflict ||
+			resp.StatusCode == http.StatusRequestTimeout ||
+			IsAdditionalCode(resp.StatusCode, additionalCodes...) {
+			return true
+		}
+	}
+	return false
+}
