@@ -23,7 +23,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 			return
 		}
 		ctx := context.TODO()
-		_ = DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber1, didPoolEndPhoneNumber1)
+		_, _ = DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber1, didPoolEndPhoneNumber1)
 	}()
 
 	didPoolDescription1 := "Test description"

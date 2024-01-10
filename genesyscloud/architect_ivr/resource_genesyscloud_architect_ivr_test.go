@@ -31,7 +31,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 			return
 		}
 		ctx := context.TODO()
-		_ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, number1, number2)
+		_, _ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, number1, number2)
 	}()
 
 	resource.Test(t, resource.TestCase{
@@ -108,7 +108,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 			return
 		}
 		ctx := context.TODO()
-		_ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, number1, number2)
+		_, _ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, number1, number2)
 	}()
 
 	resource.Test(t, resource.TestCase{
@@ -239,7 +239,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 			return
 		}
 		ctx := context.TODO()
-		_ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, startNumberStr, endNumberStr)
+		_, _ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, startNumberStr, endNumberStr)
 	}()
 
 	fullResourceId := resourceName + "." + resourceID

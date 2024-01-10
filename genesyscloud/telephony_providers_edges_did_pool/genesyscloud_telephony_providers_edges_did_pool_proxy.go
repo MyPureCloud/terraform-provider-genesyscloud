@@ -35,11 +35,9 @@ var internalProxy *telephonyDidPoolProxy
 type createTelephonyDidPool func(ctx context.Context, t *telephonyDidPoolProxy, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, error)
 type getTelephonyDidPoolById func(context.Context, *telephonyDidPoolProxy, string) (didPool *platformclientv2.Didpool, respCode int, err error)
 type updateTelephonyDidPool func(context.Context, *telephonyDidPoolProxy, string, *platformclientv2.Didpool) (*platformclientv2.Didpool, error)
-type deleteTelephonyDidPool func(context.Context, *telephonyDidPoolProxy, string) error
+type deleteTelephonyDidPool func(context.Context, *telephonyDidPoolProxy, string) (*platformclientv2.APIResponse, error)
 type getTelephonyDidPoolIdByStartAndEndNumber func(ctx context.Context, t *telephonyDidPoolProxy, start, end string) (id string, retryable bool, err error)
 type getAllTelephonyDidPools func(context.Context, *telephonyDidPoolProxy) (*[]platformclientv2.Didpool, error)
-
-type getTelephonyDidPoolsDids func(ctx context.Context, proxy *telephonyDidPoolProxy, number string, varType string) (*[]platformclientv2.Didnumber, error)
 
 // telephonyDidPoolProxy contains all methods that call genesys cloud APIs.
 type telephonyDidPoolProxy struct {
@@ -93,7 +91,7 @@ func (t *telephonyDidPoolProxy) updateTelephonyDidPool(ctx context.Context, id s
 }
 
 // deleteTelephonyDidPool delete a Genesys Cloud did pool
-func (t *telephonyDidPoolProxy) deleteTelephonyDidPool(ctx context.Context, id string) error {
+func (t *telephonyDidPoolProxy) deleteTelephonyDidPool(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
 	return t.deleteTelephonyDidPoolAttr(ctx, t, id)
 }
 
@@ -135,9 +133,9 @@ func updateEdgesDidPoolFn(_ context.Context, t *telephonyDidPoolProxy, id string
 }
 
 // deleteTelephonyDidPoolFn is an implementation function for deleting a Genesys Cloud did pool
-func deleteTelephonyDidPoolFn(_ context.Context, t *telephonyDidPoolProxy, id string) error {
-	_, err := t.telephonyApi.DeleteTelephonyProvidersEdgesDidpool(id)
-	return err
+func deleteTelephonyDidPoolFn(_ context.Context, t *telephonyDidPoolProxy, id string) (*platformclientv2.APIResponse, error) {
+	resp, err := t.telephonyApi.DeleteTelephonyProvidersEdgesDidpool(id)
+	return resp, err
 }
 
 // getAllTelephonyDidPoolsFn is an implementation function for reading all Genesys Cloud did pools
