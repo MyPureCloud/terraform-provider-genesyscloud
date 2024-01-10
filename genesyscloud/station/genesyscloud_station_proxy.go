@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package

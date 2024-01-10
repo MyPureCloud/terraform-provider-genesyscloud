@@ -2,24 +2,19 @@ package genesyscloud
 
 import (
 	"fmt"
-	"math/rand"
-	"strconv"
+	"github.com/google/uuid"
 	"strings"
 	"testing"
-	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
 	var (
 		domainRes     = "routing-domain1"
-		domainId      = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainId      = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 		queueResource = "email-queue"
 		queueName     = "Terraform Email Queue-" + uuid.NewString()
 		langResource  = "email-lang"
@@ -39,10 +34,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		bccEmail1     = "test1@" + domainId
 		bccEmail2     = "test2@" + domainId
 	)
-	_, err := AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
+
 	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{

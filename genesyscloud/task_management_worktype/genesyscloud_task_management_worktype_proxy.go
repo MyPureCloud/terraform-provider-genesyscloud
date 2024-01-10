@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 /*

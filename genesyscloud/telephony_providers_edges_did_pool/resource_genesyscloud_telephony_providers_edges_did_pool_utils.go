@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 type DidPoolStruct struct {
@@ -18,13 +18,13 @@ type DidPoolStruct struct {
 
 // DeleteDidPoolWithStartAndEndNumber deletes a did pool by start and end number. Used as a cleanup function in tests which
 // utilise the did pool resource
-func DeleteDidPoolWithStartAndEndNumber(ctx context.Context, startNumber, endNumber string) error {
+func DeleteDidPoolWithStartAndEndNumber(ctx context.Context, startNumber, endNumber string) (*platformclientv2.APIResponse, error) {
 	config := platformclientv2.GetDefaultConfiguration()
 	proxy := getTelephonyDidPoolProxy(config)
 
 	didPoolId, _, err := proxy.getTelephonyDidPoolIdByStartAndEndNumber(ctx, startNumber, endNumber)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	return proxy.deleteTelephonyDidPool(ctx, didPoolId)
