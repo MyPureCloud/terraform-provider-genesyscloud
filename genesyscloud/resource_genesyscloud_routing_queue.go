@@ -890,6 +890,7 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 			Percentage: platformclientv2.Float64(settingsMap["service_level_percentage"].(float64)),
 			DurationMs: platformclientv2.Int(settingsMap["service_level_duration_ms"].(int)),
 		},
+		EnableAutoAnswer: platformclientv2.Bool(settingsMap["enable_auto_answer"].(bool)),
 	}
 }
 
@@ -910,6 +911,7 @@ func flattenMediaSettingCallback(settings platformclientv2.Callbackmediasettings
 	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
 
 	return []interface{}{settingsMap}
 }
