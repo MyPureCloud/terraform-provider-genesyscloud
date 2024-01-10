@@ -106,26 +106,74 @@ func createTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkit
 
 // getAllTaskManagementWorkitemFn is the implementation for retrieving all task management workitem in Genesys Cloud
 func getAllTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkitemProxy) (*[]platformclientv2.Workitem, error) {
-	var allWorkitems []platformclientv2.Workitem
+	// Workitem query requires one of workbin, assignee, or worktype filter. We'll use workbins.
+
+	// Get all workbins
+	var allWorkbins []platformclientv2.Workbin
 	pageSize := 200
 	after := ""
 
 	for {
-		queryReq := &platformclientv2.Workitemquerypostrequest{
+		queryReq := &platformclientv2.Workbinqueryrequest{
 			PageSize: &pageSize,
 			After:    &after,
 		}
-		worktypes, _, err := p.taskManagementApi.PostTaskmanagementWorkitemsQuery(*queryReq)
+		workbins, _, err := p.taskManagementApi.PostTaskmanagementWorkbinsQuery(*queryReq)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get worktypes: %v", err)
+			return nil, fmt.Errorf("failed to get workbin: %v", err)
 		}
-		allWorkitems = append(allWorkitems, *worktypes.Entities...)
+		allWorkbins = append(allWorkbins, *workbins.Entities...)
 
 		// Exit loop if there are no more 'pages'
-		if worktypes.After == nil || *worktypes.After == "" {
+		if workbins.After == nil || *workbins.After == "" {
 			break
 		}
-		after = *worktypes.After
+		after = *workbins.After
+	}
+
+	// Method to query workitems on a workbin
+	queryWorkitemsOnWorkbin := func(workbinId string) (*[]platformclientv2.Workitem, error) {
+		var wbWorkitems []platformclientv2.Workitem
+		pageSize := 200
+		after := ""
+
+		for {
+			queryReq := &platformclientv2.Workitemquerypostrequest{
+				PageSize: &pageSize,
+				After:    &after,
+				Filters: &[]platformclientv2.Workitemfilter{
+					{
+						Name:     platformclientv2.String("workbinId"),
+						VarType:  platformclientv2.String("String"),
+						Operator: platformclientv2.String("EQ"),
+						Values:   &[]string{workbinId},
+					},
+				},
+			}
+			workitems, _, err := p.taskManagementApi.PostTaskmanagementWorkitemsQuery(*queryReq)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get workitems: %v", err)
+			}
+			wbWorkitems = append(wbWorkitems, *workitems.Entities...)
+
+			// Exit loop if there are no more 'pages'
+			if workitems.After == nil || *workitems.After == "" {
+				break
+			}
+			after = *workitems.After
+		}
+
+		return &wbWorkitems, nil
+	}
+
+	// Get all workitems on all workbins
+	var allWorkitems []platformclientv2.Workitem
+	for _, wb := range allWorkbins {
+		wbWorkitems, err := queryWorkitemsOnWorkbin(*wb.Id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get workitems on workbin %s: %v", *wb.Id, err)
+		}
+		allWorkitems = append(allWorkitems, *wbWorkitems...)
 	}
 
 	return &allWorkitems, nil
