@@ -15,7 +15,7 @@ import (
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 var (
@@ -94,7 +94,7 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 				Id: &wi.external_contact_id,
 			},
 			ExternalTag: &wi.external_tag,
-			Queue: &platformclientv2.Queuereference{
+			Queue: &platformclientv2.Workitemqueuereference{
 				Id: &wi.queue_id,
 			},
 			Skills: &[]platformclientv2.Routingskillreference{
@@ -234,7 +234,7 @@ func TestUnitResourceWorkitemRead(t *testing.T) {
 				Id: &wi.external_contact_id,
 			},
 			ExternalTag: &wi.external_tag,
-			Queue: &platformclientv2.Queuereference{
+			Queue: &platformclientv2.Workitemqueuereference{
 				Id: &wi.queue_id,
 			},
 			Skills: &[]platformclientv2.Routingskillreference{
@@ -398,7 +398,7 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 				Id: &wi.external_contact_id,
 			},
 			ExternalTag: &wi.external_tag,
-			Queue: &platformclientv2.Queuereference{
+			Queue: &platformclientv2.Workitemqueuereference{
 				Id: &wi.queue_id,
 			},
 			Skills: &[]platformclientv2.Routingskillreference{
