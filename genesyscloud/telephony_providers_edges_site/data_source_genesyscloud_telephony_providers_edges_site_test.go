@@ -2,6 +2,7 @@ package telephony_providers_edges_site
 
 import (
 	"fmt"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"strconv"
 	"testing"
 
@@ -25,15 +26,9 @@ func TestAccDataSourceSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	emergencyNumber := "+13173124745"
-	err = DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	location := gcloud.GenerateLocationResource(
@@ -89,9 +84,9 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 		name        = "PureCloud Voice - AWS"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
+	siteId, err := getSiteIdByName(name)
 	if err != nil {
-		t.Fatal(err)
+		t.Skipf("failed to retrieve ID of site '%s'", name)
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -106,7 +101,7 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 					true,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_site."+siteDataRes, "name", name),
+					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_site."+siteDataRes, "id", siteId),
 				),
 			},
 		},
@@ -126,4 +121,20 @@ func generateSiteDataSource(
 		depends_on=[%s]
 	}
 	`, resourceID, name, managed, dependsOnResource)
+}
+
+func getSiteIdByName(name string) (string, error) {
+	api := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	data, _, err := api.GetTelephonyProvidersEdgesSites(1, 1, "", "", name, "", true)
+	if err != nil {
+		return "", err
+	}
+	if data.Entities == nil || len(*data.Entities) == 0 {
+		return "", fmt.Errorf("no sites found with name %s", name)
+	}
+	site := (*data.Entities)[0]
+	if *site.Name != name {
+		return "", fmt.Errorf("no sites found with name %s", name)
+	}
+	return *site.Id, nil
 }

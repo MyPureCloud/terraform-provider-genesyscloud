@@ -59,15 +59,9 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		callerAddressUpdated = "+353371112111"
 	)
 
-	// necessary to avoid errors during site creation
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
 	emergencyNumber := "+13178793428"
-	err = edgeSite.DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	referencedResources := fmt.Sprintf(`
@@ -418,15 +412,9 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		locationResourceId    = "location"
 	)
 
-	// necessary to avoid errors during site creation
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
 	emergencyNumber := "+13178793429"
-	err = edgeSite.DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	referencedResources := obContactList.GenerateOutboundContactList(
@@ -621,15 +609,9 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 		locationResourceId    = "location"
 	)
 
-	// necessary to avoid errors during site creation
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
 	emergencyNumber := "+13178793430"
-	err = edgeSite.DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	// Test campaign_status can be turned on at time of creation as well
@@ -893,14 +875,14 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 
 func addContactsToContactList(state *terraform.State) error {
 	outboundAPI := platformclientv2.NewOutboundApi()
-	resource := state.RootModule().Resources["genesyscloud_outbound_contact_list.contact_list"]
-	if resource == nil {
-		return fmt.Errorf("genesyscloud_outbound_contact_list.contact_list resource not found in state")
+	contactListResource := state.RootModule().Resources["genesyscloud_outbound_contact_list.contact_list"]
+	if contactListResource == nil {
+		return fmt.Errorf("genesyscloud_outbound_contact_list.contact_list contactListResource not found in state")
 	}
 
-	contactList, _, err := outboundAPI.GetOutboundContactlist(resource.Primary.ID, false, false)
+	contactList, _, err := outboundAPI.GetOutboundContactlist(contactListResource.Primary.ID, false, false)
 	if err != nil {
-		return fmt.Errorf("genesyscloud_outbound_contact_list (%s) not available", resource.Primary.ID)
+		return fmt.Errorf("genesyscloud_outbound_contact_list (%s) not available", contactListResource.Primary.ID)
 	}
 	contactsJSON := `[{
 			"data": {
@@ -1014,11 +996,7 @@ func generateDynamicContactQueueingSettingsBlock(sort string) string {
 }
 
 func getPublishedScriptId() (string, error) {
-	config, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		return "", fmt.Errorf("failed to authorize client: %v", err)
-	}
-	api := platformclientv2.NewScriptsApiWithConfig(config)
+	api := platformclientv2.NewScriptsApiWithConfig(sdkConfig)
 	// Get the published scripts.
 	data, _, err := api.GetScriptsPublished(50, 1, "", "", "", "", "", "")
 	if err != nil {

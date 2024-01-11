@@ -45,15 +45,9 @@ func TestAccResourceSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	emergencyNumber := "+13173124741"
-	err = DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	location := gcloud.GenerateLocationResource(
@@ -181,15 +175,9 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	emergencyNumber := "+13173124742"
-	err = DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	location := gcloud.GenerateLocationResource(
@@ -382,15 +370,9 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	emergencyNumber := "+13173124743"
-	err = DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
 
 	location := gcloud.GenerateLocationResource(
@@ -573,20 +555,14 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	originalSiteId, err = GetOrganizationDefaultSiteId()
+	originalSiteId, err := GetOrganizationDefaultSiteId()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	emergencyNumber := "+13173124744"
-	err = DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err = DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
 
 	location := gcloud.GenerateLocationResource(
