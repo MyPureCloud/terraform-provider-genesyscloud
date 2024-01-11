@@ -438,11 +438,6 @@ var (
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"knowledge_base_uri": {
-				Description: "The knowledge base uri for support center.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
 			"router_type": {
 				Description: "Router type for support center.",
 				Type:        schema.TypeString,

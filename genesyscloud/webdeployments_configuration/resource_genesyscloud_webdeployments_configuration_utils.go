@@ -471,8 +471,9 @@ func flattenSupportCenterSettings(supportCenterSettings *platformclientv2.Suppor
 	}
 
 	return []interface{}{map[string]interface{}{
-		"enabled":            supportCenterSettings.Enabled,
-		"knowledgebase":      flattenKnowledgeBase(supportCenterSettings.KnowledgeBase),
+		"enabled":           supportCenterSettings.Enabled,
+		"knowledge_base_id": flattenKnowledgeBaseId(supportCenterSettings.KnowledgeBase),
+
 		"custom_messages":    flattenSupportCenterCustomMessage(supportCenterSettings.CustomMessages),
 		"enabled_categories": flattenSupportCenterCategory(supportCenterSettings.EnabledCategories),
 	}}
@@ -485,10 +486,16 @@ func flattenSupportCenterCategory(triggers *[]platformclientv2.Supportcentercate
 
 	result := make([]interface{}, len(*triggers))
 	for i, trigger := range *triggers {
+
+		imgSrc := ""
+		if trigger.Image != nil && trigger.Image.Source != nil && trigger.Image.Source.DefaultUrl != nil {
+			imgSrc = *trigger.Image.Source.DefaultUrl
+		}
+
 		result[i] = map[string]interface{}{
 			"enabled_categories_id": trigger.Id,
 			"self_uri":              trigger.SelfUri,
-			"image_source":          trigger.Image,
+			"image_source":          imgSrc,
 		}
 	}
 	return result
@@ -509,14 +516,12 @@ func flattenSupportCenterCustomMessage(triggers *[]platformclientv2.Supportcente
 	return result
 }
 
-func flattenKnowledgeBase(knowledgebase *platformclientv2.Addressableentityref) []interface{} {
+func flattenKnowledgeBaseId(knowledgebase *platformclientv2.Addressableentityref) string {
 	if knowledgebase == nil {
-		return nil
+		return ""
 	}
 
-	return []interface{}{map[string]interface{}{
-		"knowledgebase_id": knowledgebase.Id,
-	}}
+	return *knowledgebase.Id
 }
 
 func flattenSelectorEventTriggers(triggers *[]platformclientv2.Selectoreventtrigger) []interface{} {
