@@ -9,17 +9,12 @@ import (
 	"time"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
+	"terraform-provider-genesyscloud/genesyscloud/telephony"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
-)
-
-var (
-	// Used for testing the default site functionality. Track so it can be restored after test
-	originalSiteId string
 )
 
 func TestAccResourceSite(t *testing.T) {
@@ -586,7 +581,7 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Store the original default site so it can be restored later
+				// Store the original default site, so it can be restored later
 				PreConfig: func() {
 					originalSiteId, err = GetOrganizationDefaultSiteId()
 					if err != nil {
@@ -660,7 +655,7 @@ func testVerifySitesDestroyed(state *terraform.State) error {
 			continue
 		} else {
 			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+			return fmt.Errorf("unexpected error: %s", err)
 		}
 	}
 	// Success. All sites destroyed
