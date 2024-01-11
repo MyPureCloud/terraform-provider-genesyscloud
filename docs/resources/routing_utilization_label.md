@@ -2,20 +2,21 @@
 page_title: "genesyscloud_routing_utilization_label Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Routing Utilization Label
+  Genesys Cloud Routing Utilization Label. This resource is not yet widely available. Only use it if the feature is enabled.
 ---
 # genesyscloud_routing_utilization_label (Resource)
-Genesys Cloud Routing Utilization Label
+
+Genesys Cloud Routing Utilization Label. This resource is not yet widely available. Only use it if the feature is enabled.
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * These endpoints are not yet publicly available and are subject to change.
-* POST /api/v2/routing/utilization/labels
-* GET /api/v2/routing/utilization/labels
-* GET /api/v2/routing/utilization/labels/{id}
-* DELETE /api/v2/routing/utilization/labels/{id}
-* PUT /api/v2/routing/utilization/labels/{id}
+* [POST /api/v2/routing/utilization/labels](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
+* [GET /api/v2/routing/utilization/labels](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
+* [GET /api/v2/routing/utilization/labels/{id}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
+* [DELETE /api/v2/routing/utilization/labels/{id}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
+* [PUT /api/v2/routing/utilization/labels/{id}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
 
 ## Example Usage
 
@@ -35,3 +36,4 @@ resource "genesyscloud_routing_utilization_label" "red_label" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+

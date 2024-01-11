@@ -48,7 +48,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: ValidateTestLabelDestroyed,
+		CheckDestroy: validateTestLabelDestroyed,
 	})
 }
 
@@ -59,7 +59,7 @@ func GenerateRoutingUtilizationLabelResource(resourceID string, name string) str
 	`, resourceID, name)
 }
 
-func ValidateTestLabelDestroyed(state *terraform.State) error {
+func validateTestLabelDestroyed(state *terraform.State) error {
 	routingApi := platformclientv2.NewRoutingApi()
 
 	for _, rs := range state.RootModule().Resources {

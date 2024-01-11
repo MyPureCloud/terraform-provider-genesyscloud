@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -18,9 +19,10 @@ func dataSourceRoutingUtilizationLabel() *schema.Resource {
 		ReadContext: ReadWithPooledClient(dataSourceRoutingUtilizationLabelRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Label name.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  "Label name.",
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringDoesNotContainAny("*"),
+				Required:     true,
 			},
 		},
 	}
@@ -42,12 +44,8 @@ func dataSourceRoutingUtilizationLabelRead(ctx context.Context, d *schema.Resour
 			return retry.RetryableError(fmt.Errorf("No labels found with name %s", name))
 		}
 
-		if len(*labels.Entities) == 1 {
-			label := (*labels.Entities)[0]
-			d.SetId(*label.Id)
-			return nil
-		}
-
-		return retry.NonRetryableError(fmt.Errorf("%d labels found with name %s. The data source might be misconfigured", len(*labels.Entities), name))
+		label := (*labels.Entities)[0]
+		d.SetId(*label.Id)
+		return nil
 	})
 }

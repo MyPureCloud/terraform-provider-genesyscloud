@@ -29,7 +29,7 @@ func TestAccDataSourceRoutingUtilizationLabel(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: ValidateTestLabelDestroyed,
+		CheckDestroy: validateTestLabelDestroyed,
 	})
 }
 
