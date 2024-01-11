@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 // Returns the schema for the routing email domain
@@ -52,7 +52,6 @@ func DataSourceRoutingEmailDomainRead(ctx context.Context, d *schema.ResourceDat
 			// Once I get a result, cycle through until we find a name that matches
 			for _, domain := range *domains.Entities {
 				if domain.Id != nil && *domain.Id == name {
-
 					d.SetId(*domain.Id)
 					return nil
 				}

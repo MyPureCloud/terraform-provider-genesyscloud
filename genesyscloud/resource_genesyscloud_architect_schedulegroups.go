@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 func getAllArchitectScheduleGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -253,10 +253,18 @@ func deleteArchitectScheduleGroups(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	log.Printf("Deleting schedule %s", d.Id())
-	_, err := archAPI.DeleteArchitectSchedulegroup(d.Id())
-	if err != nil {
-		return diag.Errorf("Failed to delete schedule group %s: %s", d.Id(), err)
+	// DEVTOOLING-313: a schedule group linked to an IVR will not be able to be deleted until that IVR is deleted. Retryig here to make sure it is cleared properly.
+	log.Printf("Deleting schedule group %s", d.Id())
+	diagErr := RetryWhen(IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Deleting schedule group %s", d.Id())
+		resp, err := archAPI.DeleteArchitectSchedulegroup(d.Id())
+		if err != nil {
+			return resp, diag.Errorf("Failed to delete schedule group %s: %s", d.Id(), err)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

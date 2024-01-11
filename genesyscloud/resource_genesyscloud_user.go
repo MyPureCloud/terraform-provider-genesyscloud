@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -1243,7 +1243,7 @@ func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclie
 					}
 				}
 				// Update settings
-				_, _, err := usersAPI.PutRoutingUserUtilization(d.Id(), platformclientv2.Utilization{
+				_, _, err := usersAPI.PutRoutingUserUtilization(d.Id(), platformclientv2.Utilizationrequest{
 					Utilization: &sdkSettings,
 				})
 				if err != nil {

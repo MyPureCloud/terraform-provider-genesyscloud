@@ -2,28 +2,23 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"log"
-	"math/rand"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 	var (
 		emailDomainResourceId = "email_domain_test"
-		emailDomainId         = "terraform" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		emailDomainId         = fmt.Sprintf("terraform.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 		emailDataResourceId   = "email_domain_data"
 	)
 
-	_, err := AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
 	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{

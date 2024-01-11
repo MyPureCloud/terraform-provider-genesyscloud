@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 type PhoneConfig struct {
@@ -208,7 +208,7 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 
 	// If line_addresses is not provided, phone is not standalone
 	if !ok || len(lineStringList) == 0 {
-		lineName := "line_" + *lineBaseSettings.Id
+		lineName := "line_" + *lineBaseSettings.Id + d.Get("name").(string)
 		line := platformclientv2.Line{
 			Name:             &lineName,
 			LineBaseSettings: lineBaseSettings,

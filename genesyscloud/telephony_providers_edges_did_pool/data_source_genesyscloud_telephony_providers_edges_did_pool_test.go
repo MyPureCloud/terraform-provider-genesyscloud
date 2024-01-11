@@ -23,7 +23,7 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 			return
 		}
 		ctx := context.TODO()
-		_ = DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
+		_, _ = DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
 	}()
 
 	resource.Test(t, resource.TestCase{

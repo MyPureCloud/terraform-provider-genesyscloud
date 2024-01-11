@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueBasic(t *testing.T) {
@@ -113,7 +113,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					TrueValue, // enable_manual_assignment true
 					TrueValue, // enable_transcription true
 					GenerateMediaSettings("media_settings_call", alertTimeout2, FalseValue, slPercent2, slDuration2),
-					GenerateMediaSettings("media_settings_callback", alertTimeout2, FalseValue, slPercent2, slDuration2),
+					GenerateMediaSettings("media_settings_callback", alertTimeout2, TrueValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_chat", alertTimeout2, FalseValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_email", alertTimeout2, FalseValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_message", alertTimeout2, FalseValue, slPercent2, slDuration2),
@@ -136,7 +136,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "enable_transcription", TrueValue),
 					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
 					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout2, FalseValue, slPercent2, slDuration2),
-					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout2, FalseValue, slPercent2, slDuration2),
+					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout2, TrueValue, slPercent2, slDuration2),
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout2, FalseValue, slPercent2, slDuration2),
 					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout2, FalseValue, slPercent2, slDuration2),
 					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout2, FalseValue, slPercent2, slDuration2),
@@ -211,11 +211,11 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					NullValue,  // enable_transcription false
 					FalseValue, // suppress_in_queue_call_recording false
 					NullValue,  // enable_manual_assignment false
-					GenerateMediaSettings("media_settings_call", alertTimeout1, FalseValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_callback", alertTimeout1, FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_call", alertTimeout1, TrueValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, TrueValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, FalseValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_email", alertTimeout1, FalseValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_message", alertTimeout1, FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_email", alertTimeout1, TrueValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_message", alertTimeout1, TrueValue, slPercent1, slDuration1),
 					GenerateConditionalGroupRoutingRules(
 						NullValue,                              // queue_id (queue_id in the first rule should be omitted)
 						conditionalGroupRouting1Operator,       // operator
@@ -248,11 +248,11 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "conditional_group_routing_rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceId, "id"),
 
 					TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResource1),
-					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, FalseValue, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, FalseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_call", alertTimeout1, TrueValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_callback", alertTimeout1, TrueValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResource1, "media_settings_chat", alertTimeout1, FalseValue, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, FalseValue, slPercent1, slDuration1),
-					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, FalseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_email", alertTimeout1, TrueValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResource1, "media_settings_message", alertTimeout1, TrueValue, slPercent1, slDuration1),
 				),
 			},
 			{
