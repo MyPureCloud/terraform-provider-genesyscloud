@@ -154,7 +154,6 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled", "true"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_uri", "/api/v2/knowledge/knowledgebases/dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.default_value", "Welcome to Knowledge Portal"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.type", "Welcome"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", "hash"),
@@ -258,7 +257,6 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.enabled", "true"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_id", "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
-					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.knowledge_base_uri", "/api/v2/knowledge/knowledgebases/dfffc742-3ba4-4363-b8e6-fbc1bea1f643"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.default_value", "Welcome to Knowledge Portal"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.custom_messages.0.type", "Welcome"),
 					resource.TestCheckResourceAttr(fullResourceName, "support_center.0.router_type", "hash"),
@@ -397,7 +395,6 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 		support_center {
 			enabled = true
 			knowledge_base_id = "dfffc742-3ba4-4363-b8e6-fbc1bea1f643"
-			knowledge_base_uri = "/api/v2/knowledge/knowledgebases/dfffc742-3ba4-4363-b8e6-fbc1bea1f643"
 			custom_messages {
 				default_value = "Welcome to Knowledge Portal"
 				type ="Welcome"

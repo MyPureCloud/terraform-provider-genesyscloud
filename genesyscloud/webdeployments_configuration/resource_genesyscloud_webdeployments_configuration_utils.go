@@ -471,9 +471,8 @@ func flattenSupportCenterSettings(supportCenterSettings *platformclientv2.Suppor
 	}
 
 	return []interface{}{map[string]interface{}{
-		"enabled":           supportCenterSettings.Enabled,
-		"knowledge_base_id": flattenKnowledgeBaseId(supportCenterSettings.KnowledgeBase),
-
+		"enabled":            supportCenterSettings.Enabled,
+		"knowledge_base_id":  flattenKnowledgeBaseId(supportCenterSettings.KnowledgeBase),
 		"custom_messages":    flattenSupportCenterCustomMessage(supportCenterSettings.CustomMessages),
 		"enabled_categories": flattenSupportCenterCategory(supportCenterSettings.EnabledCategories),
 	}}
@@ -702,12 +701,6 @@ func readSupportCenterSettings(d *schema.ResourceData) *platformclientv2.Support
 	if id, ok := cfg["knowledge_base_id"].(string); ok {
 		supportCenterSettings.KnowledgeBase = &platformclientv2.Addressableentityref{
 			Id: &id,
-		}
-	}
-
-	if selfuri, ok := cfg["knowledge_base_uri"].(string); ok {
-		supportCenterSettings.KnowledgeBase = &platformclientv2.Addressableentityref{
-			SelfUri: &selfuri,
 		}
 	}
 
