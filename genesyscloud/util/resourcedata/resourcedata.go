@@ -190,6 +190,19 @@ func GetNillableTime(d *schema.ResourceData, key string) *time.Time {
 	return nil
 }
 
+func GetNillableTimeCustomFormat(d *schema.ResourceData, key string, parseFormat string) *time.Time {
+	stringValue := GetNillableValue[string](d, key)
+	if stringValue != nil {
+		timeValue, err := time.Parse(parseFormat, *stringValue)
+		if err != nil {
+			log.Printf("GetNillableTime failed for %s. Required format: %s", *stringValue, parseFormat)
+			return nil
+		}
+		return &timeValue
+	}
+	return nil
+}
+
 func BuildSdkListFirstElement[T interface{}](d *schema.ResourceData, key string, elementBuilder func(map[string]interface{}) *T, nilForEmpty bool) *T {
 	list := d.Get(key).(*schema.Set).List()
 	if len(list) > 0 {
