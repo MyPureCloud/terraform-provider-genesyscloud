@@ -26,7 +26,7 @@ The resource_genesyscloud_task_management_workitem.go contains all of the method
 
 // getAllAuthTaskManagementWorkitem retrieves all of the task management workitem via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthTaskManagementWorkitems(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newTaskManagementWorkitemProxy(clientConfig)
+	proxy := getTaskManagementWorkitemProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	workitems, err := proxy.getAllTaskManagementWorkitem(ctx)
