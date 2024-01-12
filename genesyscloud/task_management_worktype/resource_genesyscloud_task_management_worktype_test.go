@@ -93,7 +93,7 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 			{
 				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
-					generateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, ""),
+					GenerateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, ""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resID, "name", wtRes.name),
 					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resID, "description", wtRes.description),
@@ -233,7 +233,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 			{
 				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
-					generateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, generateWorktypeAllStatuses(wtRes)),
+					GenerateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, generateWorktypeAllStatuses(wtRes)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resID, "name", wtRes.name),
 					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resID, "description", wtRes.description),
@@ -257,7 +257,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 			{
 				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
-					generateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, generateWorktypeAllStatuses(statusUpdates)),
+					GenerateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, generateWorktypeAllStatuses(statusUpdates)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resID, "name", wtRes.name),
 					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resID, "description", wtRes.description),
@@ -296,7 +296,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 			{
 				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, gcloud.NullValue) +
 					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
-					generateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, generateWorktypeAllStatuses(statusUpdates2)),
+					GenerateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, generateWorktypeAllStatuses(statusUpdates2)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resID, "name", wtRes.name),
 					resource.TestCheckResourceAttr(resourceName+"."+wtRes.resID, "description", wtRes.description),
@@ -341,17 +341,6 @@ func testVerifyTaskManagementWorktypeDestroyed(state *terraform.State) error {
 	}
 	// Success. All worktypes destroyed
 	return nil
-}
-
-func generateWorktypeResourceBasic(resId, name, description, workbinResourceId, schemaResourceId, attrs string) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
-		name = "%s"
-		description = "%s"
-		default_workbin_id = %s
-		schema_id = %s
-		%s
-	}
-	`, resourceName, resId, name, description, workbinResourceId, schemaResourceId, attrs)
 }
 
 func generateWorktypeResource(wt worktypeConfig) string {
