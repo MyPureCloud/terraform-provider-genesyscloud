@@ -33,11 +33,6 @@ func TestAccDataSourceStation(t *testing.T) {
 		stationDataRes = "station1234"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	defaultSiteId, err := edgeSite.GetOrganizationDefaultSiteId()
 	if err != nil {
 		t.Fatal(err)

@@ -50,12 +50,14 @@ import (
 func initTestResources() {
 	resourceExporters = make(map[string]*resourceExporter.ResourceExporter)
 	providerResources = make(map[string]*schema.Resource)
+	providerDataSources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
 	// register exporters first and then resources. Since there is a dependency of exporters on Resources
 	regInstance.registerTestExporters()
 	regInstance.registerTestResources()
+	regInstance.registerTestDataSources()
 }
 
 type registerTestInstance struct {
@@ -241,6 +243,10 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_task_management_worktype", worktype.TaskManagementWorktypeExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
+}
+
+func (r *registerTestInstance) registerTestDataSources() {
+	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 
 func RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {

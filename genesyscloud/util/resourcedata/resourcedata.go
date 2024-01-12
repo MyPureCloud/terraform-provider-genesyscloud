@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 const (
@@ -183,6 +183,19 @@ func GetNillableTime(d *schema.ResourceData, key string) *time.Time {
 		timeValue, err := time.Parse(TimeParseFormat, *stringValue)
 		if err != nil {
 			log.Printf("GetNillableTime failed for %s. Required format: %s", *stringValue, TimeParseFormat)
+			return nil
+		}
+		return &timeValue
+	}
+	return nil
+}
+
+func GetNillableTimeCustomFormat(d *schema.ResourceData, key string, parseFormat string) *time.Time {
+	stringValue := GetNillableValue[string](d, key)
+	if stringValue != nil {
+		timeValue, err := time.Parse(parseFormat, *stringValue)
+		if err != nil {
+			log.Printf("GetNillableTime failed for %s. Required format: %s", *stringValue, parseFormat)
 			return nil
 		}
 		return &timeValue

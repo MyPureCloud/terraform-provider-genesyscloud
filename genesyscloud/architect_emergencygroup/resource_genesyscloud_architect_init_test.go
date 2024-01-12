@@ -3,6 +3,7 @@ package architect_emergencygroup
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	"testing"
 )
@@ -21,12 +22,14 @@ type registerTestInstance struct {
 // registerTestResources registers all resources used in the tests
 func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_ivr"] = architect_ivr.ResourceArchitectIvrConfig()
+	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
 	providerResources["genesyscloud_architect_emergencygroup"] = ResourceArchitectEmergencyGroup()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
-	providerResources["genesyscloud_architect_ivr"] = architect_ivr.DataSourceArchitectIvr()
+	providerDataSources["genesyscloud_architect_ivr"] = architect_ivr.DataSourceArchitectIvr()
+	providerDataSources["genesyscloud_flow"] = gcloud.DataSourceFlow()
 	providerDataSources["genesyscloud_architect_emergencygroup"] = DataSourceArchitectEmergencyGroup()
 }
 

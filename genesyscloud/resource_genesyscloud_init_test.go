@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 var (
@@ -26,7 +26,6 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_routing_queue"] = ResourceRoutingQueue()
 	providerResources["genesyscloud_flow"] = ResourceFlow()
 	providerResources["genesyscloud_location"] = ResourceLocation()
@@ -40,7 +39,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_group"] = ResourceGroup()
 	providerResources["genesyscloud_group_roles"] = ResourceGroupRoles()
 	providerResources["genesyscloud_idp_adfs"] = ResourceIdpAdfs()
-	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()
 	providerResources["genesyscloud_idp_okta"] = ResourceIdpOkta()
@@ -72,6 +70,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_skill_group"] = ResourceRoutingSkillGroup()
 	providerResources["genesyscloud_routing_settings"] = ResourceRoutingSettings()
 	providerResources["genesyscloud_routing_utilization"] = ResourceRoutingUtilization()
+	providerResources["genesyscloud_routing_utilization_label"] = ResourceRoutingUtilizationLabel()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_user"] = ResourceUser()
 	providerResources["genesyscloud_user_roles"] = ResourceUserRoles()
@@ -117,6 +116,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_routing_skill"] = dataSourceRoutingSkill()
 	providerDataSources["genesyscloud_routing_skill_group"] = dataSourceRoutingSkillGroup()
 	providerDataSources["genesyscloud_routing_email_domain"] = DataSourceRoutingEmailDomain()
+	providerDataSources["genesyscloud_routing_utilization_label"] = dataSourceRoutingUtilizationLabel()
 	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
 	providerDataSources["genesyscloud_user"] = DataSourceUser()
 	providerDataSources["genesyscloud_widget_deployment"] = dataSourceWidgetDeployments()

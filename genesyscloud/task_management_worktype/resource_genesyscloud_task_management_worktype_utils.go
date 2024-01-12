@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 /*
@@ -421,4 +421,16 @@ func (wt *worktypeConfig) getStatusIdFromName(name string) *string {
 	}
 
 	return nil
+}
+
+// GenerateWorktypeResourceBasic generates a terraform config string for a basic worktype
+func GenerateWorktypeResourceBasic(resId, name, description, workbinResourceId, schemaResourceId, attrs string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		name = "%s"
+		description = "%s"
+		default_workbin_id = %s
+		schema_id = %s
+		%s
+	}
+	`, resourceName, resId, name, description, workbinResourceId, schemaResourceId, attrs)
 }

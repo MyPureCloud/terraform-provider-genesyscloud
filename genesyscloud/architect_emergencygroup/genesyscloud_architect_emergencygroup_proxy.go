@@ -3,7 +3,7 @@ package architect_emergencygroup
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 var internalProxy *architectEmergencyGroupProxy
@@ -52,7 +52,7 @@ func (p *architectEmergencyGroupProxy) getAllArchitectEmergencyGroups(ctx contex
 	return p.getAllArchitectEmergencyGroupAttr(ctx, p)
 }
 
-func (p *architectEmergencyGroupProxy) getAllArchitectEmergencyGroup(ctx context.Context, emergencyGroupId string) (*platformclientv2.Emergencygroup, *platformclientv2.APIResponse, error) {
+func (p *architectEmergencyGroupProxy) getArchitectEmergencyGroup(ctx context.Context, emergencyGroupId string) (*platformclientv2.Emergencygroup, *platformclientv2.APIResponse, error) {
 	return p.getArchitectEmergencyGroupAttr(ctx, p, emergencyGroupId)
 }
 
@@ -79,6 +79,10 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 
 	emergencyGroupConfigs, resp, getErr := p.architectApi.GetArchitectEmergencygroups(1, pageSize, "", "", "")
 
+	if getErr != nil {
+		return nil, resp, fmt.Errorf("Failed to get page of emergency group configs: %v", getErr)
+	}
+
 	if emergencyGroupConfigs.Entities == nil || len(*emergencyGroupConfigs.Entities) == 0 {
 		return &totalRecords, nil, nil
 	}
@@ -88,6 +92,8 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 	}
 
 	for pageNum := 2; pageNum <= *emergencyGroupConfigs.PageCount; pageNum++ {
+		emergencyGroupConfigs, resp, getErr := p.architectApi.GetArchitectEmergencygroups(pageNum, pageSize, "", "", "")
+
 		if getErr != nil {
 			return nil, resp, fmt.Errorf("Failed to get page of emergency group configs: %v", getErr)
 		}
@@ -96,6 +102,9 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 			break
 		}
 
+		for _, emergencyGroup := range *emergencyGroupConfigs.Entities {
+			totalRecords = append(totalRecords, emergencyGroup)
+		}
 	}
 
 	return &totalRecords, nil, nil

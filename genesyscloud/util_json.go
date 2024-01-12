@@ -108,3 +108,11 @@ func JsonStringToInterface(jsonStr string) (interface{}, error) {
 	}
 	return obj, nil
 }
+
+func MapToJson(m *map[string]interface{}) (string, error) {
+	j, err := json.Marshal(*m)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal %v: %v", *m, err)
+	}
+	return string(j), nil
+}

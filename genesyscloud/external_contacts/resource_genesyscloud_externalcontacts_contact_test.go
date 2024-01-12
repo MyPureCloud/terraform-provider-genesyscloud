@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 /*
@@ -61,7 +61,7 @@ func TestAccResourceExternalContacts(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateBasicExternalContactResource(
+				Config: GenerateBasicExternalContactResource(
 					contactresource1,
 					title1,
 				),
@@ -160,12 +160,6 @@ func TestAccResourceExternalContacts(t *testing.T) {
 		},
 		CheckDestroy: testVerifyContactDestroyed,
 	})
-}
-
-func generateBasicExternalContactResource(resourceID string, title string) string {
-	return fmt.Sprintf(`resource "genesyscloud_externalcontacts_contact" "%s" {
-		title = "%s"
-	}`, resourceID, title)
 }
 
 func generateFullExternalContactResource(

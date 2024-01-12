@@ -3,12 +3,6 @@ package tfexporter
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mohae/deepcopy"
 	"hash/fnv"
 	"log"
 	"os"
@@ -25,7 +19,14 @@ import (
 	stringmap "terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/google/uuid"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mohae/deepcopy"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 /*
@@ -164,8 +165,8 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 		return diagErr
 	}
 
-	// Step #4 Convert the Genesys Cloud resources to neutral format (e.g. map of maps)
-	diagErr = g.buildAndExportDependsOnResources()
+	// Step #4 export dependent resources for the flows
+	diagErr = g.buildAndExportDependsOnResourcesForFlows()
 	if diagErr != nil {
 		return diagErr
 	}
@@ -176,7 +177,13 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 		return diagErr
 	}
 
-	// Step #6 Write the terraform state file along with either the HCL or JSON
+	// Step #6 export dependents for other resources
+	diagErr = g.buildAndExportDependentResources()
+	if diagErr != nil {
+		return diagErr
+	}
+
+	// Step #7 Write the terraform state file along with either the HCL or JSON
 	diagErr = g.generateOutputFiles()
 	if diagErr != nil {
 		return diagErr
@@ -415,7 +422,7 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResources() diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResourcesForFlows() diag.Diagnostics {
 
 	if g.addDependsOn {
 		filterList, resources, err := g.processAndBuildDependencies()
@@ -492,16 +499,10 @@ func (g *GenesysCloudResourceExporter) rebuildExports(filterList []string) (diag
 }
 
 func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []string, resources resourceExporter.ResourceIDMetaMap) (diagErr diag.Diagnostics) {
-	g.resourceTypeFilter = IncludeFilterByResourceType
-	g.resourceFilter = FilterResourceByName
+	g.reAssignFilters()
 	g.filterList = &filterList
-	existingExportersInterface := deepcopy.Copy(*g.exporters)
-	existingExporters, _ := existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
-
-	existingResources := g.resources
-	g.resources = nil
-	uniqueResources := make([]resourceExporter.ResourceInfo, 0)
-	removeChan := make([]string, 0)
+	existingExporters := g.copyExporters()
+	existingResources := g.copyResources()
 
 	err := g.rebuildExports(filterList)
 	if err != nil {
@@ -509,6 +510,59 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	}
 
 	// retain the exporters and resources
+	g.retainExporterList(resources)
+	uniqueResources := g.attainUniqueResourceList(resources)
+
+	// deep copy is needed here else exporters being overridden
+	depExporters := g.copyExporters()
+
+	// this is done before the merge of exporters and this will make sure only dependency resources are resolved
+	g.buildResourceConfigMap()
+	g.exportAndResolveDependencyAttributes()
+
+	g.resources = append(existingResources, append(uniqueResources, g.resources...)...)
+	g.exporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.exporters))
+
+	return nil
+}
+
+func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagErr diag.Diagnostics) {
+	if g.addDependsOn {
+		g.reAssignFilters()
+		existingExporters := g.copyExporters()
+		existingResources := g.copyResources()
+
+		// this will make sure all the dependency resources are resolved
+		g.exportAndResolveDependencyAttributes()
+
+		// merge the resources and exporters after the dependencies are resolved
+		g.resources = append(existingResources, g.resources...)
+		g.exporters = mergeExporters(existingExporters, *g.exporters)
+
+		// rebuild the config map
+		diagErr = g.buildResourceConfigMap()
+		if diagErr != nil {
+			return diagErr
+		}
+	}
+	return nil
+}
+
+func (g *GenesysCloudResourceExporter) copyExporters() map[string]*resourceExporter.ResourceExporter {
+	// deep copy is needed here else exporters are being overridden
+	existingExportersInterface := deepcopy.Copy(*g.exporters)
+	existingExporters, _ := existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
+	return existingExporters
+}
+
+func (g *GenesysCloudResourceExporter) copyResources() []resourceExporter.ResourceInfo {
+	existingResources := g.resources
+	g.resources = nil
+	return existingResources
+}
+
+func (g *GenesysCloudResourceExporter) retainExporterList(resources resourceExporter.ResourceIDMetaMap) diag.Diagnostics {
+	removeChan := make([]string, 0)
 	for _, exporter := range *g.exporters {
 		for id, _ := range exporter.SanitizedResourceMap {
 			_, exists := resources[id]
@@ -521,49 +575,47 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 			delete(exporter.SanitizedResourceMap, removeId)
 		}
 	}
+	return nil
+}
 
+func (g *GenesysCloudResourceExporter) reAssignFilters() {
+	g.resourceTypeFilter = IncludeFilterByResourceType
+	g.resourceFilter = FilterResourceByName
+}
+
+func (g *GenesysCloudResourceExporter) attainUniqueResourceList(resources resourceExporter.ResourceIDMetaMap) []resourceExporter.ResourceInfo {
+	uniqueResources := make([]resourceExporter.ResourceInfo, 0)
 	for _, resource := range g.resources {
 		_, exists := resources[resource.State.ID]
 		if exists {
 			uniqueResources = append(uniqueResources, resource)
 		}
 	}
-	// deep copy is needed here else exporters being overridden
-	depExportersInterface := deepcopy.Copy(*g.exporters)
-	depExporters, _ := depExportersInterface.(map[string]*resourceExporter.ResourceExporter)
-
-	// this is done before the merge of exporters and this will make sure only dependency resources are resolved
-	g.buildResourceConfigMap()
-	g.exportAndResolveDependencyAttributes()
-
-	g.resources = append(existingResources, append(uniqueResources, g.resources...)...)
-	g.exporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.exporters))
-
-	return nil
+	return uniqueResources
 }
 
 func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (diagErr diag.Diagnostics) {
+	if g.addDependsOn {
+		g.resources = nil
+		exp := make(map[string]*resourceExporter.ResourceExporter, 0)
+		filterListById := make([]string, 0)
 
-	g.resources = nil
-	exp := make(map[string]*resourceExporter.ResourceExporter, 0)
-	filterListById := make([]string, 0)
-
-	// build filter list with guid.
-	for refType, guidList := range g.buildSecondDeps {
-		if refType != "" {
-			for _, guid := range guidList {
-				if guid != "" {
-					filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
+		// build filter list with guid.
+		for refType, guidList := range g.buildSecondDeps {
+			if refType != "" {
+				for _, guid := range guidList {
+					if guid != "" {
+						filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
+					}
 				}
 			}
 		}
-	}
 
-	if len(filterListById) > 0 {
-		g.resourceFilter = FilterResourceById
-		g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp)
+		if len(filterListById) > 0 {
+			g.resourceFilter = FilterResourceById
+			g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp)
+		}
 	}
-
 	return nil
 }
 
@@ -591,9 +643,16 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		if err != nil {
 			return err
 		}
+		// checks and exports if there are any dependent flow resources
+		err = g.buildAndExportDependsOnResourcesForFlows()
+		if err != nil {
+			return err
+		}
 
-		g.buildResourceConfigMap()
-
+		err = g.buildResourceConfigMap()
+		if err != nil {
+			return err
+		}
 		//append the resources and exporters
 		g.resources = append(existingResources, g.resources...)
 		g.exporters = mergeExporters(existingExporters, *g.exporters)

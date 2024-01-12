@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
@@ -41,17 +41,19 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 		t.Skip("Skipping because IVR does not exists in the target org.")
 	}
 
+	flowResourceConfig := genesyscloud.GenerateFlowResource(
+		flowResource,
+		flowFilePath,
+		inboundCallConfig,
+		false,
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
 		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: genesyscloud.GenerateFlowResource(
-					flowResource,
-					flowFilePath,
-					inboundCallConfig,
-					false,
-				) + GenerateArchitectEmergencyGroupResource(
+				Config: flowResourceConfig + GenerateArchitectEmergencyGroupResource(
 					resourceName,
 					name,
 					genesyscloud.NullValue,

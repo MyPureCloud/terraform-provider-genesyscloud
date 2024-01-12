@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -110,7 +110,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 			DefaultLanguage: &platformclientv2.Languagereference{
 				Id: &wt.defaultLanguageId,
 			},
-			DefaultQueue: &platformclientv2.Queuereference{
+			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
 			AssignmentEnabled: &wt.assignmentEnabled,
@@ -532,7 +532,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 			DefaultLanguage: &platformclientv2.Languagereference{
 				Id: &wt.defaultLanguageId,
 			},
-			DefaultQueue: &platformclientv2.Queuereference{
+			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
 			AssignmentEnabled: &wt.assignmentEnabled,

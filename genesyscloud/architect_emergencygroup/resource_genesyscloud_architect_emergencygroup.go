@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 func getAllEmergencyGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -78,7 +78,7 @@ func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interf
 
 	log.Printf("Reading emergency group %s", d.Id())
 	return genesyscloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		emergencyGroup, resp, getErr := ap.getAllArchitectEmergencyGroup(ctx, d.Id())
+		emergencyGroup, resp, getErr := ap.getArchitectEmergencyGroup(ctx, d.Id())
 		if getErr != nil {
 			if genesyscloud.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr))
@@ -130,7 +130,7 @@ func updateEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 
 	diagErr := genesyscloud.RetryWhen(genesyscloud.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current emergency group version
-		emergencyGroup, resp, getErr := ap.getAllArchitectEmergencyGroup(ctx, d.Id())
+		emergencyGroup, resp, getErr := ap.getArchitectEmergencyGroup(ctx, d.Id())
 		if getErr != nil {
 			return resp, diag.Errorf("Failed to read emergency group %s: %s", d.Id(), getErr)
 		}
@@ -172,7 +172,7 @@ func deleteEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("Failed to delete emergency group %s: %s", d.Id(), err)
 	}
 	return genesyscloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		emergencyGroup, resp, err := ap.getAllArchitectEmergencyGroup(ctx, d.Id())
+		emergencyGroup, resp, err := ap.getArchitectEmergencyGroup(ctx, d.Id())
 		if err != nil {
 			if genesyscloud.IsStatus404(resp) {
 				// group deleted

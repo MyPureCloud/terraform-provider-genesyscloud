@@ -14,8 +14,7 @@ Data source for Genesys Cloud Email Domains. Select an email domain by name
 
 ```terraform
 data "genesyscloud_routing_email_domain" "email_domain" {
-  name      = "example.emaildomain.com"
-  subdomain = false
+  name = "example.emaildomain.com"
 }
 ```
 

@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 func TestAccResourcePhoneBasic(t *testing.T) {
@@ -62,11 +62,6 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		"",               // No profile skills
 		"",               // No certs
 	)
-
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	siteId, err := edgeSite.GetOrganizationDefaultSiteId()
 	if err != nil {
@@ -181,17 +176,13 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	t.Parallel()
 	number := "+14175538114"
-	platformConfig, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
 	// TODO: Use did pool resource inside config once cyclic dependency issue is resolved between genesyscloud and did_pools package
-	didPoolId, err := createDidPoolForEdgesPhoneTest(platformConfig, number)
+	didPoolId, err := createDidPoolForEdgesPhoneTest(sdkConfig, number)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		if err := deleteDidPool(platformConfig, didPoolId); err != nil {
+		if err := deleteDidPool(sdkConfig, didPoolId); err != nil {
 			t.Logf("failed to delete did pool '%s': %v", didPoolId, err)
 		}
 	}()
@@ -206,8 +197,8 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 	locationRes := "test-location"
 
 	emergencyNumber := "+13173114121"
-	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber); err != nil {
-		t.Log(err)
+	if err = edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	locationConfig := gcloud.GenerateLocationResource(

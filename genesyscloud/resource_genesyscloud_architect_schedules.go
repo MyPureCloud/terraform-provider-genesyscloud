@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 func getAllArchitectSchedules(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -84,13 +84,13 @@ func ResourceArchitectSchedules() *schema.Resource {
 				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validateLocalDateTimes,
+				ValidateDiagFunc: ValidateLocalDateTimes,
 			},
 			"end": {
 				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validateLocalDateTimes,
+				ValidateDiagFunc: ValidateLocalDateTimes,
 			},
 			"rrule": {
 				Description: "An iCal Recurrence Rule (RRULE) string.",
@@ -263,10 +263,18 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
+	// DEVTOOLING-311: a schedule linked to a schedule group will not be able to be deleted until that schedule group is deleted. Retryig here to make sure it is cleared properly.
 	log.Printf("Deleting schedule %s", d.Id())
-	_, err := archAPI.DeleteArchitectSchedule(d.Id())
-	if err != nil {
-		return diag.Errorf("Failed to delete schedule %s: %s", d.Id(), err)
+	diagErr := RetryWhen(IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Deleting schedule %s", d.Id())
+		resp, err := archAPI.DeleteArchitectSchedule(d.Id())
+		if err != nil {
+			return resp, diag.Errorf("Failed to delete schedule %s: %s", d.Id(), err)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

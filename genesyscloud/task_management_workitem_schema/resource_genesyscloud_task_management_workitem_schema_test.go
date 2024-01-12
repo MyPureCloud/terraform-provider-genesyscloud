@@ -14,7 +14,7 @@ import (
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 /*
@@ -197,7 +197,7 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 			},
 			// Update with fields
 			{
-				Config: generateWorkitemSchemaResource(
+				Config: GenerateWorkitemSchemaResource(
 					schemaResId,
 					schemaName,
 					schemaDescription,
@@ -223,7 +223,7 @@ func TestAccResourceTaskManagementWorkitemSchema(t *testing.T) {
 			},
 			// Disable the schema
 			{
-				Config: generateWorkitemSchemaResource(
+				Config: GenerateWorkitemSchemaResource(
 					schemaResId,
 					schemaName,
 					schemaDescription,
@@ -385,14 +385,4 @@ func generateAdditionalProperties(props map[string]interface{}) string {
 		ret += "\n"
 	}
 	return ret
-}
-
-func generateWorkitemSchemaResource(resourceId, name, description, properties, enabledStr string) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
-		name = "%s"
-		description = "%s"
-		properties = %s
-		enabled = %s
-	}
-	`, resourceName, resourceId, name, description, properties, enabledStr)
 }
