@@ -500,6 +500,34 @@ func flattenSupportCenterCategory(triggers *[]platformclientv2.Supportcentercate
 	return result
 }
 
+// func flattenSupportCenterScreens(supportcentermodulesetting *[]platformclientv2.Supportcentermodulesetting) []interface{} {
+// 	if supportcentermodulesetting == nil {
+// 		return nil
+// 	}
+
+// 	return []interface{}{map[string]interface{}{
+// 		"enabled":            supportcentermodulesetting.Enabled,
+// 		"module_settings_compact_category_module_template":  supportcentermodulesetting.Supportcentercompactcategorymoduletemplate   ,
+// 		"DetailedCategoryModuleTemplate ":    flattenSupportCenterCustomMessage(supportCenterSettings.Supportcenterdetailedcategorymoduletemplate ),
+// 	}}
+// }
+
+func flattenSupportCenterScreens(supportcentermodulesettings *[]platformclientv2.Supportcentermodulesetting) []interface{} {
+	if supportcentermodulesettings == nil {
+		return nil
+	}
+
+	var flattened []interface{}
+	for _, supportcentermodulesetting := range *supportcentermodulesettings {
+		flattened = append(flattened, map[string]interface{}{
+			"enabled": *supportcentermodulesetting.Enabled,
+			"module_settings_compact_category_module_template":  *supportcentermodulesetting.CompactCategoryModuleTemplate,
+			"module_settings_detailed_category_module_template": *supportcentermodulesetting.DetailedCategoryModuleTemplate,
+		})
+	}
+	return flattened
+}
+
 func flattenSupportCenterCustomMessage(triggers *[]platformclientv2.Supportcentercustommessage) []interface{} {
 	if triggers == nil || len(*triggers) < 1 {
 		return nil
