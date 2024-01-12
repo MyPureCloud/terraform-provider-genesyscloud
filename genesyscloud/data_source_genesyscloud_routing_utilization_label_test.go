@@ -28,6 +28,7 @@ func TestAccDataSourceRoutingUtilizationLabel(t *testing.T) {
 				Config: GenerateRoutingUtilizationLabelResource(
 					resourceName,
 					labelName,
+					"",
 				) + generateRoutingUtilizationLabelDataSource(dataSourceName, labelName, "genesyscloud_routing_utilization_label."+resourceName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_utilization_label."+dataSourceName, "id", "genesyscloud_routing_utilization_label."+resourceName, "id"),

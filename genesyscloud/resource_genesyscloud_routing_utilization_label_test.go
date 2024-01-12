@@ -31,6 +31,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 				Config: GenerateRoutingUtilizationLabelResource(
 					resourceName,
 					labelName,
+					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization_label."+resourceName, "name", labelName),
@@ -41,6 +42,7 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 				Config: GenerateRoutingUtilizationLabelResource(
 					resourceName,
 					updatedLabelName,
+					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_utilization_label."+resourceName, "name", updatedLabelName),
@@ -57,11 +59,18 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 	})
 }
 
-func GenerateRoutingUtilizationLabelResource(resourceID string, name string) string {
+func GenerateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
+	dependsOn := ""
+
+	if dependsOnResource != "" {
+		dependsOn = fmt.Sprintf("depends_on=[genesyscloud_routing_utilization_label.%s]", dependsOnResource)
+	}
+
 	return fmt.Sprintf(`resource "genesyscloud_routing_utilization_label" "%s" {
 		name = "%s"
+		%s
 	}
-	`, resourceID, name)
+	`, resourceID, name, dependsOn)
 }
 
 func validateTestLabelDestroyed(state *terraform.State) error {

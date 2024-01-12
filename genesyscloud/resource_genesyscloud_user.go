@@ -1043,7 +1043,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclient
 			allSettings := map[string]interface{}{}
 			for sdkType, schemaType := range utilizationMediaTypes {
 				if mediaSettings, ok := (*settings.Utilization)[sdkType]; ok {
-					allSettings[schemaType] = flattenUtilizationSetting(mediaSettings)
+					allSettings[schemaType] = flattenUtilizationMediaSetting(mediaSettings)
 				}
 			}
 			d.Set("routing_utilization", []interface{}{allSettings})
@@ -1349,6 +1349,20 @@ func GenerateUserResource(
 		certifications = [%s]
 	}
 	`, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
+}
+
+func flattenUtilizationMediaSetting(settings platformclientv2.Mediautilization) []interface{} {
+	settingsMap := make(map[string]interface{})
+	if settings.MaximumCapacity != nil {
+		settingsMap["maximum_capacity"] = *settings.MaximumCapacity
+	}
+	if settings.InterruptableMediaTypes != nil {
+		settingsMap["interruptible_media_types"] = lists.StringListToSet(*settings.InterruptableMediaTypes)
+	}
+	if settings.IncludeNonAcd != nil {
+		settingsMap["include_non_acd"] = *settings.IncludeNonAcd
+	}
+	return []interface{}{settingsMap}
 }
 
 func GenerateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
