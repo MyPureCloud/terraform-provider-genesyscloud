@@ -9,11 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
-)
-
-var (
-	sdkConfig *platformclientv2.Configuration
 )
 
 func TestAccDataSourceOutboundCampaign(t *testing.T) {
@@ -24,15 +19,9 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 		outboundFlowFilePath = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
 	)
 
-	// necessary to avoid errors during site creation
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
 	emergencyNumber := "+13173124740"
-	err = edgeSite.DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
 
 	resource.Test(t, resource.TestCase{

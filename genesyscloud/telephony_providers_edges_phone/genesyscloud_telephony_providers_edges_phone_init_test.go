@@ -1,13 +1,14 @@
 package telephony_providers_edges_phone
 
 import (
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"log"
 	"sync"
-	"testing"
-
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -19,11 +20,16 @@ import (
    Please make sure you register ALL resources and data sources your test cases will use.
 */
 
-// providerDataSources holds a map of all registered sites
-var providerDataSources map[string]*schema.Resource
+var (
+	// providerDataSources holds a map of all registered sites
+	providerDataSources map[string]*schema.Resource
 
-// providerResources holds a map of all registered sites
-var providerResources map[string]*schema.Resource
+	// providerResources holds a map of all registered sites
+	providerResources map[string]*schema.Resource
+
+	sdkConfig *platformclientv2.Configuration
+	authErr   error
+)
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
@@ -54,6 +60,10 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
+	sdkConfig, authErr = gcloud.AuthorizeSdk()
+	if authErr != nil {
+		log.Fatalf("failed to authorize sdk for the package telephony_providers_edges_phone: %v", authErr)
+	}
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 

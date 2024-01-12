@@ -538,10 +538,9 @@ func GenerateSiteResourceWithCustomAttrs(
 	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
 }
 
-// DeleteLocationWithNumber is a test utiliy function to delete site and location with the provided emergency number
-func DeleteLocationWithNumber(emergencyNumber string) error {
-	sdkConfig := platformclientv2.GetDefaultConfiguration()
-	locationsAPI := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
+// DeleteLocationWithNumber is a test utility function to delete site and location with the provided emergency number
+func DeleteLocationWithNumber(emergencyNumber string, config *platformclientv2.Configuration) error {
+	locationsAPI := platformclientv2.NewLocationsApiWithConfig(config)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
@@ -556,6 +555,9 @@ func DeleteLocationWithNumber(emergencyNumber string) error {
 
 		for _, location := range *locations.Entities {
 			if location.EmergencyNumber != nil {
+				if location.EmergencyNumber.E164 == nil {
+					continue
+				}
 				if strings.Contains(*location.EmergencyNumber.E164, emergencyNumber) {
 					err := deleteSiteWithLocationId(*location.Id)
 					if err != nil {
@@ -575,7 +577,6 @@ func DeleteLocationWithNumber(emergencyNumber string) error {
 // deleteSiteWithLocationId is a test utility function that will
 // delete a site with the provided location id
 func deleteSiteWithLocationId(locationId string) error {
-	sdkConfig := platformclientv2.GetDefaultConfiguration()
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
@@ -601,9 +602,8 @@ func deleteSiteWithLocationId(locationId string) error {
 	}
 }
 
-// getOrganizationDefaultSite is a test utiliy function to get the default site ID of the org
+// GetOrganizationDefaultSiteId is a test utiliy function to get the default site ID of the org
 func GetOrganizationDefaultSiteId() (siteId string, err error) {
-	sdkConfig := platformclientv2.GetDefaultConfiguration()
 	organizationApi := platformclientv2.NewOrganizationApiWithConfig(sdkConfig)
 
 	org, _, err := organizationApi.GetOrganizationsMe()
