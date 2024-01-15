@@ -478,6 +478,19 @@ func flattenSupportCenterSettings(supportCenterSettings *platformclientv2.Suppor
 	}}
 }
 
+func flattenSupportCenterStyleSetting(supportCenterSettings *platformclientv2.Supportcentersettings) []interface{} {
+	if supportCenterSettings == nil {
+		return nil
+	}
+
+	return []interface{}{map[string]interface{}{
+		"enabled":            supportCenterSettings.Enabled,
+		"knowledge_base_id":  flattenKnowledgeBaseId(supportCenterSettings.KnowledgeBase),
+		"custom_messages":    flattenSupportCenterCustomMessage(supportCenterSettings.CustomMessages),
+		"enabled_categories": flattenSupportCenterCategory(supportCenterSettings.EnabledCategories),
+	}}
+}
+
 func flattenSupportCenterCategory(triggers *[]platformclientv2.Supportcentercategory) []interface{} {
 	if triggers == nil || len(*triggers) < 1 {
 		return nil
@@ -500,17 +513,54 @@ func flattenSupportCenterCategory(triggers *[]platformclientv2.Supportcentercate
 	return result
 }
 
-// func flattenSupportCenterScreens(supportcentermodulesetting *[]platformclientv2.Supportcentermodulesetting) []interface{} {
-// 	if supportcentermodulesetting == nil {
-// 		return nil
-// 	}
+func flattensupportCenterStyleSetting(heroTriggers *[]platformclientv2.Supportcenterherostyle, globalTriggers *[]platformclientv2.Supportcenterglobalstyle) []interface{} {
+	if (heroTriggers == nil || len(*heroTriggers) < 1) && (globalTriggers == nil || len(*globalTriggers) < 1) {
+		return nil
+	}
 
-// 	return []interface{}{map[string]interface{}{
-// 		"enabled":            supportcentermodulesetting.Enabled,
-// 		"module_settings_compact_category_module_template":  supportcentermodulesetting.Supportcentercompactcategorymoduletemplate   ,
-// 		"DetailedCategoryModuleTemplate ":    flattenSupportCenterCustomMessage(supportCenterSettings.Supportcenterdetailedcategorymoduletemplate ),
-// 	}}
-// }
+	heroResult := flattenSupportCenterHeroStyle(heroTriggers)
+	globalResult := flattenSupportCenterGlobalStyle(globalTriggers)
+
+	result := append(heroResult, globalResult...)
+
+	return result
+}
+
+func flattenSupportCenterHeroStyle(triggers *[]platformclientv2.Supportcenterherostyle) []interface{} {
+	if triggers == nil || len(*triggers) < 1 {
+		return nil
+	}
+
+	result := make([]interface{}, len(*triggers))
+	for i, trigger := range *triggers {
+		result[i] = map[string]interface{}{
+			"hero_style_background_color": trigger.BackgroundColor,
+			"hero_style_text_color":       trigger.TextColor,
+			"hero_style_image":            trigger.Image,
+		}
+	}
+	return result
+}
+
+func flattenSupportCenterGlobalStyle(triggers *[]platformclientv2.Supportcenterglobalstyle) []interface{} {
+	if triggers == nil || len(*triggers) < 1 {
+		return nil
+	}
+
+	result := make([]interface{}, len(*triggers))
+	for i, trigger := range *triggers {
+
+		result[i] = map[string]interface{}{
+			"global_style_background_color":    trigger.BackgroundColor,
+			"global_style_primary_color":       trigger.PrimaryColor,
+			"global_style_primary_color_dark":  trigger.PrimaryColorDark,
+			"global_style_primary_color_light": trigger.PrimaryColorLight,
+			"global_style_text_color":          trigger.TextColor,
+			"global_style_font_family":         trigger.FontFamily,
+		}
+	}
+	return result
+}
 
 func flattenSupportCenterScreens(supportcentermodulesettings *[]platformclientv2.Supportcentermodulesetting) []interface{} {
 	if supportcentermodulesettings == nil {
@@ -520,7 +570,8 @@ func flattenSupportCenterScreens(supportcentermodulesettings *[]platformclientv2
 	var flattened []interface{}
 	for _, supportcentermodulesetting := range *supportcentermodulesettings {
 		flattened = append(flattened, map[string]interface{}{
-			"enabled": *supportcentermodulesetting.Enabled,
+			"enabled":              *supportcentermodulesetting.Enabled,
+			"module_settings_type": *supportcentermodulesetting.VarType,
 			"module_settings_compact_category_module_template":  *supportcentermodulesetting.CompactCategoryModuleTemplate,
 			"module_settings_detailed_category_module_template": *supportcentermodulesetting.DetailedCategoryModuleTemplate,
 		})
