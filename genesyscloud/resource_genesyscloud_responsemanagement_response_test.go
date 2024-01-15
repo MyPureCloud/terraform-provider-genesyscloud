@@ -410,7 +410,7 @@ func generateResponseManagementResponseResource(
 	assetIds []string,
 	nestedBlocks ...string,
 ) string {
-	return fmt.Sprintf(`
+	returnString := fmt.Sprintf(`
 		resource "genesyscloud_responsemanagement_response" "%s" {
 			name = "%s"
 			library_ids = [%s]
@@ -421,6 +421,8 @@ func generateResponseManagementResponseResource(
 			%s
 		}
 	`, resourceId, name, strings.Join(libraryIds, ", "), interactionType, schema, responseType, strings.Join(assetIds, ", "), strings.Join(nestedBlocks, "\n"))
+
+	return returnString
 }
 
 func generateTextsBlock(

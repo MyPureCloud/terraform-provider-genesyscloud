@@ -30,6 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 	providerResources["genesyscloud_team"] = ResourceTeam()
 	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
+	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
