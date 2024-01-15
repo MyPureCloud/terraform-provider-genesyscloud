@@ -5,6 +5,8 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
+	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
 )
@@ -513,13 +515,46 @@ func flattenSupportCenterCategory(triggers *[]platformclientv2.Supportcentercate
 	return result
 }
 
+// func flattensupportCenterStyleSetting(heroTriggers *[]platformclientv2.Supportcenterherostyle, globalTriggers *[]platformclientv2.Supportcenterglobalstyle) []interface{} {
+// 	if (heroTriggers == nil || len(*heroTriggers) < 1) && (globalTriggers == nil || len(*globalTriggers) < 1) {
+// 		return nil
+// 	}
+
+// 	heroResult := flattenSupportCenterHeroStyle(heroTriggers)
+// 	globalResult := flattenSupportCenterGlobalStyle(globalTriggers)
+
+// 	// Delete this before final commit
+// 	fmt.Println("Hero Result:", heroResult)
+// 	fmt.Println("Global Result:", globalResult)
+
+// 	result := append(heroResult, globalResult...)
+
+// 	return result
+// }
+
 func flattensupportCenterStyleSetting(heroTriggers *[]platformclientv2.Supportcenterherostyle, globalTriggers *[]platformclientv2.Supportcenterglobalstyle) []interface{} {
 	if (heroTriggers == nil || len(*heroTriggers) < 1) && (globalTriggers == nil || len(*globalTriggers) < 1) {
 		return nil
 	}
 
+	// Iterate over heroTriggers
+	for _, heroTrigger := range *heroTriggers {
+			"hero_style_background_color": heroTriggers.BackgroundColor,
+			"hero_style_text_color":       heroTriggers.TextColor,
+			"hero_style_image":            heroTriggers.Image,
+	}
+
+	// Iterate over globalTriggers
+	for _, globalTrigger := range *globalTriggers {
+		fmt.Println("Global Trigger:", globalTrigger)
+	}
+
 	heroResult := flattenSupportCenterHeroStyle(heroTriggers)
 	globalResult := flattenSupportCenterGlobalStyle(globalTriggers)
+
+	// Delete this before final commit
+	fmt.Println("Hero Result:", heroResult)
+	fmt.Println("Global Result:", globalResult)
 
 	result := append(heroResult, globalResult...)
 
