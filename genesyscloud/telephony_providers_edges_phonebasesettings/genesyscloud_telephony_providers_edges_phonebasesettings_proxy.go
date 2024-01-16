@@ -12,16 +12,18 @@ type getPhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, phoneB
 type deletePhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string) (*platformclientv2.APIResponse, error)
 type putPhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string, body platformclientv2.Phonebase) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error)
 type postPhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, body platformclientv2.Phonebase) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error)
+type getAllPhoneBaseSettingsFunc func(ctx context.Context, p *phoneBaseProxy) (*[]platformclientv2.Phonebase, error)
 
 // phoneBaseProxy contains all of the methods that call genesys cloud APIs.
 type phoneBaseProxy struct {
 	clientConfig *platformclientv2.Configuration
 	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
 
-	getPhoneBaseSettingAttr    getPhoneBaseSettingFunc
-	deletePhoneBaseSettingAttr deletePhoneBaseSettingFunc
-	putPhoneBaseSettingAttr    putPhoneBaseSettingFunc
-	postPhoneBaseSettingAttr   postPhoneBaseSettingFunc
+	getPhoneBaseSettingAttr     getPhoneBaseSettingFunc
+	deletePhoneBaseSettingAttr  deletePhoneBaseSettingFunc
+	putPhoneBaseSettingAttr     putPhoneBaseSettingFunc
+	postPhoneBaseSettingAttr    postPhoneBaseSettingFunc
+	getAllPhoneBaseSettingsAttr getAllPhoneBaseSettingsFunc
 }
 
 // newPhoneBaseProxy initializes the Phone Base proxy with all of the data needed to communicate with Genesys Cloud
@@ -32,10 +34,11 @@ func newphoneBaseProxy(clientConfig *platformclientv2.Configuration) *phoneBaseP
 		clientConfig: clientConfig,
 		edgesApi:     edgesApi,
 
-		getPhoneBaseSettingAttr:    getPhoneBaseSettingFn,
-		deletePhoneBaseSettingAttr: deletePhoneBaseSettingsFn,
-		putPhoneBaseSettingAttr:    putPhoneBaseSettingFn,
-		postPhoneBaseSettingAttr:   postPhoneBaseSettingFn,
+		getPhoneBaseSettingAttr:     getPhoneBaseSettingFn,
+		deletePhoneBaseSettingAttr:  deletePhoneBaseSettingsFn,
+		putPhoneBaseSettingAttr:     putPhoneBaseSettingFn,
+		postPhoneBaseSettingAttr:    postPhoneBaseSettingFn,
+		getAllPhoneBaseSettingsAttr: getAllPhoneBaseSettingsFn,
 	}
 }
 
@@ -63,6 +66,10 @@ func (p *phoneBaseProxy) putPhoneBaseSetting(ctx context.Context, phoneBaseSetti
 
 func (p *phoneBaseProxy) postPhoneBaseSetting(ctx context.Context, body platformclientv2.Phonebase) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
 	return p.postPhoneBaseSettingAttr(ctx, p, body)
+}
+
+func (p *phoneBaseProxy) getAllPhoneBaseSettings(ctx context.Context) (*[]platformclientv2.Phonebase, error) {
+	return p.getAllPhoneBaseSettingsAttr(ctx, p)
 }
 
 // getPhoneBaseSettingFn is an implementation function for retrieving a Genesys Cloud Phone Base Setting
@@ -96,4 +103,28 @@ func postPhoneBaseSettingFn(ctx context.Context, p *phoneBaseProxy, body platfor
 	}
 
 	return phoneBase, resp, nil
+}
+
+func getAllPhoneBaseSettingsFn(ctx context.Context, p *phoneBaseProxy) (*[]platformclientv2.Phonebase, error) {
+	const pageSize = 100
+	var allPhoneBaseSettings []platformclientv2.Phonebase
+
+	for pageNum := 1; ; pageNum++ {
+		phoneBaseSettings, _, err := p.edgesApi.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, "")
+		if err != nil {
+			return nil, err
+		}
+
+		if phoneBaseSettings.Entities == nil || len(*phoneBaseSettings.Entities) == 0 {
+			break
+		}
+
+		for _, phoneBaseSetting := range *phoneBaseSettings.Entities {
+			if phoneBaseSetting.State != nil && *phoneBaseSetting.State != "deleted" {
+				allPhoneBaseSettings = append(allPhoneBaseSettings, phoneBaseSetting)
+			}
+		}
+	}
+
+	return &allPhoneBaseSettings, nil
 }

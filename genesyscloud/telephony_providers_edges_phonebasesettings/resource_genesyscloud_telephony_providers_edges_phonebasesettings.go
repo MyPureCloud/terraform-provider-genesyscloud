@@ -185,33 +185,15 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 
 func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
+	pp := getPhoneBaseProxy(sdkConfig)
+	phoneBaseSettings, err := pp.getAllPhoneBaseSettings(ctx)
+	if err != nil {
+		return nil, diag.Errorf("failed to get all phone base settings: %s", err)
+	}
 
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	for _, phoneBaseSetting := range *phoneBaseSettings {
+		resources[*phoneBaseSetting.Id] = &resourceExporter.ResourceMeta{Name: *phoneBaseSetting.Name}
+	}
 
-	err := gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, "")
-			if getErr != nil {
-				if gcloud.IsStatus404(resp) {
-					return retry.RetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
-				}
-				return retry.NonRetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
-			}
-
-			if phoneBaseSettings.Entities == nil || len(*phoneBaseSettings.Entities) == 0 {
-				break
-			}
-
-			for _, phoneBaseSetting := range *phoneBaseSettings.Entities {
-				if phoneBaseSetting.State != nil && *phoneBaseSetting.State != "deleted" {
-					resources[*phoneBaseSetting.Id] = &resourceExporter.ResourceMeta{Name: *phoneBaseSetting.Name}
-				}
-			}
-		}
-
-		return nil
-	})
-
-	return resources, err
+	return resources, nil
 }
