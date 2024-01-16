@@ -102,8 +102,7 @@ func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters ma
 
 			jsonData, err := json.Marshal(sanitisedSkillIds)
 			if err != nil {
-				log.Println("json.marshal.error:", err)
-				return fmt.Errorf("error")
+				return fmt.Errorf("error converting sanitized skill ids array to JSON: %s", err)
 			}
 			configMap["skills"] = string(jsonData)
 		}
