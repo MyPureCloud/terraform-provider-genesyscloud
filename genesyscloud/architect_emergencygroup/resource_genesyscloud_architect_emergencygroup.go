@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -96,17 +97,8 @@ func readEmergencyGroup(ctx context.Context, d *schema.ResourceData, meta interf
 		d.Set("name", *emergencyGroup.Name)
 		d.Set("division_id", *emergencyGroup.Division.Id)
 
-		if emergencyGroup.Description != nil {
-			d.Set("description", *emergencyGroup.Description)
-		} else {
-			d.Set("description", nil)
-		}
-
-		if emergencyGroup.Enabled != nil {
-			d.Set("enabled", *emergencyGroup.Enabled)
-		} else {
-			d.Set("enabled", nil)
-		}
+		resourcedata.SetNillableValue(d, "description", emergencyGroup.Description)
+		resourcedata.SetNillableValue(d, "enabled", emergencyGroup.Enabled)
 
 		if emergencyGroup.EmergencyCallFlows != nil && len(*emergencyGroup.EmergencyCallFlows) > 0 {
 			d.Set("emergency_call_flows", flattenEmergencyCallFlows(*emergencyGroup.EmergencyCallFlows))
