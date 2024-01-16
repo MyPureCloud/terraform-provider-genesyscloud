@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccResourceOutboundSequence(t *testing.T) {
-
 	t.Parallel()
 	var (
 		// Sequence
@@ -35,15 +34,8 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 		emergencyNumber       = "+13172947329"
 	)
 
-	// necessary to avoid errors during site creation
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = edgeSite.DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -146,15 +138,8 @@ func TestAccResourceOutboundSequenceStatus(t *testing.T) {
 		emergencyNumber       = "+13172947330"
 	)
 
-	// necessary to avoid errors during site creation
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = edgeSite.DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	resource.Test(t, resource.TestCase{

@@ -33,6 +33,12 @@ func DataSourceAuthDivisionHome() *schema.Resource {
 	}
 }
 
+func GenerateAuthDivisionHomeDataSource(resName string) string {
+	return fmt.Sprintf(`
+		data "genesyscloud_auth_division_home" "%s" {}
+		`, resName)
+}
+
 func dataSourceAuthDivisionHomeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*ProviderMeta).ClientConfig
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)

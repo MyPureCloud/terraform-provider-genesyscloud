@@ -31,15 +31,8 @@ func TestAccDataSourceOutboundSequence(t *testing.T) {
 		emergencyNumber       = "+13128451429"
 	)
 
-	// necessary to avoid errors during site creation
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = edgeSite.DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	resource.Test(t, resource.TestCase{

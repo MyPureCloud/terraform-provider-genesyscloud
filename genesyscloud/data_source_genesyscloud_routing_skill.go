@@ -27,14 +27,22 @@ func dataSourceRoutingSkill() *schema.Resource {
 }
 
 func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	const pageSize = 100
+	var pageCount int
+
 	sdkConfig := m.(*ProviderMeta).ClientConfig
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-
 	name := d.Get("name").(string)
+
+	skills, _, getErr := routingAPI.GetRoutingSkills(pageSize, 1, name, nil)
+	if getErr != nil {
+		return diag.Errorf("error requesting skill %s: %s", name, getErr)
+	}
+	pageCount = *skills.PageCount
 
 	// Find first non-deleted skill by name. Retry in case new skill is not yet indexed by search
 	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		for pageNum := 1; ; pageNum++ {
+		for pageNum := 1; pageNum <= pageCount; pageNum++ {
 			const pageSize = 100
 			skills, _, getErr := routingAPI.GetRoutingSkills(pageSize, pageNum, name, nil)
 			if getErr != nil {
@@ -53,5 +61,6 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 				}
 			}
 		}
+		return retry.RetryableError(fmt.Errorf("no routing skills found with name %s", name))
 	})
 }
