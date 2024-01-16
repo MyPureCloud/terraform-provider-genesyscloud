@@ -6,6 +6,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
+	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -112,6 +113,7 @@ func registerResources() {
 	regInstance := &RegisterInstance{}
 	dt.SetRegistrar(regInstance)                            //Registering architect data table
 	dtr.SetRegistrar(regInstance)                           //Registering architect data table row
+	emergencyGroup.SetRegistrar(regInstance)                //Registering architect emergency group
 	grammar.SetRegistrar(regInstance)                       //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)               //Registering architect grammar language
 	edgePhone.SetRegistrar(regInstance)                     //Registering telephony providers edges phone
