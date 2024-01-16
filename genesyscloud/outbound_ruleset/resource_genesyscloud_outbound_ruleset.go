@@ -2,8 +2,10 @@ package outbound_ruleset
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -29,12 +31,23 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 	proxy := getOutboundRulesetProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	rulesets, err := proxy.getAllOutboundRuleset(ctx)
-	if err != nil {
-		return nil, diag.Errorf("Failed to get ruleset: %v", err)
+	rulesets, rsErr := proxy.getAllOutboundRuleset(ctx)
+	if rsErr != nil {
+		return nil, diag.Errorf("Failed to get ruleset: %v", rsErr)
 	}
 
-	for _, ruleset := range *rulesets {
+	// DEVTOOLING-319: Filtering rule sets by removing the ones that are referencing skills that no longer exist
+	skillExporter := gcloud.RoutingSkillExporter()
+	skillMap, skillErr := skillExporter.GetResourcesFunc(ctx)
+	if skillErr != nil {
+		return nil, diag.Errorf("Failed to get skill resources: %v", skillErr)
+	}
+	filteredRuleSets, filterErr := filterOutboundRuleset(*rulesets, skillMap)
+	if filterErr != nil {
+		return nil, diag.Errorf("Failed to filter outbound rule set: %v", filterErr)
+	}
+
+	for _, ruleset := range filteredRuleSets {
 		log.Printf("Dealing with ruleset id : %s", *ruleset.Id)
 		resources[*ruleset.Id] = &resourceExporter.ResourceMeta{Name: *ruleset.Name}
 	}
@@ -130,4 +143,60 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 		return retry.RetryableError(fmt.Errorf("Outbound Ruleset %s still exists", d.Id()))
 	})
+}
+
+// filterOutboundRuleset filters rulesets by removing the ones that are referencing skills that no longer exist in GC
+func filterOutboundRuleset(ruleSets []platformclientv2.Ruleset, skillMap resourceExporter.ResourceIDMetaMap) ([]platformclientv2.Ruleset, diag.Diagnostics) {
+	var filteredRuleSets []platformclientv2.Ruleset
+	log.Printf("Filtering outbound rule sets")
+
+RuleSetLoop:
+	for _, ruleSet := range ruleSets {
+		for _, rule := range *ruleSet.Rules {
+			// look through rule actions to check if the referenced skills exist in our skill map or not
+			for _, action := range *rule.Actions {
+				if action.ActionTypeName != nil && strings.ToLower(*action.ActionTypeName) == "set_skills" && action.Properties != nil {
+					for id, value := range *action.Properties {
+						if strings.ToLower(id) == "skills" {
+							// the property value is a json string wrapping an array of skill ids, need to convert it back to a slice to check if each skill exists
+							var skillIds []string
+							err := json.Unmarshal([]byte(value), &skillIds)
+							if err != nil {
+								log.Printf("Error decoding JSON: %s", err)
+								return nil, diag.Errorf("Failed to filter ruleset: %s", err)
+							}
+							for _, skillId := range skillIds {
+								_, found := skillMap[skillId]
+								if !found { // skill id referenced by the rule action is not found in the skill map, we filter the ruleset out and evaluate the next one.
+									log.Printf("Removing ruleset %s, the skill %s used in action does not exist in GC anymore", *ruleSet.Id, skillId)
+									continue RuleSetLoop
+								}
+							}
+						}
+					}
+				}
+			}
+			// look through rule conditions to check if the referenced skills exist in our skill map or not
+			for _, condition := range *rule.Conditions {
+				if condition.AttributeName != nil && strings.ToLower(*condition.AttributeName) == "skill" {
+					if condition.Value != nil {
+						var found bool
+						for _, value := range skillMap {
+							if value.Name == *condition.Value {
+								found = true
+								break
+							}
+						}
+						if !found { // skill name referenced by rule condition is not found in the skill map, we filter the rulset out and evaluate the next one
+							log.Printf("Removing ruleset %s, the skill %s used in condition does not exist in GC anymore", *ruleSet.Id, *condition.Value)
+							continue RuleSetLoop
+						}
+					}
+				}
+			}
+		}
+		filteredRuleSets = append(filteredRuleSets, ruleSet)
+	}
+
+	return filteredRuleSets, nil
 }
