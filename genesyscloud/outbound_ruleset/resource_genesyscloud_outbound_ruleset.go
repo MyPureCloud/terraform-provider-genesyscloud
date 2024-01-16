@@ -42,9 +42,9 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 	if skillErr != nil {
 		return nil, diag.Errorf("Failed to get skill resources: %v", skillErr)
 	}
-	filteredRuleSets, filterErr := filterOutboundRuleset(*rulesets, skillMap)
+	filteredRuleSets, filterErr := filterOutboundRulesets(*rulesets, skillMap)
 	if filterErr != nil {
-		return nil, diag.Errorf("Failed to filter outbound rule set: %v", filterErr)
+		return nil, diag.Errorf("Failed to filter outbound rulesets: %v", filterErr)
 	}
 
 	for _, ruleset := range filteredRuleSets {
@@ -146,7 +146,7 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 // filterOutboundRuleset filters rulesets by removing the ones that are referencing skills that no longer exist in GC
-func filterOutboundRuleset(ruleSets []platformclientv2.Ruleset, skillMap resourceExporter.ResourceIDMetaMap) ([]platformclientv2.Ruleset, diag.Diagnostics) {
+func filterOutboundRulesets(ruleSets []platformclientv2.Ruleset, skillMap resourceExporter.ResourceIDMetaMap) ([]platformclientv2.Ruleset, diag.Diagnostics) {
 	var filteredRuleSets []platformclientv2.Ruleset
 	log.Printf("Filtering outbound rule sets")
 
