@@ -30,23 +30,21 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 	providerResources["genesyscloud_team"] = ResourceTeam()
 	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
+	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-
 	providerDataSources["genesyscloud_team"] = DataSourceTeam()
 }
 
-// initTestResources initializes all test resources and data sources.
+// initTestresources initializes all test resources and data sources.
 func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
-
 	regInstance := &registerTestInstance{}
-
 	regInstance.registerTestResources()
 	regInstance.registerTestDataSources()
 }

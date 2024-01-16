@@ -16,8 +16,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/teams](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-teams)
 * [GET /api/v2/teams/{teamId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-teams--teamId-)
 * [GET /api/v2/teams](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-teams)
-
-
+* [DELETE /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-teams--teamId--members)
+* [POST /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-teams--teamId--members)
+* [GET /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-teams--teamId--members)
 
 ## Example Usage
 
@@ -26,6 +27,7 @@ resource "genesyscloud_team" "example_team" {
   name        = "My Team"
   description = "Example Team"
   division_id = genesyscloud_auth_division.example_division.id
+  member_ids  = []
 }
 ```
 
@@ -40,6 +42,7 @@ resource "genesyscloud_team" "example_team" {
 ### Optional
 
 - `description` (String) Team information.
+- `member_ids` (List of String) Specifies the members, No modifications to members will be made if not set. If empty all members will be deleted. If populated, only the populated members will be retained
 
 ### Read-Only
 
