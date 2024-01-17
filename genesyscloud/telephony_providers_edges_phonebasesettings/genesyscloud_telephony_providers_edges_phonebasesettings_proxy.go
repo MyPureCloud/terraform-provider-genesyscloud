@@ -14,7 +14,7 @@ type putPhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, phoneB
 type postPhoneBaseSettingFunc func(ctx context.Context, p *phoneBaseProxy, body platformclientv2.Phonebase) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error)
 type getAllPhoneBaseSettingsFunc func(ctx context.Context, p *phoneBaseProxy) (*[]platformclientv2.Phonebase, error)
 
-// phoneBaseProxy contains all of the methods that call genesys cloud APIs.
+// PhoneBaseSettinProxy contains all of the methods that call genesys cloud APIs.
 type phoneBaseProxy struct {
 	clientConfig *platformclientv2.Configuration
 	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
@@ -26,7 +26,7 @@ type phoneBaseProxy struct {
 	getAllPhoneBaseSettingsAttr getAllPhoneBaseSettingsFunc
 }
 
-// newPhoneBaseProxy initializes the Phone Base proxy with all of the data needed to communicate with Genesys Cloud
+// newPhoneBaseSettinProxy initializes the Phone Base Setting proxy with all of the data needed to communicate with Genesys Cloud
 func newphoneBaseProxy(clientConfig *platformclientv2.Configuration) *phoneBaseProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 
@@ -42,7 +42,7 @@ func newphoneBaseProxy(clientConfig *platformclientv2.Configuration) *phoneBaseP
 	}
 }
 
-// getPhoneProxy acts as a singleton to for the internalProxy.  It also ensures
+// getPhoneBaseProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getPhoneBaseProxy(clientConfig *platformclientv2.Configuration) *phoneBaseProxy {
 	if internalProxy == nil {
