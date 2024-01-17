@@ -48,6 +48,9 @@ func ArchitectSchedulesExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
+		CustomValidateExports: map[string][]string{
+			"rrule": {"rrule"},
+		},
 	}
 }
 
@@ -93,9 +96,10 @@ func ResourceArchitectSchedules() *schema.Resource {
 				ValidateDiagFunc: validateLocalDateTimes,
 			},
 			"rrule": {
-				Description: "An iCal Recurrence Rule (RRULE) string.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:      "An iCal Recurrence Rule (RRULE) string.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateDiagFunc: ValidateRrule,
 			},
 		},
 	}
