@@ -73,7 +73,10 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	log.Printf("Reading team %s", d.Id())
 	// reading members
 	members, err := readMembers(ctx, d, proxy)
-	if err != nil && members != nil {
+	if err != nil {
+		return diag.Errorf("failed to read members %s : %s", d.Id(), err)
+	}
+	if members != nil {
 		d.Set("member_ids", members)
 	}
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
