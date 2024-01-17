@@ -169,13 +169,10 @@ Required:
 <a id="nestedblock--direct_routing"></a>
 ### Nested Schema for `direct_routing`
 
-Required:
-
-- `backup_queue_id` (String) Direct Routing default backup queue id.
-
 Optional:
 
 - `agent_wait_seconds` (Number) The queue default time a Direct Routing interaction will wait for an agent before it goes to configured backup. Defaults to `60`.
+- `backup_queue_id` (String) Direct Routing default backup queue id (if none supplied this queue will be used as backup).
 - `call_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for calls. Defaults to `true`.
 - `email_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for emails. Defaults to `true`.
 - `message_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for messages. Defaults to `true`.
