@@ -93,9 +93,9 @@ var (
 	directRoutingResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"backup_queue_id": {
-				Description: "Direct Routing default backup queue id.",
+				Description: "Direct Routing default backup queue id (if none supplied this queue will be used as backup).",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 			"agent_wait_seconds": {
 				Description: "The queue default time a Direct Routing interaction will wait for an agent before it goes to configured backup.",
