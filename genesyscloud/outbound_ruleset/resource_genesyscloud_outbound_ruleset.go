@@ -2,10 +2,8 @@ package outbound_ruleset
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -36,7 +34,7 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 		return nil, diag.Errorf("Failed to get ruleset: %v", rsErr)
 	}
 
-	// DEVTOOLING-319: Filtering rule sets by removing the ones that are referencing skills that no longer exist
+	// DEVTOOLING-319: filters rule sets by removing the ones that reference skills that no longer exist in GC
 	skillExporter := gcloud.RoutingSkillExporter()
 	skillMap, skillErr := skillExporter.GetResourcesFunc(ctx)
 	if skillErr != nil {
@@ -145,57 +143,36 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 	})
 }
 
-// filterOutboundRuleset filters rulesets by removing the ones that are referencing skills that no longer exist in GC
+// filterOutboundRulesets filters rule sets by removing the ones that reference skills that no longer exist in GC
 func filterOutboundRulesets(ruleSets []platformclientv2.Ruleset, skillMap resourceExporter.ResourceIDMetaMap) ([]platformclientv2.Ruleset, diag.Diagnostics) {
 	var filteredRuleSets []platformclientv2.Ruleset
 	log.Printf("Filtering outbound rule sets")
 
-RuleSetLoop:
 	for _, ruleSet := range ruleSets {
+		var foundDeleted bool
+
 		for _, rule := range *ruleSet.Rules {
-			// look through rule actions to check if the referenced skills exist in our skill map or not
-			for _, action := range *rule.Actions {
-				if action.ActionTypeName != nil && strings.ToLower(*action.ActionTypeName) == "set_skills" && action.Properties != nil {
-					for id, value := range *action.Properties {
-						if strings.ToLower(id) == "skills" {
-							// the property value is a json string wrapping an array of skill ids, need to convert it back to a slice to check if each skill exists
-							var skillIds []string
-							err := json.Unmarshal([]byte(value), &skillIds)
-							if err != nil {
-								log.Printf("Error decoding JSON: %s", err)
-								return nil, diag.Errorf("Failed to filter ruleset: %s", err)
-							}
-							for _, skillId := range skillIds {
-								_, found := skillMap[skillId]
-								if !found { // skill id referenced by the rule action is not found in the skill map, we filter the ruleset out and evaluate the next one.
-									log.Printf("Removing ruleset %s, the skill %s used in action does not exist in GC anymore", *ruleSet.Id, skillId)
-									continue RuleSetLoop
-								}
-							}
-						}
-					}
-				}
+			var err error
+
+			if foundDeleted, err = doesRuleActionsRefDeletedSkill(rule, skillMap); err != nil {
+				return nil, diag.Errorf("Failed to filter ruleset: %s", err)
 			}
-			// look through rule conditions to check if the referenced skills exist in our skill map or not
-			for _, condition := range *rule.Conditions {
-				if condition.AttributeName != nil && strings.ToLower(*condition.AttributeName) == "skill" {
-					if condition.Value != nil {
-						var found bool
-						for _, value := range skillMap {
-							if value.Name == *condition.Value {
-								found = true
-								break
-							}
-						}
-						if !found { // skill name referenced by rule condition is not found in the skill map, we filter the rulset out and evaluate the next one
-							log.Printf("Removing ruleset %s, the skill %s used in condition does not exist in GC anymore", *ruleSet.Id, *condition.Value)
-							continue RuleSetLoop
-						}
-					}
+
+			if foundDeleted {
+				break
+			} else {
+				if foundDeleted = doesRuleConditionsRefDeletedSkill(rule, skillMap); foundDeleted {
+					break
 				}
 			}
 		}
-		filteredRuleSets = append(filteredRuleSets, ruleSet)
+
+		if !foundDeleted {
+			// No references to a deleted skill in the ruleset, keep it
+			filteredRuleSets = append(filteredRuleSets, ruleSet)
+		} else {
+			log.Printf("Removing ruleset id '%s'", *ruleSet.Id)
+		}
 	}
 
 	return filteredRuleSets, nil
