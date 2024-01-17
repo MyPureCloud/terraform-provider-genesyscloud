@@ -167,11 +167,11 @@ func filterOutboundRulesets(ruleSets []platformclientv2.Ruleset, skillMap resour
 			}
 		}
 
-		if !foundDeleted {
+		if foundDeleted {
+			log.Printf("Removing ruleset id '%s'", *ruleSet.Id)
+		} else {
 			// No references to a deleted skill in the ruleset, keep it
 			filteredRuleSets = append(filteredRuleSets, ruleSet)
-		} else {
-			log.Printf("Removing ruleset id '%s'", *ruleSet.Id)
 		}
 	}
 
