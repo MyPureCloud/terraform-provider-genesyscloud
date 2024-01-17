@@ -103,7 +103,7 @@ func generateTeamsWithMemberResource(
 	return returnString
 }
 
-func GenerateUserWithCustomAttrs(resourceID string, name string, email string, divisionId string) string {
+func GenerateUserWithDivisionId(resourceID string, name string, email string, divisionId string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		name = "%s"
 		email = "%s"
