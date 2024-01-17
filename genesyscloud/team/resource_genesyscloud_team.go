@@ -74,7 +74,7 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	// reading members
 	members, err := readMembers(ctx, d, proxy)
 	if err != nil {
-		return diag.Errorf("failed to read team %s : %s", d.Id(), err)
+		return diag.Errorf("failed to read members of the team %s : %s", d.Id(), err)
 	}
 	if members != nil {
 		d.Set("member_ids", members)
