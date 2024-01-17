@@ -43,8 +43,8 @@ func TestAccResourceMembers(t *testing.T) {
 			{
 				// Create Team
 				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
-					GenerateUserWithCustomAttrs(testUserResource1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResource+".id") +
-					GenerateUserWithCustomAttrs(testUserResource2, testUserName2, testUserEmail2, "genesyscloud_auth_division."+divResource+".id") +
+					GenerateUserWithDivisionId(testUserResource1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResource+".id") +
+					GenerateUserWithDivisionId(testUserResource2, testUserName2, testUserEmail2, "genesyscloud_auth_division."+divResource+".id") +
 					generateTeamsWithMemberResource(
 						resourceId,
 						name1,
@@ -65,7 +65,7 @@ func TestAccResourceMembers(t *testing.T) {
 			{
 				// Update Team
 				Config: gcloud.GenerateAuthDivisionBasic(divResource, divName) +
-					GenerateUserWithCustomAttrs(testUserResource1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResource+".id") +
+					GenerateUserWithDivisionId(testUserResource1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResource+".id") +
 					generateTeamsWithMemberResource(
 						resourceId,
 						name1,
