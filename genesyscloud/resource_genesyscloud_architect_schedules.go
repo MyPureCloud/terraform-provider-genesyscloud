@@ -48,6 +48,9 @@ func ArchitectSchedulesExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
+		CustomValidateExports: map[string][]string{
+			"rrule": {"rrule"},
+		},
 	}
 }
 
@@ -93,9 +96,10 @@ func ResourceArchitectSchedules() *schema.Resource {
 				ValidateDiagFunc: ValidateLocalDateTimes,
 			},
 			"rrule": {
-				Description: "An iCal Recurrence Rule (RRULE) string.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:      "An iCal Recurrence Rule (RRULE) string. It is required to be set for schedules determining when upgrades to the Edge software can be applied.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateDiagFunc: ValidateRrule,
 			},
 		},
 	}
