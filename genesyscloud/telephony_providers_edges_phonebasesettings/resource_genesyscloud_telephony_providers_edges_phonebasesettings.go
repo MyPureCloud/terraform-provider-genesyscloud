@@ -44,10 +44,10 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 
 	log.Printf("Creating phone base settings %s", name)
-	phoneBaseSettings, _, err := edgesAPI.PostTelephonyProvidersEdgesPhonebasesettings(phoneBase)
+	phoneBaseSettings, _, err := phoneBaseProxy.postPhoneBaseSetting(ctx, phoneBase)
 	if err != nil {
 		return diag.Errorf("Failed to create phone base settings %s: %s", name, err)
 	}
@@ -85,9 +85,8 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
-	phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
+	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
+	phoneBaseSettings, resp, getErr := phoneBaseProxy.getPhoneBaseSetting(ctx, d.Id())
 	if getErr != nil {
 		if gcloud.IsStatus404(resp) {
 			return nil
@@ -97,7 +96,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	(*phoneBase.Lines)[0].Id = (*phoneBaseSettings.Lines)[0].Id
 
 	log.Printf("Updating phone base settings %s", name)
-	phoneBaseSettings, resp, err := edgesAPI.PutTelephonyProvidersEdgesPhonebasesetting(d.Id(), phoneBase)
+	phoneBaseSettings, resp, err := phoneBaseProxy.putPhoneBaseSetting(ctx, d.Id(), phoneBase)
 	if err != nil {
 		return diag.Errorf("Failed to update phone base settings %s: %v", name, err)
 	}
@@ -109,16 +108,16 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 
 func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
+	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 	log.Printf("Reading phone base settings %s", d.Id())
+
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
+		phoneBaseSettings, resp, getErr := phoneBaseProxy.getPhoneBaseSetting(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read phone base settings %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read phone base settings %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read phone base settings %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings())
@@ -155,64 +154,47 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 
 	log.Printf("Deleting phone base settings")
-	_, err := edgesAPI.DeleteTelephonyProvidersEdgesPhonebasesetting(d.Id())
+	_, err := phoneBaseProxy.deletePhoneBaseSetting(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete phone base settings: %s", err)
+		return diag.Errorf("failed to delete phone base settings: %s", err)
 	}
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		phoneBaseSettings, resp, err := edgesAPI.GetTelephonyProvidersEdgesPhonebasesetting(d.Id())
+		phoneBaseSettings, resp, err := phoneBaseProxy.getPhoneBaseSetting(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
-				// Phone base settings deleted
+				// Phone base proxy settings deleted
 				log.Printf("Deleted Phone base settings %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting Phone base settings %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting Phone base settings %s: %s", d.Id(), err))
 		}
 
 		if phoneBaseSettings.State != nil && *phoneBaseSettings.State == "deleted" {
-			// Phone base settings deleted
+			// Phone base proxy settings deleted
 			log.Printf("Deleted Phone base settings %s", d.Id())
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Phone base settings %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("phone base settings %s still exists", d.Id()))
 	})
 }
 
 func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
+	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
+	phoneBaseSettings, err := phoneBaseProxy.getAllPhoneBaseSettings(ctx)
+	if err != nil {
+		return nil, diag.Errorf("failed to get all phone base settings: %s", err)
+	}
 
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
-	err := gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
-			phoneBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesPhonebasesettings(pageSize, pageNum, "", "", nil, "")
-			if getErr != nil {
-				if gcloud.IsStatus404(resp) {
-					return retry.RetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
-				}
-				return retry.NonRetryableError(fmt.Errorf("Failed to get page of phonebasesettings: %v", getErr))
-			}
-
-			if phoneBaseSettings.Entities == nil || len(*phoneBaseSettings.Entities) == 0 {
-				break
-			}
-
-			for _, phoneBaseSetting := range *phoneBaseSettings.Entities {
-				if phoneBaseSetting.State != nil && *phoneBaseSetting.State != "deleted" {
-					resources[*phoneBaseSetting.Id] = &resourceExporter.ResourceMeta{Name: *phoneBaseSetting.Name}
-				}
-			}
+	if phoneBaseSettings != nil {
+		for _, phoneBaseSetting := range *phoneBaseSettings {
+			resources[*phoneBaseSetting.Id] = &resourceExporter.ResourceMeta{Name: *phoneBaseSetting.Name}
 		}
-
-		return nil
-	})
-
-	return resources, err
+	}
+	return resources, nil
 }
