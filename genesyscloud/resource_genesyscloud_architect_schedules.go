@@ -96,7 +96,7 @@ func ResourceArchitectSchedules() *schema.Resource {
 				ValidateDiagFunc: validateLocalDateTimes,
 			},
 			"rrule": {
-				Description:      "An iCal Recurrence Rule (RRULE) string.",
+				Description:      "An iCal Recurrence Rule (RRULE) string. It is required to be set for schedules determining when upgrades to the Edge software can be applied.",
 				Type:             schema.TypeString,
 				Optional:         true,
 				ValidateDiagFunc: ValidateRrule,

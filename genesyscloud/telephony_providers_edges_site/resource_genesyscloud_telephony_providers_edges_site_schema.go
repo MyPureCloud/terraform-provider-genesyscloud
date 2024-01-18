@@ -79,7 +79,7 @@ func ResourceSite() *schema.Resource {
 				Required:    true,
 			},
 			"rrule": {
-				Description:      "The recurrence rule for updating the Edges assigned to the site. The only supported frequencies are daily and weekly. Weekly frequencies require a day list with at least oneday specified. All other configurations are not supported.",
+				Description:      "A reoccurring rule for updating the Edges assigned to the site. The only supported frequencies are daily and weekly. Weekly frequencies require a day list with at least oneday specified. All other configurations are not supported.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: gcloud.ValidateRrule,

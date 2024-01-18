@@ -42,7 +42,7 @@ resource "genesyscloud_architect_schedules" "sample_schedule" {
 
 - `description` (String) Description of the schedule.
 - `division_id` (String) The division to which this schedule group will belong. If not set, the home division will be used. If set, you must have all divisions and future divisions selected in your OAuth client role
-- `rrule` (String) An iCal Recurrence Rule (RRULE) string.
+- `rrule` (String) An iCal Recurrence Rule (RRULE) string. It is required to be set for schedules determining when upgrades to the Edge software can be applied.
 
 ### Read-Only
 

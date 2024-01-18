@@ -134,7 +134,7 @@ type ResourceExporter struct {
 
 	//This a place holder filter out specific resources from a filter.
 	FilterResource func(ResourceIDMetaMap, string, []string) ResourceIDMetaMap
-	// Attributes that are e164 numbers and should be ensured to export in the correct format (remove hyphens, whitespace, etc.)
+	// Attributes that are mentioned with custom exports like e164 numbers,rrule  should be ensured to export in the correct format (remove hyphens, whitespace, etc.)
 	CustomValidateExports map[string][]string
 }
 
