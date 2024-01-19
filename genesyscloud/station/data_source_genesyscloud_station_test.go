@@ -33,7 +33,7 @@ func TestAccDataSourceStation(t *testing.T) {
 		stationDataRes = "station1234"
 	)
 
-	defaultSiteId, err := edgeSite.GetOrganizationDefaultSiteId()
+	defaultSiteId, err := edgeSite.GetOrganizationDefaultSiteId(sdkConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
