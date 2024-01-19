@@ -644,8 +644,8 @@ func deleteSiteWithLocationId(locationId string, config *platformclientv2.Config
 }
 
 // GetOrganizationDefaultSiteId is a test utiliy function to get the default site ID of the org
-func GetOrganizationDefaultSiteId() (siteId string, err error) {
-	organizationApi := platformclientv2.NewOrganizationApiWithConfig(sdkConfig)
+func GetOrganizationDefaultSiteId(config *platformclientv2.Configuration) (siteId string, err error) {
+	organizationApi := platformclientv2.NewOrganizationApiWithConfig(config)
 
 	org, _, err := organizationApi.GetOrganizationsMe()
 	if err != nil {

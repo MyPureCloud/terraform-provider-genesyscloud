@@ -32,7 +32,7 @@ func TestAccDataSourcePhone(t *testing.T) {
 		userDepartment = "Development"
 	)
 
-	defaultSiteId, err := edgeSite.GetOrganizationDefaultSiteId()
+	defaultSiteId, err := edgeSite.GetOrganizationDefaultSiteId(sdkConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
