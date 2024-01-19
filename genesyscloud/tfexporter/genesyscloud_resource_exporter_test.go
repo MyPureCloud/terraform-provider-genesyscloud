@@ -239,6 +239,7 @@ func TestUnitRemoveTrailingZerosRrule(t *testing.T) {
 	}{
 		{"FREQ=YEARLY;INTERVAL=01;BYMONTH=12;BYMONTHDAY=06", "FREQ=YEARLY;INTERVAL=1;BYMONTH=12;BYMONTHDAY=6"},
 		{"FREQ=YEARLY;INTERVAL=01;BYMONTHDAY=22", "FREQ=YEARLY;INTERVAL=1;BYMONTHDAY=22"},
+		{"FREQ=YEARLY;BYDAY=SU", "FREQ=YEARLY;BYDAY=SU"},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.input, func(t *testing.T) {
