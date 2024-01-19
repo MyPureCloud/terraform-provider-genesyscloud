@@ -63,7 +63,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		"",               // No certs
 	)
 
-	siteId, err := edgeSite.GetOrganizationDefaultSiteId()
+	siteId, err := edgeSite.GetOrganizationDefaultSiteId(sdkConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
