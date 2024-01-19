@@ -4,8 +4,7 @@ import (
 	"context"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-
-	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v116/platformclientv2"
@@ -472,128 +471,91 @@ func flattenSupportCenterSettings(supportCenterSettings *platformclientv2.Suppor
 		return nil
 	}
 
+	screens := &supportCenterSettings.Screens
+
 	return []interface{}{map[string]interface{}{
-		"enabled":            supportCenterSettings.Enabled,
-		"knowledge_base_id":  flattenKnowledgeBaseId(supportCenterSettings.KnowledgeBase),
-		"custom_messages":    flattenSupportCenterCustomMessage(supportCenterSettings.CustomMessages),
-		"enabled_categories": flattenSupportCenterCategory(supportCenterSettings.EnabledCategories),
+		"enabled":                          supportCenterSettings.Enabled,
+		"knowledge_base_id":                flattenKnowledgeBaseId(supportCenterSettings.KnowledgeBase),
+		"router_type":                      supportCenterSettings.RouterType,
+		"custom_messages":                  flattenSupportCenterCustomMessage(supportCenterSettings.CustomMessages),
+		"feedback_enabled":                 supportCenterSettings.Feedback.Enabled,
+		"enabled_categories":               flattenSupportCenterCategory(supportCenterSettings.EnabledCategories),
+		"flattenSupportCenterStyleSetting": flattenSupportCenterStyleSetting(supportCenterSettings.StyleSetting),
+		"flattenSupportCenterScreens":      flattenSupportCenterScreens(screens),
 	}}
 }
 
-func flattenSupportCenterStyleSetting(supportCenterSettings *platformclientv2.Supportcentersettings) []interface{} {
-	if supportCenterSettings == nil {
+func flattenSupportCenterCategory(categories *[]platformclientv2.Supportcentercategory) []interface{} {
+	if categories == nil || len(*categories) < 1 {
 		return nil
 	}
 
-	return []interface{}{map[string]interface{}{
-		"enabled":            supportCenterSettings.Enabled,
-		"knowledge_base_id":  flattenKnowledgeBaseId(supportCenterSettings.KnowledgeBase),
-		"custom_messages":    flattenSupportCenterCustomMessage(supportCenterSettings.CustomMessages),
-		"enabled_categories": flattenSupportCenterCategory(supportCenterSettings.EnabledCategories),
-	}}
-}
-
-func flattenSupportCenterCategory(triggers *[]platformclientv2.Supportcentercategory) []interface{} {
-	if triggers == nil || len(*triggers) < 1 {
-		return nil
-	}
-
-	result := make([]interface{}, len(*triggers))
-	for i, trigger := range *triggers {
+	result := make([]interface{}, len(*categories))
+	for i, category := range *categories {
 
 		imgSrc := ""
-		if trigger.Image != nil && trigger.Image.Source != nil && trigger.Image.Source.DefaultUrl != nil {
-			imgSrc = *trigger.Image.Source.DefaultUrl
+		if category.Image != nil && category.Image.Source != nil && category.Image.Source.DefaultUrl != nil {
+			imgSrc = *category.Image.Source.DefaultUrl
 		}
 
 		result[i] = map[string]interface{}{
-			"enabled_categories_id": trigger.Id,
-			"self_uri":              trigger.SelfUri,
+			"enabled_categories_id": category.Id,
+			"self_uri":              category.SelfUri,
 			"image_source":          imgSrc,
 		}
 	}
 	return result
 }
 
-// func flattensupportCenterStyleSetting(heroTriggers *[]platformclientv2.Supportcenterherostyle, globalTriggers *[]platformclientv2.Supportcenterglobalstyle) []interface{} {
-// 	if (heroTriggers == nil || len(*heroTriggers) < 1) && (globalTriggers == nil || len(*globalTriggers) < 1) {
-// 		return nil
-// 	}
+func flattenSupportCenterStyleSetting(styleSetting *platformclientv2.Supportcenterstylesetting) []interface{} {
 
-// 	heroResult := flattenSupportCenterHeroStyle(heroTriggers)
-// 	globalResult := flattenSupportCenterGlobalStyle(globalTriggers)
-
-// 	// Delete this before final commit
-// 	fmt.Println("Hero Result:", heroResult)
-// 	fmt.Println("Global Result:", globalResult)
-
-// 	result := append(heroResult, globalResult...)
-
-// 	return result
-// }
-
-func flattensupportCenterStyleSetting(heroTriggers *[]platformclientv2.Supportcenterherostyle, globalTriggers *[]platformclientv2.Supportcenterglobalstyle) []interface{} {
-	if (heroTriggers == nil || len(*heroTriggers) < 1) && (globalTriggers == nil || len(*globalTriggers) < 1) {
+	if styleSetting == nil {
 		return nil
+
 	}
 
-	// Iterate over heroTriggers
-	for _, heroTrigger := range *heroTriggers {
-			"hero_style_background_color": heroTriggers.BackgroundColor,
-			"hero_style_text_color":       heroTriggers.TextColor,
-			"hero_style_image":            heroTriggers.Image,
-	}
+	heroStyles := styleSetting.HeroStyle
+	globalStyles := styleSetting.GlobalStyle
 
-	// Iterate over globalTriggers
-	for _, globalTrigger := range *globalTriggers {
-		fmt.Println("Global Trigger:", globalTrigger)
-	}
+	heroResult := flattenSupportCenterHeroStyle(heroStyles)
+	globalResult := flattenSupportCenterGlobalStyle(globalStyles)
 
-	heroResult := flattenSupportCenterHeroStyle(heroTriggers)
-	globalResult := flattenSupportCenterGlobalStyle(globalTriggers)
+	result := stringmap.MergeSingularMaps(heroResult, globalResult)
 
-	// Delete this before final commit
-	fmt.Println("Hero Result:", heroResult)
-	fmt.Println("Global Result:", globalResult)
-
-	result := append(heroResult, globalResult...)
+	result = append(result, heroResult...)
+	result = append(result, globalResult...)
 
 	return result
 }
 
-func flattenSupportCenterHeroStyle(triggers *[]platformclientv2.Supportcenterherostyle) []interface{} {
-	if triggers == nil || len(*triggers) < 1 {
+func flattenSupportCenterHeroStyle(heroStyles *platformclientv2.Supportcenterherostyle) map[string]interface{} {
+	if heroStyles == nil {
 		return nil
 	}
 
-	result := make([]interface{}, len(*triggers))
-	for i, trigger := range *triggers {
-		result[i] = map[string]interface{}{
-			"hero_style_background_color": trigger.BackgroundColor,
-			"hero_style_text_color":       trigger.TextColor,
-			"hero_style_image":            trigger.Image,
-		}
+	result := map[string]interface{}{
+		"hero_style_background_color": heroStyles.BackgroundColor,
+		"hero_style_text_color":       heroStyles.TextColor,
+		"hero_style_image":            heroStyles.Image,
 	}
+
 	return result
 }
 
-func flattenSupportCenterGlobalStyle(triggers *[]platformclientv2.Supportcenterglobalstyle) []interface{} {
-	if triggers == nil || len(*triggers) < 1 {
+func flattenSupportCenterGlobalStyle(globalStyles *platformclientv2.Supportcenterglobalstyle) map[string]interface{} {
+	if globalStyles == nil {
 		return nil
 	}
 
-	result := make([]interface{}, len(*triggers))
-	for i, trigger := range *triggers {
-
-		result[i] = map[string]interface{}{
-			"global_style_background_color":    trigger.BackgroundColor,
-			"global_style_primary_color":       trigger.PrimaryColor,
-			"global_style_primary_color_dark":  trigger.PrimaryColorDark,
-			"global_style_primary_color_light": trigger.PrimaryColorLight,
-			"global_style_text_color":          trigger.TextColor,
-			"global_style_font_family":         trigger.FontFamily,
-		}
+	result := map[string]interface{}{
+		"global_style_background_color":    globalStyles.BackgroundColor,
+		"global_style_primary_color":       globalStyles.PrimaryColor,
+		"global_style_primary_color_dark":  globalStyles.PrimaryColorDark,
+		"global_style_primary_color_light": globalStyles.PrimaryColorLight,
+		"global_style_text_color":          globalStyles.TextColor,
+		"global_style_font_family":         globalStyles.FontFamily,
 	}
+
 	return result
 }
 
@@ -602,6 +564,7 @@ func flattenSupportCenterScreens(supportcentermodulesettings *[]platformclientv2
 		return nil
 	}
 
+	// flattened := make([]interface{}, len(*flattened))
 	var flattened []interface{}
 	for _, supportcentermodulesetting := range *supportcentermodulesettings {
 		flattened = append(flattened, map[string]interface{}{
@@ -614,16 +577,16 @@ func flattenSupportCenterScreens(supportcentermodulesettings *[]platformclientv2
 	return flattened
 }
 
-func flattenSupportCenterCustomMessage(triggers *[]platformclientv2.Supportcentercustommessage) []interface{} {
-	if triggers == nil || len(*triggers) < 1 {
+func flattenSupportCenterCustomMessage(customMessage *[]platformclientv2.Supportcentercustommessage) []interface{} {
+	if customMessage == nil || len(*customMessage) < 1 {
 		return nil
 	}
 
-	result := make([]interface{}, len(*triggers))
-	for i, trigger := range *triggers {
+	result := make([]interface{}, len(*customMessage))
+	for i, customMessage := range *customMessage {
 		result[i] = map[string]interface{}{
-			"default_value": trigger.DefaultValue,
-			"type":          trigger.VarType,
+			"default_value": customMessage.DefaultValue,
+			"type":          customMessage.VarType,
 		}
 	}
 	return result
