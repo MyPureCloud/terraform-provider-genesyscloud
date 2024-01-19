@@ -471,7 +471,7 @@ func flattenSupportCenterSettings(supportCenterSettings *platformclientv2.Suppor
 		return nil
 	}
 
-	screens := &supportCenterSettings.Screens
+	// screens := &supportCenterSettings.Screens
 
 	return []interface{}{map[string]interface{}{
 		"enabled":                          supportCenterSettings.Enabled,
@@ -481,7 +481,7 @@ func flattenSupportCenterSettings(supportCenterSettings *platformclientv2.Suppor
 		"feedback_enabled":                 supportCenterSettings.Feedback.Enabled,
 		"enabled_categories":               flattenSupportCenterCategory(supportCenterSettings.EnabledCategories),
 		"flattenSupportCenterStyleSetting": flattenSupportCenterStyleSetting(supportCenterSettings.StyleSetting),
-		"flattenSupportCenterScreens":      flattenSupportCenterScreens(screens),
+		"flattenSupportCenterScreens":      flattenSupportCenterScreens(supportCenterSettings.Screens),
 	}}
 }
 
@@ -522,8 +522,7 @@ func flattenSupportCenterStyleSetting(styleSetting *platformclientv2.Supportcent
 
 	result := stringmap.MergeSingularMaps(heroResult, globalResult)
 
-	result = append(result, heroResult...)
-	result = append(result, globalResult...)
+	result := append(heroResult, globalResult...)
 
 	return result
 }
@@ -560,7 +559,7 @@ func flattenSupportCenterGlobalStyle(globalStyles *platformclientv2.Supportcente
 }
 
 func flattenSupportCenterScreens(supportcentermodulesettings *[]platformclientv2.Supportcentermodulesetting) []interface{} {
-	if supportcentermodulesettings == nil {
+	if supportcentermodulesettings == nil || len(*supportcentermodulesettings) < 1 {
 		return nil
 	}
 
