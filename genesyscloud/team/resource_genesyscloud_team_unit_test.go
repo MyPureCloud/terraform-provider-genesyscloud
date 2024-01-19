@@ -35,11 +35,15 @@ func TestUnitResourceTeamRead(t *testing.T) {
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 		return teamObj, apiResponse.StatusCode, nil
 	}
+	teamProxyobj.getMembersByIdAttr = func(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, err error) {
+		return nil, nil
+	}
+
 	internalProxy = teamProxyobj
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gc := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	resourceSchema := ResourceTeam().Schema
 
@@ -48,7 +52,7 @@ func TestUnitResourceTeamRead(t *testing.T) {
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
 
-	diag := readTeam(ctx, d, gcloud)
+	diag := readTeam(ctx, d, gc)
 	assert.Equal(t, false, diag.HasError())
 	assert.Equal(t, tId, d.Id())
 	assert.Equal(t, tName, d.Get("name").(string))
@@ -84,7 +88,7 @@ func TestUnitResourceTeamDelete(t *testing.T) {
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gc := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	resourceSchema := ResourceTeam().Schema
 
@@ -93,7 +97,7 @@ func TestUnitResourceTeamDelete(t *testing.T) {
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
 
-	diag := deleteTeam(ctx, d, gcloud)
+	diag := deleteTeam(ctx, d, gc)
 	assert.Nil(t, diag)
 	assert.Equal(t, tId, d.Id())
 }
@@ -129,11 +133,15 @@ func TestUnitResourceTeamCreate(t *testing.T) {
 		return team, nil
 	}
 
+	teamProxyobj.getMembersByIdAttr = func(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, err error) {
+		return nil, nil
+	}
+
 	internalProxy = teamProxyobj
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gc := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	resourceSchema := ResourceTeam().Schema
 
@@ -142,7 +150,7 @@ func TestUnitResourceTeamCreate(t *testing.T) {
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
 
-	diag := createTeam(ctx, d, gcloud)
+	diag := createTeam(ctx, d, gc)
 	assert.Equal(t, false, diag.HasError())
 	assert.Equal(t, tId, d.Id())
 }
@@ -178,11 +186,15 @@ func TestUnitResourceTeamUpdate(t *testing.T) {
 		return team, nil
 	}
 
+	teamProxyobj.getMembersByIdAttr = func(ctx context.Context, p *teamProxy, teamId string) (members *[]platformclientv2.Userreferencewithname, err error) {
+		return nil, nil
+	}
+
 	internalProxy = teamProxyobj
 	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
-	gcloud := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	gc := &gcloud.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	resourceSchema := ResourceTeam().Schema
 
@@ -191,7 +203,7 @@ func TestUnitResourceTeamUpdate(t *testing.T) {
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
 
-	diag := updateTeam(ctx, d, gcloud)
+	diag := updateTeam(ctx, d, gc)
 	assert.Equal(t, false, diag.HasError())
 	assert.Equal(t, tId, d.Id())
 	assert.Equal(t, tDescription, d.Get("description").(string))
