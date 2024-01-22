@@ -223,20 +223,13 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 	// Go through and clear the status references first to avoid dependency errors on deletion
 	log.Printf("Clearing references of statuses for deletion of worktype %s", d.Id())
 	for _, forDeletionId := range forDeletionIds {
-		updateForCleaning := Workitemstatusupdate{}
+		updateForCleaning := platformclientv2.Workitemstatusupdate{}
 
-		// NOTE: Keep this comments so we can remember to use SetField here for forcing null in refactor
-		// refer: temp_api_utils.go file
 		// // Force these properties as 'null' for the API request
-		// updateForCleaning.SetField("DestinationStatusIds", &[]string{})
-		// updateForCleaning.SetField("DefaultDestinationStatusId", nil)
-		// updateForCleaning.SetField("StatusTransitionDelaySeconds", nil)
-		// updateForCleaning.SetField("StatusTransitionTime", nil)
-
-		updateForCleaning.DestinationStatusIds = &[]string{}
-		updateForCleaning.DefaultDestinationStatusId = nil
-		updateForCleaning.StatusTransitionDelaySeconds = nil
-		updateForCleaning.StatusTransitionTime = nil
+		updateForCleaning.SetField("DestinationStatusIds", &[]string{})
+		updateForCleaning.SetField("DefaultDestinationStatusId", nil)
+		updateForCleaning.SetField("StatusTransitionDelaySeconds", nil)
+		updateForCleaning.SetField("StatusTransitionTime", nil)
 
 		// We put a random description so we can ensure there is a 'change' in the status.
 		// Else we'll get a 400 error if the status has no destination status /default status to begin with
