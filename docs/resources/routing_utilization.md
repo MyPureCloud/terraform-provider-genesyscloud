@@ -18,7 +18,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_routing_utilization" "org-utililzation" {
+resource "genesyscloud_routing_utilization" "org-utilization" {
   call {
     maximum_capacity = 1
     include_non_acd  = true
@@ -43,6 +43,15 @@ resource "genesyscloud_routing_utilization" "org-utililzation" {
     include_non_acd           = false
     interruptible_media_types = ["call", "chat"]
   }
+  label_utilizations {
+    label_id         = genesyscloud_routing_utilization_label.red_label.id
+    maximum_capacity = 4
+  }
+  label_utilizations {
+    label_id               = genesyscloud_routing_utilization_label.blue_label.id
+    maximum_capacity       = 3
+    interrupting_label_ids = [genesyscloud_routing_utilization_label.red_label.id]
+  }
 }
 ```
 
@@ -55,6 +64,7 @@ resource "genesyscloud_routing_utilization" "org-utililzation" {
 - `callback` (Block List, Max: 1) Callback media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--callback))
 - `chat` (Block List, Max: 1) Chat media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--chat))
 - `email` (Block List, Max: 1) Email media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--email))
+- `label_utilizations` (Block List) Label utilization settings. If not set, default label settings will be applied. This is in PREVIEW and should not be used unless the feature is available to your organization. (see [below for nested schema](#nestedblock--label_utilizations))
 - `message` (Block List, Max: 1) Message media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--message))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
@@ -112,6 +122,19 @@ Optional:
 
 - `include_non_acd` (Boolean) Block this media type when on a non-ACD conversation. Defaults to `false`.
 - `interruptible_media_types` (Set of String) Set of other media types that can interrupt this media type (call | callback | chat | email | message).
+
+
+<a id="nestedblock--label_utilizations"></a>
+### Nested Schema for `label_utilizations`
+
+Required:
+
+- `label_id` (String) Id of the label being configured.
+- `maximum_capacity` (Number) Maximum capacity of conversations with this label. Value must be between 0 and 25.
+
+Optional:
+
+- `interrupting_label_ids` (Set of String) Set of other labels that can interrupt this label.
 
 
 <a id="nestedblock--message"></a>
