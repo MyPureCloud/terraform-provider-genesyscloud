@@ -1,4 +1,4 @@
-package outbound
+package outbound_callabletimeset
 
 import (
 	"context"
@@ -14,20 +14,11 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
-func dataSourceOutboundCallabletimeset() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Clound Outbound Callable Timesets. Select a callable timeset by name.",
-		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundCallabletimesetRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Callable timeset name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
+/*
+The data_source_genesyscloud_outbound_callabletimeset.go contains the data source implementation for the resource.
+*/
 
+// dataSourceOutboundCallabletimesetRead retrieves by name term the id in question
 func dataSourceOutboundCallabletimesetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
 	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
