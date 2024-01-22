@@ -93,6 +93,15 @@ resource "genesyscloud_user" "example_user" {
       include_non_acd           = false
       interruptible_media_types = ["call", "chat"]
     }
+    label_utilizations {
+      label_id                  = genesyscloud_routing_utilization_label.red_label.id
+      maximum_capacity          = 4
+    }
+    label_utilizations {
+      label_id                  = genesyscloud_routing_utilization_label.blue_label.id
+      maximum_capacity          = 4
+      interrupting_label_ids    = [genesyscloud_routing_utilization_label.red_label.id]
+    }
   }
 }
 ```
@@ -203,6 +212,7 @@ Optional:
 - `callback` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--callback))
 - `chat` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--chat))
 - `email` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--email))
+- `label_utilizations` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--label_utilizations))
 - `message` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--message))
 
 <a id="nestedobjatt--routing_utilization--call"></a>
@@ -245,6 +255,16 @@ Optional:
 - `maximum_capacity` (Number)
 
 
+<a id="nestedobjatt--routing_utilization--label_utilizations"></a>
+### Nested Schema for `routing_utilization.label_utilizations`
+
+Optional:
+
+- `interrupting_label_ids` (Set of String)
+- `label_id` (String)
+- `maximum_capacity` (Number)
+
+
 <a id="nestedobjatt--routing_utilization--message"></a>
 ### Nested Schema for `routing_utilization.message`
 
@@ -254,3 +274,17 @@ Optional:
 - `interruptible_media_types` (Set of String)
 - `maximum_capacity` (Number)
 
+<a id="nestedblock--routing_utilization--label_utilizations"></a>
+### Nested Schema for `label_utilizations`
+
+The utilization label feature is not yet available. Only use this block if the feature is enabled for your organization.
+
+Required:
+
+- `label_id` (String) Id of the label being configured.
+
+- `maximum_capacity` (Number) Maximum capacity of conversations of this label. Value must be between 0 and 25.
+
+Optional:
+
+- `interrupting_label_ids` (Set of String) Set of other labels that can interrupt this one.
