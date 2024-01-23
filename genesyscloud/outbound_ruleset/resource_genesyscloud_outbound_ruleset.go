@@ -150,23 +150,12 @@ func filterOutboundRulesets(ruleSets []platformclientv2.Ruleset, skillMap resour
 
 	for _, ruleSet := range ruleSets {
 		var foundDeleted bool
-
 		for _, rule := range *ruleSet.Rules {
-			var err error
-
-			if foundDeleted, err = doesRuleActionsRefDeletedSkill(rule, skillMap); err != nil {
-				return nil, diag.Errorf("Failed to filter ruleset: %s", err)
-			}
-
-			if foundDeleted {
+			if doesRuleActionsRefDeletedSkill(rule, skillMap) || doesRuleConditionsRefDeletedSkill(rule, skillMap) {
+				foundDeleted = true
 				break
-			} else {
-				if foundDeleted = doesRuleConditionsRefDeletedSkill(rule, skillMap); foundDeleted {
-					break
-				}
 			}
 		}
-
 		if foundDeleted {
 			log.Printf("Removing ruleset id '%s'", *ruleSet.Id)
 		} else {

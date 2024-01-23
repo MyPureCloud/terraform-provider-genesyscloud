@@ -2,7 +2,6 @@ package outbound_ruleset
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -275,27 +274,28 @@ func flattenDataactionconditionpredicates(predicates *[]platformclientv2.Dataact
 }
 
 // look through rule actions to check if the referenced skills exist in our skill map or not
-func doesRuleActionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMap resourceExporter.ResourceIDMetaMap) (bool, error) {
+func doesRuleActionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMap resourceExporter.ResourceIDMetaMap) bool {
 	for _, action := range *rule.Actions {
 		if action.ActionTypeName != nil && strings.EqualFold(*action.ActionTypeName, "set_skills") && action.Properties != nil {
 			if value, found := (*action.Properties)["skills"]; found {
 				// the property value is a json string wrapping an array of skill ids, need to convert it back to a slice to check if each skill exists
 				var skillIds []string
-				if err := json.Unmarshal([]byte(value), &skillIds); err != nil {
-					return false, fmt.Errorf("error decoding JSON: %s", err)
+				err := json.Unmarshal([]byte(value), &skillIds)
+				if err != nil {
+					log.Printf("doesRuleActionsRefDeletedSkill.Error unmarshaling skills JSON: %s", err)
+					return true
 				}
-
 				for _, skillId := range skillIds {
 					_, found := skillMap[skillId]
 					if !found { // skill id referenced by the rule action is not found in the skill map
 						log.Printf("The skill id '%s' used in action does not exist in GC anymore", skillId)
-						return true, nil
+						return true
 					}
 				}
 			}
 		}
 	}
-	return false, nil
+	return false
 }
 
 // look through rule conditions to check if the referenced skills exist in our skill map or not
