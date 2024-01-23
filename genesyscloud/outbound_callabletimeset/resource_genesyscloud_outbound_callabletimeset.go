@@ -28,7 +28,7 @@ func getAllOutboundCallableTimesets(ctx context.Context, clientConfig *platformc
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getOutboundCallabletimesetProxy(clientConfig)
 
-	callabletimesets, getErr := proxy.getAllOutboundCallableTimeset(ctx)
+	callabletimesets, _, getErr := proxy.getAllOutboundCallableTimeset(ctx)
 	if getErr != nil {
 		return nil, diag.Errorf("Failed to get page of callable timeset configs: %v", getErr)
 	}
@@ -43,7 +43,7 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := newOutboundCallableTimesetProxy(sdkConfig)
+	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 
 	callableTimeset := platformclientv2.Callabletimeset{
 		CallableTimes: buildCallableTimes(d.Get("callable_times").(*schema.Set)),
@@ -54,7 +54,7 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	log.Printf("Creating Outbound Callabletimeset %s", name)
-	outboundCallabletimeset, err := proxy.createOutboundCallabletimeset(ctx, &callableTimeset)
+	outboundCallabletimeset, _, err := proxy.createOutboundCallabletimeset(ctx, &callableTimeset)
 	if err != nil {
 		return diag.Errorf("Failed to create Outbound Callabletimeset %s: %s", name, err)
 	}
@@ -68,24 +68,24 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 // updateOutboundCallabletimeset is used by the outbound_callabletimeset resource to update an Outbound Callable Timeset
 func updateOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := newOutboundCallableTimesetProxy(sdkConfig)
+	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 
 	callableTimeset := getOutboundCallableTimesetFromResourceData(d)
 
 	log.Printf("Updating Outbound Callabletimeset %s", d.Id())
-	outboundCallabletimeset, err := proxy.updateOutboundCallabletimeset(ctx, d.Id(), &callableTimeset)
+	outboundCallabletimeset, _, err := proxy.updateOutboundCallabletimeset(ctx, d.Id(), &callableTimeset)
 	if err != nil {
 		return diag.Errorf("Failed to read Outbound Callabletimeset %s: %s", d.Id(), err)
 	}
 
-	log.Printf("Updated Outbound Callabletimeset %s", outboundCallabletimeset.Id)
+	log.Printf("Updated Outbound Callabletimeset %s", *outboundCallabletimeset.Id)
 	return readOutboundCallabletimeset(ctx, d, meta)
 }
 
 // readOutboundCallabletimeset is used by the outbound_callabletimeset resource to read an Outbound Callable Timeset from the genesys cloud
 func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := newOutboundCallableTimesetProxy(sdkConfig)
+	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 
 	log.Printf("Reading Outbound Callabletimeset %s", d.Id())
 
@@ -115,7 +115,7 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 // deleteOutboundCallabletimeset is used by the outbound_callabletimeset resource to delete an existing Outbound Callable Timeset from the genesys cloud
 func deleteOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
-	proxy := newOutboundCallableTimesetProxy(sdkConfig)
+	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 
 	log.Printf("Deleting Outbound Callabletimeset")
 	_, err := proxy.deleteOutboundCallabletimeset(ctx, d.Id())

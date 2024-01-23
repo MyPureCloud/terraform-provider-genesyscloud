@@ -19,11 +19,11 @@ with the Genesys Cloud SDK
 var internalProxy *outboundCallableTimesetProxy
 
 // type definitions for each func on our proxy
-type createOutboundCallabletimesetFunc func(ctx context.Context, p *outboundCallableTimesetProxy, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, error)
-type getAllOutboundCallableTimesetFunc func(ctx context.Context, p *outboundCallableTimesetProxy) (*[]platformclientv2.Callabletimeset, error)
+type createOutboundCallabletimesetFunc func(ctx context.Context, p *outboundCallableTimesetProxy, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, int, error)
+type getAllOutboundCallableTimesetFunc func(ctx context.Context, p *outboundCallableTimesetProxy) (*[]platformclientv2.Callabletimeset, int, error)
 type getOutboundCallabletimesetByIdFunc func(ctx context.Context, p *outboundCallableTimesetProxy, timesetId string) (timeset *platformclientv2.Callabletimeset, responseCode int, err error)
 type getOutboundCallabletimesetByNameFunc func(ctx context.Context, p *outboundCallableTimesetProxy, name string) (timesetId string, retryable bool, err error)
-type updateOutboundCallabletimesetFunc func(ctx context.Context, p *outboundCallableTimesetProxy, timesetId string, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, error)
+type updateOutboundCallabletimesetFunc func(ctx context.Context, p *outboundCallableTimesetProxy, timesetId string, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, int, error)
 type deleteOutboundCallabletimesetFunc func(ctx context.Context, p *outboundCallableTimesetProxy, timesetId string) (responseCode int, err error)
 
 // outboundCallableTimesetProxy contains all of the methods that call genesys cloud APIs
@@ -62,12 +62,12 @@ func getOutboundCallabletimesetProxy(clientConfig *platformclientv2.Configuratio
 }
 
 // createOutboundCallabletimeset creates a Genesys Cloud Outbound Callable Timeset
-func (p *outboundCallableTimesetProxy) createOutboundCallabletimeset(ctx context.Context, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, error) {
+func (p *outboundCallableTimesetProxy) createOutboundCallabletimeset(ctx context.Context, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, int, error) {
 	return p.createOutboundCallabletimesetAttr(ctx, p, timeset)
 }
 
 // getAllOutboundCallableTimeset retrieves all Genesys Cloud Outbound Callable Timesets
-func (p *outboundCallableTimesetProxy) getAllOutboundCallableTimeset(ctx context.Context) (*[]platformclientv2.Callabletimeset, error) {
+func (p *outboundCallableTimesetProxy) getAllOutboundCallableTimeset(ctx context.Context) (*[]platformclientv2.Callabletimeset, int, error) {
 	return p.getAllOutboundCallableTimesetAttr(ctx, p)
 }
 
@@ -82,7 +82,7 @@ func (p *outboundCallableTimesetProxy) getOutboundCallabletimesetByName(ctx cont
 }
 
 // updateOutboundCallabletimeset updates a Genesys Cloud Outbound Callable Timeset
-func (p *outboundCallableTimesetProxy) updateOutboundCallabletimeset(ctx context.Context, timesetId string, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, error) {
+func (p *outboundCallableTimesetProxy) updateOutboundCallabletimeset(ctx context.Context, timesetId string, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, int, error) {
 	return p.updateOutboundCallabletimesetAttr(ctx, p, timesetId, timeset)
 }
 
@@ -92,27 +92,40 @@ func (p *outboundCallableTimesetProxy) deleteOutboundCallabletimeset(ctx context
 }
 
 // createOutboundCallabletimesetFn is an implementation function for creating a Genesys Cloud Outbound Callable Timeset
-func createOutboundCallabletimesetFn(ctx context.Context, p *outboundCallableTimesetProxy, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, error) {
-	timeset, _, err := p.outboundApi.PostOutboundCallabletimesets(*timeset)
+func createOutboundCallabletimesetFn(ctx context.Context, p *outboundCallableTimesetProxy, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, int, error) {
+	timeset, resp, err := p.outboundApi.PostOutboundCallabletimesets(*timeset)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create timeset: %s", err)
+		return nil, 0, fmt.Errorf("Failed to create timeset: %s", err)
 	}
 
-	return timeset, nil
+	return timeset, resp.StatusCode, nil
 }
 
 // getAllOutboundCallableTimesetFn is the implementation for retrieving all outbound callable timesets in Genesys Cloud
-func getAllOutboundCallableTimesetFn(ctx context.Context, p *outboundCallableTimesetProxy) (*[]platformclientv2.Callabletimeset, error) {
+func getAllOutboundCallableTimesetFn(ctx context.Context, p *outboundCallableTimesetProxy) (*[]platformclientv2.Callabletimeset, int, error) {
 	var allCallableTimesets []platformclientv2.Callabletimeset
 
-	for pageNum := 1; ; pageNum++ {
+	timesets, resp, err := p.outboundApi.GetOutboundCallabletimesets(100, 1, true, "", "", "", "")
+	if err != nil {
+		return nil, 0, fmt.Errorf("Failed to get outbound timesets: %v", err)
+	}
+	if timesets.Entities == nil || len(*timesets.Entities) == 0 {
+		return &allCallableTimesets, resp.StatusCode, nil
+	}
+
+	for _, timeset := range *timesets.Entities {
+		allCallableTimesets = append(allCallableTimesets, timeset)
+	}
+
+	var statusCode int
+	for pageNum := 2; pageNum <= *timesets.PageCount; pageNum++ {
 		const pageSize = 100
 
-		timesets, _, err := p.outboundApi.GetOutboundCallabletimesets(pageSize, pageNum, true, "", "", "", "")
+		timesets, resp, err := p.outboundApi.GetOutboundCallabletimesets(pageSize, pageNum, true, "", "", "", "")
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get outbound timesets: %v", err)
+			return nil, 0, fmt.Errorf("Failed to get outbound timesets: %v", err)
 		}
-
+		statusCode = resp.StatusCode
 		if timesets.Entities == nil || len(*timesets.Entities) == 0 {
 			break
 		}
@@ -123,7 +136,7 @@ func getAllOutboundCallableTimesetFn(ctx context.Context, p *outboundCallableTim
 		}
 	}
 
-	return &allCallableTimesets, nil
+	return &allCallableTimesets, statusCode, nil
 }
 
 // getOutboundCallabletimesetByIdFn is an implementation of the function to get a Genesys Cloud Outbound Callabletimeset by Id
@@ -143,44 +156,35 @@ func getOutboundCallabletimesetByIdFn(ctx context.Context, p *outboundCallableTi
 
 // getOutboundCallabletimesetIdByNameFn is an implementation of the function to get a Genesys Cloud Outbound Callabletimeset by name
 func getOutboundCallabletimesetByNameFn(ctx context.Context, p *outboundCallableTimesetProxy, name string) (timesetId string, retryable bool, err error) {
-	const pageNum = 1
-	const pageSize = 100
-	timesets, _, err := p.outboundApi.GetOutboundCallabletimesets(pageSize, pageNum, true, "", name, "", "")
+	timesets, _, err := getAllOutboundCallableTimesetFn(ctx, p)
 	if err != nil {
 		return "", false, fmt.Errorf("Error searching outbound timeset %s: %s", name, err)
 	}
 
-	if timesets.Entities == nil || len(*timesets.Entities) == 0 {
-		return "", true, fmt.Errorf("No outbound timeset found with name %s", name)
-	}
-
 	var timeset platformclientv2.Callabletimeset
-	entities := *timesets.Entities
-
-	for _, timesetSdk := range entities {
+	for _, timesetSdk := range *timesets {
 		if *timesetSdk.Name == name {
 			log.Printf("Retrieved the timeset id %s by name %s", *timesetSdk.Id, name)
 			timeset = timesetSdk
 			return *timeset.Id, false, nil
 		}
 	}
-
 	return "", false, fmt.Errorf("Unable to find timeset with name %s", name)
 }
 
 // updateOutboundCallabletimesetFn is an implementation of the function to update a Genesys Cloud Outbound Callabletimesets
-func updateOutboundCallabletimesetFn(ctx context.Context, p *outboundCallableTimesetProxy, timesetId string, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, error) {
+func updateOutboundCallabletimesetFn(ctx context.Context, p *outboundCallableTimesetProxy, timesetId string, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, int, error) {
 	outboundCallabletimeset, _, err := getOutboundCallabletimesetByIdFn(ctx, p, timesetId)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to timeset by id %s: %s", timesetId, err)
+		return nil, 0, fmt.Errorf("Failed to timeset by id %s: %s", timesetId, err)
 	}
 
 	timeset.Version = outboundCallabletimeset.Version
-	timeset, _, err = p.outboundApi.PutOutboundCallabletimeset(timesetId, *timeset)
+	timeset, resp, err := p.outboundApi.PutOutboundCallabletimeset(timesetId, *timeset)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to update timeset: %s", err)
+		return nil, 0, fmt.Errorf("Failed to update timeset: %s", err)
 	}
-	return timeset, nil
+	return timeset, resp.StatusCode, nil
 }
 
 // deleteOutboundCallabletimesetFn is an implementation function for deleting a Genesys Cloud Outbound Callabletimesets

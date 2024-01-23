@@ -11,7 +11,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 /*
@@ -21,28 +20,21 @@ The data_source_genesyscloud_outbound_callabletimeset.go contains the data sourc
 // dataSourceOutboundCallabletimesetRead retrieves by name term the id in question
 func dataSourceOutboundCallabletimesetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*gcloud.ProviderMeta).ClientConfig
-	outboundAPI := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
-
+	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 	timesetName := d.Get("name").(string)
 
 	return gcloud.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100
+		timesetId, retryable, err := proxy.getOutboundCallabletimesetByName(ctx, timesetName)
 
-			timesets, _, getErr := outboundAPI.GetOutboundCallabletimesets(pageSize, pageNum, true, "", "", "", "")
-			if getErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("error requesting callable timeset %s: %s", timesetName, getErr))
-			}
-			if timesets.Entities == nil || len(*timesets.Entities) == 0 {
-				return retry.RetryableError(fmt.Errorf("no callable timeset found with timesetName %s", timesetName))
-			}
-
-			for _, timeset := range *timesets.Entities {
-				if timeset.Name != nil && *timeset.Name == timesetName {
-					d.SetId(*timeset.Id)
-					return nil
-				}
-			}
+		if err != nil && !retryable {
+			return retry.NonRetryableError(fmt.Errorf("error requesting callable timeset %s: %s", timesetName, err))
 		}
+
+		if retryable {
+			return retry.RetryableError(fmt.Errorf("no callable timeset found with timesetName %s", timesetName))
+		}
+
+		d.SetId(timesetId)
+		return nil
 	})
 }
