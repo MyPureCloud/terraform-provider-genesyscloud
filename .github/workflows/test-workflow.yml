@@ -14,10 +14,10 @@ on:
         default: ''
       test-log-artifact-name:
         type: string
-        default: ''
+        required: true
       sdk-log-artifact-name:
         type: string
-        default: ''
+        required: true
       sdk-debug-log-file-path:
         type: string
         default: './genesyscloud/sdk_debug.log'
@@ -90,7 +90,7 @@ jobs:
           go test -timeout 80m -v -cover ${{ inputs.package-path }} -parallel 20 -coverprofile="${{ inputs.coverage-out-filename }}" -skip="${{ inputs.skip-regexp }}" -run="${{ inputs.run-regexp }}"
           go tool cover -html="${{ inputs.coverage-out-filename }}" -o="${{ inputs.coverage-html-filename }}"
       - name: 'Upload Logs'
-        if: ${{ inputs.test-log-artifact-name != '' }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.test-log-artifact-name }} ${{ matrix.terraform }}
@@ -98,7 +98,7 @@ jobs:
           retention-days: 5
 
       - name: 'Upload SDK Log'
-        if: ${{ inputs.sdk-log-artifact-name != '' }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.sdk-log-artifact-name }} ${{ matrix.terraform }}

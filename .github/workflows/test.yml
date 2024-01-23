@@ -39,6 +39,7 @@ jobs:
   outbound-tests:
     uses: ./.github/workflows/test-workflow.yml
     name: Outbound
+    needs: build
     with:
       package-path: './genesyscloud/...'
       run-regexp: '(Outbound)+'
@@ -53,6 +54,7 @@ jobs:
   export-tests:
     uses: ./.github/workflows/test-workflow.yml
     name: Export
+    needs: build
     with:
       package-path: './genesyscloud/tfexporter/...'
       coverage-out-filename: 'export-coverage.out'
@@ -68,6 +70,7 @@ jobs:
   routing-tests:
     uses: ./.github/workflows/test-workflow.yml
     name: Routing
+    needs: build
     with:
       package-path: './genesyscloud/...'
       run-regexp: '(Routing)+'
@@ -80,6 +83,11 @@ jobs:
       client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
 
   all-other-datasource-tests:
+    needs:
+      - routing-tests
+      - export-tests
+      - outbound-tests
+    if: ${{ always() }}
     uses: ./.github/workflows/test-workflow.yml
     name: All Other DataSource Tests
     with:
@@ -97,6 +105,11 @@ jobs:
   all-other-resource-tests:
     uses: ./.github/workflows/test-workflow.yml
     name: All Other Resource Tests
+    needs:
+      - routing-tests
+      - export-tests
+      - outbound-tests
+    if: ${{ always() }}
     with:
       package-path: './genesyscloud/...'
       skip-regexp: '(TfExport)+|(Outbound)+|(Routing)+'
