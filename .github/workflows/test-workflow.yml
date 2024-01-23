@@ -18,6 +18,9 @@ on:
       sdk-log-artifact-name:
         type: string
         default: ''
+      sdk-debug-log-file-path:
+        type: string
+        default: './genesyscloud/sdk_debug.log'
       running-export-tests:
         type: string
         default: 'false'
@@ -71,7 +74,7 @@ jobs:
         env:
           TF_ACC: '1'
           TF_LOG: 'DEBUG'
-          TF_LOG_PATH: '../test.log'
+          TF_LOG_PATH: ${{ github.workspace }}/test.log
           TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
 
           GENESYSCLOUD_OAUTHCLIENT_ID: ${{ secrets.client-id }}
@@ -83,23 +86,23 @@ jobs:
           if [ "$TF_ACC_TERRAFORM_VERSION" == "0.14.7" ]; then
             sleep 300 # This avoids conflicts with the API and other related issues e.g. too many routing email domains
           fi
-          # Run all times, skipping the export & outbound tests. They are being ran in separate jobs.
+          
           go test -timeout 80m -v -cover ${{ inputs.package-path }} -parallel 20 -coverprofile="${{ inputs.coverage-out-filename }}" -skip="${{ inputs.skip-regexp }}" -run="${{ inputs.run-regexp }}"
           go tool cover -html="${{ inputs.coverage-out-filename }}" -o="${{ inputs.coverage-html-filename }}"
       - name: 'Upload Logs'
-        if: inputs.test-log-artifact-name != ''
+        if: ${{ inputs.test-log-artifact-name != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.test-log-artifact-name }} ${{ matrix.terraform }}
-          path: ./test.log
+          path: ${{ github.workspace }}/test.log
           retention-days: 5
 
       - name: 'Upload SDK Log'
-        if: inputs.sdk-log-artifact-name != ''
+        if: ${{ inputs.sdk-log-artifact-name != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.sdk-log-artifact-name }} ${{ matrix.terraform }}
-          path: ./genesyscloud/sdk_debug.log
+          path: ${{ inputs.sdk-debug-log-file-path }}
           retention-days: 5
 
       - name: 'Upload Export Result'
@@ -107,5 +110,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: export-result ${{ matrix.terraform }}
-          path: ./.terraform/
+          path: ${{ github.workspace }}/.terraform/
           retention-days: 5

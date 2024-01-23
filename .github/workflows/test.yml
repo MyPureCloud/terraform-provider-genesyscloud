@@ -60,6 +60,7 @@ jobs:
       running-export-tests: 'true'
       test-log-artifact-name: 'export logs'
       sdk-log-artifact-name: 'export sdk_log'
+      sdk-debug-log-file-path: './genesyscloud/tfexporter/sdk_debug.log'
     secrets:
       client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
       client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
