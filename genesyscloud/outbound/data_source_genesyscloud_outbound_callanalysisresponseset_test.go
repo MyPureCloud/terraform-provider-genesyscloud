@@ -12,7 +12,7 @@ import (
 
 var FalseValue = "false"
 
-func TestAccDataSourceCallAnalysisResponseSet(t *testing.T) {
+func TestAccDataSourceOutboundCallAnalysisResponseSet(t *testing.T) {
 	var (
 		resourceId      = "cars"
 		responseSetName = "Test CAR " + uuid.NewString()
