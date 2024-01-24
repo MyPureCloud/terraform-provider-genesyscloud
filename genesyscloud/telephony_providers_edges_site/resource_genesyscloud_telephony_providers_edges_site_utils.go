@@ -540,14 +540,32 @@ func GenerateSiteResourceWithCustomAttrs(
 
 // DeleteLocationWithNumber is a test utility function to delete site and location with the provided emergency number
 func DeleteLocationWithNumber(emergencyNumber string, config *platformclientv2.Configuration) error {
-	locationsAPI := platformclientv2.NewLocationsApiWithConfig(config)
+	var (
+		locationsAPI = platformclientv2.NewLocationsApiWithConfig(config)
+		pageCount    int
+	)
+	const pageSize = 100
 
-	for pageNum := 1; ; pageNum++ {
+	log.Printf("Reading locations")
+	locations, _, getErr := locationsAPI.GetLocations(pageSize, 1, []string{}, "")
+	if getErr != nil {
+		return getErr
+	}
+	log.Printf("Read locations")
+	if locations.Entities == nil || len(*locations.Entities) == 0 {
+		return nil
+	}
+
+	pageCount = *locations.PageCount
+
+	for pageNum := 1; pageNum <= pageCount; pageNum++ {
 		const pageSize = 100
-		locations, _, getErr := locationsAPI.GetLocations(pageSize, pageNum, nil, "")
+		log.Printf("Reading locations")
+		locations, _, getErr := locationsAPI.GetLocations(pageSize, pageNum, []string{}, "")
 		if getErr != nil {
 			return getErr
 		}
+		log.Printf("Read locations")
 
 		if locations.Entities == nil || len(*locations.Entities) == 0 {
 			break
@@ -559,13 +577,17 @@ func DeleteLocationWithNumber(emergencyNumber string, config *platformclientv2.C
 					continue
 				}
 				if strings.Contains(*location.EmergencyNumber.E164, emergencyNumber) {
-					err := deleteSiteWithLocationId(*location.Id)
+					err := deleteSiteWithLocationId(*location.Id, config)
 					if err != nil {
 						return err
 					}
-					_, err = locationsAPI.DeleteLocation(*location.Id)
+					log.Printf("Deleting location %s", *location.Id)
+					if _, err = locationsAPI.DeleteLocation(*location.Id); err != nil {
+						return err
+					}
+					log.Printf("Deleted location %s", *location.Id)
 					time.Sleep(30 * time.Second)
-					return err
+					return nil
 				}
 			}
 		}
@@ -576,14 +598,32 @@ func DeleteLocationWithNumber(emergencyNumber string, config *platformclientv2.C
 
 // deleteSiteWithLocationId is a test utility function that will
 // delete a site with the provided location id
-func deleteSiteWithLocationId(locationId string) error {
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false)
+func deleteSiteWithLocationId(locationId string, config *platformclientv2.Configuration) error {
+	const pageSize = 100
+	var (
+		pageCount int
+		edgesAPI  = platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(config)
+	)
+
+	log.Printf("Reading telephony providers edges sites with location ID %s", locationId)
+	sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", locationId, false)
+	if getErr != nil {
+		return getErr
+	}
+	log.Printf("Read telephony providers edges sites with location ID %s", locationId)
+	if sites.Entities == nil || len(*sites.Entities) == 0 {
+		return nil
+	}
+
+	pageCount = *sites.PageCount
+
+	for pageNum := 1; pageNum <= pageCount; pageNum++ {
+		log.Printf("Reading telephony providers edges site with location ID %s", locationId)
+		sites, _, getErr = edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", locationId, false)
 		if getErr != nil {
 			return getErr
 		}
+		log.Printf("Read telephony providers edges sites with location ID %s", locationId)
 
 		if sites.Entities == nil || len(*sites.Entities) == 0 {
 			return nil
@@ -591,15 +631,16 @@ func deleteSiteWithLocationId(locationId string) error {
 
 		for _, site := range *sites.Entities {
 			if site.Location != nil && *site.Location.Id == locationId {
-				_, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(*site.Id)
-				if err != nil {
+				log.Printf("Deleting telephony providers edges site %s", *site.Id)
+				if _, err := edgesAPI.DeleteTelephonyProvidersEdgesSite(*site.Id); err != nil {
 					return err
 				}
+				log.Printf("Deleted telephony providers edges site %s", *site.Id)
 				time.Sleep(8 * time.Second)
-				break
 			}
 		}
 	}
+	return nil
 }
 
 // GetOrganizationDefaultSiteId is a test utiliy function to get the default site ID of the org

@@ -112,13 +112,14 @@ func (p *outboundCampaignProxy) turnOffCampaign(ctx context.Context, campaignId 
 	log.Printf("Updated campaign '%s'", *outboundCampaign.Name)
 
 	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		log.Printf("Reading Outbound Campaign %s to ensure campaign_status if 'off'", campaignId)
+		log.Printf("Reading Outbound Campaign %s to ensure campaign_status is 'off'", campaignId)
 		outboundCampaign, _, getErr := p.getOutboundCampaignById(ctx, campaignId)
 		if getErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Campaign %s: %s", campaignId, getErr))
 		}
 		log.Printf("Read Outbound Campaign %s", campaignId)
-		if *outboundCampaign.CampaignStatus != "off" {
+		if *outboundCampaign.CampaignStatus == "on" {
+			time.Sleep(5 * time.Second)
 			return retry.RetryableError(fmt.Errorf("campaign %s campaign_status is still %s", campaignId, *outboundCampaign.CampaignStatus))
 		}
 		// Success

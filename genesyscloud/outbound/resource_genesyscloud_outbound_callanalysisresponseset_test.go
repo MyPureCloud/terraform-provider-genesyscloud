@@ -14,7 +14,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
-func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
+func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 	t.Parallel()
 	var (
 		resourceId          = "cars"
