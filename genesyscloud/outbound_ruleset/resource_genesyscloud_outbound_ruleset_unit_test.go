@@ -10,7 +10,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
-func TestDoesRuleConditionsRefDeletedSkill(t *testing.T) {
+func TestUnitDoesRuleConditionsRefDeletedSkill(t *testing.T) {
 	rule := platformclientv2.Dialerrule{}
 	skillMap := resourceExporter.ResourceIDMetaMap{
 		"Skill1": {Name: "Skill1"},
@@ -49,7 +49,7 @@ func TestDoesRuleConditionsRefDeletedSkill(t *testing.T) {
 	assert.True(t, doesRuleConditionsRefDeletedSkill(rule, skillMap))
 }
 
-func TestDoesRuleActionsRefDeletedSkill(t *testing.T) {
+func TestUnitDoesRuleActionsRefDeletedSkill(t *testing.T) {
 	rule := platformclientv2.Dialerrule{}
 	skillMap := resourceExporter.ResourceIDMetaMap{
 		"Skill1": {Name: "Skill1"},
@@ -78,7 +78,6 @@ func TestDoesRuleActionsRefDeletedSkill(t *testing.T) {
 			},
 		},
 	}
-
 	exists = doesRuleActionsRefDeletedSkill(rule, skillMap)
 	assert.True(t, exists)
 
@@ -91,7 +90,6 @@ func TestDoesRuleActionsRefDeletedSkill(t *testing.T) {
 			},
 		},
 	}
-
 	exists = doesRuleActionsRefDeletedSkill(rule, skillMap)
 	assert.True(t, exists)
 }
