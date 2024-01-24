@@ -30,7 +30,7 @@ func GetHomeDivisionName(key string, divisionName *string) resource.TestCheckFun
 	}
 }
 
-func getHomeDivisionID() (string, diag.Diagnostics) {
+func GetHomeDivisionID() (string, diag.Diagnostics) {
 	divOnce.Do(func() {
 		authAPI := platformclientv2.NewAuthorizationApi()
 		homeDiv, _, err := authAPI.GetAuthorizationDivisionsHome()
@@ -53,7 +53,7 @@ func updateObjectDivision(d *schema.ResourceData, objType string, sdkConfig *pla
 		divisionID := d.Get("division_id").(string)
 		if divisionID == "" {
 			// Default to home division
-			homeDivision, diagErr := getHomeDivisionID()
+			homeDivision, diagErr := GetHomeDivisionID()
 			if diagErr != nil {
 				return diagErr
 			}
