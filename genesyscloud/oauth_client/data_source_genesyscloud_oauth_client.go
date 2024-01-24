@@ -37,7 +37,7 @@ func dataSourceOAuthClientRead(ctx context.Context, d *schema.ResourceData, m in
 			}
 		}
 
-		return nil
+		return retry.NonRetryableError(fmt.Errorf("Unable to locate a oauth client with name %s", name))
 	})
 
 }

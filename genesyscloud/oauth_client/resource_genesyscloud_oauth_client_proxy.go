@@ -16,9 +16,6 @@ type getAllOauthClientsFunc func(ctx context.Context, o *oauthClientProxy) (*[]p
 type deleteOAuthClientFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 type deleteIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 
-//type getAllArchitectIvrsFunc func(context.Context, *architectIvrProxy, string) (*[]platformclientv2.Ivr, error)
-//type getArchitectIvrIdByNameFunc func(context.Context, *architectIvrProxy, string) (id string, retryable bool, err error)
-
 type oauthClientProxy struct {
 	clientConfig   *platformclientv2.Configuration
 	api            *platformclientv2.OAuthApi

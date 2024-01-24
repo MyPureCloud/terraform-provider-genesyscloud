@@ -193,7 +193,7 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		currentCredential, _, getErr := oauthClientProxy.getIntegrationCredential(ctx, d.Id())
 		if getErr == nil {
 			_, err := oauthClientProxy.deleteIntegrationCredential(ctx, d.Id())
-			diag.Errorf("failed to delete integration credential %s (%s): %s", *currentCredential.Id, *currentCredential.Name, err)
+			return diag.Errorf("failed to delete integration credential %s (%s): %s", *currentCredential.Id, *currentCredential.Name, err)
 		}
 	}
 
