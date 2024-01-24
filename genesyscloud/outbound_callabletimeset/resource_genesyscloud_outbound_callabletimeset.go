@@ -45,13 +45,7 @@ func createOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getOutboundCallabletimesetProxy(sdkConfig)
 
-	callableTimeset := platformclientv2.Callabletimeset{
-		CallableTimes: buildCallableTimes(d.Get("callable_times").(*schema.Set)),
-	}
-
-	if name != "" {
-		callableTimeset.Name = &name
-	}
+	callableTimeset := getOutboundCallableTimesetFromResourceData(d)
 
 	log.Printf("Creating Outbound Callabletimeset %s", name)
 	outboundCallabletimeset, _, err := proxy.createOutboundCallabletimeset(ctx, &callableTimeset)
