@@ -100,7 +100,7 @@ func TestAccResourceRoutingUtilizationWithLabels(t *testing.T) {
 		greenLabelResource = "label_green"
 		redLabelName       = "Terraform Red " + uuid.NewString()
 		blueLabelName      = "Terraform Blue " + uuid.NewString()
-		greenLabelName     = "Terraform Green" + uuid.NewString()
+		greenLabelName     = "Terraform Green " + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
