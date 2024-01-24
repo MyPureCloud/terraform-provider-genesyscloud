@@ -1279,7 +1279,7 @@ func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclie
 		if utilConfig := d.Get("routing_utilization").([]interface{}); utilConfig != nil {
 			var err error
 
-			log.Printf("Updating user utilization")
+			log.Printf("Updating user utilization for user %s", d.Id())
 
 			if len(utilConfig) > 0 { // Specified but empty utilization list will reset to org-wide defaults
 				// Update settings
@@ -1320,7 +1320,7 @@ func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclie
 				}
 			}
 
-			log.Printf("Updated user utilization")
+			log.Printf("Updated user utilization for user %s", d.Id())
 		}
 	}
 	return nil
