@@ -1,11 +1,12 @@
 package webdeployments_configuration
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const resourceName = "genesyscloud_webdeployments_configuration"
@@ -237,6 +238,80 @@ var (
 		},
 	}
 
+	customMessage = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"default_value": {
+				Description: "Default value for the custom message",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"type": {
+				Description:  "The custom message type. (Welcome or Fallback)",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Welcome", "Fallback"}, false),
+			},
+		},
+	}
+
+	supportCenterModuleSetting = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"type": {
+				Description:  "Screen module type",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Search", "Categories", "FAQ", "Contact", "Results", "Article", "TopViewedArticles"}, false),
+			},
+			"enabled": {
+				Description: "Whether or not knowledge portal (previously support center) screen module is enabled",
+				Type:        schema.TypeBool,
+				Required:    true,
+			},
+			"compact_category_module_template_active": {
+				Description: "Whether the Support Center Compact Category Module Template is active or not",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"detailed_category_module_template": {
+				Description: "Detailed category module template settings",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"active": {
+							Description: "Whether the Support Center Detailed Category Module Template is active or not",
+							Type:        schema.TypeBool,
+							Required:    true,
+						},
+						"sidebar_enabled": {
+							Description: "Whether the Support Center Detailed Category Module Sidebar is active or not",
+							Type:        schema.TypeBool,
+							Required:    true,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	supportCenterScreen = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"type": {
+				Description:  "The type of the screen",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Home", "Category", "SearchResults", "Article"}, false),
+			},
+			"moduleSettings": {
+				Description: "Module settings for the screen, valid modules for each screenType: Home: Search, Categories, TopViewedArticles; Category: Search, Categories; SearchResults: Search, Results; Article: Search, Article;",
+				Type:        schema.TypeList,
+				Required:    true,
+				Elem:        supportCenterModuleSetting,
+			},
+		},
+	}
+
 	journeyEventsSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"enabled": {
@@ -301,6 +376,139 @@ var (
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        scrollPercentageEventTrigger,
+			},
+		},
+	}
+
+	supportCenterSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"enabled": {
+				Description: "Whether or not knowledge portal (previously support center) is enabled",
+				Type:        schema.TypeBool,
+				Required:    true,
+				Default:     true,
+			},
+			"knowledge_base_id": {
+				Description: "The knowledge base for knowledge portal (previously support center)",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"custom_messages": {
+				Description: "Customizable display texts for knowledge portal",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        customMessage,
+			},
+			"router_type": {
+				Description:  "Router type for knowledge portal",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Hash", "Browser"}, false),
+			},
+			"screens": {
+				Description: "Available screens for the knowledge portal with its modules",
+				Type:        schema.TypeList,
+				Required:    true,
+				Elem:        supportCenterScreen,
+			},
+			"enabled_categories": {
+				Description: "Featured categories for knowledge portal (previously support center) home screen",
+				Type:        schema.TypeList,
+				Required:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"category_id": {
+							Description: "The knowledge base category id",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"image_uri": {
+							Description:  "Source URL for the featured category",
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.IsURLWithHTTPS,
+						},
+					},
+				},
+			},
+			"hero_style_setting": {
+				Description: "Knowledge portal (previously support center) hero customizations",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Required:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"background_color": {
+							Description:      "Background color for hero section, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"text_color": {
+							Description:      "Text color for hero section, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"image_uri": {
+							Description:  "Background image for hero section",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.IsURLWithHTTPS,
+						},
+					},
+				},
+			},
+			"global_style_setting": {
+				Description: "Knowledge portal (previously support center) global customizations",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Required:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"background_color": {
+							Description:      "Global background color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"primary_color": {
+							Description:      "Global primary color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"primary_color_dark": {
+							Description:      "Global dark primary color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"primary_color_light": {
+							Description:      "Global light primary color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"text_color": {
+							Description:      "Global text color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"font_family": {
+							Description: "Global font family",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"image_uri": {
+							Description:  "Background image for hero section",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.IsURLWithHTTPS,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -401,6 +609,13 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        journeyEventsSettings,
+			},
+			"support_center": {
+				Description: "Settings concerning knowledge portal (previously support center)",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        supportCenterSettings,
 			},
 		},
 		CustomizeDiff: customizeConfigurationDiff,
