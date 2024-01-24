@@ -138,6 +138,7 @@ func ResourceGroup() *schema.Resource {
 				Type:        schema.TypeList,
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				MinItems:    1,
 			},
 			"member_ids": {
 				Description: "IDs of members assigned to the group. If not set, this resource will not manage group members.",
@@ -165,11 +166,6 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("%v", err)
 	}
 
-	ownerArray := lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids")
-	if len(*ownerArray) < 1 {
-		return diag.Errorf("At least one user required to create group")
-	}
-
 	log.Printf("Creating group %s", name)
 	group, _, err := groupsAPI.PostGroups(platformclientv2.Groupcreate{
 		Name:         &name,
@@ -177,7 +173,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		Visibility:   &visibility,
 		RulesVisible: &rulesVisible,
 		Addresses:    addresses,
-		OwnerIds:     ownerArray,
+		OwnerIds:     lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
 	})
 	if err != nil {
 		return diag.Errorf("Failed to create group %s: %s", name, err)
@@ -265,11 +261,6 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil, diag.Errorf("%v", err)
 		}
 
-		ownerArray := lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids")
-		if len(*ownerArray) < 1 {
-			return nil, diag.Errorf("At least one user required to update group")
-		}
-
 		log.Printf("Updating group %s", name)
 		_, resp, putErr := groupsAPI.PutGroup(d.Id(), platformclientv2.Groupupdate{
 			Version:      group.Version,
@@ -278,7 +269,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			Visibility:   &visibility,
 			RulesVisible: &rulesVisible,
 			Addresses:    addresses,
-			OwnerIds:     ownerArray,
+			OwnerIds:     lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
 		})
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update group %s: %s", d.Id(), putErr)
