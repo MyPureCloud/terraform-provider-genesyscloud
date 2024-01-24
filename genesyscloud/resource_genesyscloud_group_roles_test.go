@@ -36,6 +36,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
@@ -54,6 +55,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
@@ -78,6 +80,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
@@ -96,6 +99,7 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,

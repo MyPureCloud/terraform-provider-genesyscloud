@@ -40,6 +40,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 						NullValue, // Default type
 						NullValue, // Default visibility
 						NullValue, // Default rules_visible
+						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
@@ -58,6 +59,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					strconv.Quote(typeOfficial), // Cannot change type
 					strconv.Quote(visMembers),
 					FalseValue,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
@@ -108,6 +110,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 						typeGroupRing,
 						NullValue, // No extension
 					),
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
@@ -125,6 +128,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 						typeGroupPhone,
 						NullValue,
 					),
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
@@ -142,6 +146,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 						typeGroupPhone,
 						strconv.Quote(addrPhoneExt),
 					),
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
@@ -159,6 +164,7 @@ func TestAccResourceGroupAddresses(t *testing.T) {
 						typeGroupPhone,
 						strconv.Quote(addrPhoneExt2),
 					),
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResource1, "name", groupName),
@@ -202,7 +208,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				Config: GenerateBasicGroupResource(
 					groupResource,
 					groupName,
-					generateGroupOwners("genesyscloud_user."+userResource1+".id"),
+					GenerateGroupOwners("genesyscloud_user."+userResource1+".id"),
 					generateGroupMembers("genesyscloud_user."+userResource2+".id"),
 				) + GenerateBasicUserResource(
 					userResource1,
@@ -223,7 +229,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource,
 					groupName,
-					generateGroupOwners("genesyscloud_user."+userResource1+".id"),
+					GenerateGroupOwners("genesyscloud_user."+userResource1+".id"),
 					generateGroupMembers(
 						"genesyscloud_user."+userResource1+".id",
 						"genesyscloud_user."+userResource2+".id",
@@ -248,7 +254,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource,
 					groupName,
-					generateGroupOwners("genesyscloud_user."+userResource2+".id"),
+					GenerateGroupOwners("genesyscloud_user."+userResource2+".id"),
 					generateGroupMembers(
 						"genesyscloud_user."+userResource1+".id",
 					),
@@ -271,7 +277,7 @@ func TestAccResourceGroupMembers(t *testing.T) {
 				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource,
 					groupName,
-					generateGroupOwners("genesyscloud_user."+userResource2+".id"),
+					GenerateGroupOwners("genesyscloud_user."+userResource2+".id"),
 					"member_ids = []",
 				) + GenerateBasicUserResource(
 					userResource2,

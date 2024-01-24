@@ -559,8 +559,8 @@ func generateGroupResource(
 	return fmt.Sprintf(`resource "genesyscloud_group" "%s" {
 		name = "%s"
 		description = %s
-		type = %s"
-		"visibility = %s
+		type = %s
+		visibility = %s
 		rules_visible = %s
         %s
 	}
@@ -576,7 +576,7 @@ func generateGroupAddress(number string, phoneType string, extension string) str
 	`, number, phoneType, extension)
 }
 
-func generateGroupOwners(userIDs ...string) string {
+func GenerateGroupOwners(userIDs ...string) string {
 	return fmt.Sprintf(`owner_ids = [%s]
 	`, strings.Join(userIDs, ","))
 }
