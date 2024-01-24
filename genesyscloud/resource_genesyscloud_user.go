@@ -454,7 +454,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		createUser.DivisionId = &divisionID
 	}
 
-	log.Printf("Creating user %s", email)
+	//log.Printf("Creating user %s", email)
 
 	user, resp, err := usersAPI.PostUsers(createUser)
 	if err != nil {
@@ -516,7 +516,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	log.Printf("Created user %s %s", email, *user.Id)
+	//log.Printf("Created user %s %s", email, *user.Id)
 	return readUser(ctx, d, meta)
 }
 
@@ -524,7 +524,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
-	log.Printf("Reading user %s", d.Id())
+	//log.Printf("Reading user %s", d.Id())
 	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentUser, resp, getErr := usersAPI.GetUser(d.Id(), []string{
 			// Expands
@@ -587,7 +587,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
-		log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
+		//log.Printf("Read user %s %s", d.Id(), *currentUser.Email)
 		return cc.CheckState()
 	})
 }

@@ -186,6 +186,9 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 		conditionalGroupRouting2ConditionValue = "5"
 		conditionalGroupRouting2WaitSeconds    = "15"
 		conditionalGroupRouting2GroupType      = "GROUP"
+		testUserResource                       = "user_resource1"
+		testUserName                           = "nameUser1" + uuid.NewString()
+		testUserEmail                          = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -194,7 +197,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingSkillGroupResourceBasic(
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateRoutingSkillGroupResourceBasic(
 					skillGroupResourceId,
 					skillGroupName,
 					"description",
@@ -1400,6 +1403,9 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		skillGroupResource    = "routing-skill-group"
 		skillGroupName        = "Skillgroup" + uuid.NewString()
 		skillGroupDescription = "description-" + uuid.NewString()
+		testUserResource      = "user_resource1"
+		testUserName          = "nameUser1" + uuid.NewString()
+		testUserEmail         = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -1408,7 +1414,7 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
 					GenerateBasicGroupResource(groupResource, groupName) +
 					GenerateRoutingQueueResourceBasicWithDepends(
 						queueResource,

@@ -22,6 +22,9 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 		groupResource2                  = "test-group-2"
 		groupName1                      = "TF Group" + uuid.NewString()
 		groupName2                      = "TF Group" + uuid.NewString()
+		testUserResource                = "user_resource1"
+		testUserName                    = "nameUser1" + uuid.NewString()
+		testUserEmail                   = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,7 +33,7 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 1 user and 1 group
 			{
-				Config: GenerateBasicUserResource(
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicUserResource(
 					userResource1,
 					email1,
 					userName1,

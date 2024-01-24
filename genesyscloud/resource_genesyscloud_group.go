@@ -136,7 +136,7 @@ func ResourceGroup() *schema.Resource {
 			"owner_ids": {
 				Description: "IDs of owners of the group.",
 				Type:        schema.TypeList,
-				Optional:    true,
+				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"member_ids": {
@@ -165,6 +165,11 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("%v", err)
 	}
 
+	ownerArray := lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids")
+	if len(*ownerArray) < 1 {
+		return diag.Errorf("At least one user required to create group")
+	}
+
 	log.Printf("Creating group %s", name)
 	group, _, err := groupsAPI.PostGroups(platformclientv2.Groupcreate{
 		Name:         &name,
@@ -172,7 +177,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		Visibility:   &visibility,
 		RulesVisible: &rulesVisible,
 		Addresses:    addresses,
-		OwnerIds:     lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
+		OwnerIds:     ownerArray,
 	})
 	if err != nil {
 		return diag.Errorf("Failed to create group %s: %s", name, err)
@@ -260,6 +265,11 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil, diag.Errorf("%v", err)
 		}
 
+		ownerArray := lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids")
+		if len(*ownerArray) < 1 {
+			return nil, diag.Errorf("At least one user required to update group")
+		}
+
 		log.Printf("Updating group %s", name)
 		_, resp, putErr := groupsAPI.PutGroup(d.Id(), platformclientv2.Groupupdate{
 			Version:      group.Version,
@@ -268,7 +278,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			Visibility:   &visibility,
 			RulesVisible: &rulesVisible,
 			Addresses:    addresses,
-			OwnerIds:     lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
+			OwnerIds:     ownerArray,
 		})
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to update group %s: %s", d.Id(), putErr)
@@ -549,8 +559,8 @@ func generateGroupResource(
 	return fmt.Sprintf(`resource "genesyscloud_group" "%s" {
 		name = "%s"
 		description = %s
-		type = %s
-		visibility = %s
+		type = %s"
+		"visibility = %s
 		rules_visible = %s
         %s
 	}
@@ -559,11 +569,11 @@ func generateGroupResource(
 
 func generateGroupAddress(number string, phoneType string, extension string) string {
 	return fmt.Sprintf(`addresses {
-				number = %s
-				type = "%s"
-                extension = %s
-			}
-			`, number, phoneType, extension)
+		number = %s
+		type = "%s"
+		extension = %s
+	}
+	`, number, phoneType, extension)
 }
 
 func generateGroupOwners(userIDs ...string) string {
