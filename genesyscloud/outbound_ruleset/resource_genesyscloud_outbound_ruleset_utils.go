@@ -1,7 +1,11 @@
 package outbound_ruleset
 
 import (
+	"encoding/json"
+	"log"
+	"strings"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -267,4 +271,49 @@ func flattenDataactionconditionpredicates(predicates *[]platformclientv2.Dataact
 	}
 
 	return predicateList
+}
+
+// look through rule actions to check if the referenced skills exist in our skill map or not
+func doesRuleActionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMap resourceExporter.ResourceIDMetaMap) bool {
+	for _, action := range *rule.Actions {
+		if action.ActionTypeName != nil && strings.EqualFold(*action.ActionTypeName, "set_skills") && action.Properties != nil {
+			if value, found := (*action.Properties)["skills"]; found {
+				// the property value is a json string wrapping an array of skill ids, need to convert it back to a slice to check if each skill exists
+				var skillIds []string
+				err := json.Unmarshal([]byte(value), &skillIds)
+				if err != nil {
+					log.Printf("doesRuleActionsRefDeletedSkill.Error unmarshaling skills JSON: %s", err)
+					return true
+				}
+				for _, skillId := range skillIds {
+					_, found := skillMap[skillId]
+					if !found { // skill id referenced by the rule action is not found in the skill map
+						log.Printf("The skill id '%s' used in action does not exist in GC anymore", skillId)
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+// look through rule conditions to check if the referenced skills exist in our skill map or not
+func doesRuleConditionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMap resourceExporter.ResourceIDMetaMap) bool {
+	for _, condition := range *rule.Conditions {
+		if condition.AttributeName != nil && strings.EqualFold(*condition.AttributeName, "skill") && condition.Value != nil {
+			var found bool
+			for _, value := range skillMap {
+				if value.Name == *condition.Value {
+					found = true
+					break // found skill, evaluate next condition
+				}
+			}
+			if !found { // skill name referenced by rule condition is not found in the skill map
+				log.Printf("The skill name '%s' used in condition does not exist in GC anymore", *condition.Value)
+				return true
+			}
+		}
+	}
+	return false
 }
