@@ -82,6 +82,22 @@ jobs:
       client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
       client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
 
+  all-other-unit-tests:
+    uses: ./.github/workflows/test-workflow.yml
+    name: All Other Unit Tests
+    needs:
+      - build
+    with:
+      package-path: './genesyscloud/...'
+      skip-regexp: 'TfExport|Outbound|Routing|TestAccDataSource|TestAccResource'
+      coverage-out-filename: 'unit-coverage.out'
+      coverage-html-filename: 'unit-coverage.html'
+      test-log-artifact-name: 'unit test logs'
+      sdk-log-artifact-name: 'unit sdk_log'
+    secrets:
+      client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
+      client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
+
   all-other-datasource-tests:
     needs:
       - routing-tests

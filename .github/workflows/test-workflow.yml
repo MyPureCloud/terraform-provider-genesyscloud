@@ -17,7 +17,7 @@ on:
         required: true
       sdk-log-artifact-name:
         type: string
-        required: true
+        default: ''
       sdk-debug-log-file-path:
         type: string
         default: './genesyscloud/sdk_debug.log'
@@ -98,7 +98,7 @@ jobs:
           retention-days: 5
 
       - name: 'Upload SDK Log'
-        if: ${{ always() }}
+        if: ${{ inputs.sdk-log-artifact-name != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.sdk-log-artifact-name }} ${{ matrix.terraform }}
