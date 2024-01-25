@@ -11,7 +11,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
-func TestAccResponseManagementResponseAsset(t *testing.T) {
+func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 	t.Parallel()
 	var (
 		resourceId         = "responseasset"

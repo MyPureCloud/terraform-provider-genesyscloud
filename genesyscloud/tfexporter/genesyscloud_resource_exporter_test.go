@@ -23,7 +23,7 @@ type PostProcessHclBytesTestCase struct {
 	decodedMap map[string]string
 }
 
-func TestPostProcessHclBytesFunc(t *testing.T) {
+func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {
 	testCase1 := PostProcessHclBytesTestCase{
 		original: `
 		resource "example_resource" "example" {
@@ -101,7 +101,7 @@ func TestPostProcessHclBytesFunc(t *testing.T) {
 	}
 }
 
-func TestRemoveZeroValuesFunc(t *testing.T) {
+func TestUnitTfExportRemoveZeroValuesFunc(t *testing.T) {
 	m := make(gcloud.JsonMap, 0)
 
 	nonZeroString := "foobar"
@@ -136,11 +136,11 @@ func TestRemoveZeroValuesFunc(t *testing.T) {
 	}
 }
 
-// TestAllowEmptyArray will test if fields included in the exporter property `AllowEmptyArrays`
+// TestUnitTfExportAllowEmptyArray will test if fields included in the exporter property `AllowEmptyArrays`
 // will retain empty arrays in the configMap when their state values are null or [].
 // Empty array fields not included in `AllowEmptyArrays` will be sanitized to nil by default,
 // and other arrays shouldn't be affected.
-func TestAllowEmptyArray(t *testing.T) {
+func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 	testResourceType := "test_allow_empty_array_resource"
 	testResourceId := "test_id"
 	testResourceName := "test_res_name"
@@ -231,8 +231,8 @@ func TestAllowEmptyArray(t *testing.T) {
 	assert.Len(t, configMap["arr_attr_3"], 1)
 }
 
-// TestUnitRemoveTrailingZerosRrule will test if rrule is properly sanaitized before export.
-func TestUnitRemoveTrailingZerosRrule(t *testing.T) {
+// TestUnitTfExportRemoveTrailingZerosRrule will test if rrule is properly sanaitized before export.
+func TestUnitTfExportRemoveTrailingZerosRrule(t *testing.T) {
 	testCases := []struct {
 		input    string
 		expected string
@@ -254,7 +254,7 @@ func TestUnitRemoveTrailingZerosRrule(t *testing.T) {
 	}
 }
 
-func TestUnitBuildDependsOnResources(t *testing.T) {
+func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
 		Name:     "example::::resource",
@@ -309,7 +309,7 @@ func TestUnitBuildDependsOnResources(t *testing.T) {
 
 }
 
-func TestFilterResourceById(t *testing.T) {
+func TestUnitTfExportFilterResourceById(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
 		Name:     "example resource1",
@@ -353,7 +353,7 @@ func TestFilterResourceById(t *testing.T) {
 	}
 }
 
-func TestUnitMergeExporters(t *testing.T) {
+func TestUnitTfExportMergeExporters(t *testing.T) {
 
 	m1 := map[string]*resourceExporter.ResourceExporter{
 		"exporter1": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key1", "key2"}},
