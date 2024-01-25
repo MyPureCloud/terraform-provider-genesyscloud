@@ -169,7 +169,7 @@ func getOutboundCallabletimesetByNameFn(ctx context.Context, p *outboundCallable
 			return *timeset.Id, false, nil
 		}
 	}
-	return "", false, fmt.Errorf("Unable to find timeset with name %s", name)
+	return "", true, fmt.Errorf("Unable to find timeset with name %s", name)
 }
 
 // updateOutboundCallabletimesetFn is an implementation of the function to update a Genesys Cloud Outbound Callabletimesets
