@@ -94,13 +94,13 @@ resource "genesyscloud_user" "example_user" {
       interruptible_media_types = ["call", "chat"]
     }
     label_utilizations {
-      label_id                  = genesyscloud_routing_utilization_label.red_label.id
-      maximum_capacity          = 4
+      label_id         = genesyscloud_routing_utilization_label.red_label.id
+      maximum_capacity = 4
     }
     label_utilizations {
-      label_id                  = genesyscloud_routing_utilization_label.blue_label.id
-      maximum_capacity          = 4
-      interrupting_label_ids    = [genesyscloud_routing_utilization_label.red_label.id]
+      label_id               = genesyscloud_routing_utilization_label.blue_label.id
+      maximum_capacity       = 4
+      interrupting_label_ids = [genesyscloud_routing_utilization_label.red_label.id]
     }
   }
 }
@@ -130,6 +130,7 @@ resource "genesyscloud_user" "example_user" {
 - `routing_skills` (Set of Object) Skills and proficiencies for this user. If not set, this resource will not manage user skills. (see [below for nested schema](#nestedatt--routing_skills))
 - `routing_utilization` (List of Object) The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings. (see [below for nested schema](#nestedatt--routing_utilization))
 - `state` (String) User's state (active | inactive). Default is 'active'. Defaults to `active`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `title` (String) User's title.
 
 ### Read-Only
@@ -274,17 +275,14 @@ Optional:
 - `interruptible_media_types` (Set of String)
 - `maximum_capacity` (Number)
 
-<a id="nestedblock--routing_utilization--label_utilizations"></a>
-### Nested Schema for `label_utilizations`
 
-The utilization label feature is not yet available. Only use this block if the feature is enabled for your organization.
 
-Required:
-
-- `label_id` (String) Id of the label being configured.
-
-- `maximum_capacity` (Number) Maximum capacity of conversations of this label. Value must be between 0 and 25.
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
 
 Optional:
 
-- `interrupting_label_ids` (Set of String) Set of other labels that can interrupt this one.
+- `create` (String)
+- `read` (String)
+- `update` (String)
+
