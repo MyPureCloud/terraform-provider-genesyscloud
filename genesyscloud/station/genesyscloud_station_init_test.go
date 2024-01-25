@@ -1,6 +1,8 @@
 package station
 
 import (
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"log"
 	"sync"
 	"testing"
 
@@ -23,6 +25,9 @@ var providerDataSources map[string]*schema.Resource
 
 // providerResources holds a map of all registered sites
 var providerResources map[string]*schema.Resource
+
+var sdkConfig *platformclientv2.Configuration
+var authErr error
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
@@ -50,6 +55,11 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
+	sdkConfig, authErr = gcloud.AuthorizeSdk()
+	if authErr != nil {
+		log.Fatal(authErr)
+	}
+
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 

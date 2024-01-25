@@ -4,6 +4,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	"terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
+	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -67,7 +68,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_architect_grammar_language"] = grammarLanguage.ResourceArchitectGrammarLanguage()
 	providerResources["genesyscloud_architect_datatable"] = dt.ResourceArchitectDatatable()
 	providerResources["genesyscloud_architect_datatable_row"] = architect_datatable_row.ResourceArchitectDatatableRow()
-	providerResources["genesyscloud_architect_emergencygroup"] = gcloud.ResourceArchitectEmergencyGroup()
+	providerResources["genesyscloud_architect_emergencygroup"] = emergencyGroup.ResourceArchitectEmergencyGroup()
 	providerResources["genesyscloud_flow"] = gcloud.ResourceFlow()
 	providerResources["genesyscloud_flow_milestone"] = flowMilestone.ResourceFlowMilestone()
 	providerResources["genesyscloud_flow_outcome"] = flowOutcome.ResourceFlowOutcome()
@@ -158,7 +159,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_architect_grammar_language", grammarLanguage.ArchitectGrammarLanguageExporter())
 	RegisterExporter("genesyscloud_architect_datatable", dt.ArchitectDatatableExporter())
 	RegisterExporter("genesyscloud_architect_datatable_row", architect_datatable_row.ArchitectDatatableRowExporter())
-	RegisterExporter("genesyscloud_architect_emergencygroup", gcloud.ArchitectEmergencyGroupExporter())
+	RegisterExporter("genesyscloud_architect_emergencygroup", emergencyGroup.ArchitectEmergencyGroupExporter())
 	RegisterExporter("genesyscloud_architect_ivr", archIvr.ArchitectIvrExporter())
 	RegisterExporter("genesyscloud_architect_schedules", gcloud.ArchitectSchedulesExporter())
 	RegisterExporter("genesyscloud_architect_schedulegroups", gcloud.ArchitectScheduleGroupsExporter())

@@ -77,7 +77,9 @@ func GroupExporter() *resourceExporter.ResourceExporter {
 			"owner_ids":  {RefType: "genesyscloud_user"},
 			"member_ids": {RefType: "genesyscloud_user"},
 		},
-		E164Numbers: []string{"addresses.number"},
+		CustomValidateExports: map[string][]string{
+			"E164": {"addresses.number"},
+		},
 	}
 }
 

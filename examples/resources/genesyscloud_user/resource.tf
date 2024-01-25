@@ -64,5 +64,14 @@ resource "genesyscloud_user" "example_user" {
       include_non_acd           = false
       interruptible_media_types = ["call", "chat"]
     }
+    label_utilizations {
+      label_id         = genesyscloud_routing_utilization_label.red_label.id
+      maximum_capacity = 4
+    }
+    label_utilizations {
+      label_id               = genesyscloud_routing_utilization_label.blue_label.id
+      maximum_capacity       = 4
+      interrupting_label_ids = [genesyscloud_routing_utilization_label.red_label.id]
+    }
   }
 }

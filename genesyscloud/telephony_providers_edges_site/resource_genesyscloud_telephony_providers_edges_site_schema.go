@@ -86,9 +86,10 @@ func ResourceSite() *schema.Resource {
 				Required:    true,
 			},
 			"rrule": {
-				Description: "The recurrence rule for updating the Edges assigned to the site. The only supported frequencies are daily and weekly. Weekly frequencies require a day list with at least oneday specified. All other configurations are not supported.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "A reoccurring rule for updating the Edges assigned to the site. The only supported frequencies are daily and weekly. Weekly frequencies require a day list with at least oneday specified. All other configurations are not supported.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: gcloud.ValidateRrule,
 			},
 			"start": {
 				Description: "Date time is represented as an ISO-8601 string without a timezone. For example: yyyy-MM-ddTHH:mm:ss.SSS",
@@ -282,6 +283,9 @@ func SiteExporter() *resourceExporter.ResourceExporter {
 			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 			"primary_sites":   {RefType: "genesyscloud_telephony_providers_edges_site"},
 			"secondary_sites": {RefType: "genesyscloud_telephony_providers_edges_site"},
+		},
+		CustomValidateExports: map[string][]string{
+			"rrule": {"edge_auto_update_config.rrule"},
 		},
 	}
 }

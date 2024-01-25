@@ -1,4 +1,4 @@
-resource "genesyscloud_routing_utilization" "org-utililzation" {
+resource "genesyscloud_routing_utilization" "org-utilization" {
   call {
     maximum_capacity = 1
     include_non_acd  = true
@@ -22,5 +22,14 @@ resource "genesyscloud_routing_utilization" "org-utililzation" {
     maximum_capacity          = 4
     include_non_acd           = false
     interruptible_media_types = ["call", "chat"]
+  }
+  label_utilizations {
+    label_id         = genesyscloud_routing_utilization_label.red_label.id
+    maximum_capacity = 4
+  }
+  label_utilizations {
+    label_id               = genesyscloud_routing_utilization_label.blue_label.id
+    maximum_capacity       = 3
+    interrupting_label_ids = [genesyscloud_routing_utilization_label.red_label.id]
   }
 }
