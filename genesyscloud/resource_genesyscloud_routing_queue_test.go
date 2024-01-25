@@ -40,6 +40,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 
 		bullseyeMemberGroupName = "test_membergroup_series6"
 		bullseyeMemberGroupType = "GROUP"
+		testUserResource        = "user_resource1"
+		testUserName            = "nameUser1" + uuid.NewString()
+		testUserEmail           = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -48,7 +51,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
 					generateGroupResource(
 						bullseyeMemberGroupName,
 						"MySeries6Group",
@@ -56,6 +59,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 						NullValue, // Default type
 						NullValue, // Default visibility
 						NullValue, // Default rules_visible
+						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 					) + GenerateRoutingQueueResource(
 					queueResource1,
 					queueName1,
@@ -186,6 +190,9 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 		conditionalGroupRouting2ConditionValue = "5"
 		conditionalGroupRouting2WaitSeconds    = "15"
 		conditionalGroupRouting2GroupType      = "GROUP"
+		testUserResource                       = "user_resource1"
+		testUserName                           = "nameUser1" + uuid.NewString()
+		testUserEmail                          = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -257,9 +264,10 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 			},
 			{
 				// Update
-				Config: GenerateBasicGroupResource(
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResourceId,
 					groupName,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) +
 					generateRoutingQueueResourceBasic(
 						queueResource2,
@@ -1400,6 +1408,9 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		skillGroupResource    = "routing-skill-group"
 		skillGroupName        = "Skillgroup" + uuid.NewString()
 		skillGroupDescription = "description-" + uuid.NewString()
+		testUserResource      = "user_resource1"
+		testUserName          = "nameUser1" + uuid.NewString()
+		testUserEmail         = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -1408,8 +1419,10 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
-					GenerateBasicGroupResource(groupResource, groupName) +
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
+					GenerateBasicGroupResource(groupResource, groupName,
+						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					) +
 					GenerateRoutingQueueResourceBasicWithDepends(
 						queueResource,
 						"genesyscloud_routing_skill_group."+skillGroupResource,
