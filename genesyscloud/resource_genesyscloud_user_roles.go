@@ -56,7 +56,7 @@ Terraform expects to manage the resources that are defined in its stack. You can
 				Description: "Roles and their divisions assigned to this user.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Elem:        roleAssignmentResource,
+				Elem:        RoleAssignmentResource,
 			},
 		},
 	}
@@ -76,7 +76,7 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Reading roles for user %s", d.Id())
 	_ = d.Set("user_id", d.Id())
 	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		roles, _, err := readSubjectRoles(d, authAPI)
+		roles, _, err := ReadSubjectRoles(d, authAPI)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
@@ -93,7 +93,7 @@ func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Updating roles for user %s", d.Id())
-	diagErr := updateSubjectRoles(ctx, d, authAPI, "PC_USER")
+	diagErr := UpdateSubjectRoles(ctx, d, authAPI, "PC_USER")
 	if diagErr != nil {
 		return diagErr
 	}

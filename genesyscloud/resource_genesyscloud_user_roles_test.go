@@ -55,7 +55,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					resource.TestCheckResourceAttrPair("genesyscloud_user_roles."+userRoleResource, "roles.0.division_ids.0",
 						"data.genesyscloud_auth_division_home.home", "id"),
 					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.1.division_ids.#", "0"),
-					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1),
+					ValidateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1),
 				),
 			},
 			{
@@ -82,8 +82,8 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.1.division_ids.#", "0"),
 					resource.TestCheckResourceAttr("genesyscloud_user_roles."+userRoleResource, "roles.0.division_ids.#", "2"),
-					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1),
-					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource2,
+					ValidateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1),
+					ValidateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource2,
 						"genesyscloud_auth_division."+divResource, "data.genesyscloud_auth_division_home.home"),
 				),
 			},
@@ -103,7 +103,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "genesyscloud_auth_division."+divResource+".id"),
 				) + GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
-					validateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1, "genesyscloud_auth_division."+divResource),
+					ValidateResourceRole("genesyscloud_user_roles."+userRoleResource, "genesyscloud_auth_role."+roleResource1, "genesyscloud_auth_division."+divResource),
 				),
 			},
 			{

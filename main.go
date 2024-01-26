@@ -14,6 +14,7 @@ import (
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
+	groupRoles "terraform-provider-genesyscloud/genesyscloud/group_roles"
 	"terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
@@ -119,6 +120,7 @@ func registerResources() {
 	emergencyGroup.SetRegistrar(regInstance)                //Registering architect emergency group
 	grammar.SetRegistrar(regInstance)                       //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)               //Registering architect grammar language
+	groupRoles.SetRegistrar(regInstance)                    //Registering group roles
 	edgePhone.SetRegistrar(regInstance)                     //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)                      //Registering telephony providers edges site
 	flowMilestone.SetRegistrar(regInstance)                 //Registering flow milestone
