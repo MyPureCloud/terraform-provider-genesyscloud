@@ -152,3 +152,14 @@ func IsStatus409(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 	}
 	return false
 }
+
+func IsStatus412(resp *platformclientv2.APIResponse, additionalCodes ...int) bool {
+	if resp != nil {
+		if resp.StatusCode == http.StatusPreconditionFailed ||
+			resp.StatusCode == http.StatusRequestTimeout ||
+			IsAdditionalCode(resp.StatusCode, additionalCodes...) {
+			return true
+		}
+	}
+	return false
+}
