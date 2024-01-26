@@ -103,7 +103,7 @@ jobs:
           retention-days: 5
 
       - name: 'Upload SDK Log'
-        if: ${{ inputs.sdk-log-artifact-name != '' }}
+        if: ${{ always() && inputs.sdk-log-artifact-name != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.sdk-log-artifact-name }} ${{ matrix.terraform }}
@@ -111,7 +111,7 @@ jobs:
           retention-days: 5
 
       - name: 'Upload Export Result'
-        if: ${{ inputs.running-export-tests == 'true' }}
+        if: ${{ always() && inputs.running-export-tests == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: export-result ${{ matrix.terraform }}

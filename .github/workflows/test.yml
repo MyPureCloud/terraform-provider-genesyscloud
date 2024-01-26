@@ -46,7 +46,6 @@ jobs:
       coverage-out-filename: 'ob-coverage.out'
       coverage-html-filename: 'ob-coverage.html'
       test-log-artifact-name: 'outbound logs'
-      sdk-log-artifact-name: 'outbound sdk_log'
     secrets:
       client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
       client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
@@ -93,7 +92,6 @@ jobs:
       coverage-out-filename: 'unit-coverage.out'
       coverage-html-filename: 'unit-coverage.html'
       test-log-artifact-name: 'unit test logs'
-      sdk-log-artifact-name: 'unit sdk_log'
       tf-unit: '*'
     secrets:
       client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
@@ -114,7 +112,6 @@ jobs:
       coverage-out-filename: 'data-source-coverage.out'
       coverage-html-filename: 'data-source-coverage.html'
       test-log-artifact-name: 'data source tests logs'
-      sdk-log-artifact-name: 'data source tests sdk_log'
     secrets:
       client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
       client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
@@ -134,7 +131,6 @@ jobs:
       coverage-out-filename: 'resource-coverage.out'
       coverage-html-filename: 'resource-coverage.html'
       test-log-artifact-name: 'resource tests logs'
-      sdk-log-artifact-name: 'resource tests sdk_log'
     secrets:
       client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
       client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}
