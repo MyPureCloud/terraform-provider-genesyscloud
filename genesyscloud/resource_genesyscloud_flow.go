@@ -92,6 +92,16 @@ func ResourceFlow() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"flow_name": {
+				Description: `Genesys Cloud flow name`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"flow_type": {
+				Description: `Genesys Cloud flow type`,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
 }
@@ -108,6 +118,8 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			}
 			return retry.NonRetryableError(fmt.Errorf("Failed to read flow %s: %s", d.Id(), err))
 		}
+		d.Set("flow_name", *flow.Name)
+		d.Set("flow_type", *flow.VarType)
 
 		log.Printf("Read flow %s %s", d.Id(), *flow.Name)
 		return nil
