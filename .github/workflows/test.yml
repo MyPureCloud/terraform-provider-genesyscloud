@@ -94,6 +94,7 @@ jobs:
       coverage-html-filename: 'unit-coverage.html'
       test-log-artifact-name: 'unit test logs'
       sdk-log-artifact-name: 'unit sdk_log'
+      tf-unit: '*'
     secrets:
       client-id: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_ID }}
       client-secret: ${{ secrets.TEST_GENESYSCLOUD_OAUTHCLIENT_SECRET }}

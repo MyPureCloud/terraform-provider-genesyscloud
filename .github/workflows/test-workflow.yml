@@ -30,6 +30,10 @@ on:
       coverage-html-filename:
         type: string
         default: ''
+      tf-unit:
+        type: string
+        default: ''
+        description: "used to set the TF_UNIT env variable for jobs that don't need sdk authorization"
     secrets:
       client-id:
         description: 'Genesys Cloud Client ID'
@@ -76,6 +80,7 @@ jobs:
           TF_LOG: 'DEBUG'
           TF_LOG_PATH: ${{ github.workspace }}/test.log
           TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
+          TF_UNIT: ${{ inputs.tf-unit }}
 
           GENESYSCLOUD_OAUTHCLIENT_ID: ${{ secrets.client-id }}
           GENESYSCLOUD_OAUTHCLIENT_SECRET: ${{ secrets.client-secret }}
