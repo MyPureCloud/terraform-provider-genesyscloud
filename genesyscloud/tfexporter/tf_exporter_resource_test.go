@@ -15,6 +15,7 @@ import (
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	outboundAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -132,7 +133,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources["genesyscloud_outbound_attempt_limit"] = outboundAttemptLimit.ResourceOutboundAttemptLimit()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = ob.ResourceOutboundCallAnalysisResponseSet()
-	providerResources["genesyscloud_outbound_callabletimeset"] = ob.ResourceOutboundCallabletimeset()
+	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
 	providerResources["genesyscloud_outbound_campaign"] = obCampaign.ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = ob.ResourceOutboundContactListFilter()
@@ -193,7 +194,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_oauth_client", gcloud.OauthClientExporter())
 	RegisterExporter("genesyscloud_outbound_attempt_limit", outboundAttemptLimit.OutboundAttemptLimitExporter())
 	RegisterExporter("genesyscloud_outbound_callanalysisresponseset", ob.OutboundCallAnalysisResponseSetExporter())
-	RegisterExporter("genesyscloud_outbound_callabletimeset", ob.OutboundCallableTimesetExporter())
+	RegisterExporter("genesyscloud_outbound_callabletimeset", obCallableTimeset.OutboundCallableTimesetExporter())
 	RegisterExporter("genesyscloud_outbound_campaign", obCampaign.OutboundCampaignExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactList.OutboundContactListExporter())
 	RegisterExporter("genesyscloud_outbound_contactlistfilter", ob.OutboundContactListFilterExporter())
