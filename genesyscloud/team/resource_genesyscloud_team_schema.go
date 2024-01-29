@@ -54,6 +54,12 @@ func ResourceTeam() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
+			`member_ids`: {
+				Description: `Specifies the members, No modifications to members will be made if not set. If empty all members will be deleted. If populated, only the populated members will be retained`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }

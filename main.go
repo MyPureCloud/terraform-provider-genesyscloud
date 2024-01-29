@@ -6,6 +6,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
+	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -19,6 +20,7 @@ import (
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -33,6 +35,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	workitem "terraform-provider-genesyscloud/genesyscloud/task_management_workitem"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	"terraform-provider-genesyscloud/genesyscloud/team"
@@ -111,6 +114,7 @@ func registerResources() {
 	regInstance := &RegisterInstance{}
 	dt.SetRegistrar(regInstance)                            //Registering architect data table
 	dtr.SetRegistrar(regInstance)                           //Registering architect data table row
+	emergencyGroup.SetRegistrar(regInstance)                //Registering architect emergency group
 	grammar.SetRegistrar(regInstance)                       //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)               //Registering architect grammar language
 	edgePhone.SetRegistrar(regInstance)                     //Registering telephony providers edges phone
@@ -124,6 +128,7 @@ func registerResources() {
 	obwm.SetRegistrar(regInstance)                          //Registering outbound wrapup code mappings
 	gcloud.SetRegistrar(regInstance)                        //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                //Registering outbound attempt limit
+	obCallableTimeset.SetRegistrar(regInstance)             //Registering outbound callable timeset
 	obCampaign.SetRegistrar(regInstance)                    //Registering outbound campaign
 	obContactList.SetRegistrar(regInstance)                 //Registering outbound contact list
 	obSequence.SetRegistrar(regInstance)                    //Registering outbound sequence
@@ -141,6 +146,7 @@ func registerResources() {
 	workbin.SetRegistrar(regInstance)                       //Registering task management workbin
 	workitemSchema.SetRegistrar(regInstance)                //Registering task management workitem schema
 	worktype.SetRegistrar(regInstance)                      //Registering task management worktype
+	workitem.SetRegistrar(regInstance)                      //Registering task management workitem
 	externalContacts.SetRegistrar(regInstance)              //Registering external contacts
 	team.SetRegistrar(regInstance)                          //Registering team
 	telephony.SetRegistrar(regInstance)                     //Registering telephony package

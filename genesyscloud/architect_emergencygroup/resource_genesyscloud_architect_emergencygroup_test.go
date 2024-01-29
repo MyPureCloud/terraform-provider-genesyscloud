@@ -1,9 +1,10 @@
-package genesyscloud
+package architect_emergencygroup
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -24,11 +25,11 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 
 		flowResource      = "test_flow"
 		flowName          = "Terraform Test Flow " + uuid.NewString()
-		flowFilePath      = "../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		flowFilePath      = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 		inboundCallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 	)
 
-	config, err := AuthorizeSdk()
+	config, err := genesyscloud.AuthorizeSdk()
 	if err != nil {
 		t.Skip("failed to authorize client credentials")
 	}
@@ -40,28 +41,30 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 		t.Skip("Skipping because IVR does not exists in the target org.")
 	}
 
+	flowResourceConfig := genesyscloud.GenerateFlowResource(
+		flowResource,
+		flowFilePath,
+		inboundCallConfig,
+		false,
+	)
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateFlowResource(
-					flowResource,
-					flowFilePath,
-					inboundCallConfig,
-					false,
-				) + generateArchitectEmergencyGroupResource(
+				Config: flowResourceConfig + GenerateArchitectEmergencyGroupResource(
 					resourceName,
 					name,
-					NullValue,
+					genesyscloud.NullValue,
 					description,
-					TrueValue,
+					genesyscloud.TrueValue,
 					generateEmergencyCallFlow("genesyscloud_flow."+flowResource+".id", strconv.Quote(ivrId)),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", description),
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", TrueValue),
+					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", genesyscloud.TrueValue),
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "emergency_call_flows.0.ivr_ids.0", ivrId),
 					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.emergency_flow_id",
 						"genesyscloud_flow."+flowResource, "id"),
@@ -69,23 +72,23 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 			},
 			{
 				// Update
-				Config: GenerateFlowResource(
+				Config: genesyscloud.GenerateFlowResource(
 					flowResource,
 					flowFilePath,
 					inboundCallConfig,
 					false,
-				) + generateArchitectEmergencyGroupResource(
+				) + GenerateArchitectEmergencyGroupResource(
 					resourceName,
 					name,
-					NullValue,
+					genesyscloud.NullValue,
 					updatedDescription,
-					FalseValue,
+					genesyscloud.FalseValue,
 					generateEmergencyCallFlow("genesyscloud_flow."+flowResource+".id", strconv.Quote(ivrId)),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "description", updatedDescription),
-					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", FalseValue),
+					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "enabled", genesyscloud.FalseValue),
 					resource.TestCheckResourceAttrPair(resourceType+"."+resourceName, "emergency_call_flows.0.emergency_flow_id",
 						"genesyscloud_flow."+flowResource, "id"),
 					resource.TestCheckResourceAttr(resourceType+"."+resourceName, "emergency_call_flows.0.ivr_ids.0", ivrId),
@@ -102,7 +105,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 	})
 }
 
-func generateArchitectEmergencyGroupResource(
+func GenerateArchitectEmergencyGroupResource(
 	eGroupResource string,
 	name string,
 	divisionId string,
@@ -138,7 +141,7 @@ func testVerifyEmergencyGroupDestroyed(state *terraform.State) error {
 		eGroup, resp, err := archAPI.GetArchitectEmergencygroup(rs.Primary.ID)
 		if eGroup != nil {
 			return fmt.Errorf("emergency group (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
+		} else if genesyscloud.IsStatus404(resp) {
 			// Emergency group not found as expected
 			continue
 		} else {

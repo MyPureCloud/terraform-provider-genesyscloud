@@ -48,6 +48,9 @@ func ArchitectSchedulesExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
+		CustomValidateExports: map[string][]string{
+			"rrule": {"rrule"},
+		},
 	}
 }
 
@@ -84,18 +87,19 @@ func ResourceArchitectSchedules() *schema.Resource {
 				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validateLocalDateTimes,
+				ValidateDiagFunc: ValidateLocalDateTimes,
 			},
 			"end": {
 				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validateLocalDateTimes,
+				ValidateDiagFunc: ValidateLocalDateTimes,
 			},
 			"rrule": {
-				Description: "An iCal Recurrence Rule (RRULE) string.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:      "An iCal Recurrence Rule (RRULE) string. It is required to be set for schedules determining when upgrades to the Edge software can be applied.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateDiagFunc: ValidateRrule,
 			},
 		},
 	}

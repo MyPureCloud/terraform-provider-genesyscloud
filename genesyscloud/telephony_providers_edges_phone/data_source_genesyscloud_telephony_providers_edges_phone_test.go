@@ -32,12 +32,7 @@ func TestAccDataSourcePhone(t *testing.T) {
 		userDepartment = "Development"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defaultSiteId, err := edgeSite.GetOrganizationDefaultSiteId()
+	defaultSiteId, err := edgeSite.GetOrganizationDefaultSiteId(sdkConfig)
 	if err != nil {
 		t.Fatal(err)
 	}

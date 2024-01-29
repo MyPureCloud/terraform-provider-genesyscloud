@@ -1,6 +1,7 @@
 package telephony_providers_edges_site
 
 import (
+	"log"
 	"sync"
 	"testing"
 
@@ -49,6 +50,11 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
+	sdkConfig, authErr = gcloud.AuthorizeSdk()
+	if authErr != nil {
+		log.Fatalf("failed to authorize sdk: %v", authErr)
+	}
+
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 

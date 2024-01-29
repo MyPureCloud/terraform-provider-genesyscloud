@@ -1,13 +1,16 @@
 package genesyscloud
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
@@ -823,6 +826,179 @@ func TestAccResourceUserRoutingUtil(t *testing.T) {
 	})
 }
 
+func TestAccResourceUserRoutingUtilWithLabels(t *testing.T) {
+	t.Parallel()
+	var (
+		userResource1 = "test-user-util"
+		userName      = "Terraform Util"
+		email1        = "terraform-" + uuid.NewString() + "@example.com"
+		maxCapacity0  = "0"
+		maxCapacity1  = "10"
+		maxCapacity2  = "12"
+		utilTypeCall  = "call"
+		utilTypeEmail = "email"
+
+		redLabelResource   = "label_red"
+		blueLabelResource  = "label_blue"
+		greenLabelResource = "label_green"
+		redLabelName       = "Terraform Red " + uuid.NewString()
+		blueLabelName      = "Terraform Blue " + uuid.NewString()
+		greenLabelName     = "Terraform Green " + uuid.NewString()
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			TestAccPreCheck(t)
+			if err := checkIfLabelsAreEnabled(); err != nil {
+				t.Skipf("%v", err) // be sure to skip the test and not fail it
+			}
+		},
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create with utilization settings
+				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
+					GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+					GenerateUserWithCustomAttrs(
+						userResource1,
+						email1,
+						userName,
+						generateUserRoutingUtil(
+							generateRoutingUtilMediaType("call", maxCapacity1, FalseValue),
+							generateRoutingUtilMediaType("callback", maxCapacity1, FalseValue),
+							generateRoutingUtilMediaType("chat", maxCapacity1, FalseValue),
+							generateRoutingUtilMediaType("email", maxCapacity1, FalseValue),
+							generateRoutingUtilMediaType("message", maxCapacity1, FalseValue),
+							generateLabelUtilization(redLabelResource, maxCapacity1),
+							generateLabelUtilization(blueLabelResource, maxCapacity1, redLabelResource),
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Agent"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", FalseValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", FalseValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", FalseValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", FalseValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", FalseValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttrSet("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.label_id"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttrSet("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.1.label_id"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity1),
+				),
+			},
+			{
+				// Update utilization settings and set different org-level settings
+				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
+					GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+					GenerateUserWithCustomAttrs(
+						userResource1,
+						email1,
+						userName,
+						generateUserRoutingUtil(
+							generateRoutingUtilMediaType("call", maxCapacity2, TrueValue, strconv.Quote(utilTypeEmail)),
+							generateRoutingUtilMediaType("callback", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("chat", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("email", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("message", maxCapacity2, TrueValue, strconv.Quote(utilTypeCall)),
+							generateLabelUtilization(redLabelResource, maxCapacity2),
+							generateLabelUtilization(blueLabelResource, maxCapacity2, redLabelResource),
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Agent"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", TrueValue),
+					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", TrueValue),
+					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", TrueValue),
+					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", TrueValue),
+					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", TrueValue),
+					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttrSet("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.label_id"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttrSet("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.1.label_id"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity2),
+				),
+			},
+			{
+				// Ensure max capacity can be set to 0
+				Config: GenerateRoutingUtilizationLabelResource(redLabelResource, redLabelName, "") +
+					GenerateRoutingUtilizationLabelResource(blueLabelResource, blueLabelName, redLabelResource) +
+					GenerateRoutingUtilizationLabelResource(greenLabelResource, greenLabelName, blueLabelResource) +
+					GenerateUserWithCustomAttrs(
+						userResource1,
+						email1,
+						userName,
+						generateUserRoutingUtil(
+							generateRoutingUtilMediaType("call", maxCapacity0, TrueValue, strconv.Quote(utilTypeEmail)),
+							generateRoutingUtilMediaType("callback", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("chat", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("email", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
+							generateRoutingUtilMediaType("message", maxCapacity0, TrueValue, strconv.Quote(utilTypeCall)),
+							generateLabelUtilization(redLabelResource, maxCapacity0),
+							generateLabelUtilization(blueLabelResource, maxCapacity0, redLabelResource),
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Agent"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.include_non_acd", TrueValue),
+					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.include_non_acd", TrueValue),
+					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.include_non_acd", TrueValue),
+					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.include_non_acd", TrueValue),
+					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.include_non_acd", TrueValue),
+					ValidateStringInArray("genesyscloud_user."+userResource1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttrSet("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.label_id"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttrSet("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.1.label_id"),
+					resource.TestCheckResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity0),
+				),
+			},
+			{
+				// Reset to org-level settings by specifying empty routing utilization attribute
+				Config: GenerateUserWithCustomAttrs(
+					userResource1,
+					email1,
+					userName,
+					"routing_utilization = []",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateUserUtilizationLevel("genesyscloud_user."+userResource1, "Organization"),
+					resource.TestCheckNoResourceAttr("genesyscloud_user."+userResource1, "routing_utilization.%"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
 func TestAccResourceUserRestore(t *testing.T) {
 	t.Parallel()
 	var (
@@ -929,22 +1105,30 @@ func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
 
 func testVerifyUsersDestroyed(state *terraform.State) error {
 	usersAPI := platformclientv2.NewUsersApi()
-	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_user" {
-			continue
-		}
 
-		user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
-		if user != nil {
-			return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
-		} else if IsStatus404(resp) {
-			// User not found as expected
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+	diagErr := WithRetries(context.Background(), 20*time.Second, func() *retry.RetryError {
+		for _, rs := range state.RootModule().Resources {
+			if rs.Type != "genesyscloud_user" {
+				continue
+			}
+			_, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+
+			if err != nil {
+				if IsStatus404(resp) {
+					continue
+				}
+				return retry.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
+			}
+
+			return retry.RetryableError(fmt.Errorf("User (%s) still exists", rs.Primary.ID))
 		}
+		return nil
+	})
+
+	if diagErr != nil {
+		return fmt.Errorf(fmt.Sprintf("%v", diagErr))
 	}
+
 	// Success. All users destroyed
 	return nil
 }

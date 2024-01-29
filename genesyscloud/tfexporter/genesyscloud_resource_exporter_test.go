@@ -231,6 +231,29 @@ func TestAllowEmptyArray(t *testing.T) {
 	assert.Len(t, configMap["arr_attr_3"], 1)
 }
 
+// TestUnitRemoveTrailingZerosRrule will test if rrule is properly sanaitized before export.
+func TestUnitRemoveTrailingZerosRrule(t *testing.T) {
+	testCases := []struct {
+		input    string
+		expected string
+	}{
+		{"FREQ=YEARLY;INTERVAL=01;BYMONTH=12;BYMONTHDAY=06", "FREQ=YEARLY;INTERVAL=1;BYMONTH=12;BYMONTHDAY=6"},
+		{"FREQ=YEARLY;INTERVAL=01;BYMONTHDAY=22", "FREQ=YEARLY;INTERVAL=1;BYMONTHDAY=22"},
+		{"FREQ=YEARLY;BYDAY=SU", "FREQ=YEARLY;BYDAY=SU"},
+		{"FREQ=DAILY;INTERVAL=1", "FREQ=DAILY;INTERVAL=1"},
+		{"FREQ=MONTHLY;BYMONTHDAY=22;INTERVAL=1", "FREQ=MONTHLY;BYMONTHDAY=22;INTERVAL=1"},
+		{"FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=22", "FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=22"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.input, func(t *testing.T) {
+			result := sanitizeRrule(testCase.input)
+			if result != testCase.expected {
+				t.Errorf("Expected: %s, Got: %s", testCase.expected, result)
+			}
+		})
+	}
+}
+
 func TestUnitBuildDependsOnResources(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{

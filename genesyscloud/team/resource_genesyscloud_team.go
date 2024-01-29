@@ -32,11 +32,9 @@ func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configu
 	if err != nil {
 		return nil, diag.Errorf("Failed to get team: %v", err)
 	}
-
 	for _, team := range *teams {
 		resources[*team.Id] = &resourceExporter.ResourceMeta{Name: *team.Name}
 	}
-
 	return resources, nil
 }
 
@@ -44,17 +42,27 @@ func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configu
 func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
-
 	team := getTeamFromResourceData(d)
-
 	log.Printf("Creating team %s", *team.Name)
 	teamObj, err := proxy.createTeam(ctx, &team)
 	if err != nil {
 		return diag.Errorf("Failed to create team: %s", err)
 	}
-
 	d.SetId(*teamObj.Id)
 	log.Printf("Created team %s", *teamObj.Id)
+	//adding members to the team
+	members, ok := d.GetOk("member_ids")
+	if ok {
+		memberList := members.([]interface{})
+		//creating members along with teams
+		if len(memberList) > 0 {
+			_, err := proxy.createMembers(ctx, d.Id(), buildTeamMembers(memberList))
+			if err != nil {
+				return diag.Errorf("Failed to create members: %s", err)
+			}
+			log.Printf("Created members %s", d.Id())
+		}
+	}
 	return readTeam(ctx, d, meta)
 }
 
@@ -62,26 +70,27 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
-
 	log.Printf("Reading team %s", d.Id())
-
+	// reading members
+	members, err := readMembers(ctx, d, proxy)
+	if err != nil {
+		return diag.Errorf("failed to read members of the team %s : %s", d.Id(), err)
+	}
+	if members != nil {
+		d.Set("member_ids", members)
+	}
 	return gcloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		team, respCode, getErr := proxy.getTeamById(ctx, d.Id())
 		if getErr != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
-				return retry.RetryableError(fmt.Errorf("Failed to read team %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read team %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read team %s: %s", d.Id(), getErr))
 		}
-
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam())
-
 		resourcedata.SetNillableValue(d, "name", team.Name)
-
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", team.Division)
-
 		resourcedata.SetNillableValue(d, "description", team.Description)
-
 		log.Printf("Read team %s %s", d.Id(), *team.Name)
 		return cc.CheckState()
 	})
@@ -91,53 +100,93 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
-
 	team := getTeamFromResourceData(d)
-
-	log.Printf("Updating team %s", *team.Name)
+	log.Printf("updating team %s", *team.Name)
 	teamObj, err := proxy.updateTeam(ctx, d.Id(), &team)
 	if err != nil {
-		return diag.Errorf("Failed to update team: %s", err)
+		return diag.Errorf("failed to update team %s : %s", d.Id(), err)
 	}
+	members, ok := d.GetOk("member_ids")
 
+	if ok {
+		memberList := members.([]interface{})
+		if len(memberList) == 0 {
+			currentMembers, _ := readMembers(ctx, d, proxy)
+			if len(currentMembers) > 0 {
+				deleteMembers(ctx, d.Id(), currentMembers, proxy)
+			}
+		}
+		if len(memberList) > 0 {
+			currentMembers, _ := readMembers(ctx, d, proxy)
+			if len(currentMembers) > 0 {
+				removeMembers, addMembers := SliceDifferenceMembers(currentMembers, memberList)
+				if len(removeMembers) > 0 {
+					deleteMembers(ctx, d.Id(), removeMembers, proxy)
+				}
+				if len(addMembers) > 0 {
+					createMembers(ctx, d.Id(), addMembers, proxy)
+				}
+			}
+		}
+	}
 	log.Printf("Updated team %s", *teamObj.Id)
 	return readTeam(ctx, d, meta)
+
 }
 
 // deleteTeam is used by the team resource to delete an team from Genesys cloud
 func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
-
 	_, err := proxy.deleteTeam(ctx, d.Id())
 	if err != nil {
-		return diag.Errorf("Failed to delete team %s: %s", d.Id(), err)
+		return diag.Errorf("failed to delete team %s: %s", d.Id(), err)
 	}
-
 	return gcloud.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, respCode, err := proxy.getTeamById(ctx, d.Id())
-
 		if err != nil {
 			if gcloud.IsStatus404ByInt(respCode) {
-				log.Printf("Deleted team %s", d.Id())
+				log.Printf("deleted team %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting team %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting team %s: %s", d.Id(), err))
 		}
-
 		return retry.RetryableError(fmt.Errorf("team %s still exists", d.Id()))
 	})
 }
 
-// getTeamFromResourceData maps data from schema ResourceData object to a platformclientv2.Team
-func getTeamFromResourceData(d *schema.ResourceData) platformclientv2.Team {
-
-	name := d.Get("name").(string)
-	division := d.Get("division_id").(string)
-
-	return platformclientv2.Team{
-		Name:        &name,
-		Division:    &platformclientv2.Writabledivision{Id: &division},
-		Description: platformclientv2.String(d.Get("description").(string)),
+// readMembers is used by the members resource to read a members from genesys cloud
+func readMembers(ctx context.Context, d *schema.ResourceData, proxy *teamProxy) ([]interface{}, error) {
+	log.Printf("attempting to read members of team %s", d.Id())
+	teamMemberListing, err := proxy.getMembersById(ctx, d.Id())
+	if err != nil {
+		log.Printf("unable to retrieve members of team %s : %s", d.Id(), err)
+		return nil, err
 	}
+	log.Printf("success reading members of team %s", d.Id())
+	if teamMemberListing != nil {
+		return flattenMemberIds(*teamMemberListing), nil
+	}
+	return nil, nil
+}
+
+// deleteMembers is used by the members resource to delete a members from Genesys cloud
+func deleteMembers(ctx context.Context, teamId string, memberList []interface{}, proxy *teamProxy) diag.Diagnostics {
+	_, err := proxy.deleteMembers(ctx, teamId, convertMemberListtoString(memberList))
+	if err != nil {
+		return diag.Errorf("failed to remove members from team %s : %s", teamId, err)
+	}
+	log.Printf("success removing members from team %s", teamId)
+	return nil
+}
+
+// createMembers is used by the members resource to create Genesys cloud members
+func createMembers(ctx context.Context, teamId string, members []interface{}, proxy *teamProxy) diag.Diagnostics {
+	log.Printf("adding members to team %s", teamId)
+	_, err := proxy.createMembers(ctx, teamId, buildTeamMembers(members))
+	if err != nil {
+		return diag.Errorf("failed to add members to team %s : %s", teamId, err)
+	}
+	log.Printf("success adding members to team %s", teamId)
+	return nil
 }

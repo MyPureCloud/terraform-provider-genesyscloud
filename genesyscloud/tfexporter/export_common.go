@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -218,6 +219,40 @@ func sanitizeE164Number(number string) string {
 		number = strings.Replace(number, c, "", -1)
 	}
 	return number
+}
+func sanitizeRrule(input string) string {
+	attributeRegex := map[string]*regexp.Regexp{
+		"INTERVAL":   regexp.MustCompile(`INTERVAL=([1-9][0-9]*|0?[1-9][0-9]*);`),
+		"BYMONTH":    regexp.MustCompile(`BYMONTH=(0?[1-9]|1[0-2]);`),
+		"BYMONTHDAY": regexp.MustCompile(`BYMONTHDAY=(0?[1-9]|[1-2][0-9]|3[0-1])$`),
+	}
+
+	// Iterate over attributes and modify the input string
+	for attributeName, regex := range attributeRegex {
+		input = regex.ReplaceAllStringFunc(input, func(match string) string {
+			return removeTrailingZeros(match, attributeName)
+		})
+	}
+	return input
+}
+
+func removeTrailingZeros(match, attributeName string) string {
+	pattern := `=(\d{1,2})`
+	re := regexp.MustCompile(pattern)
+	outputText := re.ReplaceAllStringFunc(match, func(match string) string {
+		numericPart := match[1:]
+		numericPart = fmt.Sprintf("%d", parseInt(numericPart))
+		return "=" + numericPart
+	})
+	return outputText
+}
+
+func parseInt(s string) int {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return i
 }
 
 // Get a string path to the target export file
