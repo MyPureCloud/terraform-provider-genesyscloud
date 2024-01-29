@@ -18,6 +18,7 @@ import (
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
+	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
@@ -112,6 +113,7 @@ type RegisterInstance struct {
 
 func registerResources() {
 	regInstance := &RegisterInstance{}
+	oauth.SetRegistrar(regInstance)                         //Registering oauth_client
 	dt.SetRegistrar(regInstance)                            //Registering architect data table
 	dtr.SetRegistrar(regInstance)                           //Registering architect data table row
 	emergencyGroup.SetRegistrar(regInstance)                //Registering architect emergency group

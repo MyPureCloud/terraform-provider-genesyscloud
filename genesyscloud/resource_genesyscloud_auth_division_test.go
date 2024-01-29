@@ -152,7 +152,7 @@ func validateHomeDivisionID(divResourceName string) resource.TestCheckFunc {
 			return fmt.Errorf("Failed to find division %s in state", divResourceName)
 		}
 		divID := divResource.Primary.ID
-		homeDivID, err := getHomeDivisionID()
+		homeDivID, err := GetHomeDivisionID()
 		if err != nil {
 			return fmt.Errorf("%v", err)
 		}

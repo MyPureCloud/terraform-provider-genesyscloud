@@ -53,7 +53,7 @@ func TestAccPreCheck(t *testing.T) {
 // Verify default division is home division
 func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		homeDivID, err := getHomeDivisionID()
+		homeDivID, err := GetHomeDivisionID()
 		if err != nil {
 			return fmt.Errorf("Failed to query home division: %v", err)
 		}

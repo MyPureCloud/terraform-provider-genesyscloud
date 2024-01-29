@@ -576,7 +576,7 @@ func removeSkillGroupDivisionID(d *schema.ResourceData, list []string) ([]string
 	}
 	divisionId := d.Get("division_id").(string)
 	if divisionId == "" {
-		id, diagErr := getHomeDivisionID()
+		id, diagErr := GetHomeDivisionID()
 		if diagErr != nil {
 			return nil, diagErr
 		}

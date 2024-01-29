@@ -90,7 +90,7 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 
 	if home {
 		// Home division must already exist, or it cannot be modified
-		id, diagErr := getHomeDivisionID()
+		id, diagErr := GetHomeDivisionID()
 		if diagErr != nil {
 			return diagErr
 		}
