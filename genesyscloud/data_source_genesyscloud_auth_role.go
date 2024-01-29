@@ -50,3 +50,12 @@ func DataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m inter
 		return nil
 	})
 }
+
+func GenerateDefaultAuthRoleDataSource(
+	resourceID string,
+	name string) string {
+	return fmt.Sprintf(`data "genesyscloud_auth_role" "%s" {
+		name = %s
+	}
+	`, resourceID, name)
+}

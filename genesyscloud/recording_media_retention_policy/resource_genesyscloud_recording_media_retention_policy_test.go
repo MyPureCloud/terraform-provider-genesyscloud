@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 	"time"
 
@@ -948,7 +949,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
 						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
-					gcloud.GenerateUserRoles(
+					userRoles.GenerateUserRoles(
 						userRoleResource1,
 						userResource1,
 						gcloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
@@ -1055,7 +1056,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
 						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
-					gcloud.GenerateUserRoles(
+					userRoles.GenerateUserRoles(
 						userRoleResource1,
 						userResource1,
 						gcloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
@@ -1162,7 +1163,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
 						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
-					gcloud.GenerateUserRoles(
+					userRoles.GenerateUserRoles(
 						userRoleResource1,
 						userResource1,
 						gcloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
@@ -1269,7 +1270,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						gcloud.GenerateRolePermPolicy(qualityDomain, evaluationEntityType, strconv.Quote(editAction)),
 						gcloud.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
-					gcloud.GenerateUserRoles(
+					userRoles.GenerateUserRoles(
 						userRoleResource1,
 						userResource1,
 						gcloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),

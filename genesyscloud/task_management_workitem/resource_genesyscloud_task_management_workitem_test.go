@@ -3,6 +3,7 @@ package task_management_workitem
 import (
 	"fmt"
 	"strconv"
+	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 	"time"
 
@@ -196,7 +197,7 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 					gcloud.GenerateAuthRoleResource(roleResId1, roleName1, "test role description",
 						gcloud.GenerateRolePermPolicy("workitems", "*", strconv.Quote("*")),
 					) +
-					gcloud.GenerateUserRoles("user_role_1", userResId1,
+					user_roles.GenerateUserRoles("user_role_1", userResId1,
 						gcloud.GenerateResourceRoles(
 							"genesyscloud_auth_role."+roleResId1+".id",
 							"data.genesyscloud_auth_division_home."+homeDivRes+".id",

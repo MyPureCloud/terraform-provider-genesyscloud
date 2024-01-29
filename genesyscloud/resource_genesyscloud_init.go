@@ -102,7 +102,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_routing_utilization_label", ResourceRoutingUtilizationLabel())
 	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
 	l.RegisterResource("genesyscloud_user", ResourceUser())
-	l.RegisterResource("genesyscloud_user_roles", ResourceUserRoles())
 	l.RegisterResource("genesyscloud_widget_deployment", ResourceWidgetDeployment())
 
 }
@@ -146,7 +145,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_routing_utilization_label", RoutingUtilizationLabelExporter())
 	l.RegisterExporter("genesyscloud_routing_wrapupcode", RoutingWrapupCodeExporter())
 	l.RegisterExporter("genesyscloud_user", UserExporter())
-	l.RegisterExporter("genesyscloud_user_roles", UserRolesExporter())
 	l.RegisterExporter("genesyscloud_widget_deployment", WidgetDeploymentExporter())
 	l.RegisterExporter("genesyscloud_knowledge_v1_document", KnowledgeDocumentExporterV1())
 	l.RegisterExporter("genesyscloud_knowledge_document_variation", KnowledgeDocumentVariationExporter())
