@@ -3,6 +3,7 @@ package resource_exporter
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -88,15 +89,25 @@ func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters ma
 			}
 
 			for _, skillId := range skillIdList {
-				exportId = (*exporter.SanitizedResourceMap[skillId]).Name
-				sanitisedSkillIds = append(sanitisedSkillIds, fmt.Sprintf("${genesyscloud_routing_skill.%s.id}", exportId))
+				// DEVTOOLING-319: Outbound rulesets can reference skills that no longer exist. Plugin crash if we process a skill that doesn't exist in the skill map, making sure of its existence before proceeding.
+				value, exists := exporter.SanitizedResourceMap[skillId]
+				if exists {
+					exportId = value.Name
+					sanitisedSkillIds = append(sanitisedSkillIds, fmt.Sprintf("${genesyscloud_routing_skill.%s.id}", exportId))
+				} else {
+					log.Printf("Skill '%s' does not exist in the skill map.\n", skillId)
+					sanitisedSkillIds = append(sanitisedSkillIds, fmt.Sprintf("skill_%s_not_found", skillId))
+				}
 			}
 
-			jsonData, _ := json.Marshal(sanitisedSkillIds)
+			jsonData, err := json.Marshal(sanitisedSkillIds)
+			if err != nil {
+				return fmt.Errorf("error converting sanitized skill ids array to JSON: %s", err)
+			}
 			configMap["skills"] = string(jsonData)
 		}
 	} else {
-		return fmt.Errorf("unable to locate genesyscloud_routing_skill in the exporters array.")
+		return fmt.Errorf("unable to locate genesyscloud_routing_skill in the exporters array")
 	}
 	return nil
 }

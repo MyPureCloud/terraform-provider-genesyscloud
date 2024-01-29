@@ -550,7 +550,7 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	originalSiteId, err := GetOrganizationDefaultSiteId()
+	originalSiteId, err := GetOrganizationDefaultSiteId(sdkConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -583,7 +583,7 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 			{
 				// Store the original default site, so it can be restored later
 				PreConfig: func() {
-					originalSiteId, err = GetOrganizationDefaultSiteId()
+					originalSiteId, err = GetOrganizationDefaultSiteId(sdkConfig)
 					if err != nil {
 						t.Fatalf("error setting original default site ID %s", originalSiteId)
 					}
@@ -765,7 +765,7 @@ func setDefaultSite(siteId string) error {
 // Verify if the provided resource site is the default site
 func testDefaultSite(resource string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		defaultSiteId, err := GetOrganizationDefaultSiteId()
+		defaultSiteId, err := GetOrganizationDefaultSiteId(sdkConfig)
 		if err != nil {
 			return fmt.Errorf("failed to get default site id: %v", err)
 		}

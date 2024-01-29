@@ -136,8 +136,9 @@ func ResourceGroup() *schema.Resource {
 			"owner_ids": {
 				Description: "IDs of owners of the group.",
 				Type:        schema.TypeList,
-				Optional:    true,
+				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				MinItems:    1,
 			},
 			"member_ids": {
 				Description: "IDs of members assigned to the group. If not set, this resource will not manage group members.",
@@ -559,14 +560,14 @@ func generateGroupResource(
 
 func generateGroupAddress(number string, phoneType string, extension string) string {
 	return fmt.Sprintf(`addresses {
-				number = %s
-				type = "%s"
-                extension = %s
-			}
-			`, number, phoneType, extension)
+		number = %s
+		type = "%s"
+		extension = %s
+	}
+	`, number, phoneType, extension)
 }
 
-func generateGroupOwners(userIDs ...string) string {
+func GenerateGroupOwners(userIDs ...string) string {
 	return fmt.Sprintf(`owner_ids = [%s]
 	`, strings.Join(userIDs, ","))
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceDncList(t *testing.T) {
+func TestAccDataSourceOutboundDncList(t *testing.T) {
 	var (
 		resourceId   = "dnc_list"
 		dncListName  = "Test List " + uuid.NewString()

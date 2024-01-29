@@ -37,7 +37,7 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 		}
 
 		for _, flow := range *flows.Entities {
-			resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.Name}
+			resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.VarType + "_" + *flow.Name}
 		}
 	}
 

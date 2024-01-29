@@ -9,7 +9,7 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
-const resourceName = "genesyscloud_outbound_callabletimeset_callabletimeset"
+const resourceName = "genesyscloud_outbound_callabletimeset"
 
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
