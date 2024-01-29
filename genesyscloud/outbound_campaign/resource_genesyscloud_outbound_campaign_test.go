@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
@@ -170,12 +171,12 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 			contact_list_id = genesyscloud_outbound_contact_list.%s.id
 		}
 		`, ruleSetResourceId, "tf ruleset "+uuid.NewString(), contactListResourceId,
-	) + outbound.GenerateOutboundCallabletimeset(
+	) + obCallableTimeset.GenerateOutboundCallabletimeset(
 		callableTimeSetId,
 		"tf timeset "+uuid.NewString(),
-		outbound.GenerateCallableTimesBlock(
+		obCallableTimeset.GenerateCallableTimesBlock(
 			"Africa/Abidjan",
-			outbound.GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+			obCallableTimeset.GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
 		))
 
 	resource.Test(t, resource.TestCase{

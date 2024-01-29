@@ -13,7 +13,7 @@ const resourceName = "genesyscloud_outbound_callabletimeset"
 
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, dataSourceOutboundCallabletimeset())
+	l.RegisterDataSource(resourceName, DataSourceOutboundCallabletimeset())
 	l.RegisterResource(resourceName, ResourceOutboundCallabletimeset())
 	l.RegisterExporter(resourceName, OutboundCallableTimesetExporter())
 }
@@ -94,7 +94,7 @@ func OutboundCallableTimesetExporter() *resourceExporter.ResourceExporter {
 }
 
 // dataSourceOutboundCallabletimeset registers the genesyscloud_outbound_callabletimeset data source
-func dataSourceOutboundCallabletimeset() *schema.Resource {
+func DataSourceOutboundCallabletimeset() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Clound Outbound Callable Timesets. Select a callable timeset by name.",
 		ReadContext: gcloud.ReadWithPooledClient(dataSourceOutboundCallabletimesetRead),
