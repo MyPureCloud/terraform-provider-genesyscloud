@@ -45,8 +45,13 @@ func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m i
 			return retry.RetryableError(fmt.Errorf("No authorization divisions found with name %s", name))
 		}
 
-		division := (*divisions.Entities)[0]
-		d.SetId(*division.Id)
-		return nil
+		for _, division := range *divisions.Entities {
+			if *division.Name == name {
+				d.SetId(*division.Id)
+				return nil
+			}
+		}
+
+		return retry.RetryableError(fmt.Errorf("No division with name %s found", name))
 	})
 }
