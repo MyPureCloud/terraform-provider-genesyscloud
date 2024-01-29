@@ -4,6 +4,7 @@ import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	outboundCampaignrule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
@@ -27,7 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_outbound_callabletimeset"] = ResourceOutboundCallabletimeset()
+	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
 	providerResources["genesyscloud_outbound_campaignrule"] = outboundCampaignrule.ResourceOutboundCampaignrule()
 	providerResources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.ResourceOutboundAttemptLimit()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = ResourceOutboundCallAnalysisResponseSet()
@@ -54,7 +55,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_outbound_callabletimeset"] = dataSourceOutboundCallabletimeset()
+	providerDataSources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.DataSourceOutboundCallabletimeset()
 	providerDataSources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.DataSourceOutboundAttemptLimit()
 	providerDataSources["genesyscloud_outbound_callanalysisresponseset"] = dataSourceOutboundCallAnalysisResponseSet()
 	providerDataSources["genesyscloud_outbound_campaignrule"] = outboundCampaignrule.DataSourceOutboundCampaignrule()
