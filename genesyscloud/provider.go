@@ -319,8 +319,8 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 	// Create new config
 	sdkConfig := platformclientv2.GetDefaultConfiguration()
 
-	_, exists := os.LookupEnv("TF_UNIT")
-	if exists {
+	v, exists := os.LookupEnv("TF_UNIT")
+	if exists && v != "" {
 		log.Printf("TF_UNIT environment is set.  No authorization of the SDK has occurred")
 		return sdkConfig, nil
 	}

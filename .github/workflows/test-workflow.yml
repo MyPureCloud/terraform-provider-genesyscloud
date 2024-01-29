@@ -17,7 +17,7 @@ on:
         required: true
       sdk-log-artifact-name:
         type: string
-        required: true
+        default: ''
       sdk-debug-log-file-path:
         type: string
         default: './genesyscloud/sdk_debug.log'
@@ -30,6 +30,10 @@ on:
       coverage-html-filename:
         type: string
         default: ''
+      tf-unit:
+        type: string
+        default: ''
+        description: "used to set the TF_UNIT env variable for jobs that don't need sdk authorization"
     secrets:
       client-id:
         description: 'Genesys Cloud Client ID'
@@ -76,6 +80,7 @@ jobs:
           TF_LOG: 'DEBUG'
           TF_LOG_PATH: ${{ github.workspace }}/test.log
           TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
+          TF_UNIT: ${{ inputs.tf-unit }}
 
           GENESYSCLOUD_OAUTHCLIENT_ID: ${{ secrets.client-id }}
           GENESYSCLOUD_OAUTHCLIENT_SECRET: ${{ secrets.client-secret }}
@@ -98,7 +103,7 @@ jobs:
           retention-days: 5
 
       - name: 'Upload SDK Log'
-        if: ${{ always() }}
+        if: ${{ always() && inputs.sdk-log-artifact-name != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.sdk-log-artifact-name }} ${{ matrix.terraform }}
@@ -106,7 +111,7 @@ jobs:
           retention-days: 5
 
       - name: 'Upload Export Result'
-        if: ${{ inputs.running-export-tests == 'true' }}
+        if: ${{ always() && inputs.running-export-tests == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: export-result ${{ matrix.terraform }}

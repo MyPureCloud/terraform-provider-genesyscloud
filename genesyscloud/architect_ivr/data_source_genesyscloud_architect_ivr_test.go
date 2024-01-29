@@ -52,7 +52,7 @@ func TestAccDataSourceArchitectIvr(t *testing.T) {
 /*
 This is a unit test to test whether the Architect IVR data source is properly pulling the id back from the proxy
 */
-func TestDataSourceArchitectIvr(t *testing.T) {
+func TestUnitDataSourceArchitectIvr(t *testing.T) {
 	targetId := uuid.NewString()
 	targetName := "MyTargetId"
 	archProxy := &architectIvrProxy{}
