@@ -36,7 +36,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_outbound_callabletimeset"] = dataSourceOutboundCallabletimeset()
+	providerDataSources["genesyscloud_outbound_callabletimeset"] = DataSourceOutboundCallabletimeset()
 
 }
 
