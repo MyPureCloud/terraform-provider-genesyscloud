@@ -16,7 +16,7 @@ import (
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	chunksProcess "terraform-provider-genesyscloud/genesyscloud/util/chunks"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -616,22 +616,14 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValue(d, "description", currentQueue.Description)
 		resourcedata.SetNillableValue(d, "skill_evaluation_method", currentQueue.SkillEvaluationMethod)
 
-		if currentQueue.Division != nil && currentQueue.Division.Id != nil {
-			d.Set("division_id", *currentQueue.Division.Id)
-		} else {
-			d.Set("division_id", nil)
-		}
+		resourcedata.SetNillableReferenceDivision(d, "division_id", currentQueue.Division)
 
 		d.Set("acw_wrapup_prompt", nil)
 		d.Set("acw_timeout_ms", nil)
 
 		if currentQueue.AcwSettings != nil {
-			if currentQueue.AcwSettings.WrapupPrompt != nil {
-				d.Set("acw_wrapup_prompt", *currentQueue.AcwSettings.WrapupPrompt)
-			}
-			if currentQueue.AcwSettings.TimeoutMs != nil {
-				d.Set("acw_timeout_ms", int(*currentQueue.AcwSettings.TimeoutMs))
-			}
+			resourcedata.SetNillableValue(d, "acw_wrapup_prompt", currentQueue.AcwSettings.WrapupPrompt)
+			resourcedata.SetNillableValue(d, "acw_timeout_ms", currentQueue.AcwSettings.TimeoutMs)
 		}
 
 		d.Set("media_settings_call", nil)
@@ -641,37 +633,17 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		d.Set("media_settings_message", nil)
 
 		if currentQueue.MediaSettings != nil {
-			if currentQueue.MediaSettings.Call != nil {
-				d.Set("media_settings_call", flattenMediaSetting(*currentQueue.MediaSettings.Call))
-			}
-
-			if currentQueue.MediaSettings.Callback != nil {
-				d.Set("media_settings_callback", flattenMediaSettingCallback(*currentQueue.MediaSettings.Callback))
-			}
-
-			if currentQueue.MediaSettings.Chat != nil {
-				d.Set("media_settings_chat", flattenMediaSetting(*currentQueue.MediaSettings.Chat))
-			}
-
-			if currentQueue.MediaSettings.Email != nil {
-				d.Set("media_settings_email", flattenMediaSetting(*currentQueue.MediaSettings.Email))
-			}
-
-			if currentQueue.MediaSettings.Message != nil {
-				d.Set("media_settings_message", flattenMediaSetting(*currentQueue.MediaSettings.Message))
-			}
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_call", currentQueue.MediaSettings.Call, flattenMediaSetting)
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_callback", currentQueue.MediaSettings.Callback, flattenMediaSettingCallback)
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_chat", currentQueue.MediaSettings.Chat, flattenMediaSetting)
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_email", currentQueue.MediaSettings.Email, flattenMediaSetting)
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_message", currentQueue.MediaSettings.Message, flattenMediaSetting)
 		}
 
-		if currentQueue.RoutingRules != nil {
-			d.Set("routing_rules", flattenRoutingRules(*currentQueue.RoutingRules))
-		} else {
-			d.Set("routing_rules", nil)
-		}
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
 
-		if currentQueue.Bullseye != nil && currentQueue.Bullseye.Rings != nil {
-			d.Set("bullseye_rings", flattenBullseyeRings(*currentQueue.Bullseye.Rings))
-		} else {
-			d.Set("bullseye_rings", nil)
+		if currentQueue.Bullseye != nil {
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "bullseye_rings", currentQueue.Bullseye.Rings, flattenBullseyeRings)
 		}
 
 		resourcedata.SetNillableReference(d, "queue_flow_id", currentQueue.QueueFlow)
@@ -686,51 +658,47 @@ func readQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValue(d, "calling_party_number", currentQueue.CallingPartyNumber)
 
 		if currentQueue.DefaultScripts != nil {
-			d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
+			_ = d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
 		} else {
-			d.Set("default_script_ids", nil)
+			_ = d.Set("default_script_ids", nil)
 		}
 
 		if currentQueue.OutboundMessagingAddresses != nil && currentQueue.OutboundMessagingAddresses.SmsAddress != nil {
-			d.Set("outbound_messaging_sms_address_id", *currentQueue.OutboundMessagingAddresses.SmsAddress.Id)
+			_ = d.Set("outbound_messaging_sms_address_id", *currentQueue.OutboundMessagingAddresses.SmsAddress.Id)
 		} else {
-			d.Set("outbound_messaging_sms_address_id", nil)
+			_ = d.Set("outbound_messaging_sms_address_id", nil)
 		}
 
 		if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
 			outboundEmailAddress := *currentQueue.OutboundEmailAddress
-			d.Set("outbound_email_address", []interface{}{flattenQueueEmailAddress(*outboundEmailAddress)})
+			_ = d.Set("outbound_email_address", []interface{}{flattenQueueEmailAddress(*outboundEmailAddress)})
 		} else {
-			d.Set("outbound_email_address", nil)
+			_ = d.Set("outbound_email_address", nil)
 		}
 
-		if currentQueue.DirectRouting != nil {
-			d.Set("direct_routing", []interface{}{flattenDirectRouting(*currentQueue.DirectRouting)})
-		} else {
-			d.Set("direct_routing", nil)
-		}
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
 
 		wrapupCodes, err := flattenQueueWrapupCodes(d.Id(), routingAPI)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
-		d.Set("wrapup_codes", wrapupCodes)
+		_ = d.Set("wrapup_codes", wrapupCodes)
 
 		members, err := flattenQueueMembers(d.Id(), "user", routingAPI)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
-		d.Set("members", members)
+		_ = d.Set("members", members)
 
 		skillgroup := "SKILLGROUP"
 		team := "TEAM"
 		group := "GROUP"
 
-		d.Set("skill_groups", flattenQueueMemberGroupsList(currentQueue, &skillgroup))
-		d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
-		d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
+		_ = d.Set("skill_groups", flattenQueueMemberGroupsList(currentQueue, &skillgroup))
+		_ = d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
+		_ = d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
 
-		d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
+		_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
 
 		log.Printf("Done reading queue %s %s", d.Id(), *currentQueue.Name)
 		return cc.CheckState()
@@ -894,7 +862,7 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	}
 }
 
-func flattenMediaSetting(settings platformclientv2.Mediasettings) []interface{} {
+func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{} {
 	settingsMap := make(map[string]interface{})
 
 	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
@@ -905,7 +873,7 @@ func flattenMediaSetting(settings platformclientv2.Mediasettings) []interface{} 
 	return []interface{}{settingsMap}
 }
 
-func flattenMediaSettingCallback(settings platformclientv2.Callbackmediasettings) []interface{} {
+func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasettings) []interface{} {
 	settingsMap := make(map[string]interface{})
 
 	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
@@ -956,9 +924,9 @@ func buildSdkRoutingRules(d *schema.ResourceData) *[]platformclientv2.Routingrul
 	return &routingRules
 }
 
-func flattenRoutingRules(sdkRoutingRules []platformclientv2.Routingrule) []interface{} {
-	rules := make([]interface{}, len(sdkRoutingRules))
-	for i, sdkRule := range sdkRoutingRules {
+func flattenRoutingRules(sdkRoutingRules *[]platformclientv2.Routingrule) []interface{} {
+	rules := make([]interface{}, len(*sdkRoutingRules))
+	for i, sdkRule := range *sdkRoutingRules {
 		ruleSettings := make(map[string]interface{})
 
 		resourcedata.SetMapValueIfNotNil(ruleSettings, "operator", sdkRule.Operator)
@@ -1057,10 +1025,10 @@ the public API will take the list item in the list and make it the default and i
 to always add a dumb bullseye ring block.  Now, we automatically add one for you.  We only except a maximum of 5 bullseyes_ring blocks, but we will always
 remove the last block returned by the API.
 */
-func flattenBullseyeRings(sdkRings []platformclientv2.Ring) []interface{} {
-	rings := make([]interface{}, len(sdkRings)-1) //Sizing the target array of Rings to account for us removing the default block
-	for i, sdkRing := range sdkRings {
-		if i < len(sdkRings)-1 { //Checking to make sure we are do nothing with the last item in the list by skipping processing if it is defined
+func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []interface{} {
+	rings := make([]interface{}, len(*sdkRings)-1) //Sizing the target array of Rings to account for us removing the default block
+	for i, sdkRing := range *sdkRings {
+		if i < len(*sdkRings)-1 { //Checking to make sure we are do nothing with the last item in the list by skipping processing if it is defined
 			ringSettings := make(map[string]interface{})
 			if sdkRing.ExpansionCriteria != nil {
 				for _, criteria := range *sdkRing.ExpansionCriteria {
@@ -1320,7 +1288,7 @@ func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouti
 	return nil
 }
 
-func flattenDirectRouting(settings platformclientv2.Directrouting) map[string]interface{} {
+func flattenDirectRouting(settings *platformclientv2.Directrouting) []interface{} {
 	settingsMap := make(map[string]interface{})
 
 	if settings.BackupQueueId != nil {
@@ -1346,7 +1314,7 @@ func flattenDirectRouting(settings platformclientv2.Directrouting) map[string]in
 		settingsMap["message_use_agent_address_outbound"] = *messageSettings.UseAgentAddressOutbound
 	}
 
-	return settingsMap
+	return []interface{}{settingsMap}
 }
 
 func updateQueueWrapupCodes(d *schema.ResourceData, routingAPI *platformclientv2.RoutingApi) diag.Diagnostics {
