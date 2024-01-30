@@ -52,7 +52,7 @@ import (
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
-	"terraform-provider-genesyscloud/genesyscloud/user_roles"
+	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
@@ -164,7 +164,7 @@ func registerResources() {
 	lineBaseSettings.SetRegistrar(regInstance)              //Registering Line Base Settings
 	edgesTrunk.SetRegistrar(regInstance)                    //Registering Edges Trunk Settings
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
-	user_roles.SetRegistrar(regInstance)                    //Registering user roles
+	userRoles.SetRegistrar(regInstance)                     //Registering user roles
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
