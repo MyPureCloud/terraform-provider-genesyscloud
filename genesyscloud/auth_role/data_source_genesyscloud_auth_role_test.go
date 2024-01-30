@@ -1,7 +1,8 @@
-package genesyscloud
+package auth_role
 
 import (
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -17,8 +18,8 @@ func TestAccDataSourceAuthRole(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { genesyscloud.TestAccPreCheck(t) },
+		ProviderFactories: genesyscloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateAuthRoleResource(
