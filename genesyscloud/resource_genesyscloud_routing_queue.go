@@ -1290,7 +1290,6 @@ func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouti
 	if directRouting != nil && len(directRouting) > 0 {
 		settingsMap := directRouting[0].(map[string]interface{})
 
-		backupQueueID := settingsMap["backup_queue_id"].(string)
 		agentWaitSeconds := settingsMap["agent_wait_seconds"].(int)
 		waitForAgent := settingsMap["wait_for_agent"].(bool)
 
@@ -1309,24 +1308,19 @@ func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouti
 			UseAgentAddressOutbound: &messageUseAgentAddressOutbound,
 		}
 
-		if backupQueueID == "" || backupQueueID == NullValue {
-			return &platformclientv2.Directrouting{
-				CallMediaSettings:    callSettings,
-				EmailMediaSettings:   emailSettings,
-				MessageMediaSettings: messageSettings,
-				WaitForAgent:         &waitForAgent,
-				AgentWaitSeconds:     &agentWaitSeconds,
-			}
-		}
-
-		return &platformclientv2.Directrouting{
+		sdkDirectRouting := &platformclientv2.Directrouting{
 			CallMediaSettings:    callSettings,
 			EmailMediaSettings:   emailSettings,
 			MessageMediaSettings: messageSettings,
 			WaitForAgent:         &waitForAgent,
 			AgentWaitSeconds:     &agentWaitSeconds,
-			BackupQueueId:        &backupQueueID,
 		}
+
+		if backUpQueueId, ok := settingsMap["backup_queue_id"].(string); ok && backUpQueueId != "" {
+			sdkDirectRouting.BackupQueueId = &backUpQueueId
+		}
+
+		return sdkDirectRouting
 	}
 	return nil
 }
