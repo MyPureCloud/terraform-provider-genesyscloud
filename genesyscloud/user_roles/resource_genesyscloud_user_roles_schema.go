@@ -12,7 +12,7 @@ const resourceName = "genesyscloud_user_roles"
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource(resourceName, ResourceUserRoles())
-	l.RegisterExporter(resourceName, userRolesExporter())
+	l.RegisterExporter(resourceName, UserRolesExporter())
 }
 
 // ResourceUserRoles registers the genesyscloud_user_roles resource with terraform
@@ -48,7 +48,7 @@ Terraform expects to manage the resources that are defined in its stack. You can
 }
 
 // userRolesExporter returns the resourceExporter object used to hold the genesyscloud_user_roles exporter's config
-func userRolesExporter() *resourceExporter.ResourceExporter {
+func UserRolesExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: genesyscloud.GetAllWithPooledClient(genesyscloud.GetAllUsers),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
