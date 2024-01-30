@@ -519,8 +519,8 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	// this is done before the merge of exporters and this will make sure only dependency resources are resolved
 	g.buildResourceConfigMap()
 	g.exportAndResolveDependencyAttributes()
-
-	g.resources = append(existingResources, append(uniqueResources, g.resources...)...)
+	g.appendResources(uniqueResources)
+	g.appendResources(existingResources)
 	g.exporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.exporters))
 
 	return nil
@@ -536,7 +536,7 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagE
 		g.exportAndResolveDependencyAttributes()
 
 		// merge the resources and exporters after the dependencies are resolved
-		g.resources = append(existingResources, g.resources...)
+		g.appendResources(existingResources)
 		g.exporters = mergeExporters(existingExporters, *g.exporters)
 
 		// rebuild the config map
@@ -556,9 +556,40 @@ func (g *GenesysCloudResourceExporter) copyExporters() map[string]*resourceExpor
 }
 
 func (g *GenesysCloudResourceExporter) copyResources() []resourceExporter.ResourceInfo {
-	existingResources := g.resources
+	existingResources := g.copyResource()
 	g.resources = nil
 	return existingResources
+}
+
+func (g *GenesysCloudResourceExporter) copyResource() []resourceExporter.ResourceInfo {
+	existingResources := make([]resourceExporter.ResourceInfo, 0)
+	for _, resource := range g.resources {
+		existingResourceInterface := deepcopy.Copy(resource)
+		existingResource, _ := existingResourceInterface.(resourceExporter.ResourceInfo)
+		existingResourceCtyTypeInterface := deepcopy.Copy(resource.CtyType)
+		existingResource.CtyType, _ = existingResourceCtyTypeInterface.(cty.Type)
+		if existingResource.CtyType == cty.NilType {
+			existingResource.CtyType = resource.CtyType
+		}
+		existingResources = append(existingResources, existingResource)
+	}
+	return existingResources
+}
+
+func (g *GenesysCloudResourceExporter) copyResourceAddtoG(resourcesToAdd []resourceExporter.ResourceInfo) {
+	existingResources := make([]resourceExporter.ResourceInfo, 0)
+	for _, resource := range resourcesToAdd {
+		existingResourceInterface := deepcopy.Copy(resource)
+		existingResource, _ := existingResourceInterface.(resourceExporter.ResourceInfo)
+		existingResourceCtyTypeInterface := deepcopy.Copy(resource.CtyType)
+		existingResource.CtyType, _ = existingResourceCtyTypeInterface.(cty.Type)
+		if existingResource.CtyType == cty.NilType {
+			existingResource.CtyType = resource.CtyType
+		}
+		existingResources = append(existingResources, existingResource)
+	}
+
+	g.resources = existingResources
 }
 
 func (g *GenesysCloudResourceExporter) retainExporterList(resources resourceExporter.ResourceIDMetaMap) diag.Diagnostics {
@@ -654,7 +685,7 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 			return err
 		}
 		//append the resources and exporters
-		g.resources = append(existingResources, g.resources...)
+		g.appendResources(existingResources)
 		g.exporters = mergeExporters(existingExporters, *g.exporters)
 
 		// deep copy is needed here else exporters being overridden
@@ -675,6 +706,29 @@ func (g *GenesysCloudResourceExporter) sourceForVersion(version string) string {
 		providerSource = "genesys.com/mypurecloud/genesyscloud"
 	}
 	return providerSource
+}
+
+func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resourceExporter.ResourceInfo) {
+
+	existingResources := g.copyResource()
+
+	for _, resourceToAdd := range resourcesToAdd {
+		// Check if the resource with the same ID already exists
+		duplicate := false
+		for _, existingResource := range g.resources {
+			if existingResource.State.ID == resourceToAdd.State.ID {
+				duplicate = true
+				break
+			}
+		}
+
+		// No duplicate found, append the resource
+		if !duplicate {
+			existingResources = append(existingResources, resourceToAdd)
+		}
+	}
+
+	g.copyResourceAddtoG(existingResources)
 }
 
 func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[string]*resourceExporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
@@ -1277,10 +1331,11 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 		// Get the sanitized name from the ID returned as a reference expression
 		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
 			if meta := idMetaMap[refID]; meta != nil && meta.Name != "" {
-				return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.Name)
+				if g.resourceIdExists(refID) {
+					return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.Name)
+				}
 			}
 		}
-
 	}
 	if g.buildSecondDeps == nil || len(g.buildSecondDeps) == 0 {
 		g.buildSecondDeps = make(map[string][]string)
@@ -1307,4 +1362,18 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 	}
 	// No match found. Remove the value from the config since we do not have a reference to use
 	return ""
+}
+
+func (g *GenesysCloudResourceExporter) resourceIdExists(refID string) bool {
+	if g.addDependsOn {
+		for _, resource := range g.resources {
+			if refID == resource.State.ID {
+				return true
+			}
+		}
+		log.Printf("resource present in sanitizedconfigmap and not present in resources section %v", refID)
+		return false
+	}
+
+	return true
 }
