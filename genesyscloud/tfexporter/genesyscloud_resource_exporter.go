@@ -1020,6 +1020,14 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			continue
 		}
 
+		if exporter.IsAttributeRrule(currAttr) {
+			if rrule, ok := configMap[key].(string); !ok || rrule == "" {
+				continue
+			}
+			configMap[key] = sanitizeRrule(configMap[key].(string))
+			continue
+		}
+
 		switch val.(type) {
 		case map[string]interface{}:
 			// Maps are sanitized in-place

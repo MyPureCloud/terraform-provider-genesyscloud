@@ -3,6 +3,7 @@ package telephony_providers_edges_site
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -18,6 +19,12 @@ resource_genesyscloud_telephony_providers_edges_site_schema.go should hold four 
 4.  The resource exporter configuration for the telephony_providers_edges_site exporter.
 */
 const resourceName = "genesyscloud_telephony_providers_edges_site"
+
+// used in sdk authorization for tests
+var (
+	sdkConfig *platformclientv2.Configuration
+	authErr   error
+)
 
 var (
 	// This is outside the ResourceSite because it is used in a utility function.
@@ -79,9 +86,10 @@ func ResourceSite() *schema.Resource {
 				Required:    true,
 			},
 			"rrule": {
-				Description: "The recurrence rule for updating the Edges assigned to the site. The only supported frequencies are daily and weekly. Weekly frequencies require a day list with at least oneday specified. All other configurations are not supported.",
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:      "A reoccurring rule for updating the Edges assigned to the site. The only supported frequencies are daily and weekly. Weekly frequencies require a day list with at least oneday specified. All other configurations are not supported.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ValidateDiagFunc: gcloud.ValidateRrule,
 			},
 			"start": {
 				Description: "Date time is represented as an ISO-8601 string without a timezone. For example: yyyy-MM-ddTHH:mm:ss.SSS",
@@ -275,6 +283,9 @@ func SiteExporter() *resourceExporter.ResourceExporter {
 			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 			"primary_sites":   {RefType: "genesyscloud_telephony_providers_edges_site"},
 			"secondary_sites": {RefType: "genesyscloud_telephony_providers_edges_site"},
+		},
+		CustomValidateExports: map[string][]string{
+			"rrule": {"edge_auto_update_config.rrule"},
 		},
 	}
 }

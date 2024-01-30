@@ -3,17 +3,16 @@ package outbound_campaign
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"log"
 	"strconv"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 /*
@@ -78,10 +77,11 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 }
 
 func updateOutboundCampaignStatus(ctx context.Context, campaignId string, proxy *outboundCampaignProxy, campaign platformclientv2.Campaign, newCampaignStatus string) diag.Diagnostics {
-	if newCampaignStatus != "" &&
-		// Campaign status can only go from ON -> OFF or OFF, COMPLETE, INVALID, ETC -> ON
-		((*campaign.CampaignStatus == "on" && newCampaignStatus == "off") ||
-			(*campaign.CampaignStatus != "on" && newCampaignStatus == "on")) {
+	if newCampaignStatus == "" {
+		return nil
+	}
+	// Campaign status can only go from ON -> OFF or OFF, COMPLETE, INVALID, ETC -> ON
+	if (*campaign.CampaignStatus == "on" && newCampaignStatus == "off") || newCampaignStatus == "on" {
 		campaign.CampaignStatus = &newCampaignStatus
 		log.Printf("Updating Outbound Campaign %s status to %s", *campaign.Name, newCampaignStatus)
 		_, err := proxy.updateOutboundCampaign(ctx, campaignId, &campaign)

@@ -22,6 +22,9 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 		roleDesc          = "Terraform Group roles test"
 		divResource       = "test-division"
 		divName           = "terraform-" + uuid.NewString()
+		testUserResource  = "user_resource1"
+		testUserName      = "nameUser1" + uuid.NewString()
+		testUserEmail     = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,9 +33,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create group with 1 role in default division
-				Config: GenerateBasicGroupResource(
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
@@ -48,9 +52,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 			},
 			{
 				// Create another role and division and add to the group
-				Config: GenerateBasicGroupResource(
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
@@ -72,9 +77,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove a role from the group and modify division
-				Config: GenerateBasicGroupResource(
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,
@@ -90,9 +96,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 			},
 			{
 				// Remove all roles from the group
-				Config: GenerateBasicGroupResource(
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + GenerateAuthRoleResource(
 					roleResource1,
 					roleName1,

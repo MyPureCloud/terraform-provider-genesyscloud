@@ -34,6 +34,36 @@ func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Phone number %v is not a string", number)
 }
 
+// ValidateRrule validates rrule attribute
+func ValidateRrule(rrule interface{}, _ cty.Path) diag.Diagnostics {
+	if input, ok := rrule.(string); ok {
+		freqRegex := regexp.MustCompile(`FREQ=([A-Z]+)`)
+		if match := freqRegex.FindStringSubmatch(input); strings.Contains(input, "FREQ=") && match == nil {
+			return diag.Errorf("Invalid FREQ attribute. Should consist of uppercase letters.")
+		}
+		// INTERVAL Attribute validation
+		intervalRegex := regexp.MustCompile(`INTERVAL=([1-9][0-9]*)`)
+		if match := intervalRegex.FindStringSubmatch(input); strings.Contains(input, "INTERVAL=") && match == nil {
+			return diag.Errorf("Invalid INTERVAL attribute. Should be a positive integer greater than 0 without leading zeros.")
+		}
+
+		// BYMONTH Attribute validation
+		byMonthRegex := regexp.MustCompile(`BYMONTH=(1[0-2]|[1-9])`)
+		if match := byMonthRegex.FindStringSubmatch(input); strings.Contains(input, "BYMONTH=") && match == nil {
+			return diag.Errorf("Invalid BYMONTH attribute. Should be a valid month (1-12) without leading zeros for single-digit months.")
+		}
+
+		// BYMONTHDAY Attribute validation
+		byMonthDayRegex := regexp.MustCompile(`BYMONTHDAY=([1-9]|[12][0-9]|3[0-1])$`)
+		if match := byMonthDayRegex.FindStringSubmatch(input); strings.Contains(input, "BYMONTHDAY=") && match == nil {
+			return diag.Errorf("Invalid BYMONTHDAY attribute. Should be a valid day of the month (1-31) without leading zeros for single-digit days.")
+		}
+
+		return nil
+	}
+	return diag.Errorf("Provided rrule %v is not in string format", rrule)
+}
+
 // Validates a phone extension pool
 func ValidateExtensionPool(number interface{}, _ cty.Path) diag.Diagnostics {
 	if numberStr, ok := number.(string); ok {
@@ -112,7 +142,7 @@ func ValidateTimeHHMM(time interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // Validates a date string is in the format 2006-01-02T15:04:05.000000
-func validateLocalDateTimes(date interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateLocalDateTimes(date interface{}, _ cty.Path) diag.Diagnostics {
 	if dateStr, ok := date.(string); ok {
 		_, err := time.Parse(resourcedata.TimeParseFormat, dateStr)
 		if err != nil {

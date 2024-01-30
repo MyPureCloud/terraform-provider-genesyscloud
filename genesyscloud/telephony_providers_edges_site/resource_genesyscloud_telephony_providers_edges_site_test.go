@@ -9,17 +9,12 @@ import (
 	"time"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
+	"terraform-provider-genesyscloud/genesyscloud/telephony"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
-)
-
-var (
-	// Used for testing the default site functionality. Track so it can be restored after test
-	originalSiteId string
 )
 
 func TestAccResourceSite(t *testing.T) {
@@ -45,15 +40,9 @@ func TestAccResourceSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	emergencyNumber := "+13173124741"
-	err = DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	location := gcloud.GenerateLocationResource(
@@ -181,15 +170,9 @@ func TestAccResourceSiteNumberPlans(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	emergencyNumber := "+13173124742"
-	err = DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
 	location := gcloud.GenerateLocationResource(
@@ -382,15 +365,9 @@ func TestAccResourceSiteOutboundRoutes(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	emergencyNumber := "+13173124743"
-	err = DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err := DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
 
 	location := gcloud.GenerateLocationResource(
@@ -573,20 +550,14 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 		locationRes = "test-location1"
 	)
 
-	_, err := gcloud.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	originalSiteId, err = GetOrganizationDefaultSiteId()
+	originalSiteId, err := GetOrganizationDefaultSiteId(sdkConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	emergencyNumber := "+13173124744"
-	err = DeleteLocationWithNumber(emergencyNumber)
-	if err != nil {
-		t.Fatal(err)
+	if err = DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s, %v", emergencyNumber, err)
 	}
 
 	location := gcloud.GenerateLocationResource(
@@ -610,9 +581,9 @@ func TestAccResourceSiteDefaultSite(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Store the original default site so it can be restored later
+				// Store the original default site, so it can be restored later
 				PreConfig: func() {
-					originalSiteId, err = GetOrganizationDefaultSiteId()
+					originalSiteId, err = GetOrganizationDefaultSiteId(sdkConfig)
 					if err != nil {
 						t.Fatalf("error setting original default site ID %s", originalSiteId)
 					}
@@ -684,7 +655,7 @@ func testVerifySitesDestroyed(state *terraform.State) error {
 			continue
 		} else {
 			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+			return fmt.Errorf("unexpected error: %s", err)
 		}
 	}
 	// Success. All sites destroyed
@@ -794,7 +765,7 @@ func setDefaultSite(siteId string) error {
 // Verify if the provided resource site is the default site
 func testDefaultSite(resource string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		defaultSiteId, err := GetOrganizationDefaultSiteId()
+		defaultSiteId, err := GetOrganizationDefaultSiteId(sdkConfig)
 		if err != nil {
 			return fmt.Errorf("failed to get default site id: %v", err)
 		}

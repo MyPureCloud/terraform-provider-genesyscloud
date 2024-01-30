@@ -3,7 +3,11 @@ package outbound_campaign
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"time"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
@@ -90,6 +94,37 @@ func (p *outboundCampaignProxy) updateOutboundCampaign(ctx context.Context, id s
 // deleteOutboundCampaign deletes a Genesys Cloud outbound campaign by Id
 func (p *outboundCampaignProxy) deleteOutboundCampaign(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
 	return p.deleteOutboundCampaignAttr(ctx, p, id)
+}
+
+// turnOffCampaign sets a campaign's campaign_status to 'off' before confirming the update using retry logic and get calls
+func (p *outboundCampaignProxy) turnOffCampaign(ctx context.Context, campaignId string) diag.Diagnostics {
+	log.Printf("Reading Outbound Campaign %s", campaignId)
+	outboundCampaign, _, getErr := p.getOutboundCampaignById(ctx, campaignId)
+	if getErr != nil {
+		return diag.Errorf("Failed to read Outbound Campaign %s: %s", campaignId, getErr)
+	}
+	log.Printf("Read Outbound Campaign %s", campaignId)
+
+	log.Printf("Updating campaign '%s' campaign_status to off", *outboundCampaign.Name)
+	if diagErr := updateOutboundCampaignStatus(ctx, campaignId, p, *outboundCampaign, "off"); diagErr != nil {
+		return diagErr
+	}
+	log.Printf("Updated campaign '%s'", *outboundCampaign.Name)
+
+	return gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		log.Printf("Reading Outbound Campaign %s to ensure campaign_status is 'off'", campaignId)
+		outboundCampaign, _, getErr := p.getOutboundCampaignById(ctx, campaignId)
+		if getErr != nil {
+			return retry.NonRetryableError(fmt.Errorf("failed to read Outbound Campaign %s: %s", campaignId, getErr))
+		}
+		log.Printf("Read Outbound Campaign %s", campaignId)
+		if *outboundCampaign.CampaignStatus == "on" {
+			time.Sleep(5 * time.Second)
+			return retry.RetryableError(fmt.Errorf("campaign %s campaign_status is still %s", campaignId, *outboundCampaign.CampaignStatus))
+		}
+		// Success
+		return nil
+	})
 }
 
 // createOutboundCampaignFn is an implementation function for creating a Genesys Cloud outbound campaign

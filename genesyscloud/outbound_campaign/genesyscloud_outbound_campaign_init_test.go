@@ -1,9 +1,12 @@
 package outbound_campaign
 
 import (
+	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
+	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	outboundRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
@@ -23,6 +26,11 @@ var providerDataSources map[string]*schema.Resource
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
+var (
+	sdkConfig *platformclientv2.Configuration
+	authErr   error
+)
+
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
 	datasourceMapMutex sync.RWMutex
@@ -41,7 +49,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = outbound.ResourceOutboundContactListFilter()
 	providerResources["genesyscloud_outbound_ruleset"] = outboundRuleset.ResourceOutboundRuleset()
-	providerResources["genesyscloud_outbound_callabletimeset"] = outbound.ResourceOutboundCallabletimeset()
+	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -52,6 +60,10 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
+	sdkConfig, authErr = gcloud.AuthorizeSdk()
+	if authErr != nil {
+		log.Fatalf("failed to authorize sdk for package outbound_campaign: %v", authErr)
+	}
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 

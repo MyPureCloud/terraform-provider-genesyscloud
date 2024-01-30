@@ -99,13 +99,13 @@ var (
 			Description:      "Timestamp at which the action map is scheduled to start firing. Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 			Type:             schema.TypeString,
 			Required:         true, // Now is the default value for this field. Better to make it required.
-			ValidateDiagFunc: validateLocalDateTimes,
+			ValidateDiagFunc: ValidateLocalDateTimes,
 		},
 		"end_date": {
 			Description:      "Timestamp at which the action map is scheduled to stop firing. Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
 			Type:             schema.TypeString,
 			Optional:         true,
-			ValidateDiagFunc: validateLocalDateTimes,
+			ValidateDiagFunc: ValidateLocalDateTimes,
 		},
 	}
 
