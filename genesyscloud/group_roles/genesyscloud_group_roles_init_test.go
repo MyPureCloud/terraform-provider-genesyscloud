@@ -41,9 +41,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for outbound_callabletimeset package
+	// Run setup function before starting the test suite for group_roles package
 	initTestResources()
 
-	// Run the test suite for the outbound_callabletimeset package
+	// Run the test suite for the group_roles package
 	m.Run()
 }

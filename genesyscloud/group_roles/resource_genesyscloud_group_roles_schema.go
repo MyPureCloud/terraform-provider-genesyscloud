@@ -15,7 +15,7 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter(resourceName, GroupRolesExporter())
 }
 
-// ResourceOutboundCallabletimeset registers the genesyscloud_group_roles resource with Terraform
+// ResourceGroupRoles registers the genesyscloud_group_roles resource with Terraform
 func ResourceGroupRoles() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Group Roles maintains group role assignments.`,
