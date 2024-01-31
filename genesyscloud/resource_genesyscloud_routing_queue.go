@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -570,6 +571,26 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		createQueue.Division = &platformclientv2.Writabledivision{Id: &divisionID}
 	}
 
+	// temporarily setting different log destination
+	origOutput := log.Writer()
+	defer func() {
+		log.SetOutput(origOutput)
+	}()
+	flags := os.O_APPEND | os.O_CREATE | os.O_WRONLY
+	file, err := os.OpenFile("../queue-logs.log", flags, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Redirecting logs to the file
+	log.SetOutput(file)
+	log.Println("Hello, World!")
+	log.Printf("We are writing info about queue %s to a different file", d.Get("name").(string))
+
+	log.Println("---")
+	log.Println("Queue object about to be sent out in POST request:")
+	log.Println(createQueue.String())
+	log.Println("---")
+
 	log.Printf("creating queue %s using routingAPI.PostRoutingQueues", *createQueue.Name)
 	queue, resp, err := routingAPI.PostRoutingQueues(createQueue)
 	if err != nil {
@@ -581,7 +602,31 @@ func createQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diag.Errorf("Failed to create queue %s: with httpStatus code: %d", *createQueue.Name, resp.StatusCode)
 	}
 
+	log.Println("---")
+	log.Println("Queue object returned from the POST request:")
+	log.Println(queue.String())
+	log.Println("---")
+
 	d.SetId(*queue.Id)
+
+	if members, ok := d.Get("members").(*schema.Set); ok {
+		membersList := members.List()
+		log.Printf("\nMembers in schema before POST for queue '%s':", d.Id())
+		for _, mem := range membersList {
+			mMap := mem.(map[string]interface{})
+			log.Println("---")
+			if userId, ok := mMap["user_id"].(string); ok {
+				log.Printf("User ID: %s", userId)
+			}
+			if ringNum, ok := mMap["ring_num"].(string); ok {
+				log.Printf("Ring number: %s", ringNum)
+			} else {
+				log.Printf("nil ring_num for above user")
+			}
+			log.Println("---")
+		}
+		log.Println()
+	}
 
 	diagErr = updateQueueMembers(d, routingAPI)
 	if diagErr != nil {
@@ -1414,7 +1459,7 @@ func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.Rou
 				newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
 			}
 
-			oldSdkUsers, err := getRoutingQueueMembers(d.Id(), "", routingAPI)
+			oldSdkUsers, err := getRoutingQueueMembers(d.Id(), "user", routingAPI)
 			if err != nil {
 				return err
 			}
@@ -1436,6 +1481,9 @@ func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.Rou
 
 			if len(newUserIds) > 0 {
 				usersToAdd := lists.SliceDifference(newUserIds, oldUserIds)
+				log.Println("---")
+				log.Println("UserToAdd: ", usersToAdd)
+				log.Println("---")
 				err := updateMembersInChunks(d.Id(), usersToAdd, false, routingAPI)
 				if err != nil {
 					return err
@@ -1446,6 +1494,7 @@ func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.Rou
 			for userID, newNum := range newUserRingNums {
 				if oldNum, found := oldUserRingNums[userID]; found {
 					if newNum != oldNum {
+						log.Printf("updating ring_num for user %s because it has updated. New: %s, Old: %s", userID, newNum, oldNum)
 						// Number changed. Update ring number
 						err := updateQueueUserRingNum(d.Id(), userID, newNum, routingAPI)
 						if err != nil {
@@ -1454,6 +1503,7 @@ func updateQueueMembers(d *schema.ResourceData, routingAPI *platformclientv2.Rou
 					}
 				} else if newNum != 1 {
 					// New queue member. Update ring num if not set to the default of 1
+					log.Printf("updating user %s ring_num because it is not the default 1", userID)
 					err := updateQueueUserRingNum(d.Id(), userID, newNum, routingAPI)
 					if err != nil {
 						return err
@@ -1590,6 +1640,11 @@ func flattenQueueMembers(queueID string, memberBy string, api *platformclientv2.
 		memberMap := make(map[string]interface{})
 		memberMap["user_id"] = *member.Id
 		memberMap["ring_num"] = *member.RingNumber
+
+		log.Println("--read--")
+		log.Println(memberMap)
+		log.Println("--read--")
+
 		memberSet.Add(memberMap)
 	}
 
