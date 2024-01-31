@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
@@ -100,6 +101,150 @@ func readScrollPercentageEventTriggers(triggers []interface{}) *[]platformclient
 	}
 
 	return &results
+}
+
+func readCustomMessages(messages []interface{}) *[]platformclientv2.Supportcentercustommessage {
+	if messages == nil || len(messages) < 1 {
+		return nil
+	}
+
+	results := make([]platformclientv2.Supportcentercustommessage, len(messages))
+	for i, value := range messages {
+		if message, ok := value.(map[string]interface{}); ok {
+			results[i] = platformclientv2.Supportcentercustommessage{
+				DefaultValue: platformclientv2.String(message["default_value"].(string)),
+				VarType:      platformclientv2.String(message["type"].(string)),
+			}
+		}
+	}
+
+	return &results
+}
+
+func readModuleSettings(settings []interface{}) *[]platformclientv2.Supportcentermodulesetting {
+	if settings == nil || len(settings) < 1 {
+		return nil
+	}
+
+	ret := make([]platformclientv2.Supportcentermodulesetting, len(settings))
+	for i, setting := range settings {
+		settingMap, ok := setting.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		moduleSetting := platformclientv2.Supportcentermodulesetting{
+			VarType: resourcedata.GetNillableValueFromMap[string](settingMap, "type"),
+			Enabled: resourcedata.GetNillableValueFromMap[bool](settingMap, "enabled"),
+		}
+
+		if compactModActive, ok := settingMap["compact_category_module_template_active"].(bool); ok {
+			moduleSetting.CompactCategoryModuleTemplate = &platformclientv2.Supportcentercompactcategorymoduletemplate{
+				Active: &compactModActive,
+			}
+		}
+
+		if detailedModTemp, ok := settingMap["compact_category_module_template_active"].(map[string]interface{}); ok {
+			moduleSetting.DetailedCategoryModuleTemplate = &platformclientv2.Supportcenterdetailedcategorymoduletemplate{
+				Active: platformclientv2.Bool(detailedModTemp["active"].(bool)),
+				Sidebar: &platformclientv2.Supportcenterdetailedcategorymodulesidebar{
+					Enabled: platformclientv2.Bool(detailedModTemp["sidebar_enabled"].(bool)),
+				},
+			}
+		}
+
+		ret[i] = moduleSetting
+	}
+
+	return &ret
+}
+
+func readScreens(screens []interface{}) *[]platformclientv2.Supportcenterscreen {
+	if screens == nil || len(screens) < 1 {
+		return nil
+	}
+
+	results := make([]platformclientv2.Supportcenterscreen, len(screens))
+	for i, value := range screens {
+		if screen, ok := value.(map[string]interface{}); ok {
+			results[i] = platformclientv2.Supportcenterscreen{
+				VarType:        platformclientv2.String(screen["type"].(string)),
+				ModuleSettings: readModuleSettings(screen["moduleSettings"].([]interface{})),
+			}
+		}
+	}
+
+	return &results
+}
+
+func readEnabledCategories(categories []interface{}) *[]platformclientv2.Supportcentercategory {
+	if categories == nil || len(categories) < 1 {
+		return nil
+	}
+
+	results := make([]platformclientv2.Supportcentercategory, len(categories))
+	for i, value := range categories {
+		category, ok := value.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		scCategory := platformclientv2.Supportcentercategory{
+			Id: platformclientv2.String(category["category_id"].(string)),
+		}
+
+		if imageUri, ok := category["image_uri"].(string); ok {
+			scCategory.Image = &platformclientv2.Supportcenterimage{
+				Source: &platformclientv2.Supportcenterimagesource{
+					DefaultUrl: &imageUri,
+				},
+			}
+		}
+
+		results[i] = scCategory
+	}
+
+	return &results
+}
+
+func readSupportCenterHeroStyle(styles []interface{}) *platformclientv2.Supportcenterherostyle {
+	if styles == nil || len(styles) < 1 {
+		return nil
+	}
+
+	style := styles[0].(map[string]interface{})
+	heroStyle := &platformclientv2.Supportcenterherostyle{
+		BackgroundColor: platformclientv2.String(style["background_color"].(string)),
+		TextColor:       platformclientv2.String(style["text_color"].(string)),
+	}
+
+	if imageUri, ok := style["image_uri"].(string); ok {
+		heroStyle.Image = &platformclientv2.Supportcenterimage{
+			Source: &platformclientv2.Supportcenterimagesource{
+				DefaultUrl: &imageUri,
+			},
+		}
+	}
+
+	return heroStyle
+}
+
+func readSupportCenterGlobalStyle(styles []interface{}) *platformclientv2.Supportcenterglobalstyle {
+	if styles == nil || len(styles) < 1 {
+		return nil
+	}
+
+	style := styles[0].(map[string]interface{})
+	globalStyle := &platformclientv2.Supportcenterglobalstyle{
+		BackgroundColor:   platformclientv2.String(style["background_color"].(string)),
+		PrimaryColor:      platformclientv2.String(style["primary_color"].(string)),
+		PrimaryColorDark:  platformclientv2.String(style["primary_color_dark"].(string)),
+		PrimaryColorLight: platformclientv2.String(style["primary_color_light"].(string)),
+		TextColor:         platformclientv2.String(style["text_color"].(string)),
+		FontFamily:        platformclientv2.String(style["font_family"].(string)),
+	}
+
+	return globalStyle
 }
 
 func readMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengersettings {
@@ -203,6 +348,102 @@ func readCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesett
 		MaskSelectors:     &maskSelectors,
 		ReadonlySelectors: &readonlySelectors,
 	}
+}
+
+func readJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyeventssettings {
+	value, ok := d.GetOk("journey_events")
+	if !ok {
+		return nil
+	}
+
+	cfgs := value.([]interface{})
+	if len(cfgs) < 1 {
+		return nil
+	}
+
+	cfg := cfgs[0].(map[string]interface{})
+	enabled, _ := cfg["enabled"].(bool)
+	journeySettings := &platformclientv2.Journeyeventssettings{
+		Enabled: &enabled,
+	}
+
+	excludedQueryParams := lists.InterfaceListToStrings(cfg["excluded_query_parameters"].([]interface{}))
+	journeySettings.ExcludedQueryParameters = &excludedQueryParams
+
+	if keepUrlFragment, ok := cfg["should_keep_url_fragment"].(bool); ok && keepUrlFragment {
+		journeySettings.ShouldKeepUrlFragment = &keepUrlFragment
+	}
+
+	searchQueryParameters := lists.InterfaceListToStrings(cfg["search_query_parameters"].([]interface{}))
+	journeySettings.SearchQueryParameters = &searchQueryParameters
+
+	pageviewConfig := cfg["pageview_config"]
+	if value, ok := pageviewConfig.(string); ok {
+		if value != "" {
+			journeySettings.PageviewConfig = &value
+		}
+	}
+
+	if clickEvents := readSelectorEventTriggers(cfg["click_event"].([]interface{})); clickEvents != nil {
+		journeySettings.ClickEvents = clickEvents
+	}
+
+	if formsTrackEvents := readFormsTrackTriggers(cfg["form_track_event"].([]interface{})); formsTrackEvents != nil {
+		journeySettings.FormsTrackEvents = formsTrackEvents
+	}
+
+	if idleEvents := readIdleEventTriggers(cfg["idle_event"].([]interface{})); idleEvents != nil {
+		journeySettings.IdleEvents = idleEvents
+	}
+
+	if inViewportEvents := readSelectorEventTriggers(cfg["in_viewport_event"].([]interface{})); inViewportEvents != nil {
+		journeySettings.InViewportEvents = inViewportEvents
+	}
+
+	if scrollDepthEvents := readScrollPercentageEventTriggers(cfg["scroll_depth_event"].([]interface{})); scrollDepthEvents != nil {
+		journeySettings.ScrollDepthEvents = scrollDepthEvents
+	}
+
+	return journeySettings
+}
+
+func readSupportCenterSettings(d *schema.ResourceData) *platformclientv2.Supportcentersettings {
+	value, ok := d.GetOk("support_center")
+	if !ok {
+		return nil
+	}
+
+	cfgs := value.([]interface{})
+	if len(cfgs) < 1 {
+		return nil
+	}
+
+	cfg := cfgs[0].(map[string]interface{})
+	supportCenterSettings := &platformclientv2.Supportcentersettings{
+		Enabled: resourcedata.GetNillableValueFromMap[bool](cfg, "enabled"),
+		KnowledgeBase: &platformclientv2.Addressableentityref{
+			Id: resourcedata.GetNillableValueFromMap[string](cfg, "knowledge_base_id"),
+		},
+		EnabledCategories: readEnabledCategories(cfg["enabled_categories"].([]interface{})),
+		StyleSetting: &platformclientv2.Supportcenterstylesetting{
+			HeroStyle:   readSupportCenterHeroStyle(cfg["hero_style_setting"].([]interface{})),
+			GlobalStyle: readSupportCenterGlobalStyle(cfg["global_style_setting"].([]interface{})),
+		},
+	}
+
+	if customMessages := readCustomMessages(cfg["custom_messages"].([]interface{})); customMessages != nil {
+		supportCenterSettings.CustomMessages = customMessages
+	}
+
+	if routerType, ok := cfg["router_type"].(string); ok {
+		supportCenterSettings.RouterType = &routerType
+	}
+
+	if screens := readScreens(cfg["screens"].([]interface{})); screens != nil {
+		supportCenterSettings.Screens = screens
+	}
+
+	return supportCenterSettings
 }
 
 // featureNotImplemented checks the response object to find out if the request failed because a feature is not yet
@@ -418,62 +659,10 @@ func readWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (str
 		inputCfg.JourneyEvents = journeySettings
 	}
 
+	supportCenterSettings := readSupportCenterSettings(d)
+	if supportCenterSettings != nil {
+		inputCfg.SupportCenter = supportCenterSettings
+	}
+
 	return name, inputCfg
-}
-
-func readJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyeventssettings {
-	value, ok := d.GetOk("journey_events")
-	if !ok {
-		return nil
-	}
-
-	cfgs := value.([]interface{})
-	if len(cfgs) < 1 {
-		return nil
-	}
-
-	cfg := cfgs[0].(map[string]interface{})
-	enabled, _ := cfg["enabled"].(bool)
-	journeySettings := &platformclientv2.Journeyeventssettings{
-		Enabled: &enabled,
-	}
-
-	excludedQueryParams := lists.InterfaceListToStrings(cfg["excluded_query_parameters"].([]interface{}))
-	journeySettings.ExcludedQueryParameters = &excludedQueryParams
-
-	if keepUrlFragment, ok := cfg["should_keep_url_fragment"].(bool); ok && keepUrlFragment {
-		journeySettings.ShouldKeepUrlFragment = &keepUrlFragment
-	}
-
-	searchQueryParameters := lists.InterfaceListToStrings(cfg["search_query_parameters"].([]interface{}))
-	journeySettings.SearchQueryParameters = &searchQueryParameters
-
-	pageviewConfig := cfg["pageview_config"]
-	if value, ok := pageviewConfig.(string); ok {
-		if value != "" {
-			journeySettings.PageviewConfig = &value
-		}
-	}
-
-	if clickEvents := readSelectorEventTriggers(cfg["click_event"].([]interface{})); clickEvents != nil {
-		journeySettings.ClickEvents = clickEvents
-	}
-
-	if formsTrackEvents := readFormsTrackTriggers(cfg["form_track_event"].([]interface{})); formsTrackEvents != nil {
-		journeySettings.FormsTrackEvents = formsTrackEvents
-	}
-
-	if idleEvents := readIdleEventTriggers(cfg["idle_event"].([]interface{})); idleEvents != nil {
-		journeySettings.IdleEvents = idleEvents
-	}
-
-	if inViewportEvents := readSelectorEventTriggers(cfg["in_viewport_event"].([]interface{})); inViewportEvents != nil {
-		journeySettings.InViewportEvents = inViewportEvents
-	}
-
-	if scrollDepthEvents := readScrollPercentageEventTriggers(cfg["scroll_depth_event"].([]interface{})); scrollDepthEvents != nil {
-		journeySettings.ScrollDepthEvents = scrollDepthEvents
-	}
-
-	return journeySettings
 }

@@ -158,6 +158,14 @@ func SetNillableTime(d *schema.ResourceData, key string, value *time.Time) {
 	SetNillableValue(d, key, timeValue)
 }
 
+func GetNillableValueFromMap[T any](targetMap map[string]interface{}, key string) *T {
+	if value, ok := targetMap[key]; ok {
+		v := value.(T)
+		return &v
+	}
+	return nil
+}
+
 func GetNillableValue[T any](d *schema.ResourceData, key string) *T {
 	value, ok := d.GetOk(key)
 	if ok {

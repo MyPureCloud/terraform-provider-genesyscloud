@@ -501,12 +501,6 @@ var (
 							Type:        schema.TypeString,
 							Required:    true,
 						},
-						"image_uri": {
-							Description:  "Background image for hero section",
-							Type:         schema.TypeString,
-							Required:     true,
-							ValidateFunc: validation.IsURLWithHTTPS,
-						},
 					},
 				},
 			},
