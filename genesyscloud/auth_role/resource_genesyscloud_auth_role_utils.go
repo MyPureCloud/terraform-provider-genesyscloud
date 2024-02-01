@@ -3,11 +3,40 @@ package auth_role
 import (
 	"fmt"
 	"strings"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
+
+func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Domainpermissionpolicy) error {
+	allowedPermissions, err := proxy.getAllowedPermissions(*policy.Domain)
+	if err != nil {
+		return fmt.Errorf("error requesting org permissions: %s", err)
+	}
+	if allowedPermissions == nil {
+		return fmt.Errorf("domain %s not found", *policy.Domain)
+	}
+
+	// Check entity type (e.g. callableTimeSet) exists in the map of allowed permissions
+	if entityPermissions, ok := (*allowedPermissions)[*policy.EntityName]; ok {
+		// Check if the policy actions exist for the given domain permission e.g. callableTimeSet: add
+		for _, action := range *policy.ActionSet {
+			for _, entityPermission := range entityPermissions {
+				if action == *entityPermission.Action {
+					// action found. Check next action
+					break
+				}
+				// action not found
+				return fmt.Errorf("action %s not found for domain %s, entity name %s", action, *policy.Domain, *policy.EntityName)
+			}
+		}
+		// All actions have been found, permission exists
+		return nil
+	}
+
+	return fmt.Errorf("entity name %s not found for domain %s", *policy.EntityName, *policy.Domain)
+}
 
 func buildSdkRolePermissions(d *schema.ResourceData) *[]string {
 	if permConfig, ok := d.GetOk("permissions"); ok {

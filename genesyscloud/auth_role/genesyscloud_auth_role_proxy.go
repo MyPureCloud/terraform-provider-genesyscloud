@@ -23,33 +23,36 @@ type getAuthRoleByIdFunc func(ctx context.Context, p *authRoleProxy, id string) 
 type updateAuthRoleFunc func(ctx context.Context, p *authRoleProxy, id string, domainOrganizationRole *platformclientv2.Domainorganizationroleupdate) (*platformclientv2.Domainorganizationrole, error)
 type deleteAuthRoleFunc func(ctx context.Context, p *authRoleProxy, id string) (responseCode int, err error)
 type restoreDefaultRolesFunc func(ctx context.Context, p *authRoleProxy, roles *[]platformclientv2.Domainorganizationrole) error
+type getAllowedPermissionsFunc func(p *authRoleProxy, domain string) (*map[string][]platformclientv2.Domainpermission, error)
 
 // authRoleProxy contains all of the methods that call genesys cloud APIs.
 type authRoleProxy struct {
-	clientConfig            *platformclientv2.Configuration
-	authorizationApi        *platformclientv2.AuthorizationApi
-	createAuthRoleAttr      createAuthRoleFunc
-	getAllAuthRoleAttr      getAllAuthRoleFunc
-	getAuthRoleIdByNameAttr getAuthRoleIdByNameFunc
-	getAuthRoleByIdAttr     getAuthRoleByIdFunc
-	updateAuthRoleAttr      updateAuthRoleFunc
-	deleteAuthRoleAttr      deleteAuthRoleFunc
-	restoreDefaultRolesAttr restoreDefaultRolesFunc
+	clientConfig              *platformclientv2.Configuration
+	authorizationApi          *platformclientv2.AuthorizationApi
+	createAuthRoleAttr        createAuthRoleFunc
+	getAllAuthRoleAttr        getAllAuthRoleFunc
+	getAuthRoleIdByNameAttr   getAuthRoleIdByNameFunc
+	getAuthRoleByIdAttr       getAuthRoleByIdFunc
+	updateAuthRoleAttr        updateAuthRoleFunc
+	deleteAuthRoleAttr        deleteAuthRoleFunc
+	restoreDefaultRolesAttr   restoreDefaultRolesFunc
+	getAllowedPermissionsAttr getAllowedPermissionsFunc
 }
 
 // newAuthRoleProxy initializes the auth role proxy with all of the data needed to communicate with Genesys Cloud
 func newAuthRoleProxy(clientConfig *platformclientv2.Configuration) *authRoleProxy {
 	api := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
 	return &authRoleProxy{
-		clientConfig:            clientConfig,
-		authorizationApi:        api,
-		createAuthRoleAttr:      createAuthRoleFn,
-		getAllAuthRoleAttr:      getAllAuthRoleFn,
-		getAuthRoleIdByNameAttr: getAuthRoleIdByNameFn,
-		getAuthRoleByIdAttr:     getAuthRoleByIdFn,
-		updateAuthRoleAttr:      updateAuthRoleFn,
-		deleteAuthRoleAttr:      deleteAuthRoleFn,
-		restoreDefaultRolesAttr: restoreDefaultRolesFn,
+		clientConfig:              clientConfig,
+		authorizationApi:          api,
+		createAuthRoleAttr:        createAuthRoleFn,
+		getAllAuthRoleAttr:        getAllAuthRoleFn,
+		getAuthRoleIdByNameAttr:   getAuthRoleIdByNameFn,
+		getAuthRoleByIdAttr:       getAuthRoleByIdFn,
+		updateAuthRoleAttr:        updateAuthRoleFn,
+		deleteAuthRoleAttr:        deleteAuthRoleFn,
+		restoreDefaultRolesAttr:   restoreDefaultRolesFn,
+		getAllowedPermissionsAttr: getAllowedPermissionsFn,
 	}
 }
 
@@ -95,6 +98,11 @@ func (p *authRoleProxy) deleteAuthRole(ctx context.Context, id string) (statusCo
 
 func (p *authRoleProxy) restoreDefaultRoles(ctx context.Context, roles *[]platformclientv2.Domainorganizationrole) error {
 	return p.restoreDefaultRolesAttr(ctx, p, roles)
+}
+
+// getAllowedPermissions returns an array of available permissions for a given domain e.g. outbound
+func (p *authRoleProxy) getAllowedPermissions(domain string) (*map[string][]platformclientv2.Domainpermission, error) {
+	return p.getAllowedPermissionsAttr(p, domain)
 }
 
 // createAuthRoleFn is an implementation function for creating a Genesys Cloud auth role
@@ -148,4 +156,43 @@ func restoreDefaultRolesFn(ctx context.Context, p *authRoleProxy, roles *[]platf
 	}
 
 	return nil
+}
+
+// getAllowedPermissionsFn is an implementation function for getting all allowed permissions for a domain
+func getAllowedPermissionsFn(p *authRoleProxy, domain string) (*map[string][]platformclientv2.Domainpermission, error) {
+	const pageSize = 100
+	allowedPermissions := make(map[string][]platformclientv2.Domainpermission)
+
+	permissions, _, err := p.authorizationApi.GetAuthorizationPermissions(pageSize, 1, "domain", domain)
+	if err != nil {
+		return nil, err
+	}
+
+	if permissions.Entities == nil || len(*permissions.Entities) == 0 {
+		return &allowedPermissions, nil
+	}
+
+	for _, permission := range *permissions.Entities {
+		for entityType, entityPermissions := range *permission.PermissionMap {
+			allowedPermissions[entityType] = entityPermissions
+		}
+	}
+
+	for pageNum := 2; pageNum <= *permissions.PageCount; pageNum++ {
+		permissions, _, err := p.authorizationApi.GetAuthorizationPermissions(pageSize, pageNum, "domain", domain)
+		if err != nil {
+			return nil, err
+		}
+		if permissions.Entities == nil || len(*permissions.Entities) == 0 {
+			break
+		}
+
+		for _, permission := range *permissions.Entities {
+			for entityType, entityPermissions := range *permission.PermissionMap {
+				allowedPermissions[entityType] = entityPermissions
+			}
+		}
+	}
+
+	return &allowedPermissions, nil
 }

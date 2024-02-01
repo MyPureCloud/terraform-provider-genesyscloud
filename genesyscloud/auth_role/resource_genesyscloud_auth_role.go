@@ -84,6 +84,18 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		PermissionPolicies: buildSdkRolePermPolicies(d),
 	}
 
+	// Validate each permission policy exists before continuing
+	// This is a workaround for a bug in the auth roles APIs
+	// Bug reported to auth team in ticket AUTHZ-315
+	if roleObj.PermissionPolicies != nil {
+		for _, policy := range *roleObj.PermissionPolicies {
+			err := validatePermissionPolicy(proxy, policy)
+			if err != nil {
+				return diag.Errorf("%s", err)
+			}
+		}
+	}
+
 	role, err := proxy.createAuthRole(ctx, &roleObj)
 	if err != nil {
 		return diag.Errorf("Failed to create role %s: %s", name, err)
