@@ -570,6 +570,10 @@ func validatePermissionPolicy(authApi *platformclientv2.AuthorizationApi, policy
 		return fmt.Errorf("domain %s not found", *policy.Domain)
 	}
 
+	if *policy.EntityName == "*" {
+		return nil
+	}
+
 	// Check entity type (e.g. callableTimeSet) exists in the map of allowed permissions
 	if entityPermissions, ok := (*allowedPermissions)[*policy.EntityName]; ok {
 		// Check if the policy actions exist for the given domain permission e.g. callableTimeSet: add
