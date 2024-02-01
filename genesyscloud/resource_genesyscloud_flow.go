@@ -3,10 +3,12 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +21,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+
+	"gopkg.in/yaml.v2"
 )
 
 func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -96,11 +100,13 @@ func ResourceFlow() *schema.Resource {
 				Description: `Genesys Cloud flow name`,
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 			"flow_type": {
 				Description: `Genesys Cloud flow type`,
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}
@@ -158,6 +164,11 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	log.Printf("Updating flow")
 
+	flowName := d.Get("flow_name").(string)
+	log.Printf("flow_name:%s", flowName)
+	flowType := d.Get("flow_type").(string)
+	log.Printf("flow_type:%s", flowType)
+
 	//Check to see if we need to force and unlock on an architect flow
 	if isForceUnlockEnabled(d) {
 		err := forceUnlockFlow(d.Id(), sdkConfig)
@@ -190,6 +201,11 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if err != nil {
 		setFileContentHashToNil(d)
 		return diag.Errorf(err.Error())
+	}
+
+	err = compareFlowInfo(reader, flowName, flowType, substitutions)
+	if err != nil {
+		log.Fatalf("Error comparing flow information: %v", err)
 	}
 
 	s3Uploader := files.NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
@@ -307,4 +323,67 @@ func updateFile(filepath, content string) {
 // in the file content hash and re-attempt an update, should the user re-run terraform apply without making changes to the file contents
 func setFileContentHashToNil(d *schema.ResourceData) {
 	_ = d.Set("file_content_hash", nil)
+}
+
+// compareFlowInfo compares the flow information in YAML content.
+func compareFlowInfo(reader io.Reader, flowNameAttrValue string, flowTypeAttrValue string, substitutions map[string]interface{}) error {
+	// Unmarshal YAML content into a map
+	var data map[interface{}]interface{}
+	decoder := yaml.NewDecoder(reader)
+	err := decoder.Decode(&data)
+	if err != nil {
+		return fmt.Errorf("error decoding YAML content: %v", err)
+	}
+
+	// Check for the flow type at the beginning of the YAML file
+	if flowType, ok := data[flowTypeAttrValue]; ok {
+		if value, ok := flowType.(string); ok && !strings.EqualFold(value, flowTypeAttrValue) {
+			return fmt.Errorf("flow type provided '%s' does not match the flow type set within yaml: '%s'", flowTypeAttrValue, value)
+		}
+	}
+
+	// Get the value set for the first "name" property of the YAML (i.e. flow name or substitution variable)
+	var flowNameYaml string
+	for key, value := range data {
+		if keyStr, ok := key.(string); ok {
+			if strings.EqualFold(keyStr, "name") {
+				if propValue, ok := value.(string); ok {
+					flowNameYaml = propValue
+					break
+				}
+			}
+		}
+	}
+
+	if flowNameYaml == "" {
+		return fmt.Errorf("could not find the 'name' property in the flow config yaml")
+	}
+
+	// Does the flow name set in attribute "flow_name" matches the name set in the yaml?
+	if isSubstitutionVariable(flowNameYaml) {
+		// Display all substitutions
+		log.Println("All Substitutions:")
+		for key, value := range substitutions {
+			log.Printf("%s: %v\n", key, value)
+		}
+
+		// Check if the flow name substitution key exists in the substitutions map and if the value provided is equal to the "flow_name" attribute
+		if value, ok := substitutions[flowNameYaml]; ok {
+			if flowNameAttrValue != value {
+				return fmt.Errorf("'flow_name' attribute value '%s' does not match substitution key '%s' value '%s'", flowNameAttrValue, flowNameYaml, value)
+			}
+		} else {
+			return fmt.Errorf("substitution key '%s' found in the flow config yaml does not exist in the flow resource substitutions config map", flowNameYaml)
+		}
+	} else {
+		if flowNameAttrValue != flowNameYaml {
+			return fmt.Errorf("'flow_name' attribute value '%s' does not match the flow name set in the flow config yaml: '%s'", flowNameAttrValue, flowNameYaml)
+		}
+	}
+	return nil
+}
+
+func isSubstitutionVariable(input string) bool {
+	re := regexp.MustCompile(`^\{\{([^{}]+)\}\}$`)
+	return re.MatchString(input)
 }
