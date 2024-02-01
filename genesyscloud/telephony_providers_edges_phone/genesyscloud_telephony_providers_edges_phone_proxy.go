@@ -45,6 +45,7 @@ type getPhoneBaseSettingFunc func(ctx context.Context, p *phoneProxy, phoneBaseS
 type getStationOfUserFunc func(ctx context.Context, p *phoneProxy, userId string) (station *platformclientv2.Station, retryable bool, err error)
 type unassignUserFromStationFunc func(ctx context.Context, p *phoneProxy, stationId string) (*platformclientv2.APIResponse, error)
 type assignUserToStationFunc func(ctx context.Context, p *phoneProxy, userId string, stationId string) (*platformclientv2.APIResponse, error)
+type assignStationAsDefaultFunc func(ctx context.Context, p *phoneProxy, userId string, stationId string) (*platformclientv2.APIResponse, error)
 
 // phoneProxy contains all of the methods that call genesys cloud APIs.
 type phoneProxy struct {
@@ -64,6 +65,7 @@ type phoneProxy struct {
 	getStationOfUserAttr        getStationOfUserFunc
 	unassignUserFromStationAttr unassignUserFromStationFunc
 	assignUserToStationAttr     assignUserToStationFunc
+	assignStationAsDefaultAttr  assignStationAsDefaultFunc
 }
 
 // newPhoneProxy initializes the Phone proxy with all of the data needed to communicate with Genesys Cloud
@@ -89,6 +91,7 @@ func newPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 		getStationOfUserAttr:        getStationOfUserFn,
 		unassignUserFromStationAttr: unassignUserFromStationFn,
 		assignUserToStationAttr:     assignUserToStationFn,
+		assignStationAsDefaultAttr:  assignStationAsDefaultFn,
 	}
 }
 
@@ -150,6 +153,11 @@ func (p *phoneProxy) unassignUserFromStation(ctx context.Context, stationId stri
 // assignUserToStation assigns a user to the station
 func (p *phoneProxy) assignUserToStation(ctx context.Context, userId string, stationId string) (*platformclientv2.APIResponse, error) {
 	return p.assignUserToStationAttr(ctx, p, userId, stationId)
+}
+
+// assignStationAsDefault assigns a station as the default
+func (p *phoneProxy) assignStationAsDefault(ctx context.Context, userId string, stationId string) (*platformclientv2.APIResponse, error) {
+	return p.assignStationAsDefaultAttr(ctx, p, userId, stationId)
 }
 
 // getAllPhonesFn is an implementation function for retrieving all Genesys Cloud Phones
@@ -310,4 +318,10 @@ func unassignUserFromStationFn(ctx context.Context, p *phoneProxy, stationId str
 // assignUserToStationFn is an implementation function for assigning a Genesys Cloud User to a Station
 func assignUserToStationFn(ctx context.Context, p *phoneProxy, userId string, stationId string) (*platformclientv2.APIResponse, error) {
 	return p.usersApi.PutUserStationAssociatedstationStationId(userId, stationId)
+
+}
+
+// assignStationAsDefaultFn is an implementation function for assigning a station as Default Station
+func assignStationAsDefaultFn(ctx context.Context, p *phoneProxy, userId string, stationId string) (*platformclientv2.APIResponse, error) {
+	return p.usersApi.PutUserStationDefaultstationStationId(userId, stationId)
 }
