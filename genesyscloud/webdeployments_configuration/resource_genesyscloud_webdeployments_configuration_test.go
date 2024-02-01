@@ -36,6 +36,7 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.#", "0"),
 				),
 			},
 			{
@@ -48,6 +49,7 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "0"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "0"),
+					resource.TestCheckResourceAttr(fullResourceName, "support_center.#", "0"),
 				),
 			},
 			{

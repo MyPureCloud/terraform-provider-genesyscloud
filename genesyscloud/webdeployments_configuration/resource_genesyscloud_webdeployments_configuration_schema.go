@@ -303,11 +303,89 @@ var (
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Home", "Category", "SearchResults", "Article"}, false),
 			},
-			"moduleSettings": {
+			"module_settings": {
 				Description: "Module settings for the screen, valid modules for each screenType: Home: Search, Categories, TopViewedArticles; Category: Search, Categories; SearchResults: Search, Results; Article: Search, Article;",
 				Type:        schema.TypeList,
 				Required:    true,
 				Elem:        supportCenterModuleSetting,
+			},
+		},
+	}
+
+	styleSetting = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"hero_style_setting": {
+				Description: "Knowledge portal (previously support center) hero customizations",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"background_color": {
+							Description:      "Background color for hero section, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"text_color": {
+							Description:      "Text color for hero section, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"image_uri": {
+							Description:  "Background image for hero section",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.IsURLWithHTTPS,
+						},
+					},
+				},
+			},
+			"global_style_setting": {
+				Description: "Knowledge portal (previously support center) global customizations",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"background_color": {
+							Description:      "Global background color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"primary_color": {
+							Description:      "Global primary color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"primary_color_dark": {
+							Description:      "Global dark primary color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"primary_color_light": {
+							Description:      "Global light primary color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"text_color": {
+							Description:      "Global text color, in hexadecimal format, eg #ffffff",
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: gcloud.ValidateHexColor,
+						},
+						"font_family": {
+							Description: "Global font family",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -386,12 +464,11 @@ var (
 				Description: "Whether or not knowledge portal (previously support center) is enabled",
 				Type:        schema.TypeBool,
 				Required:    true,
-				Default:     true,
 			},
 			"knowledge_base_id": {
 				Description: "The knowledge base for knowledge portal (previously support center)",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 			"custom_messages": {
 				Description: "Customizable display texts for knowledge portal",
@@ -408,13 +485,13 @@ var (
 			"screens": {
 				Description: "Available screens for the knowledge portal with its modules",
 				Type:        schema.TypeList,
-				Required:    true,
+				Optional:    true,
 				Elem:        supportCenterScreen,
 			},
 			"enabled_categories": {
 				Description: "Featured categories for knowledge portal (previously support center) home screen",
 				Type:        schema.TypeList,
-				Required:    true,
+				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"category_id": {
@@ -431,78 +508,17 @@ var (
 					},
 				},
 			},
-			"hero_style_setting": {
-				Description: "Knowledge portal (previously support center) hero customizations",
+			"style_setting": {
+				Description: "Style attributes for knowledge portal (previously support center)",
 				Type:        schema.TypeList,
 				MaxItems:    1,
-				Required:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"background_color": {
-							Description:      "Background color for hero section, in hexadecimal format, eg #ffffff",
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
-						},
-						"text_color": {
-							Description:      "Text color for hero section, in hexadecimal format, eg #ffffff",
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
-						},
-						"image_uri": {
-							Description:  "Background image for hero section",
-							Type:         schema.TypeString,
-							Required:     true,
-							ValidateFunc: validation.IsURLWithHTTPS,
-						},
-					},
-				},
+				Optional:    true,
+				Elem:        styleSetting,
 			},
-			"global_style_setting": {
-				Description: "Knowledge portal (previously support center) global customizations",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Required:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"background_color": {
-							Description:      "Global background color, in hexadecimal format, eg #ffffff",
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
-						},
-						"primary_color": {
-							Description:      "Global primary color, in hexadecimal format, eg #ffffff",
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
-						},
-						"primary_color_dark": {
-							Description:      "Global dark primary color, in hexadecimal format, eg #ffffff",
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
-						},
-						"primary_color_light": {
-							Description:      "Global light primary color, in hexadecimal format, eg #ffffff",
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
-						},
-						"text_color": {
-							Description:      "Global text color, in hexadecimal format, eg #ffffff",
-							Type:             schema.TypeString,
-							Required:         true,
-							ValidateDiagFunc: gcloud.ValidateHexColor,
-						},
-						"font_family": {
-							Description: "Global font family",
-							Type:        schema.TypeString,
-							Required:    true,
-						},
-					},
-				},
+			"feedback_enabled": {
+				Description: "Whether or not requesting customer feedback on article content and article search results is enabled",
+				Type:        schema.TypeBool,
+				Optional:    true,
 			},
 		},
 	}
