@@ -484,7 +484,6 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        queueMemberResource,
 			},
@@ -1402,78 +1401,110 @@ func getRoutingQueueWrapupCodes(queueID string, api *platformclientv2.RoutingApi
 }
 
 func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
-	if d.HasChange("members") {
-		if members := d.Get("members"); members != nil {
-			log.Printf("Updating members for Queue %s", d.Get("name"))
-			newUserRingNums := make(map[string]int)
-			memberList := members.(*schema.Set).List()
-			newUserIds := make([]string, len(memberList))
-			for i, member := range memberList {
-				memberMap := member.(map[string]interface{})
-				newUserIds[i] = memberMap["user_id"].(string)
-				newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
-			}
+	if !d.HasChange("members") {
+		return nil
+	}
+	membersSet, ok := d.Get("members").(*schema.Set)
+	if !ok || membersSet.Len() == 0 {
+		if err := removeAllExistingUserMembersFromQueue(d.Id(), sdkConfig); err != nil {
+			return diag.FromErr(err)
+		}
+		return nil
+	}
 
-			if len(newUserIds) > 0 {
-				log.Printf("Sleeping for 10 seconds")
-				time.Sleep(10 * time.Second)
-				for _, userId := range newUserIds {
-					if err := verifyUserIsNotGroupMemberOfQueue(d.Id(), userId, sdkConfig); err != nil {
-						return diag.Errorf("%v", err)
-					}
+	log.Printf("Updating members for Queue %s", d.Get("name"))
+	newUserRingNums := make(map[string]int)
+	memberList := membersSet.List()
+	newUserIds := make([]string, len(memberList))
+	for i, member := range memberList {
+		memberMap := member.(map[string]interface{})
+		newUserIds[i] = memberMap["user_id"].(string)
+		newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
+	}
+
+	if len(newUserIds) > 0 {
+		log.Printf("Sleeping for 10 seconds")
+		time.Sleep(10 * time.Second)
+		for _, userId := range newUserIds {
+			if err := verifyUserIsNotGroupMemberOfQueue(d.Id(), userId, sdkConfig); err != nil {
+				return diag.Errorf("%v", err)
+			}
+		}
+	}
+
+	oldSdkUsers, err := getRoutingQueueMembers(d.Id(), "user", sdkConfig)
+	if err != nil {
+		return err
+	}
+
+	oldUserIds := make([]string, len(oldSdkUsers))
+	oldUserRingNums := make(map[string]int)
+	for i, user := range oldSdkUsers {
+		oldUserIds[i] = *user.Id
+		oldUserRingNums[oldUserIds[i]] = *user.RingNumber
+	}
+
+	if len(oldUserIds) > 0 {
+		usersToRemove := lists.SliceDifference(oldUserIds, newUserIds)
+		err := updateMembersInChunks(d.Id(), usersToRemove, true, sdkConfig)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(newUserIds) > 0 {
+		usersToAdd := lists.SliceDifference(newUserIds, oldUserIds)
+		err := updateMembersInChunks(d.Id(), usersToAdd, false, sdkConfig)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Check for ring numbers to update
+	for userID, newNum := range newUserRingNums {
+		if oldNum, found := oldUserRingNums[userID]; found {
+			if newNum != oldNum {
+				log.Printf("updating ring_num for user %s because it has updated. New: %v, Old: %v", userID, newNum, oldNum)
+				// Number changed. Update ring number
+				err := updateQueueUserRingNum(d.Id(), userID, newNum, sdkConfig)
+				if err != nil {
+					return err
 				}
 			}
-
-			oldSdkUsers, err := getRoutingQueueMembers(d.Id(), "user", sdkConfig)
+		} else if newNum != 1 {
+			// New queue member. Update ring num if not set to the default of 1
+			log.Printf("updating user %s ring_num because it is not the default 1", userID)
+			err := updateQueueUserRingNum(d.Id(), userID, newNum, sdkConfig)
 			if err != nil {
 				return err
 			}
-
-			oldUserIds := make([]string, len(oldSdkUsers))
-			oldUserRingNums := make(map[string]int)
-			for i, user := range oldSdkUsers {
-				oldUserIds[i] = *user.Id
-				oldUserRingNums[oldUserIds[i]] = *user.RingNumber
-			}
-
-			if len(oldUserIds) > 0 {
-				usersToRemove := lists.SliceDifference(oldUserIds, newUserIds)
-				err := updateMembersInChunks(d.Id(), usersToRemove, true, sdkConfig)
-				if err != nil {
-					return err
-				}
-			}
-
-			if len(newUserIds) > 0 {
-				usersToAdd := lists.SliceDifference(newUserIds, oldUserIds)
-				err := updateMembersInChunks(d.Id(), usersToAdd, false, sdkConfig)
-				if err != nil {
-					return err
-				}
-			}
-
-			// Check for ring numbers to update
-			for userID, newNum := range newUserRingNums {
-				if oldNum, found := oldUserRingNums[userID]; found {
-					if newNum != oldNum {
-						log.Printf("updating ring_num for user %s because it has updated. New: %v, Old: %v", userID, newNum, oldNum)
-						// Number changed. Update ring number
-						err := updateQueueUserRingNum(d.Id(), userID, newNum, sdkConfig)
-						if err != nil {
-							return err
-						}
-					}
-				} else if newNum != 1 {
-					// New queue member. Update ring num if not set to the default of 1
-					log.Printf("updating user %s ring_num because it is not the default 1", userID)
-					err := updateQueueUserRingNum(d.Id(), userID, newNum, sdkConfig)
-					if err != nil {
-						return err
-					}
-				}
-			}
-			log.Printf("Members updated for Queue %s", d.Get("name"))
 		}
+	}
+	log.Printf("Members updated for Queue %s", d.Get("name"))
+
+	return nil
+}
+
+// removeAllExistingUserMembersFromQueue get all existing user members of a given queue and remove them from the queue
+func removeAllExistingUserMembersFromQueue(queueId string, sdkConfig *platformclientv2.Configuration) error {
+	log.Printf("Reading user members of queue %s", queueId)
+	oldSdkUsers, err := getRoutingQueueMembers(queueId, "user", sdkConfig)
+	if err != nil {
+		return fmt.Errorf("%v", err)
+	}
+	log.Printf("Read user members of queue %s", queueId)
+
+	var oldUserIds []string
+	for _, user := range oldSdkUsers {
+		oldUserIds = append(oldUserIds, *user.Id)
+	}
+
+	if len(oldUserIds) > 0 {
+		log.Printf("Removing queue %s user members", queueId)
+		if err := updateMembersInChunks(queueId, oldUserIds, true, sdkConfig); err != nil {
+			return fmt.Errorf("%v", err)
+		}
+		log.Printf("Removing queue %s user members", queueId)
 	}
 	return nil
 }
@@ -1498,8 +1529,9 @@ func verifyUserIsNotGroupMemberOfQueue(queueId, userId string, sdkConfig *platfo
 		log.Printf("read user %s %s", userId, userName)
 	}
 
+	const pageSize = 100
 	for pageNum := 1; ; pageNum++ {
-		users, resp, err := sdkGetRoutingQueueMembers(queueId, "group", userName, pageNum, 100, routingApi)
+		users, resp, err := sdkGetRoutingQueueMembers(queueId, "group", userName, pageNum, pageSize, routingApi)
 		if err != nil || resp.StatusCode != http.StatusOK {
 			log.Printf("Error requesting group members of queue '%s': %v. Cannot validate that user '%s' is not already assigned via a group", queueId, err, userId)
 			break
