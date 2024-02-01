@@ -198,12 +198,25 @@ func ResourceAuthRole() *schema.Resource {
 }
 
 func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+
+	// Validate each permission policy exists before continuing
+	// This is a workaround for a bug in the auth roles APIs
+	// Bug reported to auth team in ticket AUTHZ-315
+	policies := buildSdkRolePermPolicies(d)
+	if policies != nil {
+		for _, policy := range *policies {
+			err := validatePermissionPolicy(authAPI, &policy)
+			if err != nil {
+				return diag.Errorf("Permission policy not found: %s, ensure your org has the required product for this permission", err)
+			}
+		}
+	}
+
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	defaultRoleID := d.Get("default_role_id").(string)
-
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Creating role %s", name)
 	if defaultRoleID != "" {
@@ -220,19 +233,7 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		Name:               &name,
 		Description:        &description,
 		Permissions:        buildSdkRolePermissions(d),
-		PermissionPolicies: buildSdkRolePermPolicies(d),
-	}
-
-	// Validate each permission policy exists before continuing
-	// This is a workaround for a bug in the auth roles APIs
-	// Bug reported to auth team in ticket AUTHZ-315
-	if roleObj.PermissionPolicies != nil {
-		for _, policy := range *roleObj.PermissionPolicies {
-			err := validatePermissionPolicy(authAPI, &policy)
-			if err != nil {
-				return diag.Errorf("Permission policy not found: %s", err)
-			}
-		}
+		PermissionPolicies: policies,
 	}
 
 	role, _, err := authAPI.PostAuthorizationRoles(roleObj)
@@ -293,12 +294,25 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 }
 
 func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+
+	// Validate each permission policy exists before continuing
+	// This is a workaround for a bug in the auth roles APIs
+	// Bug reported to auth team in ticket AUTHZ-315
+	policies := buildSdkRolePermPolicies(d)
+	if policies != nil {
+		for _, policy := range *policies {
+			err := validatePermissionPolicy(authAPI, &policy)
+			if err != nil {
+				return diag.Errorf("Permission policy not found: %s, ensure your org has the required product for this permission", err)
+			}
+		}
+	}
+
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	defaultRoleID := d.Get("default_role_id").(string)
-
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Updating role %s", name)
 
@@ -306,20 +320,8 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		Name:               &name,
 		Description:        &description,
 		Permissions:        buildSdkRolePermissions(d),
-		PermissionPolicies: buildSdkRolePermPolicies(d),
+		PermissionPolicies: policies,
 		DefaultRoleId:      &defaultRoleID,
-	}
-
-	// Validate each permission policy exists before continuing
-	// This is a workaround for a bug in the auth roles APIs
-	// Bug reported to auth team in ticket AUTHZ-315
-	if updateObj.PermissionPolicies != nil {
-		for _, policy := range *updateObj.PermissionPolicies {
-			err := validatePermissionPolicy(authAPI, &policy)
-			if err != nil {
-				return diag.Errorf("Permission policy not found: %s", err)
-			}
-		}
 	}
 
 	_, _, err := authAPI.PutAuthorizationRole(d.Id(), updateObj)
