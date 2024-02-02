@@ -566,7 +566,7 @@ func validatePermissionPolicy(authApi *platformclientv2.AuthorizationApi, policy
 	if err != nil {
 		return fmt.Errorf("error requesting org permissions: %s", err)
 	}
-	if allowedPermissions == nil {
+	if len(*allowedPermissions) == 0 {
 		return fmt.Errorf("domain %s not found", *policy.Domain)
 	}
 
