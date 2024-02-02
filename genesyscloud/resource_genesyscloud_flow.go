@@ -327,7 +327,7 @@ func setFileContentHashToNil(d *schema.ResourceData) {
 	_ = d.Set("file_content_hash", nil)
 }
 
-// Compares the flow name & type from the terraform resource and see if they match with the values set in the yaml config
+// compareFlowInfo compares the flow name & type from the terraform resource and see if they match with the values set in the YAML data.
 func compareFlowInfo(reader io.Reader, flowNameAttrValue string, flowTypeAttrValue string, substitutions map[string]interface{}) error {
 	// Unmarshal YAML content into a map
 	var data map[interface{}]interface{}
@@ -378,8 +378,7 @@ func checkFlowName(data map[interface{}]interface{}, flowNameAttrValue string, s
 
 	// Extract flow name from YAML
 	var flowNameYaml string
-	flow, ok := data[yamlFlowType].(map[interface{}]interface{})
-	if ok {
+	if flow, ok := data[yamlFlowType].(map[interface{}]interface{}); ok {
 		if name, ok := flow["name"].(string); ok {
 			log.Printf("flow name property value: %s", name)
 			flowNameYaml = name
@@ -390,9 +389,9 @@ func checkFlowName(data map[interface{}]interface{}, flowNameAttrValue string, s
 		return fmt.Errorf("invalid flow name property value: '%s'", flowNameYaml)
 	}
 
-	if isSubVariable(flowNameYaml) { // Check if the flow name value in config YAML is a substitution variable
+	if isSubVariable(flowNameYaml) { // Check if the flow name value in flow config YAML is a substitution variable
 		flowNameYaml, _ = extractSubVariableStringValue(flowNameYaml)
-		// Check if substitution key exists and its value matches the 'flow_name' attribute value
+		// Check if substitution key exists and if its value matches the 'flow_name' attribute value
 		if value, ok := substitutions[flowNameYaml]; ok {
 			if flowNameAttrValue != value {
 				return fmt.Errorf("'flow_name' attribute value '%s' does not match substitution key '%s' value '%s'", flowNameAttrValue, flowNameYaml, value)
@@ -400,7 +399,7 @@ func checkFlowName(data map[interface{}]interface{}, flowNameAttrValue string, s
 		} else {
 			return fmt.Errorf("substitution key '%s' found in the flow config yaml does not exist in the flow resource substitutions config map", flowNameYaml)
 		}
-	} else { // Check if flow name in YAML matches the 'flow_name' attribute value
+	} else { // Check if the flow name in flow config YAML matches the 'flow_name' attribute value
 		if flowNameAttrValue != flowNameYaml {
 			return fmt.Errorf("'flow_name' attribute value '%s' does not match the flow name set in the flow config yaml: '%s'", flowNameAttrValue, flowNameYaml)
 		}
@@ -409,13 +408,13 @@ func checkFlowName(data map[interface{}]interface{}, flowNameAttrValue string, s
 	return nil
 }
 
-// Checks if the input string represents a substitution variable enclosed within double curly braces (e.g. {{variable}} )
+// isSubVariable checks if the input string represents a substitution variable enclosed within double curly braces (e.g. {{variable}} )
 func isSubVariable(input string) bool {
 	re := regexp.MustCompile(`^\{\{([^{}]+)\}\}$`)
 	return re.MatchString(input)
 }
 
-// Retrieves the value of the first node in a YAML config
+// getRootNodeKey retrieves the value of the first node in a YAML config
 func getRootNodeKey(data map[interface{}]interface{}) (string, error) {
 	for key := range data {
 		if keyStr, ok := key.(string); ok {
@@ -426,7 +425,7 @@ func getRootNodeKey(data map[interface{}]interface{}) (string, error) {
 	return "", fmt.Errorf("could not find the root node key in the flow config yaml")
 }
 
-// Extracts the content inside double curly braces, assuming it represents a substitution variable (e.g. {{variable}} )
+// extractSubVariableStringValue extracts the content inside double curly braces of a substitution variable (e.g. {{variable}} )
 func extractSubVariableStringValue(input string) (string, error) {
 	re := regexp.MustCompile(`\{\{(.+?)\}\}`)
 	match := re.FindStringSubmatch(input)

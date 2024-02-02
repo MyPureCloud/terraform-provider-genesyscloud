@@ -13,10 +13,8 @@ func ResetReader(reader io.Reader) (io.Reader, error) {
 		if err != nil {
 			return nil, err
 		}
-		// Return the original reader (which is also an io.Reader)
 		return reader, nil
 	}
 
-	// Return an error if the reader does not support seeking
 	return nil, fmt.Errorf("reader does not support seeking")
 }
