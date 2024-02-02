@@ -345,7 +345,6 @@ func createDidPoolForEdgesPhoneTest(config *platformclientv2.Configuration, numb
 func checkifDefaultPhoneAdded(userName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		userResource, ok := state.RootModule().Resources[userName]
-		fmt.Printf("%v userResource", userResource)
 		if !ok {
 			return fmt.Errorf("Failed to find user %s in state", userName)
 		}
