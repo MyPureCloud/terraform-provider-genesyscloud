@@ -96,6 +96,7 @@ var (
 				Description: "Direct Routing default backup queue id (if none supplied this queue will be used as backup).",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 			"agent_wait_seconds": {
 				Description: "The queue default time a Direct Routing interaction will wait for an agent before it goes to configured backup.",
@@ -1256,7 +1257,6 @@ func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouti
 	if directRouting != nil && len(directRouting) > 0 {
 		settingsMap := directRouting[0].(map[string]interface{})
 
-		backupQueueID := settingsMap["backup_queue_id"].(string)
 		agentWaitSeconds := settingsMap["agent_wait_seconds"].(int)
 		waitForAgent := settingsMap["wait_for_agent"].(bool)
 
@@ -1275,14 +1275,19 @@ func buildSdkDirectRouting(d *schema.ResourceData) *platformclientv2.Directrouti
 			UseAgentAddressOutbound: &messageUseAgentAddressOutbound,
 		}
 
-		return &platformclientv2.Directrouting{
+		sdkDirectRouting := &platformclientv2.Directrouting{
 			CallMediaSettings:    callSettings,
 			EmailMediaSettings:   emailSettings,
 			MessageMediaSettings: messageSettings,
 			WaitForAgent:         &waitForAgent,
 			AgentWaitSeconds:     &agentWaitSeconds,
-			BackupQueueId:        &backupQueueID,
 		}
+
+		if backUpQueueId, ok := settingsMap["backup_queue_id"].(string); ok && backUpQueueId != "" {
+			sdkDirectRouting.BackupQueueId = &backUpQueueId
+		}
+
+		return sdkDirectRouting
 	}
 	return nil
 }
