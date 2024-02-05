@@ -4,6 +4,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	wdcUtils "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration/utils"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -255,6 +256,7 @@ var (
 										Description: "The humanize conversations settings for the messenger app",
 										Type:        schema.TypeList,
 										MaxItems:    1,
+										Optional:    true,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												"enabled": {
@@ -797,7 +799,7 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 					"Error",
 					"Deleting",
 				}, false),
-				DiffSuppressFunc: validateConfigurationStatusChange,
+				DiffSuppressFunc: wdcUtils.ValidateConfigurationStatusChange,
 			},
 			"version": {
 				Description: "The version of the configuration.",
@@ -854,7 +856,7 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 				Elem:        authenticationSettings,
 			},
 		},
-		CustomizeDiff: customizeConfigurationDiff,
+		CustomizeDiff: wdcUtils.CustomizeConfigurationDiff,
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	wdcUtils "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration/utils"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -60,14 +61,14 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
-	name, inputCfg := readWebDeploymentConfigurationFromResourceData(d)
+	name, inputCfg := wdcUtils.ReadWebDeploymentConfigurationFromResourceData(d)
 	log.Printf("Creating web deployment configuration %s", name)
 
 	diagErr := gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		configuration, resp, err := wp.createWebdeploymentsConfiguration(ctx, *inputCfg)
 		if err != nil {
 			var extraErrorInfo string
-			featureIsNotImplemented, fieldName := featureNotImplemented(resp)
+			featureIsNotImplemented, fieldName := wdcUtils.FeatureNotImplemented(resp)
 			if featureIsNotImplemented {
 				extraErrorInfo = fmt.Sprintf("Feature '%s' is not yet implemented", fieldName)
 			}
@@ -139,10 +140,10 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 		resourcedata.SetNillableValue(d, "status", configuration.Status)
 		resourcedata.SetNillableValue(d, "version", configuration.Version)
 
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "messenger", configuration.Messenger, flattenMessengerSettings)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "cobrowse", configuration.Cobrowse, flattenCobrowseSettings)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "journey_events", configuration.JourneyEvents, flattenJourneyEvents)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "support_center", configuration.SupportCenter, flattenSupportCenterSettings)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "messenger", configuration.Messenger, wdcUtils.FlattenMessengerSettings)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "cobrowse", configuration.Cobrowse, wdcUtils.FlattenCobrowseSettings)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "journey_events", configuration.JourneyEvents, wdcUtils.FlattenJourneyEvents)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "support_center", configuration.SupportCenter, wdcUtils.FlattenSupportCenterSettings)
 
 		log.Printf("Read web deployment configuration %s %s", d.Id(), *configuration.Name)
 		return cc.CheckState()
@@ -152,7 +153,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
-	name, inputCfg := readWebDeploymentConfigurationFromResourceData(d)
+	name, inputCfg := wdcUtils.ReadWebDeploymentConfigurationFromResourceData(d)
 
 	log.Printf("Updating web deployment configuration %s", name)
 
