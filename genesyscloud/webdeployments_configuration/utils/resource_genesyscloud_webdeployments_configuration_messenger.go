@@ -237,10 +237,10 @@ func flattenAppConversations(conversations *platformclientv2.Conversationappsett
 	}
 
 	if conversations.ConversationDisconnect != nil {
-		retMap["conversation_disconnect"] = map[string]interface{}{
+		retMap["conversation_disconnect"] = []interface{}{map[string]interface{}{
 			"enabled": conversations.ConversationDisconnect.Enabled,
 			"type":    conversations.ConversationDisconnect.VarType,
-		}
+		}}
 	}
 
 	if conversations.ConversationClear != nil {
@@ -248,13 +248,13 @@ func flattenAppConversations(conversations *platformclientv2.Conversationappsett
 	}
 
 	if conversations.Humanize != nil {
-		retMap["humanize"] = map[string]interface{}{
+		retMap["humanize"] = []interface{}{map[string]interface{}{
 			"enabled": conversations.Humanize.Enabled,
 			"bot": []interface{}{map[string]interface{}{
 				"name":       conversations.Humanize.Bot.Name,
 				"avatar_url": conversations.Humanize.Bot.AvatarUrl,
 			}},
-		}
+		}}
 	}
 
 	return []interface{}{retMap}

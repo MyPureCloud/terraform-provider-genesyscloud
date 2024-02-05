@@ -144,6 +144,13 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 
 func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 	var (
+		// Knowledge Base Settings
+		kbResName1  = "test-kb-1"
+		kbName1     = "tf-kb-" + uuid.NewString()
+		kbDesc1     = "kb created for terraform test 1"
+		kbCoreLang1 = "en-US"
+
+		// Webdeployment configuration
 		configName        = "Test Configuration " + gcloud.RandString(8)
 		configDescription = "Test Configuration description " + gcloud.RandString(32)
 		fullResourceName  = "genesyscloud_webdeployments_configuration.complex"
@@ -157,9 +164,15 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: complexConfigurationResource(
+				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+					kbResName1,
+					kbName1,
+					kbDesc1,
+					kbCoreLang1,
+				) + complexConfigurationResource(
 					configName,
 					configDescription,
+					"genesyscloud_knowledge_knowledgebase."+kbResName1+".id",
 					generateWebDeploymentConfigCobrowseSettings(
 						gcloud.TrueValue,
 						gcloud.TrueValue,
@@ -171,8 +184,28 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceName, "name", configName),
 					resource.TestCheckResourceAttr(fullResourceName, "description", configDescription),
+					resource.TestCheckResourceAttr(fullResourceName, "headless_mode_enabled", gcloud.TrueValue),
 					resource.TestMatchResourceAttr(fullResourceName, "status", regexp.MustCompile("^(Pending|Active)$")),
 					resource.TestCheckResourceAttrSet(fullResourceName, "version"),
+
+					resource.TestCheckResourceAttr(fullResourceName, "languages.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceName, "languages.0", "en-us"),
+					resource.TestCheckResourceAttr(fullResourceName, "languages.1", "ja"),
+					resource.TestCheckResourceAttr(fullResourceName, "default_language", "en-us"),
+
+					resource.TestCheckResourceAttr(fullResourceName, "custom_i18n_labels.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "custom_i18n_labels.0.language", "en-us"),
+					resource.TestCheckResourceAttr(fullResourceName, "custom_i18n_labels.0.localized_labels.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceName, "custom_i18n_labels.0.localized_labels.0.key", "MessengerHomeHeaderTitle"),
+					resource.TestCheckResourceAttr(fullResourceName, "custom_i18n_labels.0.localized_labels.0.value", "My Messenger Home Header Title"),
+					resource.TestCheckResourceAttr(fullResourceName, "custom_i18n_labels.0.localized_labels.1.key", "MessengerHomeHeaderSubTitle"),
+					resource.TestCheckResourceAttr(fullResourceName, "custom_i18n_labels.0.localized_labels.1.value", "My Messenger Home Header SubTitle"),
+
+					resource.TestCheckResourceAttr(fullResourceName, "position.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "position.0.alignment", "Auto"),
+					resource.TestCheckResourceAttr(fullResourceName, "position.0.side_space", "10"),
+					resource.TestCheckResourceAttr(fullResourceName, "position.0.bottom_space", "20"),
+
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.launcher_button.0.visibility", "OnDemand"),
@@ -186,6 +219,26 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.show_agent_typing_indicator", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.show_user_typing_indicator", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.auto_start_enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.markdown_enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.conversation_clear_enabled", gcloud.TrueValue),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.conversation_disconnect.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.conversation_disconnect.0.enabled", "true"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.conversation_disconnect.0.type", "Send"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.humanize.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.humanize.0.enabled", "true"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.humanize.0.bot.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.humanize.0.bot.0.name", "Marvin"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.conversations.0.humanize.0.bot.0.avatar_url", "https://my-domain-example.net/images/marvin.png"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.knowledge.#", "1"),
+					resource.TestCheckResourceAttr(fullResourceName, "messenger.0.apps.0.knowledge.0.enabled", "true"),
+					resource.TestCheckResourceAttrPair(fullResourceName, "messenger.0.apps.0.knowledge.0.knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+kbResName1, "id"),
+
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.allow_agent_control", gcloud.TrueValue),
@@ -195,6 +248,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.mask_selectors.0", "selector-one"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "cobrowse.0.readonly_selectors.0", "selector-one"),
+
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.enabled", gcloud.TrueValue),
 					resource.TestCheckResourceAttr(fullResourceName, "journey_events.0.excluded_query_parameters.#", "1"),
@@ -233,9 +287,15 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 			},
 			{
 				// Update cobrowse settings
-				Config: complexConfigurationResource(
+				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+					kbResName1,
+					kbName1,
+					kbDesc1,
+					kbCoreLang1,
+				) + complexConfigurationResource(
 					configName,
 					configDescription,
+					"genesyscloud_knowledge_knowledgebase."+kbResName1+".id",
 					generateWebDeploymentConfigCobrowseSettings(
 						gcloud.FalseValue,
 						gcloud.FalseValue,
@@ -825,13 +885,30 @@ func basicConfigurationResource(name, description string) string {
 	`, name, description)
 }
 
-func complexConfigurationResource(name, description string, nestedBlocks ...string) string {
+func complexConfigurationResource(name, description, kbId string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`
 	resource "genesyscloud_webdeployments_configuration" "complex" {
 		name = "%s"
 		description = "%s"
 		languages = [ "en-us", "ja" ]
 		default_language = "en-us"
+		headless_mode_enabled = true
+		custom_i18n_labels {
+			language = "en-us"
+			localized_labels {
+				key = "MessengerHomeHeaderTitle"
+				value = "My Messenger Home Header Title"
+			}
+			localized_labels {
+				key = "MessengerHomeHeaderSubTitle"
+				value = "My Messenger Home Header SubTitle"
+			}
+		}
+		position {
+			alignment = "Auto"
+			side_space = 10
+			bottom_space = 20
+		}
 		messenger {
 			enabled = true
 			launcher_button {
@@ -852,6 +929,31 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 				mode {
 					file_types = [ "image/jpeg" ]
 					max_file_size_kb = 123
+				}
+			}
+			apps {
+				conversations {
+					enabled = true
+					show_agent_typing_indicator = true
+					show_user_typing_indicator = true
+					auto_start_enabled = true
+					markdown_enabled = true
+					conversation_disconnect {
+						enabled = true
+						type = "Send"
+					}
+					conversation_clear_enabled = true
+					humanize {
+						enabled = true
+						bot {
+							name = "Marvin"
+							avatar_url = "https://my-domain-example.net/images/marvin.png"
+						}
+					}
+				}
+				knowledge {
+					enabled = true
+					knowledge_base_id = %s
 				}
 			}
 		}
@@ -916,7 +1018,7 @@ func complexConfigurationResource(name, description string, nestedBlocks ...stri
 		}
 		%s
 	}
-	`, name, description, strings.Join(nestedBlocks, "\n"))
+	`, name, description, kbId, strings.Join(nestedBlocks, "\n"))
 }
 
 func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string) string {
