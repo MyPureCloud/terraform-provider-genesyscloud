@@ -192,6 +192,7 @@ var (
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"conversations": {
@@ -199,32 +200,38 @@ var (
 							Type:        schema.TypeList,
 							MaxItems:    1,
 							Optional:    true,
+							Computed:    true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"enabled": {
 										Description: "The toggle to enable or disable conversations",
 										Type:        schema.TypeBool,
 										Optional:    true,
+										Computed:    true,
 									},
 									"show_agent_typing_indicator": {
 										Description: "The toggle to enable or disable typing indicator for messenger",
 										Type:        schema.TypeBool,
 										Optional:    true,
+										Computed:    true,
 									},
 									"show_user_typing_indicator": {
 										Description: "The toggle to enable or disable typing indicator for messenger",
 										Type:        schema.TypeBool,
 										Optional:    true,
+										Computed:    true,
 									},
 									"auto_start_enabled": {
 										Description: "The auto start for the messenger conversation",
 										Type:        schema.TypeBool,
 										Optional:    true,
+										Computed:    true,
 									},
 									"markdown_enabled": {
 										Description: "The markdown for the messenger app",
 										Type:        schema.TypeBool,
 										Optional:    true,
+										Computed:    true,
 									},
 									"conversation_disconnect": {
 										Description: "The conversation disconnect for the messenger app",
@@ -251,6 +258,7 @@ var (
 										Description: "The conversation clear settings for the messenger app",
 										Type:        schema.TypeBool,
 										Optional:    true,
+										Computed:    true,
 									},
 									"humanize": {
 										Description: "The humanize conversations settings for the messenger app",

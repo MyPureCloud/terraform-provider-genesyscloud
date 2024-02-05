@@ -164,6 +164,61 @@ func FlattenCobrowseSettings(cobrowseSettings *platformclientv2.Cobrowsesettings
 	}}
 }
 
+func flattenLocalizedLabels(localizedLabels *[]platformclientv2.Localizedlabels) []interface{} {
+	if localizedLabels == nil {
+		return nil
+	}
+
+	results := make([]interface{}, len(*localizedLabels))
+	for i, label := range *localizedLabels {
+		results[i] = map[string]interface{}{
+			"key":   *label.Key,
+			"value": *label.Value,
+		}
+	}
+
+	return results
+}
+
+func FlattenCustomI18nLabels(customI18nLabels *[]platformclientv2.Customi18nlabels) []interface{} {
+	if customI18nLabels == nil {
+		return nil
+	}
+
+	results := make([]interface{}, len(*customI18nLabels))
+	for i, label := range *customI18nLabels {
+		results[i] = map[string]interface{}{
+			"language":         label.Language,
+			"localized_labels": flattenLocalizedLabels(label.LocalizedLabels),
+		}
+	}
+
+	return results
+}
+
+func FlattenPosition(position *platformclientv2.Positionsettings) []interface{} {
+	if position == nil {
+		return nil
+	}
+
+	return []interface{}{map[string]interface{}{
+		"alignment":    position.Alignment,
+		"side_space":   position.SideSpace,
+		"bottom_space": position.BottomSpace,
+	}}
+}
+
+func FlattenAuthenticationSettings(authenticationSettings *platformclientv2.Authenticationsettings) []interface{} {
+	if authenticationSettings == nil {
+		return nil
+	}
+
+	return []interface{}{map[string]interface{}{
+		"enabled":        authenticationSettings.Enabled,
+		"integration_id": authenticationSettings.IntegrationId,
+	}}
+}
+
 func ReadWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (string, *platformclientv2.Webdeploymentconfigurationversion) {
 	name := d.Get("name").(string)
 	languages := lists.InterfaceListToStrings(d.Get("languages").([]interface{}))

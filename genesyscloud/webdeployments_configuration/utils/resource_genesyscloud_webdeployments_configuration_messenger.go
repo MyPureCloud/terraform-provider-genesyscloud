@@ -2,10 +2,168 @@ package webdeployments_configuration_utils
 
 import (
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
+
+func readAppConversations(conversations []interface{}) *platformclientv2.Conversationappsettings {
+	if len(conversations) < 1 {
+		return nil
+	}
+
+	conversation := conversations[0].(map[string]interface{})
+	ret := &platformclientv2.Conversationappsettings{
+		Enabled:                  platformclientv2.Bool(conversation["enabled"].(bool)),
+		ShowAgentTypingIndicator: platformclientv2.Bool(conversation["show_agent_typing_indicator"].(bool)),
+		ShowUserTypingIndicator:  platformclientv2.Bool(conversation["show_user_typing_indicator"].(bool)),
+		AutoStart: &platformclientv2.Autostart{
+			Enabled: platformclientv2.Bool(conversation["auto_start_enabled"].(bool)),
+		},
+		Markdown: &platformclientv2.Markdown{
+			Enabled: platformclientv2.Bool(conversation["markdown_enabled"].(bool)),
+		},
+		ConversationClear: &platformclientv2.Conversationclearsettings{
+			Enabled: platformclientv2.Bool(conversation["conversation_clear_enabled"].(bool)),
+		},
+	}
+
+	if conversationDisconnectArr, ok := conversation["conversation_disconnect"].([]interface{}); ok && len(conversationDisconnectArr) > 0 {
+		conversationDisconnect := conversationDisconnectArr[0].(map[string]interface{})
+		ret.ConversationDisconnect = &platformclientv2.Conversationdisconnectsettings{
+			Enabled: platformclientv2.Bool(conversationDisconnect["enabled"].(bool)),
+			VarType: platformclientv2.String(conversationDisconnect["type"].(string)),
+		}
+	}
+
+	if humanizeArr, ok := conversation["humanize"].([]interface{}); ok && len(humanizeArr) > 0 {
+		humanize := humanizeArr[0].(map[string]interface{})
+		ret.Humanize = &platformclientv2.Humanize{
+			Enabled: platformclientv2.Bool(humanize["enabled"].(bool)),
+		}
+		if botArr, ok := humanize["bot"].([]interface{}); ok && len(botArr) > 0 {
+			bot := botArr[0].(map[string]interface{})
+			ret.Humanize.Bot = &platformclientv2.Botmessengerprofile{
+				Name:      platformclientv2.String(bot["name"].(string)),
+				AvatarUrl: platformclientv2.String(bot["avatar_url"].(string)),
+			}
+		}
+	}
+
+	return ret
+}
+
+func readAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
+	if len(knowledge) < 1 {
+		return nil
+	}
+
+	knowledgeCfg := knowledge[0].(map[string]interface{})
+	ret := &platformclientv2.Knowledge{
+		Enabled: platformclientv2.Bool(knowledgeCfg["enabled"].(bool)),
+	}
+
+	if knowledgeBaseId, ok := knowledgeCfg["knowledge_base_id"].(string); ok {
+		ret.KnowledgeBase = &platformclientv2.Addressableentityref{
+			Id: &knowledgeBaseId,
+		}
+	}
+
+	return ret
+}
+
+func readMessengerApps(apps []interface{}) *platformclientv2.Messengerapps {
+	if len(apps) < 1 {
+		return nil
+	}
+
+	app := apps[0].(map[string]interface{})
+	return &platformclientv2.Messengerapps{
+		Conversations: readAppConversations(app["conversations"].([]interface{})),
+		Knowledge:     readAppKnowledge(app["knowledge"].([]interface{})),
+	}
+}
+
+func readMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengersettings {
+	value, ok := d.GetOk("messenger")
+	if !ok {
+		return nil
+	}
+
+	cfgs := value.([]interface{})
+	if len(cfgs) < 1 {
+		return nil
+	}
+
+	cfg := cfgs[0].(map[string]interface{})
+	enabled, _ := cfg["enabled"].(bool)
+	messengerSettings := &platformclientv2.Messengersettings{
+		Enabled: &enabled,
+		Apps:    readMessengerApps(cfg["apps"].([]interface{})),
+	}
+
+	if styles, ok := cfg["styles"].([]interface{}); ok && len(styles) > 0 {
+		style := styles[0].(map[string]interface{})
+		if primaryColor, ok := style["primary_color"].(string); ok {
+			messengerSettings.Styles = &platformclientv2.Messengerstyles{
+				PrimaryColor: &primaryColor,
+			}
+		}
+	}
+
+	if launchers, ok := cfg["launcher_button"].([]interface{}); ok && len(launchers) > 0 {
+		launcher := launchers[0].(map[string]interface{})
+		if visibility, ok := launcher["visibility"].(string); ok {
+			messengerSettings.LauncherButton = &platformclientv2.Launcherbuttonsettings{
+				Visibility: &visibility,
+			}
+		}
+	}
+
+	if screens, ok := cfg["home_screen"].([]interface{}); ok && len(screens) > 0 {
+		if screen, ok := screens[0].(map[string]interface{}); ok {
+			enabled, enabledOk := screen["enabled"].(bool)
+			logoUrl, logoUrlOk := screen["logo_url"].(string)
+
+			if enabledOk && logoUrlOk {
+				messengerSettings.HomeScreen = &platformclientv2.Messengerhomescreen{
+					Enabled: &enabled,
+					LogoUrl: &logoUrl,
+				}
+			}
+		}
+	}
+
+	if fileUploads, ok := cfg["file_upload"].([]interface{}); ok && len(fileUploads) > 0 {
+		fileUpload := fileUploads[0].(map[string]interface{})
+		if modesCfg, ok := fileUpload["mode"].([]interface{}); ok && len(modesCfg) > 0 {
+			modes := make([]platformclientv2.Fileuploadmode, len(modesCfg))
+			for i, modeCfg := range modesCfg {
+				if mode, ok := modeCfg.(map[string]interface{}); ok {
+					maxFileSize := mode["max_file_size_kb"].(int)
+					fileTypes := lists.InterfaceListToStrings(mode["file_types"].([]interface{}))
+					modes[i] = platformclientv2.Fileuploadmode{
+						FileTypes:     &fileTypes,
+						MaxFileSizeKB: &maxFileSize,
+					}
+				}
+			}
+
+			messengerSettings.FileUpload = &platformclientv2.Fileuploadsettings{
+				EnableAttachments:          resourcedata.GetNillableBool(d, "messenger.0.file_upload.0.enable_attachments"),
+				UseSupportedContentProfile: resourcedata.GetNillableBool(d, "messenger.0.file_upload.0.use_supported_content_profile"),
+			}
+
+			if len(modes) > 0 {
+				messengerSettings.FileUpload.Modes = &modes
+			}
+		}
+
+	}
+
+	return messengerSettings
+}
 
 func flattenStyles(styles *platformclientv2.Messengerstyles) []interface{} {
 	if styles == nil {
@@ -51,11 +209,14 @@ func flattenFileUpload(settings *platformclientv2.Fileuploadsettings) []interfac
 		}
 	}
 
-	return []interface{}{map[string]interface{}{
-		"enable_attachments":            settings.EnableAttachments,
-		"use_supported_content_profile": settings.UseSupportedContentProfile,
-		"mode":                          modes,
-	}}
+	ret := map[string]interface{}{
+		"mode": modes,
+	}
+
+	resourcedata.SetMapValueIfNotNil(ret, "enable_attachments", settings.EnableAttachments)
+	resourcedata.SetMapValueIfNotNil(ret, "use_supported_content_profile", settings.UseSupportedContentProfile)
+
+	return []interface{}{ret}
 }
 
 func flattenAppConversations(conversations *platformclientv2.Conversationappsettings) []interface{} {
@@ -126,81 +287,6 @@ func flattenMessengerApps(apps *platformclientv2.Messengerapps) []interface{} {
 		"conversations": flattenAppConversations(apps.Conversations),
 		"knowledge":     flattenAppKnowledge(apps.Knowledge),
 	}}
-}
-
-func readMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengersettings {
-	value, ok := d.GetOk("messenger")
-	if !ok {
-		return nil
-	}
-
-	cfgs := value.([]interface{})
-	if len(cfgs) < 1 {
-		return nil
-	}
-
-	cfg := cfgs[0].(map[string]interface{})
-	enabled, _ := cfg["enabled"].(bool)
-	messengerSettings := &platformclientv2.Messengersettings{
-		Enabled: &enabled,
-	}
-
-	if styles, ok := cfg["styles"].([]interface{}); ok && len(styles) > 0 {
-		style := styles[0].(map[string]interface{})
-		if primaryColor, ok := style["primary_color"].(string); ok {
-			messengerSettings.Styles = &platformclientv2.Messengerstyles{
-				PrimaryColor: &primaryColor,
-			}
-		}
-	}
-
-	if launchers, ok := cfg["launcher_button"].([]interface{}); ok && len(launchers) > 0 {
-		launcher := launchers[0].(map[string]interface{})
-		if visibility, ok := launcher["visibility"].(string); ok {
-			messengerSettings.LauncherButton = &platformclientv2.Launcherbuttonsettings{
-				Visibility: &visibility,
-			}
-		}
-	}
-
-	if screens, ok := cfg["home_screen"].([]interface{}); ok && len(screens) > 0 {
-		if screen, ok := screens[0].(map[string]interface{}); ok {
-			enabled, enabledOk := screen["enabled"].(bool)
-			logoUrl, logoUrlOk := screen["logo_url"].(string)
-
-			if enabledOk && logoUrlOk {
-				messengerSettings.HomeScreen = &platformclientv2.Messengerhomescreen{
-					Enabled: &enabled,
-					LogoUrl: &logoUrl,
-				}
-			}
-		}
-	}
-
-	if fileUploads, ok := cfg["file_upload"].([]interface{}); ok && len(fileUploads) > 0 {
-		fileUpload := fileUploads[0].(map[string]interface{})
-		if modesCfg, ok := fileUpload["mode"].([]interface{}); ok && len(modesCfg) > 0 {
-			modes := make([]platformclientv2.Fileuploadmode, len(modesCfg))
-			for i, modeCfg := range modesCfg {
-				if mode, ok := modeCfg.(map[string]interface{}); ok {
-					maxFileSize := mode["max_file_size_kb"].(int)
-					fileTypes := lists.InterfaceListToStrings(mode["file_types"].([]interface{}))
-					modes[i] = platformclientv2.Fileuploadmode{
-						FileTypes:     &fileTypes,
-						MaxFileSizeKB: &maxFileSize,
-					}
-				}
-			}
-
-			if len(modes) > 0 {
-				messengerSettings.FileUpload = &platformclientv2.Fileuploadsettings{
-					Modes: &modes,
-				}
-			}
-		}
-	}
-
-	return messengerSettings
 }
 
 func FlattenMessengerSettings(messengerSettings *platformclientv2.Messengersettings) []interface{} {

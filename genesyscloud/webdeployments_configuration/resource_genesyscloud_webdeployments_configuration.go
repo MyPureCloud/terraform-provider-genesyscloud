@@ -139,6 +139,13 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 		resourcedata.SetNillableValue(d, "default_language", configuration.DefaultLanguage)
 		resourcedata.SetNillableValue(d, "status", configuration.Status)
 		resourcedata.SetNillableValue(d, "version", configuration.Version)
+		if configuration.HeadlessMode != nil {
+			resourcedata.SetNillableValue(d, "headless_mode_enabled", configuration.HeadlessMode.Enabled)
+		}
+
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "custom_i18n_labels", configuration.CustomI18nLabels, wdcUtils.FlattenCustomI18nLabels)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "position", configuration.Position, wdcUtils.FlattenPosition)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "authentication_settings", configuration.AuthenticationSettings, wdcUtils.FlattenAuthenticationSettings)
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "messenger", configuration.Messenger, wdcUtils.FlattenMessengerSettings)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "cobrowse", configuration.Cobrowse, wdcUtils.FlattenCobrowseSettings)
