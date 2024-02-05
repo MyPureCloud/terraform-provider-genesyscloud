@@ -19,6 +19,57 @@ func SetRegistrar(l registrar.Registrar) {
 }
 
 var (
+	customI18nLabel = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"language": {
+				Description: "Language of localized labels in homescreen app (eg. en-us, de-de)",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"localized_labels": {
+				Description: "Contains localized labels used in homescreen app",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"key": {
+							Description:  "Contains localized label key used in messenger homescreen",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.StringInSlice([]string{"MessengerHomeHeaderTitle", "MessengerHomeHeaderSubTitle"}, false),
+						},
+						"value": {
+							Description: "Contains localized label value used in messenger homescreen",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	position = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"alignment": {
+				Description:  "The alignment for position",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Auto", "Left", "Right"}, false),
+			},
+			"side_space": {
+				Description: "The sidespace value for position",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"bottom_space": {
+				Description: "The bottomspace value for position",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+		},
+	}
+
 	messengerStyle = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"primary_color": {
@@ -80,6 +131,16 @@ var (
 
 	fileUploadSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"enable_attachments": {
+				Description: "Whether or not attachments is enabled",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"use_supported_content_profile": {
+				Description: "Whether or not supported content profile is enabled",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
 			"mode": {
 				Description: "The list of supported file upload modes",
 				Type:        schema.TypeList,
@@ -124,6 +185,131 @@ var (
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        fileUploadSettings,
+			},
+			"apps": {
+				Description: "The apps embedded in the messenger",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"conversations": {
+							Description: "Conversation settings that handles chats within the messenger",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"enabled": {
+										Description: "The toggle to enable or disable conversations",
+										Type:        schema.TypeBool,
+										Optional:    true,
+									},
+									"show_agent_typing_indicator": {
+										Description: "The toggle to enable or disable typing indicator for messenger",
+										Type:        schema.TypeBool,
+										Optional:    true,
+									},
+									"show_user_typing_indicator": {
+										Description: "The toggle to enable or disable typing indicator for messenger",
+										Type:        schema.TypeBool,
+										Optional:    true,
+									},
+									"auto_start_enabled": {
+										Description: "The auto start for the messenger conversation",
+										Type:        schema.TypeBool,
+										Optional:    true,
+									},
+									"markdown_enabled": {
+										Description: "The markdown for the messenger app",
+										Type:        schema.TypeBool,
+										Optional:    true,
+									},
+									"conversation_disconnect": {
+										Description: "The conversation disconnect for the messenger app",
+										Type:        schema.TypeList,
+										MaxItems:    1,
+										Optional:    true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"enabled": {
+													Description: "whether or not conversation disconnect setting is enabled",
+													Type:        schema.TypeBool,
+													Optional:    true,
+												},
+												"type": {
+													Description:  "Conversation disconnect type",
+													Type:         schema.TypeString,
+													Optional:     true,
+													ValidateFunc: validation.StringInSlice([]string{"Send", "ReadOnly"}, false),
+												},
+											},
+										},
+									},
+									"conversation_clear_enabled": {
+										Description: "The conversation clear settings for the messenger app",
+										Type:        schema.TypeBool,
+										Optional:    true,
+									},
+									"humanize": {
+										Description: "The humanize conversations settings for the messenger app",
+										Type:        schema.TypeList,
+										MaxItems:    1,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"enabled": {
+													Description: "Whether or not humanize conversations setting is enabled",
+													Type:        schema.TypeBool,
+													Optional:    true,
+												},
+												"bot": {
+													Description: "Bot messenger profile setting",
+													Type:        schema.TypeList,
+													MaxItems:    1,
+													Optional:    true,
+													Elem: &schema.Resource{
+														Schema: map[string]*schema.Schema{
+															"name": {
+																Description: "The name of the bot",
+																Type:        schema.TypeString,
+																Optional:    true,
+															},
+															"avatar_url": {
+																Description: "The avatar URL of the bot",
+																Type:        schema.TypeString,
+																Optional:    true,
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						"knowledge": {
+							Description: "The knowledge base config for messenger",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"enabled": {
+										Description: "whether or not knowledge base is enabled",
+										Type:        schema.TypeBool,
+										Optional:    true,
+									},
+									"knowledge_base_id": {
+										Description: "The knowledge base for messenger",
+										Type:        schema.TypeString,
+										Optional:    true,
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -522,6 +708,21 @@ var (
 			},
 		},
 	}
+
+	authenticationSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"enabled": {
+				Description: "Indicate if these auth is required for this deployment. If, for example, this flag is set to true then webmessaging sessions can not send messages unless the end-user is authenticated.",
+				Type:        schema.TypeBool,
+				Required:    true,
+			},
+			"integration_id": {
+				Description: "The integration identifier which contains the auth settings required on the deployment.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
 )
 
 func DataSourceWebDeploymentsConfiguration() *schema.Resource {
@@ -567,6 +768,11 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"headless_mode_enabled": {
+				Description: "Headless Mode Support which Controls UI components. When enabled, native UI components will be disabled and allows for custom-built UI.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
 			"languages": {
 				Description: "A list of languages supported on the configuration.",
 				Type:        schema.TypeList,
@@ -599,6 +805,19 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 				Computed:    true,
 				MaxItems:    0,
 			},
+			"custom_i18n_labels": {
+				Description: "The localization settings for homescreen app",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        customI18nLabel,
+			},
+			"position": {
+				Description: "Settings concerning position",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        position,
+			},
 			"messenger": {
 				Description: "Settings concerning messenger",
 				Type:        schema.TypeList,
@@ -626,6 +845,13 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        supportCenterSettings,
+			},
+			"authentication_settings": {
+				Description: "Settings for authenticated webdeployments.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        authenticationSettings,
 			},
 		},
 		CustomizeDiff: customizeConfigurationDiff,
