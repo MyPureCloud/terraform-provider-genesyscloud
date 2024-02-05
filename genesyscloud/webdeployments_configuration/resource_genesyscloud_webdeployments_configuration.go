@@ -44,16 +44,16 @@ func waitForConfigurationDraftToBeActive(ctx context.Context, meta interface{}, 
 		configuration, resp, err := wp.getWebdeploymentsConfigurationVersionsDraft(ctx, id)
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Error verifying active status for new web deployment configuration %s: %s", id, err))
+				return retry.RetryableError(fmt.Errorf("error verifying active status for new web deployment configuration %s: %s", id, err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment configuration %s: %s", id, err))
+			return retry.NonRetryableError(fmt.Errorf("error verifying active status for new web deployment configuration %s: %s", id, err))
 		}
 
 		if *configuration.Status == "Active" {
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Web deployment configuration %s not active yet. Status: %s", id, *configuration.Status))
+		return retry.RetryableError(fmt.Errorf("web deployment configuration %s not active yet. Status: %s", id, *configuration.Status))
 	})
 }
 
@@ -95,9 +95,9 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		configuration, resp, err := wp.createWebdeploymentsConfigurationVersionsDraftPublish(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus400(resp) {
-				return retry.RetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
+				return retry.RetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
 		}
 		d.Set("version", configuration.Version)
 		d.Set("status", configuration.Status)
@@ -168,9 +168,9 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		_, resp, err := wp.updateWebdeploymentsConfigurationVersionsDraft(ctx, d.Id(), *inputCfg)
 		if err != nil {
 			if gcloud.IsStatus400(resp) {
-				return retry.RetryableError(fmt.Errorf("Error updating web deployment configuration %s: %s", name, err))
+				return retry.RetryableError(fmt.Errorf("error updating web deployment configuration %s: %s", name, err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error updating web deployment configuration %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error updating web deployment configuration %s: %s", name, err))
 		}
 		return nil
 	})
@@ -187,9 +187,9 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		configuration, resp, err := wp.createWebdeploymentsConfigurationVersionsDraftPublish(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus400(resp) {
-				return retry.RetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
+				return retry.RetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
 		}
 		d.Set("version", configuration.Version)
 		d.Set("status", configuration.Status)
@@ -224,9 +224,9 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 				log.Printf("Deleted web deployment configuration %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting web deployment configuration %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting web deployment configuration %s: %s", d.Id(), err))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Web deployment configuration %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("web deployment configuration %s still exists", d.Id()))
 	})
 }

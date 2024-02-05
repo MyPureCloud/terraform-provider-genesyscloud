@@ -151,7 +151,6 @@ func readMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengerse
 			}
 
 			messengerSettings.FileUpload = &platformclientv2.Fileuploadsettings{
-				EnableAttachments:          resourcedata.GetNillableBool(d, "messenger.0.file_upload.0.enable_attachments"),
 				UseSupportedContentProfile: resourcedata.GetNillableBool(d, "messenger.0.file_upload.0.use_supported_content_profile"),
 			}
 
@@ -213,7 +212,6 @@ func flattenFileUpload(settings *platformclientv2.Fileuploadsettings) []interfac
 		"mode": modes,
 	}
 
-	resourcedata.SetMapValueIfNotNil(ret, "enable_attachments", settings.EnableAttachments)
 	resourcedata.SetMapValueIfNotNil(ret, "use_supported_content_profile", settings.UseSupportedContentProfile)
 
 	return []interface{}{ret}

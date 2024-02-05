@@ -132,11 +132,6 @@ var (
 
 	fileUploadSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"enable_attachments": {
-				Description: "Whether or not attachments is enabled",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
 			"use_supported_content_profile": {
 				Description: "Whether or not supported content profile is enabled",
 				Type:        schema.TypeBool,
