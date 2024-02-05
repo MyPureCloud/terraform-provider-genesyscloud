@@ -2,6 +2,7 @@ package telephony_providers_edges_phone
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,6 +19,7 @@ import (
 func TestAccResourcePhoneBasic(t *testing.T) {
 	var (
 		phoneRes    = "phone1234"
+		phoneRes2   = "phone5555"
 		name1       = "test-phone_" + uuid.NewString()
 		name2       = "test-phone_" + uuid.NewString()
 		stateActive = "active"
@@ -32,6 +34,9 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 		userRes2   = "user2"
 		userName2  = "test_webrtc_user_" + uuid.NewString()
 		userEmail2 = userName2 + "@test.com"
+
+		phoneBaseSettingsRes2  = "phoneBaseSettings123"
+		phoneBaseSettingsName2 = "phoneBaseSettings " + uuid.NewString()
 
 		userTitle      = "Senior Director"
 		userDepartment = "Development"
@@ -100,16 +105,16 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 	// Update phone with new user and name
 	config2 := gcloud.GenerateOrganizationMe() + user1 + user2 +
 		phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
-			phoneBaseSettingsRes,
-			phoneBaseSettingsName,
+			phoneBaseSettingsRes2,
+			phoneBaseSettingsName2,
 			"phoneBaseSettings description",
 			"inin_webrtc_softphone.json",
 		) + GeneratePhoneResourceWithCustomAttrs(&PhoneConfig{
-		phoneRes,
+		phoneRes2,
 		name2,
 		stateActive,
 		fmt.Sprintf("\"%s\"", siteId),
-		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes + ".id",
+		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes2 + ".id",
 		nil, // no line addresses
 		"genesyscloud_user." + userRes2 + ".id",
 		"", // no depends_on
@@ -149,22 +154,24 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.cdm", gcloud.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.hardware_id_type", "mac"),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "capabilities.0.media_codecs.0", "audio/opus"),
+					checkifDefaultPhoneAdded("genesyscloud_user."+userRes1),
 				),
 			},
 			{
 				Config: config2,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "state", stateActive),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes, "site_id", siteId),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "phone_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "line_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "line_base_settings_id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes, "web_rtc_user_id", "genesyscloud_user."+userRes2, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes2, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes2, "state", stateActive),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phone."+phoneRes2, "site_id", siteId),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes2, "phone_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes2, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes2, "line_base_settings_id", "genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes2, "line_base_settings_id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneRes2, "web_rtc_user_id", "genesyscloud_user."+userRes2, "id"),
+					checkifDefaultPhoneAdded("genesyscloud_user."+userRes2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_telephony_providers_edges_phone." + phoneRes,
+				ResourceName:      "genesyscloud_telephony_providers_edges_phone." + phoneRes2,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -175,7 +182,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 
 func TestAccResourcePhoneStandalone(t *testing.T) {
 	t.Parallel()
-	number := "+14175538114"
+	number := "+14175538119"
 	// TODO: Use did pool resource inside config once cyclic dependency issue is resolved between genesyscloud and did_pools package
 	didPoolId, err := createDidPoolForEdgesPhoneTest(sdkConfig, number)
 	if err != nil {
@@ -332,6 +339,45 @@ func createDidPoolForEdgesPhoneTest(config *platformclientv2.Configuration, numb
 		return "", fmt.Errorf("failed to create did pool: %v", err)
 	}
 	return *didPool.Id, nil
+}
+
+// Check if flow is published, then check if flow name and type are correct
+func checkifDefaultPhoneAdded(userName string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		userResource, ok := state.RootModule().Resources[userName]
+		if !ok {
+			return fmt.Errorf("Failed to find user %s in state", userName)
+		}
+		userId := userResource.Primary.ID
+		usersApi := platformclientv2.NewUsersApi()
+		stationsApi := platformclientv2.NewStationsApi()
+		const pageSize = 100
+		const pageNum = 1
+		stations, _, err := stationsApi.GetStations(pageSize, pageNum, "", "", "", userId, "", "")
+		if err != nil {
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+		if stations.Entities == nil || len(*stations.Entities) == 0 {
+			return fmt.Errorf("Failed to find user %s in state", userName)
+		}
+
+		user, _, err := usersApi.GetUserStation(userId)
+
+		if err != nil {
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+
+		if user == nil || user.DefaultStation == nil {
+			return fmt.Errorf("User Stations (%s) not found. ", userId)
+		}
+
+		station := &(*stations.Entities)[0]
+		if *user.DefaultStation.Id != *station.Id {
+			return fmt.Errorf("User  (%s) has incorrect default station Id. Expect: %s, Actual: %s", userId, *station.Id, *user.DefaultStation.Id)
+		}
+
+		return nil
+	}
 }
 
 func deleteDidPool(config *platformclientv2.Configuration, id string) error {

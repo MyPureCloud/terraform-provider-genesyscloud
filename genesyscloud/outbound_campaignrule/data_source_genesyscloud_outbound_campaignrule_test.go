@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceCampaignRule(t *testing.T) {
+func TestAccDataSourceOutboundCampaignRule(t *testing.T) {
 	t.Parallel()
 
 	var (

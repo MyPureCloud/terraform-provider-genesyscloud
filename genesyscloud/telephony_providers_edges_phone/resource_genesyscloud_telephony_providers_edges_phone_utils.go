@@ -129,6 +129,12 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 		if putErr != nil {
 			return resp, diag.Errorf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr)
 		}
+
+		resp, putErr = pp.assignStationAsDefault(ctx, userId, stationId)
+		if putErr != nil {
+			return resp, diag.Errorf("Failed to assign Station %v as the default station for user %s: %s", stationId, userId, putErr)
+		}
+
 		return resp, nil
 	})
 	if diagErr != nil {

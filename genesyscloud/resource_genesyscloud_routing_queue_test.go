@@ -40,6 +40,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 
 		bullseyeMemberGroupName = "test_membergroup_series6"
 		bullseyeMemberGroupType = "GROUP"
+		testUserResource        = "user_resource1"
+		testUserName            = "nameUser1" + uuid.NewString()
+		testUserEmail           = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -48,7 +51,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateRoutingSkillResource(queueSkillResource, queueSkillName) +
 					generateGroupResource(
 						bullseyeMemberGroupName,
 						"MySeries6Group",
@@ -56,6 +59,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 						NullValue, // Default type
 						NullValue, // Default visibility
 						NullValue, // Default rules_visible
+						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 					) + GenerateRoutingQueueResource(
 					queueResource1,
 					queueName1,
@@ -186,6 +190,9 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 		conditionalGroupRouting2ConditionValue = "5"
 		conditionalGroupRouting2WaitSeconds    = "15"
 		conditionalGroupRouting2GroupType      = "GROUP"
+		testUserResource                       = "user_resource1"
+		testUserName                           = "nameUser1" + uuid.NewString()
+		testUserEmail                          = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -257,9 +264,10 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 			},
 			{
 				// Update
-				Config: GenerateBasicGroupResource(
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + GenerateBasicGroupResource(
 					groupResourceId,
 					groupName,
+					GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) +
 					generateRoutingQueueResourceBasic(
 						queueResource2,
@@ -965,6 +973,69 @@ func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 	})
 }
 
+func TestAccResourceRoutingQueueDirectRoutingNoBackup(t *testing.T) {
+	var (
+		queueResource1    = "test-queue-direct"
+		queueName1        = "Terraform Test Queue1-" + uuid.NewString()
+		queueName2        = "Terraform Test Queue2-" + uuid.NewString()
+		agentWaitSeconds1 = "200"
+		waitForAgent1     = "true"
+		agentWaitSeconds2 = "300"
+		waitForAgent2     = "false"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { TestAccPreCheck(t) },
+		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateRoutingQueueResourceBasic(
+					queueResource1,
+					queueName1,
+					generateDirectRouting(
+						agentWaitSeconds1, // agentWaitSeconds
+						waitForAgent1,     // waitForAgent
+						"true",            // callUseAgentAddressOutbound
+						"true",            // emailUseAgentAddressOutbound
+						"true",            // messageUseAgentAddressOutbound
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResource1, "name", queueName1),
+					validateDirectRouting(queueResource1, agentWaitSeconds1, waitForAgent1, "true", "true", "true"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "direct_routing.0.backup_queue_id", "genesyscloud_routing_queue."+queueResource1, "id"), // set to itself by Backend logic
+				),
+			},
+			{
+				// Update
+				Config: generateRoutingQueueResourceBasic(
+					queueResource1,
+					queueName2,
+					generateDirectRouting(
+						agentWaitSeconds2, // agentWaitSeconds
+						waitForAgent2,     // waitForAgent
+						"true",            // callUseAgentAddressOutbound
+						"true",            // emailUseAgentAddressOutbound
+						"true",            // messageEnabled
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateDirectRouting(queueResource1, agentWaitSeconds2, waitForAgent2, "true", "true", "true"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResource1, "direct_routing.0.backup_queue_id", "genesyscloud_routing_queue."+queueResource1, "id"), // set to itself by Backend logic
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResource1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
+}
+
 /*
 The conditional routing rule functionality insist that the first rule should always be defaulted to the queue in which
 it belongs to.  This means the flattenConditionalGroupRoutingRules() function should never set the queue id of
@@ -1400,6 +1471,9 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		skillGroupResource    = "routing-skill-group"
 		skillGroupName        = "Skillgroup" + uuid.NewString()
 		skillGroupDescription = "description-" + uuid.NewString()
+		testUserResource      = "user_resource1"
+		testUserName          = "nameUser1" + uuid.NewString()
+		testUserEmail         = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -1408,8 +1482,10 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
-					GenerateBasicGroupResource(groupResource, groupName) +
+				Config: GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateRoutingSkillGroupResourceBasic(skillGroupResource, skillGroupName, skillGroupDescription) +
+					GenerateBasicGroupResource(groupResource, groupName,
+						GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					) +
 					GenerateRoutingQueueResourceBasicWithDepends(
 						queueResource,
 						"genesyscloud_routing_skill_group."+skillGroupResource,

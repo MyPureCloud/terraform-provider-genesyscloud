@@ -46,7 +46,7 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 					userResource1,
 					GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "data.genesyscloud_auth_division_home.home.id"),
 					GenerateResourceRoles("data.genesyscloud_auth_role."+empRoleDataSrc+".id"),
-				) + generateDefaultAuthRoleDataSource(
+				) + GenerateDefaultAuthRoleDataSource(
 					empRoleDataSrc,
 					strconv.Quote(empRoleName),
 				),

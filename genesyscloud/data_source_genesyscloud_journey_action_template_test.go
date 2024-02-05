@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataJourneyActionTemplate(t *testing.T) {
+func TestAccDataSourceJourneyActionTemplate(t *testing.T) {
 	runDataJourneyActionTemplateTestCase(t, "find_by_name")
 }
 

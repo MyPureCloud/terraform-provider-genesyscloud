@@ -275,14 +275,24 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 		sdkresponse.MessagingTemplate = buildSdkresponsemanagementresponseMessagingtemplate(messagingTemplate)
 	}
 
-	log.Printf("Creating Responsemanagement Response %s", name)
-	responsemanagementResponse, _, err := responseManagementApi.PostResponsemanagementResponses(sdkresponse, "")
-	if err != nil {
-		return diag.Errorf("Failed to create Responsemanagement Response %s: %s", name, err)
-	}
-	d.SetId(*responsemanagementResponse.Id)
+	diagErr := WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		log.Printf("Creating Responsemanagement Response %s", name)
+		responsemanagementResponse, resp, err := responseManagementApi.PostResponsemanagementResponses(sdkresponse, "")
+		if err != nil {
+			if IsStatus412(resp) {
+				return retry.RetryableError(fmt.Errorf("failed to create Responsemanagement Response %s: %s", name, err))
+			}
+			return retry.NonRetryableError(fmt.Errorf("failed to create Responsemanagement Response %s: %s", name, err))
+		}
+		d.SetId(*responsemanagementResponse.Id)
+		log.Printf("Created Responsemanagement Response %s %s", name, *responsemanagementResponse.Id)
+		return nil
+	})
 
-	log.Printf("Created Responsemanagement Response %s %s", name, *responsemanagementResponse.Id)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	return readResponsemanagementResponse(ctx, d, meta)
 }
 

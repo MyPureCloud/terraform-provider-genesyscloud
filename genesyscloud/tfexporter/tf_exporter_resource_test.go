@@ -13,8 +13,10 @@ import (
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
+	"terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	outboundAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -102,7 +104,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
 	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
 	providerResources["genesyscloud_recording_media_retention_policy"] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
-	providerResources["genesyscloud_oauth_client"] = gcloud.ResourceOAuthClient()
+	providerResources["genesyscloud_oauth_client"] = oauth_client.ResourceOAuthClient()
 	providerResources["genesyscloud_outbound_settings"] = ob.ResourceOutboundSettings()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
@@ -132,7 +134,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources["genesyscloud_outbound_attempt_limit"] = outboundAttemptLimit.ResourceOutboundAttemptLimit()
 	providerResources["genesyscloud_outbound_callanalysisresponseset"] = ob.ResourceOutboundCallAnalysisResponseSet()
-	providerResources["genesyscloud_outbound_callabletimeset"] = ob.ResourceOutboundCallabletimeset()
+	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
 	providerResources["genesyscloud_outbound_campaign"] = obCampaign.ResourceOutboundCampaign()
 	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = ob.ResourceOutboundContactListFilter()
@@ -190,10 +192,10 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_knowledge_document", gcloud.KnowledgeDocumentExporter())
 	RegisterExporter("genesyscloud_knowledge_category", gcloud.KnowledgeCategoryExporter())
 	RegisterExporter("genesyscloud_location", gcloud.LocationExporter())
-	RegisterExporter("genesyscloud_oauth_client", gcloud.OauthClientExporter())
+	RegisterExporter("genesyscloud_oauth_client", oauth_client.OauthClientExporter())
 	RegisterExporter("genesyscloud_outbound_attempt_limit", outboundAttemptLimit.OutboundAttemptLimitExporter())
 	RegisterExporter("genesyscloud_outbound_callanalysisresponseset", ob.OutboundCallAnalysisResponseSetExporter())
-	RegisterExporter("genesyscloud_outbound_callabletimeset", ob.OutboundCallableTimesetExporter())
+	RegisterExporter("genesyscloud_outbound_callabletimeset", obCallableTimeset.OutboundCallableTimesetExporter())
 	RegisterExporter("genesyscloud_outbound_campaign", obCampaign.OutboundCampaignExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactList.OutboundContactListExporter())
 	RegisterExporter("genesyscloud_outbound_contactlistfilter", ob.OutboundContactListFilterExporter())

@@ -1,8 +1,9 @@
-package genesyscloud
+package oauth_client
 
 import (
 	"fmt"
 	"strconv"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -25,8 +26,8 @@ func TestAccDataSourceOAuthClient(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: generateAuthRoleDataSource(
@@ -39,10 +40,10 @@ func TestAccDataSourceOAuthClient(t *testing.T) {
 					clientDesc1,
 					grantTypeClientCreds,
 					tokenSec1,
-					NullValue, // Default state
-					GenerateStringArray(strconv.Quote(redirectURI1)),
-					NullValue, // No scopes for client creds
-					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", NullValue),
+					gcloud.NullValue, // Default state
+					gcloud.GenerateStringArray(strconv.Quote(redirectURI1)),
+					gcloud.NullValue, // No scopes for client creds
+					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", gcloud.NullValue),
 				) + generateOAuthClientDataSource(
 					oauthClientDataSource,
 					"genesyscloud_oauth_client."+clientResource1+".name",
@@ -67,4 +68,26 @@ func generateOAuthClientDataSource(
 		depends_on=[%s]
 	}
 	`, resourceID, name, dependsOnResource)
+}
+
+func generateAuthRoleDataSource(
+	resourceID string,
+	name string,
+	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+	dependsOnResource string) string {
+	return fmt.Sprintf(`data "genesyscloud_auth_role" "%s" {
+		name = %s
+        depends_on=[%s]
+	}
+	`, resourceID, name, dependsOnResource)
+}
+
+func generateDefaultAuthRoleDataSource(
+	resourceID string,
+	name string) string {
+	return fmt.Sprintf(`data "genesyscloud_auth_role" "%s" {
+		name = %s
+	}
+	`, resourceID, name)
 }

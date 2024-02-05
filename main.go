@@ -18,8 +18,10 @@ import (
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
+	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -111,6 +113,7 @@ type RegisterInstance struct {
 
 func registerResources() {
 	regInstance := &RegisterInstance{}
+	oauth.SetRegistrar(regInstance)                         //Registering oauth_client
 	dt.SetRegistrar(regInstance)                            //Registering architect data table
 	dtr.SetRegistrar(regInstance)                           //Registering architect data table row
 	emergencyGroup.SetRegistrar(regInstance)                //Registering architect emergency group
@@ -127,6 +130,7 @@ func registerResources() {
 	obwm.SetRegistrar(regInstance)                          //Registering outbound wrapup code mappings
 	gcloud.SetRegistrar(regInstance)                        //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                //Registering outbound attempt limit
+	obCallableTimeset.SetRegistrar(regInstance)             //Registering outbound callable timeset
 	obCampaign.SetRegistrar(regInstance)                    //Registering outbound campaign
 	obContactList.SetRegistrar(regInstance)                 //Registering outbound contact list
 	obSequence.SetRegistrar(regInstance)                    //Registering outbound sequence

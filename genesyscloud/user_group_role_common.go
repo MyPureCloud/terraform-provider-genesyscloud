@@ -59,7 +59,7 @@ func readSubjectRoles(d *schema.ResourceData, authAPI *platformclientv2.Authoriz
 		return nil, resp, err
 	}
 
-	homeDivId, err := getHomeDivisionID()
+	homeDivId, err := GetHomeDivisionID()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -103,7 +103,7 @@ func updateSubjectRoles(_ context.Context, d *schema.ResourceData, authAPI *plat
 		existingGrants = append(existingGrants, createRoleDivisionPair(*grant.Role.Id, *grant.Division.Id))
 	}
 
-	homeDiv, diagErr := getHomeDivisionID()
+	homeDiv, diagErr := GetHomeDivisionID()
 	if diagErr != nil {
 		return diagErr
 	}
@@ -238,7 +238,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		}
 		roleID := roleResource.Primary.ID
 
-		homeDivID, err := getHomeDivisionID()
+		homeDivID, err := GetHomeDivisionID()
 		if err != nil {
 			return fmt.Errorf("failed to retrieve home division ID: %v", err)
 		}

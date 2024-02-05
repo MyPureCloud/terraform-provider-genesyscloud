@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceAttemptLimit(t *testing.T) {
+func TestAccDataSourceOutboundAttemptLimit(t *testing.T) {
 
 	var (
 		resourceId       = "attempt_limit"

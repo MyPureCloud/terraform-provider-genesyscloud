@@ -6,6 +6,7 @@ import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
+	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	outboundRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
@@ -48,7 +49,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
 	providerResources["genesyscloud_outbound_contactlistfilter"] = outbound.ResourceOutboundContactListFilter()
 	providerResources["genesyscloud_outbound_ruleset"] = outboundRuleset.ResourceOutboundRuleset()
-	providerResources["genesyscloud_outbound_callabletimeset"] = outbound.ResourceOutboundCallabletimeset()
+	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

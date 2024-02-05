@@ -36,6 +36,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_integration"] = ResourceIntegration()
 	providerResources["genesyscloud_group"] = gcloud.ResourceGroup()
 	providerResources["genesyscloud_integration_credential"] = integrationCred.ResourceIntegrationCredential()
+	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
