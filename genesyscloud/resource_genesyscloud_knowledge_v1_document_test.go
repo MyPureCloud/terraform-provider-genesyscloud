@@ -40,7 +40,7 @@ package genesyscloud
 // 	Steps: []resource.TestStep{
 // 		{
 // 			// Create
-// 			Config: generateKnowledgeKnowledgebaseResource(
+// 			Config: GenerateKnowledgeKnowledgebaseResource(
 // 				knowledgeBaseResource1,
 // 				knowledgeBaseName1,
 // 				knowledgeBaseDescription1,
@@ -78,7 +78,7 @@ package genesyscloud
 // 		},
 // 		{
 // 			// Update
-// 			Config: generateKnowledgeKnowledgebaseResource(
+// 			Config: GenerateKnowledgeKnowledgebaseResource(
 // 				knowledgeBaseResource1,
 // 				knowledgeBaseName1,
 // 				knowledgeBaseDescription1,
