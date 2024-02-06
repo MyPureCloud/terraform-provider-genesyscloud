@@ -2,6 +2,7 @@ package task_management_workitem
 
 import (
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -44,7 +45,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_queue"] = gcloud.ResourceRoutingQueue()
 	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
 	providerResources["genesyscloud_auth_role"] = gcloud.ResourceAuthRole()
-	providerResources["genesyscloud_user_roles"] = gcloud.ResourceUserRoles()
+	providerResources["genesyscloud_user_roles"] = user_roles.ResourceUserRoles()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

@@ -71,7 +71,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_utilization_label"] = ResourceRoutingUtilizationLabel()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_user"] = ResourceUser()
-	providerResources["genesyscloud_user_roles"] = ResourceUserRoles()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
 }
 
