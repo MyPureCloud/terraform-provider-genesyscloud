@@ -13,11 +13,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
 /*
-The resource_genesyscloud_user_roles.go contains all of the methods that perform the core logic for a resource
+The resource_genesyscloud_user_roles.go contains all the methods that perform the core logic for a resource
 */
 
 func createUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -29,12 +28,19 @@ func createUserRoles(ctx context.Context, d *schema.ResourceData, meta interface
 
 func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+	proxy := getUserRolesProxy(sdkConfig)
 
 	log.Printf("Reading roles for user %s", d.Id())
-	_ = d.Set("user_id", d.Id())
+	d.Set("user_id", d.Id())
+
 	return genesyscloud.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		roles, _, err := genesyscloud.ReadSubjectRoles(d, authAPI)
+		roles, resp, err := flattenSubjectRoles(d, proxy)
+		if err != nil {
+			if genesyscloud.IsStatus404ByInt(resp.StatusCode) {
+				return retry.RetryableError(fmt.Errorf("Failed to read roles for user %s: %v", d.Id(), err))
+			}
+			return retry.NonRetryableError(fmt.Errorf("Failed to read roles for user %s: %v", d.Id(), err))
+		}
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
@@ -48,12 +54,20 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 func updateUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*genesyscloud.ProviderMeta).ClientConfig
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+	proxy := getUserRolesProxy(sdkConfig)
+
+	if !d.HasChange("roles") {
+		return nil
+	}
+	rolesConfig := d.Get("roles").(*schema.Set)
+	if rolesConfig == nil {
+		return nil
+	}
 
 	log.Printf("Updating roles for user %s", d.Id())
-	diagErr := genesyscloud.UpdateSubjectRoles(ctx, d, authAPI, "PC_USER")
+	_, diagErr := proxy.updateUserRoles(ctx, d.Id(), rolesConfig, "PC_USER")
 	if diagErr != nil {
-		return diagErr
+		return diag.Errorf("error %v", diagErr)
 	}
 
 	log.Printf("Updated user roles for %s", d.Id())

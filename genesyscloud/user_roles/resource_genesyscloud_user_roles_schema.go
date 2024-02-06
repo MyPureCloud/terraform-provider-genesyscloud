@@ -9,11 +9,29 @@ import (
 
 const resourceName = "genesyscloud_user_roles"
 
-// SetRegistrar registers all of the resources and exporters in the package
+// SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource(resourceName, ResourceUserRoles())
 	l.RegisterExporter(resourceName, UserRolesExporter())
 }
+
+var (
+	RoleAssignmentResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"role_id": {
+				Description: "Role ID.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"division_ids": {
+				Description: "Division IDs applied to this resource. If not set, the home division will be used. '*' may be set for all divisions.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+		},
+	}
+)
 
 // ResourceUserRoles registers the genesyscloud_user_roles resource with terraform
 func ResourceUserRoles() *schema.Resource {
@@ -41,7 +59,7 @@ Terraform expects to manage the resources that are defined in its stack. You can
 				Description: "Roles and their divisions assigned to this user.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Elem:        genesyscloud.RoleAssignmentResource,
+				Elem:        RoleAssignmentResource,
 			},
 		},
 	}

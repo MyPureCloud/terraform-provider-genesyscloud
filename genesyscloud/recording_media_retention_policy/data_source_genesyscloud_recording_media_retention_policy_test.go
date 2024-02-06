@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 
@@ -160,7 +161,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					userRoles.GenerateUserRoles(
 						userRoleResource1,
 						userResource1,
-						gcloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 					) +
 					gcloud.GenerateUserWithCustomAttrs(userResource1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
@@ -209,4 +210,16 @@ func generateRecordingMediaRetentionPolicyDataSource(
 		depends_on = [%s]
 	}
 	`, resourceID, name, dependsOn)
+}
+
+func generateResourceRoles(skillID string, divisionIds ...string) string {
+	var divAttr string
+	if len(divisionIds) > 0 {
+		divAttr = "division_ids = [" + strings.Join(divisionIds, ",") + "]"
+	}
+	return fmt.Sprintf(`roles {
+		role_id = %s
+		%s
+	}
+	`, skillID, divAttr)
 }
