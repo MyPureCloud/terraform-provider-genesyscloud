@@ -1,10 +1,11 @@
 package station
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"log"
 	"sync"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"

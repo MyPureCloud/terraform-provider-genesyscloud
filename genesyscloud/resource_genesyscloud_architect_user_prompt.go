@@ -25,7 +25,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 type PromptAudioData struct {
@@ -726,7 +726,7 @@ func getAllUserPrompts(_ context.Context, clientConfig *platformclientv2.Configu
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		userPrompts, _, getErr := architectAPI.GetArchitectPrompts(pageNum, pageSize, nil, "", "", "", "")
+		userPrompts, _, getErr := architectAPI.GetArchitectPrompts(pageNum, pageSize, nil, "", "", "", "", false, false, nil)
 		if getErr != nil {
 			return nil, diag.Errorf("Failed to get page of prompts: %v", getErr)
 		}
@@ -875,7 +875,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 	log.Printf("Reading User Prompt %s", d.Id())
 
 	return WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		userPrompt, resp, getErr := architectAPI.GetArchitectPrompt(d.Id())
+		userPrompt, resp, getErr := architectAPI.GetArchitectPrompt(d.Id(), true, true, nil)
 		if getErr != nil {
 			if IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to read User Prompt %s: %s", d.Id(), getErr))
@@ -970,7 +970,7 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	log.Printf("Deleted user prompt %s", name)
 
 	return WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := architectApi.GetArchitectPrompt(d.Id())
+		_, resp, err := architectApi.GetArchitectPrompt(d.Id(), false, false, nil)
 		if err != nil {
 			if resp != nil && resp.StatusCode == 404 {
 				// User prompt deleted
@@ -1077,7 +1077,7 @@ func updatePromptResource(d *schema.ResourceData, architectApi *platformclientv2
 	name := d.Get("name").(string)
 
 	// Get the prompt so we can get existing prompt resources
-	userPrompt, _, err := architectApi.GetArchitectPrompt(d.Id())
+	userPrompt, _, err := architectApi.GetArchitectPrompt(d.Id(), true, true, nil)
 	if err != nil {
 		return diag.Errorf("Failed to get user prompt %s: %s", d.Id(), err)
 	}
@@ -1180,7 +1180,7 @@ func getArchitectPromptAudioData(promptId string, meta interface{}) ([]PromptAud
 	sdkConfig := meta.(*ProviderMeta).ClientConfig
 	apiInstance := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
 
-	data, _, err := apiInstance.GetArchitectPrompt(promptId)
+	data, _, err := apiInstance.GetArchitectPrompt(promptId, true, true, nil)
 	if err != nil {
 		return nil, err
 	}

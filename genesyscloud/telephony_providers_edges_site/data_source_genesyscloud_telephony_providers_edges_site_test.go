@@ -2,9 +2,10 @@ package telephony_providers_edges_site
 
 import (
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"strconv"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
@@ -125,7 +126,7 @@ func generateSiteDataSource(
 
 func getSiteIdByName(name string) (string, error) {
 	api := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-	data, _, err := api.GetTelephonyProvidersEdgesSites(1, 1, "", "", name, "", true)
+	data, _, err := api.GetTelephonyProvidersEdgesSites(1, 1, "", "", name, "", true, nil)
 	if err != nil {
 		return "", err
 	}

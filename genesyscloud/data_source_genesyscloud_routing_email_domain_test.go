@@ -2,14 +2,15 @@ package genesyscloud
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"log"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func TestAccDataSourceRoutingEmailDomain(t *testing.T) {

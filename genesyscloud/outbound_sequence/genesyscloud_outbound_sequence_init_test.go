@@ -1,7 +1,6 @@
 package outbound_sequence
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -10,6 +9,8 @@ import (
 	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

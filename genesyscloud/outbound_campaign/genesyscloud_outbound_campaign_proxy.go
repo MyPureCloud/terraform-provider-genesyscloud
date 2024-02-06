@@ -3,13 +3,14 @@ package outbound_campaign
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"log"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 /*
