@@ -37,7 +37,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
 	providerResources["genesyscloud_employeeperformance_externalmetrics_definitions"] = ResourceEmployeeperformanceExternalmetricsDefinition()
 	providerResources["genesyscloud_group"] = ResourceGroup()
-	providerResources["genesyscloud_group_roles"] = ResourceGroupRoles()
 	providerResources["genesyscloud_idp_adfs"] = ResourceIdpAdfs()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()

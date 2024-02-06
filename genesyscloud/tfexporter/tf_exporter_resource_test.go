@@ -10,6 +10,7 @@ import (
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
+	groupRoles "terraform-provider-genesyscloud/genesyscloud/group_roles"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
@@ -82,7 +83,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
 	providerResources["genesyscloud_employeeperformance_externalmetrics_definitions"] = gcloud.ResourceEmployeeperformanceExternalmetricsDefinition()
 	providerResources["genesyscloud_group"] = gcloud.ResourceGroup()
-	providerResources["genesyscloud_group_roles"] = gcloud.ResourceGroupRoles()
+	providerResources["genesyscloud_group_roles"] = groupRoles.ResourceGroupRoles()
 	providerResources["genesyscloud_idp_adfs"] = gcloud.ResourceIdpAdfs()
 	providerResources["genesyscloud_idp_generic"] = gcloud.ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = gcloud.ResourceIdpGsuite()
@@ -173,7 +174,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_flow_milestone", flowMilestone.FlowMilestoneExporter())
 	RegisterExporter("genesyscloud_flow_outcome", flowOutcome.FlowOutcomeExporter())
 	RegisterExporter("genesyscloud_group", gcloud.GroupExporter())
-	RegisterExporter("genesyscloud_group_roles", gcloud.GroupRolesExporter())
+	RegisterExporter("genesyscloud_group_roles", groupRoles.GroupRolesExporter())
 	RegisterExporter("genesyscloud_idp_adfs", gcloud.IdpAdfsExporter())
 	RegisterExporter("genesyscloud_idp_generic", gcloud.IdpGenericExporter())
 	RegisterExporter("genesyscloud_idp_gsuite", gcloud.IdpGsuiteExporter())

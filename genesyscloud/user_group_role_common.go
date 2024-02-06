@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	roleAssignmentResource = &schema.Resource{
+	RoleAssignmentResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"role_id": {
 				Description: "Role ID.",
@@ -53,7 +53,7 @@ func getAssignedGrants(subjectID string, authAPI *platformclientv2.Authorization
 	return grants, resp, nil
 }
 
-func readSubjectRoles(d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi) (*schema.Set, *platformclientv2.APIResponse, diag.Diagnostics) {
+func ReadSubjectRoles(d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi) (*schema.Set, *platformclientv2.APIResponse, diag.Diagnostics) {
 	grants, resp, err := getAssignedGrants(d.Id(), authAPI)
 	if err != nil {
 		return nil, resp, err
@@ -73,7 +73,7 @@ func readSubjectRoles(d *schema.ResourceData, authAPI *platformclientv2.Authoriz
 		}
 	}
 
-	roleSet := schema.NewSet(schema.HashResource(roleAssignmentResource), []interface{}{})
+	roleSet := schema.NewSet(schema.HashResource(RoleAssignmentResource), []interface{}{})
 	for roleID, divs := range roleDivsMap {
 		role := make(map[string]interface{})
 		role["role_id"] = roleID
@@ -83,7 +83,7 @@ func readSubjectRoles(d *schema.ResourceData, authAPI *platformclientv2.Authoriz
 	return roleSet, resp, nil
 }
 
-func updateSubjectRoles(_ context.Context, d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {
+func UpdateSubjectRoles(_ context.Context, d *schema.ResourceData, authAPI *platformclientv2.AuthorizationApi, subjectType string) diag.Diagnostics {
 	if !d.HasChange("roles") {
 		return nil
 	}
@@ -224,7 +224,7 @@ func GenerateResourceRoles(skillID string, divisionIds ...string) string {
 	`, skillID, divAttr)
 }
 
-func validateResourceRole(resourceName string, roleResourceName string, divisions ...string) resource.TestCheckFunc {
+func ValidateResourceRole(resourceName string, roleResourceName string, divisions ...string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		resourceState, ok := state.RootModule().Resources[resourceName]
 		if !ok {
