@@ -2,8 +2,11 @@ package group_roles
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
 	"github.com/google/uuid"
@@ -45,10 +48,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				) + generateGroupRoles(
 					groupRoleResource,
 					groupResource1,
-					genesyscloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					genesyscloud.ValidateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1),
+					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1),
 				),
 			},
 			{
@@ -68,12 +71,12 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				) + generateGroupRoles(
 					groupRoleResource,
 					groupResource1,
-					genesyscloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
-					genesyscloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource2+".id", "genesyscloud_auth_division."+divResource+".id"),
+					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+					generateResourceRoles("genesyscloud_auth_role."+roleResource2+".id", "genesyscloud_auth_division."+divResource+".id"),
 				) + genesyscloud.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
-					genesyscloud.ValidateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1),
-					genesyscloud.ValidateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource2, "genesyscloud_auth_division."+divResource),
+					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1),
+					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource2, "genesyscloud_auth_division."+divResource),
 				),
 			},
 			{
@@ -89,10 +92,10 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 				) + generateGroupRoles(
 					groupRoleResource,
 					groupResource1,
-					genesyscloud.GenerateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "genesyscloud_auth_division."+divResource+".id"),
+					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "genesyscloud_auth_division."+divResource+".id"),
 				) + genesyscloud.GenerateAuthDivisionBasic(divResource, divName),
 				Check: resource.ComposeTestCheckFunc(
-					genesyscloud.ValidateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1, "genesyscloud_auth_division."+divResource),
+					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1, "genesyscloud_auth_division."+divResource),
 				),
 			},
 			{
@@ -129,4 +132,80 @@ func generateGroupRoles(resourceID string, groupResource string, roles ...string
 		%s
 	}
 	`, resourceID, groupResource, strings.Join(roles, "\n"))
+}
+
+func validateResourceRole(resourceName string, roleResourceName string, divisions ...string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resourceState, ok := state.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find %s in state", resourceName)
+		}
+		resourceID := resourceState.Primary.ID
+
+		roleResource, ok := state.RootModule().Resources[roleResourceName]
+		if !ok {
+			return fmt.Errorf("Failed to find role %s in state", roleResourceName)
+		}
+		roleID := roleResource.Primary.ID
+
+		homeDivID, err := genesyscloud.GetHomeDivisionID()
+		if err != nil {
+			return fmt.Errorf("failed to retrieve home division ID: %v", err)
+		}
+
+		if len(divisions) > 0 && divisions[0] != "*" {
+			// Get the division IDs from state
+			divisionIDs := make([]string, len(divisions))
+			for i, divResourceName := range divisions {
+				divResource, ok := state.RootModule().Resources[divResourceName]
+				if !ok {
+					return fmt.Errorf("failed to find %s in state", divResourceName)
+				}
+				divisionIDs[i] = divResource.Primary.ID
+			}
+			divisions = divisionIDs
+		}
+
+		resourceAttrs := resourceState.Primary.Attributes
+		numRolesAttr, _ := resourceAttrs["roles.#"]
+		numRoles, _ := strconv.Atoi(numRolesAttr)
+		for i := 0; i < numRoles; i++ {
+			if resourceAttrs["roles."+strconv.Itoa(i)+".role_id"] == roleID {
+				numDivsAttr, _ := resourceAttrs["roles."+strconv.Itoa(i)+".division_ids.#"]
+				numDivs, _ := strconv.Atoi(numDivsAttr)
+				stateDivs := make([]string, numDivs)
+				for j := 0; j < numDivs; j++ {
+					stateDivs[j] = resourceAttrs["roles."+strconv.Itoa(i)+".division_ids."+strconv.Itoa(j)]
+				}
+
+				extraDivs := lists.SliceDifference(stateDivs, divisions)
+				if len(extraDivs) > 0 {
+					if len(extraDivs) > 1 || extraDivs[0] != homeDivID {
+						return fmt.Errorf("unexpected divisions found for role %s in state: %v", roleID, extraDivs)
+					}
+				}
+
+				missingDivs := lists.SliceDifference(divisions, stateDivs)
+				if len(missingDivs) > 0 {
+					return fmt.Errorf("missing expected divisions for role %s in state: %v", roleID, missingDivs)
+				}
+
+				// Found expected role and divisions
+				return nil
+			}
+		}
+		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceID, roleID)
+	}
+}
+
+func generateResourceRoles(skillID string, divisionIds ...string) string {
+	var divAttr string
+	if len(divisionIds) > 0 {
+		divAttr = "division_ids = [" + strings.Join(divisionIds, ",") + "]"
+	}
+	return fmt.Sprintf(`roles {
+		role_id = %s
+		%s
+	}
+	`, skillID, divAttr)
 }
