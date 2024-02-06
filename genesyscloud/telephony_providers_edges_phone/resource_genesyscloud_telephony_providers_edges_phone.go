@@ -104,6 +104,15 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			d.Set("line_addresses", flattenPhoneLines(currentPhone.Lines))
 		}
 
+		d.Set("properties", nil)
+		if currentPhone.Properties != nil {
+			properties, err := gcloud.FlattenBaseSettingsProperties(currentPhone.Properties)
+			if err != nil {
+				return retry.NonRetryableError(fmt.Errorf("%v", err))
+			}
+			d.Set("properties", properties)
+		}
+
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "capabilities", currentPhone.Capabilities, flattenPhoneCapabilities)
 
 		log.Printf("Read phone %s %s", d.Id(), *currentPhone.Name)

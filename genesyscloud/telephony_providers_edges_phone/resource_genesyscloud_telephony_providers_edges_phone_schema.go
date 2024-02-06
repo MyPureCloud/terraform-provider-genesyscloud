@@ -140,6 +140,13 @@ func ResourcePhone() *schema.Resource {
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: gcloud.ValidatePhoneNumber},
 			},
+			"properties": {
+				Description:      "phone properties",
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				DiffSuppressFunc: gcloud.SuppressEquivalentJsonDiffs,
+			},
 			"capabilities": {
 				Description: "Phone Capabilities.",
 				Type:        schema.TypeList,

@@ -33,9 +33,10 @@ type PhoneConfig struct {
 
 func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.ResourceData) (*platformclientv2.Phone, error) {
 	phoneConfig := &platformclientv2.Phone{
-		Name:  platformclientv2.String(d.Get("name").(string)),
-		State: platformclientv2.String(d.Get("state").(string)),
-		Site:  gcloud.BuildSdkDomainEntityRef(d, "site_id"),
+		Name:       platformclientv2.String(d.Get("name").(string)),
+		State:      platformclientv2.String(d.Get("state").(string)),
+		Site:       gcloud.BuildSdkDomainEntityRef(d, "site_id"),
+		Properties: gcloud.BuildBaseSettingsProperties(d),
 		PhoneBaseSettings: &platformclientv2.Phonebasesettings{
 			Id: buildSdkPhoneBaseSettings(d, "phone_base_settings_id").Id,
 		},
