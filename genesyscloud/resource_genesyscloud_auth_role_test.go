@@ -55,7 +55,7 @@ func TestAccResourceAuthRoleDefault(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource2, "default_role_id", defaultRoleID),
 					// New permissions
 					validateRolePermissions("genesyscloud_auth_role."+roleResource2, perm1),
-					validatePermissionPolicy("genesyscloud_auth_role."+roleResource2, directoryDom, userEntity, addAction),
+					validatePermissionPolicyTest("genesyscloud_auth_role."+roleResource2, directoryDom, userEntity, addAction),
 				),
 			},
 			{
@@ -102,7 +102,7 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource1, "name", roleName1),
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource1, "description", roleDesc1),
 					validateRolePermissions("genesyscloud_auth_role."+roleResource1, perm1),
-					validatePermissionPolicy("genesyscloud_auth_role."+roleResource1, directoryDom, userEntity, addAction),
+					validatePermissionPolicyTest("genesyscloud_auth_role."+roleResource1, directoryDom, userEntity, addAction),
 				),
 			},
 			{
@@ -119,8 +119,8 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource1, "name", roleName1),
 					resource.TestCheckResourceAttr("genesyscloud_auth_role."+roleResource1, "description", roleDesc2),
 					validateRolePermissions("genesyscloud_auth_role."+roleResource1, perm1, perm2),
-					validatePermissionPolicy("genesyscloud_auth_role."+roleResource1, directoryDom, userEntity, allAction),
-					validatePermissionPolicy("genesyscloud_auth_role."+roleResource1, directoryDom, groupEntity, addAction, editAction),
+					validatePermissionPolicyTest("genesyscloud_auth_role."+roleResource1, directoryDom, userEntity, allAction),
+					validatePermissionPolicyTest("genesyscloud_auth_role."+roleResource1, directoryDom, groupEntity, addAction, editAction),
 				),
 			},
 			{
@@ -420,7 +420,7 @@ func validateRolePermissions(roleResourceName string, permissions ...string) res
 	}
 }
 
-func validatePermissionPolicy(roleResourceName string, domain string, entityName string, actionSet ...string) resource.TestCheckFunc {
+func validatePermissionPolicyTest(roleResourceName string, domain string, entityName string, actionSet ...string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		roleResource, ok := state.RootModule().Resources[roleResourceName]
 		if !ok {

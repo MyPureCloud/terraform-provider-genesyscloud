@@ -47,7 +47,7 @@ var (
 	}
 )
 
-func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func GetAllGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(clientConfig)
 
@@ -72,7 +72,7 @@ func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuratio
 
 func GroupExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllGroups),
+		GetResourcesFunc: GetAllWithPooledClient(GetAllGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"owner_ids":  {RefType: "genesyscloud_user"},
 			"member_ids": {RefType: "genesyscloud_user"},

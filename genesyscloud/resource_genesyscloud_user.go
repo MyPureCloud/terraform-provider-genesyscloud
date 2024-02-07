@@ -123,7 +123,7 @@ var (
 	}
 )
 
-func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
@@ -178,7 +178,7 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 
 func UserExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllUsers),
+		GetResourcesFunc: GetAllWithPooledClient(GetAllUsers),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"manager":                       {RefType: "genesyscloud_user"},
 			"division_id":                   {RefType: "genesyscloud_auth_division"},

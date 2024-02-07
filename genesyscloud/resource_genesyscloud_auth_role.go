@@ -198,12 +198,25 @@ func ResourceAuthRole() *schema.Resource {
 }
 
 func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+
+	// Validate each permission policy exists before continuing
+	// This is a workaround for a bug in the auth roles APIs
+	// Bug reported to auth team in ticket AUTHZ-315
+	policies := buildSdkRolePermPolicies(d)
+	if policies != nil {
+		for _, policy := range *policies {
+			err := validatePermissionPolicy(authAPI, &policy)
+			if err != nil {
+				return diag.Errorf("Permission policy not found: %s, ensure your org has the required product for this permission", err)
+			}
+		}
+	}
+
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	defaultRoleID := d.Get("default_role_id").(string)
-
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
 
 	log.Printf("Creating role %s", name)
 	if defaultRoleID != "" {
@@ -216,12 +229,14 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		return updateAuthRole(ctx, d, meta)
 	}
 
-	role, _, err := authAPI.PostAuthorizationRoles(platformclientv2.Domainorganizationrolecreate{
+	roleObj := platformclientv2.Domainorganizationrolecreate{
 		Name:               &name,
 		Description:        &description,
 		Permissions:        buildSdkRolePermissions(d),
-		PermissionPolicies: buildSdkRolePermPolicies(d),
-	})
+		PermissionPolicies: policies,
+	}
+
+	role, _, err := authAPI.PostAuthorizationRoles(roleObj)
 	if err != nil {
 		return diag.Errorf("Failed to create role %s: %s", name, err)
 	}
@@ -279,21 +294,37 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 }
 
 func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*ProviderMeta).ClientConfig
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+
+	// Validate each permission policy exists before continuing
+	// This is a workaround for a bug in the auth roles APIs
+	// Bug reported to auth team in ticket AUTHZ-315
+	policies := buildSdkRolePermPolicies(d)
+	if policies != nil {
+		for _, policy := range *policies {
+			err := validatePermissionPolicy(authAPI, &policy)
+			if err != nil {
+				return diag.Errorf("Permission policy not found: %s, ensure your org has the required product for this permission", err)
+			}
+		}
+	}
+
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	defaultRoleID := d.Get("default_role_id").(string)
 
-	sdkConfig := meta.(*ProviderMeta).ClientConfig
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
-
 	log.Printf("Updating role %s", name)
-	_, _, err := authAPI.PutAuthorizationRole(d.Id(), platformclientv2.Domainorganizationroleupdate{
+
+	updateObj := platformclientv2.Domainorganizationroleupdate{
 		Name:               &name,
 		Description:        &description,
 		Permissions:        buildSdkRolePermissions(d),
-		PermissionPolicies: buildSdkRolePermPolicies(d),
+		PermissionPolicies: policies,
 		DefaultRoleId:      &defaultRoleID,
-	})
+	}
+
+	_, _, err := authAPI.PutAuthorizationRole(d.Id(), updateObj)
 	if err != nil {
 		return diag.Errorf("Failed to update role %s: %s", name, err)
 	}
@@ -528,6 +559,85 @@ func getRoleID(defaultRoleID string, authAPI *platformclientv2.AuthorizationApi)
 	}
 
 	return *(*roles.Entities)[0].Id, nil
+}
+
+func validatePermissionPolicy(authApi *platformclientv2.AuthorizationApi, policy *platformclientv2.Domainpermissionpolicy) error {
+	allowedPermissions, err := getAllowedPermissions(authApi, *policy.Domain)
+	if err != nil {
+		return fmt.Errorf("error requesting org permissions: %s", err)
+	}
+	if len(*allowedPermissions) == 0 {
+		return fmt.Errorf("domain %s not found", *policy.Domain)
+	}
+
+	if *policy.EntityName == "*" {
+		return nil
+	}
+
+	// Check entity type (e.g. callableTimeSet) exists in the map of allowed permissions
+	if entityPermissions, ok := (*allowedPermissions)[*policy.EntityName]; ok {
+		// Check if the policy actions exist for the given domain permission e.g. callableTimeSet: add
+		for _, action := range *policy.ActionSet {
+			if action == "*" && len(entityPermissions) >= 1 {
+				break
+			}
+
+			var found bool
+			for _, entityPermission := range entityPermissions {
+				if action == *entityPermission.Action {
+					// action found, move to next action
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("action %s not found for domain %s, entity name %s", action, *policy.Domain, *policy.EntityName)
+			}
+		}
+		// All actions have been found, permission exists
+		return nil
+	}
+
+	return fmt.Errorf("entity_name %s not found for domain %s", *policy.EntityName, *policy.Domain)
+}
+
+// getAllowedPermissions will get all allowed permissions for a domain
+func getAllowedPermissions(authApi *platformclientv2.AuthorizationApi, domain string) (*map[string][]platformclientv2.Domainpermission, error) {
+	const pageSize = 100
+	allowedPermissions := make(map[string][]platformclientv2.Domainpermission)
+
+	permissions, _, err := authApi.GetAuthorizationPermissions(pageSize, 1, "domain", domain)
+	if err != nil {
+		return nil, err
+	}
+
+	if permissions.Entities == nil || len(*permissions.Entities) == 0 {
+		return &allowedPermissions, nil
+	}
+
+	for _, permission := range *permissions.Entities {
+		for entityType, entityPermissions := range *permission.PermissionMap {
+			allowedPermissions[entityType] = entityPermissions
+		}
+	}
+
+	for pageNum := 2; pageNum <= *permissions.PageCount; pageNum++ {
+		permissions, _, err := authApi.GetAuthorizationPermissions(pageSize, pageNum, "domain", domain)
+		if err != nil {
+			return nil, err
+		}
+		if permissions.Entities == nil || len(*permissions.Entities) == 0 {
+			break
+		}
+
+		for _, permission := range *permissions.Entities {
+			for entityType, entityPermissions := range *permission.PermissionMap {
+				allowedPermissions[entityType] = entityPermissions
+			}
+		}
+	}
+
+	return &allowedPermissions, nil
 }
 
 func GenerateAuthRoleResource(
