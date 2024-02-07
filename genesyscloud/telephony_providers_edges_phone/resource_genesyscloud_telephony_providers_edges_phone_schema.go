@@ -156,6 +156,7 @@ func ResourcePhone() *schema.Resource {
 				Elem:        phoneCapabilities,
 			},
 		},
+		CustomizeDiff: gcloud.CustomizePhonePropertiesDiff,
 	}
 }
 
