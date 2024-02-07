@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
-func readSelectorEventTriggers(triggers []interface{}) *[]platformclientv2.Selectoreventtrigger {
+func buildSelectorEventTriggers(triggers []interface{}) *[]platformclientv2.Selectoreventtrigger {
 	if triggers == nil || len(triggers) < 1 {
 		return nil
 	}
@@ -27,7 +27,7 @@ func readSelectorEventTriggers(triggers []interface{}) *[]platformclientv2.Selec
 	return &results
 }
 
-func readFormsTrackTriggers(triggers []interface{}) *[]platformclientv2.Formstracktrigger {
+func buildFormsTrackTriggers(triggers []interface{}) *[]platformclientv2.Formstracktrigger {
 	if triggers == nil || len(triggers) < 1 {
 		return nil
 	}
@@ -51,7 +51,7 @@ func readFormsTrackTriggers(triggers []interface{}) *[]platformclientv2.Formstra
 	return &results
 }
 
-func readIdleEventTriggers(triggers []interface{}) *[]platformclientv2.Idleeventtrigger {
+func buildIdleEventTriggers(triggers []interface{}) *[]platformclientv2.Idleeventtrigger {
 	if triggers == nil || len(triggers) < 1 {
 		return nil
 	}
@@ -71,7 +71,7 @@ func readIdleEventTriggers(triggers []interface{}) *[]platformclientv2.Idleevent
 	return &results
 }
 
-func readScrollPercentageEventTriggers(triggers []interface{}) *[]platformclientv2.Scrollpercentageeventtrigger {
+func buildScrollPercentageEventTriggers(triggers []interface{}) *[]platformclientv2.Scrollpercentageeventtrigger {
 	if triggers == nil || len(triggers) < 1 {
 		return nil
 	}
@@ -153,7 +153,7 @@ func flattenScrollPercentageEventTriggers(triggers *[]platformclientv2.Scrollper
 	return result
 }
 
-func readJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyeventssettings {
+func buildJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyeventssettings {
 	value, ok := d.GetOk("journey_events")
 	if !ok {
 		return nil
@@ -187,23 +187,23 @@ func readJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyevents
 		}
 	}
 
-	if clickEvents := readSelectorEventTriggers(cfg["click_event"].([]interface{})); clickEvents != nil {
+	if clickEvents := buildSelectorEventTriggers(cfg["click_event"].([]interface{})); clickEvents != nil {
 		journeySettings.ClickEvents = clickEvents
 	}
 
-	if formsTrackEvents := readFormsTrackTriggers(cfg["form_track_event"].([]interface{})); formsTrackEvents != nil {
+	if formsTrackEvents := buildFormsTrackTriggers(cfg["form_track_event"].([]interface{})); formsTrackEvents != nil {
 		journeySettings.FormsTrackEvents = formsTrackEvents
 	}
 
-	if idleEvents := readIdleEventTriggers(cfg["idle_event"].([]interface{})); idleEvents != nil {
+	if idleEvents := buildIdleEventTriggers(cfg["idle_event"].([]interface{})); idleEvents != nil {
 		journeySettings.IdleEvents = idleEvents
 	}
 
-	if inViewportEvents := readSelectorEventTriggers(cfg["in_viewport_event"].([]interface{})); inViewportEvents != nil {
+	if inViewportEvents := buildSelectorEventTriggers(cfg["in_viewport_event"].([]interface{})); inViewportEvents != nil {
 		journeySettings.InViewportEvents = inViewportEvents
 	}
 
-	if scrollDepthEvents := readScrollPercentageEventTriggers(cfg["scroll_depth_event"].([]interface{})); scrollDepthEvents != nil {
+	if scrollDepthEvents := buildScrollPercentageEventTriggers(cfg["scroll_depth_event"].([]interface{})); scrollDepthEvents != nil {
 		journeySettings.ScrollDepthEvents = scrollDepthEvents
 	}
 

@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
-func readSupportCenterHeroStyle(styles []interface{}) *platformclientv2.Supportcenterherostyle {
+func buildSupportCenterHeroStyle(styles []interface{}) *platformclientv2.Supportcenterherostyle {
 	if styles == nil || len(styles) < 1 {
 		return nil
 	}
@@ -29,7 +29,7 @@ func readSupportCenterHeroStyle(styles []interface{}) *platformclientv2.Supportc
 	return heroStyle
 }
 
-func readSupportCenterGlobalStyle(styles []interface{}) *platformclientv2.Supportcenterglobalstyle {
+func buildSupportCenterGlobalStyle(styles []interface{}) *platformclientv2.Supportcenterglobalstyle {
 	if styles == nil || len(styles) < 1 {
 		return nil
 	}
@@ -47,21 +47,21 @@ func readSupportCenterGlobalStyle(styles []interface{}) *platformclientv2.Suppor
 	return globalStyle
 }
 
-func readStyleSettings(styles []interface{}) *platformclientv2.Supportcenterstylesetting {
+func buildStyleSettings(styles []interface{}) *platformclientv2.Supportcenterstylesetting {
 	if styles == nil || len(styles) < 1 {
 		return nil
 	}
 
 	style := styles[0].(map[string]interface{})
 	styleSetting := &platformclientv2.Supportcenterstylesetting{
-		HeroStyle:   readSupportCenterHeroStyle(style["hero_style_setting"].([]interface{})),
-		GlobalStyle: readSupportCenterGlobalStyle(style["global_style_setting"].([]interface{})),
+		HeroStyle:   buildSupportCenterHeroStyle(style["hero_style_setting"].([]interface{})),
+		GlobalStyle: buildSupportCenterGlobalStyle(style["global_style_setting"].([]interface{})),
 	}
 
 	return styleSetting
 }
 
-func readEnabledCategories(categories []interface{}) *[]platformclientv2.Supportcentercategory {
+func buildEnabledCategories(categories []interface{}) *[]platformclientv2.Supportcentercategory {
 	if categories == nil || len(categories) < 1 {
 		return nil
 	}
@@ -91,7 +91,7 @@ func readEnabledCategories(categories []interface{}) *[]platformclientv2.Support
 	return &results
 }
 
-func readCustomMessages(messages []interface{}) *[]platformclientv2.Supportcentercustommessage {
+func buildCustomMessages(messages []interface{}) *[]platformclientv2.Supportcentercustommessage {
 	if messages == nil || len(messages) < 1 {
 		return nil
 	}
@@ -109,7 +109,7 @@ func readCustomMessages(messages []interface{}) *[]platformclientv2.Supportcente
 	return &results
 }
 
-func readModuleSettings(settings []interface{}) *[]platformclientv2.Supportcentermodulesetting {
+func buildModuleSettings(settings []interface{}) *[]platformclientv2.Supportcentermodulesetting {
 	if settings == nil || len(settings) < 1 {
 		return nil
 	}
@@ -148,7 +148,7 @@ func readModuleSettings(settings []interface{}) *[]platformclientv2.Supportcente
 	return &ret
 }
 
-func readScreens(screens []interface{}) *[]platformclientv2.Supportcenterscreen {
+func buildScreens(screens []interface{}) *[]platformclientv2.Supportcenterscreen {
 	if screens == nil || len(screens) < 1 {
 		return nil
 	}
@@ -158,7 +158,7 @@ func readScreens(screens []interface{}) *[]platformclientv2.Supportcenterscreen 
 		if screen, ok := value.(map[string]interface{}); ok {
 			results[i] = platformclientv2.Supportcenterscreen{
 				VarType:        platformclientv2.String(screen["type"].(string)),
-				ModuleSettings: readModuleSettings(screen["module_settings"].([]interface{})),
+				ModuleSettings: buildModuleSettings(screen["module_settings"].([]interface{})),
 			}
 		}
 	}
@@ -289,7 +289,7 @@ func flattenGlobalStyle(style *platformclientv2.Supportcenterglobalstyle) []inte
 	}}
 }
 
-func readSupportCenterSettings(d *schema.ResourceData) *platformclientv2.Supportcentersettings {
+func buildSupportCenterSettings(d *schema.ResourceData) *platformclientv2.Supportcentersettings {
 	value, ok := d.GetOk("support_center")
 	if !ok {
 		return nil
@@ -303,8 +303,8 @@ func readSupportCenterSettings(d *schema.ResourceData) *platformclientv2.Support
 	cfg := cfgs[0].(map[string]interface{})
 	supportCenterSettings := &platformclientv2.Supportcentersettings{
 		Enabled:           platformclientv2.Bool(cfg["enabled"].(bool)),
-		EnabledCategories: readEnabledCategories(cfg["enabled_categories"].([]interface{})),
-		StyleSetting:      readStyleSettings(cfg["style_setting"].([]interface{})),
+		EnabledCategories: buildEnabledCategories(cfg["enabled_categories"].([]interface{})),
+		StyleSetting:      buildStyleSettings(cfg["style_setting"].([]interface{})),
 		Feedback: &platformclientv2.Supportcenterfeedbacksettings{
 			Enabled: platformclientv2.Bool(cfg["feedback_enabled"].(bool)),
 		},
@@ -317,11 +317,11 @@ func readSupportCenterSettings(d *schema.ResourceData) *platformclientv2.Support
 		}
 	}
 
-	if customMessages := readCustomMessages(cfg["custom_messages"].([]interface{})); customMessages != nil {
+	if customMessages := buildCustomMessages(cfg["custom_messages"].([]interface{})); customMessages != nil {
 		supportCenterSettings.CustomMessages = customMessages
 	}
 
-	if screens := readScreens(cfg["screens"].([]interface{})); screens != nil {
+	if screens := buildScreens(cfg["screens"].([]interface{})); screens != nil {
 		supportCenterSettings.Screens = screens
 	}
 

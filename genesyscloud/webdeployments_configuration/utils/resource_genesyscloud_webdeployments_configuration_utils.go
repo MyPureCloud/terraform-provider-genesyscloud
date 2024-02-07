@@ -10,7 +10,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
-func readCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesettings {
+func buildCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesettings {
 	value, ok := d.GetOk("cobrowse")
 	if !ok {
 		return nil
@@ -38,7 +38,7 @@ func readCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesett
 	}
 }
 
-func readLocalizedLabels(labels []interface{}) *[]platformclientv2.Localizedlabels {
+func buildLocalizedLabels(labels []interface{}) *[]platformclientv2.Localizedlabels {
 	if len(labels) < 1 {
 		return nil
 	}
@@ -56,7 +56,7 @@ func readLocalizedLabels(labels []interface{}) *[]platformclientv2.Localizedlabe
 	return &results
 }
 
-func readCustomI18nLabels(d *schema.ResourceData) *[]platformclientv2.Customi18nlabels {
+func buildCustomI18nLabels(d *schema.ResourceData) *[]platformclientv2.Customi18nlabels {
 	value, ok := d.GetOk("custom_i18n_labels")
 	if !ok {
 		return nil
@@ -72,7 +72,7 @@ func readCustomI18nLabels(d *schema.ResourceData) *[]platformclientv2.Customi18n
 		if label, ok := value.(map[string]interface{}); ok {
 			results[i] = platformclientv2.Customi18nlabels{
 				Language:        platformclientv2.String(label["language"].(string)),
-				LocalizedLabels: readLocalizedLabels(label["localized_labels"].([]interface{})),
+				LocalizedLabels: buildLocalizedLabels(label["localized_labels"].([]interface{})),
 			}
 		}
 	}
@@ -80,7 +80,7 @@ func readCustomI18nLabels(d *schema.ResourceData) *[]platformclientv2.Customi18n
 	return &results
 }
 
-func readPosition(d *schema.ResourceData) *platformclientv2.Positionsettings {
+func buildPosition(d *schema.ResourceData) *platformclientv2.Positionsettings {
 	value, ok := d.GetOk("position")
 	if !ok {
 		return nil
@@ -99,7 +99,7 @@ func readPosition(d *schema.ResourceData) *platformclientv2.Positionsettings {
 	}
 }
 
-func readAuthenticationSettings(d *schema.ResourceData) *platformclientv2.Authenticationsettings {
+func buildAuthenticationSettings(d *schema.ResourceData) *platformclientv2.Authenticationsettings {
 	value, ok := d.GetOk("authentication_settings")
 	if !ok {
 		return nil
@@ -219,7 +219,7 @@ func FlattenAuthenticationSettings(authenticationSettings *platformclientv2.Auth
 	}}
 }
 
-func ReadWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (string, *platformclientv2.Webdeploymentconfigurationversion) {
+func BuildWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (string, *platformclientv2.Webdeploymentconfigurationversion) {
 	name := d.Get("name").(string)
 	languages := lists.InterfaceListToStrings(d.Get("languages").([]interface{}))
 
@@ -236,37 +236,37 @@ func ReadWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (str
 		}
 	}
 
-	customI18nLabels := readCustomI18nLabels(d)
+	customI18nLabels := buildCustomI18nLabels(d)
 	if customI18nLabels != nil {
 		inputCfg.CustomI18nLabels = customI18nLabels
 	}
 
-	position := readPosition(d)
+	position := buildPosition(d)
 	if position != nil {
 		inputCfg.Position = position
 	}
 
-	messengerSettings := readMessengerSettings(d)
+	messengerSettings := buildMessengerSettings(d)
 	if messengerSettings != nil {
 		inputCfg.Messenger = messengerSettings
 	}
 
-	cobrowseSettings := readCobrowseSettings(d)
+	cobrowseSettings := buildCobrowseSettings(d)
 	if cobrowseSettings != nil {
 		inputCfg.Cobrowse = cobrowseSettings
 	}
 
-	journeySettings := readJourneySettings(d)
+	journeySettings := buildJourneySettings(d)
 	if journeySettings != nil {
 		inputCfg.JourneyEvents = journeySettings
 	}
 
-	supportCenterSettings := readSupportCenterSettings(d)
+	supportCenterSettings := buildSupportCenterSettings(d)
 	if supportCenterSettings != nil {
 		inputCfg.SupportCenter = supportCenterSettings
 	}
 
-	authenticationSettings := readAuthenticationSettings(d)
+	authenticationSettings := buildAuthenticationSettings(d)
 	if authenticationSettings != nil {
 		inputCfg.AuthenticationSettings = authenticationSettings
 	}

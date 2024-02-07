@@ -61,7 +61,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
-	name, inputCfg := wdcUtils.ReadWebDeploymentConfigurationFromResourceData(d)
+	name, inputCfg := wdcUtils.BuildWebDeploymentConfigurationFromResourceData(d)
 	log.Printf("Creating web deployment configuration %s", name)
 
 	diagErr := gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -160,7 +160,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
-	name, inputCfg := wdcUtils.ReadWebDeploymentConfigurationFromResourceData(d)
+	name, inputCfg := wdcUtils.BuildWebDeploymentConfigurationFromResourceData(d)
 
 	log.Printf("Updating web deployment configuration %s", name)
 

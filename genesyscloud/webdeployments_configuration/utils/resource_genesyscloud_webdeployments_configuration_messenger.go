@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
 
-func readAppConversations(conversations []interface{}) *platformclientv2.Conversationappsettings {
+func buildAppConversations(conversations []interface{}) *platformclientv2.Conversationappsettings {
 	if len(conversations) < 1 {
 		return nil
 	}
@@ -54,7 +54,7 @@ func readAppConversations(conversations []interface{}) *platformclientv2.Convers
 	return ret
 }
 
-func readAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
+func buildAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
 	if len(knowledge) < 1 {
 		return nil
 	}
@@ -73,19 +73,19 @@ func readAppKnowledge(knowledge []interface{}) *platformclientv2.Knowledge {
 	return ret
 }
 
-func readMessengerApps(apps []interface{}) *platformclientv2.Messengerapps {
+func buildMessengerApps(apps []interface{}) *platformclientv2.Messengerapps {
 	if len(apps) < 1 {
 		return nil
 	}
 
 	app := apps[0].(map[string]interface{})
 	return &platformclientv2.Messengerapps{
-		Conversations: readAppConversations(app["conversations"].([]interface{})),
-		Knowledge:     readAppKnowledge(app["knowledge"].([]interface{})),
+		Conversations: buildAppConversations(app["conversations"].([]interface{})),
+		Knowledge:     buildAppKnowledge(app["knowledge"].([]interface{})),
 	}
 }
 
-func readMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengersettings {
+func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengersettings {
 	value, ok := d.GetOk("messenger")
 	if !ok {
 		return nil
@@ -100,7 +100,7 @@ func readMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengerse
 	enabled, _ := cfg["enabled"].(bool)
 	messengerSettings := &platformclientv2.Messengersettings{
 		Enabled: &enabled,
-		Apps:    readMessengerApps(cfg["apps"].([]interface{})),
+		Apps:    buildMessengerApps(cfg["apps"].([]interface{})),
 	}
 
 	if styles, ok := cfg["styles"].([]interface{}); ok && len(styles) > 0 {
