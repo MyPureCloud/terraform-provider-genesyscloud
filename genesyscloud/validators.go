@@ -233,3 +233,18 @@ func ValidateSubStringInSlice(valid []string) schema.SchemaValidateFunc {
 		return warnings, errors
 	}
 }
+
+// Validate if a string matches '#FFFFFF' RGB color representation.
+func ValidateHexColor(color interface{}, _ cty.Path) diag.Diagnostics {
+	if colorStr, ok := color.(string); ok {
+		matched, err := regexp.MatchString("^#([A-Fa-f0-9]{6})$", colorStr)
+		if err != nil {
+			return diag.Errorf("Error applying regular expression against color: %v", err)
+		}
+		if !matched {
+			return diag.Errorf("Invalid color. It must be in the format #FFFFFF")
+		}
+		return nil
+	}
+	return diag.Errorf("Color %v is not a string", color)
+}

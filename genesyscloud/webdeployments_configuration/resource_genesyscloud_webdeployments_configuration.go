@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	wdcUtils "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration/utils"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -42,16 +44,16 @@ func waitForConfigurationDraftToBeActive(ctx context.Context, meta interface{}, 
 		configuration, resp, err := wp.getWebdeploymentsConfigurationVersionsDraft(ctx, id)
 		if err != nil {
 			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Error verifying active status for new web deployment configuration %s: %s", id, err))
+				return retry.RetryableError(fmt.Errorf("error verifying active status for new web deployment configuration %s: %s", id, err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error verifying active status for new web deployment configuration %s: %s", id, err))
+			return retry.NonRetryableError(fmt.Errorf("error verifying active status for new web deployment configuration %s: %s", id, err))
 		}
 
 		if *configuration.Status == "Active" {
 			return nil
 		}
 
-		return retry.RetryableError(fmt.Errorf("Web deployment configuration %s not active yet. Status: %s", id, *configuration.Status))
+		return retry.RetryableError(fmt.Errorf("web deployment configuration %s not active yet. Status: %s", id, *configuration.Status))
 	})
 }
 
@@ -59,14 +61,14 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
 
-	name, inputCfg := readWebDeploymentConfigurationFromResourceData(d)
+	name, inputCfg := wdcUtils.BuildWebDeploymentConfigurationFromResourceData(d)
 	log.Printf("Creating web deployment configuration %s", name)
 
 	diagErr := gcloud.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		configuration, resp, err := wp.createWebdeploymentsConfiguration(ctx, *inputCfg)
 		if err != nil {
 			var extraErrorInfo string
-			featureIsNotImplemented, fieldName := featureNotImplemented(resp)
+			featureIsNotImplemented, fieldName := wdcUtils.FeatureNotImplemented(resp)
 			if featureIsNotImplemented {
 				extraErrorInfo = fmt.Sprintf("Feature '%s' is not yet implemented", fieldName)
 			}
@@ -93,9 +95,9 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		configuration, resp, err := wp.createWebdeploymentsConfigurationVersionsDraftPublish(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus400(resp) {
-				return retry.RetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
+				return retry.RetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
 		}
 		d.Set("version", configuration.Version)
 		d.Set("status", configuration.Status)
@@ -124,38 +126,31 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 
 		if getErr != nil {
 			if gcloud.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to read web deployment configuration %s: %s", d.Id(), getErr))
+				return retry.RetryableError(fmt.Errorf("failed to read web deployment configuration %s: %s", d.Id(), getErr))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Failed to read web deployment configuration %s: %s", d.Id(), getErr))
+			return retry.NonRetryableError(fmt.Errorf("failed to read web deployment configuration %s: %s", d.Id(), getErr))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeploymentConfiguration())
 		d.Set("name", *configuration.Name)
 
-		if configuration.Description != nil {
-			d.Set("description", *configuration.Description)
+		resourcedata.SetNillableValue(d, "description", configuration.Description)
+		resourcedata.SetNillableValue(d, "languages", configuration.Languages)
+		resourcedata.SetNillableValue(d, "default_language", configuration.DefaultLanguage)
+		resourcedata.SetNillableValue(d, "status", configuration.Status)
+		resourcedata.SetNillableValue(d, "version", configuration.Version)
+		if configuration.HeadlessMode != nil {
+			resourcedata.SetNillableValue(d, "headless_mode_enabled", configuration.HeadlessMode.Enabled)
 		}
-		if configuration.Languages != nil {
-			d.Set("languages", *configuration.Languages)
-		}
-		if configuration.DefaultLanguage != nil {
-			d.Set("default_language", *configuration.DefaultLanguage)
-		}
-		if configuration.Status != nil {
-			d.Set("status", *configuration.Status)
-		}
-		if configuration.Version != nil {
-			d.Set("version", *configuration.Version)
-		}
-		if configuration.Messenger != nil {
-			d.Set("messenger", flattenMessengerSettings(configuration.Messenger))
-		}
-		if configuration.Cobrowse != nil {
-			d.Set("cobrowse", flattenCobrowseSettings(configuration.Cobrowse))
-		}
-		if configuration.JourneyEvents != nil {
-			d.Set("journey_events", flattenJourneyEvents(configuration.JourneyEvents))
-		}
+
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "custom_i18n_labels", configuration.CustomI18nLabels, wdcUtils.FlattenCustomI18nLabels)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "position", configuration.Position, wdcUtils.FlattenPosition)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "authentication_settings", configuration.AuthenticationSettings, wdcUtils.FlattenAuthenticationSettings)
+
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "messenger", configuration.Messenger, wdcUtils.FlattenMessengerSettings)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "cobrowse", configuration.Cobrowse, wdcUtils.FlattenCobrowseSettings)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "journey_events", configuration.JourneyEvents, wdcUtils.FlattenJourneyEvents)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "support_center", configuration.SupportCenter, wdcUtils.FlattenSupportCenterSettings)
 
 		log.Printf("Read web deployment configuration %s %s", d.Id(), *configuration.Name)
 		return cc.CheckState()
@@ -165,7 +160,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*gcloud.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
-	name, inputCfg := readWebDeploymentConfigurationFromResourceData(d)
+	name, inputCfg := wdcUtils.BuildWebDeploymentConfigurationFromResourceData(d)
 
 	log.Printf("Updating web deployment configuration %s", name)
 
@@ -173,9 +168,9 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		_, resp, err := wp.updateWebdeploymentsConfigurationVersionsDraft(ctx, d.Id(), *inputCfg)
 		if err != nil {
 			if gcloud.IsStatus400(resp) {
-				return retry.RetryableError(fmt.Errorf("Error updating web deployment configuration %s: %s", name, err))
+				return retry.RetryableError(fmt.Errorf("error updating web deployment configuration %s: %s", name, err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error updating web deployment configuration %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error updating web deployment configuration %s: %s", name, err))
 		}
 		return nil
 	})
@@ -192,9 +187,9 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		configuration, resp, err := wp.createWebdeploymentsConfigurationVersionsDraftPublish(ctx, d.Id())
 		if err != nil {
 			if gcloud.IsStatus400(resp) {
-				return retry.RetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
+				return retry.RetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error publishing web deployment configuration %s: %s", name, err))
+			return retry.NonRetryableError(fmt.Errorf("error publishing web deployment configuration %s: %s", name, err))
 		}
 		d.Set("version", configuration.Version)
 		d.Set("status", configuration.Status)
@@ -229,9 +224,9 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 				log.Printf("Deleted web deployment configuration %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(fmt.Errorf("Error deleting web deployment configuration %s: %s", d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error deleting web deployment configuration %s: %s", d.Id(), err))
 		}
 
-		return retry.RetryableError(fmt.Errorf("Web deployment configuration %s still exists", d.Id()))
+		return retry.RetryableError(fmt.Errorf("web deployment configuration %s still exists", d.Id()))
 	})
 }

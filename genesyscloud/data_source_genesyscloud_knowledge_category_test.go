@@ -27,7 +27,7 @@ func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResource1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,

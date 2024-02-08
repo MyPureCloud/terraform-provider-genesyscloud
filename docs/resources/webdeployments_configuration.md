@@ -24,10 +24,27 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
-  name             = "Example Web Deployment Configuration"
-  description      = "This example configuration shows how to define a full web deployment configuration"
-  languages        = ["en-us", "ja"]
-  default_language = "en-us"
+  name                  = "Example Web Deployment Configuration"
+  description           = "This example configuration shows how to define a full web deployment configuration"
+  languages             = ["en-us", "ja"]
+  default_language      = "en-us"
+  headless_mode_enabled = true
+  custom_i18n_labels {
+    language = "en-us"
+    localized_labels {
+      key   = "MessengerHomeHeaderTitle"
+      value = "Custom Header Title"
+    }
+    localized_labels {
+      key   = "MessengerHomeHeaderSubTitle"
+      value = "Custom Header Subtitle"
+    }
+  }
+  position {
+    alignment    = "Auto"
+    side_space   = 10
+    bottom_space = 20
+  }
   messenger {
     enabled = true
     launcher_button {
@@ -41,6 +58,7 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
       primary_color = "#B0B0B0"
     }
     file_upload {
+      use_supported_content_profile = true
       mode {
         file_types       = ["image/png"]
         max_file_size_kb = 256
@@ -48,6 +66,31 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
       mode {
         file_types       = ["image/jpeg"]
         max_file_size_kb = 128
+      }
+    }
+    apps {
+      conversations {
+        enabled                     = true
+        show_agent_typing_indicator = true
+        show_user_typing_indicator  = true
+        auto_start_enabled          = true
+        markdown_enabled            = true
+        conversation_disconnect {
+          enabled = true
+          type    = "Send"
+        }
+        conversation_clear_enabled = true
+        humanize {
+          enabled = true
+          bot {
+            name       = "Marvin"
+            avatar_url = "https://my-domain-example.net/images/marvin.png"
+          }
+        }
+      }
+      knowledge {
+        enabled           = true
+        knowledge_base_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
       }
     }
   }
@@ -117,6 +160,10 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
       percentage = 90
     }
   }
+  authentication_settings {
+    enabled        = true
+    integration_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  }
 }
 ```
 
@@ -131,16 +178,30 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
 
 ### Optional
 
+- `authentication_settings` (Block List, Max: 1) Settings for authenticated webdeployments. (see [below for nested schema](#nestedblock--authentication_settings))
 - `cobrowse` (Block List, Max: 1) Settings concerning cobrowse (see [below for nested schema](#nestedblock--cobrowse))
+- `custom_i18n_labels` (Block List) The localization settings for homescreen app (see [below for nested schema](#nestedblock--custom_i18n_labels))
 - `description` (String) Deployment description
+- `headless_mode_enabled` (Boolean) Headless Mode Support which Controls UI components. When enabled, native UI components will be disabled and allows for custom-built UI.
 - `journey_events` (Block List, Max: 1) Settings concerning journey events (see [below for nested schema](#nestedblock--journey_events))
 - `messenger` (Block List, Max: 1) Settings concerning messenger (see [below for nested schema](#nestedblock--messenger))
+- `position` (Block List, Max: 1) Settings concerning position (see [below for nested schema](#nestedblock--position))
 - `status` (String) The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.
+- `support_center` (Block List, Max: 1) Settings concerning knowledge portal (previously support center) (see [below for nested schema](#nestedblock--support_center))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
 - `version` (String) The version of the configuration.
+
+<a id="nestedblock--authentication_settings"></a>
+### Nested Schema for `authentication_settings`
+
+Required:
+
+- `enabled` (Boolean) Indicate if these auth is required for this deployment. If, for example, this flag is set to true then webmessaging sessions can not send messages unless the end-user is authenticated.
+- `integration_id` (String) The integration identifier which contains the auth settings required on the deployment.
+
 
 <a id="nestedblock--cobrowse"></a>
 ### Nested Schema for `cobrowse`
@@ -152,6 +213,24 @@ Optional:
 - `enabled` (Boolean) Whether or not cobrowse is enabled
 - `mask_selectors` (List of String) List of CSS selectors which should be masked when screen sharing is active
 - `readonly_selectors` (List of String) List of CSS selectors which should be read-only when screen sharing is active
+
+
+<a id="nestedblock--custom_i18n_labels"></a>
+### Nested Schema for `custom_i18n_labels`
+
+Optional:
+
+- `language` (String) Language of localized labels in homescreen app (eg. en-us, de-de)
+- `localized_labels` (Block List) Contains localized labels used in homescreen app (see [below for nested schema](#nestedblock--custom_i18n_labels--localized_labels))
+
+<a id="nestedblock--custom_i18n_labels--localized_labels"></a>
+### Nested Schema for `custom_i18n_labels.localized_labels`
+
+Required:
+
+- `key` (String) Contains localized label key used in messenger homescreen
+- `value` (String) Contains localized label value used in messenger homescreen
+
 
 
 <a id="nestedblock--journey_events"></a>
@@ -226,11 +305,72 @@ Required:
 
 Optional:
 
+- `apps` (Block List, Max: 1) The apps embedded in the messenger (see [below for nested schema](#nestedblock--messenger--apps))
 - `enabled` (Boolean) Whether or not messenger is enabled
 - `file_upload` (Block List, Max: 1) File upload settings for messenger (see [below for nested schema](#nestedblock--messenger--file_upload))
 - `home_screen` (Block List, Max: 1) The settings for the home screen (see [below for nested schema](#nestedblock--messenger--home_screen))
 - `launcher_button` (Block List, Max: 1) The settings for the launcher button (see [below for nested schema](#nestedblock--messenger--launcher_button))
 - `styles` (Block List, Max: 1) The style settings for messenger (see [below for nested schema](#nestedblock--messenger--styles))
+
+<a id="nestedblock--messenger--apps"></a>
+### Nested Schema for `messenger.apps`
+
+Optional:
+
+- `conversations` (Block List, Max: 1) Conversation settings that handles chats within the messenger (see [below for nested schema](#nestedblock--messenger--apps--conversations))
+- `knowledge` (Block List, Max: 1) The knowledge base config for messenger (see [below for nested schema](#nestedblock--messenger--apps--knowledge))
+
+<a id="nestedblock--messenger--apps--conversations"></a>
+### Nested Schema for `messenger.apps.conversations`
+
+Optional:
+
+- `auto_start_enabled` (Boolean) The auto start for the messenger conversation
+- `conversation_clear_enabled` (Boolean) The conversation clear settings for the messenger app
+- `conversation_disconnect` (Block List, Max: 1) The conversation disconnect for the messenger app (see [below for nested schema](#nestedblock--messenger--apps--conversations--conversation_disconnect))
+- `enabled` (Boolean) The toggle to enable or disable conversations
+- `humanize` (Block List, Max: 1) The humanize conversations settings for the messenger app (see [below for nested schema](#nestedblock--messenger--apps--conversations--humanize))
+- `markdown_enabled` (Boolean) The markdown for the messenger app
+- `show_agent_typing_indicator` (Boolean) The toggle to enable or disable typing indicator for messenger
+- `show_user_typing_indicator` (Boolean) The toggle to enable or disable typing indicator for messenger
+
+<a id="nestedblock--messenger--apps--conversations--conversation_disconnect"></a>
+### Nested Schema for `messenger.apps.conversations.conversation_disconnect`
+
+Optional:
+
+- `enabled` (Boolean) whether or not conversation disconnect setting is enabled
+- `type` (String) Conversation disconnect type
+
+
+<a id="nestedblock--messenger--apps--conversations--humanize"></a>
+### Nested Schema for `messenger.apps.conversations.humanize`
+
+Optional:
+
+- `bot` (Block List, Max: 1) Bot messenger profile setting (see [below for nested schema](#nestedblock--messenger--apps--conversations--humanize--bot))
+- `enabled` (Boolean) Whether or not humanize conversations setting is enabled
+
+<a id="nestedblock--messenger--apps--conversations--humanize--bot"></a>
+### Nested Schema for `messenger.apps.conversations.humanize.bot`
+
+Optional:
+
+- `avatar_url` (String) The avatar URL of the bot
+- `name` (String) The name of the bot
+
+
+
+
+<a id="nestedblock--messenger--apps--knowledge"></a>
+### Nested Schema for `messenger.apps.knowledge`
+
+Optional:
+
+- `enabled` (Boolean) whether or not knowledge base is enabled
+- `knowledge_base_id` (String) The knowledge base for messenger
+
+
 
 <a id="nestedblock--messenger--file_upload"></a>
 ### Nested Schema for `messenger.file_upload`
@@ -238,6 +378,7 @@ Optional:
 Optional:
 
 - `mode` (Block List) The list of supported file upload modes (see [below for nested schema](#nestedblock--messenger--file_upload--mode))
+- `use_supported_content_profile` (Boolean) Whether or not supported content profile is enabled
 
 <a id="nestedblock--messenger--file_upload--mode"></a>
 ### Nested Schema for `messenger.file_upload.mode`
@@ -272,4 +413,116 @@ Optional:
 Optional:
 
 - `primary_color` (String) The primary color of messenger in hexadecimal
+
+
+
+<a id="nestedblock--position"></a>
+### Nested Schema for `position`
+
+Optional:
+
+- `alignment` (String) The alignment for position
+- `bottom_space` (Number) The bottomspace value for position
+- `side_space` (Number) The sidespace value for position
+
+
+<a id="nestedblock--support_center"></a>
+### Nested Schema for `support_center`
+
+Required:
+
+- `enabled` (Boolean) Whether or not knowledge portal (previously support center) is enabled
+
+Optional:
+
+- `custom_messages` (Block List) Customizable display texts for knowledge portal (see [below for nested schema](#nestedblock--support_center--custom_messages))
+- `enabled_categories` (Block List) Featured categories for knowledge portal (previously support center) home screen (see [below for nested schema](#nestedblock--support_center--enabled_categories))
+- `feedback_enabled` (Boolean) Whether or not requesting customer feedback on article content and article search results is enabled
+- `knowledge_base_id` (String) The knowledge base for knowledge portal (previously support center)
+- `router_type` (String) Router type for knowledge portal
+- `screens` (Block List) Available screens for the knowledge portal with its modules (see [below for nested schema](#nestedblock--support_center--screens))
+- `style_setting` (Block List, Max: 1) Style attributes for knowledge portal (previously support center) (see [below for nested schema](#nestedblock--support_center--style_setting))
+
+<a id="nestedblock--support_center--custom_messages"></a>
+### Nested Schema for `support_center.custom_messages`
+
+Required:
+
+- `default_value` (String) Default value for the custom message
+- `type` (String) The custom message type. (Welcome or Fallback)
+
+
+<a id="nestedblock--support_center--enabled_categories"></a>
+### Nested Schema for `support_center.enabled_categories`
+
+Required:
+
+- `category_id` (String) The knowledge base category id
+
+Optional:
+
+- `image_uri` (String) Source URL for the featured category
+
+
+<a id="nestedblock--support_center--screens"></a>
+### Nested Schema for `support_center.screens`
+
+Required:
+
+- `module_settings` (Block List, Min: 1) Module settings for the screen, valid modules for each screenType: Home: Search, Categories, TopViewedArticles; Category: Search, Categories; SearchResults: Search, Results; Article: Search, Article; (see [below for nested schema](#nestedblock--support_center--screens--module_settings))
+- `type` (String) The type of the screen
+
+<a id="nestedblock--support_center--screens--module_settings"></a>
+### Nested Schema for `support_center.screens.module_settings`
+
+Required:
+
+- `enabled` (Boolean) Whether or not knowledge portal (previously support center) screen module is enabled
+- `type` (String) Screen module type
+
+Optional:
+
+- `compact_category_module_template_active` (Boolean) Whether the Support Center Compact Category Module Template is active or not
+- `detailed_category_module_template` (Block List, Max: 1) Detailed category module template settings (see [below for nested schema](#nestedblock--support_center--screens--module_settings--detailed_category_module_template))
+
+<a id="nestedblock--support_center--screens--module_settings--detailed_category_module_template"></a>
+### Nested Schema for `support_center.screens.module_settings.detailed_category_module_template`
+
+Required:
+
+- `active` (Boolean) Whether the Support Center Detailed Category Module Template is active or not
+- `sidebar_enabled` (Boolean) Whether the Support Center Detailed Category Module Sidebar is active or not
+
+
+
+
+<a id="nestedblock--support_center--style_setting"></a>
+### Nested Schema for `support_center.style_setting`
+
+Optional:
+
+- `global_style_setting` (Block List, Max: 1) Knowledge portal (previously support center) global customizations (see [below for nested schema](#nestedblock--support_center--style_setting--global_style_setting))
+- `hero_style_setting` (Block List, Max: 1) Knowledge portal (previously support center) hero customizations (see [below for nested schema](#nestedblock--support_center--style_setting--hero_style_setting))
+
+<a id="nestedblock--support_center--style_setting--global_style_setting"></a>
+### Nested Schema for `support_center.style_setting.global_style_setting`
+
+Required:
+
+- `background_color` (String) Global background color, in hexadecimal format, eg #ffffff
+- `font_family` (String) Global font family
+- `primary_color` (String) Global primary color, in hexadecimal format, eg #ffffff
+- `primary_color_dark` (String) Global dark primary color, in hexadecimal format, eg #ffffff
+- `primary_color_light` (String) Global light primary color, in hexadecimal format, eg #ffffff
+- `text_color` (String) Global text color, in hexadecimal format, eg #ffffff
+
+
+<a id="nestedblock--support_center--style_setting--hero_style_setting"></a>
+### Nested Schema for `support_center.style_setting.hero_style_setting`
+
+Required:
+
+- `background_color` (String) Background color for hero section, in hexadecimal format, eg #ffffff
+- `image_uri` (String) Background image for hero section
+- `text_color` (String) Text color for hero section, in hexadecimal format, eg #ffffff
 
