@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -521,4 +522,112 @@ func testVerifyFlowDestroyed(state *terraform.State) error {
 	}
 	// Success. All Flows destroyed
 	return nil
+}
+
+/** Unit Test **/
+
+func TestUnitCheckFlowType(t *testing.T) {
+	// Test case 1: Empty flow type attribute (optional)
+	t.Run("EmptyFlowType", func(t *testing.T) {
+		err := checkFlowType(nil, "")
+		assert.NoError(t, err)
+	})
+
+	// Test case 2: Valid flow type attribute
+	t.Run("ValidFlowType", func(t *testing.T) {
+		yamlData := map[interface{}]interface{}{
+			"inboundCall:": map[interface{}]interface{}{
+				"name": "TestFlow",
+			},
+		}
+		err := checkFlowType(yamlData, "INBOUNDCALL")
+		assert.NoError(t, err)
+	})
+
+	// Test case 3: Mismatch between flow type attribute and YAML flow type
+	t.Run("MismatchedFlowType", func(t *testing.T) {
+		yamlData := map[interface{}]interface{}{
+			"inboundCall:": map[interface{}]interface{}{
+				"name": "TestFlow",
+			},
+		}
+		err := checkFlowType(yamlData, "BOT")
+		expectedError := "flow type provided 'BOT' does not match the flow type set within yaml 'inboundCall'"
+		assert.EqualError(t, err, expectedError)
+	})
+}
+
+func TestUnitCheckFlowName(t *testing.T) {
+	// Test case 1: Empty flow name attribute (optional)
+	t.Run("EmptyFlowName", func(t *testing.T) {
+		err := checkFlowName(nil, "", nil)
+		assert.NoError(t, err)
+	})
+
+	// Test case 2: Valid flow name attribute and matching name in YAML data
+	t.Run("ValidFlowName", func(t *testing.T) {
+		yamlData := map[interface{}]interface{}{
+			"inboundCall:": map[interface{}]interface{}{
+				"name": "TestFlow",
+			},
+		}
+		err := checkFlowName(yamlData, "TestFlow", nil)
+		assert.NoError(t, err)
+	})
+
+	// Test case 3: Mismatch between flow name attribute and name in YAML data
+	t.Run("MismatchedFlowName", func(t *testing.T) {
+		yamlData := map[interface{}]interface{}{
+			"inboundCall:": map[interface{}]interface{}{
+				"name": "TestFlow",
+			},
+		}
+		err := checkFlowName(yamlData, "InvalidName", nil)
+		expectedError := "'flow_name' attribute value 'InvalidName' does not match the flow name set in the flow config yaml: 'TestFlow'"
+		assert.EqualError(t, err, expectedError)
+	})
+
+	// Test case 4: Flow name attribute matches the value of the substitution variable
+	t.Run("SubstitutionVariableMatch", func(t *testing.T) {
+		yamlData := map[interface{}]interface{}{
+			"inboundCall:": map[interface{}]interface{}{
+				"name": "{{flowName}}",
+			},
+		}
+		substitutions := map[string]interface{}{
+			"flowName": "TestFlow",
+		}
+		err := checkFlowName(yamlData, "TestFlow", substitutions)
+		assert.NoError(t, err)
+	})
+
+	// Test case 5: Flow name attribute value does not match substitution variable value
+	t.Run("SubstitutionVariableMismatch", func(t *testing.T) {
+		yamlData := map[interface{}]interface{}{
+			"inboundCall:": map[interface{}]interface{}{
+				"name": "{{flowName}}",
+			},
+		}
+		substitutions := map[string]interface{}{
+			"flowName": "TestFlow",
+		}
+		err := checkFlowName(yamlData, "Flow1", substitutions)
+		expectedError := "'flow_name' attribute value 'Flow1' does not match substitution key 'flowName' value 'TestFlow'"
+		assert.EqualError(t, err, expectedError)
+	})
+
+	// Test case 6: Substitution key not found in substitutions map
+	t.Run("SubstitutionKeyNotFound", func(t *testing.T) {
+		yamlData := map[interface{}]interface{}{
+			"inboundCall:": map[interface{}]interface{}{
+				"name": "{{invalidKey}}",
+			},
+		}
+		substitutions := map[string]interface{}{
+			"flowName": "TestFlow",
+		}
+		err := checkFlowName(yamlData, "itdoesntmatter", substitutions)
+		expectedError := "substitution key 'invalidKey' found in the flow config yaml does not exist in the flow resource substitutions config map"
+		assert.EqualError(t, err, expectedError)
+	})
 }
