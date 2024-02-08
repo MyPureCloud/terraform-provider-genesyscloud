@@ -236,7 +236,7 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		// This is simpler than checking the status fields if there are any changes.
 		// Since this status is for deletion anyway we shouldn't care about this managed update.
 		description := "this status is set for deletion by CX as Code " + uuid.NewString()
-		updateForCleaning.Description = &description
+		updateForCleaning.SetField("Description", &description)
 
 		if _, err := proxy.updateTaskManagementWorktypeStatus(ctx, d.Id(), forDeletionId, &updateForCleaning); err != nil {
 			return diag.Errorf("failed to clean up references of task management worktype status %s: %v", forDeletionId, err)

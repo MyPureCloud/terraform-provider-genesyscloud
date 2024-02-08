@@ -212,7 +212,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 					name:                         "Open Status",
 					description:                  "Description of open status. Updated 2",
 					defaultDestinationStatusName: "Close Status",
-					transitionDelay:              300,
+					transitionDelay:              86600,
 
 					category: "Open",
 				},
