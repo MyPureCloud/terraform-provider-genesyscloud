@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
@@ -52,7 +52,7 @@ func TestAccDataSourceArchitectIvr(t *testing.T) {
 /*
 This is a unit test to test whether the Architect IVR data source is properly pulling the id back from the proxy
 */
-func TestDataSourceArchitectIvr(t *testing.T) {
+func TestUnitDataSourceArchitectIvr(t *testing.T) {
 	targetId := uuid.NewString()
 	targetName := "MyTargetId"
 	archProxy := &architectIvrProxy{}

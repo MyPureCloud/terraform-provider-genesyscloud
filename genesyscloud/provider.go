@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func init() {
@@ -319,8 +319,8 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 	// Create new config
 	sdkConfig := platformclientv2.GetDefaultConfiguration()
 
-	_, exists := os.LookupEnv("TF_UNIT")
-	if exists {
+	v, exists := os.LookupEnv("TF_UNIT")
+	if exists && v != "" {
 		log.Printf("TF_UNIT environment is set.  No authorization of the SDK has occurred")
 		return sdkConfig, nil
 	}

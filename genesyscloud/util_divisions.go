@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 type JsonMap map[string]interface{}
@@ -30,7 +30,7 @@ func GetHomeDivisionName(key string, divisionName *string) resource.TestCheckFun
 	}
 }
 
-func getHomeDivisionID() (string, diag.Diagnostics) {
+func GetHomeDivisionID() (string, diag.Diagnostics) {
 	divOnce.Do(func() {
 		authAPI := platformclientv2.NewAuthorizationApi()
 		homeDiv, _, err := authAPI.GetAuthorizationDivisionsHome()
@@ -53,7 +53,7 @@ func updateObjectDivision(d *schema.ResourceData, objType string, sdkConfig *pla
 		divisionID := d.Get("division_id").(string)
 		if divisionID == "" {
 			// Default to home division
-			homeDivision, diagErr := getHomeDivisionID()
+			homeDivision, diagErr := GetHomeDivisionID()
 			if diagErr != nil {
 				return diagErr
 			}

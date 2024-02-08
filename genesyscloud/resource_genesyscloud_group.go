@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 var (
@@ -47,7 +47,7 @@ var (
 	}
 )
 
-func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func GetAllGroups(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	groupsAPI := platformclientv2.NewGroupsApiWithConfig(clientConfig)
 
@@ -72,7 +72,7 @@ func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuratio
 
 func GroupExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllGroups),
+		GetResourcesFunc: GetAllWithPooledClient(GetAllGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"owner_ids":  {RefType: "genesyscloud_user"},
 			"member_ids": {RefType: "genesyscloud_user"},
@@ -136,8 +136,9 @@ func ResourceGroup() *schema.Resource {
 			"owner_ids": {
 				Description: "IDs of owners of the group.",
 				Type:        schema.TypeList,
-				Optional:    true,
+				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				MinItems:    1,
 			},
 			"member_ids": {
 				Description: "IDs of members assigned to the group. If not set, this resource will not manage group members.",
@@ -559,14 +560,14 @@ func generateGroupResource(
 
 func generateGroupAddress(number string, phoneType string, extension string) string {
 	return fmt.Sprintf(`addresses {
-				number = %s
-				type = "%s"
-                extension = %s
-			}
-			`, number, phoneType, extension)
+		number = %s
+		type = "%s"
+		extension = %s
+	}
+	`, number, phoneType, extension)
 }
 
-func generateGroupOwners(userIDs ...string) string {
+func GenerateGroupOwners(userIDs ...string) string {
 	return fmt.Sprintf(`owner_ids = [%s]
 	`, strings.Join(userIDs, ","))
 }

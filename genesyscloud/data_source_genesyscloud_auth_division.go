@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func dataSourceAuthDivision() *schema.Resource {
@@ -36,7 +36,7 @@ func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m i
 	return WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		const pageSize = 100
 		const pageNum = 1
-		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, name)
+		divisions, _, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, name)
 		if getErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("Error requesting division %s: %s", name, getErr))
 		}
@@ -45,8 +45,13 @@ func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m i
 			return retry.RetryableError(fmt.Errorf("No authorization divisions found with name %s", name))
 		}
 
-		division := (*divisions.Entities)[0]
-		d.SetId(*division.Id)
-		return nil
+		for _, division := range *divisions.Entities {
+			if *division.Name == name {
+				d.SetId(*division.Id)
+				return nil
+			}
+		}
+
+		return retry.RetryableError(fmt.Errorf("No division with name %s found", name))
 	})
 }

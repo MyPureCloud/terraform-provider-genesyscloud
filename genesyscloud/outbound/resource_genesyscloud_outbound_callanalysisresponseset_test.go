@@ -11,10 +11,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
-func TestAccResourceCallAnalysisResponseSet(t *testing.T) {
+func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 	t.Parallel()
 	var (
 		resourceId          = "cars"

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 /*
@@ -186,10 +186,18 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	campaignStatus := d.Get("campaign_status").(string)
 
 	// Campaigns have to be turned off before they can be deleted
-	if campaignStatus != "off" {
-		log.Printf("Turning off Outbound Campaign before deletion")
-		if diagErr := proxy.turnOffCampaign(ctx, d.Id()); diagErr != nil {
-			return diagErr
+	if campaignStatus == "on" {
+		currentCampaign, _, err := proxy.getOutboundCampaignById(ctx, d.Id())
+		if err != nil {
+			log.Printf("failed to read campaign %s: %v", d.Id(), err)
+		}
+		if *currentCampaign.CampaignStatus == "complete" {
+			log.Printf("Deleting campaign %s in 'complete' state", *currentCampaign.Id)
+		} else {
+			log.Printf("Turning off Outbound Campaign before deletion")
+			if diagErr := proxy.turnOffCampaign(ctx, d.Id()); diagErr != nil {
+				return diagErr
+			}
 		}
 	}
 

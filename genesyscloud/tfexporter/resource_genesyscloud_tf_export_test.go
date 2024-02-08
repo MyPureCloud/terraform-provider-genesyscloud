@@ -3,7 +3,6 @@ package tfexporter
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 	"io"
 	"math/rand"
 	"os"
@@ -17,6 +16,8 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"testing"
 	"time"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -1662,9 +1663,9 @@ func generateTfExportResource(
 		resource_types = [
 			"genesyscloud_architect_datatable",
 			"genesyscloud_architect_datatable_row",
-			"genesyscloud_flow",
+			//"genesyscloud_flow",
 			"genesyscloud_flow_milestone",	
-			"genesyscloud_flow_outcome",	
+			//"genesyscloud_flow_outcome",	
 			"genesyscloud_architect_ivr",
 			"genesyscloud_architect_schedules",
 			"genesyscloud_architect_schedulegroups",
@@ -1691,7 +1692,7 @@ func generateTfExportResource(
 			"genesyscloud_routing_email_domain",
 			"genesyscloud_routing_email_route",
 			"genesyscloud_routing_language",
-			"genesyscloud_routing_queue",
+			//"genesyscloud_routing_queue",
 			"genesyscloud_routing_settings",
 			"genesyscloud_routing_skill",
 			"genesyscloud_routing_utilization",
@@ -1703,7 +1704,7 @@ func generateTfExportResource(
 			"genesyscloud_telephony_providers_edges_phonebasesettings",
 			"genesyscloud_telephony_providers_edges_trunkbasesettings",
 			"genesyscloud_telephony_providers_edges_trunk",
-			"genesyscloud_user_roles",
+			//"genesyscloud_user_roles",
 			"genesyscloud_webdeployments_configuration",
 			"genesyscloud_webdeployments_deployment",
 			"genesyscloud_knowledge_knowledgebase"

@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 /*
@@ -50,6 +50,10 @@ func TestAccResourceIntegration(t *testing.T) {
 		credTypeName1 = "basicAuth"
 		key1          = "userName"
 		val1          = "someUserName"
+
+		testUserResource = "user_resource1"
+		testUserName     = "nameUser1" + uuid.NewString()
+		testUserEmail    = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -157,9 +161,10 @@ func TestAccResourceIntegration(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{ // Create a group first and use it as reference for a new integration
-				Config: gcloud.GenerateBasicGroupResource(
+				Config: gcloud.GenerateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + gcloud.GenerateBasicGroupResource(
 					groupResource1,
 					groupName,
+					gcloud.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
 				) + GenerateIntegrationResource(
 					inteResource1,
 					strconv.Quote(enabledState),

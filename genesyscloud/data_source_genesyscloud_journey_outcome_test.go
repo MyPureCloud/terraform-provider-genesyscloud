@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataJourneyOutcome(t *testing.T) {
+func TestAccDataSourceJourneyOutcome(t *testing.T) {
 	runDataJourneyOutcomeTestCase(t, "find_by_name")
 }
 

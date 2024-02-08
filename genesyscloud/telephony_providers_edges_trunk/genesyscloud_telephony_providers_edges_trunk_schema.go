@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_telephony_providers_edges_did"
+const resourceName = "genesyscloud_telephony_providers_edges_trunk"
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource("genesyscloud_telephony_providers_edges_trunk", DataSourceTrunk())
-	l.RegisterResource("genesyscloud_telephony_providers_edges_trunk", ResourceTrunk())
-	l.RegisterExporter("genesyscloud_telephony_providers_edges_trunk", TrunkExporter())
+	l.RegisterDataSource(resourceName, DataSourceTrunk())
+	l.RegisterResource(resourceName, ResourceTrunk())
+	l.RegisterExporter(resourceName, TrunkExporter())
 }
 
 func DataSourceTrunk() *schema.Resource {

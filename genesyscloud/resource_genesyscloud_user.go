@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -18,9 +19,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
+
+type AgentUtilizationWithLabels struct {
+	Utilization       map[string]MediaUtilization `json:"utilization"`
+	LabelUtilizations map[string]LabelUtilization `json:"labelUtilizations"`
+	Level             string                      `json:"level"`
+}
 
 var (
 	contactTypeEmail = "EMAIL"
@@ -116,7 +123,7 @@ var (
 	}
 )
 
-func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 
@@ -171,7 +178,7 @@ func getAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 
 func UserExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: GetAllWithPooledClient(getAllUsers),
+		GetResourcesFunc: GetAllWithPooledClient(GetAllUsers),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"manager":                       {RefType: "genesyscloud_user"},
 			"division_id":                   {RefType: "genesyscloud_auth_division"},
@@ -198,6 +205,11 @@ func ResourceUser() *schema.Resource {
 		DeleteContext: DeleteWithPooledClient(deleteUser),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
+		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(5 * time.Second),
+			Update: schema.DefaultTimeout(5 * time.Second),
+			Read:   schema.DefaultTimeout(5 * time.Second),
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
@@ -404,6 +416,14 @@ func ResourceUser() *schema.Resource {
 							ConfigMode:  schema.SchemaConfigModeAttr,
 							Elem:        utilizationSettingsResource,
 						},
+						"label_utilizations": {
+							Description: "Label utilization settings. If not set, default label settings will be applied. This is in PREVIEW and should not be used unless the feature is available to your organization.",
+							Type:        schema.TypeList,
+							Optional:    true,
+							Computed:    true,
+							ConfigMode:  schema.SchemaConfigModeAttr,
+							Elem:        utilizationLabelResource,
+						},
 					},
 				},
 			},
@@ -511,7 +531,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	diagErr = updateUserRoutingUtilization(d, usersAPI)
+	diagErr = updateUserRoutingUtilization(d, usersAPI, sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -583,7 +603,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("certifications", flattenUserCertifications(currentUser.Certifications))
 		d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
 
-		if diagErr := readUserRoutingUtilization(d, usersAPI); diagErr != nil {
+		if diagErr := readUserRoutingUtilization(d, sdkConfig); diagErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 
@@ -658,7 +678,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	diagErr = updateUserRoutingUtilization(d, usersAPI)
+	diagErr = updateUserRoutingUtilization(d, usersAPI, sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -1025,38 +1045,61 @@ func flattenUserEmployerInfo(empInfo *platformclientv2.Employerinfo) []interface
 	}}
 }
 
-func readUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
-	settings, resp, getErr := usersAPI.GetRoutingUserUtilization(d.Id())
-	if getErr != nil {
-		if IsStatus404(resp) {
+func readUserRoutingUtilization(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+	log.Printf("Getting user utilization")
+
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	apiClient := &routingAPI.Configuration.APIClient
+
+	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", routingAPI.Configuration.BasePath, d.Id())
+	headerParams := buildHeaderParams(routingAPI)
+	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil)
+
+	if err != nil {
+		if IsStatus404(response) {
 			d.SetId("") // User doesn't exist
 			return nil
 		}
-		return diag.Errorf("Failed to read Routing Utilization for user %s: %s", d.Id(), getErr)
+		return diag.Errorf("Failed to read Routing Utilization for user %s: %s", d.Id(), err)
 	}
 
-	if settings != nil && settings.Utilization != nil {
+	agentUtilization := &AgentUtilizationWithLabels{}
+	json.Unmarshal(response.RawBody, &agentUtilization)
+
+	if agentUtilization == nil {
+		d.Set("routing_utilization", nil)
+	} else if agentUtilization.Level == "Organization" {
 		// If the settings are org-wide, set to empty to indicate no settings on the user
-		if settings.Level != nil && *settings.Level == "Organization" {
-			d.Set("routing_utilization", []interface{}{})
-		} else {
-			allSettings := map[string]interface{}{}
+		d.Set("routing_utilization", []interface{}{})
+	} else {
+		allSettings := map[string]interface{}{}
+
+		if agentUtilization.Utilization != nil {
 			for sdkType, schemaType := range utilizationMediaTypes {
-				if mediaSettings, ok := (*settings.Utilization)[sdkType]; ok {
-					allSettings[schemaType] = flattenUtilizationMediaSetting(mediaSettings)
+				if mediaSettings, ok := agentUtilization.Utilization[sdkType]; ok {
+					allSettings[schemaType] = flattenUtilizationSetting(mediaSettings)
 				}
 			}
-			d.Set("routing_utilization", []interface{}{allSettings})
 		}
-	} else {
-		d.Set("routing_utilization", nil)
+
+		if agentUtilization.LabelUtilizations != nil {
+			utilConfig := d.Get("routing_utilization").([]interface{})
+			originalSettings := utilConfig[0].(map[string]interface{})
+			originalLabelUtilizations := originalSettings["label_utilizations"].([]interface{})
+
+			// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
+			filteredLabelUtilizations := filterAndFlattenLabelUtilizations(agentUtilization.LabelUtilizations, originalLabelUtilizations)
+
+			allSettings["label_utilizations"] = filteredLabelUtilizations
+		}
+
+		d.Set("routing_utilization", []interface{}{allSettings})
 	}
 
 	return nil
 }
 
 func updateUserSkills(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
-
 	transformFunc := func(configSkill interface{}) platformclientv2.Userroutingskillpost {
 		skillMap := configSkill.(map[string]interface{})
 		skillID := skillMap["skill_id"].(string)
@@ -1231,21 +1274,41 @@ func updateUserProfileSkills(d *schema.ResourceData, usersAPI *platformclientv2.
 	return nil
 }
 
-func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi) diag.Diagnostics {
+func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclientv2.UsersApi, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
 	if d.HasChange("routing_utilization") {
 		if utilConfig := d.Get("routing_utilization").([]interface{}); utilConfig != nil {
+			var err error
+
+			log.Printf("Updating user utilization for user %s", d.Id())
+
 			if len(utilConfig) > 0 { // Specified but empty utilization list will reset to org-wide defaults
-				sdkSettings := make(map[string]platformclientv2.Mediautilization)
-				allSettings := utilConfig[0].(map[string]interface{})
-				for sdkType, schemaType := range utilizationMediaTypes {
-					if mediaSettings, ok := allSettings[schemaType]; ok && len(mediaSettings.([]interface{})) > 0 {
-						sdkSettings[sdkType] = buildSdkMediaUtilization(mediaSettings.([]interface{}))
-					}
-				}
 				// Update settings
-				_, _, err := usersAPI.PutRoutingUserUtilization(d.Id(), platformclientv2.Utilizationrequest{
-					Utilization: &sdkSettings,
-				})
+				allSettings := utilConfig[0].(map[string]interface{})
+				labelUtilizations := allSettings["label_utilizations"].([]interface{})
+
+				if labelUtilizations != nil && len(labelUtilizations) > 0 {
+					routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+					apiClient := &routingAPI.Configuration.APIClient
+
+					path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", routingAPI.Configuration.BasePath, d.Id())
+					headerParams := buildHeaderParams(routingAPI)
+					requestPayload := make(map[string]interface{})
+					requestPayload["utilization"] = buildMediaTypeUtilizations(allSettings)
+					requestPayload["labelUtilizations"] = buildLabelUtilizationsRequest(labelUtilizations)
+					_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil)
+				} else {
+					sdkSettings := make(map[string]platformclientv2.Mediautilization)
+					for sdkType, schemaType := range utilizationMediaTypes {
+						if mediaSettings, ok := allSettings[schemaType]; ok && len(mediaSettings.([]interface{})) > 0 {
+							sdkSettings[sdkType] = buildSdkMediaUtilization(mediaSettings.([]interface{}))
+						}
+					}
+
+					_, _, err = usersAPI.PutRoutingUserUtilization(d.Id(), platformclientv2.Utilizationrequest{
+						Utilization: &sdkSettings,
+					})
+				}
+
 				if err != nil {
 					return diag.Errorf("Failed to update Routing Utilization for user %s: %s", d.Id(), err)
 				}
@@ -1256,6 +1319,8 @@ func updateUserRoutingUtilization(d *schema.ResourceData, usersAPI *platformclie
 					return diag.Errorf("Failed to delete Routing Utilization for user %s: %s", d.Id(), err)
 				}
 			}
+
+			log.Printf("Updated user utilization for user %s", d.Id())
 		}
 	}
 	return nil
@@ -1321,6 +1386,19 @@ func flattenUserCertifications(certs *[]string) *schema.Set {
 	return nil
 }
 
+func buildMediaTypeUtilizations(allUtilizations map[string]interface{}) *map[string]platformclientv2.Mediautilization {
+	settings := make(map[string]platformclientv2.Mediautilization)
+
+	for sdkType, schemaType := range utilizationMediaTypes {
+		mediaSettings := allUtilizations[schemaType].([]interface{})
+		if mediaSettings != nil && len(mediaSettings) > 0 {
+			settings[sdkType] = buildSdkMediaUtilization(mediaSettings)
+		}
+	}
+
+	return &settings
+}
+
 // Basic user with minimum required fields
 func GenerateBasicUserResource(resourceID string, email string, name string) string {
 	return GenerateUserResource(resourceID, email, name, NullValue, NullValue, NullValue, NullValue, NullValue, "", "")
@@ -1349,20 +1427,6 @@ func GenerateUserResource(
 		certifications = [%s]
 	}
 	`, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
-}
-
-func flattenUtilizationMediaSetting(settings platformclientv2.Mediautilization) []interface{} {
-	settingsMap := make(map[string]interface{})
-	if settings.MaximumCapacity != nil {
-		settingsMap["maximum_capacity"] = *settings.MaximumCapacity
-	}
-	if settings.InterruptableMediaTypes != nil {
-		settingsMap["interruptible_media_types"] = lists.StringListToSet(*settings.InterruptableMediaTypes)
-	}
-	if settings.IncludeNonAcd != nil {
-		settingsMap["include_non_acd"] = *settings.IncludeNonAcd
-	}
-	return []interface{}{settingsMap}
 }
 
 func GenerateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {

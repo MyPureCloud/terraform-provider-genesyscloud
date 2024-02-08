@@ -3,6 +3,8 @@ package task_management_workitem
 import (
 	"fmt"
 	"strconv"
+	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 	"time"
 
@@ -17,7 +19,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 /*
@@ -196,8 +198,8 @@ func TestAccResourceTaskManagementWorkitem(t *testing.T) {
 					gcloud.GenerateAuthRoleResource(roleResId1, roleName1, "test role description",
 						gcloud.GenerateRolePermPolicy("workitems", "*", strconv.Quote("*")),
 					) +
-					gcloud.GenerateUserRoles("user_role_1", userResId1,
-						gcloud.GenerateResourceRoles(
+					user_roles.GenerateUserRoles("user_role_1", userResId1,
+						generateResourceRoles(
 							"genesyscloud_auth_role."+roleResId1+".id",
 							"data.genesyscloud_auth_division_home."+homeDivRes+".id",
 						),
@@ -620,4 +622,16 @@ func testVerifyTaskManagementWorkitemDestroyed(state *terraform.State) error {
 	}
 	// Success. All worktypes destroyed
 	return nil
+}
+
+func generateResourceRoles(skillID string, divisionIds ...string) string {
+	var divAttr string
+	if len(divisionIds) > 0 {
+		divAttr = "division_ids = [" + strings.Join(divisionIds, ",") + "]"
+	}
+	return fmt.Sprintf(`roles {
+		role_id = %s
+		%s
+	}
+	`, skillID, divAttr)
 }

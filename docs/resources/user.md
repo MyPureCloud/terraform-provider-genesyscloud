@@ -93,6 +93,15 @@ resource "genesyscloud_user" "example_user" {
       include_non_acd           = false
       interruptible_media_types = ["call", "chat"]
     }
+    label_utilizations {
+      label_id         = genesyscloud_routing_utilization_label.red_label.id
+      maximum_capacity = 4
+    }
+    label_utilizations {
+      label_id               = genesyscloud_routing_utilization_label.blue_label.id
+      maximum_capacity       = 4
+      interrupting_label_ids = [genesyscloud_routing_utilization_label.red_label.id]
+    }
   }
 }
 ```
@@ -121,6 +130,7 @@ resource "genesyscloud_user" "example_user" {
 - `routing_skills` (Set of Object) Skills and proficiencies for this user. If not set, this resource will not manage user skills. (see [below for nested schema](#nestedatt--routing_skills))
 - `routing_utilization` (List of Object) The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings. (see [below for nested schema](#nestedatt--routing_utilization))
 - `state` (String) User's state (active | inactive). Default is 'active'. Defaults to `active`.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `title` (String) User's title.
 
 ### Read-Only
@@ -203,6 +213,7 @@ Optional:
 - `callback` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--callback))
 - `chat` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--chat))
 - `email` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--email))
+- `label_utilizations` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--label_utilizations))
 - `message` (List of Object) (see [below for nested schema](#nestedobjatt--routing_utilization--message))
 
 <a id="nestedobjatt--routing_utilization--call"></a>
@@ -245,6 +256,16 @@ Optional:
 - `maximum_capacity` (Number)
 
 
+<a id="nestedobjatt--routing_utilization--label_utilizations"></a>
+### Nested Schema for `routing_utilization.label_utilizations`
+
+Optional:
+
+- `interrupting_label_ids` (Set of String)
+- `label_id` (String)
+- `maximum_capacity` (Number)
+
+
 <a id="nestedobjatt--routing_utilization--message"></a>
 ### Nested Schema for `routing_utilization.message`
 
@@ -253,4 +274,15 @@ Optional:
 - `include_non_acd` (Boolean)
 - `interruptible_media_types` (Set of String)
 - `maximum_capacity` (Number)
+
+
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `create` (String)
+- `read` (String)
+- `update` (String)
 

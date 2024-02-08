@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func TestAccResourceAuthDivisionBasic(t *testing.T) {
@@ -152,7 +152,7 @@ func validateHomeDivisionID(divResourceName string) resource.TestCheckFunc {
 			return fmt.Errorf("Failed to find division %s in state", divResourceName)
 		}
 		divID := divResource.Primary.ID
-		homeDivID, err := getHomeDivisionID()
+		homeDivID, err := GetHomeDivisionID()
 		if err != nil {
 			return fmt.Errorf("%v", err)
 		}

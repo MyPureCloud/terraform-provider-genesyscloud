@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 var (
@@ -37,7 +37,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
 	providerResources["genesyscloud_employeeperformance_externalmetrics_definitions"] = ResourceEmployeeperformanceExternalmetricsDefinition()
 	providerResources["genesyscloud_group"] = ResourceGroup()
-	providerResources["genesyscloud_group_roles"] = ResourceGroupRoles()
 	providerResources["genesyscloud_idp_adfs"] = ResourceIdpAdfs()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()
@@ -55,7 +54,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_knowledge_category"] = ResourceKnowledgeCategory()
 	providerResources["genesyscloud_knowledge_label"] = ResourceKnowledgeLabel()
 	providerResources["genesyscloud_location"] = ResourceLocation()
-	providerResources["genesyscloud_oauth_client"] = ResourceOAuthClient()
 	providerResources["genesyscloud_orgauthorization_pairing"] = resourceOrgauthorizationPairing()
 	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
 	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
@@ -73,7 +71,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_utilization_label"] = ResourceRoutingUtilizationLabel()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_user"] = ResourceUser()
-	providerResources["genesyscloud_user_roles"] = ResourceUserRoles()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
 }
 
@@ -103,7 +100,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_knowledge_category"] = dataSourceKnowledgeCategory()
 	providerDataSources["genesyscloud_knowledge_label"] = dataSourceKnowledgeLabel()
 	providerDataSources["genesyscloud_location"] = DataSourceLocation()
-	providerDataSources["genesyscloud_oauth_client"] = dataSourceOAuthClient()
 	providerDataSources["genesyscloud_organizations_me"] = DataSourceOrganizationsMe()
 	providerDataSources["genesyscloud_quality_forms_evaluation"] = DataSourceQualityFormsEvaluations()
 	providerDataSources["genesyscloud_quality_forms_survey"] = dataSourceQualityFormsSurvey()

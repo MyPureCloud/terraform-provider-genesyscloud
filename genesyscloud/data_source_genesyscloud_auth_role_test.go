@@ -25,7 +25,7 @@ func TestAccDataSourceAuthRole(t *testing.T) {
 					roleResource,
 					roleName,
 					roleDesc,
-				) + generateAuthRoleDataSource(
+				) + GenerateAuthRoleDataSource(
 					roleDataSource,
 					"genesyscloud_auth_role."+roleResource+".name",
 					"genesyscloud_auth_role."+roleResource,
@@ -38,7 +38,7 @@ func TestAccDataSourceAuthRole(t *testing.T) {
 	})
 }
 
-func generateAuthRoleDataSource(
+func GenerateAuthRoleDataSource(
 	resourceID string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
@@ -49,13 +49,4 @@ func generateAuthRoleDataSource(
         depends_on=[%s]
 	}
 	`, resourceID, name, dependsOnResource)
-}
-
-func generateDefaultAuthRoleDataSource(
-	resourceID string,
-	name string) string {
-	return fmt.Sprintf(`data "genesyscloud_auth_role" "%s" {
-		name = %s
-	}
-	`, resourceID, name)
 }

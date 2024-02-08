@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 type SkillGroupsRequest struct {
@@ -576,7 +576,7 @@ func removeSkillGroupDivisionID(d *schema.ResourceData, list []string) ([]string
 	}
 	divisionId := d.Get("division_id").(string)
 	if divisionId == "" {
-		id, diagErr := getHomeDivisionID()
+		id, diagErr := GetHomeDivisionID()
 		if diagErr != nil {
 			return nil, diagErr
 		}

@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 var TrueValue = "true"
@@ -37,13 +38,13 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 
 		callableTimeSetResourceId = "callable_time_set"
 		callableTimeSetName       = "Test CTS " + uuid.NewString()
-		callableTimeSetResource   = GenerateOutboundCallabletimeset(
+		callableTimeSetResource   = obCallableTimeset.GenerateOutboundCallabletimeset(
 			callableTimeSetResourceId,
 			callableTimeSetName,
-			GenerateCallableTimesBlock(
+			obCallableTimeset.GenerateCallableTimesBlock(
 				"Europe/Dublin",
-				GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
-				GenerateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
+				obCallableTimeset.GenerateTimeSlotsBlock("07:00:00", "18:00:00", "3"),
+				obCallableTimeset.GenerateTimeSlotsBlock("09:30:00", "22:30:00", "5"),
 			),
 		)
 
