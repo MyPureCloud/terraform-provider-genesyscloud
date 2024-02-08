@@ -66,7 +66,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_auth_division", ResourceAuthDivision())
 	l.RegisterResource("genesyscloud_employeeperformance_externalmetrics_definitions", ResourceEmployeeperformanceExternalmetricsDefinition())
 	l.RegisterResource("genesyscloud_group", ResourceGroup())
-	l.RegisterResource("genesyscloud_group_roles", ResourceGroupRoles())
 	l.RegisterResource("genesyscloud_idp_adfs", ResourceIdpAdfs())
 	l.RegisterResource("genesyscloud_idp_generic", ResourceIdpGeneric())
 	l.RegisterResource("genesyscloud_idp_gsuite", ResourceIdpGsuite())
@@ -103,7 +102,6 @@ func registerResources(l registrar.Registrar) {
 	l.RegisterResource("genesyscloud_routing_utilization_label", ResourceRoutingUtilizationLabel())
 	l.RegisterResource("genesyscloud_routing_wrapupcode", ResourceRoutingWrapupCode())
 	l.RegisterResource("genesyscloud_user", ResourceUser())
-	l.RegisterResource("genesyscloud_user_roles", ResourceUserRoles())
 	l.RegisterResource("genesyscloud_widget_deployment", ResourceWidgetDeployment())
 
 }
@@ -117,7 +115,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_employeeperformance_externalmetrics_definitions", EmployeeperformanceExternalmetricsDefinitionExporter())
 	l.RegisterExporter("genesyscloud_flow", FlowExporter())
 	l.RegisterExporter("genesyscloud_group", GroupExporter())
-	l.RegisterExporter("genesyscloud_group_roles", GroupRolesExporter())
 	l.RegisterExporter("genesyscloud_idp_adfs", IdpAdfsExporter())
 	l.RegisterExporter("genesyscloud_idp_generic", IdpGenericExporter())
 	l.RegisterExporter("genesyscloud_idp_gsuite", IdpGsuiteExporter())
@@ -148,7 +145,6 @@ func registerExporters(l registrar.Registrar) {
 	l.RegisterExporter("genesyscloud_routing_utilization_label", RoutingUtilizationLabelExporter())
 	l.RegisterExporter("genesyscloud_routing_wrapupcode", RoutingWrapupCodeExporter())
 	l.RegisterExporter("genesyscloud_user", UserExporter())
-	l.RegisterExporter("genesyscloud_user_roles", UserRolesExporter())
 	l.RegisterExporter("genesyscloud_widget_deployment", WidgetDeploymentExporter())
 	l.RegisterExporter("genesyscloud_knowledge_v1_document", KnowledgeDocumentExporterV1())
 	l.RegisterExporter("genesyscloud_knowledge_document_variation", KnowledgeDocumentVariationExporter())

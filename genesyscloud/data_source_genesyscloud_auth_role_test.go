@@ -50,12 +50,3 @@ func GenerateAuthRoleDataSource(
 	}
 	`, resourceID, name, dependsOnResource)
 }
-
-func GenerateDefaultAuthRoleDataSource(
-	resourceID string,
-	name string) string {
-	return fmt.Sprintf(`data "genesyscloud_auth_role" "%s" {
-		name = %s
-	}
-	`, resourceID, name)
-}

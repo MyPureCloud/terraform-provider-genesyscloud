@@ -2,10 +2,11 @@ package telephony_providers_edges_phone
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
@@ -13,7 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func TestAccResourcePhoneBasic(t *testing.T) {

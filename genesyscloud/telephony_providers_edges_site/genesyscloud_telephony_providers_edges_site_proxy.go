@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 /*
@@ -219,7 +219,7 @@ func getAllManagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclientv
 	var allManagedSites []platformclientv2.Site
 
 	const pageSize = 100
-	sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", "", true)
+	sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", "", true, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +232,7 @@ func getAllManagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclientv
 	}
 
 	for pageNum := 2; pageNum <= *sites.PageCount; pageNum++ {
-		sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", true)
+		sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", true, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -256,7 +256,7 @@ func getAllUnmanagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclien
 	var allUnManagedSites []platformclientv2.Site
 
 	const pageSize = 100
-	sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", "", false)
+	sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", "", false, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func getAllUnmanagedSitesFn(ctx context.Context, p *siteProxy) (*[]platformclien
 	}
 
 	for pageNum := 2; pageNum <= *sites.PageCount; pageNum++ {
-		sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false)
+		sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", "", false, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -321,7 +321,7 @@ func getSiteByIdFn(ctx context.Context, p *siteProxy, siteId string) (*platformc
 // getSiteIdByNameFn is an implementation function for retrieving a Genesys Cloud Site by name
 func getSiteIdByNameFn(ctx context.Context, p *siteProxy, siteName string, managed bool) (string, bool, error) {
 	const pageSize = 100
-	sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", siteName, "", managed)
+	sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", siteName, "", managed, nil)
 	if err != nil {
 		return "", false, err
 	}
@@ -335,7 +335,7 @@ func getSiteIdByNameFn(ctx context.Context, p *siteProxy, siteName string, manag
 	}
 
 	for pageNum := 2; pageNum <= *sites.PageCount; pageNum++ {
-		sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", siteName, "", managed)
+		sites, _, err := p.edgesApi.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", siteName, "", managed, nil)
 		if err != nil {
 			return "", false, err
 		}

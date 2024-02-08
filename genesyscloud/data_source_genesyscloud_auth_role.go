@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 func DataSourceAuthRole() *schema.Resource {
@@ -49,4 +49,13 @@ func DataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m inter
 		d.SetId(*role.Id)
 		return nil
 	})
+}
+
+func GenerateDefaultAuthRoleDataSource(
+	resourceID string,
+	name string) string {
+	return fmt.Sprintf(`data "genesyscloud_auth_role" "%s" {
+		name = %s
+	}
+	`, resourceID, name)
 }

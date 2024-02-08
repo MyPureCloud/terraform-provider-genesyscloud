@@ -14,6 +14,7 @@ import (
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
+	groupRoles "terraform-provider-genesyscloud/genesyscloud/group_roles"
 	"terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
@@ -51,6 +52,7 @@ import (
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
+	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
@@ -119,6 +121,7 @@ func registerResources() {
 	emergencyGroup.SetRegistrar(regInstance)                //Registering architect emergency group
 	grammar.SetRegistrar(regInstance)                       //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)               //Registering architect grammar language
+	groupRoles.SetRegistrar(regInstance)                    //Registering group roles
 	edgePhone.SetRegistrar(regInstance)                     //Registering telephony providers edges phone
 	edgeSite.SetRegistrar(regInstance)                      //Registering telephony providers edges site
 	flowMilestone.SetRegistrar(regInstance)                 //Registering flow milestone
@@ -161,6 +164,7 @@ func registerResources() {
 	lineBaseSettings.SetRegistrar(regInstance)              //Registering Line Base Settings
 	edgesTrunk.SetRegistrar(regInstance)                    //Registering Edges Trunk Settings
 	resourceExporter.SetRegisterExporter(resourceExporters) //Registering register exporters
+	userRoles.SetRegistrar(regInstance)                     //Registering user roles
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

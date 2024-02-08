@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 var (
@@ -37,7 +37,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
 	providerResources["genesyscloud_employeeperformance_externalmetrics_definitions"] = ResourceEmployeeperformanceExternalmetricsDefinition()
 	providerResources["genesyscloud_group"] = ResourceGroup()
-	providerResources["genesyscloud_group_roles"] = ResourceGroupRoles()
 	providerResources["genesyscloud_idp_adfs"] = ResourceIdpAdfs()
 	providerResources["genesyscloud_idp_generic"] = ResourceIdpGeneric()
 	providerResources["genesyscloud_idp_gsuite"] = ResourceIdpGsuite()
@@ -72,7 +71,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_routing_utilization_label"] = ResourceRoutingUtilizationLabel()
 	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
 	providerResources["genesyscloud_user"] = ResourceUser()
-	providerResources["genesyscloud_user_roles"] = ResourceUserRoles()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
 }
 

@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v121/platformclientv2"
 )
 
 var (
@@ -606,7 +606,7 @@ func deleteSiteWithLocationId(locationId string, config *platformclientv2.Config
 	)
 
 	log.Printf("Reading telephony providers edges sites with location ID %s", locationId)
-	sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", locationId, false)
+	sites, _, getErr := edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, 1, "", "", "", locationId, false, nil)
 	if getErr != nil {
 		return getErr
 	}
@@ -619,7 +619,7 @@ func deleteSiteWithLocationId(locationId string, config *platformclientv2.Config
 
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
 		log.Printf("Reading telephony providers edges site with location ID %s", locationId)
-		sites, _, getErr = edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", locationId, false)
+		sites, _, getErr = edgesAPI.GetTelephonyProvidersEdgesSites(pageSize, pageNum, "", "", "", locationId, false, nil)
 		if getErr != nil {
 			return getErr
 		}
