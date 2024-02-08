@@ -38,7 +38,6 @@ func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 // ValidateRrule validates rrule attribute
 func ValidateRrule(rrule interface{}, _ cty.Path) diag.Diagnostics {
 	if input, ok := rrule.(string); ok {
-		rRuleAttributes := strings.Split(input, ";")
 		// FREQ Attribute validation
 		freqRegex := regexp.MustCompile(`FREQ=([A-Z]+)`)
 		if match := freqRegex.FindStringSubmatch(input); strings.Contains(input, "FREQ=") && match == nil {
@@ -53,6 +52,7 @@ func ValidateRrule(rrule interface{}, _ cty.Path) diag.Diagnostics {
 		// rrule is split and stored in array using ';' as delimiter
 		// array is iterated over and variables are assigned if they exist
 		// This allows for the values for BYMONTH and BYMONTHDAY to be split, parsed and checked that they are within the valid range
+		rRuleAttributes := strings.Split(input, ";")
 		for _, value := range rRuleAttributes {
 			// BYMONTH Attribute validation
 			if strings.Contains(value, "BYMONTH=") {
