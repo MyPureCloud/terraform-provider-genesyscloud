@@ -28,14 +28,14 @@ func TestAccResourceResponseManagementLibrary(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateResponseManagementLibraryResource(libraryResource, name1),
+				Config: GenerateResponseManagementLibraryResource(libraryResource, name1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResource, "name", name1),
 				),
 			},
 			{
 				// Update
-				Config: generateResponseManagementLibraryResource(libraryResource, name2),
+				Config: GenerateResponseManagementLibraryResource(libraryResource, name2),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResource, "name", name2),
 				),
@@ -49,16 +49,6 @@ func TestAccResourceResponseManagementLibrary(t *testing.T) {
 		},
 		CheckDestroy: testVerifyResponseManagementLibraryDestroyed,
 	})
-}
-
-func generateResponseManagementLibraryResource(
-	resourceId string,
-	name string) string {
-	return fmt.Sprintf(`
-		resource "genesyscloud_responsemanagement_library" "%s" {
-			name = "%s"
-		}
-	`, resourceId, name)
 }
 
 func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error {

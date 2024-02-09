@@ -1,7 +1,8 @@
-package genesyscloud
+package responsemanagement_response
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 
 	"github.com/google/uuid"
@@ -22,21 +23,21 @@ func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { TestAccPreCheck(t) },
-		ProviderFactories: GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:          func() { gcloud.TestAccPreCheck(t) },
+		ProviderFactories: gcloud.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Search by name
-				Config: generateResponseManagementLibraryResource(
+				Config: gcloud.GenerateResponseManagementLibraryResource(
 					libraryResource,
 					libraryName,
 				) + generateResponseManagementResponseResource(
 					responseResource,
 					name,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResource + ".id"},
-					NullValue,
-					NullValue,
-					NullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
+					gcloud.NullValue,
 					[]string{},
 					generateTextsBlock(
 						textsContent,
