@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
@@ -43,6 +45,7 @@ type getArchitectIvrIdByNameFunc func(context.Context, *architectIvrProxy, strin
 
 // architectIvrProxy contains all methods that call genesys cloud APIs.
 type architectIvrProxy struct {
+	cache        resource_cache.CacheInterface[platformclientv2.Ivr]
 	clientConfig *platformclientv2.Configuration
 	api          *platformclientv2.ArchitectApi
 
@@ -63,9 +66,11 @@ type architectIvrProxy struct {
 // newArchitectIvrProxy initializes the proxy with all the data needed to communicate with Genesys Cloud
 func newArchitectIvrProxy(clientConfig *platformclientv2.Configuration) *architectIvrProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
+	cache := resource_cache.NewResourceCache[platformclientv2.Ivr]()
 	return &architectIvrProxy{
 		clientConfig: clientConfig,
 		api:          api,
+		cache:        cache,
 
 		createArchitectIvrAttr:      createArchitectIvrFn,
 		getArchitectIvrAttr:         getArchitectIvrFn,
@@ -136,7 +141,12 @@ func createArchitectIvrFn(ctx context.Context, a *architectIvrProxy, ivr platfor
 }
 
 // getArchitectIvrFn is an implementation function for retrieving a Genesys Cloud Architect IVR by ID
-func getArchitectIvrFn(_ context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+func getArchitectIvrFn(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	if tfexporter_state.IsExporterActive() {
+		ivr := a.cache.Get(id)
+		return &ivr, nil, nil
+	}
+
 	return a.api.GetArchitectIvr(id)
 }
 
@@ -163,7 +173,7 @@ func deleteArchitectIvrFn(_ context.Context, a *architectIvrProxy, id string) (*
 }
 
 // getAllArchitectIvrsFn is an implementation function for retrieving all Genesys Cloud Architect IVRs
-func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string) (*[]platformclientv2.Ivr, error) {
+func getAllArchitectIvrsFn(ctx context.Context, a *architectIvrProxy, name string) (*[]platformclientv2.Ivr, error) {
 	var (
 		allIvrs   []platformclientv2.Ivr
 		pageCount int
@@ -180,10 +190,6 @@ func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string)
 		allIvrs = append(allIvrs, *ivrs.Entities...)
 	}
 
-	if pageCount < 2 {
-		return &allIvrs, nil
-	}
-
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
 		ivrs, _, err := a.api.GetArchitectIvrs(pageNum, pageSize, "", "", name, "", "")
 		if err != nil {
@@ -194,6 +200,13 @@ func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string)
 		}
 		allIvrs = append(allIvrs, *ivrs.Entities...)
 	}
+
+	if tfexporter_state.IsExporterActive() {
+		for _, ivr := range allIvrs {
+			a.cache.Set(*ivr.Id, ivr)
+		}
+	}
+
 	return &allIvrs, nil
 }
 

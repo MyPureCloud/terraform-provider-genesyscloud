@@ -873,7 +873,6 @@ func getResourcesForType(resType string, provider *schema.Provider, exporter *re
 	for id, resMeta := range exporter.SanitizedResourceMap {
 		go func(id string, resMeta *resourceExporter.ResourceMeta) {
 			defer wg.Done()
-
 			fetchResourceState := func() error {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(30)*time.Minute)
 				defer cancel()

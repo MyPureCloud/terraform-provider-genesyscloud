@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
 )
@@ -53,6 +55,7 @@ type phoneProxy struct {
 	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
 	stationsApi  *platformclientv2.StationsApi
 	usersApi     *platformclientv2.UsersApi
+	phoneCache   resource_cache.CacheInterface[platformclientv2.Phone]
 
 	getAllPhonesAttr   getAllPhonesFunc
 	createPhoneAttr    createPhoneFunc
@@ -73,13 +76,13 @@ func newPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	stationsApi := platformclientv2.NewStationsApiWithConfig(clientConfig)
 	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
-
+	phoneCache := resource_cache.NewResourceCache[platformclientv2.Phone]()
 	return &phoneProxy{
-		clientConfig: clientConfig,
-		edgesApi:     edgesApi,
-		stationsApi:  stationsApi,
-		usersApi:     usersApi,
-
+		clientConfig:       clientConfig,
+		edgesApi:           edgesApi,
+		stationsApi:        stationsApi,
+		usersApi:           usersApi,
+		phoneCache:         phoneCache,
 		getAllPhonesAttr:   getAllPhonesFn,
 		createPhoneAttr:    createPhoneFn,
 		getPhoneByIdAttr:   getPhoneByIdFn,
@@ -166,8 +169,8 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	var allPhones []platformclientv2.Phone
 	const pageSize = 100
 	const sortBy = "id"
-
-	phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+	expands := []string{"lines", "phoneBaseSettings"}
+	phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", expands, nil)
 	if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
 		log.Printf("getAllPhonesFn:: error encountered while trying to get first page of phone data #%v statusCode: %d", err, response.StatusCode)
 		return nil, err
@@ -187,7 +190,7 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	}
 
 	for pageNum := 2; pageNum <= *phones.PageCount; pageNum++ {
-		phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", nil, nil)
+		phones, response, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(pageNum, pageSize, sortBy, "", "", "", "", "", "", "", "", "", "", "", "", expands, nil)
 		if err != nil || (response != nil && response.StatusCode != http.StatusOK) {
 			return nil, err
 		}
@@ -206,6 +209,10 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 	log.Printf("getAllPhonesFn:: Listing all of the non-deleted phone ids and names that we actually retrieved")
 	for _, phone := range allPhones {
 		log.Printf("getAllPhonesFn::  Retrieved phone id %s with phone name: %s\n", *phone.Id, *phone.Name)
+		if tfexporter_state.IsExporterActive() {
+			log.Printf("I am in the SET PHONES: %v:", phone)
+			p.phoneCache.Set(*phone.Id, phone)
+		}
 	}
 
 	return &allPhones, nil
@@ -223,7 +230,13 @@ func createPhoneFn(ctx context.Context, p *phoneProxy, phoneConfig *platformclie
 
 // getPhoneByIdFn is an implementation function for retrieving a Genesys Cloud Phone by id
 func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
+	if tfexporter_state.IsExporterActive() {
+		ph := p.phoneCache.Get(phoneId)
+		return &ph, nil, nil
+	}
+
 	phone, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhone(phoneId)
+	log.Printf("I am in the GetPhone API call %s: %#v:", phoneId, phone)
 
 	if err != nil {
 		return nil, resp, err

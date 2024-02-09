@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v119/platformclientv2"
+	"net/http"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package

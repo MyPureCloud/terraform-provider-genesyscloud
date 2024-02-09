@@ -14,6 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 )
 
 func SetRegistrar(l registrar.Registrar) {
@@ -123,6 +124,8 @@ func ResourceTfExport() *schema.Resource {
 }
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	tfexporter_state.ActivateExporterState()
+
 	if _, ok := d.GetOk("include_filter_resources"); ok {
 		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources)
 		diagErr := gre.Export()
@@ -148,6 +151,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	//Dealing with the traditional resource
 	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, LegacyInclude)
 	diagErr := gre.Export()
+
 	if diagErr != nil {
 		return diagErr
 	}
